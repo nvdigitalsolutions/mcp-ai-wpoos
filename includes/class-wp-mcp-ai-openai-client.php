@@ -80,12 +80,12 @@ class WP_MCP_AI_OpenAI_Client {
             'timeout' => $timeout,
         );
 
-        WP_MCP_AI_Admin_Settings::log( 'Sending request to OpenAI.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
+        WP_MCP_AI_Logger::log_event( 'openai_request', 'Sending request to OpenAI.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
 
         $response = wp_remote_post( self::API_ENDPOINT, $request_args );
 
         if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Admin_Settings::log( 'OpenAI request failed.', array( 'error' => $response->get_error_message() ) );
+            WP_MCP_AI_Logger::log_error( 'OpenAI request failed.', array( 'error' => $response->get_error_message() ) );
 
             return new WP_Error(
                 'wp_mcp_ai_http_error',
@@ -100,20 +100,20 @@ class WP_MCP_AI_OpenAI_Client {
         $json_err = json_last_error();
 
         if ( JSON_ERROR_NONE !== $json_err ) {
-            WP_MCP_AI_Admin_Settings::log( 'Failed to decode OpenAI response.', array( 'body' => $body ) );
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI response.', array( 'body' => $body ) );
 
             return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The OpenAI API returned malformed JSON.', 'wp-mcp-ai' ) );
         }
 
         if ( $code < 200 || $code >= 300 ) {
-            WP_MCP_AI_Admin_Settings::log( 'OpenAI returned an error response.', array( 'code' => $code, 'body' => $decoded ) );
+            WP_MCP_AI_Logger::log_error( 'OpenAI returned an error response.', array( 'code' => $code, 'body' => $decoded ) );
 
             $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
 
             return new WP_Error( 'wp_mcp_ai_api_error', $message, array( 'status' => $code, 'body' => $decoded ) );
         }
 
-        WP_MCP_AI_Admin_Settings::log( 'OpenAI request completed.', array( 'response' => $decoded ) );
+        WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
         return $decoded;
     }

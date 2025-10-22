@@ -65,6 +65,20 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
         }
 
+        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+        if ( ! $user_id ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view WooCommerce orders.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+        }
+
+        if ( ! user_can( $user_id, 'manage_woocommerce' ) && ! user_can( $user_id, 'view_woocommerce_reports' ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view WooCommerce orders.', 'wp-mcp-ai' ) );
+        }
+
         $limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
         $limit = $limit > 0 ? min( $limit, 20 ) : 5;
         $args  = array(

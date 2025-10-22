@@ -55,6 +55,16 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function execute( array $arguments = array(), array $context = array() ) {
+        $acting_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+        if ( ! $acting_user_id ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to inspect users.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+        }
+
         $user_id = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : 0;
         if ( ! $user_id && isset( $context['user_id'] ) ) {
             $user_id = absint( $context['user_id'] );
@@ -66,6 +76,14 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
 
         if ( ! $user_id ) {
             return new WP_Error( 'wp_mcp_ai_no_user', __( 'Unable to determine which user to load.', 'wp-mcp-ai' ) );
+        }
+
+        if ( $user_id !== $acting_user_id && ! user_can( $acting_user_id, 'list_users' ) && ! user_can( $acting_user_id, 'manage_options' ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view other user profiles.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'The requested user does not belong to this site.', 'wp-mcp-ai' ) );
         }
 
         $user = get_userdata( $user_id );
