@@ -37,10 +37,26 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 ---
 
-## 💬 Example Shortcode
+## 💬 Frontend Shortcode
+Embed a published assistant anywhere on the site with the shortcode. Replace `123` with the post ID of the assistant you created under **AI Assistants**.
+
 ```html
 [mcp_ai_chat assistant="123"]
 ```
+
+### How it works
+- The shortcode renders a lightweight chat UI that talks to the plugin's REST API endpoints.
+- Scripts and styles are enqueued automatically and include REST nonces plus the selected assistant ID.
+- Responses are displayed inline, including tool invocation feedback when the model requests a registered tool.
+
+### Requirements
+- The assistant post must be **published** and the current user must have the `edit_posts` capability (matching the REST permission check).
+- An OpenAI API key and default model must be configured in **Settings → MCP AI**.
+
+### Tips
+- Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
+- Multiple shortcodes can be added to the same page; each chat instance maintains its own conversation context on the client.
+- REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ---
 

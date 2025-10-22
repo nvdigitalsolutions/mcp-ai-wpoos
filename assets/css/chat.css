@@ -1,0 +1,114 @@
+.wp-mcp-ai-chat {
+    border: 1px solid #d5d5d5;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+    max-width: 640px;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wp-mcp-ai-chat__messages {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-right: 4px;
+}
+
+.wp-mcp-ai-chat__message {
+    display: flex;
+}
+
+.wp-mcp-ai-chat__message--user {
+    justify-content: flex-end;
+}
+
+.wp-mcp-ai-chat__message--assistant,
+.wp-mcp-ai-chat__message--tool,
+.wp-mcp-ai-chat__message--system {
+    justify-content: flex-start;
+}
+
+.wp-mcp-ai-chat__bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    line-height: 1.4;
+    background: #f1f1f1;
+    color: #222;
+    max-width: 100%;
+    word-break: break-word;
+}
+
+.wp-mcp-ai-chat__message--user .wp-mcp-ai-chat__bubble {
+    background: #3858e9;
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__message--tool .wp-mcp-ai-chat__bubble {
+    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+    white-space: pre-wrap;
+}
+
+.wp-mcp-ai-chat__status {
+    margin-bottom: 1rem;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.wp-mcp-ai-chat__label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-chat__input {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #c3c4c7;
+    resize: vertical;
+    min-height: 120px;
+}
+
+.wp-mcp-ai-chat__input:focus {
+    outline: 2px solid #3858e9;
+    outline-offset: 2px;
+}
+
+.wp-mcp-ai-chat__actions {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.wp-mcp-ai-chat__submit {
+    background: #3858e9;
+    border: none;
+    color: #fff;
+    padding: 0.6rem 1.4rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s ease-in-out;
+}
+
+.wp-mcp-ai-chat__submit:hover,
+.wp-mcp-ai-chat__submit:focus {
+    background: #2b45b8;
+}
+
+.wp-mcp-ai-chat__submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.wp-mcp-ai-chat__notice {
+    border: 1px solid #d63638;
+    background: #fef2f2;
+    color: #8a1f1f;
+    padding: 1rem;
+    border-radius: 4px;
+}
