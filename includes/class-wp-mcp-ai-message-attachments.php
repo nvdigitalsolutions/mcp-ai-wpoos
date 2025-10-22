@@ -39,7 +39,7 @@ class WP_MCP_AI_Message_Attachments {
     }
 
     /**
-     * Prepare an input text segment.
+     * Prepare a text segment.
      *
      * @param string $text Raw text.
      * @return array
@@ -49,7 +49,7 @@ class WP_MCP_AI_Message_Attachments {
         $text = trim( $text );
 
         return array(
-            'type' => 'input_text',
+            'type' => 'text',
             'text' => $text,
         );
     }
