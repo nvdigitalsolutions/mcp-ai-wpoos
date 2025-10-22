@@ -1,11 +1,13 @@
 # MCP Server Authentication
 
+
 The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Remote assistants authenticate with Auth0 bearer tokens while in-dashboard tooling continues to leverage native WordPress cookies and nonces.
 
 ## Credential mechanism
 
 * **Auth0 bearer tokens** are the primary mechanism for remote assistants. Provision them through your Auth0 tenant using the API identifier configured in the plugin settings.
 * **REST nonces** (`X-WP-Nonce`) remain available for the built-in shortcode, dashboard UI, or any same-origin script that operates on behalf of a logged-in user.
+
 
 ## Supplying credentials
 
