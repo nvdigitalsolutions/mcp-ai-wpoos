@@ -62,7 +62,12 @@ class WP_MCP_AI_OpenAI_Client {
         if ( ! empty( $options['system_prompt'] ) ) {
             $system_messages[] = array(
                 'role'    => 'system',
-                'content' => (string) $options['system_prompt'],
+                'content' => array(
+                    array(
+                        'type' => 'input_text',
+                        'text' => (string) $options['system_prompt'],
+                    ),
+                ),
             );
         }
 
@@ -78,6 +83,14 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( ! empty( $options['tools'] ) ) {
             $payload['tools'] = array_values( $options['tools'] );
+        }
+
+        if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
+            $payload['attachments'] = array_values( $options['attachments'] );
+        }
+
+        if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
+            $payload['response_format'] = $options['response_format'];
         }
 
         $request_args = array(
@@ -162,8 +175,13 @@ class WP_MCP_AI_OpenAI_Client {
 
                 $messages[] = array(
                     'role'    => 'system',
-                    /* translators: %1$s: document title, %2$s: extracted text snippet. */
-                    'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk ),
+                    'content' => array(
+                        array(
+                            'type' => 'input_text',
+                            /* translators: %1$s: document title, %2$s: extracted text snippet. */
+                            'text' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk ),
+                        ),
+                    ),
                 );
             }
         }
@@ -181,15 +199,75 @@ class WP_MCP_AI_OpenAI_Client {
         if ( isset( $payload['messages'] ) ) {
             $trimmed_messages = array();
             foreach ( $payload['messages'] as $message ) {
-                if ( isset( $message['content'] ) ) {
+                if ( isset( $message['content'] ) && is_array( $message['content'] ) ) {
+                    $trimmed_segments = array();
+
+                    foreach ( $message['content'] as $segment ) {
+                        if ( ! is_array( $segment ) ) {
+                            continue;
+                        }
+
+                        $segment_copy = $segment;
+                        $type         = isset( $segment['type'] ) ? $segment['type'] : '';
+
+                        if ( 'input_text' === $type && isset( $segment['text'] ) ) {
+                            $content = (string) $segment['text'];
+                            $length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
+                            $slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
+                            $segment_copy['text'] = $slice . ( $length > 200 ? '…' : '' );
+                        }
+
+                        if ( 'input_image' === $type && isset( $segment['image_url']['url'] ) ) {
+                            $segment_copy['image_url']['url'] = esc_url_raw( $segment['image_url']['url'] );
+                        }
+
+                        if ( 'input_image' === $type && isset( $segment['image_file']['file_id'] ) ) {
+                            $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                        }
+
+                        if ( 'input_file' === $type && isset( $segment['file_id'] ) ) {
+                            $segment_copy = array(
+                                'type'    => 'input_file',
+                                'file_id' => $segment['file_id'],
+                            );
+
+                            if ( isset( $segment['display_name'] ) ) {
+                                $segment_copy['display_name'] = $segment['display_name'];
+                            }
+                        }
+
+                        $trimmed_segments[] = $segment_copy;
+                    }
+
+                    $message['content'] = $trimmed_segments;
+                } elseif ( isset( $message['content'] ) ) {
                     $content = (string) $message['content'];
                     $length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
                     $slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
                     $message['content'] = $slice . ( $length > 200 ? '…' : '' );
                 }
+
                 $trimmed_messages[] = $message;
             }
             $payload['messages'] = $trimmed_messages;
+        }
+
+        if ( isset( $payload['attachments'] ) && is_array( $payload['attachments'] ) ) {
+            $scrubbed = array();
+
+            foreach ( $payload['attachments'] as $attachment ) {
+                if ( ! is_array( $attachment ) ) {
+                    continue;
+                }
+
+                if ( isset( $attachment['data'] ) ) {
+                    $attachment['data'] = '[redacted]';
+                }
+
+                $scrubbed[] = $attachment;
+            }
+
+            $payload['attachments'] = $scrubbed;
         }
 
         return $payload;

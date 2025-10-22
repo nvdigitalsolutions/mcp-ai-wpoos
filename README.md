@@ -76,6 +76,49 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 
 ---
 
+## 🧵 REST Chat Payloads & Attachments
+
+The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each message object still requires a `role`, but the
+`content` may now be either a plain string or an array of structured segments that map to OpenAI's multimodal contract.
+
+```json
+{
+  "assistant_id": 123,
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        { "type": "input_text", "text": "Describe this photo" },
+        { "type": "input_image", "attachment_id": 456, "detail": "high" }
+      ]
+    }
+  ],
+  "options": {
+    "response_format": { "type": "json_schema", "json_schema": { "name": "caption" } }
+  }
+}
+```
+
+### Supported segment types
+
+- `input_text` – Free-form text (`text` property). Strings supplied directly to `content` are automatically wrapped in this format.
+- `input_image` – Reference an uploaded WordPress attachment (`attachment_id`) or provide a remote `url`. Optional `detail`
+  hints (`low`, `auto`, `high`) and `caption` fields are preserved.
+- `input_file` – Reference an uploaded attachment that should be streamed to the model.
+
+The REST controller validates attachment ownership/permissions, enforces a default 5 MB size cap (filterable via
+`wp_mcp_ai_max_attachment_bytes`), and only allows safe MIME types by default (`image/*` formats, `text/plain`, `text/markdown`,
+`text/csv`, `application/pdf`, `application/json`).
+
+Whenever attachments are present, the plugin automatically includes an `attachments` block in the upstream OpenAI payload with
+base64-encoded blobs, file names, captions, and generated `file_id` values. Message segments that reference the attachment will
+use these `file_id` handles so integrators do not need to upload assets manually.
+
+Assistant memory files configured on the post (`memory_files`) are also promoted to structured `input_text` segments on the
+system channel, retaining the existing chunking/truncation safeguards.
+
+---
+
 ## 🪵 Logging
 
 - Enable or disable logging from **Settings → MCP AI → Enable Logging**.
