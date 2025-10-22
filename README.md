@@ -17,8 +17,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🧠 Create AI Assistants via a custom post type (`ai_assistant`)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🔧 Tool Registry for registering PHP functions callable by the AI
-- 🛍 WooCommerce-aware tools (fetch orders)
-- ⚙️ JetEngine integration for dynamic content queries
+- 🛍 WooCommerce-aware tools (fetch orders, requires WooCommerce)
+- ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 🔐 Secure REST API endpoints
 - 🔑 Configurable OpenAI key via settings panel
 - 🧱 Ready for extension with ChatKit Add-on
@@ -68,6 +68,37 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
   - Tool executions (including permission denials).
   - Errors returned from the OpenAI API and internal validation.
 - Log entries are written via PHP's `error_log()` and can be filtered with `wp_mcp_ai_log_entry` to route them elsewhere.
+
+---
+
+## 🔌 Optional Tools & Dependencies
+
+The plugin registers several tools automatically. Tools that rely on third-party plugins only load when their dependency is active:
+
+- **WooCommerce Orders Tool** – Visible only when WooCommerce is active. If WooCommerce is missing, an informational notice is shown to administrators and the tool will not be listed for assistants.
+- **JetEngine Items Tool** – Visible only when JetEngine is active. Administrators are informed when JetEngine is not detected and the tool remains unavailable to assistants.
+
+Each tool description in the admin UI reiterates the dependency so editors understand why a tool might be unavailable.
+
+---
+
+## ✅ Manual QA Scenarios
+
+The project currently relies on manual verification. Run these checks after updating the plugin:
+
+1. **Baseline (no optional plugins)**
+   - Deactivate WooCommerce and JetEngine.
+   - Load the AI Assistant edit screen and confirm only core tools appear. No PHP notices or fatal errors should occur.
+   - Visit the WordPress dashboard to confirm the informational notices explain why optional tools are disabled.
+2. **WooCommerce enabled**
+   - Activate WooCommerce.
+   - Reload the Assistant editor and ensure the WooCommerce Orders tool appears and can be selected.
+   - Trigger the tool (e.g., via an assistant conversation) and confirm recent orders return without errors.
+3. **JetEngine enabled**
+   - Activate JetEngine.
+   - Confirm the JetEngine Items tool appears for assistants and returns data for a configured JetEngine post type.
+
+Document the results of each scenario when preparing releases to ensure optional integrations remain stable.
 
 ---
 

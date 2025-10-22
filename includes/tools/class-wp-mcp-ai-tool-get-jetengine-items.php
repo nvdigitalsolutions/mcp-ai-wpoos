@@ -14,6 +14,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
     /**
+     * Determine whether JetEngine is available.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+    }
+
+    /**
+     * Message explaining why the tool is unavailable.
+     *
+     * @return string
+     */
+    public static function get_unavailable_reason() {
+        return __( 'The JetEngine Items tool is disabled because JetEngine is not active.', 'wp-mcp-ai' );
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function get_slug() {
@@ -31,7 +49,7 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function get_description() {
-        return __( 'Returns content items from a JetEngine managed post type.', 'wp-mcp-ai' );
+        return __( 'Returns content items from a JetEngine managed post type. Requires JetEngine.', 'wp-mcp-ai' );
     }
 
     /**
@@ -62,7 +80,7 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function execute( array $arguments = array(), array $context = array() ) {
-        if ( ! function_exists( 'jet_engine' ) ) {
+        if ( ! self::is_available() ) {
             return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'wp-mcp-ai' ) );
         }
 

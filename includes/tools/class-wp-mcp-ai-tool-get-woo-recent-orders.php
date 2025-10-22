@@ -14,6 +14,24 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
     /**
+     * Determine whether WooCommerce is available.
+     *
+     * @return bool
+     */
+    public static function is_available() {
+        return class_exists( 'WooCommerce' ) && function_exists( 'wc_get_orders' );
+    }
+
+    /**
+     * Message explaining why the tool is unavailable.
+     *
+     * @return string
+     */
+    public static function get_unavailable_reason() {
+        return __( 'The WooCommerce Orders tool is disabled because WooCommerce is not active.', 'wp-mcp-ai' );
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function get_slug() {
@@ -31,7 +49,7 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function get_description() {
-        return __( 'Returns recent WooCommerce orders with totals and statuses.', 'wp-mcp-ai' );
+        return __( 'Returns recent WooCommerce orders with totals and statuses. Requires WooCommerce.', 'wp-mcp-ai' );
     }
 
     /**
@@ -61,7 +79,7 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function execute( array $arguments = array(), array $context = array() ) {
-        if ( ! class_exists( 'WooCommerce' ) || ! function_exists( 'wc_get_orders' ) ) {
+        if ( ! self::is_available() ) {
             return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
         }
 
