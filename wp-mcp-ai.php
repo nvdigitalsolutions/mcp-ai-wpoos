@@ -26,6 +26,15 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
 /**
+ * Load the plugin textdomain for localisation support.
+ */
+function wp_mcp_ai_load_textdomain() {
+    load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+}
+
+add_action( 'init', 'wp_mcp_ai_load_textdomain' );
+
+/**
  * Bootstrap the plugin once all dependencies are loaded.
  */
 function wp_mcp_ai_bootstrap() {
