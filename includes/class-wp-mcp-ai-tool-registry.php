@@ -37,6 +37,13 @@ class WP_MCP_AI_Tool_Registry {
     protected $bootstrapped = false;
 
     /**
+     * Human readable messages describing tools that were skipped.
+     *
+     * @var string[]
+     */
+    protected $unavailable_tool_messages = array();
+
+    /**
      * Retrieve the singleton instance.
      *
      * @return WP_MCP_AI_Tool_Registry
@@ -76,12 +83,33 @@ class WP_MCP_AI_Tool_Registry {
 
         $this->load_default_tools();
 
+        if ( is_admin() && ! empty( $this->unavailable_tool_messages ) ) {
+            add_action( 'admin_notices', array( $this, 'render_unavailable_tool_notices' ) );
+        }
+
         /**
          * Allow third parties to register additional tools.
          *
          * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
          */
         do_action( 'wp_mcp_ai_register_tools', $this );
+    }
+
+    /**
+     * Render admin notices for tools that were skipped during registration.
+     */
+    public function render_unavailable_tool_notices() {
+        if ( empty( $this->unavailable_tool_messages ) || ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        foreach ( $this->unavailable_tool_messages as $message ) {
+            if ( empty( $message ) ) {
+                continue;
+            }
+
+            printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $message ) );
+        }
     }
 
     /**
@@ -163,7 +191,22 @@ class WP_MCP_AI_Tool_Registry {
             }
 
             if ( class_exists( $class ) ) {
-                $this->register_tool( new $class() );
+                $should_register = true;
+
+                if ( method_exists( $class, 'is_available' ) ) {
+                    $should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+
+                    if ( ! $should_register && method_exists( $class, 'get_unavailable_reason' ) ) {
+                        $message = (string) call_user_func( array( $class, 'get_unavailable_reason' ) );
+                        if ( $message && ! in_array( $message, $this->unavailable_tool_messages, true ) ) {
+                            $this->unavailable_tool_messages[] = $message;
+                        }
+                    }
+                }
+
+                if ( $should_register ) {
+                    $this->register_tool( new $class() );
+                }
             }
         }
     }
