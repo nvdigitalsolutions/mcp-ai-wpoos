@@ -37,6 +37,64 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure assistant tool calls are preserved even when the content is empty.
+     */
+    public function test_assistant_tool_calls_are_preserved_when_content_empty() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Call the tool',
+                ),
+                array(
+                    'role'       => 'assistant',
+                    'content'    => '',
+                    'tool_calls' => array(
+                        array(
+                            'id'       => 'call_123',
+                            'type'     => 'function',
+                            'function' => array(
+                                'name'      => 'fetch_data',
+                                'arguments' => '{"foo":"bar"}',
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertCount( 2, $messages );
+
+                $assistant_message = $messages[1];
+                $this->assertSame( 'assistant', $assistant_message['role'] );
+                $this->assertArrayHasKey( 'content', $assistant_message );
+                $this->assertIsArray( $assistant_message['content'] );
+                $this->assertEmpty( $assistant_message['content'] );
+
+                $this->assertArrayHasKey( 'tool_calls', $assistant_message );
+                $this->assertIsArray( $assistant_message['tool_calls'] );
+                $this->assertCount( 1, $assistant_message['tool_calls'] );
+
+                $tool_call = $assistant_message['tool_calls'][0];
+                $this->assertSame( 'call_123', $tool_call['id'] );
+                $this->assertSame( 'function', $tool_call['type'] );
+                $this->assertArrayHasKey( 'function', $tool_call );
+                $this->assertSame( 'fetch_data', $tool_call['function']['name'] );
+                $this->assertSame( '{"foo":"bar"}', $tool_call['function']['arguments'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure image attachments are transformed into attachment-backed segments.
      */
     public function test_image_attachment_segment_is_prepared() {
