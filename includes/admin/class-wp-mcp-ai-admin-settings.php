@@ -37,6 +37,7 @@ class WP_MCP_AI_Admin_Settings {
             'enable_logging'   => false,
             'default_model'    => 'gpt-4o-mini',
             'request_timeout'  => 30,
+            'delete_on_uninstall' => false,
         );
     }
 
@@ -148,6 +149,21 @@ class WP_MCP_AI_Admin_Settings {
             self::PAGE_SLUG,
             'wp_mcp_ai_assistant_section'
         );
+
+        add_settings_section(
+            'wp_mcp_ai_maintenance_section',
+            __( 'Maintenance', 'wp-mcp-ai' ),
+            '__return_false',
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'delete_on_uninstall',
+            __( 'Remove Data on Uninstall', 'wp-mcp-ai' ),
+            array( $this, 'render_delete_on_uninstall_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_maintenance_section'
+        );
     }
 
     /**
@@ -182,6 +198,8 @@ class WP_MCP_AI_Admin_Settings {
             $clean['request_timeout'] = $timeout > 0 ? $timeout : $clean['request_timeout'];
         }
 
+        $clean['delete_on_uninstall'] = ! empty( $settings['delete_on_uninstall'] );
+
         return $clean;
     }
 
@@ -205,6 +223,20 @@ class WP_MCP_AI_Admin_Settings {
                 ?>
             </form>
         </div>
+        <?php
+    }
+
+    /**
+     * Render the delete on uninstall checkbox.
+     */
+    public function render_delete_on_uninstall_field() {
+        $settings = self::get_settings();
+        ?>
+        <label for="wp-mcp-ai-delete-on-uninstall">
+            <input id="wp-mcp-ai-delete-on-uninstall" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[delete_on_uninstall]" value="1" <?php checked( $settings['delete_on_uninstall'] ); ?> />
+            <?php esc_html_e( 'When uninstalling the plugin, remove assistants, settings, and other stored data.', 'wp-mcp-ai' ); ?>
+        </label>
+        <p class="description"><?php esc_html_e( 'Leave unchecked to preserve plugin data for future installations.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
