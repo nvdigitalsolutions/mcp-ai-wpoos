@@ -159,6 +159,32 @@ system channel, retaining the existing chunking/truncation safeguards.
 
 ---
 
+## 🧾 JetEngine REST Endpoint Report Helper
+
+Use the JetEngine report helper to surface the CRUD coverage matrix that was compiled during the REST endpoint audit. The helper exposes the underlying endpoint metadata as a structured array so you can reuse it in documentation, dashboards, or custom checks.
+
+```php
+$report = wp_mcp_ai_get_jetengine_endpoint_report();
+
+foreach ( $report['coverage'] as $resource => $operations ) {
+    printf( "%s supports: %s\n", ucfirst( $resource ), implode( ', ', array_keys( array_filter( $operations ) ) ) );
+}
+
+if ( empty( $report['missing'] ) ) {
+    echo "All CRUD operations are covered.";
+}
+```
+
+The helper is filterable via:
+
+- `wp_mcp_ai_jetengine_endpoint_routes` – Adjust the source routes before the coverage matrix is derived.
+- `wp_mcp_ai_jetengine_endpoint_coverage` – Modify the generated CRUD coverage.
+- `wp_mcp_ai_jetengine_missing_operations` – Override the derived list of missing operations per resource.
+
+Each filter receives the full data set so you can extend or replace the output when JetEngine adds new endpoints or when your project needs to surface additional metadata.
+
+---
+
 ## 🔌 Optional Tools & Dependencies
 
 The plugin registers several tools automatically. Tools that rely on third-party plugins only load when their dependency is active:
