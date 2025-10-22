@@ -20,6 +20,7 @@ class WP_MCP_AI_Assistant_CPT {
     const META_SYSTEM_PROMPT   = '_wp_mcp_ai_system_prompt';
     const META_MEMORY_FILES    = '_wp_mcp_ai_memory_files';
     const META_VECTOR_STORE_ID = '_wp_mcp_ai_vector_store_id';
+    const META_CREDENTIALS     = WP_MCP_AI_Credentials::META_KEY;
 
     /**
      * Tool registry instance.
@@ -39,6 +40,10 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'init', array( __CLASS__, 'register_post_type' ) );
         add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
         add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
+        add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
+        add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
+        add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
+        add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
     }
 
     /**
@@ -108,6 +113,100 @@ class WP_MCP_AI_Assistant_CPT {
             'normal',
             'default'
         );
+
+        add_meta_box(
+            'wp-mcp-ai-credentials',
+            __( 'API Credentials', 'wp-mcp-ai' ),
+            array( $this, 'render_credentials_meta_box' ),
+            self::POST_TYPE,
+            'side',
+            'default'
+        );
+    }
+
+    /**
+     * Render the credentials meta box content.
+     *
+     * @param WP_Post $post Post object.
+     */
+    public function render_credentials_meta_box( $post ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            echo '<p>' . esc_html__( 'You do not have permission to manage credentials.', 'wp-mcp-ai' ) . '</p>';
+            return;
+        }
+
+        $credentials = WP_MCP_AI_Credentials::get_credentials( $post->ID );
+
+        echo '<p>' . esc_html__( 'Issue tokens for remote integrations. Store the generated token securely; it will not be shown again.', 'wp-mcp-ai' ) . '</p>';
+
+        if ( empty( $credentials ) ) {
+            echo '<p>' . esc_html__( 'No credentials have been issued for this assistant.', 'wp-mcp-ai' ) . '</p>';
+        } else {
+            echo '<table class="widefat striped">';
+            echo '<thead><tr>';
+            echo '<th>' . esc_html__( 'Credential ID', 'wp-mcp-ai' ) . '</th>';
+            echo '<th>' . esc_html__( 'Created', 'wp-mcp-ai' ) . '</th>';
+            echo '<th>' . esc_html__( 'Status', 'wp-mcp-ai' ) . '</th>';
+            echo '<th>' . esc_html__( 'Actions', 'wp-mcp-ai' ) . '</th>';
+            echo '</tr></thead>';
+            echo '<tbody>';
+
+            foreach ( $credentials as $credential ) {
+                $created_at = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'wp-mcp-ai' );
+                $status     = __( 'Active', 'wp-mcp-ai' );
+                $actions    = '&#8212;';
+
+                if ( ! empty( $credential['revoked_at'] ) ) {
+                    $status = sprintf(
+                        /* translators: %s: revocation timestamp */
+                        __( 'Revoked %s', 'wp-mcp-ai' ),
+                        get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
+                    );
+                } else {
+                    $revoke_url = admin_url( 'admin-post.php' );
+                    ob_start();
+                    ?>
+                    <form method="post" action="<?php echo esc_url( $revoke_url ); ?>">
+                        <?php wp_nonce_field( 'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'], 'wp_mcp_ai_revoke_nonce' ); ?>
+                        <input type="hidden" name="action" value="wp_mcp_ai_revoke_credential" />
+                        <input type="hidden" name="post_id" value="<?php echo esc_attr( $post->ID ); ?>" />
+                        <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential['id'] ); ?>" />
+                        <?php
+                        submit_button(
+                            __( 'Revoke', 'wp-mcp-ai' ),
+                            'link delete',
+                            'submit',
+                            false,
+                            array(
+                                'onclick' => 'return confirm("' . esc_js( __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' ) ) . '");',
+                            )
+                        );
+                        ?>
+                    </form>
+                    <?php
+                    $actions = ob_get_clean();
+                }
+
+                echo '<tr>';
+                echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
+                echo '<td>' . esc_html( $created_at ) . '</td>';
+                echo '<td>' . esc_html( $status ) . '</td>';
+                echo '<td>' . $actions . '</td>';
+                echo '</tr>';
+            }
+
+            echo '</tbody>';
+            echo '</table>';
+        }
+
+        ?>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+            <?php wp_nonce_field( 'wp_mcp_ai_issue_credential_' . $post->ID, 'wp_mcp_ai_issue_nonce' ); ?>
+            <input type="hidden" name="action" value="wp_mcp_ai_issue_credential" />
+            <input type="hidden" name="post_id" value="<?php echo esc_attr( $post->ID ); ?>" />
+            <?php submit_button( __( 'Generate Credential', 'wp-mcp-ai' ), 'secondary', 'submit', false ); ?>
+        </form>
+        <?php
     }
 
     /**
@@ -303,6 +402,209 @@ class WP_MCP_AI_Assistant_CPT {
         } );
         </script>
         <?php
+    }
+
+    /**
+     * Handle credential issuance requests from the admin UI.
+     */
+    public function handle_issue_credential() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+        }
+
+        $post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( ! $post_id ) {
+            wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
+        }
+
+        check_admin_referer( 'wp_mcp_ai_issue_credential_' . $post_id, 'wp_mcp_ai_issue_nonce' );
+
+        $post = get_post( $post_id );
+        if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+            wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 404 ) );
+        }
+
+        $user_id = get_current_user_id();
+        $issued  = WP_MCP_AI_Credentials::issue_credential( $post_id, $user_id );
+
+        if ( is_wp_error( $issued ) ) {
+            $error_code = sanitize_key( $issued->get_error_code() );
+            $this->redirect_with_notice( $post_id, 'credential_error', array( 'error' => $error_code ) );
+        }
+
+        set_transient(
+            $this->get_token_transient_key( $user_id ),
+            array(
+                'assistant_id' => $post_id,
+                'token'        => $issued['token'],
+            ),
+            10 * MINUTE_IN_SECONDS
+        );
+
+        $this->redirect_with_notice( $post_id, 'credential_created' );
+    }
+
+    /**
+     * Handle credential revocation requests from the admin UI.
+     */
+    public function handle_revoke_credential() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+        }
+
+        $post_id       = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $credential_id = isset( $_POST['credential_id'] ) ? sanitize_key( wp_unslash( $_POST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+        if ( ! $post_id || '' === $credential_id ) {
+            wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
+        }
+
+        check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_revoke_nonce' );
+
+        $post = get_post( $post_id );
+        if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+            wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 404 ) );
+        }
+
+        $result = WP_MCP_AI_Credentials::revoke_credential( $post_id, $credential_id, get_current_user_id() );
+
+        if ( is_wp_error( $result ) ) {
+            $error_code = sanitize_key( $result->get_error_code() );
+            $this->redirect_with_notice( $post_id, 'credential_error', array( 'error' => $error_code ) );
+        }
+
+        $this->redirect_with_notice( $post_id, 'credential_revoked' );
+    }
+
+    /**
+     * Display notices related to credential management.
+     */
+    public function render_admin_notices() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return;
+        }
+
+        $screen = get_current_screen();
+
+        if ( ! $screen || 'post' !== $screen->base || self::POST_TYPE !== $screen->post_type ) {
+            return;
+        }
+
+        $post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( ! $post_id ) {
+            return;
+        }
+
+        $user_id      = get_current_user_id();
+        $transient_key = $this->get_token_transient_key( $user_id );
+        $token_notice  = get_transient( $transient_key );
+
+        if ( is_array( $token_notice ) && isset( $token_notice['assistant_id'], $token_notice['token'] ) && absint( $token_notice['assistant_id'] ) === $post_id ) {
+            delete_transient( $transient_key );
+
+            printf(
+                '<div class="notice notice-success"><p>%s</p></div>',
+                sprintf(
+                    /* translators: %s: credential token */
+                    esc_html__( 'New credential issued. Copy this token now: %s', 'wp-mcp-ai' ),
+                    '<code>' . esc_html( $token_notice['token'] ) . '</code>'
+                )
+            );
+        }
+
+        $notice = isset( $_GET['wp_mcp_ai_notice'] ) ? sanitize_key( wp_unslash( $_GET['wp_mcp_ai_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+        if ( '' === $notice ) {
+            return;
+        }
+
+        $error_code = isset( $_GET['error'] ) ? sanitize_key( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $message    = $this->get_notice_message( $notice, $error_code );
+
+        if ( '' === $message ) {
+            return;
+        }
+
+        $class = in_array( $notice, array( 'credential_created', 'credential_revoked' ), true ) ? 'notice-success' : 'notice-error';
+
+        printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+    }
+
+    /**
+     * Build the transient key used for temporary token storage.
+     *
+     * @param int $user_id User ID.
+     * @return string
+     */
+    protected function get_token_transient_key( $user_id ) {
+        return 'wp_mcp_ai_new_token_' . absint( $user_id );
+    }
+
+    /**
+     * Redirect back to the assistant edit screen with a notice.
+     *
+     * @param int    $post_id Assistant post ID.
+     * @param string $notice  Notice identifier.
+     * @param array  $extra   Additional query arguments.
+     */
+    protected function redirect_with_notice( $post_id, $notice, $extra = array() ) {
+        $args = array_merge(
+            array(
+                'post'             => absint( $post_id ),
+                'action'           => 'edit',
+                'wp_mcp_ai_notice' => sanitize_key( $notice ),
+            ),
+            array_change_key_case( $extra, CASE_LOWER )
+        );
+
+        wp_safe_redirect( add_query_arg( $args, admin_url( 'post.php' ) ) );
+        exit;
+    }
+
+    /**
+     * Map notice identifiers to user-facing messages.
+     *
+     * @param string $notice     Notice identifier.
+     * @param string $error_code Optional error code.
+     * @return string
+     */
+    protected function get_notice_message( $notice, $error_code = '' ) {
+        switch ( $notice ) {
+            case 'credential_created':
+                return __( 'Credential issued successfully.', 'wp-mcp-ai' );
+            case 'credential_revoked':
+                return __( 'Credential revoked successfully.', 'wp-mcp-ai' );
+            case 'credential_error':
+                switch ( $error_code ) {
+                    case 'wp_mcp_ai_unknown_credential':
+                        return __( 'The requested credential could not be found.', 'wp-mcp-ai' );
+                    case 'wp_mcp_ai_credential_already_revoked':
+                        return __( 'The credential has already been revoked.', 'wp-mcp-ai' );
+                    case 'wp_mcp_ai_invalid_assistant':
+                        return __( 'Unable to manage credentials for this assistant.', 'wp-mcp-ai' );
+                    default:
+                        return __( 'An error occurred while managing the credential.', 'wp-mcp-ai' );
+                }
+        }
+
+        return '';
+    }
+
+    /**
+     * Remove credential index entries when an assistant is deleted.
+     *
+     * @param int $post_id Post ID being deleted.
+     */
+    public function cleanup_deleted_assistant_credentials( $post_id ) {
+        if ( self::POST_TYPE !== get_post_type( $post_id ) ) {
+            return;
+        }
+
+        WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
     }
 
     /**
