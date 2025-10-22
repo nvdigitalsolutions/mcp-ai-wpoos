@@ -1,0 +1,66 @@
+name: PHPUnit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      WP_DB_NAME: wordpress_test
+      WP_DB_USER: wordpress
+      WP_DB_PASSWORD: wordpress
+      WP_DB_HOST: 127.0.0.1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          coverage: none
+          extensions: mbstring, mysqli
+          tools: composer
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Configure WordPress test suite
+        run: |
+          bin/install-wp-tests.sh "$WP_DB_NAME" "$WP_DB_USER" "$WP_DB_PASSWORD" "$WP_DB_HOST" latest
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
