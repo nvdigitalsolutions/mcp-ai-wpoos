@@ -24,6 +24,10 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🧱 Ready for extension with ChatKit Add-on
 - 🪵 Optional logging of chat interactions, tool executions, and API errors
 - 🪝 Developer hooks and filters for integrating custom behaviours
+- 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- ⏱ Per-site request timeout control with sensible minimum enforcement
+- 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
+- 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
 
 ---
 
@@ -34,6 +38,31 @@ It allows you to create and manage AI Assistants that can interact with users, a
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
+
+---
+
+## ⚙️ Configuration Checklist (Action Items)
+
+Complete these after installation to unlock every integration point:
+
+- [ ] **Add your OpenAI API key** in **Settings → MCP AI → OpenAI API Key** so API calls are authorised.
+- [ ] **Confirm or override the default model** via **Settings → MCP AI → Default Model** (`gpt-4o-mini` ships as the default).
+- [ ] **Adjust the request timeout** under **Settings → MCP AI → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
+- [ ] **Select a default assistant** with **Settings → MCP AI → Default Assistant** so REST and shortcode requests have a fallback.
+- [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
+- [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
+
+---
+
+## 🛠 Assistant Editor Overview
+
+Assistant posts ship with dedicated controls that map directly to runtime behaviour:
+
+- **Available Tools** – Choose which registered tools (core, WooCommerce, JetEngine, or custom) the model may invoke. Dependency-aware notices explain why certain tools are unavailable.
+- **Model Defaults** – Provide assistant-specific overrides for the OpenAI model, temperature (0–2), and system prompt applied to every conversation.
+- **Base Knowledge** – Attach Media Library items that are chunked, truncated, and streamed as memory context, and optionally store an external **Vector Store ID** to coordinate retrieval workflows.
+
+If an API or shortcode request omits the `assistant` parameter, the plugin automatically uses the default assistant configured in the global settings.
 
 ---
 
