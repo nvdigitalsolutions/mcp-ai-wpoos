@@ -56,6 +56,53 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure requests without explicit credentials return actionable guidance.
+     */
+    public function test_request_without_credentials_returns_actionable_error() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 401, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 'wp_mcp_ai_missing_credentials', $data['code'] );
+        $this->assertArrayHasKey( 'actions', $data );
+        $this->assertArrayHasKey( 'supply_bearer_token', $data['actions'] );
+    }
+
+    /**
      * Ensure chat requests succeed for published assistants.
      */
     public function test_chat_request_allows_published_assistant() {
@@ -104,6 +151,125 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
+     * Ensure bearer token requests can be authorised via the validation filter.
+     */
+    public function test_bearer_token_request_honours_validation_filter() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        add_filter(
+            'wp_mcp_ai_pre_validate_bearer_token',
+            function ( $pre, $token ) {
+                if ( 'test-token' === $token ) {
+                    return true;
+                }
+
+                return $pre;
+            },
+            10,
+            2
+        );
+
+        try {
+            $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+            $request->set_param( 'assistant_id', $assistant_id );
+            $request->set_param(
+                'messages',
+                array(
+                    array(
+                        'role'    => 'user',
+                        'content' => 'Hello',
+                    ),
+                )
+            );
+            $request->set_header( 'Authorization', 'Bearer test-token' );
+
+            $response = rest_get_server()->dispatch( $request );
+
+            $this->assertInstanceOf( WP_REST_Response::class, $response );
+            $this->assertSame( 200, $response->get_status() );
+        } finally {
+            remove_all_filters( 'wp_mcp_ai_pre_validate_bearer_token' );
+        }
+    }
+
+    /**
+     * Ensure bearer token requests can be rejected via the validation filter.
+     */
+    public function test_bearer_token_request_rejected_via_filter_error() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        add_filter(
+            'wp_mcp_ai_pre_validate_bearer_token',
+            function () {
+                return new WP_Error( 'custom', 'Denied' );
+            }
+        );
+
+        try {
+            $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+            $request->set_param( 'assistant_id', $assistant_id );
+            $request->set_param(
+                'messages',
+                array(
+                    array(
+                        'role'    => 'user',
+                        'content' => 'Hello',
+                    ),
+                )
+            );
+            $request->set_header( 'Authorization', 'Bearer invalid' );
+
+            $response = rest_get_server()->dispatch( $request );
+
+            $this->assertInstanceOf( WP_REST_Response::class, $response );
+            $this->assertSame( 500, $response->get_status() );
+            $this->assertSame( 'custom', $response->get_data()['code'] );
+        } finally {
+            remove_all_filters( 'wp_mcp_ai_pre_validate_bearer_token' );
+        }
     }
 
     /**
