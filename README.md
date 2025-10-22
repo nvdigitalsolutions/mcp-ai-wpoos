@@ -37,6 +37,22 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 ---
 
+## 🐳 Local Development with Docker
+
+Spin up a disposable WordPress instance that mounts the plugin source directly into the container:
+
+```bash
+docker compose up -d
+```
+
+- WordPress will be available at [http://localhost:8000](http://localhost:8000).
+- The plugin source in this repository is mounted to `/var/www/html/wp-content/plugins/wp-mcp-ai` inside the container, so edits on your machine are reflected immediately.
+- The MySQL service is provisioned with the `wordpress` database, user, and password (`wordpress` / `wordpress`).
+
+Visit the site in your browser to complete the standard WordPress installation flow, using the database credentials above when prompted. When you're finished developing, stop the stack with `docker compose down`.
+
+---
+
 ## 💬 Frontend Shortcode
 Embed a published assistant anywhere on the site with the shortcode. Replace `123` with the post ID of the assistant you created under **AI Assistants**.
 
