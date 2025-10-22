@@ -1,24 +1,27 @@
 # MCP Server Authentication
 
-The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). It accepts the same credentials that WordPress core understands so you can authenticate assistants without bolting on a separate auth layer.
+
+The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Remote assistants authenticate with Auth0 bearer tokens while in-dashboard tooling continues to leverage native WordPress cookies and nonces.
 
 ## Credential mechanism
 
-* **Application passwords** are the primary mechanism for remote assistants. Create them under **Users → Profile → Application Passwords** and store the generated password securely.
-* **REST nonces** (`X-WP-Nonce`) remain available for in-dashboard UI or same-origin scripts that already have a logged-in session.
+* **Auth0 bearer tokens** are the primary mechanism for remote assistants. Provision them through your Auth0 tenant using the API identifier configured in the plugin settings.
+* **REST nonces** (`X-WP-Nonce`) remain available for the built-in shortcode, dashboard UI, or any same-origin script that operates on behalf of a logged-in user.
+
 
 ## Supplying credentials
 
 | Client | Required headers | Notes |
 | --- | --- | --- |
-| Remote MCP assistant | `Authorization: Basic base64(USER:APPLICATION_PASSWORD)` | Uses WordPress' built-in Application Password flow. The username is the WordPress login for the account that issued the password. |
+| Remote MCP assistant | `Authorization: Bearer <Auth0 access token>` | Issue an Auth0 access token for your MCP API and transmit it with each request. |
 | WordPress dashboard / shortcode UI | `X-WP-Nonce: <nonce from wp_create_nonce('wp_rest')>` | Automatically injected by the plugin's UI scripts when rendering the chat interface. |
 
 ## Server-side validation
 
-1. WordPress core authenticates the Basic request and exposes the password UUID via `rest_get_authenticated_app_password()`.
-2. `WP_MCP_AI_REST::permissions_check()` detects the application password request, then verifies that the authenticated account has the `edit_posts` capability before dispatching the request.
-3. Requests that do not include Basic credentials must supply a valid `X-WP-Nonce`. Nonces are verified with `wp_verify_nonce()` and still require the `edit_posts` capability.
+1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP MCP AI**, and downloads the tenant's JWKS (cached for one hour).
+2. The token header and payload are decoded, the signature is verified against the JWKS public key via OpenSSL, and the `iss`, `aud`, and optional scope claims are enforced.
+3. If validation succeeds the request proceeds; otherwise, a structured error describing the remediation steps is returned to the client. WordPress-authenticated requests still require an `X-WP-Nonce` header and the `edit_posts` capability.
+4. Custom validation logic can hook into `wp_mcp_ai_pre_validate_bearer_token` to short-circuit the process or `wp_mcp_ai_bearer_token_payload` to inspect claims.
 
 ## Error surface area
 
@@ -26,8 +29,12 @@ Every authentication failure is returned as a structured JSON error so MCP clien
 
 | Error code | HTTP status | When it fires | Recommended action |
 | --- | --- | --- | --- |
-| `wp_mcp_ai_missing_credentials` | `401` | No Basic credentials and no nonce supplied. | Include the `Authorization` header generated from an application password or add the `X-WP-Nonce` header for same-origin requests. |
+| `wp_mcp_ai_missing_credentials` | `401` | No bearer token and no nonce supplied. | Include the `Authorization: Bearer` header or add the `X-WP-Nonce` header for same-origin requests. |
+| `wp_mcp_ai_invalid_bearer_token` | `401` | Token structure, signature, or issuer is invalid. | Request a new Auth0 access token and retry. |
+| `wp_mcp_ai_expired_bearer_token` | `401` | Token has expired. | Request a new Auth0 access token and retry. |
+| `wp_mcp_ai_invalid_bearer_audience` | `403` | Token was issued for a different API audience. | Request a token that includes the configured audience value. |
+| `wp_mcp_ai_insufficient_bearer_scope` | `403` | Token is missing the required scope. | Request a token that includes the configured scope. |
 | `rest_invalid_nonce` | `401` | Nonce provided but verification failed. | Refresh the user's session to fetch a new nonce before retrying. |
-| `wp_mcp_ai_insufficient_permissions` | `403` | Authenticated user lacks the `edit_posts` capability. | Promote the account (e.g., Author/Editor) or generate a password for a different user that has the capability. |
+| `wp_mcp_ai_insufficient_permissions` | `403` | WordPress-authenticated user lacks the `edit_posts` capability. | Promote the account (e.g., Author/Editor) or switch to a different user. |
 
 Each error also contains an `actions` array that mirrors these remediation steps so MCP clients can surface actionable guidance to end users.

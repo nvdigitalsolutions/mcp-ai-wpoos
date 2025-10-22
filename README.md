@@ -72,7 +72,7 @@ Complete these after installation to unlock every integration point:
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with WordPress [Application Passwords](https://wordpress.org/support/article/application-passwords/) using HTTP Basic auth (`Authorization: Basic base64(USER:PASSWORD)`). Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP MCP AI**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure.
 
 ---
 

@@ -32,12 +32,15 @@ class WP_MCP_AI_Admin_Settings {
      */
     public static function get_default_settings() {
         return array(
-            'openai_api_key'   => '',
-            'default_assistant' => 0,
-            'enable_logging'   => false,
-            'default_model'    => 'gpt-4o-mini',
-            'request_timeout'  => 30,
-            'delete_on_uninstall' => false,
+            'openai_api_key'       => '',
+            'default_assistant'    => 0,
+            'enable_logging'       => false,
+            'default_model'        => 'gpt-4o-mini',
+            'request_timeout'      => 30,
+            'auth0_domain'         => '',
+            'auth0_audience'       => '',
+            'auth0_required_scope' => '',
+            'delete_on_uninstall'  => false,
         );
     }
 
@@ -128,6 +131,37 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_authentication_section',
+            __( 'Authentication', 'wp-mcp-ai' ),
+            '__return_false',
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'auth0_domain',
+            __( 'Auth0 Domain', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_domain_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_field(
+            'auth0_audience',
+            __( 'Auth0 API Audience', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_audience_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_field(
+            'auth0_required_scope',
+            __( 'Required Access Scope', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_scope_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_assistant_section',
             __( 'Assistant Defaults', 'wp-mcp-ai' ),
             '__return_false',
@@ -198,6 +232,18 @@ class WP_MCP_AI_Admin_Settings {
             $clean['request_timeout'] = $timeout > 0 ? $timeout : $clean['request_timeout'];
         }
 
+        if ( isset( $settings['auth0_domain'] ) ) {
+            $clean['auth0_domain'] = trim( sanitize_text_field( $settings['auth0_domain'] ) );
+        }
+
+        if ( isset( $settings['auth0_audience'] ) ) {
+            $clean['auth0_audience'] = trim( sanitize_text_field( $settings['auth0_audience'] ) );
+        }
+
+        if ( isset( $settings['auth0_required_scope'] ) ) {
+            $clean['auth0_required_scope'] = trim( sanitize_text_field( $settings['auth0_required_scope'] ) );
+        }
+
         $clean['delete_on_uninstall'] = ! empty( $settings['delete_on_uninstall'] );
 
         return $clean;
@@ -223,6 +269,39 @@ class WP_MCP_AI_Admin_Settings {
                 ?>
             </form>
         </div>
+        <?php
+    }
+
+    /**
+     * Render the Auth0 domain field.
+     */
+    public function render_auth0_domain_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_domain]" value="<?php echo esc_attr( $settings['auth0_domain'] ); ?>" class="regular-text" placeholder="example.us.auth0.com" />
+        <p class="description"><?php esc_html_e( 'The Auth0 tenant domain that issues access tokens for remote MCP assistants.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Auth0 audience field.
+     */
+    public function render_auth0_audience_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_audience]" value="<?php echo esc_attr( $settings['auth0_audience'] ); ?>" class="regular-text" placeholder="https://api.example.com/" />
+        <p class="description"><?php esc_html_e( 'Optional. When provided, bearer tokens must include this audience (or API Identifier) claim.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Auth0 scope field.
+     */
+    public function render_auth0_scope_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_required_scope]" value="<?php echo esc_attr( $settings['auth0_required_scope'] ); ?>" class="regular-text" placeholder="mcp:invoke" />
+        <p class="description"><?php esc_html_e( 'Optional space-delimited scope that must be present on remote bearer tokens.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
