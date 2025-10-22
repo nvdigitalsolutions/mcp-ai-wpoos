@@ -1,0 +1,6 @@
+{
+  "name": "WordPress Plugin Dev",
+  "image": "mcr.microsoft.com/devcontainers/php:8.2-apache",
+  "forwardPorts": [80],
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}
