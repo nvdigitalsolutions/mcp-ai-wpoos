@@ -40,8 +40,8 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🔐 Secure REST API endpoints
 - 🔑 Configurable OpenAI key via settings panel
 - 🧱 Ready for extension with ChatKit Add-on
-- 🪵 Optional logging of chat interactions, tool executions, and API errors
-- 🪝 Developer hooks and filters for integrating custom behaviours
+- 🧾 Optional logging of chat interactions, tool executions, and API errors
+- 🧩 Developer hooks and filters for integrating custom behaviours
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
