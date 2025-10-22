@@ -33,6 +33,13 @@ class WP_MCP_AI_REST {
     protected $client;
 
     /**
+     * Tracks authentication details for the current request.
+     *
+     * @var array
+     */
+    protected $auth_context = array();
+
+    /**
      * Constructor.
      *
      * @param WP_MCP_AI_Tool_Registry  $registry Tool registry instance.
@@ -43,6 +50,64 @@ class WP_MCP_AI_REST {
         $this->client   = $client;
 
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+    }
+
+    /**
+     * Reset the stored authentication context for the current request.
+     */
+    protected function reset_auth_context() {
+        $this->auth_context = array(
+            'user_id'             => absint( get_current_user_id() ),
+            'token_authenticated' => false,
+            'token_type'          => null,
+            'token_context'       => array(),
+        );
+    }
+
+    /**
+     * Persist information about token-based authentication.
+     *
+     * @param string $type    Authentication method identifier.
+     * @param array  $context Additional context information.
+     */
+    protected function mark_token_authenticated( $type, $context = array() ) {
+        if ( empty( $this->auth_context ) ) {
+            $this->reset_auth_context();
+        }
+
+        $this->auth_context['token_authenticated'] = true;
+        $this->auth_context['token_type']          = sanitize_key( $type );
+        $this->auth_context['token_context']       = is_array( $context ) ? $context : array();
+
+        if ( isset( $context['user_id'] ) ) {
+            $this->auth_context['user_id'] = absint( $context['user_id'] );
+        }
+    }
+
+    /**
+     * Store the resolved WordPress user ID for the request.
+     *
+     * @param int $user_id WordPress user identifier.
+     */
+    protected function set_authenticated_user_id( $user_id ) {
+        if ( empty( $this->auth_context ) ) {
+            $this->reset_auth_context();
+        }
+
+        $this->auth_context['user_id'] = absint( $user_id );
+    }
+
+    /**
+     * Retrieve the authentication context for the current request.
+     *
+     * @return array
+     */
+    protected function get_auth_context() {
+        if ( empty( $this->auth_context ) ) {
+            $this->reset_auth_context();
+        }
+
+        return $this->auth_context;
     }
 
     /**
@@ -109,6 +174,8 @@ class WP_MCP_AI_REST {
      * @return true|WP_Error
      */
     public function permissions_check( WP_REST_Request $request ) {
+        $this->reset_auth_context();
+
         $bearer = $request->get_header( 'Authorization' );
         if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
             $token     = trim( $matches[1] );
@@ -161,6 +228,8 @@ class WP_MCP_AI_REST {
             return $this->insufficient_permissions_error();
         }
 
+        $this->set_authenticated_user_id( get_current_user_id() );
+
         return true;
     }
 
@@ -201,6 +270,13 @@ class WP_MCP_AI_REST {
             return $validated;
         }
 
+        $this->mark_token_authenticated(
+            'local_token',
+            array(
+                'credential' => $validated,
+            )
+        );
+
         /**
          * Fires when a request authenticates using a stored credential token.
          *
@@ -231,7 +307,31 @@ class WP_MCP_AI_REST {
          */
         $pre = apply_filters( 'wp_mcp_ai_pre_validate_bearer_token', null, $token, $request );
         if ( null !== $pre ) {
-            return true === $pre ? true : ( $pre instanceof WP_Error ? $pre : new WP_Error(
+            if ( true === $pre ) {
+                /**
+                 * Allow mapping a pre-validated bearer token to a WordPress user.
+                 *
+                 * @param int|null        $user_id Previously mapped user identifier.
+                 * @param array|null      $payload Decoded token payload when available, or null for pre-validation shortcuts.
+                 * @param WP_REST_Request $request Current REST request.
+                 */
+                $mapped_user = apply_filters( 'wp_mcp_ai_map_bearer_to_user_id', null, null, $request );
+                if ( $mapped_user instanceof WP_Error ) {
+                    return $mapped_user;
+                }
+
+                $context = array( 'prevalidated' => true );
+                if ( is_numeric( $mapped_user ) && (int) $mapped_user > 0 ) {
+                    $context['user_id'] = absint( $mapped_user );
+                    $this->set_authenticated_user_id( $context['user_id'] );
+                }
+
+                $this->mark_token_authenticated( 'bearer', $context );
+
+                return true;
+            }
+
+            return ( $pre instanceof WP_Error ) ? $pre : new WP_Error(
                 'wp_mcp_ai_invalid_bearer_token',
                 __( 'The supplied bearer token is invalid.', 'wp-mcp-ai' ),
                 array(
@@ -240,7 +340,7 @@ class WP_MCP_AI_REST {
                         'obtain_new_token' => __( 'Request a fresh Auth0 access token and retry the call.', 'wp-mcp-ai' ),
                     ),
                 )
-            ) );
+            );
         }
 
         if ( empty( $token ) ) {
@@ -396,6 +496,32 @@ class WP_MCP_AI_REST {
         if ( $filtered_payload instanceof WP_Error ) {
             return $filtered_payload;
         }
+
+        /**
+         * Allow mapping a validated bearer token payload to a WordPress user for logging/auditing.
+         *
+         * Returning a WP_Error will surface the error to the client.
+         *
+         * @param int|null        $user_id Previously mapped user identifier.
+         * @param array           $payload Decoded JWT payload.
+         * @param WP_REST_Request $request Current REST request instance.
+         */
+        $mapped_user = apply_filters( 'wp_mcp_ai_map_bearer_to_user_id', null, $filtered_payload, $request );
+        if ( $mapped_user instanceof WP_Error ) {
+            return $mapped_user;
+        }
+
+        $context = array(
+            'payload' => $filtered_payload,
+        );
+
+        if ( is_numeric( $mapped_user ) && (int) $mapped_user > 0 ) {
+            $mapped_user = absint( $mapped_user );
+            $context['user_id'] = $mapped_user;
+            $this->set_authenticated_user_id( $mapped_user );
+        }
+
+        $this->mark_token_authenticated( 'bearer', $context );
 
         return true;
     }
@@ -752,13 +878,25 @@ class WP_MCP_AI_REST {
             return new WP_Error( 'wp_mcp_ai_tool_missing', __( 'The requested tool is not registered.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
         }
 
+        $auth_context = $this->get_auth_context();
+        $user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
+
         $context = array(
-            'user_id'      => get_current_user_id(),
+            'user_id'      => $user_id,
             'assistant_id' => $assistant_id,
             'request'      => $request,
         );
 
-        if ( empty( $context['user_id'] ) ) {
+        if ( ! empty( $auth_context['token_authenticated'] ) ) {
+            $context['token_authenticated'] = true;
+            $context['token_type']          = $auth_context['token_type'];
+
+            if ( ! empty( $auth_context['token_context'] ) ) {
+                $context['token_context'] = $auth_context['token_context'];
+            }
+        }
+
+        if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) ) {
             return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
         }
 
