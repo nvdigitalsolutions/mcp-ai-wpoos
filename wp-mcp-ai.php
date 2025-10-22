@@ -17,6 +17,7 @@ define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';

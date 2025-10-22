@@ -105,6 +105,10 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post Post object.
      */
     public function render_tools_meta_box( $post ) {
+        if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+            wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+        }
+
         wp_nonce_field( 'wp_mcp_ai_tools_meta', 'wp_mcp_ai_tools_meta_nonce' );
 
         $selected_tools = get_post_meta( $post->ID, self::META_TOOLS, true );
@@ -141,6 +145,10 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post Post object.
      */
     public function render_defaults_meta_box( $post ) {
+        if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+            wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+        }
+
         wp_nonce_field( 'wp_mcp_ai_defaults_meta', 'wp_mcp_ai_defaults_meta_nonce' );
 
         $model        = get_post_meta( $post->ID, self::META_MODEL, true );

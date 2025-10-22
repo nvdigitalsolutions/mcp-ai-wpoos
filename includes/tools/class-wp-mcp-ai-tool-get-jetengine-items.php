@@ -66,9 +66,29 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_jetengine_missing', __( 'JetEngine is not active on this site.', 'wp-mcp-ai' ) );
         }
 
+        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+        if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view JetEngine content.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+        }
+
         $post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : '';
         if ( empty( $post_type ) ) {
             return new WP_Error( 'wp_mcp_ai_missing_post_type', __( 'A JetEngine post type must be provided.', 'wp-mcp-ai' ) );
+        }
+
+        $post_type_object = get_post_type_object( $post_type );
+        if ( ! $post_type_object ) {
+            return new WP_Error( 'wp_mcp_ai_unknown_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
+        }
+
+        $required_cap = isset( $post_type_object->cap->edit_posts ) ? $post_type_object->cap->edit_posts : 'edit_posts';
+        if ( ! user_can( $user_id, $required_cap ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to read content from this post type.', 'wp-mcp-ai' ) );
         }
 
         $limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;

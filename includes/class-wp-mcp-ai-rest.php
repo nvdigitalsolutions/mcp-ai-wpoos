@@ -144,11 +144,42 @@ class WP_MCP_AI_REST {
 
         $options['tools'] = $tools;
 
+        $user_id = get_current_user_id();
+
+        /**
+         * Fires before a chat request is sent to the language model.
+         *
+         * @param int              $assistant_id Assistant identifier.
+         * @param array            $messages     Chat messages.
+         * @param array            $options      Prepared options.
+         * @param WP_REST_Request  $request      REST request instance.
+         */
+        do_action( 'wp_mcp_ai_before_chat_request', $assistant_id, $messages, $options, $request );
+
+        $options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
+
         $response = $this->client->create_chat_completion( $messages, $options );
 
         if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'Chat request failed.', array(
+                'assistant_id' => $assistant_id,
+                'user_id'      => $user_id,
+                'error_code'   => $response->get_error_code(),
+                'error'        => $response->get_error_message(),
+            ) );
             return $response;
         }
+
+        WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+
+        /**
+         * Fires after a chat response has been received from the language model.
+         *
+         * @param int              $assistant_id Assistant identifier.
+         * @param array            $response     Raw response array.
+         * @param WP_REST_Request  $request      REST request instance.
+         */
+        do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
         return rest_ensure_response( array(
             'assistant_id' => $assistant_id,
@@ -188,11 +219,41 @@ class WP_MCP_AI_REST {
             'request'      => $request,
         );
 
-        $result = $tool->execute( is_array( $arguments ) ? $arguments : array(), $context );
+        if ( empty( $context['user_id'] ) ) {
+            return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+        }
+
+        /**
+         * Fires immediately before executing a registered tool.
+         *
+         * @param string           $tool_slug Tool identifier.
+         * @param array            $arguments Arguments passed in the request.
+         * @param array            $context   Execution context including user_id and assistant_id.
+         */
+        $prepared_arguments = is_array( $arguments ) ? $arguments : array();
+
+        do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+
+        $result = $tool->execute( $prepared_arguments, $context );
 
         if ( is_wp_error( $result ) ) {
+            WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
             return $result;
         }
+
+        $result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
+
+        WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
+
+        /**
+         * Fires after a registered tool has completed execution.
+         *
+         * @param string           $tool_slug Tool identifier.
+         * @param array            $arguments Arguments passed in the request.
+         * @param array            $context   Execution context including user_id and assistant_id.
+         * @param mixed            $result    Tool result after filters have been applied.
+         */
+        do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
 
         return rest_ensure_response( array(
             'assistant_id' => $assistant_id,

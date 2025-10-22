@@ -73,17 +73,7 @@ class WP_MCP_AI_Admin_Settings {
      * @param array  $context Additional context to encode with the message.
      */
     public static function log( $message, $context = array() ) {
-        if ( ! self::is_logging_enabled() ) {
-            return;
-        }
-
-        $prefix = '[WP MCP AI] ';
-
-        if ( ! empty( $context ) ) {
-            $message .= ' ' . wp_json_encode( $context );
-        }
-
-        error_log( $prefix . $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+        WP_MCP_AI_Logger::log_event( 'debug', (string) $message, $context );
     }
 
     /**

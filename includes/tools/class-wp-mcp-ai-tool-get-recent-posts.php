@@ -62,6 +62,16 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function execute( array $arguments = array(), array $context = array() ) {
+        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+        if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view recent posts.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+        }
+
         $limit     = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
         $limit     = $limit > 0 ? min( $limit, 50 ) : 5;
         $post_type = isset( $arguments['post_type'] ) ? sanitize_key( $arguments['post_type'] ) : 'post';
