@@ -191,7 +191,17 @@
                 var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
                 var formatted = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
                 appendMessage(state.messagesEl, 'tool', formatted);
-                state.conversation.push({ role: 'tool', content: formatted });
+
+                var toolMessage = {
+                    role: 'tool',
+                    content: formatted,
+                };
+
+                if (call && call.id) {
+                    toolMessage.tool_call_id = call.id;
+                }
+
+                state.conversation.push(toolMessage);
                 setStatus(state.container, getString('toolSuccess', 'Tool response ready.'));
             })
             .catch(function (error) {
