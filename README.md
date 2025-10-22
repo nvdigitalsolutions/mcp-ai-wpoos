@@ -19,6 +19,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🔧 Tool Registry for registering PHP functions callable by the AI
 - 🛍 WooCommerce-aware tools (fetch orders, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
+- 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
 - 🔐 Secure REST API endpoints
 - 🔑 Configurable OpenAI key via settings panel
 - 🧱 Ready for extension with ChatKit Add-on
@@ -145,6 +146,13 @@ use these `file_id` handles so integrators do not need to upload assets manually
 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `input_text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
+
+---
+
+## 🛰 JetEngine REST API Reference
+
+- 📄 Review the full endpoint catalogue in [`docs/jet-engine-rest-routes.md`](docs/jet-engine-rest-routes.md) for route paths, callbacks, and required parameters.
+- 🤖 When JetEngine is active, assistants can invoke the **List JetEngine REST Routes** tool to retrieve the same metadata directly inside a conversation (requires a user with the `manage_options` capability).
 
 ---
 
