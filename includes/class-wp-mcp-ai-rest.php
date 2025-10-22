@@ -112,6 +112,14 @@ class WP_MCP_AI_REST {
         $bearer = $request->get_header( 'Authorization' );
         if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
             $token     = trim( $matches[1] );
+            $local     = $this->validate_local_token( $token, $request );
+
+            if ( true === $local ) {
+                return true;
+            } elseif ( $local instanceof WP_Error ) {
+                return $local;
+            }
+
             $validated = $this->validate_bearer_token( $token, $request );
 
             if ( is_wp_error( $validated ) ) {
@@ -172,6 +180,36 @@ class WP_MCP_AI_REST {
                 ),
             )
         );
+    }
+
+    /**
+     * Attempt to validate a plugin-issued credential token.
+     *
+     * @param string          $token   Raw token string.
+     * @param WP_REST_Request $request Current REST request.
+     * @return true|WP_Error|null True when valid, WP_Error when rejected, null when the token should be treated as a JWT.
+     */
+    protected function validate_local_token( $token, WP_REST_Request $request ) {
+        if ( ! WP_MCP_AI_Credentials::is_token_format( $token ) ) {
+            return null;
+        }
+
+        $assistant_hint = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $validated       = WP_MCP_AI_Credentials::validate_token( $token, $assistant_hint );
+
+        if ( is_wp_error( $validated ) ) {
+            return $validated;
+        }
+
+        /**
+         * Fires when a request authenticates using a stored credential token.
+         *
+         * @param array            $credential Credential metadata including assistant_id and credential_id.
+         * @param WP_REST_Request  $request    Current REST request.
+         */
+        do_action( 'wp_mcp_ai_authenticated_with_credential', $validated, $request );
+
+        return true;
     }
 
     /**
