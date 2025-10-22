@@ -354,6 +354,169 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Tool requests authenticated with local tokens should not require a WordPress user.
+     */
+    public function test_tool_request_allows_local_token_without_user() {
+        delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Token Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        $issuer_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $issuer_id );
+        $issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $issuer_id );
+        wp_set_current_user( 0 );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $captured_context = null;
+        $callback         = function ( $tool_slug, $arguments, $context ) use ( &$captured_context ) {
+            $captured_context = $context;
+        };
+
+        add_action( 'wp_mcp_ai_before_tool_execution', $callback, 10, 3 );
+
+        try {
+            $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+            $request->set_param( 'assistant_id', $assistant_id );
+            $request->set_param( 'tool', 'wp_mcp_ai_dummy_tool' );
+            $request->set_param( 'arguments', array() );
+            $request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
+
+            $response = rest_get_server()->dispatch( $request );
+
+            $this->assertInstanceOf( WP_REST_Response::class, $response );
+            $this->assertSame( 200, $response->get_status() );
+
+            $this->assertIsArray( $captured_context );
+            $this->assertArrayHasKey( 'token_authenticated', $captured_context );
+            $this->assertTrue( $captured_context['token_authenticated'] );
+            $this->assertSame( 'local_token', $captured_context['token_type'] );
+            $this->assertSame( 0, $captured_context['user_id'] );
+            $this->assertArrayHasKey( 'token_context', $captured_context );
+            $this->assertArrayHasKey( 'credential', $captured_context['token_context'] );
+        } finally {
+            remove_action( 'wp_mcp_ai_before_tool_execution', $callback, 10 );
+        }
+    }
+
+    /**
+     * Tool requests authenticated with bearer tokens should be able to map to a WordPress user ID.
+     */
+    public function test_tool_request_allows_bearer_token_without_user() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Bearer Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $mapped_user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+        $pre_callback = function ( $pre, $token, $request ) {
+            return true;
+        };
+
+        $map_callback = function ( $existing, $payload, $request ) use ( $mapped_user_id ) {
+            return $mapped_user_id;
+        };
+
+        $captured_context = null;
+        $context_callback = function ( $tool_slug, $arguments, $context ) use ( &$captured_context ) {
+            $captured_context = $context;
+        };
+
+        add_filter( 'wp_mcp_ai_pre_validate_bearer_token', $pre_callback, 10, 3 );
+        add_filter( 'wp_mcp_ai_map_bearer_to_user_id', $map_callback, 10, 3 );
+        add_action( 'wp_mcp_ai_before_tool_execution', $context_callback, 10, 3 );
+
+        try {
+            $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+            $request->set_param( 'assistant_id', $assistant_id );
+            $request->set_param( 'tool', 'wp_mcp_ai_dummy_tool' );
+            $request->set_param( 'arguments', array() );
+            $request->set_header( 'Authorization', 'Bearer example-token' );
+
+            $response = rest_get_server()->dispatch( $request );
+
+            $this->assertInstanceOf( WP_REST_Response::class, $response );
+            $this->assertSame( 200, $response->get_status() );
+
+            $this->assertIsArray( $captured_context );
+            $this->assertArrayHasKey( 'token_authenticated', $captured_context );
+            $this->assertTrue( $captured_context['token_authenticated'] );
+            $this->assertSame( 'bearer', $captured_context['token_type'] );
+            $this->assertSame( $mapped_user_id, $captured_context['user_id'] );
+        } finally {
+            remove_filter( 'wp_mcp_ai_pre_validate_bearer_token', $pre_callback, 10 );
+            remove_filter( 'wp_mcp_ai_map_bearer_to_user_id', $map_callback, 10 );
+            remove_action( 'wp_mcp_ai_before_tool_execution', $context_callback, 10 );
+        }
+    }
+
+    /**
+     * Anonymous requests without any authentication method should continue to fail.
+     */
+    public function test_tool_request_blocks_anonymous_without_credentials() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Locked Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'tool', 'wp_mcp_ai_dummy_tool' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 401, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertSame( 'wp_mcp_ai_missing_credentials', $data['code'] );
+    }
+
+    /**
      * Bootstrap the REST controller with a mocked client.
      *
      * @param WP_MCP_AI_OpenAI_Client $client Client mock instance.
