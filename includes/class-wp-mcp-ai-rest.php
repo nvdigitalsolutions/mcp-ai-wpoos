@@ -61,6 +61,7 @@ class WP_MCP_AI_REST {
             'token_authenticated' => false,
             'token_type'          => null,
             'token_context'       => array(),
+            'assistant_id'        => 0,
         );
     }
 
@@ -81,6 +82,17 @@ class WP_MCP_AI_REST {
 
         if ( isset( $context['user_id'] ) ) {
             $this->auth_context['user_id'] = absint( $context['user_id'] );
+        }
+
+        $assistant_id = 0;
+        if ( isset( $context['assistant_id'] ) ) {
+            $assistant_id = absint( $context['assistant_id'] );
+        } elseif ( isset( $context['credential']['assistant_id'] ) ) {
+            $assistant_id = absint( $context['credential']['assistant_id'] );
+        }
+
+        if ( $assistant_id ) {
+            $this->auth_context['assistant_id'] = $assistant_id;
         }
     }
 
@@ -273,7 +285,8 @@ class WP_MCP_AI_REST {
         $this->mark_token_authenticated(
             'local_token',
             array(
-                'credential' => $validated,
+                'credential'   => $validated,
+                'assistant_id' => isset( $validated['assistant_id'] ) ? absint( $validated['assistant_id'] ) : 0,
             )
         );
 
@@ -763,6 +776,13 @@ class WP_MCP_AI_REST {
      */
     public function handle_chat_request( WP_REST_Request $request ) {
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+        if ( is_wp_error( $scoped_id ) ) {
+            return $scoped_id;
+        }
+
+        $assistant_id = $scoped_id;
+
         if ( ! $assistant_id ) {
             return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
@@ -863,6 +883,13 @@ class WP_MCP_AI_REST {
      */
     public function handle_tool_request( WP_REST_Request $request ) {
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+        if ( is_wp_error( $scoped_id ) ) {
+            return $scoped_id;
+        }
+
+        $assistant_id = $scoped_id;
+
         if ( ! $assistant_id ) {
             return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
@@ -963,6 +990,54 @@ class WP_MCP_AI_REST {
         $default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
         return $default;
+    }
+
+    /**
+     * Ensure the active assistant aligns with the authenticated token scope.
+     *
+     * @param int $assistant_id Assistant identifier resolved from the request.
+     * @return int|WP_Error Scoped assistant identifier or error when the token cannot access the requested assistant.
+     */
+    protected function apply_token_assistant_scope( $assistant_id ) {
+        $assistant_id = absint( $assistant_id );
+        $auth_context = $this->get_auth_context();
+
+        if ( empty( $auth_context['token_authenticated'] ) || 'local_token' !== $auth_context['token_type'] ) {
+            return $assistant_id;
+        }
+
+        $token_assistant = 0;
+
+        if ( isset( $auth_context['assistant_id'] ) ) {
+            $token_assistant = absint( $auth_context['assistant_id'] );
+        }
+
+        if ( ! $token_assistant && isset( $auth_context['token_context']['credential']['assistant_id'] ) ) {
+            $token_assistant = absint( $auth_context['token_context']['credential']['assistant_id'] );
+        }
+
+        if ( ! $token_assistant ) {
+            return $assistant_id;
+        }
+
+        if ( ! $assistant_id ) {
+            return $token_assistant;
+        }
+
+        if ( $assistant_id !== $token_assistant ) {
+            return new WP_Error(
+                'wp_mcp_ai_assistant_scope_mismatch',
+                __( 'The provided credential cannot access the requested assistant.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 403,
+                    'actions' => array(
+                        'use_scoped_assistant' => __( 'Retry the request without overriding the assistant or request a credential for the desired assistant.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        return $token_assistant;
     }
 
     /**
