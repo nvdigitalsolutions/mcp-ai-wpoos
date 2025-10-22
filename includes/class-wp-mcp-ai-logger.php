@@ -133,9 +133,182 @@ class WP_MCP_AI_Logger {
             return array();
         }
 
+        $context = self::deep_clone_value( $context );
+
         unset( $context['openai_api_key'] );
 
+        if ( isset( $context['options'] ) && is_array( $context['options'] ) ) {
+            $context['options'] = self::sanitize_options_context( $context['options'] );
+        }
+
+        if ( array_key_exists( 'response', $context ) ) {
+            $context['response'] = self::limit_response_payload( $context['response'] );
+        }
+
         return $context;
+    }
+
+    /**
+     * Deep clone arbitrary context values so we never mutate the caller's data.
+     *
+     * @param mixed $value Raw value.
+     * @return mixed
+     */
+    protected static function deep_clone_value( $value ) {
+        if ( is_array( $value ) ) {
+            $clone = array();
+
+            foreach ( $value as $key => $child ) {
+                $clone[ $key ] = self::deep_clone_value( $child );
+            }
+
+            return $clone;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Sanitize the options payload before it is logged.
+     *
+     * @param array $options Raw options array.
+     * @return array
+     */
+    protected static function sanitize_options_context( $options ) {
+        $options = self::deep_clone_value( $options );
+
+        if ( isset( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
+            $options['attachments'] = self::sanitize_attachments( $options['attachments'] );
+        }
+
+        if ( isset( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+            $options['memory_documents'] = self::sanitize_memory_documents( $options['memory_documents'] );
+        }
+
+        return $options;
+    }
+
+    /**
+     * Sanitize attachment metadata by removing large binary blobs.
+     *
+     * @param array $attachments Attachment entries.
+     * @return array
+     */
+    protected static function sanitize_attachments( $attachments ) {
+        $sanitized = array();
+
+        foreach ( $attachments as $index => $attachment ) {
+            if ( ! is_array( $attachment ) ) {
+                $sanitized[ $index ] = $attachment;
+                continue;
+            }
+
+            $copy = self::deep_clone_value( $attachment );
+
+            if ( isset( $copy['data'] ) ) {
+                $copy['data'] = '[redacted]';
+            }
+
+            $sanitized[ $index ] = $copy;
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Limit the amount of memory document data that we persist to the logs.
+     *
+     * @param array $documents Memory document entries.
+     * @return array
+     */
+    protected static function sanitize_memory_documents( $documents ) {
+        $total   = is_array( $documents ) ? count( $documents ) : 0;
+        $preview = array();
+
+        if ( is_array( $documents ) ) {
+            $max_preview = 3;
+            $index       = 0;
+
+            foreach ( $documents as $document ) {
+                if ( $index >= $max_preview ) {
+                    break;
+                }
+
+                $preview[] = self::truncate_strings_in_structure( $document, 160 );
+                $index++;
+            }
+        }
+
+        return array(
+            'count'   => $total,
+            'preview' => $preview,
+        );
+    }
+
+    /**
+     * Recursively truncate string values within a structure.
+     *
+     * @param mixed $value  Value to inspect.
+     * @param int   $limit  Maximum characters for string values.
+     * @return mixed
+     */
+    protected static function truncate_strings_in_structure( $value, $limit ) {
+        if ( is_string( $value ) ) {
+            return self::truncate_string( $value, $limit );
+        }
+
+        if ( is_array( $value ) ) {
+            $truncated = array();
+
+            foreach ( $value as $key => $child ) {
+                $truncated[ $key ] = self::truncate_strings_in_structure( $child, $limit );
+            }
+
+            return $truncated;
+        }
+
+        if ( is_object( $value ) ) {
+            $truncated = array();
+
+            foreach ( get_object_vars( $value ) as $property => $child ) {
+                $truncated[ $property ] = self::truncate_strings_in_structure( $child, $limit );
+            }
+
+            return $truncated;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Limit the amount of response data written to the logs.
+     *
+     * @param mixed $response Response payload.
+     * @return mixed
+     */
+    protected static function limit_response_payload( $response ) {
+        if ( is_string( $response ) ) {
+            return self::truncate_string( $response, 400 );
+        }
+
+        if ( is_array( $response ) || is_object( $response ) ) {
+            $encoded = wp_json_encode( $response );
+
+            if ( false === $encoded ) {
+                return '[unserializable response]';
+            }
+
+            $preview    = self::truncate_string( $encoded, 400 );
+            $truncated  = $preview !== $encoded;
+            $payload    = array(
+                'preview'   => $preview,
+                'truncated' => $truncated,
+            );
+
+            return $payload;
+        }
+
+        return $response;
     }
 
     /**
@@ -156,10 +329,7 @@ class WP_MCP_AI_Logger {
             }
 
             $content = isset( $message['content'] ) ? (string) $message['content'] : '';
-            $length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
-            $slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 120 ) : substr( $content, 0, 120 );
-
-            $message['content'] = $slice . ( $length > 120 ? '…' : '' );
+            $message['content'] = self::truncate_string( $content, 120 );
             $limited[]          = $message;
         }
 
@@ -181,5 +351,53 @@ class WP_MCP_AI_Logger {
         }
 
         return $result;
+    }
+
+    /**
+     * Helper for truncating strings while supporting multibyte strings when available.
+     *
+     * @param string $value Raw string.
+     * @param int    $limit Maximum length.
+     * @return string
+     */
+    protected static function truncate_string( $value, $limit ) {
+        $value  = (string) $value;
+        $length = self::string_length( $value );
+
+        if ( $length <= $limit ) {
+            return $value;
+        }
+
+        return self::string_substr( $value, 0, $limit ) . '…';
+    }
+
+    /**
+     * Safe string length helper with multibyte awareness.
+     *
+     * @param string $value String to measure.
+     * @return int
+     */
+    protected static function string_length( $value ) {
+        if ( function_exists( 'mb_strlen' ) ) {
+            return mb_strlen( $value, 'UTF-8' );
+        }
+
+        return strlen( $value );
+    }
+
+    /**
+     * Safe substring helper with multibyte awareness.
+     *
+     * @param string $value  Source string.
+     * @param int    $start  Starting offset.
+     * @param int    $length Length.
+     * @return string
+     */
+    protected static function string_substr( $value, $start, $length ) {
+        if ( function_exists( 'mb_substr' ) ) {
+            return mb_substr( $value, $start, $length, 'UTF-8' );
+        }
+
+        return substr( $value, $start, $length );
     }
 }
