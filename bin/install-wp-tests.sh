@@ -6,6 +6,11 @@
 
 set -e
 
+if [ "$#" -lt 3 ]; then
+    echo "Usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]" >&2
+    exit 1
+fi
+
 DB_NAME=$1
 DB_USER=$2
 DB_PASS=$3
@@ -17,7 +22,7 @@ TMPDIR=${TMPDIR-/tmp}
 WP_TESTS_DIR=${WP_TESTS_DIR-${TMPDIR}/wordpress-tests-lib}
 WP_CORE_DIR=${WP_CORE_DIR-${TMPDIR}/wordpress/}
 
-if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASS" ]; then
+if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
     echo "Usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]" >&2
     exit 1
 fi
