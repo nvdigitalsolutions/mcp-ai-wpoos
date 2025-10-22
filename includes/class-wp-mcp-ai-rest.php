@@ -1287,10 +1287,29 @@ class WP_MCP_AI_REST {
             $options['model'] = sanitize_text_field( $assistant_config['model'] );
         }
 
-        if ( ! isset( $options['temperature'] ) && null !== $assistant_config['temperature'] ) {
-            $options['temperature'] = $assistant_config['temperature'];
-        } elseif ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
-            $options['temperature'] = floatval( $options['temperature'] );
+        $assistant_temperature = ( isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] )
+            ? floatval( $assistant_config['temperature'] )
+            : null;
+
+        $has_request_temperature = array_key_exists( 'temperature', $options );
+        $raw_temperature         = $has_request_temperature ? $options['temperature'] : null;
+
+        if ( $has_request_temperature && '' !== $raw_temperature && null !== $raw_temperature ) {
+            $temperature = floatval( $raw_temperature );
+
+            if ( ( $temperature < 0 || $temperature > 2 ) && null !== $assistant_temperature ) {
+                $temperature = $assistant_temperature;
+            }
+        } elseif ( ! $has_request_temperature && null !== $assistant_temperature ) {
+            $temperature = $assistant_temperature;
+        } else {
+            $temperature = null;
+        }
+
+        if ( null !== $temperature ) {
+            $options['temperature'] = max( 0, min( 2, $temperature ) );
+        } elseif ( $has_request_temperature ) {
+            unset( $options['temperature'] );
         }
 
         if ( isset( $options['system_prompt'] ) ) {

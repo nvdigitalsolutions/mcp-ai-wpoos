@@ -154,6 +154,212 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure out-of-range temperatures fall back to the assistant default.
+     */
+    public function test_chat_request_uses_assistant_temperature_for_out_of_range_request() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, 0.6 );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        wp_set_current_user( $user_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->anything(),
+                $this->callback(
+                    function ( $options ) {
+                        $this->assertArrayHasKey( 'temperature', $options );
+                        $this->assertSame( 0.6, $options['temperature'] );
+
+                        return true;
+                    }
+                )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_param(
+            'options',
+            array(
+                'temperature' => 5,
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
+     * Ensure temperatures above the supported range are clamped when no assistant default exists.
+     */
+    public function test_chat_request_clamps_temperature_above_range_without_assistant_default() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        wp_set_current_user( $user_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->anything(),
+                $this->callback(
+                    function ( $options ) {
+                        $this->assertArrayHasKey( 'temperature', $options );
+                        $this->assertSame( 2.0, $options['temperature'] );
+
+                        return true;
+                    }
+                )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_param(
+            'options',
+            array(
+                'temperature' => 4.5,
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
+     * Ensure temperatures below the supported range are clamped when no assistant default exists.
+     */
+    public function test_chat_request_clamps_temperature_below_range_without_assistant_default() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Public Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        wp_set_current_user( $user_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->anything(),
+                $this->callback(
+                    function ( $options ) {
+                        $this->assertArrayHasKey( 'temperature', $options );
+                        $this->assertSame( 0.0, $options['temperature'] );
+
+                        return true;
+                    }
+                )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_param(
+            'options',
+            array(
+                'temperature' => -2,
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
      * Ensure bearer token requests can be authorised via the validation filter.
      */
     public function test_bearer_token_request_honours_validation_filter() {

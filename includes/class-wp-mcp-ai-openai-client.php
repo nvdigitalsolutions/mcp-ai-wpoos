@@ -54,7 +54,8 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( isset( $options['temperature'] ) && null !== $options['temperature'] && '' !== $options['temperature'] ) {
-            $payload['temperature'] = floatval( $options['temperature'] );
+            $temperature            = floatval( $options['temperature'] );
+            $payload['temperature'] = max( 0, min( 2, $temperature ) );
         }
 
         $system_messages = array();
