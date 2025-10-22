@@ -57,14 +57,23 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['temperature'] = floatval( $options['temperature'] );
         }
 
+        $system_messages = array();
+
         if ( ! empty( $options['system_prompt'] ) ) {
-            array_unshift(
-                $payload['messages'],
-                array(
-                    'role'    => 'system',
-                    'content' => (string) $options['system_prompt'],
-                )
+            $system_messages[] = array(
+                'role'    => 'system',
+                'content' => (string) $options['system_prompt'],
             );
+        }
+
+        $memory_messages = $this->build_memory_messages_from_options( $options );
+
+        if ( ! empty( $memory_messages ) ) {
+            $system_messages = array_merge( $system_messages, $memory_messages );
+        }
+
+        if ( ! empty( $system_messages ) ) {
+            $payload['messages'] = array_merge( $system_messages, $payload['messages'] );
         }
 
         if ( ! empty( $options['tools'] ) ) {
@@ -116,6 +125,50 @@ class WP_MCP_AI_OpenAI_Client {
         WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
         return $decoded;
+    }
+
+    /**
+     * Build additional system messages from memory documents.
+     *
+     * @param array $options Chat request options.
+     * @return array
+     */
+    protected function build_memory_messages_from_options( array $options ) {
+        if ( empty( $options['memory_documents'] ) || ! is_array( $options['memory_documents'] ) ) {
+            return array();
+        }
+
+        $messages = array();
+
+        foreach ( $options['memory_documents'] as $document ) {
+            if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+                continue;
+            }
+
+            $title      = isset( $document['title'] ) && '' !== $document['title'] ? $document['title'] : __( 'Document', 'wp-mcp-ai' );
+            $chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+            $parts      = count( $chunks );
+            $part_index = 0;
+
+            foreach ( $chunks as $chunk ) {
+                $part_index++;
+
+                $label = $title;
+
+                if ( $parts > 1 ) {
+                    /* translators: %1$s: document title, %2$d: chunk number. */
+                    $label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
+                }
+
+                $messages[] = array(
+                    'role'    => 'system',
+                    /* translators: %1$s: document title, %2$s: extracted text snippet. */
+                    'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk ),
+                );
+            }
+        }
+
+        return $messages;
     }
 
     /**

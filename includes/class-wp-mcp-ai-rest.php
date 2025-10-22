@@ -14,6 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_REST {
     const REST_NAMESPACE = 'mcp-ai/v1';
+    const MEMORY_MAX_DOCUMENT_CHARS = 4000;
+    const MEMORY_CHUNK_CHARS        = 1200;
+    const MEMORY_MAX_TOTAL_CHARS    = 12000;
 
     /**
      * Tool registry instance.
@@ -143,6 +146,13 @@ class WP_MCP_AI_REST {
         }
 
         $options['tools'] = $tools;
+
+        if ( ! empty( $options['memory_files'] ) ) {
+            $memory_documents = $this->prepare_memory_documents( $options['memory_files'] );
+            if ( ! empty( $memory_documents ) ) {
+                $options['memory_documents'] = $memory_documents;
+            }
+        }
 
         $user_id = get_current_user_id();
 
@@ -345,6 +355,22 @@ class WP_MCP_AI_REST {
             $options['system_prompt'] = wp_kses_post( $assistant_config['system_prompt'] );
         }
 
+        if ( isset( $options['memory_files'] ) ) {
+            $options['memory_files'] = $this->sanitize_memory_files( $options['memory_files'] );
+        } elseif ( ! empty( $assistant_config['memory_files'] ) ) {
+            $options['memory_files'] = $this->sanitize_memory_files( $assistant_config['memory_files'] );
+        } else {
+            $options['memory_files'] = array();
+        }
+
+        if ( isset( $options['vector_store_id'] ) ) {
+            $options['vector_store_id'] = sanitize_text_field( $options['vector_store_id'] );
+        } elseif ( isset( $assistant_config['vector_store_id'] ) && '' !== $assistant_config['vector_store_id'] ) {
+            $options['vector_store_id'] = sanitize_text_field( $assistant_config['vector_store_id'] );
+        } else {
+            $options['vector_store_id'] = '';
+        }
+
         return $options;
     }
 
@@ -380,5 +406,256 @@ class WP_MCP_AI_REST {
         }
 
         return $tools_payload;
+    }
+
+    /**
+     * Sanitize memory file identifiers.
+     *
+     * @param mixed $files Raw file identifiers.
+     * @return array
+     */
+    protected function sanitize_memory_files( $files ) {
+        if ( ! is_array( $files ) ) {
+            $files = array( $files );
+        }
+
+        $sanitized = array();
+        foreach ( $files as $file_id ) {
+            $file_id = absint( $file_id );
+            if ( $file_id ) {
+                $sanitized[] = $file_id;
+            }
+        }
+
+        return array_values( array_unique( $sanitized ) );
+    }
+
+    /**
+     * Prepare memory documents for inclusion with a chat request.
+     *
+     * @param array $file_ids Attachment identifiers.
+     * @return array
+     */
+    protected function prepare_memory_documents( array $file_ids ) {
+        if ( empty( $file_ids ) ) {
+            return array();
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+
+        global $wp_filesystem;
+
+        if ( ! $wp_filesystem instanceof WP_Filesystem_Base ) {
+            WP_Filesystem();
+        }
+
+        $documents   = array();
+        $total_chars = 0;
+
+        foreach ( $file_ids as $file_id ) {
+            $file_id = absint( $file_id );
+            if ( ! $file_id ) {
+                continue;
+            }
+
+            $attachment = get_post( $file_id );
+            if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+                continue;
+            }
+
+            $file_path = get_attached_file( $file_id );
+            if ( ! $file_path ) {
+                continue;
+            }
+
+            $mime_type = get_post_mime_type( $file_id );
+            $raw_text  = $this->extract_memory_text( $file_path, $mime_type );
+
+            if ( '' === $raw_text ) {
+                continue;
+            }
+
+            $normalized = $this->normalize_memory_text( $raw_text, $mime_type );
+            if ( '' === $normalized ) {
+                continue;
+            }
+
+            $chunk_data = $this->chunk_memory_text( $normalized, $total_chars );
+
+            if ( empty( $chunk_data['chunks'] ) ) {
+                continue;
+            }
+
+            $total_chars = $chunk_data['total_chars'];
+
+            $documents[] = array(
+                'id'        => $file_id,
+                'title'     => get_the_title( $attachment ),
+                'mime_type' => $mime_type,
+                'chunks'    => $chunk_data['chunks'],
+                'truncated' => $chunk_data['truncated'],
+            );
+
+            if ( $total_chars >= self::MEMORY_MAX_TOTAL_CHARS ) {
+                break;
+            }
+        }
+
+        return $documents;
+    }
+
+    /**
+     * Extract text content from an attachment.
+     *
+     * @param string $file_path File system path.
+     * @param string $mime_type MIME type.
+     * @return string
+     */
+    protected function extract_memory_text( $file_path, $mime_type ) {
+        if ( 'application/pdf' === $mime_type ) {
+            if ( function_exists( 'wp_read_pdf' ) ) {
+                $pdf_content = wp_read_pdf( $file_path );
+
+                if ( is_array( $pdf_content ) && isset( $pdf_content['text'] ) ) {
+                    return (string) $pdf_content['text'];
+                }
+
+                if ( is_string( $pdf_content ) ) {
+                    return $pdf_content;
+                }
+            }
+
+            return '';
+        }
+
+        $textual_mimes = array(
+            'text/',
+            'application/json',
+            'application/javascript',
+            'application/xml',
+            'application/rss+xml',
+            'application/xhtml+xml',
+        );
+
+        $is_textual = 0 === strpos( $mime_type, 'text/' ) || in_array( $mime_type, $textual_mimes, true );
+
+        if ( ! $is_textual ) {
+            return '';
+        }
+
+        return (string) $this->read_file_contents( $file_path );
+    }
+
+    /**
+     * Read a file from disk using the WordPress filesystem when available.
+     *
+     * @param string $file_path File path.
+     * @return string
+     */
+    protected function read_file_contents( $file_path ) {
+        global $wp_filesystem;
+
+        if ( $wp_filesystem instanceof WP_Filesystem_Base && $wp_filesystem->exists( $file_path ) ) {
+            $contents = $wp_filesystem->get_contents( $file_path );
+            return is_string( $contents ) ? $contents : '';
+        }
+
+        if ( is_readable( $file_path ) ) {
+            return (string) file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        }
+
+        return '';
+    }
+
+    /**
+     * Normalise extracted text for downstream processing.
+     *
+     * @param string $text      Raw text.
+     * @param string $mime_type MIME type of the file.
+     * @return string
+     */
+    protected function normalize_memory_text( $text, $mime_type ) {
+        $text = (string) $text;
+
+        if ( 'text/html' === $mime_type ) {
+            $text = wp_strip_all_tags( $text );
+        }
+
+        $text = preg_replace( "/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/", ' ', $text );
+        $text = preg_replace( "/\r\n|\r/", "\n", $text );
+        $text = preg_replace( "/[ \t]+/", ' ', $text );
+        $text = preg_replace( "/\n{3,}/", "\n\n", $text );
+
+        return trim( $text );
+    }
+
+    /**
+     * Chunk and truncate text to the configured limits.
+     *
+     * @param string $text          Normalized text.
+     * @param int    $current_total Characters already accounted for in this request.
+     * @return array
+     */
+    protected function chunk_memory_text( $text, &$current_total ) {
+        $available_total = max( 0, self::MEMORY_MAX_TOTAL_CHARS - $current_total );
+
+        if ( $available_total <= 0 ) {
+            return array(
+                'chunks'      => array(),
+                'total_chars' => $current_total,
+                'truncated'   => true,
+            );
+        }
+
+        $length = $this->mb_strlen( $text );
+        $limit  = min( $available_total, min( $length, self::MEMORY_MAX_DOCUMENT_CHARS ) );
+
+        $chunks = array();
+
+        for ( $offset = 0; $offset < $limit; $offset += self::MEMORY_CHUNK_CHARS ) {
+            $remaining = $limit - $offset;
+            $take      = min( self::MEMORY_CHUNK_CHARS, $remaining );
+            $chunk     = trim( $this->mb_substr( $text, $offset, $take ) );
+
+            if ( '' !== $chunk ) {
+                $chunks[] = $chunk;
+            }
+        }
+
+        $truncated = $limit < $length;
+
+        if ( $truncated && ! empty( $chunks ) ) {
+            $chunks[ count( $chunks ) - 1 ] .= "\n\n[" . __( 'Truncated', 'wp-mcp-ai' ) . ']';
+        }
+
+        $current_total += $limit;
+
+        return array(
+            'chunks'      => array_values( $chunks ),
+            'total_chars' => $current_total,
+            'truncated'   => $truncated,
+        );
+    }
+
+    /**
+     * Multibyte-safe string length helper.
+     *
+     * @param string $string String to measure.
+     * @return int
+     */
+    protected function mb_strlen( $string ) {
+        return function_exists( 'mb_strlen' ) ? mb_strlen( $string ) : strlen( $string );
+    }
+
+    /**
+     * Multibyte-safe substring helper.
+     *
+     * @param string $string Input string.
+     * @param int    $start  Start position.
+     * @param int    $length Length of substring.
+     * @return string
+     */
+    protected function mb_substr( $string, $start, $length ) {
+        return function_exists( 'mb_substr' ) ? mb_substr( $string, $start, $length ) : substr( $string, $start, $length );
     }
 }
