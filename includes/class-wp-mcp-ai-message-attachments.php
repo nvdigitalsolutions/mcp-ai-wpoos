@@ -261,6 +261,23 @@ class WP_MCP_AI_Message_Attachments {
     }
 
     /**
+     * Public helper for checking attachment access permissions.
+     *
+     * @param int $attachment_id Attachment ID.
+     * @return bool
+     */
+    public static function user_can_access_attachment( $attachment_id ) {
+        $attachment_id = absint( $attachment_id );
+        if ( ! $attachment_id ) {
+            return false;
+        }
+
+        $helper = new self();
+
+        return $helper->current_user_can_access_attachment( $attachment_id );
+    }
+
+    /**
      * Validate whether a MIME type is permitted for the usage context.
      *
      * @param string $mime_type MIME type string.
