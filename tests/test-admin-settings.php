@@ -28,4 +28,34 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
         $this->assertTrue( $sanitized['delete_on_uninstall'] );
     }
+
+    /**
+     * Ensure sanitize_settings enforces a minimum request timeout of five seconds.
+     */
+    public function test_sanitize_settings_clamps_request_timeout_floor() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'request_timeout' => '3',
+            )
+        );
+
+        $this->assertSame( 5, $sanitized['request_timeout'] );
+    }
+
+    /**
+     * Ensure sanitize_settings leaves higher request timeout values untouched.
+     */
+    public function test_sanitize_settings_preserves_request_timeout_above_floor() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'request_timeout' => '42',
+            )
+        );
+
+        $this->assertSame( 42, $sanitized['request_timeout'] );
+    }
 }

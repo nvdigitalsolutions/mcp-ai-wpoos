@@ -229,7 +229,10 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['request_timeout'] ) ) {
             $timeout = absint( $settings['request_timeout'] );
-            $clean['request_timeout'] = $timeout > 0 ? $timeout : $clean['request_timeout'];
+
+            if ( $timeout > 0 ) {
+                $clean['request_timeout'] = max( 5, $timeout );
+            }
         }
 
         if ( isset( $settings['auth0_domain'] ) ) {
