@@ -1,0 +1,99 @@
+<?php
+/**
+ * Tool returning recent WooCommerce orders.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * Provides a summary of recent WooCommerce orders.
+ */
+class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
+    /**
+     * {@inheritdoc}
+     */
+    public function get_slug() {
+        return 'get_woo_recent_orders';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_name() {
+        return __( 'Get Recent WooCommerce Orders', 'wp-mcp-ai' );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_description() {
+        return __( 'Returns recent WooCommerce orders with totals and statuses.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_parameters_schema() {
+        return array(
+            'type'                 => 'object',
+            'properties'           => array(
+                'limit'  => array(
+                    'type'        => 'integer',
+                    'description' => __( 'Maximum number of orders to retrieve.', 'wp-mcp-ai' ),
+                    'minimum'     => 1,
+                    'maximum'     => 20,
+                    'default'     => 5,
+                ),
+                'status' => array(
+                    'type'        => 'string',
+                    'description' => __( 'Optional order status to filter by (e.g. completed).', 'wp-mcp-ai' ),
+                ),
+            ),
+            'additionalProperties' => false,
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function execute( array $arguments = array(), array $context = array() ) {
+        if ( ! class_exists( 'WooCommerce' ) || ! function_exists( 'wc_get_orders' ) ) {
+            return new WP_Error( 'wp_mcp_ai_woo_missing', __( 'WooCommerce is not active on this site.', 'wp-mcp-ai' ) );
+        }
+
+        $limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
+        $limit = $limit > 0 ? min( $limit, 20 ) : 5;
+        $args  = array(
+            'limit'   => $limit,
+            'orderby' => 'date',
+            'order'   => 'DESC',
+        );
+
+        if ( ! empty( $arguments['status'] ) ) {
+            $args['status'] = sanitize_key( $arguments['status'] );
+        }
+
+        $orders  = wc_get_orders( $args );
+        $results = array();
+
+        foreach ( $orders as $order ) {
+            /** @var WC_Order $order */
+            $results[] = array(
+                'id'            => $order->get_id(),
+                'order_number'  => $order->get_order_number(),
+                'status'        => $order->get_status(),
+                'total'         => $order->get_total(),
+                'currency'      => $order->get_currency(),
+                'created_at'    => gmdate( DATE_W3C, $order->get_date_created() ? $order->get_date_created()->getTimestamp() : time() ),
+                'billing_name'  => trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ),
+                'billing_email' => $order->get_billing_email(),
+            );
+        }
+
+        return $results;
+    }
+}

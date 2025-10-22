@@ -23,8 +23,40 @@ require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
-add_action( 'plugins_loaded', function() {
-    new WP_MCP_AI_Admin_Settings();
-    new WP_MCP_AI_Assistant_CPT();
-    new WP_MCP_AI_REST();
-});
+/**
+ * Bootstrap the plugin once all dependencies are loaded.
+ */
+function wp_mcp_ai_bootstrap() {
+    $registry = WP_MCP_AI_Tool_Registry::get_instance();
+    $registry->init();
+
+    $client = new WP_MCP_AI_OpenAI_Client();
+
+    $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
+    $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
+    $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $client );
+}
+
+add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
+
+/**
+ * Plugin activation handler.
+ */
+function wp_mcp_ai_activate() {
+    $registry = WP_MCP_AI_Tool_Registry::get_instance();
+    $registry->init();
+
+    WP_MCP_AI_Assistant_CPT::register_post_type();
+    flush_rewrite_rules();
+}
+
+register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
+
+/**
+ * Plugin deactivation handler.
+ */
+function wp_mcp_ai_deactivate() {
+    flush_rewrite_rules();
+}
+
+register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
