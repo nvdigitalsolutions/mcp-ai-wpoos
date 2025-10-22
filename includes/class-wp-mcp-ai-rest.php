@@ -1083,14 +1083,33 @@ class WP_MCP_AI_REST {
         $attachments_helper = new WP_MCP_AI_Message_Attachments();
         $sanitized          = array();
 
+        $allowed_roles = array( 'user', 'assistant', 'system', 'tool' );
+
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
                 continue;
             }
 
-            $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+            $raw_role = isset( $message['role'] ) ? $message['role'] : '';
+            $role     = sanitize_key( $raw_role );
             if ( empty( $role ) ) {
                 continue;
+            }
+
+            if ( ! in_array( $role, $allowed_roles, true ) ) {
+                $display_role = is_scalar( $raw_role ) ? (string) $raw_role : $role;
+                $display_role = sanitize_text_field( $display_role );
+
+                return new WP_Error(
+                    'wp_mcp_ai_invalid_message_role',
+                    sprintf(
+                        /* translators: 1: Provided role, 2: list of supported roles. */
+                        __( 'The message role "%1$s" is not supported. Supported roles: %2$s.', 'wp-mcp-ai' ),
+                        $display_role,
+                        implode( ', ', $allowed_roles )
+                    ),
+                    array( 'status' => 400 )
+                );
             }
 
             $content = isset( $message['content'] ) ? $message['content'] : '';

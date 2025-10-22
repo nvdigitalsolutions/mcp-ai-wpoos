@@ -37,6 +37,80 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure system messages are forwarded to the model.
+     */
+    public function test_system_role_message_is_preserved() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'system',
+                    'content' => 'Stay focused.',
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello world',
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertCount( 2, $messages );
+
+                $system_message = $messages[0];
+                $this->assertSame( 'system', $system_message['role'] );
+                $this->assertArrayHasKey( 'content', $system_message );
+                $this->assertSame( 'Stay focused.', $system_message['content'][0]['text'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
+     * Ensure tool role messages are accepted and metadata is preserved.
+     */
+    public function test_tool_role_message_is_preserved() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Call the tool',
+                ),
+                array(
+                    'role'         => 'tool',
+                    'content'      => '{"result":"ok"}',
+                    'tool_call_id' => 'call_123',
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertCount( 2, $messages );
+
+                $tool_message = $messages[1];
+                $this->assertSame( 'tool', $tool_message['role'] );
+                $this->assertSame( 'call_123', $tool_message['tool_call_id'] );
+                $this->assertSame( 'input_text', $tool_message['content'][0]['type'] );
+                $this->assertSame( '{"result":"ok"}', $tool_message['content'][0]['text'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure assistant tool calls are preserved even when the content is empty.
      */
     public function test_assistant_tool_calls_are_preserved_when_content_empty() {
@@ -195,6 +269,50 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure an invalid message role triggers a REST error response.
+     */
+    public function test_invalid_role_is_rejected() {
+        $assistant_id = $this->create_assistant_post();
+        $user_id      = get_current_user_id();
+        if ( ! $user_id ) {
+            $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+            wp_set_current_user( $user_id );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'moderator',
+                    'content' => 'Unsupported role',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 400, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertSame( 'wp_mcp_ai_invalid_message_role', $data['code'] );
+        $this->assertStringContainsString( 'moderator', $data['message'] );
+    }
+
+    /**
      * Dispatch the REST request and apply expectations against the payload.
      *
      * @param int      $assistant_id Assistant post ID.
@@ -207,10 +325,6 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         if ( ! $user_id ) {
             $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
             wp_set_current_user( $user_id );
-        }
-
-        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
-            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }
 
         $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
@@ -231,11 +345,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 )
             );
 
-        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
-        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
-
-        rest_get_server();
-        do_action( 'rest_api_init' );
+        $this->bootstrap_rest_controller( $mock_client );
 
         $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
         $request->set_param( 'assistant_id', $assistant_id );
@@ -246,6 +356,23 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
+     * Prepare the REST controller instance for testing.
+     *
+     * @param WP_MCP_AI_OpenAI_Client $mock_client Mocked OpenAI client.
+     */
+    protected function bootstrap_rest_controller( WP_MCP_AI_OpenAI_Client $mock_client ) {
+        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+        }
+
+        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
+        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
     }
 
     /**
