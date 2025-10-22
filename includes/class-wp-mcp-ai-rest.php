@@ -109,16 +109,85 @@ class WP_MCP_AI_REST {
      * @return true|WP_Error
      */
     public function permissions_check( WP_REST_Request $request ) {
+        if ( $this->is_application_password_request() ) {
+            if ( ! current_user_can( 'edit_posts' ) ) {
+                return $this->insufficient_permissions_error();
+            }
+
+            return true;
+        }
+
         $nonce = $request->get_header( 'X-WP-Nonce' );
-        if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-            return new WP_Error( 'rest_invalid_nonce', __( 'Could not verify the request nonce.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+        if ( empty( $nonce ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_credentials',
+                __( 'Authentication is required. Provide a REST nonce or a WordPress application password.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 401,
+                    'actions' => array(
+                        'supply_application_password' => __( 'Generate an application password under Users → Profile and send it in the Authorization header.', 'wp-mcp-ai' ),
+                        'include_rest_nonce'          => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error(
+                'rest_invalid_nonce',
+                __( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => rest_authorization_required_code(),
+                    'actions' => array(
+                        'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         if ( ! current_user_can( 'edit_posts' ) ) {
-            return new WP_Error( 'rest_forbidden', __( 'You do not have permission to access the MCP AI API.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+            return $this->insufficient_permissions_error();
         }
 
         return true;
+    }
+
+    /**
+     * Build a consistent error response when the authenticated user lacks access.
+     *
+     * @return WP_Error
+     */
+    protected function insufficient_permissions_error() {
+        return new WP_Error(
+            'wp_mcp_ai_insufficient_permissions',
+            __( 'The authenticated user cannot access the MCP AI API. Grant the account the "edit_posts" capability or switch to another user.', 'wp-mcp-ai' ),
+            array(
+                'status'  => 403,
+                'actions' => array(
+                    'grant_capability' => __( 'Assign a role such as Author or Editor that includes the "edit_posts" capability.', 'wp-mcp-ai' ),
+                ),
+            )
+        );
+    }
+
+    /**
+     * Determine whether the current request was authenticated with an application password.
+     *
+     * @return bool
+     */
+    protected function is_application_password_request() {
+        if ( ! function_exists( 'rest_get_authenticated_app_password' ) ) {
+            return false;
+        }
+
+        $uuid = rest_get_authenticated_app_password();
+        if ( empty( $uuid ) ) {
+            return false;
+        }
+
+        $current_user = wp_get_current_user();
+
+        return $current_user instanceof WP_User && $current_user->exists();
     }
 
     /**

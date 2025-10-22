@@ -70,6 +70,10 @@ Complete these after installation to unlock every integration point:
 - [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
 - [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
 
+## 🔒 MCP Server Authentication
+
+Remote MCP assistants should authenticate with WordPress [Application Passwords](https://wordpress.org/support/article/application-passwords/) using HTTP Basic auth (`Authorization: Basic base64(USER:PASSWORD)`). Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure.
+
 ---
 
 ## 🛠 Assistant Editor Overview
