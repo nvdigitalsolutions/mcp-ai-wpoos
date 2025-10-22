@@ -133,7 +133,14 @@ class WP_MCP_AI_REST {
             return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $messages = $this->sanitize_messages( $request->get_param( 'messages' ) );
+        $sanitized_messages = $this->sanitize_messages( $request->get_param( 'messages' ) );
+        if ( is_wp_error( $sanitized_messages ) ) {
+            return $sanitized_messages;
+        }
+
+        $messages    = $sanitized_messages['messages'];
+        $attachments = $sanitized_messages['attachments'];
+
         if ( empty( $messages ) ) {
             return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
@@ -152,6 +159,10 @@ class WP_MCP_AI_REST {
             if ( ! empty( $memory_documents ) ) {
                 $options['memory_documents'] = $memory_documents;
             }
+        }
+
+        if ( ! empty( $attachments ) ) {
+            $options['attachments'] = $attachments;
         }
 
         $user_id = get_current_user_id();
@@ -294,33 +305,127 @@ class WP_MCP_AI_REST {
      * Sanitize the messages payload.
      *
      * @param mixed $messages Raw messages.
-     * @return array
+     * @return array|WP_Error
      */
     protected function sanitize_messages( $messages ) {
         if ( ! is_array( $messages ) ) {
-            return array();
+            return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $sanitized = array();
+        $attachments_helper = new WP_MCP_AI_Message_Attachments();
+        $sanitized          = array();
+
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
                 continue;
             }
 
-            $role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
-            $content = isset( $message['content'] ) ? wp_kses_post( $message['content'] ) : '';
+            $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+            if ( empty( $role ) ) {
+                continue;
+            }
 
-            if ( empty( $role ) || '' === $content ) {
+            $content = isset( $message['content'] ) ? $message['content'] : '';
+            $segments = $this->sanitize_message_content( $content, $attachments_helper );
+
+            if ( is_wp_error( $segments ) ) {
+                return $segments;
+            }
+
+            if ( empty( $segments ) ) {
                 continue;
             }
 
             $sanitized[] = array(
                 'role'    => $role,
-                'content' => $content,
+                'content' => $segments,
             );
         }
 
-        return $sanitized;
+        return array(
+            'messages'    => $sanitized,
+            'attachments' => $attachments_helper->get_attachments(),
+        );
+    }
+
+    /**
+     * Sanitize the content of a single message and normalise into segments.
+     *
+     * @param mixed                           $content             Raw content provided by the client.
+     * @param WP_MCP_AI_Message_Attachments $attachments_helper Attachment helper instance.
+     * @return array|WP_Error
+     */
+    protected function sanitize_message_content( $content, WP_MCP_AI_Message_Attachments $attachments_helper ) {
+        if ( is_string( $content ) || is_numeric( $content ) ) {
+            $segment = $attachments_helper->prepare_input_text_segment( $content );
+
+            return '' === $segment['text'] ? array() : array( $segment );
+        }
+
+        if ( empty( $content ) ) {
+            return array();
+        }
+
+        if ( ! is_array( $content ) ) {
+            return new WP_Error( 'wp_mcp_ai_invalid_message_content', __( 'Message content must be a string or an array of segments.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+        }
+
+        $segments = array();
+
+        foreach ( $content as $segment ) {
+            if ( is_string( $segment ) || is_numeric( $segment ) ) {
+                $prepared = $attachments_helper->prepare_input_text_segment( $segment );
+
+                if ( '' !== $prepared['text'] ) {
+                    $segments[] = $prepared;
+                }
+
+                continue;
+            }
+
+            if ( ! is_array( $segment ) ) {
+                continue;
+            }
+
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'input_text';
+
+            switch ( $type ) {
+                case 'input_text':
+                    if ( isset( $segment['text'] ) ) {
+                        $prepared = $attachments_helper->prepare_input_text_segment( $segment['text'] );
+                    } elseif ( isset( $segment['content'] ) ) {
+                        $prepared = $attachments_helper->prepare_input_text_segment( $segment['content'] );
+                    } else {
+                        $prepared = $attachments_helper->prepare_input_text_segment( '' );
+                    }
+
+                    if ( '' !== $prepared['text'] ) {
+                        $segments[] = $prepared;
+                    }
+                    break;
+
+                case 'input_image':
+                    $prepared = $attachments_helper->prepare_input_image_segment( $segment );
+                    if ( is_wp_error( $prepared ) ) {
+                        return $prepared;
+                    }
+                    $segments[] = $prepared;
+                    break;
+
+                case 'input_file':
+                    $prepared = $attachments_helper->prepare_input_file_segment( $segment );
+                    if ( is_wp_error( $prepared ) ) {
+                        return $prepared;
+                    }
+                    $segments[] = $prepared;
+                    break;
+
+                default:
+                    return new WP_Error( 'wp_mcp_ai_invalid_message_segment', __( 'One or more message segments use an unsupported type.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+            }
+        }
+
+        return $segments;
     }
 
     /**
@@ -369,6 +474,10 @@ class WP_MCP_AI_REST {
             $options['vector_store_id'] = sanitize_text_field( $assistant_config['vector_store_id'] );
         } else {
             $options['vector_store_id'] = '';
+        }
+
+        if ( isset( $options['response_format'] ) && ! is_array( $options['response_format'] ) ) {
+            unset( $options['response_format'] );
         }
 
         return $options;
