@@ -22,6 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
 /**
@@ -36,6 +37,7 @@ function wp_mcp_ai_bootstrap() {
     $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
     $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
     $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $client );
+    $GLOBALS['wp_mcp_ai_shortcode'] = new WP_MCP_AI_Shortcode();
 }
 
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
