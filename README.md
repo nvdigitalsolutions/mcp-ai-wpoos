@@ -104,6 +104,29 @@ Visit the site in your browser to complete the standard WordPress installation f
 
 ---
 
+## 🧑‍💻 Development Tooling
+
+Install the PHP development dependencies (including PHP_CodeSniffer, the WordPress Coding Standards ruleset, and PHPUnit) with:
+
+```bash
+bin/setup-dev.sh
+```
+
+The script runs `composer install` and makes the following Composer scripts available:
+
+| Purpose | Command |
+| --- | --- |
+| WordPress coding standards lint | `composer run lint` |
+| PHP compatibility checks (PHP 7.4–8.3) | `composer run lint:compat` |
+| Auto-fix coding standards violations | `composer run format` |
+| Generate the translation template | `composer run pot` |
+| Install the WordPress unit test scaffolding | `composer run test:install` |
+| Execute the PHPUnit suite | `composer run test` |
+
+These commands automatically resolve the bundled `vendor/bin` tools (such as `phpcs`, `phpcbf`, and `phpunit`), so a global installation is no longer required.
+
+---
+
 ## 💬 Frontend Shortcode
 Embed a published assistant anywhere on the site with the shortcode. Replace `123` with the post ID of the assistant you created under **AI Assistants**.
 
