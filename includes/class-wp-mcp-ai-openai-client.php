@@ -65,7 +65,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'role'    => 'system',
                 'content' => array(
                     array(
-                        'type' => 'input_text',
+                        'type' => 'text',
                         'text' => (string) $options['system_prompt'],
                     ),
                 ),
@@ -178,7 +178,7 @@ class WP_MCP_AI_OpenAI_Client {
                     'role'    => 'system',
                     'content' => array(
                         array(
-                            'type' => 'input_text',
+                            'type' => 'text',
                             /* translators: %1$s: document title, %2$s: extracted text snippet. */
                             'text' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk ),
                         ),
@@ -211,7 +211,7 @@ class WP_MCP_AI_OpenAI_Client {
                         $segment_copy = $segment;
                         $type         = isset( $segment['type'] ) ? $segment['type'] : '';
 
-                        if ( 'input_text' === $type && isset( $segment['text'] ) ) {
+                        if ( in_array( $type, array( 'text', 'input_text' ), true ) && isset( $segment['text'] ) ) {
                             $content = (string) $segment['text'];
                             $length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
                             $slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );

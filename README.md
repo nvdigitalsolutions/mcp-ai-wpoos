@@ -162,7 +162,7 @@ The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each m
     {
       "role": "user",
       "content": [
-        { "type": "input_text", "text": "Describe this photo" },
+        { "type": "text", "text": "Describe this photo" },
         { "type": "input_image", "attachment_id": 456, "detail": "high" }
       ]
     }
@@ -175,7 +175,7 @@ The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each m
 
 ### Supported segment types
 
-- `input_text` – Free-form text (`text` property). Strings supplied directly to `content` are automatically wrapped in this format.
+- `text` – Free-form text (`text` property). Strings supplied directly to `content` are automatically wrapped in this format. For backwards compatibility, existing `input_text` payloads sent to the REST API are still accepted and normalised to the new schema.
 - `input_image` – Reference an uploaded WordPress attachment (`attachment_id`) or provide a remote `url`. Optional `detail`
   hints (`low`, `auto`, `high`) and `caption` fields are preserved.
 - `input_file` – Reference an uploaded attachment that should be streamed to the model.
@@ -188,7 +188,7 @@ Whenever attachments are present, the plugin automatically includes an `attachme
 base64-encoded blobs, file names, captions, and generated `file_id` values. Message segments that reference the attachment will
 use these `file_id` handles so integrators do not need to upload assets manually.
 
-Assistant memory files configured on the post (`memory_files`) are also promoted to structured `input_text` segments on the
+Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
 ---

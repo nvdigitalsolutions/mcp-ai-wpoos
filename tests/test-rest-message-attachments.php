@@ -5,7 +5,7 @@
 class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
     /**
-     * Ensure plain string messages are normalised into input_text segments.
+     * Ensure plain string messages are normalised into text segments.
      */
     public function test_text_message_is_normalised_to_segment() {
         $assistant_id = $this->create_assistant_post();
@@ -23,8 +23,46 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $this->assertArrayHasKey( 'content', $first );
                 $this->assertIsArray( $first['content'] );
-                $this->assertSame( 'input_text', $first['content'][0]['type'] );
+                $this->assertSame( 'text', $first['content'][0]['type'] );
                 $this->assertSame( 'Hello world', $first['content'][0]['text'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
+     * Ensure legacy input_text segments are still accepted and normalised to the new schema.
+     */
+    public function test_legacy_input_text_segment_is_normalised() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type' => 'input_text',
+                            'text' => 'Legacy segment',
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertNotEmpty( $messages );
+                $first = $messages[0];
+
+                $this->assertArrayHasKey( 'content', $first );
+                $this->assertIsArray( $first['content'] );
+                $this->assertSame( 'text', $first['content'][0]['type'] );
+                $this->assertSame( 'Legacy segment', $first['content'][0]['text'] );
 
                 return true;
             },
@@ -97,7 +135,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 $tool_message = $messages[1];
                 $this->assertSame( 'tool', $tool_message['role'] );
                 $this->assertSame( 'call_123', $tool_message['tool_call_id'] );
-                $this->assertSame( 'input_text', $tool_message['content'][0]['type'] );
+                $this->assertSame( 'text', $tool_message['content'][0]['type'] );
                 $this->assertSame( '{"result":"ok"}', $tool_message['content'][0]['text'] );
 
                 return true;
@@ -184,7 +222,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     'role'    => 'user',
                     'content' => array(
                         array(
-                            'type' => 'input_text',
+                            'type' => 'text',
                             'text' => 'Describe this image',
                         ),
                         array(
@@ -200,7 +238,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 $segments = $messages[0]['content'];
 
                 $this->assertCount( 2, $segments );
-                $this->assertSame( 'input_text', $segments[0]['type'] );
+                $this->assertSame( 'text', $segments[0]['type'] );
                 $this->assertSame( 'Describe this image', $segments[0]['text'] );
 
                 $image_segment = $segments[1];

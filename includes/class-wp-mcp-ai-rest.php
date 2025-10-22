@@ -1262,9 +1262,10 @@ class WP_MCP_AI_REST {
                 continue;
             }
 
-            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'input_text';
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
 
             switch ( $type ) {
+                case 'text':
                 case 'input_text':
                     if ( isset( $segment['text'] ) ) {
                         $prepared = $attachments_helper->prepare_input_text_segment( $segment['text'] );
