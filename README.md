@@ -263,6 +263,10 @@ The project currently relies on manual verification. Run these checks after upda
 3. **JetEngine enabled**
    - Activate JetEngine.
    - Confirm the JetEngine Items tool appears for assistants and returns data for a configured JetEngine post type.
+4. **Tool call retry resilience**
+   - Initiate a chat conversation that triggers a tool call (for example, request an operation that requires the WooCommerce Orders tool).
+   - After the tool output appears, send a follow-up message that prompts the assistant to continue without invoking another tool.
+   - Confirm the follow-up succeeds without a JavaScript console error referencing a missing `tool_call_id`.
 
 Document the results of each scenario when preparing releases to ensure optional integrations remain stable.
 
