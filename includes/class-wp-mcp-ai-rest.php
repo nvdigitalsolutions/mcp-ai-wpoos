@@ -795,8 +795,16 @@ class WP_MCP_AI_REST {
 
         if ( ! empty( $options['memory_files'] ) ) {
             $memory_documents = $this->prepare_memory_documents( $options['memory_files'] );
+
+            if ( is_wp_error( $memory_documents ) ) {
+                return $memory_documents;
+            }
+
             if ( ! empty( $memory_documents ) ) {
                 $options['memory_documents'] = $memory_documents;
+                $options['memory_files']     = wp_list_pluck( $memory_documents, 'id' );
+            } else {
+                $options['memory_files'] = array();
             }
         }
 
@@ -1243,8 +1251,10 @@ class WP_MCP_AI_REST {
             WP_Filesystem();
         }
 
-        $documents   = array();
-        $total_chars = 0;
+        $documents            = array();
+        $total_chars          = 0;
+        $forbidden_file_ids   = array();
+        $encountered_permitted = false;
 
         foreach ( $file_ids as $file_id ) {
             $file_id = absint( $file_id );
@@ -1256,6 +1266,13 @@ class WP_MCP_AI_REST {
             if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
                 continue;
             }
+
+            if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $file_id ) ) {
+                $forbidden_file_ids[] = $file_id;
+                continue;
+            }
+
+            $encountered_permitted = true;
 
             $file_path = get_attached_file( $file_id );
             if ( ! $file_path ) {
@@ -1293,6 +1310,17 @@ class WP_MCP_AI_REST {
             if ( $total_chars >= self::MEMORY_MAX_TOTAL_CHARS ) {
                 break;
             }
+        }
+
+        if ( empty( $documents ) && ! $encountered_permitted && ! empty( $forbidden_file_ids ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_memory_files_forbidden',
+                __( 'You do not have permission to use the requested memory files.', 'wp-mcp-ai' ),
+                array(
+                    'status'        => 403,
+                    'forbidden_ids' => array_values( array_unique( $forbidden_file_ids ) ),
+                )
+            );
         }
 
         return $documents;

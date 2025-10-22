@@ -103,4 +103,188 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
     }
+
+    /**
+     * Ensure private memory files that the user cannot read are excluded.
+     */
+    public function test_private_memory_files_are_excluded_from_payload() {
+        $author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        $admin_id  = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $author_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Restricted Memory Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $public_attachment_id = $this->create_memory_attachment( 'knowledge.txt', 'Shared knowledge.', $author_id, 'inherit' );
+        $private_attachment_id = $this->create_memory_attachment( 'secret.txt', 'Hidden knowledge.', $admin_id, 'private' );
+
+        update_post_meta(
+            $assistant_id,
+            WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES,
+            array( $public_attachment_id, $private_attachment_id )
+        );
+
+        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->callback(
+                    function ( $messages ) {
+                        return is_array( $messages ) && ! empty( $messages );
+                    }
+                ),
+                $this->callback(
+                    function ( $options ) use ( $public_attachment_id, $private_attachment_id ) {
+                        $this->assertArrayHasKey( 'memory_files', $options );
+                        $this->assertSame( array( $public_attachment_id ), $options['memory_files'] );
+
+                        $this->assertArrayHasKey( 'memory_documents', $options );
+                        $this->assertCount( 1, $options['memory_documents'] );
+                        $document = $options['memory_documents'][0];
+
+                        $this->assertSame( $public_attachment_id, $document['id'] );
+                        $this->assertIsArray( $document['chunks'] );
+                        $this->assertNotEmpty( $document['chunks'] );
+
+                        return true;
+                    }
+                )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
+        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
+     * Ensure requests fail when no memory files remain after permission checks.
+     */
+    public function test_request_rejected_when_all_memory_files_forbidden() {
+        $author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        $admin_id  = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $author_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Forbidden Memory Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $private_attachment_id = $this->create_memory_attachment( 'secret.txt', 'Hidden knowledge.', $admin_id, 'private' );
+
+        update_post_meta(
+            $assistant_id,
+            WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES,
+            array( $private_attachment_id )
+        );
+
+        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
+        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 403, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertSame( 'wp_mcp_ai_memory_files_forbidden', $data['code'] );
+        $this->assertArrayHasKey( 'forbidden_ids', $data['data'] );
+        $this->assertSame( array( $private_attachment_id ), $data['data']['forbidden_ids'] );
+    }
+
+    /**
+     * Create an attachment for use as assistant memory.
+     *
+     * @param string $filename File name.
+     * @param string $contents File contents.
+     * @param int    $author_id Post author.
+     * @param string $status Post status.
+     * @return int
+     */
+    protected function create_memory_attachment( $filename, $contents, $author_id, $status ) {
+        $upload = wp_upload_bits( $filename, null, $contents );
+        $this->assertFalse( $upload['error'] );
+
+        $attachment_id = self::factory()->attachment->create_upload_object( $upload['file'] );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_title'  => $filename,
+                'post_author' => $author_id,
+                'post_status' => $status,
+            )
+        );
+
+        return $attachment_id;
+    }
 }
