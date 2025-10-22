@@ -1100,13 +1100,18 @@ class WP_MCP_AI_REST {
                 return $segments;
             }
 
-            if ( empty( $segments ) ) {
+            $metadata = $this->sanitize_message_metadata( $message );
+
+            if ( empty( $segments ) && empty( $metadata ) ) {
                 continue;
             }
 
-            $sanitized[] = array(
-                'role'    => $role,
-                'content' => $segments,
+            $sanitized[] = array_merge(
+                array(
+                    'role'    => $role,
+                    'content' => $segments,
+                ),
+                $metadata
             );
         }
 
@@ -1114,6 +1119,74 @@ class WP_MCP_AI_REST {
             'messages'    => $sanitized,
             'attachments' => $attachments_helper->get_attachments(),
         );
+    }
+
+    /**
+     * Sanitize additional metadata attached to a message.
+     *
+     * @param array $message Raw message data.
+     * @return array
+     */
+    protected function sanitize_message_metadata( array $message ) {
+        $metadata = array();
+
+        if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+            $tool_calls = array();
+
+            foreach ( $message['tool_calls'] as $tool_call ) {
+                if ( ! is_array( $tool_call ) ) {
+                    continue;
+                }
+
+                $sanitized_call = array();
+
+                if ( isset( $tool_call['id'] ) ) {
+                    $sanitized_call['id'] = sanitize_text_field( $tool_call['id'] );
+                }
+
+                if ( isset( $tool_call['type'] ) ) {
+                    $sanitized_call['type'] = sanitize_text_field( $tool_call['type'] );
+                }
+
+                if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+                    $function = array();
+
+                    if ( isset( $tool_call['function']['name'] ) ) {
+                        $function['name'] = sanitize_text_field( $tool_call['function']['name'] );
+                    }
+
+                    if ( isset( $tool_call['function']['arguments'] ) ) {
+                        $function['arguments'] = wp_check_invalid_utf8( (string) $tool_call['function']['arguments'], true );
+                    }
+
+                    if ( ! empty( $function ) ) {
+                        $sanitized_call['function'] = $function;
+                    }
+                }
+
+                if ( isset( $tool_call['index'] ) ) {
+                    $sanitized_call['index'] = absint( $tool_call['index'] );
+                }
+
+                if ( ! empty( $sanitized_call ) ) {
+                    $tool_calls[] = $sanitized_call;
+                }
+            }
+
+            if ( ! empty( $tool_calls ) ) {
+                $metadata['tool_calls'] = $tool_calls;
+            }
+        }
+
+        if ( isset( $message['tool_call_id'] ) ) {
+            $metadata['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+        }
+
+        if ( isset( $message['name'] ) ) {
+            $metadata['name'] = sanitize_text_field( $message['name'] );
+        }
+
+        return $metadata;
     }
 
     /**
