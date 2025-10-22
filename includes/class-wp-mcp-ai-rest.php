@@ -133,6 +133,11 @@ class WP_MCP_AI_REST {
             return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
+        $assistant_post = $this->validate_assistant_access( $assistant_id );
+        if ( is_wp_error( $assistant_post ) ) {
+            return $assistant_post;
+        }
+
         $sanitized_messages = $this->sanitize_messages( $request->get_param( 'messages' ) );
         if ( is_wp_error( $sanitized_messages ) ) {
             return $sanitized_messages;
@@ -220,6 +225,11 @@ class WP_MCP_AI_REST {
             return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
+        $assistant_post = $this->validate_assistant_access( $assistant_id );
+        if ( is_wp_error( $assistant_post ) ) {
+            return $assistant_post;
+        }
+
         $assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
         $tool_slug        = sanitize_key( $request->get_param( 'tool' ) );
         $arguments        = $request->get_param( 'arguments' );
@@ -299,6 +309,35 @@ class WP_MCP_AI_REST {
         $default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
         return $default;
+    }
+
+    /**
+     * Ensure the current user can access the requested assistant post.
+     *
+     * @param int $assistant_id Assistant post ID.
+     * @return WP_Post|WP_Error
+     */
+    protected function validate_assistant_access( $assistant_id ) {
+        $assistant_id   = absint( $assistant_id );
+        $assistant_post = $assistant_id ? get_post( $assistant_id ) : null;
+
+        if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
+            return new WP_Error(
+                'wp_mcp_ai_assistant_forbidden',
+                __( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        if ( 'publish' !== $assistant_post->post_status && ! current_user_can( 'read_post', $assistant_id ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_assistant_forbidden',
+                __( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        return $assistant_post;
     }
 
     /**
