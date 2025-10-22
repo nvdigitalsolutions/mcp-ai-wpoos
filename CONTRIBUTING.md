@@ -13,7 +13,7 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 ## Getting Started
 
 1. Fork the repository and clone it locally.
-2. Install PHP dependencies:
+2. Install PHP dependencies via Composer:
    ```bash
    composer install
    ```
@@ -39,13 +39,43 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 Composer provides helper scripts aligned with WordPress coding standards:
 
 ```bash
-composer lint        # Runs phpcs with the WordPress ruleset
-composer lint:compat # Runs PHPCompatibilityWP against PHP 7.4–8.3
-composer format      # Attempts to autofix coding standards violations
-composer pot         # Generates/updates languages/wp-mcp-ai.pot
+composer run lint        # Runs phpcs with the WordPress ruleset
+composer run lint:compat # Runs PHPCompatibilityWP against PHP 7.4–8.3
+composer run format      # Attempts to autofix coding standards violations
+composer run pot         # Generates/updates languages/wp-mcp-ai.pot
 ```
 
-These commands assume that `phpcs` and `wp` are available via Composer and WP-CLI respectively. If you are missing dependencies, run `composer install` and ensure WP-CLI is installed on your machine. When contributing, please make sure `composer lint` and `composer lint:compat` pass before opening a pull request and include any updates to the `.pot` file when strings change.
+These commands assume that `phpcs` and `wp` are available via Composer and WP-CLI respectively. If you are missing dependencies, run `composer install` and ensure WP-CLI is installed on your machine. When contributing, please make sure `composer run lint` and `composer run lint:compat` pass before opening a pull request and include any updates to the `.pot` file when strings change.
+
+## Bootstrapping the WordPress Test Suite
+
+Before running automated tests you need a copy of the WordPress PHPUnit test suite installed locally. The repository bundles a helper script that mirrors the [official instructions](https://github.com/WordPress/wordpress-develop/blob/trunk/tests/phpunit/README.md):
+
+```bash
+composer run test:install
+```
+
+The default script installs WordPress into a local `wordpress_test` database using the `root` user with no password on `localhost`. Adjust the database credentials and WordPress version by calling the script directly:
+
+```bash
+bash bin/install-wp-tests.sh wordpress_test root '' localhost latest
+```
+
+If you already have a Docker or Codespaces environment with MySQL available, run the same command inside that container so the database is created alongside WordPress. Replace the database credentials with the values configured in your container.
+
+## Running PHPUnit
+
+Once the test suite is installed you can execute the plugin's test suite with Composer:
+
+```bash
+composer run test
+```
+
+Alternatively call PHPUnit directly if you prefer more control over the CLI options:
+
+```bash
+vendor/bin/phpunit
+```
 
 ## Extending the Tool Registry
 
