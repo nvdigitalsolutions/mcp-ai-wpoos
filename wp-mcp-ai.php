@@ -73,3 +73,57 @@ function wp_mcp_ai_deactivate() {
 }
 
 register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
+
+/**
+ * Plugin uninstall handler.
+ */
+function wp_mcp_ai_uninstall() {
+    $settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+    if ( ! is_array( $settings ) ) {
+        $settings = array();
+    }
+
+    $settings = wp_parse_args( $settings, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+    if ( empty( $settings['delete_on_uninstall'] ) ) {
+        return;
+    }
+
+    /**
+     * Fires before WP MCP AI performs its uninstall cleanup routines.
+     */
+    do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
+
+    $assistant_ids = get_posts(
+        array(
+            'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        )
+    );
+
+    if ( ! empty( $assistant_ids ) ) {
+        foreach ( $assistant_ids as $assistant_id ) {
+            wp_delete_post( $assistant_id, true );
+        }
+    }
+
+    $settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+    /**
+     * Fires after WP MCP AI completes its uninstall cleanup routines.
+     *
+     * @param array $summary Summary of cleanup actions performed.
+     */
+    do_action(
+        'wp_mcp_ai_after_uninstall_cleanup',
+        array(
+            'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
+            'settings_deleted'   => (bool) $settings_deleted,
+        )
+    );
+}
+
+register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );
