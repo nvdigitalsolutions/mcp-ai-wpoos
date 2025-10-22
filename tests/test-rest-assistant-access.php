@@ -56,6 +56,61 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure credential tokens can access unpublished assistants they are scoped to.
+     */
+    public function test_chat_request_allows_local_token_for_unpublished_assistant() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Draft Assistant',
+                'post_status' => 'draft',
+            )
+        );
+
+        $issuer_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $issuer_id );
+
+        $issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $issuer_id );
+
+        wp_set_current_user( 0 );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
      * Ensure requests without explicit credentials return actionable guidance.
      */
     public function test_request_without_credentials_returns_actionable_error() {

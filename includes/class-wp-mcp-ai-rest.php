@@ -1058,7 +1058,22 @@ class WP_MCP_AI_REST {
             );
         }
 
-        if ( 'publish' !== $assistant_post->post_status && ! current_user_can( 'read_post', $assistant_id ) ) {
+        $token_bypasses_visibility = false;
+
+        $auth_context = $this->get_auth_context();
+        if ( ! empty( $auth_context['token_authenticated'] ) && 'local_token' === $auth_context['token_type'] ) {
+            $token_assistant = isset( $auth_context['assistant_id'] ) ? absint( $auth_context['assistant_id'] ) : 0;
+
+            if ( ! $token_assistant && isset( $auth_context['token_context']['credential']['assistant_id'] ) ) {
+                $token_assistant = absint( $auth_context['token_context']['credential']['assistant_id'] );
+            }
+
+            if ( $token_assistant && $token_assistant === $assistant_id ) {
+                $token_bypasses_visibility = true;
+            }
+        }
+
+        if ( 'publish' !== $assistant_post->post_status && ! current_user_can( 'read_post', $assistant_id ) && ! $token_bypasses_visibility ) {
             return new WP_Error(
                 'wp_mcp_ai_assistant_forbidden',
                 __( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
