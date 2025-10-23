@@ -273,30 +273,135 @@
 
         if (Array.isArray(content)) {
             return content
-                .map(function (piece) {
-                    if (typeof piece === 'string') {
-                        return piece;
-                    }
-                    if (piece && typeof piece.text === 'string') {
-                        return piece.text;
-                    }
-                    if (piece && piece.text && typeof piece.text.value === 'string') {
-                        return piece.text.value;
-                    }
-                    if (piece && typeof piece.value === 'string') {
-                        return piece.value;
-                    }
-                    return '';
+                .map(renderContentPiece)
+                .filter(function (value) {
+                    return value && value.trim();
                 })
-                .join('\n')
+                .join('\n\n')
                 .trim();
         }
 
         if (content && typeof content === 'object') {
-            return JSON.stringify(content);
+            return renderContentPiece(content);
         }
 
         return '';
+    }
+
+    function renderContentPiece(piece) {
+        if (typeof piece === 'string') {
+            return piece;
+        }
+
+        if (!piece || typeof piece !== 'object') {
+            return '';
+        }
+
+        if (typeof piece.text === 'string') {
+            return piece.text;
+        }
+
+        if (piece.text && typeof piece.text.value === 'string') {
+            return piece.text.value;
+        }
+
+        if (typeof piece.content === 'string') {
+            return piece.content;
+        }
+
+        if (Array.isArray(piece.content)) {
+            return piece.content
+                .map(renderContentPiece)
+                .filter(function (value) {
+                    return value && value.trim();
+                })
+                .join('\n\n');
+        }
+
+        if (piece.value && typeof piece.value === 'string') {
+            return piece.value;
+        }
+
+        var type = typeof piece.type === 'string' ? piece.type : '';
+
+        if (type === 'image_file') {
+            var label = '';
+
+            if (piece.caption && typeof piece.caption === 'string') {
+                label = piece.caption;
+            } else if (piece.image_file && typeof piece.image_file === 'object') {
+                if (typeof piece.image_file.display_name === 'string') {
+                    label = piece.image_file.display_name;
+                } else if (typeof piece.image_file.file_id === 'string') {
+                    label = piece.image_file.file_id;
+                }
+            }
+
+            if (!label) {
+                label = 'Image';
+            }
+
+            return '[' + label + ']';
+        }
+
+        if (type === 'image_url' || type === 'input_image') {
+            if (piece.image_url && typeof piece.image_url.url === 'string') {
+                return '[Image: ' + piece.image_url.url + ']';
+            }
+
+            if (typeof piece.url === 'string' && piece.url) {
+                return '[Image: ' + piece.url + ']';
+            }
+
+            if (typeof piece.caption === 'string' && piece.caption) {
+                return '[' + piece.caption + ']';
+            }
+
+            return '[Image]';
+        }
+
+        if (type === 'tool_result') {
+            var parts = [];
+
+            if (piece.output) {
+                if (typeof piece.output === 'string') {
+                    parts.push(piece.output);
+                } else if (Array.isArray(piece.output)) {
+                    parts.push(
+                        piece.output
+                            .map(renderContentPiece)
+                            .filter(function (value) {
+                                return value && value.trim();
+                            })
+                            .join('\n\n')
+                    );
+                } else if (typeof piece.output === 'object') {
+                    try {
+                        parts.push(JSON.stringify(piece.output));
+                    } catch (error) {
+                        parts.push('[Tool Result]');
+                    }
+                }
+            }
+
+            if (piece.content) {
+                parts.push(normaliseContent(piece.content));
+            }
+
+            var toolText = parts
+                .filter(function (value) {
+                    return value && value.trim();
+                })
+                .join('\n\n');
+
+            return toolText || '[Tool Result]';
+        }
+
+        try {
+            return JSON.stringify(piece);
+        } catch (error) {
+            return '[' + (type || 'content') + ']';
+        }
     }
 
     function formatString(template, value) {

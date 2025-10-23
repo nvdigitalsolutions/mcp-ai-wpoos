@@ -1,6 +1,6 @@
 # WP MCP AI (Core Plugin)
 
-**Version:** 0.9.0 (Beta)  
+**Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com)**  
 **License:** GPLv2 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+
