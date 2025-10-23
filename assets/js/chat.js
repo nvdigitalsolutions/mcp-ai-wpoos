@@ -77,7 +77,12 @@
             messages: state.conversation,
         };
 
-        fetch(state.config.messagesEndpoint, {
+        function finalize() {
+            state.busy = false;
+            disableForm(state.container, false);
+        }
+
+        return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -93,18 +98,15 @@
                 return response.json();
             })
             .then(function (data) {
-                handleChatResponse(state, data);
-                finalize();
+                return handleChatResponse(state, data);
             })
-            .catch(function (error) {
+            .then(function (result) {
+                finalize();
+                return result;
+            }, function (error) {
                 handleError(state, error);
                 finalize();
             });
-
-        function finalize() {
-            state.busy = false;
-            disableForm(state.container, false);
-        }
     }
 
     function handleChatResponse(state, data) {
@@ -115,33 +117,58 @@
 
         if (!message) {
             setStatus(state.container, getString('error', 'Something went wrong.'));
-            return;
+            return Promise.resolve();
         }
 
+        var assistantMessage = { role: 'assistant' };
         if (message.content) {
             var text = normaliseContent(message.content);
             appendMessage(state.messagesEl, 'assistant', text);
-            state.conversation.push({ role: 'assistant', content: text });
-            setStatus(state.container, getString('waiting', 'Waiting for the assistant…'));
+            assistantMessage.content = text;
         }
 
-        if (message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length) {
-            processToolCalls(state, message.tool_calls).catch(function (err) {
+        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
+        if (hasToolCalls) {
+            assistantMessage.tool_calls = message.tool_calls;
+        }
+
+        if (assistantMessage.content || assistantMessage.tool_calls) {
+            if (!assistantMessage.hasOwnProperty('content')) {
+                assistantMessage.content = '';
+            }
+            state.conversation.push(assistantMessage);
+        }
+
+        if (hasToolCalls) {
+            setStatus(state.container, getString('waiting', 'Waiting for the assistant…'));
+            return processToolCalls(state, message.tool_calls).catch(function (err) {
                 if (window.console && console.error) {
                     console.error(err);
                 }
+                return Promise.reject(err);
             });
-        } else {
-            setStatus(state.container, '');
         }
+
+        setStatus(state.container, '');
+        return Promise.resolve();
     }
 
     function processToolCalls(state, toolCalls) {
-        var executions = toolCalls.map(function (call) {
-            return executeTool(state, call);
+        if (!toolCalls || !toolCalls.length) {
+            return Promise.resolve();
+        }
+
+        var sequence = Promise.resolve();
+
+        toolCalls.forEach(function (call) {
+            sequence = sequence.then(function () {
+                return executeTool(state, call);
+            });
         });
-        return Promise.all(executions).then(function () {
-            setStatus(state.container, '');
+
+        return sequence.then(function () {
+            setStatus(state.container, getString('waiting', 'Waiting for the assistant…'));
+            return sendChat(state);
         });
     }
 
@@ -189,7 +216,18 @@
             })
             .then(function (response) {
                 var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
-                var formatted = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+                var formatted = '';
+
+                if (typeof result === 'string') {
+                    formatted = result;
+                } else if (result !== null && typeof result !== 'undefined') {
+                    try {
+                        formatted = JSON.stringify(result, null, 2);
+                    } catch (error) {
+                        formatted = String(result);
+                    }
+                }
+
                 appendMessage(state.messagesEl, 'tool', formatted);
 
                 var toolMessage = {
@@ -206,7 +244,7 @@
             })
             .catch(function (error) {
                 appendMessage(state.messagesEl, 'system', getString('toolError', 'The tool request failed.'));
-                handleError(state, error);
+                return Promise.reject(error);
             });
     }
 
