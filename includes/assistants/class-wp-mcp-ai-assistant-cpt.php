@@ -853,6 +853,10 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post    Post object.
      */
     public function save_post( $post_id, $post ) {
+        if ( ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return;
+        }
+
         $tools_nonce_verified         = false;
         $defaults_nonce_verified      = false;
         $base_knowledge_nonce_verified = false;
