@@ -6,16 +6,59 @@
  */
 
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
+$plugin_root = dirname( __DIR__ );
 
 if ( ! $_tests_dir ) {
-    $_tests_dir = sys_get_temp_dir() . '/wordpress-tests-lib';
+    $vendor_tests_dir = $plugin_root . '/vendor/wp-phpunit/wp-phpunit';
+    if ( file_exists( $vendor_tests_dir . '/includes/functions.php' ) ) {
+        $_tests_dir = $vendor_tests_dir;
+    } else {
+        $_tests_dir = sys_get_temp_dir() . '/wordpress-tests-lib';
+    }
 }
 
 if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
     fwrite( STDERR, "Could not find the WordPress tests directory at {$_tests_dir}.\n" );
-    fwrite( STDERR, "Run 'composer run test:install' to download the WordPress testing framework.\n" );
+    fwrite( STDERR, "Run 'composer run test:install' to download the WordPress testing framework or install the 'wp-phpunit/wp-phpunit' composer package.\n" );
     exit( 1 );
 }
+
+$wordpress_path = getenv( 'WP_CORE_DIR' );
+if ( ! $wordpress_path ) {
+    $codex_path = $plugin_root . '/.codex-wordpress/wordpress';
+    if ( file_exists( $codex_path . '/wp-load.php' ) ) {
+        $wordpress_path = $codex_path;
+    }
+}
+
+if ( ! $wordpress_path ) {
+    fwrite( STDERR, "Could not locate a WordPress installation.\n" );
+    fwrite( STDERR, "Run 'bin/codex-startup.sh' or define the WP_CORE_DIR environment variable before executing the tests.\n" );
+    exit( 1 );
+}
+
+$tests_db_dir = $plugin_root . '/.codex-wordpress/tests-database';
+if ( ! is_dir( $tests_db_dir ) && ! mkdir( $tests_db_dir, 0775, true ) && ! is_dir( $tests_db_dir ) ) {
+    fwrite( STDERR, "Unable to create the SQLite directory at {$tests_db_dir}.\n" );
+    exit( 1 );
+}
+
+$polyfills_root = $plugin_root . '/vendor/yoast/phpunit-polyfills';
+if ( file_exists( $polyfills_root . '/phpunitpolyfills-autoload.php' ) && ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
+    define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', $polyfills_root );
+}
+
+$tests_config = $plugin_root . '/tests/wp-tests-config.php';
+
+if ( ! getenv( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
+    putenv( 'WP_PHPUNIT__TESTS_CONFIG=' . $tests_config );
+}
+
+if ( ! defined( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
+    define( 'WP_PHPUNIT__TESTS_CONFIG', $tests_config );
+}
+
+define( 'WP_TESTS_CONFIG_FILE_PATH', $tests_config );
 
 require_once $_tests_dir . '/includes/functions.php';
 
