@@ -102,6 +102,32 @@ docker compose up -d
 
 Visit the site in your browser to complete the standard WordPress installation flow, using the database credentials above when prompted. When you're finished developing, stop the stack with `docker compose down`.
 
+### 🔁 Codex environment startup script
+
+If you are working inside an OpenAI Codex environment, add `bin/codex-startup.sh` to your workspace start-up tasks so a fresh WordPress install is provisioned automatically for every session.
+
+```bash
+bin/codex-startup.sh
+```
+
+The script performs the following steps:
+
+- Boots the Docker Compose stack defined in this repository.
+- Waits for the MySQL and WordPress containers to finish provisioning.
+- Installs WordPress via WP-CLI (skipping the browser-based installer) and activates the **WP MCP AI** plugin.
+- Sets a friendly permalink structure and default site tagline.
+
+Default credentials:
+
+| Setting | Value |
+| --- | --- |
+| Site URL | `http://localhost:8000` |
+| Admin user | `admin` |
+| Admin password | `password` |
+| Admin email | `admin@example.com` |
+
+Override any of these values by exporting the environment variables `WORDPRESS_URL`, `WORDPRESS_TITLE`, `WORDPRESS_ADMIN_USER`, `WORDPRESS_ADMIN_PASSWORD`, `WORDPRESS_ADMIN_EMAIL`, or `WORDPRESS_STARTUP_TIMEOUT` before running the script.
+
 ---
 
 ## 🧑‍💻 Development Tooling
