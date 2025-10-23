@@ -104,7 +104,7 @@ Visit the site in your browser to complete the standard WordPress installation f
 
 ### 🔁 Codex environment startup script
 
-If you are working inside an OpenAI Codex environment, add `bin/codex-startup.sh` to your workspace start-up tasks so a fresh WordPress install is provisioned automatically for every session.
+If you are working inside an OpenAI Codex environment, add `bin/codex-startup.sh` to your workspace start-up tasks so a fresh WordPress install is provisioned automatically for every session — no Docker required.
 
 ```bash
 bin/codex-startup.sh
@@ -112,10 +112,11 @@ bin/codex-startup.sh
 
 The script performs the following steps:
 
-- Boots the Docker Compose stack defined in this repository.
-- Waits for the MySQL and WordPress containers to finish provisioning.
-- Installs WordPress via WP-CLI (skipping the browser-based installer) and activates the **WP MCP AI** plugin.
-- Sets a friendly permalink structure and default site tagline.
+- Downloads WP-CLI locally (if necessary) and uses it to fetch the latest WordPress core files into `.codex-wordpress/wordpress`.
+- Installs the [SQLite Database Integration](https://wordpress.org/plugins/sqlite-database-integration/) plugin so WordPress can run without a MySQL server.
+- Symlinks this repository into the new install's `wp-content/plugins/wp-mcp-ai` directory.
+- Runs `wp core install`, activates the **WP MCP AI** plugin, enables pretty permalinks, and sets a default site tagline.
+- Boots a development server on port `8000` via `wp server` and logs output to `.codex-wordpress/wp-server.log`.
 
 Default credentials:
 
@@ -126,7 +127,7 @@ Default credentials:
 | Admin password | `password` |
 | Admin email | `admin@example.com` |
 
-Override any of these values by exporting the environment variables `WORDPRESS_URL`, `WORDPRESS_TITLE`, `WORDPRESS_ADMIN_USER`, `WORDPRESS_ADMIN_PASSWORD`, `WORDPRESS_ADMIN_EMAIL`, or `WORDPRESS_STARTUP_TIMEOUT` before running the script.
+Override any of these values by exporting the environment variables `WORDPRESS_URL`, `WORDPRESS_TITLE`, `WORDPRESS_ADMIN_USER`, `WORDPRESS_ADMIN_PASSWORD`, `WORDPRESS_ADMIN_EMAIL`, or `WORDPRESS_PORT` before running the script.
 
 ---
 
