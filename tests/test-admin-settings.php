@@ -15,6 +15,16 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure defaults include the default model setting.
+     */
+    public function test_default_settings_define_default_model() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+        $this->assertArrayHasKey( 'default_model', $defaults );
+        $this->assertSame( 'gpt-4o-mini', $defaults['default_model'] );
+    }
+
+    /**
      * Ensure sanitize_settings casts the cleanup flag to a boolean value.
      */
     public function test_sanitize_settings_casts_cleanup_flag() {
@@ -57,5 +67,22 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         );
 
         $this->assertSame( 42, $sanitized['request_timeout'] );
+    }
+
+    /**
+     * Ensure sanitize_settings strips unsafe characters from the default model.
+     */
+    public function test_sanitize_settings_sanitizes_default_model() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $dirty_value = '  <b>gpt-4o-custom</b>  ';
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'default_model' => $dirty_value,
+            )
+        );
+
+        $this->assertSame( sanitize_text_field( $dirty_value ), $sanitized['default_model'] );
     }
 }
