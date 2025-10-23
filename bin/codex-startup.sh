@@ -4,17 +4,32 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
-  COMPOSE_COMMAND=(docker compose)
-elif command -v docker-compose >/dev/null 2>&1; then
-  COMPOSE_COMMAND=(docker-compose)
-else
-  echo "Docker Compose is required (docker compose or docker-compose)." >&2
-  exit 1
+for cmd in php curl unzip; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "The '$cmd' command is required to provision WordPress without Docker." >&2
+    exit 1
+  fi
+done
+
+WORK_DIR="$ROOT_DIR/.codex-wordpress"
+WP_PATH="$WORK_DIR/wordpress"
+WP_CLI_PHAR="$WORK_DIR/wp-cli.phar"
+SERVER_PID_FILE="$WORK_DIR/server.pid"
+SERVER_LOG_FILE="$WORK_DIR/wp-server.log"
+PHP_MEMORY_LIMIT=${WORDPRESS_PHP_MEMORY_LIMIT:-512M}
+
+mkdir -p "$WORK_DIR"
+
+if [[ ! -f "$WP_CLI_PHAR" ]]; then
+  echo "Downloading WP-CLI..."
+  TMP_PHAR="$WP_CLI_PHAR.tmp"
+  curl -fsSL "https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar" -o "$TMP_PHAR"
+  mv "$TMP_PHAR" "$WP_CLI_PHAR"
+  chmod +x "$WP_CLI_PHAR"
 fi
 
-compose() {
-  "${COMPOSE_COMMAND[@]}" "$@"
+wp() {
+  php -d "memory_limit=${PHP_MEMORY_LIMIT}" "$WP_CLI_PHAR" --path="$WP_PATH" --allow-root "$@"
 }
 
 SITE_URL=${WORDPRESS_URL:-http://localhost:8000}
@@ -22,69 +37,95 @@ SITE_TITLE=${WORDPRESS_TITLE:-"WP MCP AI Codex"}
 ADMIN_USER=${WORDPRESS_ADMIN_USER:-admin}
 ADMIN_PASSWORD=${WORDPRESS_ADMIN_PASSWORD:-password}
 ADMIN_EMAIL=${WORDPRESS_ADMIN_EMAIL:-admin@example.com}
-DB_ROOT_PASSWORD=${WORDPRESS_DB_ROOT_PASSWORD:-wordpress}
-WAIT_TIMEOUT=${WORDPRESS_STARTUP_TIMEOUT:-120}
+SERVER_PORT=${WORDPRESS_PORT:-8000}
 
-echo "Starting WordPress services with Docker Compose..."
-compose up -d
-
-echo "Waiting for the database to accept connections..."
-for (( second=1; second<=WAIT_TIMEOUT; second++ )); do
-  if compose exec -T db mysqladmin ping -u root -p"${DB_ROOT_PASSWORD}" --silent >/dev/null 2>&1; then
-    DB_READY=1
-    break
-  fi
-  sleep 1
-  DB_READY=0
-  if (( second % 10 == 0 )); then
-    echo "  Still waiting (${second}s elapsed)..."
-  fi
-
-done
-
-if [[ ${DB_READY:-0} -ne 1 ]]; then
-  echo "Database did not become ready within ${WAIT_TIMEOUT} seconds." >&2
-  exit 1
+if [[ ! -d "$WP_PATH" ]]; then
+  echo "Downloading WordPress core..."
+  mkdir -p "$WP_PATH"
+  wp core download --force
 fi
 
-echo "Ensuring WordPress files are provisioned..."
-for (( second=1; second<=WAIT_TIMEOUT; second++ )); do
-  if compose exec -T wordpress test -f /var/www/html/wp-load.php >/dev/null 2>&1; then
-    WP_READY=1
-    break
-  fi
-  sleep 1
-  WP_READY=0
-  if (( second % 10 == 0 )); then
-    echo "  WordPress files not ready yet (${second}s elapsed)..."
-  fi
+if [[ ! -f "$WP_PATH/wp-config.php" ]]; then
+  echo "Creating wp-config.php for SQLite..."
+  wp config create \
+    --dbname=wordpress \
+    --dbuser=unused \
+    --dbpass=unused \
+    --dbhost=localhost \
+    --dbprefix=wp_ \
+    --skip-check \
+    --extra-php <<'PHP'
+define( 'DB_TYPE', 'sqlite' );
+define( 'WP_DEBUG', false );
+PHP
 
-done
-
-if [[ ${WP_READY:-0} -ne 1 ]]; then
-  echo "WordPress container did not finish provisioning within ${WAIT_TIMEOUT} seconds." >&2
-  exit 1
+  wp config shuffle-salts
 fi
 
-if compose run --rm wp-cli core is-installed >/dev/null 2>&1; then
+SQLITE_PLUGIN_DIR="$WP_PATH/wp-content/plugins/sqlite-database-integration"
+if [[ ! -d "$SQLITE_PLUGIN_DIR" ]]; then
+  echo "Installing SQLite integration plugin..."
+  SQLITE_ZIP="$WORK_DIR/sqlite-database-integration.zip"
+  curl -fsSL "https://downloads.wordpress.org/plugin/sqlite-database-integration.latest-stable.zip" -o "$SQLITE_ZIP"
+  unzip -qo "$SQLITE_ZIP" -d "$WP_PATH/wp-content/plugins"
+  rm -f "$SQLITE_ZIP"
+fi
+
+if [[ ! -f "$WP_PATH/wp-content/db.php" ]]; then
+  if [[ -f "$SQLITE_PLUGIN_DIR/db.php" ]]; then
+    cp "$SQLITE_PLUGIN_DIR/db.php" "$WP_PATH/wp-content/db.php"
+  elif [[ -f "$SQLITE_PLUGIN_DIR/db.copy" ]]; then
+    cp "$SQLITE_PLUGIN_DIR/db.copy" "$WP_PATH/wp-content/db.php"
+  else
+    echo "Could not locate the SQLite drop-in within the plugin." >&2
+    exit 1
+  fi
+fi
+
+PLUGIN_TARGET="$WP_PATH/wp-content/plugins/wp-mcp-ai"
+if [[ -e "$PLUGIN_TARGET" && ! -L "$PLUGIN_TARGET" ]]; then
+  rm -rf "$PLUGIN_TARGET"
+fi
+ln -sfn "$ROOT_DIR" "$PLUGIN_TARGET"
+
+if wp core is-installed >/dev/null 2>&1; then
   echo "WordPress is already installed."
 else
   echo "Installing WordPress via WP-CLI..."
-  compose run --rm wp-cli core install \
-    --url="${SITE_URL}" \
-    --title="${SITE_TITLE}" \
-    --admin_user="${ADMIN_USER}" \
-    --admin_password="${ADMIN_PASSWORD}" \
-    --admin_email="${ADMIN_EMAIL}" \
+  wp core install \
+    --url="$SITE_URL" \
+    --title="$SITE_TITLE" \
+    --admin_user="$ADMIN_USER" \
+    --admin_password="$ADMIN_PASSWORD" \
+    --admin_email="$ADMIN_EMAIL" \
     --skip-email
 fi
 
 echo "Activating the WP MCP AI plugin and setting defaults..."
-compose run --rm wp-cli plugin activate wp-mcp-ai >/dev/null
-compose run --rm wp-cli rewrite structure '/%postname%/' --hard >/dev/null
-compose run --rm wp-cli option update blogdescription 'WordPress Codex test environment for WP MCP AI' >/dev/null
+wp plugin activate wp-mcp-ai >/dev/null
+wp rewrite structure '/%postname%/' --hard >/dev/null
+wp option update blogdescription 'WordPress Codex test environment for WP MCP AI' >/dev/null
+wp cache flush >/dev/null
 
-compose run --rm wp-cli cache flush >/dev/null
+if [[ -f "$SERVER_PID_FILE" ]]; then
+  if kill -0 "$(cat "$SERVER_PID_FILE")" >/dev/null 2>&1; then
+    SERVER_RUNNING=1
+  else
+    rm -f "$SERVER_PID_FILE"
+    SERVER_RUNNING=0
+  fi
+else
+  SERVER_RUNNING=0
+fi
+
+if [[ ${SERVER_RUNNING:-0} -ne 1 ]]; then
+  echo "Starting WordPress development server on port ${SERVER_PORT}..."
+  nohup php -d "memory_limit=${PHP_MEMORY_LIMIT}" "$WP_CLI_PHAR" --path="$WP_PATH" --allow-root server --host=0.0.0.0 --port="$SERVER_PORT" \
+    >"$SERVER_LOG_FILE" 2>&1 &
+  echo $! > "$SERVER_PID_FILE"
+else
+  echo "WordPress development server already running (PID $(cat "$SERVER_PID_FILE"))."
+fi
 
 cat <<SUMMARY
 
@@ -92,5 +133,7 @@ WordPress is ready for testing.
 URL:      ${SITE_URL}
 Username: ${ADMIN_USER}
 Password: ${ADMIN_PASSWORD}
+
+Logs:     ${SERVER_LOG_FILE}
 
 SUMMARY
