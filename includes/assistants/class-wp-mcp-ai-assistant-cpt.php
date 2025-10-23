@@ -38,6 +38,7 @@ class WP_MCP_AI_Assistant_CPT {
         $this->registry = $registry;
 
         add_action( 'init', array( __CLASS__, 'register_post_type' ) );
+        add_action( 'init', array( __CLASS__, 'register_meta' ) );
         add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
         add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
         add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
@@ -81,6 +82,244 @@ class WP_MCP_AI_Assistant_CPT {
         );
 
         register_post_type( self::POST_TYPE, $args );
+    }
+
+    /**
+     * Register assistant post meta for REST access and sanitization.
+     */
+    public static function register_meta() {
+        $auth_callback = array( __CLASS__, 'meta_auth_callback' );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_TOOLS,
+            array(
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => array(
+                    'schema' => array(
+                        'type'  => 'array',
+                        'items' => array(
+                            'type' => 'string',
+                        ),
+                    ),
+                ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_tools_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_MODEL,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_model_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_TEMPERATURE,
+            array(
+                'type'              => 'number',
+                'single'            => true,
+                'show_in_rest'      => array(
+                    'schema' => array(
+                        'type'    => 'number',
+                        'minimum' => 0,
+                        'maximum' => 2,
+                    ),
+                ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_temperature_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_SYSTEM_PROMPT,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_system_prompt_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_MEMORY_FILES,
+            array(
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => array(
+                    'schema' => array(
+                        'type'  => 'array',
+                        'items' => array(
+                            'type' => 'integer',
+                        ),
+                    ),
+                ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_memory_files_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_VECTOR_STORE_ID,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_vector_store_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+    }
+
+    /**
+     * Meta capability check for assistant meta values.
+     *
+     * @param bool       $allowed Existing permission.
+     * @param string     $meta_key Meta key being modified.
+     * @param int        $post_id Post ID.
+     * @param int        $user_id User ID.
+     * @param string|array $cap Capability name(s).
+     * @param array      $caps Primitive caps.
+     * @return bool
+     */
+    public static function meta_auth_callback( $allowed, $meta_key, $post_id, $user_id, $cap, $caps ) {
+        unset( $allowed, $meta_key, $user_id, $cap, $caps );
+
+        return current_user_can( 'edit_post', $post_id );
+    }
+
+    /**
+     * Sanitize tools meta value.
+     *
+     * @param mixed $tools Raw tools value.
+     * @return array
+     */
+    public static function sanitize_tools_meta( $tools ) {
+        if ( ! is_array( $tools ) ) {
+            return array();
+        }
+
+        $registry  = WP_MCP_AI_Tool_Registry::get_instance();
+        $available = array();
+
+        foreach ( $registry->get_tools() as $tool ) {
+            $available[] = $tool->get_slug();
+        }
+
+        $sanitized = array();
+
+        foreach ( $tools as $tool_slug ) {
+            $tool_slug = sanitize_key( $tool_slug );
+            if ( in_array( $tool_slug, $available, true ) ) {
+                $sanitized[] = $tool_slug;
+            }
+        }
+
+        return array_values( array_unique( $sanitized ) );
+    }
+
+    /**
+     * Sanitize model meta value.
+     *
+     * @param mixed $model Raw model value.
+     * @return string
+     */
+    public static function sanitize_model_meta( $model ) {
+        if ( ! is_string( $model ) ) {
+            return '';
+        }
+
+        return sanitize_text_field( $model );
+    }
+
+    /**
+     * Sanitize temperature meta value.
+     *
+     * @param mixed $temperature Raw temperature value.
+     * @return float|null
+     */
+    public static function sanitize_temperature_meta( $temperature ) {
+        if ( is_string( $temperature ) ) {
+            $temperature = trim( $temperature );
+        }
+
+        if ( '' === $temperature || null === $temperature ) {
+            return null;
+        }
+
+        if ( is_numeric( $temperature ) ) {
+            $temperature = floatval( $temperature );
+            if ( $temperature < 0 || $temperature > 2 ) {
+                return null;
+            }
+
+            return $temperature;
+        }
+
+        return null;
+    }
+
+    /**
+     * Sanitize system prompt meta value.
+     *
+     * @param mixed $prompt Raw prompt value.
+     * @return string
+     */
+    public static function sanitize_system_prompt_meta( $prompt ) {
+        if ( ! is_string( $prompt ) ) {
+            return '';
+        }
+
+        return wp_kses_post( $prompt );
+    }
+
+    /**
+     * Sanitize memory files meta value.
+     *
+     * @param mixed $memory_files Raw memory file IDs.
+     * @return array
+     */
+    public static function sanitize_memory_files_meta( $memory_files ) {
+        if ( ! is_array( $memory_files ) ) {
+            return array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $memory_files as $file_id ) {
+            $file_id = absint( $file_id );
+            if ( $file_id && 'attachment' === get_post_type( $file_id ) ) {
+                $sanitized[] = $file_id;
+            }
+        }
+
+        return array_values( array_unique( $sanitized ) );
+    }
+
+    /**
+     * Sanitize vector store ID meta value.
+     *
+     * @param mixed $vector_store_id Raw vector store ID.
+     * @return string
+     */
+    public static function sanitize_vector_store_meta( $vector_store_id ) {
+        if ( ! is_string( $vector_store_id ) ) {
+            return '';
+        }
+
+        return sanitize_text_field( $vector_store_id );
     }
 
     /**
@@ -614,6 +853,10 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post    Post object.
      */
     public function save_post( $post_id, $post ) {
+        if ( ( function_exists( 'wp_is_json_request' ) && wp_is_json_request() ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+            return;
+        }
+
         $tools_nonce_verified         = false;
         $defaults_nonce_verified      = false;
         $base_knowledge_nonce_verified = false;
@@ -644,53 +887,41 @@ class WP_MCP_AI_Assistant_CPT {
 
         if ( $tools_nonce_verified ) {
             $tool_slugs = array();
-            if ( isset( $_POST['wp_mcp_ai_tools'] ) && is_array( $_POST['wp_mcp_ai_tools'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                $available = array();
-                foreach ( $this->registry->get_tools() as $tool ) {
-                    $available[] = $tool->get_slug();
-                }
-
-                foreach ( $_POST['wp_mcp_ai_tools'] as $slug ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                    $slug = sanitize_key( wp_unslash( $slug ) );
-                    if ( in_array( $slug, $available, true ) ) {
-                        $tool_slugs[] = $slug;
-                    }
-                }
+            if ( isset( $_POST['wp_mcp_ai_tools'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $tool_slugs = self::sanitize_tools_meta( wp_unslash( $_POST['wp_mcp_ai_tools'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
             }
 
             update_post_meta( $post_id, self::META_TOOLS, $tool_slugs );
         }
 
         if ( $defaults_nonce_verified ) {
-            $model = isset( $_POST['wp_mcp_ai_model'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $model = isset( $_POST['wp_mcp_ai_model'] ) ? self::sanitize_model_meta( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
             update_post_meta( $post_id, self::META_MODEL, $model );
 
-            $temperature_raw = isset( $_POST['wp_mcp_ai_temperature'] ) ? wp_unslash( $_POST['wp_mcp_ai_temperature'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $temperature     = is_numeric( $temperature_raw ) ? floatval( $temperature_raw ) : '';
-            if ( '' !== $temperature && ( $temperature < 0 || $temperature > 2 ) ) {
-                $temperature = '';
+            $temperature = null;
+            if ( isset( $_POST['wp_mcp_ai_temperature'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $temperature = self::sanitize_temperature_meta( wp_unslash( $_POST['wp_mcp_ai_temperature'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
             }
-            update_post_meta( $post_id, self::META_TEMPERATURE, $temperature );
 
-            $system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? wp_kses_post( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            if ( null === $temperature ) {
+                delete_post_meta( $post_id, self::META_TEMPERATURE );
+            } else {
+                update_post_meta( $post_id, self::META_TEMPERATURE, $temperature );
+            }
+
+            $system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
             update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
         }
 
         if ( $base_knowledge_nonce_verified ) {
             $memory_files = array();
-            if ( isset( $_POST['wp_mcp_ai_memory_files'] ) && is_array( $_POST['wp_mcp_ai_memory_files'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                foreach ( $_POST['wp_mcp_ai_memory_files'] as $file_id ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                    $file_id = absint( $file_id );
-                    if ( $file_id && 'attachment' === get_post_type( $file_id ) ) {
-                        $memory_files[] = $file_id;
-                    }
-                }
+            if ( isset( $_POST['wp_mcp_ai_memory_files'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $memory_files = self::sanitize_memory_files_meta( wp_unslash( $_POST['wp_mcp_ai_memory_files'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
             }
 
-            $memory_files = array_values( array_unique( $memory_files ) );
             update_post_meta( $post_id, self::META_MEMORY_FILES, $memory_files );
 
-            $vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? self::sanitize_vector_store_meta( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
             update_post_meta( $post_id, self::META_VECTOR_STORE_ID, $vector_store_id );
         }
     }
