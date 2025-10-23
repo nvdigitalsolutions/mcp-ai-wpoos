@@ -328,12 +328,122 @@ class WP_MCP_AI_Logger {
                 continue;
             }
 
-            $content = isset( $message['content'] ) ? (string) $message['content'] : '';
-            $message['content'] = self::truncate_string( $content, 120 );
-            $limited[]          = $message;
+            $limited[] = self::limit_single_message_payload( $message );
         }
 
         return $limited;
+    }
+
+    /**
+     * Limit the payload of an individual message.
+     *
+     * @param array $message Raw message array.
+     * @return array
+     */
+    protected static function limit_single_message_payload( array $message ) {
+        $limited = self::deep_clone_value( $message );
+
+        if ( isset( $limited['content'] ) ) {
+            $limited['content'] = self::limit_message_content( $limited['content'] );
+        }
+
+        return $limited;
+    }
+
+    /**
+     * Limit structured message content so it can be safely logged.
+     *
+     * @param mixed $content Structured message content.
+     * @return mixed
+     */
+    protected static function limit_message_content( $content ) {
+        if ( is_string( $content ) ) {
+            return self::truncate_string( $content, 160 );
+        }
+
+        if ( is_array( $content ) ) {
+            $limited = array();
+
+            foreach ( $content as $segment ) {
+                if ( is_string( $segment ) ) {
+                    $limited[] = self::truncate_string( $segment, 160 );
+                    continue;
+                }
+
+                if ( ! is_array( $segment ) ) {
+                    $limited[] = $segment;
+                    continue;
+                }
+
+                $limited[] = self::limit_message_segment( $segment );
+            }
+
+            return $limited;
+        }
+
+        if ( is_object( $content ) ) {
+            return self::truncate_strings_in_structure( $content, 160 );
+        }
+
+        return $content;
+    }
+
+    /**
+     * Limit individual structured message segments prior to logging.
+     *
+     * @param array $segment Message segment array.
+     * @return array
+     */
+    protected static function limit_message_segment( array $segment ) {
+        $limited = self::truncate_strings_in_structure( $segment, 160 );
+
+        if ( isset( $limited['text'] ) ) {
+            $limited['text'] = self::limit_segment_text_field( $limited['text'] );
+        }
+
+        if ( isset( $limited['content'] ) ) {
+            $limited['content'] = self::limit_message_content( $limited['content'] );
+        }
+
+        return $limited;
+    }
+
+    /**
+     * Normalise different "text" representations within a message segment.
+     *
+     * @param mixed $value Raw text field value.
+     * @return mixed
+     */
+    protected static function limit_segment_text_field( $value ) {
+        if ( is_string( $value ) ) {
+            return self::truncate_string( $value, 160 );
+        }
+
+        if ( is_array( $value ) ) {
+            $limited = self::truncate_strings_in_structure( $value, 160 );
+
+            if ( isset( $limited['annotations'] ) && is_array( $limited['annotations'] ) ) {
+                $limited['annotations'] = array(
+                    'count' => count( $limited['annotations'] ),
+                );
+            }
+
+            return $limited;
+        }
+
+        if ( is_object( $value ) ) {
+            $limited = self::truncate_strings_in_structure( $value, 160 );
+
+            if ( isset( $limited['annotations'] ) && is_array( $limited['annotations'] ) ) {
+                $limited['annotations'] = array(
+                    'count' => count( $limited['annotations'] ),
+                );
+            }
+
+            return $limited;
+        }
+
+        return $value;
     }
 
     /**

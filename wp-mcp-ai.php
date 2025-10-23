@@ -3,7 +3,7 @@
  * Plugin Name: WP MCP AI
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
  * Description: Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
- * Version: 0.9.0
+ * Version: 1.0.0
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv2 or later
@@ -12,7 +12,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-define( 'WP_MCP_AI_VERSION', '0.9.0' );
+define( 'WP_MCP_AI_VERSION', '1.0.0' );
 define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
 
