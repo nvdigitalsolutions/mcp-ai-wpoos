@@ -161,7 +161,9 @@ class WP_MCP_AI_REST {
         $this->auth_context['token_context']       = is_array( $context ) ? $context : array();
 
         if ( isset( $context['user_id'] ) ) {
-            $this->auth_context['user_id'] = absint( $context['user_id'] );
+            $user_id                              = absint( $context['user_id'] );
+            $this->auth_context['user_id']        = $user_id;
+            $this->maybe_set_current_user( $user_id );
         }
 
         $assistant_id = 0;
@@ -186,7 +188,20 @@ class WP_MCP_AI_REST {
             $this->reset_auth_context();
         }
 
-        $this->auth_context['user_id'] = absint( $user_id );
+        $user_id = absint( $user_id );
+        $this->auth_context['user_id'] = $user_id;
+        $this->maybe_set_current_user( $user_id );
+    }
+
+    /**
+     * Sync the global current user with the authenticated context when available.
+     *
+     * @param int $user_id WordPress user identifier.
+     */
+    protected function maybe_set_current_user( $user_id ) {
+        if ( $user_id > 0 ) {
+            wp_set_current_user( $user_id );
+        }
     }
 
     /**
