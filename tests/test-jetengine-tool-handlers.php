@@ -254,4 +254,76 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
         $this->assertSame( '99', $result['data']['id'] );
         $this->assertSame( 'library', $result['data']['params']['instance'] );
     }
+
+    /**
+     * Remote fallbacks should authenticate with a proxy token when cookies are unavailable.
+     */
+    public function test_dispatch_remote_uses_proxy_token_for_authentication() {
+        $captured_args = null;
+
+        $http_interceptor = function( $preempt, $parsed_args, $url ) use ( &$captured_args ) {
+            $captured_args = $parsed_args;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'operation' => 'get_items',
+                        'instance'  => 'library',
+                    )
+                ),
+                'response' => array(
+                    'code' => 200,
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_interceptor, 10, 3 );
+
+        $result = WP_MCP_AI_JetEngine_Tool_Handlers::dispatch(
+            'get_items',
+            array(
+                'params'    => array(
+                    'instance' => 'library',
+                ),
+                'transport' => 'http',
+            ),
+            array( 'user_id' => $this->user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_interceptor, 10 );
+
+        $this->assertNotNull( $captured_args );
+        $this->assertTrue( $result['success'] );
+        $this->assertSame( 'http', $result['transport'] );
+        $this->assertSame( 200, $result['status'] );
+
+        $this->assertArrayHasKey( 'headers', $captured_args );
+        $this->assertArrayHasKey( WP_MCP_AI_JetEngine_Tool_Handlers::PROXY_HEADER, $captured_args['headers'] );
+
+        $proxy_token = $captured_args['headers'][ WP_MCP_AI_JetEngine_Tool_Handlers::PROXY_HEADER ];
+        $this->assertNotEmpty( $proxy_token );
+
+        $reflection = new ReflectionClass( WP_MCP_AI_JetEngine_Tool_Handlers::class );
+        $method     = $reflection->getMethod( 'get_proxy_transient_key' );
+        $method->setAccessible( true );
+        $transient_key = $method->invoke( null, $proxy_token );
+
+        $payload = get_transient( $transient_key );
+        $this->assertIsArray( $payload );
+        $this->assertSame( $this->user_id, $payload['user_id'] );
+
+        wp_set_current_user( 0 );
+
+        $request = new WP_REST_Request( 'GET', '/jet-engine/v2/get-items/' );
+        $request->set_header( WP_MCP_AI_JetEngine_Tool_Handlers::PROXY_HEADER, $proxy_token );
+
+        $server = rest_get_server();
+        apply_filters( 'rest_authentication_errors', null, $request, $server );
+
+        $this->assertSame( $this->user_id, get_current_user_id() );
+        $this->assertFalse( get_transient( $transient_key ) );
+
+        wp_set_current_user( $this->user_id );
+    }
 }
