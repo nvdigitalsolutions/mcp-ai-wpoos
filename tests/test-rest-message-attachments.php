@@ -3,6 +3,7 @@
  * Tests for REST chat message attachment handling.
  */
 class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
+    use WP_MCP_AI_Docx_Test_Helper;
 
     /**
      * Ensure plain string messages are normalised into text segments.
@@ -307,6 +308,53 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure DOCX file attachments are accepted and forwarded to the model.
+     */
+    public function test_docx_file_attachment_is_prepared() {
+        $assistant_id = $this->create_assistant_post();
+
+        list( $attachment_id, $file_path ) = $this->create_docx_attachment( 'notes.docx', "Important\nDOCX notes." );
+
+        $expected_file_id = 'wp-attachment-' . $attachment_id;
+        $expected_base64  = base64_encode( (string) file_get_contents( $file_path ) );
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'          => 'input_file',
+                            'attachment_id' => $attachment_id,
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) use ( $expected_file_id ) {
+                $this->assertNotEmpty( $messages );
+
+                $segment = $messages[0]['content'][0];
+                $this->assertSame( 'input_file', $segment['type'] );
+                $this->assertSame( $expected_file_id, $segment['file_id'] );
+
+                return true;
+            },
+            function ( $options ) use ( $expected_file_id, $expected_base64 ) {
+                $this->assertArrayHasKey( 'attachments', $options );
+                $this->assertNotEmpty( $options['attachments'] );
+
+                $attachment = $options['attachments'][0];
+                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $attachment['mime_type'] );
+                $this->assertSame( $expected_base64, $attachment['data'] );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure an invalid message role triggers a REST error response.
      */
     public function test_invalid_role_is_rejected() {
@@ -482,5 +530,28 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         );
 
         return $attachment_id;
+    }
+
+    /**
+     * Create a DOCX attachment for testing.
+     *
+     * @param string $filename File name.
+     * @param string $text     Text content.
+     * @return array
+     */
+    protected function create_docx_attachment( $filename, $text ) {
+        $upload = $this->create_docx_upload( $filename, $text );
+
+        $attachment_id = self::factory()->attachment->create_upload_object( $upload['file'] );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_title'  => 'DOCX Document',
+                'post_status' => 'inherit',
+            )
+        );
+
+        return array( $attachment_id, $upload['file'] );
     }
 }

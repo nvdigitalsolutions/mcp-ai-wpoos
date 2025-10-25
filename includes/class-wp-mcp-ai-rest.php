@@ -1634,6 +1634,17 @@ class WP_MCP_AI_REST {
             return '';
         }
 
+        $docx_mimes = array(
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+            'application/vnd.ms-word.document.macroEnabled.12',
+            'application/vnd.ms-word.template.macroEnabled.12',
+        );
+
+        if ( in_array( $mime_type, $docx_mimes, true ) ) {
+            return $this->extract_docx_text( $file_path );
+        }
+
         $textual_mimes = array(
             'text/',
             'application/json',
@@ -1650,6 +1661,81 @@ class WP_MCP_AI_REST {
         }
 
         return (string) $this->read_file_contents( $file_path );
+    }
+
+    /**
+     * Extract text from a DOCX-based file.
+     *
+     * @param string $file_path File system path.
+     * @return string
+     */
+    protected function extract_docx_text( $file_path ) {
+        if ( ! class_exists( 'ZipArchive' ) ) {
+            return '';
+        }
+
+        $zip = new ZipArchive();
+        $opened = $zip->open( $file_path );
+
+        if ( true !== $opened ) {
+            return '';
+        }
+
+        $flags = 0;
+
+        if ( defined( 'ZipArchive::FL_NOCASE' ) ) {
+            $flags |= ZipArchive::FL_NOCASE;
+        }
+
+        if ( defined( 'ZipArchive::FL_NODIR' ) ) {
+            $flags |= ZipArchive::FL_NODIR;
+        }
+
+        $document_index = $zip->locateName( 'word/document.xml', $flags );
+
+        if ( false === $document_index && 0 !== $flags ) {
+            $document_index = $zip->locateName( 'word/document.xml' );
+        }
+
+        if ( false === $document_index ) {
+            $zip->close();
+            return '';
+        }
+
+        $xml_content = $zip->getFromIndex( $document_index );
+        $zip->close();
+
+        if ( false === $xml_content || '' === $xml_content ) {
+            return '';
+        }
+
+        $xml_content = preg_replace( '/<w:br[^>]*\/>/i', "\n", $xml_content );
+        $xml_content = preg_replace( '/<w:cr[^>]*\/>/i', "\n", $xml_content );
+        $xml_content = preg_replace( '/<w:tab[^>]*\/>/i', "\t", $xml_content );
+        $xml_content = preg_replace( '/<\/w:p>/i', "</w:p>\n", $xml_content );
+
+        $previous = libxml_use_internal_errors( true );
+
+        $document = new DOMDocument();
+        $document->preserveWhiteSpace = false;
+        $loaded = $document->loadXML( $xml_content );
+
+        if ( ! $loaded ) {
+            libxml_clear_errors();
+            libxml_use_internal_errors( $previous );
+            return '';
+        }
+
+        $text = $document->textContent;
+
+        libxml_clear_errors();
+        libxml_use_internal_errors( $previous );
+
+        if ( ! is_string( $text ) ) {
+            return '';
+        }
+
+        return trim( $text );
     }
 
     /**
