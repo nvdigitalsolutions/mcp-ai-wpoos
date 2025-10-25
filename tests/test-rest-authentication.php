@@ -35,6 +35,7 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 
         delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
         remove_all_filters( 'wp_mcp_ai_pre_validate_bearer_token' );
+        remove_all_filters( 'wp_mcp_ai_map_bearer_to_user_id' );
 
         parent::tearDown();
     }
@@ -162,5 +163,38 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_Error::class, $result );
         $this->assertSame( 'wp_mcp_ai_invalid_bearer_token', $result->get_error_code() );
+    }
+
+    /**
+     * Mapping a bearer token to a WordPress user should update the current user context.
+     */
+    public function test_bearer_token_mapping_sets_current_user() {
+        $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
+
+        wp_set_current_user( 0 );
+
+        add_filter(
+            'wp_mcp_ai_pre_validate_bearer_token',
+            static function () {
+                return true;
+            }
+        );
+
+        add_filter(
+            'wp_mcp_ai_map_bearer_to_user_id',
+            static function ( $mapped, $payload, $request ) use ( $user_id ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+                return $user_id;
+            },
+            10,
+            3
+        );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_header( 'Authorization', 'Bearer placeholder' );
+
+        $result = $this->rest_controller->permissions_check( $request );
+
+        $this->assertTrue( $result );
+        $this->assertSame( $user_id, get_current_user_id() );
     }
 }
