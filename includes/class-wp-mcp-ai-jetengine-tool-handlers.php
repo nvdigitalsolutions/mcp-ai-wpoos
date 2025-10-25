@@ -434,12 +434,15 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
     /**
      * Authenticate proxied JetEngine requests dispatched over HTTP.
      *
-     * @param mixed            $result  Existing authentication error.
-     * @param WP_REST_Request  $request Current REST request.
-     * @param WP_REST_Server   $server  REST server instance.
+     * @param mixed                 $result  Existing authentication error.
+     * @param WP_REST_Request|null $request Current REST request, when provided.
+     * @param WP_REST_Server|null  $server  REST server instance.
      * @return mixed
      */
-    public static function maybe_authenticate_proxy_request( $result, WP_REST_Request $request, $server ) {
+    public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) {
+        if ( ! $request instanceof WP_REST_Request ) {
+            return $result;
+        }
         if ( null !== $result ) {
             return $result;
         }
