@@ -38,6 +38,11 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
         $this->register_mock_routes();
     }
 
+    protected function tearDown(): void {
+        self::$routes_registered = false;
+        parent::tearDown();
+    }
+
     /**
      * Register mock JetEngine routes so dispatch() can exercise CRUD flows.
      */
@@ -46,11 +51,29 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
             return;
         }
 
-        $server = rest_get_server();
-        if ( ! $server ) {
-            return;
+        if ( did_action( 'rest_api_init' ) ) {
+            $this->register_mock_rest_routes();
+        } else {
+            add_action( 'rest_api_init', array( $this, 'register_mock_rest_routes' ), 5 );
+            $server = rest_get_server();
+
+            if ( did_action( 'rest_api_init' ) ) {
+                remove_action( 'rest_api_init', array( $this, 'register_mock_rest_routes' ), 5 );
+            } else {
+                do_action( 'rest_api_init', $server instanceof WP_REST_Server ? $server : null );
+                remove_action( 'rest_api_init', array( $this, 'register_mock_rest_routes' ), 5 );
+            }
         }
 
+        self::$routes_registered = true;
+    }
+
+    /**
+     * Register the JetEngine mock routes used during testing.
+     *
+     * @param WP_REST_Server|null $server REST server instance.
+     */
+    public function register_mock_rest_routes( ?WP_REST_Server $server = null ) {
         register_rest_route(
             'jet-engine/v2',
             '/add-item/',
@@ -132,9 +155,6 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
                 },
             )
         );
-
-        do_action( 'rest_api_init', $server );
-        self::$routes_registered = true;
     }
 
     /**
