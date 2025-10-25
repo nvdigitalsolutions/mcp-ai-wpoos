@@ -305,6 +305,10 @@ class WP_MCP_AI_Message_Attachments {
             'text/tab-separated-values',
             'application/pdf',
             'application/json',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+            'application/vnd.ms-word.document.macroEnabled.12',
+            'application/vnd.ms-word.template.macroEnabled.12',
         );
 
         $image_mimes = apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes );

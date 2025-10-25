@@ -80,6 +80,7 @@ if ( ! defined( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
 define( 'WP_TESTS_CONFIG_FILE_PATH', $tests_config );
 
 require_once $_tests_dir . '/includes/functions.php';
+require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 
 /**
  * Manually load the plugin being tested.
