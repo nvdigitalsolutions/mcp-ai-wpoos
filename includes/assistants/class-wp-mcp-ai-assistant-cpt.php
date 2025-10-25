@@ -492,17 +492,36 @@ class WP_MCP_AI_Assistant_CPT {
             );
         }
 
+        $nonce_field_name = $this->get_credential_nonce_field_name( $nonce_name, $credential_id );
+
         ob_start();
         ?>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-credential-action" style="display:inline;"<?php echo $confirm_attribute; ?>>
             <input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
             <input type="hidden" name="post_id" value="<?php echo esc_attr( $post_id ); ?>" />
             <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential_id ); ?>" />
-            <?php wp_nonce_field( $nonce_action, $nonce_name ); ?>
+            <?php wp_nonce_field( $nonce_action, $nonce_field_name ); ?>
             <button type="submit" class="<?php echo esc_attr( $button_class ); ?>"><?php echo esc_html( $button_label ); ?></button>
         </form>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Generate a nonce field name unique to a credential.
+     *
+     * @param string $base_name     Base nonce field name.
+     * @param string $credential_id Credential identifier.
+     * @return string
+     */
+    protected function get_credential_nonce_field_name( $base_name, $credential_id ) {
+        $suffix = sanitize_key( $credential_id );
+
+        if ( '' === $suffix ) {
+            return $base_name;
+        }
+
+        return $base_name . '_' . $suffix;
     }
 
     /**
@@ -755,7 +774,9 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
         }
 
-        check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_revoke_nonce' );
+        $nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential_id );
+
+        check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
         $post = get_post( $post_id );
         if ( ! $post || self::POST_TYPE !== $post->post_type ) {
@@ -787,7 +808,9 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
         }
 
-        check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_delete_nonce' );
+        $nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential_id );
+
+        check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
         $post = get_post( $post_id );
         if ( ! $post || self::POST_TYPE !== $post->post_type ) {
