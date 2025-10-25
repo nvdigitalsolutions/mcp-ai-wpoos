@@ -61,9 +61,11 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
                     'description' => __( 'Optional user instruction or message to include in the request.', 'wp-mcp-ai' ),
                 ),
                 'input_variables' => array(
-                    'type'        => 'object',
-                    'description' => __( 'Optional key/value inputs forwarded to the workflow or assistant.', 'wp-mcp-ai' ),
-                    'properties'  => array(),
+                    'type'                 => 'object',
+                    'description'          => __( 'Optional key/value inputs forwarded to the workflow or assistant.', 'wp-mcp-ai' ),
+                    'additionalProperties' => array(
+                        'type' => array( 'string', 'number', 'integer', 'boolean', 'object', 'array', 'null' ),
+                    ),
                 ),
             ),
             'required'             => array( 'action_type', 'identifier' ),
