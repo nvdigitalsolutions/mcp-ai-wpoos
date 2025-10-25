@@ -300,7 +300,7 @@
         if (allowMarkdown) {
             bubble.innerHTML = renderMarkdown(text);
         } else {
-            bubble.textContent = text;
+            bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br />');
         }
 
         entry.appendChild(bubble);
