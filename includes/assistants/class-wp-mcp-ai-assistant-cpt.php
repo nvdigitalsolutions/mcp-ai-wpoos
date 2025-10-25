@@ -41,7 +41,7 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'init', array( __CLASS__, 'register_meta' ) );
         add_filter( 'use_block_editor_for_post_type', array( __CLASS__, 'disable_block_editor_for_post_type' ), 10, 2 );
         add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
-        add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
+        add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
         add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
         add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
         add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
@@ -869,6 +869,10 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post    Post object.
      */
     public function save_post( $post_id, $post ) {
+        if ( self::POST_TYPE !== get_post_type( $post_id ) ) {
+            return;
+        }
+
         $tools_nonce_verified         = false;
         $defaults_nonce_verified      = false;
         $base_knowledge_nonce_verified = false;
