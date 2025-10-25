@@ -189,6 +189,56 @@ class WP_MCP_AI_Credentials {
     }
 
     /**
+     * Permanently delete a credential.
+     *
+     * @param int    $assistant_id  Assistant post ID.
+     * @param string $credential_id Credential identifier.
+     * @param int    $user_id       Acting user ID.
+     * @return array|WP_Error Deleted credential record on success.
+     */
+    public static function delete_credential( $assistant_id, $credential_id, $user_id ) {
+        $assistant_id  = absint( $assistant_id );
+        $credential_id = sanitize_key( $credential_id );
+        $user_id       = absint( $user_id );
+
+        if ( ! self::is_valid_assistant( $assistant_id ) ) {
+            return new WP_Error( 'wp_mcp_ai_invalid_assistant', __( 'Unable to delete the credential for the requested assistant.', 'wp-mcp-ai' ) );
+        }
+
+        if ( '' === $credential_id ) {
+            return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+        }
+
+        $credentials = self::get_credentials( $assistant_id );
+
+        foreach ( $credentials as $index => $credential ) {
+            if ( $credential_id !== $credential['id'] ) {
+                continue;
+            }
+
+            $deleted = $credential;
+            unset( $credentials[ $index ] );
+
+            self::store_credentials( $assistant_id, array_values( $credentials ) );
+            self::remove_from_index( $credential_id );
+
+            WP_MCP_AI_Logger::log_event(
+                'credential_deleted',
+                'Assistant credential deleted.',
+                array(
+                    'assistant_id'  => $assistant_id,
+                    'credential_id' => $credential_id,
+                    'user_id'       => $user_id,
+                )
+            );
+
+            return $deleted;
+        }
+
+        return new WP_Error( 'wp_mcp_ai_unknown_credential', __( 'The requested credential could not be found.', 'wp-mcp-ai' ) );
+    }
+
+    /**
      * Validate a credential token.
      *
      * @param string   $token          Raw token.
