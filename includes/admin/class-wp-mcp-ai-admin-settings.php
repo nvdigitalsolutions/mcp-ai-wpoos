@@ -33,9 +33,12 @@ class WP_MCP_AI_Admin_Settings {
     public static function get_default_settings() {
         return array(
             'openai_api_key'       => '',
+            'gemini_api_key'       => '',
             'default_assistant'    => 0,
             'enable_logging'       => false,
             'default_model'        => 'gpt-4o-mini',
+            'default_gemini_model' => 'gemini-1.5-flash',
+            'default_provider'     => 'openai',
             'request_timeout'      => 30,
             'auth0_domain'         => '',
             'auth0_audience'       => '',
@@ -116,7 +119,7 @@ class WP_MCP_AI_Admin_Settings {
 
         add_settings_field(
             'default_model',
-            __( 'Default Model', 'wp-mcp-ai' ),
+            __( 'Default OpenAI Model', 'wp-mcp-ai' ),
             array( $this, 'render_default_model_field' ),
             self::PAGE_SLUG,
             'wp_mcp_ai_openai_section'
@@ -128,6 +131,29 @@ class WP_MCP_AI_Admin_Settings {
             array( $this, 'render_timeout_field' ),
             self::PAGE_SLUG,
             'wp_mcp_ai_openai_section'
+        );
+
+        add_settings_section(
+            'wp_mcp_ai_gemini_section',
+            __( 'Gemini Configuration', 'wp-mcp-ai' ),
+            '__return_false',
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'gemini_api_key',
+            __( 'Gemini API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_gemini_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gemini_section'
+        );
+
+        add_settings_field(
+            'default_gemini_model',
+            __( 'Default Gemini Model', 'wp-mcp-ai' ),
+            array( $this, 'render_default_gemini_model_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gemini_section'
         );
 
         add_settings_section(
@@ -166,6 +192,14 @@ class WP_MCP_AI_Admin_Settings {
             __( 'Assistant Defaults', 'wp-mcp-ai' ),
             '__return_false',
             self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'default_provider',
+            __( 'Default Provider', 'wp-mcp-ai' ),
+            array( $this, 'render_default_provider_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_assistant_section'
         );
 
         add_settings_field(
@@ -217,6 +251,10 @@ class WP_MCP_AI_Admin_Settings {
             $clean['openai_api_key'] = trim( sanitize_text_field( $settings['openai_api_key'] ) );
         }
 
+        if ( isset( $settings['gemini_api_key'] ) ) {
+            $clean['gemini_api_key'] = trim( sanitize_text_field( $settings['gemini_api_key'] ) );
+        }
+
         if ( isset( $settings['default_assistant'] ) ) {
             $clean['default_assistant'] = absint( $settings['default_assistant'] );
         }
@@ -225,6 +263,23 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['default_model'] ) ) {
             $clean['default_model'] = sanitize_text_field( $settings['default_model'] );
+        }
+
+        if ( isset( $settings['default_gemini_model'] ) ) {
+            $clean['default_gemini_model'] = sanitize_text_field( $settings['default_gemini_model'] );
+        }
+
+        if ( isset( $settings['default_provider'] ) ) {
+            $provider = sanitize_key( $settings['default_provider'] );
+            $allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+
+            if ( ! is_array( $allowed ) ) {
+                $allowed = array( 'openai', 'gemini' );
+            }
+
+            if ( in_array( $provider, $allowed, true ) ) {
+                $clean['default_provider'] = $provider;
+            }
         }
 
         if ( isset( $settings['request_timeout'] ) ) {
@@ -330,6 +385,58 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_api_key]" value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gemini API key field.
+     */
+    public function render_gemini_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the default Gemini model field.
+     */
+    public function render_default_gemini_model_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_gemini_model]" value="<?php echo esc_attr( $settings['default_gemini_model'] ); ?>" class="regular-text" />
+        <?php
+    }
+
+    /**
+     * Render the default provider dropdown field.
+     */
+    public function render_default_provider_field() {
+        $settings = self::get_settings();
+        $current  = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+        $choices  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+
+        if ( ! is_array( $choices ) ) {
+            $choices = array( 'openai', 'gemini' );
+        }
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
+            <?php
+            foreach ( $choices as $choice ) {
+                $choice = sanitize_key( $choice );
+                if ( '' === $choice ) {
+                    continue;
+                }
+
+                $label = 'openai' === $choice ? __( 'OpenAI', 'wp-mcp-ai' ) : __( 'Gemini', 'wp-mcp-ai' );
+                ?>
+                <option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $current, $choice ); ?>><?php echo esc_html( $label ); ?></option>
+                <?php
+            }
+            ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Select which provider new assistants should use when no override is set.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 

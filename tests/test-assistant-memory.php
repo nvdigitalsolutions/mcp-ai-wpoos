@@ -39,7 +39,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -54,6 +55,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
                 ),
                 $this->callback(
                     function ( $options ) use ( $attachment_id ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayHasKey( 'memory_documents', $options );
                         $this->assertArrayHasKey( 'memory_files', $options );
                         $this->assertSame( array( $attachment_id ), $options['memory_files'] );
@@ -143,7 +146,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -158,6 +162,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
                 ),
                 $this->callback(
                     function ( $options ) use ( $attachment_id ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayHasKey( 'memory_documents', $options );
                         $this->assertCount( 1, $options['memory_documents'] );
 
@@ -235,7 +241,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -250,6 +257,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
                 ),
                 $this->callback(
                     function ( $options ) use ( $public_attachment_id, $private_attachment_id ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayHasKey( 'memory_files', $options );
                         $this->assertSame( array( $public_attachment_id ), $options['memory_files'] );
 
@@ -325,7 +334,8 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 

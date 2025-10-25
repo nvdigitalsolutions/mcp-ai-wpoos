@@ -365,7 +365,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             wp_set_current_user( $user_id );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -413,7 +414,15 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             wp_set_current_user( $user_id );
         }
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $options_callback = function ( $options ) use ( $options_assertion ) {
+            $this->assertArrayHasKey( 'provider', $options );
+            $this->assertSame( 'openai', $options['provider'] );
+
+            return call_user_func( $options_assertion, $options );
+        };
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -422,7 +431,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             ->method( 'create_chat_completion' )
             ->with(
                 $this->callback( $message_assertion ),
-                $this->callback( $options_assertion )
+                $this->callback( $options_callback )
             )
             ->willReturn(
                 array(
@@ -447,9 +456,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     /**
      * Prepare the REST controller instance for testing.
      *
-     * @param WP_MCP_AI_OpenAI_Client $mock_client Mocked OpenAI client.
+     * @param WP_MCP_AI_Language_Model_Router $mock_client Mocked language model router.
      */
-    protected function bootstrap_rest_controller( WP_MCP_AI_OpenAI_Client $mock_client ) {
+    protected function bootstrap_rest_controller( WP_MCP_AI_Language_Model_Router $mock_client ) {
         if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }

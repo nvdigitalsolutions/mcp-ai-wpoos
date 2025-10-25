@@ -21,7 +21,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $requesting_user = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $requesting_user );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -74,7 +75,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
         wp_set_current_user( 0 );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -122,7 +124,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -172,7 +175,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -225,7 +229,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -293,7 +298,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -361,7 +367,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -426,7 +433,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -491,7 +499,8 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->disableOriginalConstructor()
             ->getMock();
@@ -550,7 +559,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $requesting_user = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $requesting_user );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -591,7 +600,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
         update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -638,7 +647,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $issuer_id );
         wp_set_current_user( 0 );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -692,7 +701,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
         update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -758,7 +767,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
 
         update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -780,7 +789,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     /**
      * Bootstrap the REST controller with a mocked client.
      *
-     * @param WP_MCP_AI_OpenAI_Client $client Client mock instance.
+     * @param WP_MCP_AI_Language_Model_Router $client Client mock instance.
      */
     protected function bootstrap_rest_controller( $client ) {
         if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {

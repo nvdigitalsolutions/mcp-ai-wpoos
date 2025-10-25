@@ -22,6 +22,10 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
         $this->assertArrayHasKey( 'default_model', $defaults );
         $this->assertSame( 'gpt-4o-mini', $defaults['default_model'] );
+        $this->assertArrayHasKey( 'default_gemini_model', $defaults );
+        $this->assertSame( 'gemini-1.5-flash', $defaults['default_gemini_model'] );
+        $this->assertArrayHasKey( 'default_provider', $defaults );
+        $this->assertSame( 'openai', $defaults['default_provider'] );
     }
 
     /**
@@ -84,5 +88,35 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         );
 
         $this->assertSame( sanitize_text_field( $dirty_value ), $sanitized['default_model'] );
+    }
+
+    /**
+     * Ensure sanitize_settings accepts valid default provider values.
+     */
+    public function test_sanitize_settings_accepts_valid_default_provider() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'default_provider' => 'gemini',
+            )
+        );
+
+        $this->assertSame( 'gemini', $sanitized['default_provider'] );
+    }
+
+    /**
+     * Ensure sanitize_settings rejects unsupported default provider values.
+     */
+    public function test_sanitize_settings_rejects_invalid_default_provider() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'default_provider' => 'invalid-provider',
+            )
+        );
+
+        $this->assertSame( 'openai', $sanitized['default_provider'] );
     }
 }

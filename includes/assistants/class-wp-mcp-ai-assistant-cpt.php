@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Assistant_CPT {
     const POST_TYPE = 'mcp_ai_assistant';
     const META_TOOLS = '_wp_mcp_ai_tools';
+    const META_PROVIDER = '_wp_mcp_ai_provider';
     const META_MODEL = '_wp_mcp_ai_model';
     const META_TEMPERATURE = '_wp_mcp_ai_temperature';
     const META_SYSTEM_PROMPT   = '_wp_mcp_ai_system_prompt';
@@ -129,6 +130,18 @@ class WP_MCP_AI_Assistant_CPT {
                     ),
                 ),
                 'sanitize_callback' => array( __CLASS__, 'sanitize_tools_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_PROVIDER,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_provider_meta' ),
                 'auth_callback'     => $auth_callback,
             )
         );
@@ -255,6 +268,27 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return array_values( array_unique( $sanitized ) );
+    }
+
+    /**
+     * Sanitize provider meta value.
+     *
+     * @param mixed $provider Raw provider value.
+     * @return string
+     */
+    public static function sanitize_provider_meta( $provider ) {
+        $provider = is_string( $provider ) ? sanitize_key( $provider ) : '';
+
+        $allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+        if ( ! is_array( $allowed_providers ) ) {
+            $allowed_providers = array( 'openai', 'gemini' );
+        }
+
+        if ( ! in_array( $provider, $allowed_providers, true ) ) {
+            return '';
+        }
+
+        return $provider;
     }
 
     /**
@@ -670,15 +704,47 @@ class WP_MCP_AI_Assistant_CPT {
 
         wp_nonce_field( 'wp_mcp_ai_defaults_meta', 'wp_mcp_ai_defaults_meta_nonce' );
 
-        $model        = get_post_meta( $post->ID, self::META_MODEL, true );
-        $temperature  = get_post_meta( $post->ID, self::META_TEMPERATURE, true );
+        $provider      = get_post_meta( $post->ID, self::META_PROVIDER, true );
+        $provider      = self::sanitize_provider_meta( $provider );
+        $model         = get_post_meta( $post->ID, self::META_MODEL, true );
+        $temperature   = get_post_meta( $post->ID, self::META_TEMPERATURE, true );
         $system_prompt = get_post_meta( $post->ID, self::META_SYSTEM_PROMPT, true );
+
+        $settings         = WP_MCP_AI_Admin_Settings::get_settings();
+        $default_provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+
+        if ( '' === $provider ) {
+            $provider = $default_provider;
+        }
+
+        $provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+        if ( ! is_array( $provider_choices ) ) {
+            $provider_choices = array( 'openai', 'gemini' );
+        }
 
         if ( '' === $temperature ) {
             $temperature = '';
         }
 
         ?>
+        <p>
+            <label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></strong></label>
+            <select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat">
+                <?php
+                foreach ( $provider_choices as $choice ) {
+                    $choice = sanitize_key( $choice );
+                    if ( '' === $choice ) {
+                        continue;
+                    }
+
+                    $label = 'openai' === $choice ? __( 'OpenAI', 'wp-mcp-ai' ) : __( 'Gemini', 'wp-mcp-ai' );
+                    ?>
+                    <option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $provider, $choice ); ?>><?php echo esc_html( $label ); ?></option>
+                    <?php
+                }
+                ?>
+            </select>
+        </p>
         <p>
             <label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong></label>
             <input type="text" id="wp-mcp-ai-model" name="wp_mcp_ai_model" value="<?php echo esc_attr( $model ); ?>" class="widefat" />
@@ -1103,6 +1169,16 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         if ( $defaults_nonce_verified ) {
+            $provider = isset( $_POST['wp_mcp_ai_provider'] )
+                ? self::sanitize_provider_meta( wp_unslash( $_POST['wp_mcp_ai_provider'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                : '';
+
+            if ( '' === $provider ) {
+                delete_post_meta( $post_id, self::META_PROVIDER );
+            } else {
+                update_post_meta( $post_id, self::META_PROVIDER, $provider );
+            }
+
             $model = isset( $_POST['wp_mcp_ai_model'] ) ? self::sanitize_model_meta( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
             update_post_meta( $post_id, self::META_MODEL, $model );
 
@@ -1148,6 +1224,7 @@ class WP_MCP_AI_Assistant_CPT {
 
         $config = array(
             'tools'           => get_post_meta( $assistant_id, self::META_TOOLS, true ),
+            'provider'        => get_post_meta( $assistant_id, self::META_PROVIDER, true ),
             'model'           => get_post_meta( $assistant_id, self::META_MODEL, true ),
             'temperature'     => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
             'system_prompt'   => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
@@ -1157,6 +1234,12 @@ class WP_MCP_AI_Assistant_CPT {
 
         if ( ! is_array( $config['tools'] ) ) {
             $config['tools'] = array();
+        }
+
+        if ( ! is_string( $config['provider'] ) ) {
+            $config['provider'] = '';
+        } else {
+            $config['provider'] = self::sanitize_provider_meta( $config['provider'] );
         }
 
         if ( '' === $config['model'] ) {

@@ -21,6 +21,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
@@ -47,11 +49,13 @@ function wp_mcp_ai_bootstrap() {
     $registry = WP_MCP_AI_Tool_Registry::get_instance();
     $registry->init();
 
-    $client = new WP_MCP_AI_OpenAI_Client();
+    $openai_client = new WP_MCP_AI_OpenAI_Client();
+    $gemini_client = new WP_MCP_AI_Gemini_Client();
+    $router        = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client );
 
     $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
     $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
-    $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $client );
+    $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
     $GLOBALS['wp_mcp_ai_shortcode'] = new WP_MCP_AI_Shortcode();
 }
 

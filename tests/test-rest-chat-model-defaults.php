@@ -14,7 +14,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -25,6 +26,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
                 $this->isType( 'array' ),
                 $this->callback(
                     function ( $options ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayHasKey( 'model', $options );
                         $this->assertSame( 'gpt-4o', $options['model'] );
                         return true;
@@ -72,7 +75,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
         $provided_value  = '  <b>gpt-4o-mini</b>  ';
         $expected_value  = sanitize_text_field( $provided_value );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -83,6 +87,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
                 $this->isType( 'array' ),
                 $this->callback(
                     function ( $options ) use ( $expected_value ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayHasKey( 'model', $options );
                         $this->assertSame( $expected_value, $options['model'] );
                         return true;
@@ -132,7 +138,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
         wp_set_current_user( $user_id );
 
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
             ->onlyMethods( array( 'create_chat_completion' ) )
             ->getMock();
 
@@ -143,6 +150,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
                 $this->isType( 'array' ),
                 $this->callback(
                     function ( $options ) {
+                        $this->assertArrayHasKey( 'provider', $options );
+                        $this->assertSame( 'openai', $options['provider'] );
                         $this->assertArrayNotHasKey( 'model', $options );
                         return true;
                     }
@@ -179,9 +188,9 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
     /**
      * Prepare the REST controller instance for testing.
      *
-     * @param WP_MCP_AI_OpenAI_Client $mock_client Mocked OpenAI client.
+     * @param WP_MCP_AI_Language_Model_Router $mock_client Mocked language model router.
      */
-    protected function bootstrap_rest_controller( WP_MCP_AI_OpenAI_Client $mock_client ) {
+    protected function bootstrap_rest_controller( WP_MCP_AI_Language_Model_Router $mock_client ) {
         if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
             remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
         }

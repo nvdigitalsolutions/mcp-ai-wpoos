@@ -26,9 +26,9 @@ class WP_MCP_AI_REST {
     protected $registry;
 
     /**
-     * OpenAI client.
+     * Language model router.
      *
-     * @var WP_MCP_AI_OpenAI_Client
+     * @var WP_MCP_AI_Language_Model_Router
      */
     protected $client;
 
@@ -42,10 +42,10 @@ class WP_MCP_AI_REST {
     /**
      * Constructor.
      *
-     * @param WP_MCP_AI_Tool_Registry  $registry Tool registry instance.
-     * @param WP_MCP_AI_OpenAI_Client $client   OpenAI client.
+     * @param WP_MCP_AI_Tool_Registry         $registry Tool registry instance.
+     * @param WP_MCP_AI_Language_Model_Router $client   Language model router.
      */
-    public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_OpenAI_Client $client ) {
+    public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_Language_Model_Router $client ) {
         $this->registry = $registry;
         $this->client   = $client;
 
@@ -1395,6 +1395,31 @@ class WP_MCP_AI_REST {
      */
     protected function sanitize_options( $options, array $assistant_config ) {
         $options = is_array( $options ) ? $options : array();
+
+        $provider = '';
+        if ( isset( $options['provider'] ) ) {
+            $provider = sanitize_key( $options['provider'] );
+        }
+
+        if ( empty( $provider ) && ! empty( $assistant_config['provider'] ) ) {
+            $provider = sanitize_key( $assistant_config['provider'] );
+        }
+
+        if ( empty( $provider ) ) {
+            $settings = WP_MCP_AI_Admin_Settings::get_settings();
+            $provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+        }
+
+        $allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+        if ( ! is_array( $allowed_providers ) ) {
+            $allowed_providers = array( 'openai', 'gemini' );
+        }
+
+        if ( ! in_array( $provider, $allowed_providers, true ) ) {
+            $provider = 'openai';
+        }
+
+        $options['provider'] = $provider;
 
         if ( isset( $options['model'] ) ) {
             $options['model'] = sanitize_text_field( $options['model'] );
