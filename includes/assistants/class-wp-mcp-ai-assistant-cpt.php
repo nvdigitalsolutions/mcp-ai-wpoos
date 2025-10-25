@@ -30,6 +30,13 @@ class WP_MCP_AI_Assistant_CPT {
     protected $registry;
 
     /**
+     * Track whether the credential action script has been printed.
+     *
+     * @var bool
+     */
+    protected static $credential_action_script_printed = false;
+
+    /**
      * Constructor.
      *
      * @param WP_MCP_AI_Tool_Registry $registry Tool registry.
@@ -413,7 +420,7 @@ class WP_MCP_AI_Assistant_CPT {
                         get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
                     );
                 } else {
-                    $action_links[] = $this->build_credential_action_form(
+                    $action_links[] = $this->build_credential_action_button(
                         $post->ID,
                         $credential['id'],
                         'wp_mcp_ai_revoke_credential',
@@ -424,7 +431,7 @@ class WP_MCP_AI_Assistant_CPT {
                     );
                 }
 
-                $action_links[] = $this->build_credential_action_form(
+                $action_links[] = $this->build_credential_action_button(
                     $post->ID,
                     $credential['id'],
                     'wp_mcp_ai_delete_credential',
@@ -466,10 +473,12 @@ class WP_MCP_AI_Assistant_CPT {
             esc_url( $issue_url ),
             esc_html__( 'Generate Credential', 'wp-mcp-ai' )
         );
+
+        $this->print_credential_action_script();
     }
 
     /**
-     * Build the markup for a credential action form/button.
+     * Build the markup for a credential action button.
      *
      * @param int    $post_id        Assistant post ID.
      * @param string $credential_id  Credential identifier.
@@ -482,29 +491,105 @@ class WP_MCP_AI_Assistant_CPT {
      *
      * @return string
      */
-    protected function build_credential_action_form( $post_id, $credential_id, $action, $nonce_action, $nonce_name, $button_label, $confirm_prompt, $button_class = 'button button-secondary' ) {
-        $confirm_attribute = '';
+    protected function build_credential_action_button( $post_id, $credential_id, $action, $nonce_action, $nonce_name, $button_label, $confirm_prompt, $button_class = 'button button-secondary' ) {
+        $classes = trim( $button_class . ' wp-mcp-ai-credential-action' );
+        $attributes = array(
+            'type'              => 'button',
+            'class'             => $classes,
+            'data-action'       => $action,
+            'data-post-id'      => $post_id,
+            'data-credential-id'=> $credential_id,
+            'data-nonce-name'   => $nonce_name,
+            'data-nonce-value'  => wp_create_nonce( $nonce_action ),
+            'data-endpoint'     => admin_url( 'admin-post.php' ),
+        );
 
         if ( $confirm_prompt ) {
-            $confirm_attribute = sprintf(
-                ' onsubmit="%s"',
-                esc_attr( 'return confirm(' . wp_json_encode( $confirm_prompt ) . ');' )
-            );
+            $attributes['data-confirm'] = $confirm_prompt;
         }
 
-        $nonce_field_name = $this->get_credential_nonce_field_name( $nonce_name, $credential_id );
+        $attribute_string = '';
+        foreach ( $attributes as $name => $value ) {
+            if ( '' === $value || null === $value ) {
+                continue;
+            }
 
-        ob_start();
+            $escaped_value = ( 'data-endpoint' === $name ) ? esc_url( $value ) : esc_attr( $value );
+            $attribute_string .= sprintf( ' %s="%s"', esc_attr( $name ), $escaped_value );
+        }
+
+        return sprintf( '<button%1$s>%2$s</button>', $attribute_string, esc_html( $button_label ) );
+    }
+
+    /**
+     * Print the JavaScript required to submit credential action buttons as POST requests.
+     */
+    protected function print_credential_action_script() {
+        if ( self::$credential_action_script_printed ) {
+            return;
+        }
+
+        self::$credential_action_script_printed = true;
         ?>
-        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-credential-action" style="display:inline;"<?php echo $confirm_attribute; ?>>
-            <input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
-            <input type="hidden" name="post_id" value="<?php echo esc_attr( $post_id ); ?>" />
-            <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential_id ); ?>" />
-            <?php wp_nonce_field( $nonce_action, $nonce_field_name ); ?>
-            <button type="submit" class="<?php echo esc_attr( $button_class ); ?>"><?php echo esc_html( $button_label ); ?></button>
-        </form>
+        <script type="text/javascript">
+        ( function() {
+            function submitCredentialAction( button ) {
+                if ( ! button ) {
+                    return;
+                }
+
+                var confirmMessage = button.getAttribute( 'data-confirm' );
+                if ( confirmMessage && ! window.confirm( confirmMessage ) ) {
+                    return;
+                }
+
+                var endpoint = button.getAttribute( 'data-endpoint' );
+                if ( ! endpoint ) {
+                    return;
+                }
+
+                var form = document.createElement( 'form' );
+                form.method = 'post';
+                form.action = endpoint;
+                form.style.display = 'none';
+
+                var fields = {
+                    action: button.getAttribute( 'data-action' ),
+                    post_id: button.getAttribute( 'data-post-id' ),
+                    credential_id: button.getAttribute( 'data-credential-id' )
+                };
+
+                var nonceName = button.getAttribute( 'data-nonce-name' );
+                var nonceValue = button.getAttribute( 'data-nonce-value' );
+
+                if ( nonceName && nonceValue ) {
+                    fields[ nonceName ] = nonceValue;
+                }
+
+                for ( var key in fields ) {
+                    if ( Object.prototype.hasOwnProperty.call( fields, key ) && fields[ key ] ) {
+                        var input = document.createElement( 'input' );
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = fields[ key ];
+                        form.appendChild( input );
+                    }
+                }
+
+                document.body.appendChild( form );
+                form.submit();
+            }
+
+            document.addEventListener( 'click', function( event ) {
+                var target = event.target;
+                if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-credential-action' ) ) {
+                    event.preventDefault();
+                    submitCredentialAction( target );
+                }
+            } );
+        } )();
+        </script>
         <?php
-        return ob_get_clean();
     }
 
     /**
