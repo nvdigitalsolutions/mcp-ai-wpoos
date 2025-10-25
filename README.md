@@ -152,6 +152,9 @@ The script runs `composer install` and makes the following Composer scripts avai
 
 These commands automatically resolve the bundled `vendor/bin` tools (such as `phpcs`, `phpcbf`, and `phpunit`), so a global installation is no longer required.
 
+> [!NOTE]
+> The `test:install` script prefers the Composer-provided `wp-phpunit/wp-phpunit` package for the WordPress test suite. Run `composer install` before invoking it, especially on networks where `develop.svn.wordpress.org` is inaccessible.
+
 ---
 
 ## 💬 Frontend Shortcode
