@@ -999,9 +999,10 @@ class WP_MCP_AI_REST {
         $user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : 0;
 
         $context = array(
-            'user_id'      => $user_id,
-            'assistant_id' => $assistant_id,
-            'request'      => $request,
+            'user_id'           => $user_id,
+            'assistant_id'      => $assistant_id,
+            'request'           => $request,
+            'assistant_config'  => $assistant_config,
         );
 
         if ( ! empty( $auth_context['token_authenticated'] ) ) {
@@ -1025,6 +1026,16 @@ class WP_MCP_AI_REST {
          * @param array            $context   Execution context including user_id and assistant_id.
          */
         $prepared_arguments = is_array( $arguments ) ? $arguments : array();
+
+        if ( 'run_openai_external_action' === $tool_slug ) {
+            if ( empty( $prepared_arguments['action_type'] ) && ! empty( $assistant_config['external_action_type'] ) ) {
+                $prepared_arguments['action_type'] = $assistant_config['external_action_type'];
+            }
+
+            if ( empty( $prepared_arguments['identifier'] ) && ! empty( $assistant_config['external_action_identifier'] ) ) {
+                $prepared_arguments['identifier'] = $assistant_config['external_action_identifier'];
+            }
+        }
 
         do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
