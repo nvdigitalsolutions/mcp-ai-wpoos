@@ -44,6 +44,8 @@ class WP_MCP_AI_Admin_Settings {
             'auth0_audience'       => '',
             'auth0_required_scope' => '',
             'delete_on_uninstall'  => false,
+            'crawl4ai_base_url'    => '',
+            'crawl4ai_api_key'     => '',
         );
     }
 
@@ -219,6 +221,29 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_crawl4ai_section',
+            __( 'Crawl4AI Integration', 'wp-mcp-ai' ),
+            '__return_false',
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'crawl4ai_base_url',
+            __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
+            array( $this, 'render_crawl4ai_base_url_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_crawl4ai_section'
+        );
+
+        add_settings_field(
+            'crawl4ai_api_key',
+            __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_crawl4ai_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_crawl4ai_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_maintenance_section',
             __( 'Maintenance', 'wp-mcp-ai' ),
             '__return_false',
@@ -303,6 +328,16 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         $clean['delete_on_uninstall'] = ! empty( $settings['delete_on_uninstall'] );
+
+        if ( isset( $settings['crawl4ai_base_url'] ) ) {
+            $base_url = trim( $settings['crawl4ai_base_url'] );
+
+            $clean['crawl4ai_base_url'] = $base_url ? esc_url_raw( $base_url ) : '';
+        }
+
+        if ( isset( $settings['crawl4ai_api_key'] ) ) {
+            $clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+        }
 
         return $clean;
     }
@@ -396,6 +431,28 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Crawl4AI base URL field.
+     */
+    public function render_crawl4ai_base_url_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
+        <p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Crawl4AI API key field.
+     */
+    public function render_crawl4ai_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
