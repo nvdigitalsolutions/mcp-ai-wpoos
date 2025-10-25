@@ -1222,6 +1222,8 @@ class WP_MCP_AI_REST {
     /**
      * Sanitize the messages payload.
      *
+     * Allowed roles can be customized via the `wp_mcp_ai_allowed_message_roles` filter.
+     *
      * @param mixed $messages Raw messages.
      * @return array|WP_Error
      */
@@ -1233,7 +1235,24 @@ class WP_MCP_AI_REST {
         $attachments_helper = new WP_MCP_AI_Message_Attachments();
         $sanitized          = array();
 
-        $allowed_roles = array( 'user', 'assistant', 'system', 'tool' );
+        $default_roles = array( 'user', 'assistant', 'system', 'tool' );
+        $allowed_roles = apply_filters( 'wp_mcp_ai_allowed_message_roles', $default_roles );
+
+        if ( ! is_array( $allowed_roles ) ) {
+            $allowed_roles = $default_roles;
+        }
+
+        $allowed_roles = array_values(
+            array_filter(
+                array_unique(
+                    array_map( 'sanitize_key', $allowed_roles )
+                )
+            )
+        );
+
+        if ( empty( $allowed_roles ) ) {
+            $allowed_roles = $default_roles;
+        }
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {

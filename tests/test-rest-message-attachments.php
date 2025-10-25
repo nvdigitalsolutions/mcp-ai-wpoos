@@ -400,6 +400,48 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure custom roles can be permitted via the filter.
+     */
+    public function test_custom_role_is_allowed_via_filter() {
+        $assistant_id = $this->create_assistant_post();
+
+        $filter = static function ( $roles ) {
+            $roles[] = 'moderator';
+
+            return $roles;
+        };
+
+        add_filter( 'wp_mcp_ai_allowed_message_roles', $filter );
+
+        try {
+            $this->dispatch_chat_request(
+                $assistant_id,
+                array(
+                    array(
+                        'role'    => 'moderator',
+                        'content' => 'Custom role payload',
+                    ),
+                ),
+                function ( $messages ) {
+                    $this->assertCount( 1, $messages );
+                    $this->assertSame( 'moderator', $messages[0]['role'] );
+                    $this->assertSame( 'text', $messages[0]['content'][0]['type'] );
+                    $this->assertSame( 'Custom role payload', $messages[0]['content'][0]['text'] );
+
+                    return true;
+                },
+                function ( $options ) {
+                    $this->assertArrayNotHasKey( 'attachments', $options );
+
+                    return true;
+                }
+            );
+        } finally {
+            remove_filter( 'wp_mcp_ai_allowed_message_roles', $filter );
+        }
+    }
+
+    /**
      * Dispatch the REST request and apply expectations against the payload.
      *
      * @param int      $assistant_id Assistant post ID.
