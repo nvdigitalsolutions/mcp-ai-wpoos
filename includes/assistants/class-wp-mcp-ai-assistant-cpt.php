@@ -412,28 +412,25 @@ class WP_MCP_AI_Assistant_CPT {
                         get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
                     );
                 } else {
-                    $revoke_url = admin_url( 'admin-post.php' );
-                    ob_start();
-                    ?>
-                    <form method="post" action="<?php echo esc_url( $revoke_url ); ?>">
-                        <?php wp_nonce_field( 'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'], 'wp_mcp_ai_revoke_nonce' ); ?>
-                        <input type="hidden" name="action" value="wp_mcp_ai_revoke_credential" />
-                        <input type="hidden" name="post_id" value="<?php echo esc_attr( $post->ID ); ?>" />
-                        <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential['id'] ); ?>" />
-                        <?php
-                        submit_button(
-                            __( 'Revoke', 'wp-mcp-ai' ),
-                            'link delete',
-                            'submit',
-                            false,
+                    $revoke_url = wp_nonce_url(
+                        add_query_arg(
                             array(
-                                'onclick' => 'return confirm("' . esc_js( __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' ) ) . '");',
-                            )
-                        );
-                        ?>
-                    </form>
-                    <?php
-                    $actions = ob_get_clean();
+                                'action'        => 'wp_mcp_ai_revoke_credential',
+                                'post_id'       => $post->ID,
+                                'credential_id' => $credential['id'],
+                            ),
+                            admin_url( 'admin-post.php' )
+                        ),
+                        'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
+                        'wp_mcp_ai_revoke_nonce'
+                    );
+
+                    $actions = sprintf(
+                        '<a class="button-link delete" href="%1$s" onclick="return confirm(\'%2$s\');">%3$s</a>',
+                        esc_url( $revoke_url ),
+                        esc_js( __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' ) ),
+                        esc_html__( 'Revoke', 'wp-mcp-ai' )
+                    );
                 }
 
                 echo '<tr>';
@@ -448,14 +445,23 @@ class WP_MCP_AI_Assistant_CPT {
             echo '</table>';
         }
 
-        ?>
-        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
-            <?php wp_nonce_field( 'wp_mcp_ai_issue_credential_' . $post->ID, 'wp_mcp_ai_issue_nonce' ); ?>
-            <input type="hidden" name="action" value="wp_mcp_ai_issue_credential" />
-            <input type="hidden" name="post_id" value="<?php echo esc_attr( $post->ID ); ?>" />
-            <?php submit_button( __( 'Generate Credential', 'wp-mcp-ai' ), 'secondary', 'submit', false ); ?>
-        </form>
-        <?php
+        $issue_url = wp_nonce_url(
+            add_query_arg(
+                array(
+                    'action'  => 'wp_mcp_ai_issue_credential',
+                    'post_id' => $post->ID,
+                ),
+                admin_url( 'admin-post.php' )
+            ),
+            'wp_mcp_ai_issue_credential_' . $post->ID,
+            'wp_mcp_ai_issue_nonce'
+        );
+
+        printf(
+            '<p><a class="button button-secondary" href="%1$s">%2$s</a></p>',
+            esc_url( $issue_url ),
+            esc_html__( 'Generate Credential', 'wp-mcp-ai' )
+        );
     }
 
     /**
@@ -661,7 +667,7 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
         }
 
-        $post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
         if ( ! $post_id ) {
             wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
         }
@@ -701,8 +707,8 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
         }
 
-        $post_id       = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-        $credential_id = isset( $_POST['credential_id'] ) ? sanitize_key( wp_unslash( $_POST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $post_id       = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
         if ( ! $post_id || '' === $credential_id ) {
             wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
