@@ -44,6 +44,7 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
         add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
         add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
+        add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
         add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
         add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
     }
@@ -402,8 +403,8 @@ class WP_MCP_AI_Assistant_CPT {
 
             foreach ( $credentials as $credential ) {
                 $created_at = ! empty( $credential['created_at'] ) ? get_date_from_gmt( $credential['created_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) : __( 'Unknown', 'wp-mcp-ai' );
-                $status     = __( 'Active', 'wp-mcp-ai' );
-                $actions    = '&#8212;';
+                $status      = __( 'Active', 'wp-mcp-ai' );
+                $action_links = array();
 
                 if ( ! empty( $credential['revoked_at'] ) ) {
                     $status = sprintf(
@@ -412,26 +413,29 @@ class WP_MCP_AI_Assistant_CPT {
                         get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
                     );
                 } else {
-                    $revoke_url = wp_nonce_url(
-                        add_query_arg(
-                            array(
-                                'action'        => 'wp_mcp_ai_revoke_credential',
-                                'post_id'       => $post->ID,
-                                'credential_id' => $credential['id'],
-                            ),
-                            admin_url( 'admin-post.php' )
-                        ),
+                    $action_links[] = $this->build_credential_action_form(
+                        $post->ID,
+                        $credential['id'],
+                        'wp_mcp_ai_revoke_credential',
                         'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
-                        'wp_mcp_ai_revoke_nonce'
-                    );
-
-                    $actions = sprintf(
-                        '<a class="button-link delete" href="%1$s" onclick="return confirm(\'%2$s\');">%3$s</a>',
-                        esc_url( $revoke_url ),
-                        esc_js( __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' ) ),
-                        esc_html__( 'Revoke', 'wp-mcp-ai' )
+                        'wp_mcp_ai_revoke_nonce',
+                        __( 'Revoke', 'wp-mcp-ai' ),
+                        __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
                     );
                 }
+
+                $action_links[] = $this->build_credential_action_form(
+                    $post->ID,
+                    $credential['id'],
+                    'wp_mcp_ai_delete_credential',
+                    'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
+                    'wp_mcp_ai_delete_nonce',
+                    __( 'Delete', 'wp-mcp-ai' ),
+                    __( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
+                    'button button-secondary delete'
+                );
+
+                $actions = empty( $action_links ) ? '&#8212;' : implode( ' ', $action_links );
 
                 echo '<tr>';
                 echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
@@ -462,6 +466,43 @@ class WP_MCP_AI_Assistant_CPT {
             esc_url( $issue_url ),
             esc_html__( 'Generate Credential', 'wp-mcp-ai' )
         );
+    }
+
+    /**
+     * Build the markup for a credential action form/button.
+     *
+     * @param int    $post_id        Assistant post ID.
+     * @param string $credential_id  Credential identifier.
+     * @param string $action         Admin-post action hook name.
+     * @param string $nonce_action   Action name for nonce verification.
+     * @param string $nonce_name     Nonce field name.
+     * @param string $button_label   Button label.
+     * @param string $confirm_prompt Confirmation prompt shown before submit.
+     * @param string $button_class   CSS classes to apply to the button element.
+     *
+     * @return string
+     */
+    protected function build_credential_action_form( $post_id, $credential_id, $action, $nonce_action, $nonce_name, $button_label, $confirm_prompt, $button_class = 'button button-secondary' ) {
+        $confirm_attribute = '';
+
+        if ( $confirm_prompt ) {
+            $confirm_attribute = sprintf(
+                ' onsubmit="%s"',
+                esc_attr( 'return confirm(' . wp_json_encode( $confirm_prompt ) . ');' )
+            );
+        }
+
+        ob_start();
+        ?>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-credential-action" style="display:inline;"<?php echo $confirm_attribute; ?>>
+            <input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
+            <input type="hidden" name="post_id" value="<?php echo esc_attr( $post_id ); ?>" />
+            <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential_id ); ?>" />
+            <?php wp_nonce_field( $nonce_action, $nonce_name ); ?>
+            <button type="submit" class="<?php echo esc_attr( $button_class ); ?>"><?php echo esc_html( $button_label ); ?></button>
+        </form>
+        <?php
+        return ob_get_clean();
     }
 
     /**
@@ -732,6 +773,38 @@ class WP_MCP_AI_Assistant_CPT {
     }
 
     /**
+     * Handle credential deletion requests from the admin UI.
+     */
+    public function handle_delete_credential() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+        }
+
+        $post_id       = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        $credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+        if ( ! $post_id || '' === $credential_id ) {
+            wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
+        }
+
+        check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_delete_nonce' );
+
+        $post = get_post( $post_id );
+        if ( ! $post || self::POST_TYPE !== $post->post_type ) {
+            wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 404 ) );
+        }
+
+        $result = WP_MCP_AI_Credentials::delete_credential( $post_id, $credential_id, get_current_user_id() );
+
+        if ( is_wp_error( $result ) ) {
+            $error_code = sanitize_key( $result->get_error_code() );
+            $this->redirect_with_notice( $post_id, 'credential_error', array( 'error' => $error_code ) );
+        }
+
+        $this->redirect_with_notice( $post_id, 'credential_deleted' );
+    }
+
+    /**
      * Display notices related to credential management.
      */
     public function render_admin_notices() {
@@ -784,7 +857,7 @@ class WP_MCP_AI_Assistant_CPT {
             return;
         }
 
-        $class = in_array( $notice, array( 'credential_created', 'credential_revoked' ), true ) ? 'notice-success' : 'notice-error';
+        $class = in_array( $notice, array( 'credential_created', 'credential_revoked', 'credential_deleted' ), true ) ? 'notice-success' : 'notice-error';
 
         printf( '<div class="notice %1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
     }
@@ -833,6 +906,8 @@ class WP_MCP_AI_Assistant_CPT {
                 return __( 'Credential issued successfully.', 'wp-mcp-ai' );
             case 'credential_revoked':
                 return __( 'Credential revoked successfully.', 'wp-mcp-ai' );
+            case 'credential_deleted':
+                return __( 'Credential deleted successfully.', 'wp-mcp-ai' );
             case 'credential_error':
                 switch ( $error_code ) {
                     case 'wp_mcp_ai_unknown_credential':
