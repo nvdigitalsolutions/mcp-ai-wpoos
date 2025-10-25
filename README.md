@@ -115,6 +115,7 @@ The script performs the following steps:
 - Downloads WP-CLI locally (if necessary) and uses it to fetch the latest WordPress core files into `.codex-wordpress/wordpress`.
 - Installs the [SQLite Database Integration](https://wordpress.org/plugins/sqlite-database-integration/) plugin so WordPress can run without a MySQL server.
 - Symlinks this repository into the new install's `wp-content/plugins/wp-mcp-ai` directory.
+- Installs Composer development dependencies (when available) and provisions the WordPress test suite so `composer run test` works immediately.
 - Runs `wp core install`, activates the **WP MCP AI** plugin, enables pretty permalinks, and sets a default site tagline.
 - Boots a development server on port `8000` via `wp server` and logs output to `.codex-wordpress/wp-server.log`.
 

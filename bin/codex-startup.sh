@@ -11,6 +11,15 @@ for cmd in php curl unzip; do
   fi
 done
 
+if command -v composer >/dev/null 2>&1; then
+  if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
+    echo "Installing Composer dependencies..."
+    composer install --no-interaction --prefer-dist --working-dir="$ROOT_DIR"
+  fi
+else
+  echo "Composer is not available; skipping development dependency installation." >&2
+fi
+
 WORK_DIR="$ROOT_DIR/.codex-wordpress"
 WP_PATH="$WORK_DIR/wordpress"
 WP_CLI_PHAR="$WORK_DIR/wp-cli.phar"
@@ -93,16 +102,18 @@ LOCAL_TESTS_DIR="$WORK_DIR/wordpress-tests-lib"
 TMP_TESTS_DIR="${TMPDIR:-/tmp}/wordpress-tests-lib"
 SQLITE_TESTS_DB_DIR="$WORK_DIR/tests-database"
 
-if [[ -d "$VENDOR_TESTS_DIR" ]]; then
-  echo "Linking WordPress test suite from composer package..."
-  ln -sfn "$VENDOR_TESTS_DIR" "$LOCAL_TESTS_DIR"
-  if [[ ! -e "$TMP_TESTS_DIR" ]]; then
-    ln -sfn "$LOCAL_TESTS_DIR" "$TMP_TESTS_DIR"
-  fi
-fi
-
 if [[ ! -d "$SQLITE_TESTS_DB_DIR" ]]; then
   mkdir -p "$SQLITE_TESTS_DB_DIR"
+fi
+
+echo "Ensuring WordPress test suite is installed..."
+if TMPDIR="$WORK_DIR" WP_CORE_DIR="$WP_PATH" WP_TESTS_DIR="$LOCAL_TESTS_DIR" \
+    bash "$ROOT_DIR/bin/install-wp-tests.sh" wordpress_test root '' localhost latest true; then
+  if [[ -d "$VENDOR_TESTS_DIR" && ! -e "$TMP_TESTS_DIR" ]]; then
+    ln -sfn "$VENDOR_TESTS_DIR" "$TMP_TESTS_DIR"
+  fi
+else
+  echo "Failed to provision the WordPress test suite. Tests may not run in this environment." >&2
 fi
 
 if wp core is-installed >/dev/null 2>&1; then
