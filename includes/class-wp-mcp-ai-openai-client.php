@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a small wrapper around OpenAI's Chat Completions HTTP endpoint.
  */
 class WP_MCP_AI_OpenAI_Client {
-    const API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+    const CHAT_COMPLETIONS_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+    const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
 
     /**
      * Retrieve the configured API key.
@@ -45,11 +46,21 @@ class WP_MCP_AI_OpenAI_Client {
         $timeout    = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
         $timeout    = max( 5, $timeout );
         $payload    = array(
-            'model'    => $model,
-            'messages' => $this->normalise_messages_for_payload( $messages ),
+            'model' => $model,
         );
 
-        if ( empty( $payload['messages'] ) ) {
+        $should_use_responses_api = $this->should_use_responses_api( $messages, $options );
+        $chat_messages            = $this->normalise_messages_for_payload( $messages );
+
+        if ( $should_use_responses_api ) {
+            $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages );
+        } else {
+            $payload['messages'] = $chat_messages;
+        }
+
+        $message_key = $should_use_responses_api ? 'input' : 'messages';
+
+        if ( empty( $payload[ $message_key ] ) ) {
             return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ) );
         }
 
@@ -79,14 +90,14 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $system_messages ) ) {
-            $payload['messages'] = array_merge( $system_messages, $payload['messages'] );
+            $payload[ $message_key ] = array_merge( $system_messages, $payload[ $message_key ] );
         }
 
         if ( ! empty( $options['tools'] ) ) {
             $payload['tools'] = array_values( $options['tools'] );
         }
 
-        if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
+        if ( $should_use_responses_api && ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
             $payload['attachments'] = array_values( $options['attachments'] );
         }
 
@@ -105,7 +116,8 @@ class WP_MCP_AI_OpenAI_Client {
 
         WP_MCP_AI_Logger::log_event( 'openai_request', 'Sending request to OpenAI.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
 
-        $response = wp_remote_post( self::API_ENDPOINT, $request_args );
+        $endpoint = $should_use_responses_api ? self::RESPONSES_ENDPOINT : self::CHAT_COMPLETIONS_ENDPOINT;
+        $response = wp_remote_post( $endpoint, $request_args );
 
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI request failed.', array( 'error' => $response->get_error_message() ) );
@@ -134,6 +146,10 @@ class WP_MCP_AI_OpenAI_Client {
             $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
 
             return new WP_Error( 'wp_mcp_ai_api_error', $message, array( 'status' => $code, 'body' => $decoded ) );
+        }
+
+        if ( $should_use_responses_api ) {
+            $decoded = $this->convert_responses_result_to_chat_completion( $decoded );
         }
 
         WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
@@ -261,9 +277,17 @@ class WP_MCP_AI_OpenAI_Client {
      * @return array
      */
     protected function obfuscate_request_for_log( array $payload ) {
-        if ( isset( $payload['messages'] ) ) {
+        $message_key = null;
+
+        if ( isset( $payload['messages'] ) && is_array( $payload['messages'] ) ) {
+            $message_key = 'messages';
+        } elseif ( isset( $payload['input'] ) && is_array( $payload['input'] ) ) {
+            $message_key = 'input';
+        }
+
+        if ( null !== $message_key ) {
             $trimmed_messages = array();
-            foreach ( $payload['messages'] as $message ) {
+            foreach ( $payload[ $message_key ] as $message ) {
                 if ( isset( $message['content'] ) && is_array( $message['content'] ) ) {
                     $trimmed_segments = array();
 
@@ -314,7 +338,7 @@ class WP_MCP_AI_OpenAI_Client {
 
                 $trimmed_messages[] = $message;
             }
-            $payload['messages'] = $trimmed_messages;
+            $payload[ $message_key ] = $trimmed_messages;
         }
 
         if ( isset( $payload['attachments'] ) && is_array( $payload['attachments'] ) ) {
@@ -336,5 +360,183 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $payload;
+    }
+
+    /**
+     * Determine whether the OpenAI Responses API should be used for the request.
+     *
+     * @param array $messages Sanitized chat messages.
+     * @param array $options  Prepared request options.
+     * @return bool
+     */
+    protected function should_use_responses_api( array $messages, array $options ) {
+        if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
+            return true;
+        }
+
+        foreach ( $messages as $message ) {
+            if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
+                continue;
+            }
+
+            foreach ( $message['content'] as $segment ) {
+                if ( ! is_array( $segment ) ) {
+                    continue;
+                }
+
+                $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+                if ( isset( $segment['file_id'] ) ) {
+                    return true;
+                }
+
+                if ( isset( $segment['image_file']['file_id'] ) ) {
+                    return true;
+                }
+
+                if ( strpos( $type, 'input_' ) === 0 && ( isset( $segment['file_id'] ) || isset( $segment['image_file'] ) ) ) {
+                    return true;
+                }
+
+                if ( 'input_file' === $type ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Prepare the payload used when calling the Responses API.
+     *
+     * @param array $original_messages Original chat messages.
+     * @param array $normalised_messages Messages after normalisation.
+     * @return array
+     */
+    protected function prepare_responses_input( array $original_messages, array $normalised_messages ) {
+        $prepared = array();
+
+        foreach ( $normalised_messages as $index => $message ) {
+            $entry = $message;
+
+            $original_content = isset( $original_messages[ $index ]['content'] ) ? $original_messages[ $index ]['content'] : null;
+
+            if ( isset( $entry['content'] ) && ! is_array( $entry['content'] ) ) {
+                $content_string = (string) $entry['content'];
+                $entry['content'] = array(
+                    array(
+                        'type' => 'text',
+                        'text' => $content_string,
+                    ),
+                );
+            } elseif ( isset( $entry['content'] ) && is_array( $entry['content'] ) ) {
+                $entry['content'] = array_values( $entry['content'] );
+            } elseif ( is_array( $original_content ) ) {
+                $entry['content'] = array_values( $original_content );
+            } else {
+                $entry['content'] = array();
+            }
+
+            $prepared[] = $entry;
+        }
+
+        return $prepared;
+    }
+
+    /**
+     * Convert a Responses API result into a shape that matches chat completions.
+     *
+     * @param array $response Raw Responses API payload.
+     * @return array
+     */
+    protected function convert_responses_result_to_chat_completion( array $response ) {
+        if ( isset( $response['choices'] ) && is_array( $response['choices'] ) ) {
+            return $response;
+        }
+
+        $choices = array();
+
+        if ( isset( $response['output'] ) && is_array( $response['output'] ) ) {
+            foreach ( $response['output'] as $index => $item ) {
+                if ( ! is_array( $item ) ) {
+                    continue;
+                }
+
+                $choices[] = array(
+                    'index'         => $index,
+                    'message'       => array(
+                        'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
+                        'content' => $this->extract_text_from_response_content( isset( $item['content'] ) ? $item['content'] : array() ),
+                    ),
+                    'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
+                );
+            }
+        }
+
+        if ( empty( $choices ) && isset( $response['output_text'] ) ) {
+            $choices[] = array(
+                'index'         => 0,
+                'message'       => array(
+                    'role'    => 'assistant',
+                    'content' => (string) $response['output_text'],
+                ),
+                'finish_reason' => 'stop',
+            );
+        }
+
+        if ( empty( $choices ) ) {
+            return $response;
+        }
+
+        $response['choices'] = $choices;
+
+        return $response;
+    }
+
+    /**
+     * Extract a plain text representation from a Responses API content payload.
+     *
+     * @param mixed $content Content payload from the Responses API.
+     * @return string
+     */
+    protected function extract_text_from_response_content( $content ) {
+        if ( is_string( $content ) ) {
+            return $content;
+        }
+
+        if ( ! is_array( $content ) ) {
+            return '';
+        }
+
+        $text_segments = array();
+
+        foreach ( $content as $segment ) {
+            if ( is_string( $segment ) ) {
+                $text_segments[] = $segment;
+                continue;
+            }
+
+            if ( ! is_array( $segment ) ) {
+                continue;
+            }
+
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+            if ( isset( $segment['text'] ) && in_array( $type, array( 'output_text', 'text', 'input_text' ), true ) ) {
+                $text_segments[] = (string) $segment['text'];
+                continue;
+            }
+
+            if ( isset( $segment['content'] ) && is_string( $segment['content'] ) ) {
+                $text_segments[] = $segment['content'];
+            }
+        }
+
+        $text_segments = array_filter( $text_segments, static function ( $part ) {
+            return '' !== trim( $part );
+        } );
+
+        return implode( "\n\n", $text_segments );
     }
 }
