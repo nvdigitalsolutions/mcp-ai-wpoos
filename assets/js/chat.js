@@ -300,7 +300,8 @@
         if (allowMarkdown) {
             bubble.innerHTML = renderMarkdown(text);
         } else {
-            bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br />');
+            var normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
+            bubble.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
         }
 
         entry.appendChild(bubble);
@@ -317,7 +318,7 @@
         var codeBlocks = [];
         var inlineCodes = [];
         var links = [];
-        var processed = String(text).replace(/\r\n/g, '\n');
+        var processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
 
         processed = processed.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, function (match, language, code) {
             var placeholder = '@@' + placeholderBase + '_CODE_' + codeBlocks.length + '@@';
@@ -477,7 +478,7 @@
 
         var inlineBase = 'WP_MCP_AI_INLINE_' + Math.random().toString(36).slice(2);
         var inlineCodes = [];
-        var processed = String(text).replace(/\r\n/g, ' ');
+        var processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, ' ');
 
         processed = processed.replace(/`([^`]+)`/g, function (match, code) {
             var placeholder = '@@' + inlineBase + '_CODE_' + inlineCodes.length + '@@';
