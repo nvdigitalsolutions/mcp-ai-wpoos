@@ -46,7 +46,7 @@ class WP_MCP_AI_OpenAI_Client {
         $timeout    = max( 5, $timeout );
         $payload    = array(
             'model'    => $model,
-            'messages' => array_values( $messages ),
+            'messages' => $this->normalise_messages_for_payload( $messages ),
         );
 
         if ( empty( $payload['messages'] ) ) {
@@ -139,6 +139,70 @@ class WP_MCP_AI_OpenAI_Client {
         WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
         return $decoded;
+    }
+
+    /**
+     * Prepare chat messages for the OpenAI Chat Completions payload.
+     *
+     * The REST layer represents text-only messages as arrays of segments so
+     * attachments and tool calls can be normalised consistently. Older OpenAI
+     * models (for example, gpt-3.5-turbo) only accept plain strings for the
+     * `content` field which causes those requests to fail. To remain compatible
+     * we collapse text-only segment arrays back into strings while preserving
+     * multimodal payloads that rely on structured segments.
+     *
+     * @param array $messages Sanitised chat messages.
+     * @return array
+     */
+    protected function normalise_messages_for_payload( array $messages ) {
+        $normalised = array();
+
+        foreach ( $messages as $message ) {
+            if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+                $normalised[] = $message;
+                continue;
+            }
+
+            $segments = array_values( $message['content'] );
+
+            if ( empty( $segments ) ) {
+                $message['content'] = '';
+                $normalised[]       = $message;
+                continue;
+            }
+
+            $all_text   = true;
+            $text_parts = array();
+
+            foreach ( $segments as $segment ) {
+                if ( ! is_array( $segment ) ) {
+                    $all_text = false;
+                    break;
+                }
+
+                $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+                if ( 'text' !== $type ) {
+                    $all_text = false;
+                    break;
+                }
+
+                $text_parts[] = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+            }
+
+            if ( $all_text ) {
+                $text_parts         = array_filter( $text_parts, static function ( $part ) {
+                    return '' !== trim( $part );
+                } );
+                $message['content'] = implode( "\n\n", $text_parts );
+            } else {
+                $message['content'] = $segments;
+            }
+
+            $normalised[] = $message;
+        }
+
+        return $normalised;
     }
 
     /**
