@@ -350,7 +350,7 @@ class WP_MCP_AI_REST {
      *
      * @return WP_Error
      */
-    protected function insufficient_permissions_error( $capability = 'read' ) {
+    protected function insufficient_permissions_error( $capability = 'edit_posts' ) {
         if ( is_string( $capability ) ) {
             $capability = sanitize_key( $capability );
         }
