@@ -235,13 +235,22 @@ class WP_MCP_AI_Assistant_CPT {
             return array();
         }
 
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->init();
+
         $sanitized = array();
 
         foreach ( $tools as $tool_slug ) {
             $tool_slug = sanitize_key( $tool_slug );
+
             if ( '' === $tool_slug ) {
                 continue;
             }
+
+            if ( null === $registry->get_tool( $tool_slug ) ) {
+                continue;
+            }
+
             $sanitized[] = $tool_slug;
         }
 

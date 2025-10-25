@@ -583,13 +583,13 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
-
         $user_id = self::factory()->user->create( array( 'role' => 'author' ) );
         wp_set_current_user( $user_id );
 
         $registry = WP_MCP_AI_Tool_Registry::get_instance();
         $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
         $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
             ->disableOriginalConstructor()
@@ -628,10 +628,10 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
-
         $registry = WP_MCP_AI_Tool_Registry::get_instance();
         $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
         $issuer_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
         wp_set_current_user( $issuer_id );
@@ -687,10 +687,10 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
-
         $registry = WP_MCP_AI_Tool_Registry::get_instance();
         $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
         $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
             ->disableOriginalConstructor()
@@ -753,10 +753,10 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
             )
         );
 
-        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
-
         $registry = WP_MCP_AI_Tool_Registry::get_instance();
         $registry->register_tool( new WP_MCP_AI_Dummy_Tool() );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'wp_mcp_ai_dummy_tool' ) );
 
         $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
             ->disableOriginalConstructor()
