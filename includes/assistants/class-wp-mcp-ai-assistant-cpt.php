@@ -18,10 +18,12 @@ class WP_MCP_AI_Assistant_CPT {
     const META_PROVIDER = '_wp_mcp_ai_provider';
     const META_MODEL = '_wp_mcp_ai_model';
     const META_TEMPERATURE = '_wp_mcp_ai_temperature';
-    const META_SYSTEM_PROMPT   = '_wp_mcp_ai_system_prompt';
-    const META_MEMORY_FILES    = '_wp_mcp_ai_memory_files';
-    const META_VECTOR_STORE_ID = '_wp_mcp_ai_vector_store_id';
-    const META_CREDENTIALS     = WP_MCP_AI_Credentials::META_KEY;
+    const META_SYSTEM_PROMPT         = '_wp_mcp_ai_system_prompt';
+    const META_MEMORY_FILES          = '_wp_mcp_ai_memory_files';
+    const META_VECTOR_STORE_ID       = '_wp_mcp_ai_vector_store_id';
+    const META_CREDENTIALS           = WP_MCP_AI_Credentials::META_KEY;
+    const META_EXTERNAL_ACTION_ID    = '_wp_mcp_ai_external_action_id';
+    const META_EXTERNAL_ACTION_TYPE  = '_wp_mcp_ai_external_action_type';
 
     /**
      * Tool registry instance.
@@ -218,6 +220,30 @@ class WP_MCP_AI_Assistant_CPT {
                 'auth_callback'     => $auth_callback,
             )
         );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_EXTERNAL_ACTION_ID,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_external_action_id_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_EXTERNAL_ACTION_TYPE,
+            array(
+                'type'              => 'string',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_external_action_type_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
     }
 
     /**
@@ -381,6 +407,36 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return sanitize_text_field( $vector_store_id );
+    }
+
+    /**
+     * Sanitize the default external action identifier meta value.
+     *
+     * @param mixed $identifier Raw identifier value.
+     * @return string
+     */
+    public static function sanitize_external_action_id_meta( $identifier ) {
+        if ( ! is_string( $identifier ) ) {
+            return '';
+        }
+
+        return sanitize_text_field( $identifier );
+    }
+
+    /**
+     * Sanitize the default external action type meta value.
+     *
+     * @param mixed $action_type Raw action type value.
+     * @return string
+     */
+    public static function sanitize_external_action_type_meta( $action_type ) {
+        $action_type = is_string( $action_type ) ? sanitize_key( $action_type ) : '';
+
+        if ( ! in_array( $action_type, array( 'workflow', 'assistant' ), true ) ) {
+            return '';
+        }
+
+        return $action_type;
     }
 
     /**
@@ -671,6 +727,11 @@ class WP_MCP_AI_Assistant_CPT {
 
         $tools = $this->registry->get_tools();
 
+        $external_action_id   = get_post_meta( $post->ID, self::META_EXTERNAL_ACTION_ID, true );
+        $external_action_id   = self::sanitize_external_action_id_meta( $external_action_id );
+        $external_action_type = get_post_meta( $post->ID, self::META_EXTERNAL_ACTION_TYPE, true );
+        $external_action_type = self::sanitize_external_action_type_meta( $external_action_type );
+
         if ( empty( $tools ) ) {
             echo '<p>' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
             return;
@@ -680,14 +741,58 @@ class WP_MCP_AI_Assistant_CPT {
 
         echo '<ul class="wp-mcp-ai-tools">';
         foreach ( $tools as $tool ) {
-            $slug = $tool->get_slug();
+            $slug        = $tool->get_slug();
+            $is_selected = in_array( $slug, $selected_tools, true );
+
+            echo '<li>';
+            echo '<label>';
             printf(
-                '<li><label><input type="checkbox" name="wp_mcp_ai_tools[]" value="%1$s" %2$s /> <strong>%3$s</strong><br/><span class="description">%4$s</span></label></li>',
+                '<input type="checkbox" name="wp_mcp_ai_tools[]" value="%1$s" %2$s /> <strong>%3$s</strong><br/><span class="description">%4$s</span>',
                 esc_attr( $slug ),
-                checked( in_array( $slug, $selected_tools, true ), true, false ),
+                checked( $is_selected, true, false ),
                 esc_html( $tool->get_name() ),
                 esc_html( $tool->get_description() )
             );
+            echo '</label>';
+
+            if ( 'run_openai_external_action' === $slug ) {
+                $identifier_field_id = 'wp-mcp-ai-external-action-id';
+                $type_field_id       = 'wp-mcp-ai-external-action-type';
+                ?>
+                <div class="wp-mcp-ai-tool-defaults">
+                    <p>
+                        <label for="<?php echo esc_attr( $identifier_field_id ); ?>">
+                            <strong><?php esc_html_e( 'Default workflow or assistant ID', 'wp-mcp-ai' ); ?></strong>
+                        </label>
+                        <input
+                            type="text"
+                            id="<?php echo esc_attr( $identifier_field_id ); ?>"
+                            name="wp_mcp_ai_external_action_identifier"
+                            value="<?php echo esc_attr( $external_action_id ); ?>"
+                            class="widefat"
+                        />
+                    </p>
+                    <p>
+                        <label for="<?php echo esc_attr( $type_field_id ); ?>">
+                            <strong><?php esc_html_e( 'Default action type', 'wp-mcp-ai' ); ?></strong>
+                        </label>
+                        <select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat">
+                            <option value="">
+                                <?php esc_html_e( 'Use runtime choice', 'wp-mcp-ai' ); ?>
+                            </option>
+                            <option value="workflow" <?php selected( $external_action_type, 'workflow' ); ?>>
+                                <?php esc_html_e( 'Workflow', 'wp-mcp-ai' ); ?>
+                            </option>
+                            <option value="assistant" <?php selected( $external_action_type, 'assistant' ); ?>>
+                                <?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?>
+                            </option>
+                        </select>
+                    </p>
+                </div>
+                <?php
+            }
+
+            echo '</li>';
         }
         echo '</ul>';
     }
@@ -1166,6 +1271,26 @@ class WP_MCP_AI_Assistant_CPT {
             }
 
             update_post_meta( $post_id, self::META_TOOLS, $tool_slugs );
+
+            $external_action_id = isset( $_POST['wp_mcp_ai_external_action_identifier'] )
+                ? self::sanitize_external_action_id_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_identifier'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                : '';
+
+            if ( '' === $external_action_id ) {
+                delete_post_meta( $post_id, self::META_EXTERNAL_ACTION_ID );
+            } else {
+                update_post_meta( $post_id, self::META_EXTERNAL_ACTION_ID, $external_action_id );
+            }
+
+            $external_action_type = isset( $_POST['wp_mcp_ai_external_action_type'] )
+                ? self::sanitize_external_action_type_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_type'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                : '';
+
+            if ( '' === $external_action_type ) {
+                delete_post_meta( $post_id, self::META_EXTERNAL_ACTION_TYPE );
+            } else {
+                update_post_meta( $post_id, self::META_EXTERNAL_ACTION_TYPE, $external_action_type );
+            }
         }
 
         if ( $defaults_nonce_verified ) {
@@ -1223,13 +1348,15 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         $config = array(
-            'tools'           => get_post_meta( $assistant_id, self::META_TOOLS, true ),
-            'provider'        => get_post_meta( $assistant_id, self::META_PROVIDER, true ),
-            'model'           => get_post_meta( $assistant_id, self::META_MODEL, true ),
-            'temperature'     => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
-            'system_prompt'   => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
-            'memory_files'    => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
-            'vector_store_id' => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
+            'tools'                       => get_post_meta( $assistant_id, self::META_TOOLS, true ),
+            'provider'                    => get_post_meta( $assistant_id, self::META_PROVIDER, true ),
+            'model'                       => get_post_meta( $assistant_id, self::META_MODEL, true ),
+            'temperature'                 => get_post_meta( $assistant_id, self::META_TEMPERATURE, true ),
+            'system_prompt'               => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
+            'memory_files'                => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
+            'vector_store_id'             => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
+            'external_action_identifier'  => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
+            'external_action_type'        => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
         );
 
         if ( ! is_array( $config['tools'] ) ) {
@@ -1266,6 +1393,18 @@ class WP_MCP_AI_Assistant_CPT {
             $config['vector_store_id'] = '';
         } else {
             $config['vector_store_id'] = sanitize_text_field( $config['vector_store_id'] );
+        }
+
+        if ( ! is_string( $config['external_action_identifier'] ) ) {
+            $config['external_action_identifier'] = '';
+        } else {
+            $config['external_action_identifier'] = self::sanitize_external_action_id_meta( $config['external_action_identifier'] );
+        }
+
+        if ( ! is_string( $config['external_action_type'] ) ) {
+            $config['external_action_type'] = '';
+        } else {
+            $config['external_action_type'] = self::sanitize_external_action_type_meta( $config['external_action_type'] );
         }
 
         return $config;

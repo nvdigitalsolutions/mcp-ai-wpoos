@@ -75,6 +75,16 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
      * {@inheritdoc}
      */
     public function execute( array $arguments = array(), array $context = array() ) {
+        if ( isset( $context['assistant_config'] ) && is_array( $context['assistant_config'] ) ) {
+            if ( empty( $arguments['action_type'] ) && ! empty( $context['assistant_config']['external_action_type'] ) ) {
+                $arguments['action_type'] = $context['assistant_config']['external_action_type'];
+            }
+
+            if ( empty( $arguments['identifier'] ) && ! empty( $context['assistant_config']['external_action_identifier'] ) ) {
+                $arguments['identifier'] = $context['assistant_config']['external_action_identifier'];
+            }
+        }
+
         $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
         if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
