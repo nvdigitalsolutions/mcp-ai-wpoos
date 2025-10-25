@@ -25,7 +25,26 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 
 $wordpress_path = getenv( 'WP_CORE_DIR' );
 if ( ! $wordpress_path ) {
-    $codex_path = $plugin_root . '/.codex-wordpress/wordpress';
+    $codex_path      = $plugin_root . '/.codex-wordpress/wordpress';
+    $startup_script  = $plugin_root . '/bin/codex-startup.sh';
+
+    if ( ! file_exists( $codex_path . '/wp-load.php' ) && is_file( $startup_script ) ) {
+        fwrite( STDERR, "WordPress core not found. Running codex-startup provisioning script...\n" );
+
+        $startup_output = array();
+        $startup_result = 0;
+
+        exec( escapeshellcmd( $startup_script ) . ' 2>&1', $startup_output, $startup_result );
+
+        if ( ! empty( $startup_output ) ) {
+            fwrite( STDERR, implode( "\n", $startup_output ) . "\n" );
+        }
+
+        if ( 0 !== $startup_result ) {
+            fwrite( STDERR, "codex-startup.sh exited with a non-zero status ({$startup_result}).\n" );
+        }
+    }
+
     if ( file_exists( $codex_path . '/wp-load.php' ) ) {
         $wordpress_path = $codex_path;
     }
