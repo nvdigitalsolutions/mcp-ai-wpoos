@@ -16,6 +16,47 @@ define( 'WP_MCP_AI_VERSION', '1.0.0' );
 define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
 
+/**
+ * Retrieve the capability required to access the chat interface.
+ *
+ * Site owners can filter the returned capability to relax access controls.
+ * For example, allow subscribers (with the `read` capability) or even
+ * unauthenticated visitors by returning `'public'` or an empty value.
+ *
+ * @since 1.0.0
+ *
+ * @param int    $assistant_id Assistant post ID, when known.
+ * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+ *
+ * @return string|false Capability string. Return `'public'` to allow any visitor,
+ *                      or a falsy value to skip the check entirely.
+ */
+function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = 'general' ) {
+    $assistant_id = absint( $assistant_id );
+    $context      = $context ? sanitize_key( $context ) : 'general';
+
+    /**
+     * Filters the capability required to use the front-end chat interface.
+     *
+     * Returning `'public'`, `false`, or an empty string disables the capability
+     * check, making the chat available to all visitors who satisfy the
+     * authentication requirements.
+     *
+     * @since 1.0.0
+     *
+     * @param string $capability  Capability required to access the chat. Defaults to `read`.
+     * @param int    $assistant_id Assistant post ID, when available.
+     * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+     */
+    $capability = apply_filters( 'wp_mcp_ai_chat_capability', 'read', $assistant_id, $context );
+
+    if ( is_string( $capability ) ) {
+        $capability = sanitize_key( $capability );
+    }
+
+    return $capability;
+}
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';

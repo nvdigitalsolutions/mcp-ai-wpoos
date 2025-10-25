@@ -318,8 +318,11 @@ class WP_MCP_AI_REST {
             );
         }
 
-        if ( ! current_user_can( 'edit_posts' ) ) {
-            return $this->insufficient_permissions_error();
+        $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+
+        if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+            return $this->insufficient_permissions_error( $capability );
         }
 
         $this->set_authenticated_user_id( get_current_user_id() );
@@ -332,14 +335,24 @@ class WP_MCP_AI_REST {
      *
      * @return WP_Error
      */
-    protected function insufficient_permissions_error() {
+    protected function insufficient_permissions_error( $capability = 'read' ) {
+        if ( is_string( $capability ) ) {
+            $capability = sanitize_key( $capability );
+        }
+
         return new WP_Error(
             'wp_mcp_ai_insufficient_permissions',
-            __( 'The authenticated user cannot access the MCP AI API. Grant the account the "edit_posts" capability or switch to another user.', 'wp-mcp-ai' ),
+            sprintf(
+                __( 'The authenticated user cannot access the MCP AI API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
+                $capability
+            ),
             array(
                 'status'  => 403,
                 'actions' => array(
-                    'grant_capability' => __( 'Assign a role such as Author or Editor that includes the "edit_posts" capability.', 'wp-mcp-ai' ),
+                    'grant_capability' => sprintf(
+                        __( 'Assign a role that includes the "%s" capability.', 'wp-mcp-ai' ),
+                        $capability
+                    ),
                 ),
             )
         );
