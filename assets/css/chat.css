@@ -54,6 +54,15 @@
 .wp-mcp-ai-chat__bubble ol {
     margin: 0 0 0.75rem 1.25rem;
     padding-left: 1.25rem;
+    list-style-position: outside;
+}
+
+.wp-mcp-ai-chat__bubble ul {
+    list-style-type: disc;
+}
+
+.wp-mcp-ai-chat__bubble ol {
+    list-style-type: decimal;
 }
 
 .wp-mcp-ai-chat__bubble li + li {
