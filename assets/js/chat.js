@@ -297,6 +297,9 @@
 
         var bubble = document.createElement('div');
         bubble.className = 'wp-mcp-ai-chat__bubble';
+        if (typeof allowMarkdown === 'undefined') {
+            allowMarkdown = role === 'assistant' || role === 'tool';
+        }
         if (allowMarkdown) {
             bubble.innerHTML = renderMarkdown(text);
         } else {
@@ -437,6 +440,10 @@
                 }
                 listItems.push('<li>' + bulletText + '</li>');
                 return;
+            }
+
+            if (listType) {
+                flushList();
             }
 
             paragraphLines.push(formatInline(line));
