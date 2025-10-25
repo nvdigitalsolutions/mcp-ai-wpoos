@@ -44,11 +44,11 @@ function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = '
      *
      * @since 1.0.0
      *
-     * @param string $capability  Capability required to access the chat. Defaults to `read`.
+     * @param string $capability  Capability required to access the chat. Defaults to `edit_posts`.
      * @param int    $assistant_id Assistant post ID, when available.
      * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
      */
-    $capability = apply_filters( 'wp_mcp_ai_chat_capability', 'read', $assistant_id, $context );
+    $capability = apply_filters( 'wp_mcp_ai_chat_capability', 'edit_posts', $assistant_id, $context );
 
     if ( is_string( $capability ) ) {
         $capability = sanitize_key( $capability );
