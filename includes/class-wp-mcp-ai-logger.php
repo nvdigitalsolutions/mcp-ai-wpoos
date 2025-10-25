@@ -136,6 +136,7 @@ class WP_MCP_AI_Logger {
         $context = self::deep_clone_value( $context );
 
         unset( $context['openai_api_key'] );
+        unset( $context['gemini_api_key'] );
 
         if ( isset( $context['options'] ) && is_array( $context['options'] ) ) {
             $context['options'] = self::sanitize_options_context( $context['options'] );

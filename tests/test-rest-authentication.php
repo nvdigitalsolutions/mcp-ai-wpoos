@@ -21,7 +21,7 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
         }
 
         $registry    = WP_MCP_AI_Tool_Registry::get_instance();
-        $mock_client = $this->getMockBuilder( WP_MCP_AI_OpenAI_Client::class )
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
             ->disableOriginalConstructor()
             ->getMock();
 
