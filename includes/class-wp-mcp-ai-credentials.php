@@ -171,7 +171,6 @@ class WP_MCP_AI_Credentials {
             $credentials[ $index ]['revoked_by'] = $user_id;
 
             self::store_credentials( $assistant_id, $credentials );
-            self::remove_from_index( $credential_id );
 
             WP_MCP_AI_Logger::log_event(
                 'credential_revoked',

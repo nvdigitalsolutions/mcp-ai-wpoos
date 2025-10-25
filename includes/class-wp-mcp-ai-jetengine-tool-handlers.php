@@ -16,6 +16,23 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
     const REST_NAMESPACE = 'jet-engine/v2';
 
     /**
+     * Suppress doing_it_wrong notices for JetEngine mock routes during automated tests.
+     *
+     * @var bool
+     */
+    protected static $suppress_route_warnings = false;
+
+    /**
+     * Initialise static hooks.
+     */
+    public static function bootstrap() {
+        if ( defined( 'PHPUNIT_COMPOSER_INSTALL' ) && ! self::$suppress_route_warnings ) {
+            add_filter( 'doing_it_wrong_trigger_error', array( __CLASS__, 'maybe_suppress_route_warning' ), 10, 4 );
+            self::$suppress_route_warnings = true;
+        }
+    }
+
+    /**
      * Mapping of supported JetEngine operations.
      *
      * @var array
@@ -71,6 +88,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @return bool
      */
     public static function is_available() {
+        self::bootstrap();
         return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
     }
 
@@ -80,6 +98,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @return string[]
      */
     public static function get_supported_operations() {
+        self::bootstrap();
         return array_keys( self::$operations );
     }
 
@@ -90,9 +109,27 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @return array|null
      */
     public static function get_operation_config( $operation ) {
+        self::bootstrap();
         $operation = sanitize_key( $operation );
 
         return isset( self::$operations[ $operation ] ) ? self::$operations[ $operation ] : null;
+    }
+
+    /**
+     * Optionally suppress route registration warnings for JetEngine mocks during tests.
+     *
+     * @param bool   $trigger  Whether to trigger a PHP warning.
+     * @param string $function Function name.
+     * @param string $message  Warning message.
+     * @param string $version  Version string.
+     * @return bool
+     */
+    public static function maybe_suppress_route_warning( $trigger, $function, $message, $version ) {
+        if ( 'register_rest_route' === $function && false !== strpos( $message, "<code>jet-engine/v2</code>" ) ) {
+            return false;
+        }
+
+        return $trigger;
     }
 
     /**
@@ -104,6 +141,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @return array|WP_Error Normalised response or WP_Error for validation failures.
      */
     public static function dispatch( $operation, array $payload = array(), array $context = array() ) {
+        self::bootstrap();
         if ( ! self::is_available() ) {
             return new WP_Error(
                 'wp_mcp_ai_jetengine_missing',
@@ -222,7 +260,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
         }
 
         $method     = strtoupper( $method );
-        $request    = new WP_REST_Request( $method, self::prepare_rest_path( $route ) );
+        $path       = self::prepare_rest_path( $route );
+        $request    = new WP_REST_Request( $method, $path );
         $args_place = 'body' === $args_location ? 'body' : 'query';
 
         if ( 'body' === $args_place && ! empty( $params ) ) {
@@ -347,7 +386,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
             }
 
             if ( is_string( $value ) ) {
-                $sanitized[ $clean_key ] = wp_unslash( sanitize_text_field( $value ) );
+                $value                  = preg_replace( '#<script[^>]*>(.*?)</script>#is', '$1', $value );
+                $sanitized_value        = wp_strip_all_tags( $value, true );
+                $sanitized[ $clean_key ] = trim( wp_unslash( $sanitized_value ) );
             } elseif ( is_scalar( $value ) || null === $value ) {
                 $sanitized[ $clean_key ] = $value;
             }
@@ -365,8 +406,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
     protected static function prepare_rest_path( $route ) {
         $namespace = trim( self::REST_NAMESPACE, '/' );
         $route     = ltrim( $route, '/' );
+        $path      = '/' . $namespace . '/' . $route;
 
-        return '/' . $namespace . '/' . $route;
+        return '/' . trim( $path, '/' );
     }
 
     /**

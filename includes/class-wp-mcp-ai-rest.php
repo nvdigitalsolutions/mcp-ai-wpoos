@@ -50,6 +50,86 @@ class WP_MCP_AI_REST {
         $this->client   = $client;
 
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+        add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
+        add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
+    }
+
+    /**
+     * Ensure permission errors expose actionable guidance for MCP routes.
+     *
+     * @param mixed           $response Result from the endpoint callbacks.
+     * @param array           $handler  Route handler configuration.
+     * @param WP_REST_Request $request  Current REST request.
+     * @return mixed
+     */
+    public function format_actionable_error( $response, $handler, $request ) {
+        if ( ! is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        if ( ! $request instanceof WP_REST_Request ) {
+            return $response;
+        }
+
+        $route = $request->get_route();
+        if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
+            return $response;
+        }
+
+        $data = $response->get_error_data();
+        if ( ! is_array( $data ) || empty( $data['actions'] ) ) {
+            return $response;
+        }
+
+        $status = isset( $data['status'] ) ? (int) $data['status'] : 500;
+
+        $payload = array(
+            'code'    => $response->get_error_code(),
+            'message' => $response->get_error_message(),
+            'actions' => $data['actions'],
+            'data'    => $data,
+        );
+
+        return new WP_REST_Response( $payload, $status );
+    }
+
+    /**
+     * Ensure actionable guidance is surfaced at the top-level of REST error responses.
+     *
+     * @param WP_REST_Response $response Response object.
+     * @param WP_REST_Server   $server   REST server instance.
+     * @param WP_REST_Request  $request  Original request object.
+     * @return WP_REST_Response
+     */
+    public function augment_error_actions( $response, $server, $request ) {
+        if ( ! $response instanceof WP_REST_Response ) {
+            return $response;
+        }
+
+        if ( ! $request instanceof WP_REST_Request ) {
+            return $response;
+        }
+
+        $route = $request->get_route();
+        if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
+            return $response;
+        }
+
+        $data = $response->get_data();
+        if ( ! is_array( $data ) ) {
+            return $response;
+        }
+
+        if ( isset( $data['actions'] ) ) {
+            return $response;
+        }
+
+        if ( isset( $data['data'] ) && is_array( $data['data'] ) && isset( $data['data']['actions'] ) ) {
+            $data['actions'] = $data['data']['actions'];
+            $response->set_data( $data );
+        }
+
+        return $response;
     }
 
     /**
@@ -149,7 +229,8 @@ class WP_MCP_AI_REST {
                         ),
                     ),
                 ),
-            )
+            ),
+            true
         );
 
         register_rest_route(
@@ -175,7 +256,8 @@ class WP_MCP_AI_REST {
                         ),
                     ),
                 ),
-            )
+            ),
+            true
         );
     }
 
@@ -1342,7 +1424,7 @@ class WP_MCP_AI_REST {
         }
 
         if ( null !== $temperature ) {
-            $options['temperature'] = max( 0, min( 2, $temperature ) );
+            $options['temperature'] = (float) max( 0, min( 2, $temperature ) );
         } elseif ( $has_request_temperature ) {
             unset( $options['temperature'] );
         }

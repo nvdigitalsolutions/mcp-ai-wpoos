@@ -227,20 +227,14 @@ class WP_MCP_AI_Assistant_CPT {
             return array();
         }
 
-        $registry  = WP_MCP_AI_Tool_Registry::get_instance();
-        $available = array();
-
-        foreach ( $registry->get_tools() as $tool ) {
-            $available[] = $tool->get_slug();
-        }
-
         $sanitized = array();
 
         foreach ( $tools as $tool_slug ) {
             $tool_slug = sanitize_key( $tool_slug );
-            if ( in_array( $tool_slug, $available, true ) ) {
-                $sanitized[] = $tool_slug;
+            if ( '' === $tool_slug ) {
+                continue;
             }
+            $sanitized[] = $tool_slug;
         }
 
         return array_values( array_unique( $sanitized ) );

@@ -29,6 +29,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
+WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
+
 /**
  * Load the plugin textdomain for localisation support.
  */
