@@ -42,6 +42,89 @@
     word-break: break-word;
 }
 
+.wp-mcp-ai-chat__bubble p {
+    margin: 0 0 0.75rem;
+}
+
+.wp-mcp-ai-chat__bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.wp-mcp-ai-chat__bubble ul,
+.wp-mcp-ai-chat__bubble ol {
+    margin: 0 0 0.75rem 1.25rem;
+    padding-left: 1.25rem;
+}
+
+.wp-mcp-ai-chat__bubble li + li {
+    margin-top: 0.35rem;
+}
+
+.wp-mcp-ai-chat__bubble h1,
+.wp-mcp-ai-chat__bubble h2,
+.wp-mcp-ai-chat__bubble h3,
+.wp-mcp-ai-chat__bubble h4,
+.wp-mcp-ai-chat__bubble h5,
+.wp-mcp-ai-chat__bubble h6 {
+    margin: 0 0 0.6rem;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-chat__bubble h1 { font-size: 1.6rem; }
+.wp-mcp-ai-chat__bubble h2 { font-size: 1.4rem; }
+.wp-mcp-ai-chat__bubble h3 { font-size: 1.2rem; }
+.wp-mcp-ai-chat__bubble h4 { font-size: 1.1rem; }
+.wp-mcp-ai-chat__bubble h5,
+.wp-mcp-ai-chat__bubble h6 { font-size: 1rem; }
+
+.wp-mcp-ai-chat__bubble pre {
+    background: #272822;
+    color: #f8f8f2;
+    padding: 0.9rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 0 0 0.75rem;
+}
+
+.wp-mcp-ai-chat__bubble pre:last-child {
+    margin-bottom: 0;
+}
+
+.wp-mcp-ai-chat__bubble blockquote {
+    margin: 0 0 0.75rem;
+    padding-left: 1rem;
+    border-left: 4px solid #d0d7ff;
+    color: #374151;
+}
+
+.wp-mcp-ai-chat__bubble blockquote:last-child {
+    margin-bottom: 0;
+}
+
+.wp-mcp-ai-chat__bubble code {
+    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+    background: rgba(0, 0, 0, 0.08);
+    color: #1e293b;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-chat__bubble pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+}
+
+.wp-mcp-ai-chat__bubble a {
+    color: #3858e9;
+    text-decoration: underline;
+}
+
+.wp-mcp-ai-chat__bubble a:hover,
+.wp-mcp-ai-chat__bubble a:focus {
+    text-decoration: none;
+}
+
 .wp-mcp-ai-chat__message--user .wp-mcp-ai-chat__bubble {
     background: #3858e9;
     color: #fff;
