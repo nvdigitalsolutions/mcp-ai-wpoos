@@ -593,6 +593,23 @@ class WP_MCP_AI_Assistant_CPT {
     }
 
     /**
+     * Generate a nonce field name unique to a credential.
+     *
+     * @param string $base_name     Base nonce field name.
+     * @param string $credential_id Credential identifier.
+     * @return string
+     */
+    protected function get_credential_nonce_field_name( $base_name, $credential_id ) {
+        $suffix = sanitize_key( $credential_id );
+
+        if ( '' === $suffix ) {
+            return $base_name;
+        }
+
+        return $base_name . '_' . $suffix;
+    }
+
+    /**
      * Render the tools meta box content.
      *
      * @param WP_Post $post Post object.
@@ -842,7 +859,9 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
         }
 
-        check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_revoke_nonce' );
+        $nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential_id );
+
+        check_admin_referer( 'wp_mcp_ai_revoke_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
         $post = get_post( $post_id );
         if ( ! $post || self::POST_TYPE !== $post->post_type ) {
@@ -874,7 +893,9 @@ class WP_MCP_AI_Assistant_CPT {
             wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
         }
 
-        check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, 'wp_mcp_ai_delete_nonce' );
+        $nonce_field = $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential_id );
+
+        check_admin_referer( 'wp_mcp_ai_delete_credential_' . $post_id . '_' . $credential_id, $nonce_field );
 
         $post = get_post( $post_id );
         if ( ! $post || self::POST_TYPE !== $post->post_type ) {
