@@ -285,6 +285,15 @@ class WP_MCP_AI_REST {
     public function permissions_check( WP_REST_Request $request ) {
         $this->reset_auth_context();
 
+        $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+
+        if ( is_string( $capability ) ) {
+            $capability = sanitize_key( $capability );
+        }
+
+        $requires_authenticated_user = ! empty( $capability ) && 'public' !== $capability;
+
         $bearer = $request->get_header( 'Authorization' );
         if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
             $token     = trim( $matches[1] );
@@ -306,6 +315,14 @@ class WP_MCP_AI_REST {
         }
 
         $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $requires_authenticated_user ) {
+            if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+                $this->set_authenticated_user_id( get_current_user_id() );
+            }
+
+            return true;
+        }
+
         if ( empty( $nonce ) ) {
             return new WP_Error(
                 'wp_mcp_ai_missing_credentials',
@@ -333,10 +350,7 @@ class WP_MCP_AI_REST {
             );
         }
 
-        $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
-        $capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
-
-        if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+        if ( $capability && ! current_user_can( $capability ) ) {
             return $this->insufficient_permissions_error( $capability );
         }
 
