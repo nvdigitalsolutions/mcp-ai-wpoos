@@ -869,7 +869,7 @@ class WP_MCP_AI_Assistant_CPT {
      * @param WP_Post $post    Post object.
      */
     public function save_post( $post_id, $post ) {
-        if ( self::POST_TYPE !== get_post_type( $post_id ) ) {
+        if ( ! $post instanceof WP_Post || self::POST_TYPE !== $post->post_type ) {
             return;
         }
 
