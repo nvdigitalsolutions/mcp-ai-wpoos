@@ -6,6 +6,10 @@
 
 set -e
 
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+VENDOR_TESTS_DIR="$ROOT_DIR/vendor/wp-phpunit/wp-phpunit"
+USING_VENDOR_TESTS=0
+
 if [ "$#" -lt 3 ]; then
     echo "Usage: $0 <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]" >&2
     exit 1
@@ -19,7 +23,12 @@ WP_VERSION=${5-latest}
 SKIP_DB_CREATE=${6-false}
 
 TMPDIR=${TMPDIR-/tmp}
-WP_TESTS_DIR=${WP_TESTS_DIR-${TMPDIR}/wordpress-tests-lib}
+DEFAULT_WP_TESTS_DIR="${TMPDIR}/wordpress-tests-lib"
+
+if [ -z "${WP_TESTS_DIR:-}" ]; then
+    WP_TESTS_DIR=$DEFAULT_WP_TESTS_DIR
+fi
+
 WP_CORE_DIR=${WP_CORE_DIR-${TMPDIR}/wordpress/}
 
 if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
@@ -60,6 +69,19 @@ install_test_suite() {
         return
     fi
 
+    if [ -d "$VENDOR_TESTS_DIR/includes" ]; then
+        USING_VENDOR_TESTS=1
+
+        if [ "$WP_TESTS_DIR" != "$VENDOR_TESTS_DIR" ]; then
+            echo "Linking WordPress test suite from composer package..."
+            mkdir -p "$(dirname "$WP_TESTS_DIR")"
+            rm -rf "$WP_TESTS_DIR"
+            ln -s "$VENDOR_TESTS_DIR" "$WP_TESTS_DIR"
+        fi
+
+        return
+    fi
+
     mkdir -p "$WP_TESTS_DIR"
 
     local ARCHIVE_NAME='trunk'
@@ -72,36 +94,43 @@ install_test_suite() {
 
     if ! command -v svn >/dev/null; then
         echo "Subversion (svn) is required to download the WordPress test suite." >&2
+        echo "Alternatively, run 'composer install' to use the bundled wp-phpunit/wp-phpunit package." >&2
         exit 1
     fi
 
-    svn export --force "$SVN_BASE" "$WP_TESTS_DIR" >/dev/null
+    if ! svn export --force "$SVN_BASE" "$WP_TESTS_DIR" >/dev/null; then
+        echo "Failed to download the WordPress test suite from $SVN_BASE." >&2
+        echo "If network access to develop.svn.wordpress.org is unavailable, run 'composer install' to install wp-phpunit/wp-phpunit and re-run this script." >&2
+        exit 1
+    fi
 }
 
 configure_wp_tests() {
     local CONFIG_FILE="$WP_TESTS_DIR/wp-tests-config.php"
 
+    if [ "$USING_VENDOR_TESTS" -eq 1 ]; then
+        # The composer-provided test suite manages its own configuration.
+        # Plugin bootstrap code sets WP_PHPUNIT__TESTS_CONFIG to point at the
+        # local configuration file in tests/wp-tests-config.php, so we do not
+        # need to create a second copy here.
+        return
+    fi
+
     if [ -f "$CONFIG_FILE" ]; then
         return
     fi
 
-    download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" "$CONFIG_FILE"
-
-    local SED_OPTS=(-i)
-    if [ "$(uname -s)" = 'Darwin' ]; then
-        SED_OPTS=(-i '')
-    fi
-
-    sed "${SED_OPTS[@]}" "s/youremptytestdbnamehere/$DB_NAME/" "$CONFIG_FILE"
-    sed "${SED_OPTS[@]}" "s/yourusernamehere/$DB_USER/" "$CONFIG_FILE"
-    sed "${SED_OPTS[@]}" "s/yourpasswordhere/$DB_PASS/" "$CONFIG_FILE"
-    sed "${SED_OPTS[@]}" "s:localhost:$DB_HOST:" "$CONFIG_FILE"
-    sed "${SED_OPTS[@]}" "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR':" "$CONFIG_FILE"
-
-    cat <<EXTRA >> "$CONFIG_FILE"
-
+    cat > "$CONFIG_FILE" <<PHP
+<?php
+define( 'DB_NAME', '${DB_NAME}' );
+define( 'DB_USER', '${DB_USER}' );
+define( 'DB_PASSWORD', '${DB_PASS}' );
+define( 'DB_HOST', '${DB_HOST}' );
+define( 'DB_CHARSET', 'utf8' );
+define( 'DB_COLLATE', '' );
 define( 'WP_DEBUG', true );
-EXTRA
+define( 'ABSPATH', '${WP_CORE_DIR}' );
+PHP
 }
 
 create_db() {
