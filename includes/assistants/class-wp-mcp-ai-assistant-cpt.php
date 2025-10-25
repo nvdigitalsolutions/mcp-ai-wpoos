@@ -413,48 +413,29 @@ class WP_MCP_AI_Assistant_CPT {
                         get_date_from_gmt( $credential['revoked_at'], get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) )
                     );
                 } else {
-                    $revoke_url = wp_nonce_url(
-                        add_query_arg(
-                            array(
-                                'action'        => 'wp_mcp_ai_revoke_credential',
-                                'post_id'       => $post->ID,
-                                'credential_id' => $credential['id'],
-                            ),
-                            admin_url( 'admin-post.php' )
-                        ),
+                    $action_links[] = $this->build_credential_action_form(
+                        $post->ID,
+                        $credential['id'],
+                        'wp_mcp_ai_revoke_credential',
                         'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
-                        'wp_mcp_ai_revoke_nonce'
-                    );
-
-                    $action_links[] = sprintf(
-                        '<a class="button-link delete" href="%1$s" onclick="return confirm(\'%2$s\');">%3$s</a>',
-                        esc_url( $revoke_url ),
-                        esc_js( __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' ) ),
-                        esc_html__( 'Revoke', 'wp-mcp-ai' )
+                        'wp_mcp_ai_revoke_nonce',
+                        __( 'Revoke', 'wp-mcp-ai' ),
+                        __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
                     );
                 }
 
-                $delete_url = wp_nonce_url(
-                    add_query_arg(
-                        array(
-                            'action'        => 'wp_mcp_ai_delete_credential',
-                            'post_id'       => $post->ID,
-                            'credential_id' => $credential['id'],
-                        ),
-                        admin_url( 'admin-post.php' )
-                    ),
+                $action_links[] = $this->build_credential_action_form(
+                    $post->ID,
+                    $credential['id'],
+                    'wp_mcp_ai_delete_credential',
                     'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
-                    'wp_mcp_ai_delete_nonce'
+                    'wp_mcp_ai_delete_nonce',
+                    __( 'Delete', 'wp-mcp-ai' ),
+                    __( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
+                    'button button-secondary delete'
                 );
 
-                $action_links[] = sprintf(
-                    '<a class="button-link delete" href="%1$s" onclick="return confirm(\'%2$s\');">%3$s</a>',
-                    esc_url( $delete_url ),
-                    esc_js( __( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ) ),
-                    esc_html__( 'Delete', 'wp-mcp-ai' )
-                );
-
-                $actions = empty( $action_links ) ? '&#8212;' : implode( ' | ', $action_links );
+                $actions = empty( $action_links ) ? '&#8212;' : implode( ' ', $action_links );
 
                 echo '<tr>';
                 echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
@@ -485,6 +466,43 @@ class WP_MCP_AI_Assistant_CPT {
             esc_url( $issue_url ),
             esc_html__( 'Generate Credential', 'wp-mcp-ai' )
         );
+    }
+
+    /**
+     * Build the markup for a credential action form/button.
+     *
+     * @param int    $post_id        Assistant post ID.
+     * @param string $credential_id  Credential identifier.
+     * @param string $action         Admin-post action hook name.
+     * @param string $nonce_action   Action name for nonce verification.
+     * @param string $nonce_name     Nonce field name.
+     * @param string $button_label   Button label.
+     * @param string $confirm_prompt Confirmation prompt shown before submit.
+     * @param string $button_class   CSS classes to apply to the button element.
+     *
+     * @return string
+     */
+    protected function build_credential_action_form( $post_id, $credential_id, $action, $nonce_action, $nonce_name, $button_label, $confirm_prompt, $button_class = 'button button-secondary' ) {
+        $confirm_attribute = '';
+
+        if ( $confirm_prompt ) {
+            $confirm_attribute = sprintf(
+                ' onsubmit="%s"',
+                esc_attr( 'return confirm(' . wp_json_encode( $confirm_prompt ) . ');' )
+            );
+        }
+
+        ob_start();
+        ?>
+        <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-credential-action" style="display:inline;"<?php echo $confirm_attribute; ?>>
+            <input type="hidden" name="action" value="<?php echo esc_attr( $action ); ?>" />
+            <input type="hidden" name="post_id" value="<?php echo esc_attr( $post_id ); ?>" />
+            <input type="hidden" name="credential_id" value="<?php echo esc_attr( $credential_id ); ?>" />
+            <?php wp_nonce_field( $nonce_action, $nonce_name ); ?>
+            <button type="submit" class="<?php echo esc_attr( $button_class ); ?>"><?php echo esc_html( $button_label ); ?></button>
+        </form>
+        <?php
+        return ob_get_clean();
     }
 
     /**
