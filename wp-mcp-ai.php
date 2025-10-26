@@ -186,3 +186,50 @@ function wp_mcp_ai_uninstall() {
 }
 
 register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );
+
+/**
+ * Ensure additional file-search formats can be uploaded when enabled.
+ *
+ * @param array|string $mimes Allowed mime types keyed by file extension.
+ * @return array
+ */
+function wp_mcp_ai_extend_upload_mimes( $mimes ) {
+    if ( ! is_array( $mimes ) ) {
+        $mimes = array();
+    }
+
+    if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+        return $mimes;
+    }
+
+    $allowed_sets = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+    $file_mimes   = isset( $allowed_sets['file'] ) ? (array) $allowed_sets['file'] : array();
+
+    $jsonl_candidates = array(
+        'application/jsonl',
+        'application/x-ndjson',
+    );
+
+    $selected_jsonl_mime = '';
+
+    foreach ( $jsonl_candidates as $candidate ) {
+        if ( in_array( $candidate, $file_mimes, true ) ) {
+            $selected_jsonl_mime = $candidate;
+            break;
+        }
+    }
+
+    if ( '' !== $selected_jsonl_mime ) {
+        $mimes['jsonl'] = $selected_jsonl_mime;
+    }
+
+    if ( in_array( 'application/x-ndjson', $file_mimes, true ) ) {
+        $mimes['ndjson'] = 'application/x-ndjson';
+    } elseif ( '' !== $selected_jsonl_mime ) {
+        $mimes['ndjson'] = $selected_jsonl_mime;
+    }
+
+    return $mimes;
+}
+
+add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );

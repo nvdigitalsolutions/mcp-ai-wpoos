@@ -416,6 +416,8 @@ class WP_MCP_AI_Message_Attachments {
             'text/html',
             'application/pdf',
             'application/json',
+            'application/x-ndjson',
+            'application/jsonl',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
             'application/vnd.ms-word.document.macroEnabled.12',

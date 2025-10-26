@@ -357,6 +357,27 @@ class WP_MCP_AI_Shortcode {
             }
         }
 
+        $custom_mime_extensions = array(
+            'application/x-ndjson' => array( 'ndjson', 'jsonl' ),
+            'application/jsonl'    => array( 'jsonl' ),
+        );
+
+        foreach ( $custom_mime_extensions as $mime => $custom_extensions ) {
+            if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+                continue;
+            }
+
+            foreach ( $custom_extensions as $extension ) {
+                $extension = strtolower( (string) $extension );
+
+                if ( '' === $extension ) {
+                    continue;
+                }
+
+                $extensions[] = $extension;
+            }
+        }
+
         return array_values( array_unique( $extensions ) );
     }
 
