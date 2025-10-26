@@ -61,8 +61,10 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         $chat_messages = $this->normalise_messages_for_payload( $messages );
+        $attachment_lookup = array();
 
         if ( $should_use_responses_api ) {
+            $attachment_lookup = $this->index_attachments_by_id( $attachments );
             $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
         } else {
             $payload['messages'] = $chat_messages;
@@ -100,6 +102,29 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $system_messages ) ) {
+            if ( $should_use_responses_api ) {
+                foreach ( $system_messages as &$system_message ) {
+                    if ( ! isset( $system_message['content'] ) ) {
+                        continue;
+                    }
+
+                    if ( is_array( $system_message['content'] ) ) {
+                        $system_message['content'] = $this->normalise_responses_content_segments( $system_message['content'], $attachment_lookup );
+                    } else {
+                        $system_message['content'] = $this->normalise_responses_content_segments(
+                            array(
+                                array(
+                                    'type' => 'text',
+                                    'text' => (string) $system_message['content'],
+                                ),
+                            ),
+                            $attachment_lookup
+                        );
+                    }
+                }
+                unset( $system_message );
+            }
+
             $payload[ $message_key ] = array_merge( $system_messages, $payload[ $message_key ] );
         }
 
