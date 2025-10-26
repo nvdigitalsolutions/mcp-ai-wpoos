@@ -63,7 +63,7 @@ class WP_MCP_AI_OpenAI_Client {
         $chat_messages = $this->normalise_messages_for_payload( $messages );
 
         if ( $should_use_responses_api ) {
-            $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages );
+            $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
         } else {
             $payload['messages'] = $chat_messages;
         }
@@ -105,10 +105,6 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( ! empty( $options['tools'] ) ) {
             $payload['tools'] = array_values( $options['tools'] );
-        }
-
-        if ( $should_use_responses_api && ! empty( $attachments ) ) {
-            $payload['attachments'] = $attachments;
         }
 
         if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
@@ -476,8 +472,9 @@ class WP_MCP_AI_OpenAI_Client {
      * @param array $normalised_messages Messages after normalisation.
      * @return array
      */
-    protected function prepare_responses_input( array $original_messages, array $normalised_messages ) {
+    protected function prepare_responses_input( array $original_messages, array $normalised_messages, array $attachments = array() ) {
         $prepared = array();
+        $attachment_lookup = $this->index_attachments_by_id( $attachments );
 
         foreach ( $normalised_messages as $index => $message ) {
             $entry = $message;
@@ -501,7 +498,7 @@ class WP_MCP_AI_OpenAI_Client {
             }
 
             if ( isset( $entry['content'] ) && is_array( $entry['content'] ) ) {
-                $entry['content'] = $this->normalise_responses_content_segments( $entry['content'] );
+                $entry['content'] = $this->normalise_responses_content_segments( $entry['content'], $attachment_lookup );
             }
 
             $prepared[] = $entry;
@@ -521,7 +518,7 @@ class WP_MCP_AI_OpenAI_Client {
      * @param array $segments Content segments for a single message.
      * @return array
      */
-    protected function normalise_responses_content_segments( array $segments ) {
+    protected function normalise_responses_content_segments( array $segments, array $attachments = array() ) {
         $normalised = array();
 
         foreach ( $segments as $segment ) {
@@ -539,12 +536,118 @@ class WP_MCP_AI_OpenAI_Client {
                     $segment['text'] = (string) $segment['content'];
                     unset( $segment['content'] );
                 }
+            } elseif ( 'input_image' === $type ) {
+                $segment = $this->populate_responses_image_segment( $segment, $attachments );
+            } elseif ( 'input_file' === $type ) {
+                $segment = $this->populate_responses_file_segment( $segment, $attachments );
             }
 
             $normalised[] = $segment;
         }
 
         return $normalised;
+    }
+
+    /**
+     * Build a lookup of attachments keyed by their generated identifier.
+     *
+     * @param array $attachments Attachment payloads.
+     * @return array
+     */
+    protected function index_attachments_by_id( array $attachments ) {
+        $indexed = array();
+
+        foreach ( $attachments as $attachment ) {
+            if ( ! is_array( $attachment ) ) {
+                continue;
+            }
+
+            $id = '';
+
+            if ( isset( $attachment['id'] ) ) {
+                $id = (string) $attachment['id'];
+            } elseif ( isset( $attachment['file_id'] ) ) {
+                $id = (string) $attachment['file_id'];
+            }
+
+            if ( '' === $id ) {
+                continue;
+            }
+
+            $indexed[ $id ] = $attachment;
+        }
+
+        return $indexed;
+    }
+
+    /**
+     * Hydrate an image segment with inline attachment data when available.
+     *
+     * @param array $segment     Segment definition.
+     * @param array $attachments Attachment lookup keyed by file identifier.
+     * @return array
+     */
+    protected function populate_responses_image_segment( array $segment, array $attachments ) {
+        $file_id = '';
+
+        if ( isset( $segment['image_file']['file_id'] ) ) {
+            $file_id = (string) $segment['image_file']['file_id'];
+        } elseif ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        }
+
+        if ( $file_id && isset( $attachments[ $file_id ] ) ) {
+            $attachment = $attachments[ $file_id ];
+            $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
+            $mime_type  = isset( $attachment['mime_type'] ) && '' !== $attachment['mime_type'] ? (string) $attachment['mime_type'] : 'application/octet-stream';
+
+            if ( '' !== $data ) {
+                $segment['image_url'] = 'data:' . $mime_type . ';base64,' . $data;
+            }
+
+            if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
+                $segment['caption'] = $attachment['caption'];
+            }
+
+            unset( $segment['image_file'] );
+            unset( $segment['file_id'] );
+        } elseif ( isset( $segment['image_url']['url'] ) ) {
+            $segment['image_url'] = (string) $segment['image_url']['url'];
+        }
+
+        if ( empty( $segment['detail'] ) ) {
+            $segment['detail'] = 'auto';
+        }
+
+        return $segment;
+    }
+
+    /**
+     * Hydrate a file segment with inline attachment data when available.
+     *
+     * @param array $segment     Segment definition.
+     * @param array $attachments Attachment lookup keyed by file identifier.
+     * @return array
+     */
+    protected function populate_responses_file_segment( array $segment, array $attachments ) {
+        $file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
+
+        if ( $file_id && isset( $attachments[ $file_id ] ) ) {
+            $attachment = $attachments[ $file_id ];
+            $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
+
+            if ( '' !== $data ) {
+                $segment['file_data'] = $data;
+            }
+
+            if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
+                $segment['filename'] = $attachment['filename'];
+            }
+
+            unset( $segment['file_id'] );
+        }
+
+        return $segment;
     }
 
     /**
