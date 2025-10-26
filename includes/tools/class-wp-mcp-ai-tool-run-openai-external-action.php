@@ -290,7 +290,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
                     'role'    => 'user',
                     'content' => array(
                         array(
-                            'type' => 'text',
+                            'type' => 'input_text',
                             'text' => $input_text,
                         ),
                     ),
@@ -302,7 +302,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
                     'role'    => 'user',
                     'content' => array(
                         array(
-                            'type' => 'text',
+                            'type' => 'input_text',
                             'text' => wp_json_encode( $input_variables ),
                         ),
                     ),
