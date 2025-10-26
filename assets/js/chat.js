@@ -1398,6 +1398,64 @@
         }
     }
 
+    function extractFilteredResponseNotice(choice, message) {
+        if (message && typeof message.refusal === 'string' && message.refusal.trim()) {
+            return message.refusal.trim();
+        }
+
+        var metadata = message && message.metadata ? message.metadata : null;
+        if (metadata && typeof metadata === 'object') {
+            if (typeof metadata.warning === 'string' && metadata.warning.trim()) {
+                return metadata.warning.trim();
+            }
+
+            if (typeof metadata.message === 'string' && metadata.message.trim()) {
+                return metadata.message.trim();
+            }
+
+            if (typeof metadata.reason === 'string' && metadata.reason.trim()) {
+                return metadata.reason.trim();
+            }
+
+            if (typeof metadata.error === 'string' && metadata.error.trim()) {
+                return metadata.error.trim();
+            }
+        }
+
+        var filterResults = message && message.content_filter_results ? message.content_filter_results : null;
+        if (filterResults && typeof filterResults === 'object') {
+            if (typeof filterResults.message === 'string' && filterResults.message.trim()) {
+                return filterResults.message.trim();
+            }
+
+            if (typeof filterResults.reason === 'string' && filterResults.reason.trim()) {
+                return filterResults.reason.trim();
+            }
+
+            if (filterResults.error && typeof filterResults.error === 'object') {
+                if (typeof filterResults.error.message === 'string' && filterResults.error.message.trim()) {
+                    return filterResults.error.message.trim();
+                }
+            }
+        }
+
+        var finishReason = choice && typeof choice.finish_reason === 'string' ? choice.finish_reason.trim() : '';
+
+        if (finishReason === 'content_filter') {
+            return getString('responseFiltered', 'The assistant response was blocked by safety filters.');
+        }
+
+        if (finishReason === 'length') {
+            return getString('responseIncomplete', 'The assistant response ended prematurely and could not be displayed.');
+        }
+
+        if (finishReason === 'error') {
+            return getString('responseErrored', 'The assistant response could not be displayed due to an error.');
+        }
+
+        return '';
+    }
+
     function handleChatResponse(state, data) {
         var chatData = data && data.data ? data.data : null;
         var choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
@@ -1411,13 +1469,28 @@
 
         var assistantMessage = { role: 'assistant' };
         var assistantDisplay = prepareAssistantDisplay(message, state);
+        var hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
+        var hasDisplayAttachments = assistantDisplay.attachments.length > 0;
+        var hasDisplayContent = hasDisplayText || hasDisplayAttachments;
+        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
-        if (assistantDisplay.text || assistantDisplay.attachments.length) {
+        if (hasDisplayContent) {
             appendMessage(state.messagesEl, 'assistant', assistantDisplay, true);
             assistantMessage.content = assistantDisplay.text || '';
         }
 
-        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
+        if (!hasDisplayContent && !hasToolCalls) {
+            var notice = extractFilteredResponseNotice(choice, message);
+            if (!notice) {
+                notice = getString('responseMissing', 'The assistant response could not be displayed.');
+            }
+
+            appendMessage(state.messagesEl, 'system', { text: notice });
+            setStatus(state.container, notice);
+
+            return Promise.resolve();
+        }
+
         if (hasToolCalls) {
             assistantMessage.tool_calls = message.tool_calls;
         }
