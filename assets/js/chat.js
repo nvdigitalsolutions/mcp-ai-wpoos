@@ -29,6 +29,86 @@
         objectUrlRegistry = [];
     }
 
+    function normaliseList(value) {
+        if (!Array.isArray(value)) {
+            return [];
+        }
+
+        var seen = {};
+        var result = [];
+
+        value.forEach(function (item) {
+            if (typeof item !== 'string') {
+                return;
+            }
+
+            var normalised = item.trim().toLowerCase();
+            if (!normalised || seen[normalised]) {
+                return;
+            }
+
+            seen[normalised] = true;
+            result.push(normalised);
+        });
+
+        return result;
+    }
+
+    function getFileExtension(file) {
+        if (!file || !file.name) {
+            return '';
+        }
+
+        var name = String(file.name);
+        var dotIndex = name.lastIndexOf('.');
+
+        if (dotIndex === -1) {
+            return '';
+        }
+
+        return name.slice(dotIndex + 1).toLowerCase();
+    }
+
+    function isFileTypeAllowed(file, state) {
+        if (!file) {
+            return false;
+        }
+
+        if (!state || !state.config) {
+            return true;
+        }
+
+        var allowedImageMimes = Array.isArray(state.config.allowedImageMimes) ? state.config.allowedImageMimes : [];
+        var allowedFileMimes = Array.isArray(state.config.allowedFileMimes) ? state.config.allowedFileMimes : [];
+        var allowedExtensions = Array.isArray(state.config.allowedExtensions) ? state.config.allowedExtensions : [];
+
+        if (!allowedImageMimes.length && !allowedFileMimes.length && !allowedExtensions.length) {
+            return true;
+        }
+
+        var mime = (file.type || '').toLowerCase();
+
+        if (mime) {
+            if (allowedImageMimes.indexOf(mime) !== -1 || allowedFileMimes.indexOf(mime) !== -1) {
+                return true;
+            }
+
+            var extensionFromMime = getFileExtension(file);
+            if (extensionFromMime && allowedExtensions.indexOf(extensionFromMime) !== -1) {
+                return true;
+            }
+
+            return false;
+        }
+
+        var extension = getFileExtension(file);
+        if (extension) {
+            return allowedExtensions.indexOf(extension) !== -1;
+        }
+
+        return true;
+    }
+
     if (typeof window !== 'undefined' && window.addEventListener) {
         window.addEventListener('beforeunload', revokeObjectUrls);
     }
@@ -58,6 +138,8 @@
             return;
         }
 
+        state.validationNotice = '';
+
         var files = Array.prototype.slice.call(event.target.files);
         event.target.value = '';
 
@@ -65,9 +147,44 @@
             return;
         }
 
-        var sequence = Promise.resolve();
+        var allowedFiles = [];
+        var rejectedFiles = [];
 
         files.forEach(function (file) {
+            if (isFileTypeAllowed(file, state)) {
+                allowedFiles.push(file);
+            } else {
+                rejectedFiles.push(file);
+            }
+        });
+
+        if (rejectedFiles.length) {
+            var notice;
+
+            if (rejectedFiles.length === 1) {
+                var label = (rejectedFiles[0] && rejectedFiles[0].name) || getString('unsupportedFileLabel', 'This file');
+                notice = formatString(
+                    getString('unsupportedFileType', '“%s” is not a supported file type. Please choose a different file.'),
+                    label
+                );
+            } else {
+                notice = getString(
+                    'unsupportedMultipleFiles',
+                    'Some selected files are not supported. Please try different files.'
+                );
+            }
+
+            state.validationNotice = notice;
+            setStatus(state.container, notice);
+        }
+
+        if (!allowedFiles.length) {
+            return;
+        }
+
+        var sequence = Promise.resolve();
+
+        allowedFiles.forEach(function (file) {
             sequence = sequence.then(function () {
                 return uploadAttachment(state, file);
             });
@@ -138,8 +255,13 @@
                 state.uploading = Math.max(0, (state.uploading || 1) - 1);
                 updateAttachButtonState(state);
 
-                if (!state.busy && state.uploading === 0 && !hadError) {
-                    setStatus(state.container, '');
+                if (!state.busy && state.uploading === 0) {
+                    if (!hadError && state.validationNotice) {
+                        setStatus(state.container, state.validationNotice);
+                        state.validationNotice = '';
+                    } else if (!hadError) {
+                        setStatus(state.container, '');
+                    }
                 }
             });
     }
@@ -730,6 +852,14 @@
                 instanceConfig.uploadEndpoint = globalConfig.uploadEndpoint || '';
             }
 
+            instanceConfig.allowedImageMimes = normaliseList(instanceConfig.allowedImageMimes);
+            instanceConfig.allowedFileMimes = normaliseList(instanceConfig.allowedFileMimes);
+            instanceConfig.allowedExtensions = normaliseList(instanceConfig.allowedExtensions);
+
+            if (fileInput && instanceConfig.fileAccept) {
+                fileInput.setAttribute('accept', instanceConfig.fileAccept);
+            }
+
             var state = {
                 conversation: [],
                 busy: false,
@@ -747,6 +877,7 @@
                 pendingAttachments: [],
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
+                validationNotice: '',
             };
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
