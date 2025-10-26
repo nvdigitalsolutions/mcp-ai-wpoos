@@ -93,6 +93,9 @@ class WP_MCP_AI_Shortcode {
                     'uploadError'        => __( 'The file could not be uploaded. Please try again.', 'wp-mcp-ai' ),
                     'uploadInProgress'   => __( 'Please wait for uploads to finish before sending.', 'wp-mcp-ai' ),
                     'downloadAttachment' => __( 'Download attachment', 'wp-mcp-ai' ),
+                    'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
+                    'unsupportedMultipleFiles' => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
+                    'unsupportedFileLabel' => __( 'This file', 'wp-mcp-ai' ),
                 ),
             )
         );
@@ -174,6 +177,30 @@ class WP_MCP_AI_Shortcode {
             'messagesEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat' ) ),
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
         );
+
+        if ( class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+            $allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+            $allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
+            $allowed_file_mimes  = isset( $allowed_mime_sets['file'] ) ? (array) $allowed_mime_sets['file'] : array();
+            $allowed_extensions  = self::get_allowed_extensions_for_mimes( array_merge( $allowed_image_mimes, $allowed_file_mimes ) );
+            $file_accept_tokens  = self::build_file_accept_tokens( $allowed_image_mimes, $allowed_file_mimes, $allowed_extensions );
+
+            if ( ! empty( $allowed_image_mimes ) ) {
+                $config['allowedImageMimes'] = array_values( $allowed_image_mimes );
+            }
+
+            if ( ! empty( $allowed_file_mimes ) ) {
+                $config['allowedFileMimes'] = array_values( $allowed_file_mimes );
+            }
+
+            if ( ! empty( $allowed_extensions ) ) {
+                $config['allowedExtensions'] = array_values( $allowed_extensions );
+            }
+
+            if ( ! empty( $file_accept_tokens ) ) {
+                $config['fileAccept'] = implode( ',', $file_accept_tokens );
+            }
+        }
 
         if ( $guest_token ) {
             $config['guestToken'] = $guest_token;
@@ -284,5 +311,92 @@ class WP_MCP_AI_Shortcode {
      */
     protected static function build_guest_token_key( $token ) {
         return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
+    }
+
+    /**
+     * Collect unique file extensions that correspond to the supplied MIME types.
+     *
+     * @param array $allowed_mimes List of MIME types.
+     * @return array
+     */
+    protected static function get_allowed_extensions_for_mimes( array $allowed_mimes ) {
+        if ( empty( $allowed_mimes ) ) {
+            return array();
+        }
+
+        $allowed_mimes = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'strtolower', $allowed_mimes )
+                )
+            )
+        );
+
+        if ( empty( $allowed_mimes ) ) {
+            return array();
+        }
+
+        $extensions = array();
+        $mime_map   = wp_get_mime_types();
+
+        foreach ( $mime_map as $exts => $mime ) {
+            $mime = strtolower( $mime );
+
+            if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+                continue;
+            }
+
+            $parts = array_map( 'trim', explode( '|', $exts ) );
+
+            foreach ( $parts as $extension ) {
+                if ( '' === $extension ) {
+                    continue;
+                }
+
+                $extensions[] = strtolower( $extension );
+            }
+        }
+
+        return array_values( array_unique( $extensions ) );
+    }
+
+    /**
+     * Build the tokens used for the file input accept attribute.
+     *
+     * @param array $image_mimes    Allowed image MIME types.
+     * @param array $file_mimes     Allowed file MIME types.
+     * @param array $extensions     Allowed file extensions (without dots).
+     * @return array
+     */
+    protected static function build_file_accept_tokens( array $image_mimes, array $file_mimes, array $extensions ) {
+        $tokens = array();
+
+        foreach ( array_merge( $image_mimes, $file_mimes ) as $mime ) {
+            $mime = strtolower( (string) $mime );
+
+            if ( '' !== $mime ) {
+                $tokens[] = $mime;
+            }
+        }
+
+        foreach ( $extensions as $extension ) {
+            $extension = strtolower( (string) $extension );
+
+            if ( '' === $extension ) {
+                continue;
+            }
+
+            $extension = ltrim( $extension, '.' );
+
+            if ( '' !== $extension ) {
+                $tokens[] = '.' . $extension;
+            }
+        }
+
+        return array_values(
+            array_unique(
+                array_filter( $tokens )
+            )
+        );
     }
 }

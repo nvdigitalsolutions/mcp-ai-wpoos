@@ -380,8 +380,23 @@ class WP_MCP_AI_Message_Attachments {
      * @return bool
      */
     protected function is_supported_mime_type( $mime_type, $usage ) {
-        $mime_type = (string) $mime_type;
+        $mime_type     = strtolower( (string) $mime_type );
+        $allowed_mimes = self::get_allowed_mime_types( $usage );
 
+        if ( empty( $allowed_mimes ) ) {
+            return false;
+        }
+
+        return in_array( $mime_type, $allowed_mimes, true );
+    }
+
+    /**
+     * Retrieve the allowed MIME types for attachments.
+     *
+     * @param string|null $usage Optional usage context (image|file). Null returns both lists.
+     * @return array
+     */
+    public static function get_allowed_mime_types( $usage = null ) {
         $image_mimes = array(
             'image/jpeg',
             'image/png',
@@ -453,18 +468,37 @@ class WP_MCP_AI_Message_Attachments {
             }
         }
 
-        $image_mimes = apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes );
-        $file_mimes  = apply_filters( 'wp_mcp_ai_allowed_file_mimes', $file_mimes );
+        $image_mimes = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes ) )
+                )
+            )
+        );
+        $file_mimes  = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'strtolower', apply_filters( 'wp_mcp_ai_allowed_file_mimes', $file_mimes ) )
+                )
+            )
+        );
+
+        if ( null === $usage ) {
+            return array(
+                'image' => $image_mimes,
+                'file'  => $file_mimes,
+            );
+        }
 
         if ( 'image' === $usage ) {
-            return in_array( $mime_type, $image_mimes, true );
+            return $image_mimes;
         }
 
         if ( 'file' === $usage ) {
-            return in_array( $mime_type, $file_mimes, true );
+            return $file_mimes;
         }
 
-        return false;
+        return array();
     }
 
     /**
