@@ -128,6 +128,43 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure legacy clients sending a top-level attachments parameter do not trigger validation errors.
+     */
+    public function test_top_level_attachments_parameter_is_ignored() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello world',
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertNotEmpty( $messages );
+
+                $first = $messages[0];
+                $this->assertArrayHasKey( 'content', $first );
+                $this->assertSame( 'text', $first['content'][0]['type'] );
+                $this->assertSame( 'Hello world', $first['content'][0]['text'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            },
+            array(
+                'attachments' => array(
+                    array( 'id' => 'file-123' ),
+                ),
+            )
+        );
+    }
+
+    /**
      * Ensure tool role messages are accepted and metadata is preserved.
      */
     public function test_tool_role_message_is_preserved() {
@@ -464,8 +501,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
      * @param array    $messages     Message payload.
      * @param callable $message_assertion Callback that inspects messages.
      * @param callable $options_assertion Callback that inspects options.
+     * @param array    $extra_params Optional additional parameters to include with the request.
      */
-    protected function dispatch_chat_request( $assistant_id, array $messages, callable $message_assertion, callable $options_assertion ) {
+    protected function dispatch_chat_request( $assistant_id, array $messages, callable $message_assertion, callable $options_assertion, array $extra_params = array() ) {
         $user_id = get_current_user_id();
         if ( ! $user_id ) {
             $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -503,6 +541,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
         $request->set_param( 'assistant_id', $assistant_id );
         $request->set_param( 'messages', $messages );
+
+        foreach ( $extra_params as $key => $value ) {
+            $request->set_param( $key, $value );
+        }
         $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
         $response = rest_get_server()->dispatch( $request );

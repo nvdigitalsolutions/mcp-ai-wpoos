@@ -238,6 +238,10 @@ class WP_MCP_AI_REST {
                             'type'     => 'array',
                             'required' => true,
                         ),
+                        'attachments' => array(
+                            'type'     => 'array',
+                            'required' => false,
+                        ),
                         'options' => array(
                             'type'     => 'object',
                             'required' => false,
