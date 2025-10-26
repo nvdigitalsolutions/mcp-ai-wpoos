@@ -89,6 +89,16 @@
         var mime = (file.type || '').toLowerCase();
 
         if (mime) {
+            var semicolonIndex = mime.indexOf(';');
+
+            if (semicolonIndex !== -1) {
+                mime = mime.slice(0, semicolonIndex);
+            }
+
+            mime = mime.trim();
+        }
+
+        if (mime) {
             if (allowedImageMimes.indexOf(mime) !== -1 || allowedFileMimes.indexOf(mime) !== -1) {
                 return true;
             }
