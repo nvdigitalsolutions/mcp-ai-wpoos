@@ -134,6 +134,65 @@ class WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Guest tokens issued by the shortcode allow anonymous visitors to chat.
+     */
+    public function test_permissions_check_allows_guest_token_access() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Guest Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+
+        $this->assertNotEmpty( $token );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_header( 'X-WP-MCP-AI-Guest', $token );
+
+        $result = $this->rest_controller->permissions_check( $request );
+
+        $this->assertTrue( $result );
+    }
+
+    /**
+     * Tokens are scoped to the assistant rendered on the shortcode.
+     */
+    public function test_permissions_check_rejects_mismatched_guest_token() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Scoped Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $other_assistant = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Other Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+
+        $this->assertNotEmpty( $token );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $other_assistant );
+        $request->set_header( 'X-WP-MCP-AI-Guest', $token );
+
+        $result = $this->rest_controller->permissions_check( $request );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_missing_credentials', $result->get_error_code() );
+    }
+
+    /**
      * Stored assistant credentials grant access when supplied via bearer token.
      */
     public function test_permissions_check_accepts_valid_local_token() {

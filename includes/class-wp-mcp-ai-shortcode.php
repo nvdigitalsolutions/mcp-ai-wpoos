@@ -26,6 +26,16 @@ class WP_MCP_AI_Shortcode {
     const STYLE_HANDLE = 'wp-mcp-ai-chat';
 
     /**
+     * Lifetime for guest access tokens (in seconds).
+     */
+    const GUEST_TOKEN_TTL = HOUR_IN_SECONDS;
+
+    /**
+     * Prefix used for guest access transients.
+     */
+    const GUEST_TOKEN_TRANSIENT_PREFIX = 'wp_mcp_ai_guest_access_';
+
+    /**
      * Bootstraps hooks.
      */
     public function __construct() {
@@ -110,12 +120,14 @@ class WP_MCP_AI_Shortcode {
         $atts = shortcode_atts(
             array(
                 'assistant' => '',
+                'allow_guests' => 'false',
             ),
             $atts,
             $tag
         );
 
         $assistant_id = absint( $atts['assistant'] );
+        $allow_guests = wp_validate_boolean( $atts['allow_guests'] );
 
         if ( ! $assistant_id ) {
             $settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -131,7 +143,16 @@ class WP_MCP_AI_Shortcode {
             return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
         }
 
+        $guest_token = '';
+        if ( $allow_guests ) {
+            $guest_token = self::generate_guest_token( $assistant_id );
+        }
+
         $capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
+
+        if ( $guest_token ) {
+            $capability = 'public';
+        }
 
         if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
             return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
@@ -153,6 +174,10 @@ class WP_MCP_AI_Shortcode {
             'messagesEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat' ) ),
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
         );
+
+        if ( $guest_token ) {
+            $config['guestToken'] = $guest_token;
+        }
 
         $inline_config = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
         $inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
@@ -185,5 +210,79 @@ class WP_MCP_AI_Shortcode {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Generate a guest access token for the given assistant.
+     *
+     * @param int $assistant_id Assistant post ID.
+     * @return string Guest access token or empty string on failure.
+     */
+    public static function generate_guest_token( $assistant_id ) {
+        $assistant_id = absint( $assistant_id );
+
+        if ( ! $assistant_id ) {
+            return '';
+        }
+
+        $token = wp_generate_password( 32, false, false );
+
+        if ( ! $token ) {
+            return '';
+        }
+
+        $record = array(
+            'assistant_id' => $assistant_id,
+            'created'      => time(),
+        );
+
+        $saved = set_transient( self::build_guest_token_key( $token ), $record, self::GUEST_TOKEN_TTL );
+
+        if ( ! $saved ) {
+            return '';
+        }
+
+        return $token;
+    }
+
+    /**
+     * Validate a guest token and ensure it is scoped to the requested assistant.
+     *
+     * @param string $token        Guest access token supplied by the client.
+     * @param int    $assistant_id Assistant post ID provided in the request.
+     * @return int|false Assistant ID associated with the token when valid, false otherwise.
+     */
+    public static function validate_guest_token( $token, $assistant_id = 0 ) {
+        $token = is_string( $token ) ? trim( $token ) : '';
+
+        if ( '' === $token ) {
+            return false;
+        }
+
+        $data = get_transient( self::build_guest_token_key( $token ) );
+
+        if ( empty( $data ) || ! is_array( $data ) ) {
+            return false;
+        }
+
+        $stored_assistant = isset( $data['assistant_id'] ) ? absint( $data['assistant_id'] ) : 0;
+
+        if ( $assistant_id && $stored_assistant && $assistant_id !== $stored_assistant ) {
+            return false;
+        }
+
+        set_transient( self::build_guest_token_key( $token ), $data, self::GUEST_TOKEN_TTL );
+
+        return $stored_assistant;
+    }
+
+    /**
+     * Build the transient key used to persist guest access tokens.
+     *
+     * @param string $token Guest access token.
+     * @return string
+     */
+    protected static function build_guest_token_key( $token ) {
+        return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
     }
 }
