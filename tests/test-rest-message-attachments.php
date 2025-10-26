@@ -324,6 +324,51 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure zero-byte file attachments are accepted when readable.
+     */
+    public function test_zero_byte_file_attachment_is_allowed() {
+        $assistant_id  = $this->create_assistant_post();
+        $attachment_id = $this->create_text_attachment( 'empty.txt', '' );
+        $expected_file_id = 'wp-attachment-' . $attachment_id;
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'          => 'input_file',
+                            'attachment_id' => $attachment_id,
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) use ( $expected_file_id ) {
+                $this->assertNotEmpty( $messages );
+
+                $segment = $messages[0]['content'][0];
+                $this->assertSame( 'input_file', $segment['type'] );
+                $this->assertSame( $expected_file_id, $segment['file_id'] );
+
+                return true;
+            },
+            function ( $options ) use ( $expected_file_id ) {
+                $this->assertArrayHasKey( 'attachments', $options );
+                $this->assertNotEmpty( $options['attachments'] );
+
+                $attachment = $options['attachments'][0];
+                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( 'text/plain', $attachment['mime_type'] );
+                $this->assertSame( '', $attachment['data'] );
+                $this->assertSame( 0, $attachment['bytes'] );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure DOCX file attachments are accepted and forwarded to the model.
      */
     public function test_docx_file_attachment_is_prepared() {
