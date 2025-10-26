@@ -203,7 +203,7 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         $contents = $this->read_file_contents( $file_path );
-        if ( '' === $contents ) {
+        if ( false === $contents ) {
             return new WP_Error( 'wp_mcp_ai_attachment_unreadable', __( 'Unable to read the attachment data.', 'wp-mcp-ai' ) );
         }
 
@@ -329,7 +329,7 @@ class WP_MCP_AI_Message_Attachments {
      * Read a file from disk.
      *
      * @param string $file_path File path.
-     * @return string
+     * @return string|false
      */
     protected function read_file_contents( $file_path ) {
         if ( ! class_exists( 'WP_Filesystem_Base' ) ) {
@@ -345,11 +345,13 @@ class WP_MCP_AI_Message_Attachments {
             }
         }
 
-        if ( is_readable( $file_path ) ) {
-            return (string) file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+        if ( ! is_readable( $file_path ) ) {
+            return false;
         }
 
-        return '';
+        $contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+        return ( false === $contents ) ? false : (string) $contents;
     }
 
     /**
