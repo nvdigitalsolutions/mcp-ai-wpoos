@@ -792,7 +792,8 @@
             return;
         }
 
-        var message = state.textarea.value.trim();
+        var inputValue = state.textarea.value;
+        var message = inputValue.trim();
         var pending = state.pendingAttachments.slice();
         var hasAttachments = pending.length > 0;
 
@@ -852,6 +853,7 @@
             previousConversationLength: previousConversationLength,
             pendingAttachments: pending,
             messageElement: userMessageElement,
+            inputValue: inputValue,
         });
     }
 
@@ -912,6 +914,19 @@
 
         if (submissionContext.messageElement && submissionContext.messageElement.parentNode) {
             submissionContext.messageElement.parentNode.removeChild(submissionContext.messageElement);
+        }
+
+        if (typeof submissionContext.inputValue === 'string' && state.textarea) {
+            state.textarea.value = submissionContext.inputValue;
+
+            if (typeof state.textarea.focus === 'function') {
+                state.textarea.focus();
+
+                if (typeof state.textarea.setSelectionRange === 'function') {
+                    var length = state.textarea.value.length;
+                    state.textarea.setSelectionRange(length, length);
+                }
+            }
         }
     }
 
