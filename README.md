@@ -171,12 +171,13 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - Responses are displayed inline, including tool invocation feedback when the model requests a registered tool.
 
 ### Requirements
-- The assistant post must be **published** and the current user must have the `edit_posts` capability (matching the REST permission check).
+- The assistant post must be **published** and, by default, the current user must have the `edit_posts` capability (matching the REST permission check). Add `allow_guests="true"` to the shortcode when you want anonymous visitors to participate in the chat.
 - An OpenAI API key and default model must be configured in **Settings → MCP AI**.
 
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
 - Multiple shortcodes can be added to the same page; each chat instance maintains its own conversation context on the client.
+- Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a short-lived guest token that authorises REST requests without a WordPress login.
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ---

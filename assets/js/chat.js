@@ -40,6 +40,19 @@
         return fallback;
     }
 
+    function buildJsonHeaders(state) {
+        var headers = {
+            'Content-Type': 'application/json',
+            'X-WP-Nonce': globalConfig.nonce || '',
+        };
+
+        if (state && state.config && state.config.guestToken) {
+            headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
+        }
+
+        return headers;
+    }
+
     function handleFileSelection(event, state) {
         if (!event || !event.target || !event.target.files) {
             return;
@@ -849,10 +862,7 @@
 
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce': globalConfig.nonce || '',
-            },
+            headers: buildJsonHeaders(state),
             credentials: 'same-origin',
             body: JSON.stringify(payload),
         })
@@ -967,10 +977,7 @@
 
         return fetch(state.config.toolsEndpoint, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-WP-Nonce': globalConfig.nonce || '',
-            },
+            headers: buildJsonHeaders(state),
             credentials: 'same-origin',
             body: JSON.stringify(payload),
         })

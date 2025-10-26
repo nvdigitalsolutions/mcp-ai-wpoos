@@ -288,6 +288,21 @@ class WP_MCP_AI_REST {
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
         $capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
 
+        $guest_token = $this->extract_guest_token( $request );
+
+        if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+            $guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id );
+
+            if ( $guest_assistant ) {
+                if ( ! $assistant_id ) {
+                    $assistant_id = $guest_assistant;
+                    $request->set_param( 'assistant_id', $assistant_id );
+                }
+
+                $capability = 'public';
+            }
+        }
+
         if ( is_string( $capability ) ) {
             $capability = sanitize_key( $capability );
         }
@@ -1924,6 +1939,26 @@ class WP_MCP_AI_REST {
             'total_chars' => $current_total,
             'truncated'   => $truncated,
         );
+    }
+
+    /**
+     * Extract a guest token from the incoming request headers or parameters.
+     *
+     * @param WP_REST_Request $request Request instance.
+     * @return string Guest token if supplied, otherwise empty string.
+     */
+    protected function extract_guest_token( WP_REST_Request $request ) {
+        $token = $request->get_header( 'X-WP-MCP-AI-Guest' );
+
+        if ( ! $token ) {
+            $token = $request->get_param( 'guest_token' );
+        }
+
+        if ( is_string( $token ) ) {
+            return trim( $token );
+        }
+
+        return '';
     }
 
     /**
