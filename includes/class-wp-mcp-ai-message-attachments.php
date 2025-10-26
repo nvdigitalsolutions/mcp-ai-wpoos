@@ -220,8 +220,18 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         $contents = $this->read_file_contents( $file_path );
+        $file_is_readable = is_readable( $file_path );
         if ( false === $contents ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_unreadable', __( 'Unable to read the attachment data.', 'wp-mcp-ai' ) );
+            if ( 0 === (int) $file_size && $file_is_readable ) {
+                $contents = '';
+            } else {
+                $error_code    = $file_is_readable ? 'wp_mcp_ai_attachment_read_failed' : 'wp_mcp_ai_attachment_unreadable';
+                $error_message = $file_is_readable
+                    ? __( 'The attachment file could be accessed but its contents could not be read.', 'wp-mcp-ai' )
+                    : __( 'Unable to read the attachment data.', 'wp-mcp-ai' );
+
+                return new WP_Error( $error_code, $error_message );
+            }
         }
 
         $file_id = 'wp-attachment-' . $attachment_id;
