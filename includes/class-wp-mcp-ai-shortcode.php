@@ -62,6 +62,7 @@ class WP_MCP_AI_Shortcode {
             'wpMcpAiChat',
             array(
                 'restUrl' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ),
+                'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
                 'nonce'   => wp_create_nonce( 'wp_rest' ),
                 'strings' => array(
                     'placeholder'        => __( 'Ask something…', 'wp-mcp-ai' ),
@@ -75,6 +76,13 @@ class WP_MCP_AI_Shortcode {
                     'toolSuccess'        => __( 'Tool response ready.', 'wp-mcp-ai' ),
                     'toolError'          => __( 'The tool request failed.', 'wp-mcp-ai' ),
                     'emptyMessage'       => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
+                    'attachFile'         => __( 'Attach file', 'wp-mcp-ai' ),
+                    'attachmentsLabel'   => __( 'Attachments', 'wp-mcp-ai' ),
+                    'removeAttachment'   => __( 'Remove', 'wp-mcp-ai' ),
+                    'uploadingFile'      => __( 'Uploading “%s”…', 'wp-mcp-ai' ),
+                    'uploadError'        => __( 'The file could not be uploaded. Please try again.', 'wp-mcp-ai' ),
+                    'uploadInProgress'   => __( 'Please wait for uploads to finish before sending.', 'wp-mcp-ai' ),
+                    'downloadAttachment' => __( 'Download attachment', 'wp-mcp-ai' ),
                 ),
             )
         );
@@ -158,7 +166,15 @@ class WP_MCP_AI_Shortcode {
                     <?php echo esc_html( get_the_title( $assistant_id ) ); ?>
                 </label>
                 <textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
+                <div class="wp-mcp-ai-chat__attachments" hidden>
+                    <div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'wp-mcp-ai' ); ?></div>
+                    <ul class="wp-mcp-ai-chat__attachments-list"></ul>
+                </div>
                 <div class="wp-mcp-ai-chat__actions">
+                    <input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
+                    <button type="button" class="wp-mcp-ai-chat__attach">
+                        <?php esc_html_e( 'Attach file', 'wp-mcp-ai' ); ?>
+                    </button>
                     <button type="submit" class="wp-mcp-ai-chat__submit">
                         <?php esc_html_e( 'Send', 'wp-mcp-ai' ); ?>
                     </button>
