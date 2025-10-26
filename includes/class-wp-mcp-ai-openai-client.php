@@ -61,8 +61,10 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         $chat_messages = $this->normalise_messages_for_payload( $messages );
+        $attachment_lookup = array();
 
         if ( $should_use_responses_api ) {
+            $attachment_lookup = $this->index_attachments_by_id( $attachments );
             $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
         } else {
             $payload['messages'] = $chat_messages;
@@ -100,11 +102,34 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $system_messages ) ) {
+            if ( $should_use_responses_api ) {
+                foreach ( $system_messages as &$system_message ) {
+                    if ( ! isset( $system_message['content'] ) ) {
+                        continue;
+                    }
+
+                    if ( is_array( $system_message['content'] ) ) {
+                        $system_message['content'] = $this->normalise_responses_content_segments( $system_message['content'], $attachment_lookup );
+                    } else {
+                        $system_message['content'] = $this->normalise_responses_content_segments(
+                            array(
+                                array(
+                                    'type' => 'text',
+                                    'text' => (string) $system_message['content'],
+                                ),
+                            ),
+                            $attachment_lookup
+                        );
+                    }
+                }
+                unset( $system_message );
+            }
+
             $payload[ $message_key ] = array_merge( $system_messages, $payload[ $message_key ] );
         }
 
         if ( ! empty( $options['tools'] ) ) {
-            $payload['tools'] = array_values( $options['tools'] );
+            $payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
         }
 
         if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
@@ -283,6 +308,72 @@ class WP_MCP_AI_OpenAI_Client {
     }
 
     /**
+     * Normalise tool definitions to satisfy the OpenAI payload schema.
+     *
+     * @param array $tools Tool definitions sourced from the REST layer.
+     * @return array
+     */
+    protected function normalise_tools_for_payload( $tools ) {
+        if ( $tools instanceof \Traversable ) {
+            $tools = iterator_to_array( $tools );
+        }
+
+        if ( is_object( $tools ) ) {
+            $tools = (array) $tools;
+        }
+
+        if ( ! is_array( $tools ) ) {
+            return array();
+        }
+
+        $normalised = array();
+
+        foreach ( $tools as $tool ) {
+            if ( $tool instanceof \Traversable ) {
+                $tool = iterator_to_array( $tool );
+            }
+
+            if ( is_object( $tool ) ) {
+                $tool = (array) $tool;
+            }
+
+            if ( ! is_array( $tool ) || empty( $tool ) ) {
+                continue;
+            }
+
+            $type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+            if ( 'function' === $type ) {
+                if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
+                    if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+                        $tool['name'] = (string) $tool['function']['name'];
+                    }
+                }
+            }
+
+            if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
+                if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+                    $tool['name'] = (string) $tool['function']['name'];
+                } elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+                    $tool['name'] = (string) $tool['slug'];
+                } elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+                    $tool['name'] = (string) $tool['id'];
+                }
+            }
+
+            if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+                continue;
+            }
+
+            $tool['name'] = (string) $tool['name'];
+
+            $normalised[] = $tool;
+        }
+
+        return array_values( $normalised );
+    }
+
+    /**
      * Remove large message payloads when logging requests.
      *
      * @param array $payload The payload that will be logged.
@@ -334,6 +425,28 @@ class WP_MCP_AI_OpenAI_Client {
 
                             if ( isset( $segment['display_name'] ) ) {
                                 $segment_copy['display_name'] = $segment['display_name'];
+                            }
+
+                            if ( isset( $segment['filename'] ) ) {
+                                $segment_copy['filename'] = $segment['filename'];
+                            }
+                        } elseif ( 'input_file' === $type && isset( $segment['file_data'] ) ) {
+                            $segment_copy = array(
+                                'type' => 'input_file',
+                            );
+
+                            if ( isset( $segment['display_name'] ) ) {
+                                $segment_copy['display_name'] = $segment['display_name'];
+                            }
+
+                            if ( isset( $segment['filename'] ) ) {
+                                $segment_copy['filename'] = $segment['filename'];
+                            }
+
+                            if ( is_array( $segment['file_data'] ) ) {
+                                $segment_copy['file_data'] = '[redacted]';
+                            } elseif ( is_string( $segment['file_data'] ) ) {
+                                $segment_copy['file_data'] = '[redacted]';
                             }
                         }
 
@@ -529,6 +642,10 @@ class WP_MCP_AI_OpenAI_Client {
 
             $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
+            if ( isset( $segment['display_name'] ) ) {
+                unset( $segment['display_name'] );
+            }
+
             if ( '' === $type || 'text' === $type ) {
                 $segment['type'] = 'input_text';
 
@@ -635,9 +752,10 @@ class WP_MCP_AI_OpenAI_Client {
         if ( $file_id && isset( $attachments[ $file_id ] ) ) {
             $attachment = $attachments[ $file_id ];
             $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
+            $mime_type  = isset( $attachment['mime_type'] ) ? (string) $attachment['mime_type'] : '';
 
             if ( '' !== $data ) {
-                $segment['file_data'] = $data;
+                $segment['file_data'] = $this->build_data_url_from_base64( $data, $mime_type );
             }
 
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
@@ -648,6 +766,19 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $segment;
+    }
+
+    /**
+     * Convert base64 data and mime type into a data URL string.
+     *
+     * @param string $data      Base64 encoded file contents.
+     * @param string $mime_type File mime type.
+     * @return string
+     */
+    protected function build_data_url_from_base64( $data, $mime_type ) {
+        $mime = $mime_type ? $mime_type : 'application/octet-stream';
+
+        return 'data:' . $mime . ';base64,' . $data;
     }
 
     /**

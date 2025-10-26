@@ -145,6 +145,86 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure chat completion payloads include the tool name alongside the function definition.
+     */
+    public function test_chat_completion_payload_includes_tool_name() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Force_Chat_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = $args;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'chatcmpl-test',
+                        'choices' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Hello',
+                    ),
+                ),
+            ),
+        );
+
+        $tool_definition = array(
+            'type'     => 'function',
+            'function' => array(
+                'name'        => 'fetch_latest_posts',
+                'description' => 'Fetches the latest posts.',
+                'parameters'  => array(
+                    'type'       => 'object',
+                    'properties' => array(),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion(
+            $messages,
+            array(
+                'tools' => array( $tool_definition ),
+            )
+        );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'tools', $payload );
+        $this->assertIsArray( $payload['tools'] );
+        $this->assertArrayHasKey( 0, $payload['tools'] );
+        $this->assertArrayHasKey( 'name', $payload['tools'][0] );
+        $this->assertSame( 'fetch_latest_posts', $payload['tools'][0]['name'] );
+        $this->assertArrayHasKey( 'function', $payload['tools'][0] );
+        $this->assertSame( 'fetch_latest_posts', $payload['tools'][0]['function']['name'] );
+    }
+
+    /**
      * Ensure requests containing attachments are routed through the Responses API.
      */
     public function test_create_chat_completion_with_attachments_uses_responses_api() {
@@ -239,7 +319,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertSame( base64_encode( 'Example content' ), $file_segment['file_data'] );
+        $this->assertIsString( $file_segment['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Example content' ),
+            $file_segment['file_data']
+        );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
         $this->assertArrayNotHasKey( 'file_id', $file_segment );
@@ -247,6 +331,98 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $response );
         $this->assertArrayHasKey( 'choices', $response );
         $this->assertSame( 'Hello from Responses API.', $response['choices'][0]['message']['content'] );
+    }
+
+    /**
+     * Ensure Responses API payloads include the tool name alongside the function definition.
+     */
+    public function test_responses_payload_includes_tool_name() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-test',
+                        'output' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-123',
+                    ),
+                ),
+            ),
+        );
+
+        $tool_definition = array(
+            'type'     => 'function',
+            'function' => array(
+                'name'        => 'fetch_latest_posts',
+                'description' => 'Fetches the latest posts.',
+                'parameters'  => array(
+                    'type'       => 'object',
+                    'properties' => array(),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-123',
+                    'filename'  => 'notes.txt',
+                    'mime_type' => 'text/plain',
+                    'data'      => base64_encode( 'Example content' ),
+                    'bytes'     => strlen( 'Example content' ),
+                ),
+            ),
+            'tools' => array( $tool_definition ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'output', $response );
+        $this->assertNotEmpty( $captured_request );
+        $this->assertArrayHasKey( 'args', $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'tools', $payload );
+        $this->assertIsArray( $payload['tools'] );
+        $this->assertArrayHasKey( 0, $payload['tools'] );
+        $this->assertArrayHasKey( 'name', $payload['tools'][0] );
+        $this->assertSame( 'fetch_latest_posts', $payload['tools'][0]['name'] );
+        $this->assertArrayHasKey( 'function', $payload['tools'][0] );
+        $this->assertSame( 'fetch_latest_posts', $payload['tools'][0]['function']['name'] );
     }
 
     /**
@@ -333,7 +509,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertSame( base64_encode( 'Example content' ), $file_segment['file_data'] );
+        $this->assertIsString( $file_segment['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Example content' ),
+            $file_segment['file_data']
+        );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
         $this->assertArrayNotHasKey( 'file_id', $file_segment );
@@ -421,6 +601,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'Please review the attached notes.', $payload['input'][0]['content'][0]['text'] );
         $this->assertSame( 'input_file', $payload['input'][0]['content'][1]['type'] );
         $this->assertArrayHasKey( 'file_data', $payload['input'][0]['content'][1] );
-        $this->assertSame( base64_encode( 'Notes content' ), $payload['input'][0]['content'][1]['file_data'] );
+        $this->assertIsString( $payload['input'][0]['content'][1]['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Notes content' ),
+            $payload['input'][0]['content'][1]['file_data']
+        );
     }
 }
