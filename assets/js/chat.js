@@ -543,9 +543,67 @@
 
         var lookup = buildAttachmentLookup(message, state);
         var attachments = [];
-        var seen = {};
+        var attachmentsByKey = {};
+        var defaultAttachmentLabel = getString('downloadAttachment', 'Download attachment');
 
-        function addAttachment(record, fallbackLabel) {
+        function normaliseMeta(meta) {
+            if (!meta) {
+                return '';
+            }
+
+            return String(meta).replace(/\s+/g, ' ').trim();
+        }
+
+        function mergeMeta(extra, existing) {
+            if (!extra) {
+                return existing || '';
+            }
+
+            if (!existing) {
+                return extra;
+            }
+
+            if (existing.indexOf(extra) !== -1) {
+                return existing;
+            }
+
+            return extra + ' • ' + existing;
+        }
+
+        function registerAttachmentEntry(key, entry, extraMeta, fallbackLabel) {
+            if (!key) {
+                return;
+            }
+
+            var extra = normaliseMeta(extraMeta);
+            var label = fallbackLabel ? String(fallbackLabel).trim() : '';
+            var existing = attachmentsByKey[key];
+
+            if (existing) {
+                if (label && (!existing.label || existing.label === defaultAttachmentLabel)) {
+                    existing.label = label;
+                }
+
+                if (extra) {
+                    existing.meta = mergeMeta(extra, existing.meta);
+                }
+
+                return;
+            }
+
+            if (label) {
+                entry.label = label;
+            }
+
+            if (extra) {
+                entry.meta = mergeMeta(extra, entry.meta);
+            }
+
+            attachmentsByKey[key] = entry;
+            attachments.push(entry);
+        }
+
+        function addAttachment(record, fallbackLabel, extraMeta) {
             if (!record) {
                 return;
             }
@@ -556,22 +614,118 @@
             }
 
             var key = record.fileId || url;
-            if (seen[key]) {
+            var label = record.name || record.originalName || record.downloadName || '';
+            if (!label) {
+                label = defaultAttachmentLabel;
+            }
+
+            registerAttachmentEntry(
+                key,
+                {
+                    url: url,
+                    label: label,
+                    downloadName: record.downloadName || record.originalName || record.name || '',
+                    meta: buildAttachmentMeta(record),
+                },
+                extraMeta,
+                fallbackLabel
+            );
+        }
+
+        function addRemoteAttachment(url, label, extraMeta) {
+            if (!url) {
                 return;
             }
-            seen[key] = true;
 
-            var label = fallbackLabel || record.name || record.downloadName || '';
-            if (!label) {
-                label = getString('downloadAttachment', 'Download attachment');
+            var key = 'url:' + url;
+            registerAttachmentEntry(
+                key,
+                {
+                    url: url,
+                    label: label || defaultAttachmentLabel,
+                    downloadName: '',
+                    meta: '',
+                },
+                extraMeta,
+                label
+            );
+        }
+
+        function processAnnotationCandidate(candidate, fallbackLabel) {
+            if (!candidate || typeof candidate !== 'object') {
+                return;
             }
 
-            attachments.push({
-                url: url,
-                label: label,
-                downloadName: record.downloadName || record.originalName || record.name || '',
-                meta: buildAttachmentMeta(record),
-            });
+            if (Array.isArray(candidate)) {
+                candidate.forEach(function (entry) {
+                    processAnnotationCandidate(entry, fallbackLabel);
+                });
+                return;
+            }
+
+            var label = fallbackLabel || candidate.label || candidate.title || candidate.name || candidate.text || '';
+            var extraMeta = candidate.quote || candidate.meta || '';
+            var fileId = '';
+
+            if (candidate.file_id) {
+                fileId = candidate.file_id;
+            } else if (candidate.id && String(candidate.id).indexOf('file-') === 0) {
+                fileId = candidate.id;
+            }
+
+            if (!fileId && candidate.file && typeof candidate.file === 'object') {
+                fileId = candidate.file.file_id || candidate.file.id || '';
+                if (!label) {
+                    label = candidate.file.display_name || candidate.file.filename || candidate.file.name || '';
+                }
+
+                if (!extraMeta && candidate.file.caption) {
+                    extraMeta = candidate.file.caption;
+                }
+            }
+
+            if (!fileId && candidate.file_citation && typeof candidate.file_citation === 'object') {
+                fileId = candidate.file_citation.file_id || '';
+                if (!extraMeta && candidate.file_citation.quote) {
+                    extraMeta = candidate.file_citation.quote;
+                }
+            }
+
+            var record = fileId ? lookup[fileId] : null;
+            if (record) {
+                addAttachment(record, label, extraMeta);
+                return;
+            }
+
+            var url = candidate.url || (candidate.link && candidate.link.url) || (candidate.web && candidate.web.url) || '';
+            if (!url && candidate.file && typeof candidate.file === 'object') {
+                url = candidate.file.url || candidate.file.download_url || candidate.file.href || candidate.file.source_url || '';
+            }
+
+            if (url) {
+                addRemoteAttachment(url, label, extraMeta);
+            }
+
+            if (candidate.attachments && Array.isArray(candidate.attachments)) {
+                candidate.attachments.forEach(function (attachment) {
+                    processAnnotationCandidate(attachment, label);
+                });
+            }
+        }
+
+        function processAnnotationCollection(collection) {
+            if (!collection) {
+                return;
+            }
+
+            if (Array.isArray(collection)) {
+                collection.forEach(function (item) {
+                    processAnnotationCandidate(item);
+                });
+                return;
+            }
+
+            processAnnotationCandidate(collection);
         }
 
         function processSegment(segment) {
@@ -602,13 +756,25 @@
                 segment.attachments.forEach(processSegment);
             }
 
+            if (segment.text && typeof segment.text === 'object' && segment.text.annotations) {
+                processAnnotationCollection(segment.text.annotations);
+            }
+
+            processAnnotationCollection(segment.annotations);
+
+            if (segment.metadata && typeof segment.metadata === 'object') {
+                processAnnotationCollection(segment.metadata.annotations);
+                processAnnotationCollection(segment.metadata.references);
+                processAnnotationCollection(segment.metadata.citations);
+            }
+
+            processAnnotationCollection(segment.references);
+            processAnnotationCollection(segment.citations);
+
             if (type === 'input_file' || type === 'output_file' || type === 'file_path' || type === 'file') {
                 var fileId = segment.file_id || (segment.file && segment.file.id) || segment.id || '';
-                if (fileId) {
-                    var record = lookup[fileId];
-                    if (record) {
-                        addAttachment(record, segment.display_name || (segment.file && segment.file.filename));
-                    }
+                if (fileId && lookup[fileId]) {
+                    addAttachment(lookup[fileId], segment.display_name || (segment.file && segment.file.filename), segment.quote || '');
                 }
                 return;
             }
@@ -618,19 +784,21 @@
                 if (imageFile) {
                     var imageId = imageFile.file_id || imageFile.id || '';
                     if (imageId && lookup[imageId]) {
-                        addAttachment(lookup[imageId], segment.caption || imageFile.display_name || imageFile.filename);
+                        addAttachment(lookup[imageId], segment.caption || imageFile.display_name || imageFile.filename, segment.quote || '');
                         return;
                     }
                 }
 
-                var url = (segment.image_url && segment.image_url.url) || segment.url || '';
+                var url = '';
+                if (typeof segment.image_url === 'string') {
+                    url = segment.image_url;
+                } else if (segment.image_url && typeof segment.image_url.url === 'string') {
+                    url = segment.image_url.url;
+                } else if (typeof segment.url === 'string') {
+                    url = segment.url;
+                }
                 if (url) {
-                    attachments.push({
-                        url: url,
-                        label: segment.caption || getString('downloadAttachment', 'Download attachment'),
-                        downloadName: '',
-                        meta: '',
-                    });
+                    addRemoteAttachment(url, segment.caption || '', segment.quote || '');
                 }
                 return;
             }
@@ -641,6 +809,15 @@
         }
 
         processSegment(message.content);
+        processAnnotationCollection(message.annotations);
+
+        if (message.metadata && typeof message.metadata === 'object') {
+            processAnnotationCollection(message.metadata.annotations);
+            processAnnotationCollection(message.metadata.references);
+            processAnnotationCollection(message.metadata.citations);
+        }
+
+        processAnnotationCollection(message.references);
 
         return attachments;
     }
@@ -648,18 +825,82 @@
     function buildAttachmentLookup(message, state) {
         var lookup = {};
 
+        function shouldReplace(existing, candidate) {
+            if (!existing) {
+                return true;
+            }
+
+            if (!existing.url && candidate.url) {
+                return true;
+            }
+
+            if (!existing.data && candidate.data) {
+                return true;
+            }
+
+            if (!existing.name && candidate.name) {
+                return true;
+            }
+
+            if (!existing.downloadName && candidate.downloadName) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function registerRecord(record) {
+            if (!record || !record.fileId) {
+                return;
+            }
+
+            if (!lookup[record.fileId] || shouldReplace(lookup[record.fileId], record)) {
+                lookup[record.fileId] = record;
+            }
+
+            if (state && state.attachmentLibrary) {
+                var existing = state.attachmentLibrary[record.fileId];
+                if (!existing || shouldReplace(existing, record)) {
+                    state.attachmentLibrary[record.fileId] = record;
+                }
+            }
+        }
+
         if (message && Array.isArray(message.attachments)) {
             message.attachments.forEach(function (item) {
                 var record = normaliseAttachmentRecord(item);
                 if (record) {
-                    lookup[record.fileId] = record;
+                    registerRecord(record);
+                }
+            });
+        }
 
-                    if (state && state.attachmentLibrary) {
-                        var existing = state.attachmentLibrary[record.fileId];
-                        if (!existing || (!existing.url && record.url) || (!existing.data && record.data)) {
-                            state.attachmentLibrary[record.fileId] = record;
-                        }
-                    }
+        if (message && Array.isArray(message.references)) {
+            message.references.forEach(function (reference) {
+                if (!reference || typeof reference !== 'object') {
+                    return;
+                }
+
+                var record = null;
+
+                if (reference.file && typeof reference.file === 'object') {
+                    record = normaliseAttachmentRecord(reference.file);
+                }
+
+                if (!record && reference.content && typeof reference.content === 'object') {
+                    record = normaliseAttachmentRecord(reference.content);
+                }
+
+                if (!record) {
+                    record = normaliseAttachmentRecord(reference);
+                }
+
+                if (!record && reference.file_citation && reference.file_citation.file_id) {
+                    record = normaliseAttachmentRecord({ file_id: reference.file_citation.file_id });
+                }
+
+                if (record) {
+                    registerRecord(record);
                 }
             });
         }
@@ -680,26 +921,64 @@
             return null;
         }
 
-        var fileId = raw.file_id || raw.id || raw.fileId || '';
+        function pickString() {
+            for (var index = 0; index < arguments.length; index++) {
+                var candidate = arguments[index];
+                if (typeof candidate === 'string' && candidate) {
+                    return candidate;
+                }
+            }
+
+            return '';
+        }
+
+        var fileId = raw.file_id || raw.id || raw.fileId || raw.reference_id || '';
         if (!fileId && raw.image_file && raw.image_file.file_id) {
             fileId = raw.image_file.file_id;
+        }
+
+        if (!fileId && raw.file && typeof raw.file === 'object') {
+            fileId = raw.file.file_id || raw.file.id || '';
         }
 
         if (!fileId) {
             return null;
         }
 
-        var name = raw.display_name || raw.filename || raw.name || '';
+        var name = pickString(
+            raw.display_name,
+            raw.filename,
+            raw.name,
+            raw.label,
+            raw.title && typeof raw.title === 'string' ? raw.title : ''
+        );
+
         if (!name && raw.title && typeof raw.title.rendered === 'string') {
             name = raw.title.rendered;
         }
 
-        var url = raw.url || raw.download_url || raw.href || raw.source_url || '';
-        if (!url && raw.image_url && raw.image_url.url) {
-            url = raw.image_url.url;
+        if (!name) {
+            name = pickString(raw.caption, raw.original_name);
         }
 
-        var mime = raw.mime_type || raw.type || '';
+        var downloadName = pickString(
+            raw.filename,
+            raw.name,
+            raw.download_name,
+            raw.original_name,
+            raw.display_name
+        );
+
+        var url = pickString(
+            raw.url,
+            raw.download_url,
+            raw.href,
+            raw.source_url,
+            typeof raw.image_url === 'string' ? raw.image_url : '',
+            raw.image_url && raw.image_url.url ? raw.image_url.url : ''
+        );
+
+        var mime = pickString(raw.mime_type, raw.type, raw.mime);
 
         var size = null;
         if (typeof raw.bytes === 'number') {
@@ -715,6 +994,54 @@
             data = raw.data.base64;
         }
 
+        if (raw.file && typeof raw.file === 'object') {
+            var fileEntry = raw.file;
+
+            if (!name) {
+                if (typeof fileEntry.display_name === 'string' && fileEntry.display_name) {
+                    name = fileEntry.display_name;
+                } else if (typeof fileEntry.filename === 'string' && fileEntry.filename) {
+                    name = fileEntry.filename;
+                } else if (typeof fileEntry.name === 'string' && fileEntry.name) {
+                    name = fileEntry.name;
+                } else if (typeof fileEntry.title === 'string' && fileEntry.title) {
+                    name = fileEntry.title;
+                }
+            }
+
+            if (!downloadName) {
+                downloadName = pickString(fileEntry.filename, fileEntry.name, fileEntry.display_name);
+            }
+
+            if (!url) {
+                url = pickString(fileEntry.url, fileEntry.download_url, fileEntry.href, fileEntry.source_url);
+            }
+
+            if (!mime) {
+                mime = pickString(fileEntry.mime_type, fileEntry.type, fileEntry.content_type);
+            }
+
+            if (size === null) {
+                if (typeof fileEntry.bytes === 'number') {
+                    size = fileEntry.bytes;
+                } else if (typeof fileEntry.size === 'number') {
+                    size = fileEntry.size;
+                }
+            }
+
+            if (!data) {
+                if (typeof fileEntry.data === 'string') {
+                    data = fileEntry.data;
+                } else if (fileEntry.data && typeof fileEntry.data.base64 === 'string') {
+                    data = fileEntry.data.base64;
+                }
+            }
+        }
+
+        if (!name && downloadName) {
+            name = downloadName;
+        }
+
         return {
             fileId: String(fileId),
             name: name,
@@ -722,7 +1049,7 @@
             mime: mime,
             size: size,
             data: data,
-            downloadName: raw.filename || raw.name || '',
+            downloadName: downloadName,
         };
     }
 
@@ -1071,6 +1398,64 @@
         }
     }
 
+    function extractFilteredResponseNotice(choice, message) {
+        if (message && typeof message.refusal === 'string' && message.refusal.trim()) {
+            return message.refusal.trim();
+        }
+
+        var metadata = message && message.metadata ? message.metadata : null;
+        if (metadata && typeof metadata === 'object') {
+            if (typeof metadata.warning === 'string' && metadata.warning.trim()) {
+                return metadata.warning.trim();
+            }
+
+            if (typeof metadata.message === 'string' && metadata.message.trim()) {
+                return metadata.message.trim();
+            }
+
+            if (typeof metadata.reason === 'string' && metadata.reason.trim()) {
+                return metadata.reason.trim();
+            }
+
+            if (typeof metadata.error === 'string' && metadata.error.trim()) {
+                return metadata.error.trim();
+            }
+        }
+
+        var filterResults = message && message.content_filter_results ? message.content_filter_results : null;
+        if (filterResults && typeof filterResults === 'object') {
+            if (typeof filterResults.message === 'string' && filterResults.message.trim()) {
+                return filterResults.message.trim();
+            }
+
+            if (typeof filterResults.reason === 'string' && filterResults.reason.trim()) {
+                return filterResults.reason.trim();
+            }
+
+            if (filterResults.error && typeof filterResults.error === 'object') {
+                if (typeof filterResults.error.message === 'string' && filterResults.error.message.trim()) {
+                    return filterResults.error.message.trim();
+                }
+            }
+        }
+
+        var finishReason = choice && typeof choice.finish_reason === 'string' ? choice.finish_reason.trim() : '';
+
+        if (finishReason === 'content_filter') {
+            return getString('responseFiltered', 'The assistant response was blocked by safety filters.');
+        }
+
+        if (finishReason === 'length') {
+            return getString('responseIncomplete', 'The assistant response ended prematurely and could not be displayed.');
+        }
+
+        if (finishReason === 'error') {
+            return getString('responseErrored', 'The assistant response could not be displayed due to an error.');
+        }
+
+        return '';
+    }
+
     function handleChatResponse(state, data) {
         var chatData = data && data.data ? data.data : null;
         var choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
@@ -1084,13 +1469,28 @@
 
         var assistantMessage = { role: 'assistant' };
         var assistantDisplay = prepareAssistantDisplay(message, state);
+        var hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
+        var hasDisplayAttachments = assistantDisplay.attachments.length > 0;
+        var hasDisplayContent = hasDisplayText || hasDisplayAttachments;
+        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
-        if (assistantDisplay.text || assistantDisplay.attachments.length) {
+        if (hasDisplayContent) {
             appendMessage(state.messagesEl, 'assistant', assistantDisplay, true);
             assistantMessage.content = assistantDisplay.text || '';
         }
 
-        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
+        if (!hasDisplayContent && !hasToolCalls) {
+            var notice = extractFilteredResponseNotice(choice, message);
+            if (!notice) {
+                notice = getString('responseMissing', 'The assistant response could not be displayed.');
+            }
+
+            appendMessage(state.messagesEl, 'system', { text: notice });
+            setStatus(state.container, notice);
+
+            return Promise.resolve();
+        }
+
         if (hasToolCalls) {
             assistantMessage.tool_calls = message.tool_calls;
         }
