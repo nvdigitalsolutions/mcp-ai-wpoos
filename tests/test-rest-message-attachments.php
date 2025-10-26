@@ -38,6 +38,22 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure remote image segments reject URLs that use unsupported schemes.
+     */
+    public function test_remote_image_segment_rejects_disallowed_scheme() {
+        $attachments_helper = new WP_MCP_AI_Message_Attachments();
+
+        $result = $attachments_helper->prepare_input_image_segment(
+            array(
+                'url' => 'ftp://example.com/image.png',
+            )
+        );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_unsupported_image_url_scheme', $result->get_error_code() );
+    }
+
+    /**
      * Ensure legacy input_text segments are still accepted and normalised to the new schema.
      */
     public function test_legacy_input_text_segment_is_normalised() {
