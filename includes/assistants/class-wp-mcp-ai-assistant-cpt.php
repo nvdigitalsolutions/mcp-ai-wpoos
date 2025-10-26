@@ -86,7 +86,7 @@ class WP_MCP_AI_Assistant_CPT {
             'rest_base'           => 'mcp-ai-assistants',
             'capability_type'     => 'post',
             'supports'            => array( 'title', 'editor' ),
-            'menu_icon'           => 'dashicons-robot',
+            'menu_icon'           => WP_MCP_AI_URL . 'assets/images/ai-icon.svg',
             'has_archive'         => false,
             'rewrite'             => false,
             'show_in_nav_menus'   => false,
