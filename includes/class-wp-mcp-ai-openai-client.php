@@ -189,6 +189,16 @@ class WP_MCP_AI_OpenAI_Client {
             $decoded = $this->convert_responses_result_to_chat_completion( $decoded );
         }
 
+        if ( is_array( $decoded ) ) {
+            if ( ! isset( $decoded['provider'] ) ) {
+                $decoded['provider'] = 'openai';
+            }
+
+            if ( ! isset( $decoded['model'] ) && ! empty( $model ) ) {
+                $decoded['model'] = $model;
+            }
+        }
+
         WP_MCP_AI_Logger::log_event( 'openai_response', 'OpenAI request completed.', array( 'response' => $decoded ) );
 
         return $decoded;

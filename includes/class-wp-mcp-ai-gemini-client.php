@@ -104,6 +104,10 @@ class WP_MCP_AI_Gemini_Client {
 
         $normalized = $this->normalize_response( $decoded );
 
+        if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
+            $normalized['model'] = $model;
+        }
+
         WP_MCP_AI_Logger::log_event( 'gemini_response', 'Gemini request completed.', array( 'response' => $normalized ) );
 
         return $normalized;
