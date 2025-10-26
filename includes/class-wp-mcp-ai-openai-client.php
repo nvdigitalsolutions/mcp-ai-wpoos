@@ -129,7 +129,7 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $options['tools'] ) ) {
-            $payload['tools'] = array_values( $options['tools'] );
+            $payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
         }
 
         if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
@@ -305,6 +305,72 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $messages;
+    }
+
+    /**
+     * Normalise tool definitions to satisfy the OpenAI payload schema.
+     *
+     * @param array $tools Tool definitions sourced from the REST layer.
+     * @return array
+     */
+    protected function normalise_tools_for_payload( $tools ) {
+        if ( $tools instanceof \Traversable ) {
+            $tools = iterator_to_array( $tools );
+        }
+
+        if ( is_object( $tools ) ) {
+            $tools = (array) $tools;
+        }
+
+        if ( ! is_array( $tools ) ) {
+            return array();
+        }
+
+        $normalised = array();
+
+        foreach ( $tools as $tool ) {
+            if ( $tool instanceof \Traversable ) {
+                $tool = iterator_to_array( $tool );
+            }
+
+            if ( is_object( $tool ) ) {
+                $tool = (array) $tool;
+            }
+
+            if ( ! is_array( $tool ) || empty( $tool ) ) {
+                continue;
+            }
+
+            $type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+            if ( 'function' === $type ) {
+                if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
+                    if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+                        $tool['name'] = (string) $tool['function']['name'];
+                    }
+                }
+            }
+
+            if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
+                if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+                    $tool['name'] = (string) $tool['function']['name'];
+                } elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+                    $tool['name'] = (string) $tool['slug'];
+                } elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+                    $tool['name'] = (string) $tool['id'];
+                }
+            }
+
+            if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+                continue;
+            }
+
+            $tool['name'] = (string) $tool['name'];
+
+            $normalised[] = $tool;
+        }
+
+        return array_values( $normalised );
     }
 
     /**
