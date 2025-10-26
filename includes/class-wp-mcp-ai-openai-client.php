@@ -61,8 +61,10 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         $chat_messages = $this->normalise_messages_for_payload( $messages );
+        $attachment_lookup = array();
 
         if ( $should_use_responses_api ) {
+            $attachment_lookup = $this->index_attachments_by_id( $attachments );
             $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
         } else {
             $payload['messages'] = $chat_messages;
@@ -100,6 +102,29 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $system_messages ) ) {
+            if ( $should_use_responses_api ) {
+                foreach ( $system_messages as &$system_message ) {
+                    if ( ! isset( $system_message['content'] ) ) {
+                        continue;
+                    }
+
+                    if ( is_array( $system_message['content'] ) ) {
+                        $system_message['content'] = $this->normalise_responses_content_segments( $system_message['content'], $attachment_lookup );
+                    } else {
+                        $system_message['content'] = $this->normalise_responses_content_segments(
+                            array(
+                                array(
+                                    'type' => 'text',
+                                    'text' => (string) $system_message['content'],
+                                ),
+                            ),
+                            $attachment_lookup
+                        );
+                    }
+                }
+                unset( $system_message );
+            }
+
             $payload[ $message_key ] = array_merge( $system_messages, $payload[ $message_key ] );
         }
 
@@ -335,6 +360,28 @@ class WP_MCP_AI_OpenAI_Client {
                             if ( isset( $segment['display_name'] ) ) {
                                 $segment_copy['display_name'] = $segment['display_name'];
                             }
+
+                            if ( isset( $segment['filename'] ) ) {
+                                $segment_copy['filename'] = $segment['filename'];
+                            }
+                        } elseif ( 'input_file' === $type && isset( $segment['file_data'] ) ) {
+                            $segment_copy = array(
+                                'type' => 'input_file',
+                            );
+
+                            if ( isset( $segment['display_name'] ) ) {
+                                $segment_copy['display_name'] = $segment['display_name'];
+                            }
+
+                            if ( isset( $segment['filename'] ) ) {
+                                $segment_copy['filename'] = $segment['filename'];
+                            }
+
+                            if ( is_array( $segment['file_data'] ) ) {
+                                $segment_copy['file_data'] = '[redacted]';
+                            } elseif ( is_string( $segment['file_data'] ) ) {
+                                $segment_copy['file_data'] = '[redacted]';
+                            }
                         }
 
                         $trimmed_segments[] = $segment_copy;
@@ -529,6 +576,10 @@ class WP_MCP_AI_OpenAI_Client {
 
             $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
+            if ( isset( $segment['display_name'] ) ) {
+                unset( $segment['display_name'] );
+            }
+
             if ( '' === $type || 'text' === $type ) {
                 $segment['type'] = 'input_text';
 
@@ -635,9 +686,10 @@ class WP_MCP_AI_OpenAI_Client {
         if ( $file_id && isset( $attachments[ $file_id ] ) ) {
             $attachment = $attachments[ $file_id ];
             $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
+            $mime_type  = isset( $attachment['mime_type'] ) ? (string) $attachment['mime_type'] : '';
 
             if ( '' !== $data ) {
-                $segment['file_data'] = $data;
+                $segment['file_data'] = $this->build_data_url_from_base64( $data, $mime_type );
             }
 
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
@@ -648,6 +700,19 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $segment;
+    }
+
+    /**
+     * Convert base64 data and mime type into a data URL string.
+     *
+     * @param string $data      Base64 encoded file contents.
+     * @param string $mime_type File mime type.
+     * @return string
+     */
+    protected function build_data_url_from_base64( $data, $mime_type ) {
+        $mime = $mime_type ? $mime_type : 'application/octet-stream';
+
+        return 'data:' . $mime . ';base64,' . $data;
     }
 
     /**

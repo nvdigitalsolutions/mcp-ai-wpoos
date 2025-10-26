@@ -239,7 +239,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertSame( base64_encode( 'Example content' ), $file_segment['file_data'] );
+        $this->assertIsString( $file_segment['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Example content' ),
+            $file_segment['file_data']
+        );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
         $this->assertArrayNotHasKey( 'file_id', $file_segment );
@@ -333,7 +337,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertSame( base64_encode( 'Example content' ), $file_segment['file_data'] );
+        $this->assertIsString( $file_segment['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Example content' ),
+            $file_segment['file_data']
+        );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
         $this->assertArrayNotHasKey( 'file_id', $file_segment );
@@ -421,6 +429,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'Please review the attached notes.', $payload['input'][0]['content'][0]['text'] );
         $this->assertSame( 'input_file', $payload['input'][0]['content'][1]['type'] );
         $this->assertArrayHasKey( 'file_data', $payload['input'][0]['content'][1] );
-        $this->assertSame( base64_encode( 'Notes content' ), $payload['input'][0]['content'][1]['file_data'] );
+        $this->assertIsString( $payload['input'][0]['content'][1]['file_data'] );
+        $this->assertSame(
+            'data:text/plain;base64,' . base64_encode( 'Notes content' ),
+            $payload['input'][0]['content'][1]['file_data']
+        );
     }
 }
