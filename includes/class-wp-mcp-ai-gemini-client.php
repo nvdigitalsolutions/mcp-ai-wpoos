@@ -37,13 +37,31 @@ class WP_MCP_AI_Gemini_Client {
         $api_key = $this->get_api_key();
 
         if ( empty( $api_key ) ) {
-            return new WP_Error( 'wp_mcp_ai_missing_gemini_api_key', __( 'No Gemini API key has been configured.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_gemini_api_key',
+                __( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         $model = $this->resolve_model( $options );
 
         if ( empty( $model ) ) {
-            return new WP_Error( 'wp_mcp_ai_missing_gemini_model', __( 'No Gemini model has been configured.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_gemini_model',
+                __( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_gemini_model' => __( 'Choose a Gemini model in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         $payload = $this->build_payload( $messages, $options );
@@ -142,7 +160,16 @@ class WP_MCP_AI_Gemini_Client {
      */
     protected function build_payload( array $messages, array $options ) {
         if ( empty( $messages ) ) {
-            return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_messages',
+                __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         $contents         = array();
