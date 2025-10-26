@@ -167,6 +167,10 @@
     box-shadow: 0 10px 20px rgba(59, 130, 246, 0.08);
 }
 
+.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble-attachment a {
+    color: #fff;
+}
+
 .wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble strong {
     color: #1d4ed8;
 }
