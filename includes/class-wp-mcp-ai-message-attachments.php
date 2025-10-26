@@ -303,12 +303,21 @@ class WP_MCP_AI_Message_Attachments {
             'text/markdown',
             'text/csv',
             'text/tab-separated-values',
+            'text/html',
             'application/pdf',
             'application/json',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
             'application/vnd.ms-word.document.macroEnabled.12',
             'application/vnd.ms-word.template.macroEnabled.12',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.openxmlformats-officedocument.presentationml.template',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
+            'application/vnd.ms-excel',
+            'application/vnd.ms-excel.sheet.macroEnabled.12',
         );
 
         $image_mimes = apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes );
