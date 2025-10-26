@@ -65,6 +65,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
@@ -99,6 +100,8 @@ function wp_mcp_ai_bootstrap() {
     $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
     $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
     $GLOBALS['wp_mcp_ai_shortcode'] = new WP_MCP_AI_Shortcode();
+
+    WP_MCP_AI_Usage_Tracker::init();
 
     if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
         WP_MCP_AI_Elementor_Integration::maybe_init();

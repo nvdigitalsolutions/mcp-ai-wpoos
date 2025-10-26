@@ -1003,6 +1003,13 @@ class WP_MCP_AI_REST {
 
         WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
+        WP_MCP_AI_Usage_Tracker::record_chat_usage(
+            $user_id,
+            $assistant_id,
+            $options,
+            $response
+        );
+
         /**
          * Fires after a chat response has been received from the language model.
          *
