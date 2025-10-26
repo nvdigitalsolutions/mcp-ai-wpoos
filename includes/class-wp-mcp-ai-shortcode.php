@@ -131,8 +131,10 @@ class WP_MCP_AI_Shortcode {
             return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
         }
 
-        if ( ! current_user_can( 'edit_posts' ) ) {
-            return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You need edit access to interact with this assistant.', 'wp-mcp-ai' ) . '</div>';
+        $capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
+
+        if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+            return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
         }
 
         if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {

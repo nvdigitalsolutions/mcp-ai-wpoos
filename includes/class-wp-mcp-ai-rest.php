@@ -161,7 +161,9 @@ class WP_MCP_AI_REST {
         $this->auth_context['token_context']       = is_array( $context ) ? $context : array();
 
         if ( isset( $context['user_id'] ) ) {
-            $this->auth_context['user_id'] = absint( $context['user_id'] );
+            $user_id                              = absint( $context['user_id'] );
+            $this->auth_context['user_id']        = $user_id;
+            $this->maybe_set_current_user( $user_id );
         }
 
         $assistant_id = 0;
@@ -186,7 +188,20 @@ class WP_MCP_AI_REST {
             $this->reset_auth_context();
         }
 
-        $this->auth_context['user_id'] = absint( $user_id );
+        $user_id = absint( $user_id );
+        $this->auth_context['user_id'] = $user_id;
+        $this->maybe_set_current_user( $user_id );
+    }
+
+    /**
+     * Sync the global current user with the authenticated context when available.
+     *
+     * @param int $user_id WordPress user identifier.
+     */
+    protected function maybe_set_current_user( $user_id ) {
+        if ( $user_id > 0 ) {
+            wp_set_current_user( $user_id );
+        }
     }
 
     /**
@@ -270,6 +285,15 @@ class WP_MCP_AI_REST {
     public function permissions_check( WP_REST_Request $request ) {
         $this->reset_auth_context();
 
+        $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+        $capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+
+        if ( is_string( $capability ) ) {
+            $capability = sanitize_key( $capability );
+        }
+
+        $requires_authenticated_user = ! empty( $capability ) && 'public' !== $capability;
+
         $bearer = $request->get_header( 'Authorization' );
         if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
             $token     = trim( $matches[1] );
@@ -291,6 +315,14 @@ class WP_MCP_AI_REST {
         }
 
         $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $requires_authenticated_user ) {
+            if ( ! empty( $nonce ) && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+                $this->set_authenticated_user_id( get_current_user_id() );
+            }
+
+            return true;
+        }
+
         if ( empty( $nonce ) ) {
             return new WP_Error(
                 'wp_mcp_ai_missing_credentials',
@@ -318,8 +350,8 @@ class WP_MCP_AI_REST {
             );
         }
 
-        if ( ! current_user_can( 'edit_posts' ) ) {
-            return $this->insufficient_permissions_error();
+        if ( $capability && ! current_user_can( $capability ) ) {
+            return $this->insufficient_permissions_error( $capability );
         }
 
         $this->set_authenticated_user_id( get_current_user_id() );
@@ -332,14 +364,24 @@ class WP_MCP_AI_REST {
      *
      * @return WP_Error
      */
-    protected function insufficient_permissions_error() {
+    protected function insufficient_permissions_error( $capability = 'edit_posts' ) {
+        if ( is_string( $capability ) ) {
+            $capability = sanitize_key( $capability );
+        }
+
         return new WP_Error(
             'wp_mcp_ai_insufficient_permissions',
-            __( 'The authenticated user cannot access the MCP AI API. Grant the account the "edit_posts" capability or switch to another user.', 'wp-mcp-ai' ),
+            sprintf(
+                __( 'The authenticated user cannot access the MCP AI API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
+                $capability
+            ),
             array(
                 'status'  => 403,
                 'actions' => array(
-                    'grant_capability' => __( 'Assign a role such as Author or Editor that includes the "edit_posts" capability.', 'wp-mcp-ai' ),
+                    'grant_capability' => sprintf(
+                        __( 'Assign a role that includes the "%s" capability.', 'wp-mcp-ai' ),
+                        $capability
+                    ),
                 ),
             )
         );
@@ -1180,6 +1222,8 @@ class WP_MCP_AI_REST {
     /**
      * Sanitize the messages payload.
      *
+     * Allowed roles can be customized via the `wp_mcp_ai_allowed_message_roles` filter.
+     *
      * @param mixed $messages Raw messages.
      * @return array|WP_Error
      */
@@ -1191,7 +1235,24 @@ class WP_MCP_AI_REST {
         $attachments_helper = new WP_MCP_AI_Message_Attachments();
         $sanitized          = array();
 
-        $allowed_roles = array( 'user', 'assistant', 'system', 'tool' );
+        $default_roles = array( 'user', 'assistant', 'system', 'tool' );
+        $allowed_roles = apply_filters( 'wp_mcp_ai_allowed_message_roles', $default_roles );
+
+        if ( ! is_array( $allowed_roles ) ) {
+            $allowed_roles = $default_roles;
+        }
+
+        $allowed_roles = array_values(
+            array_filter(
+                array_unique(
+                    array_map( 'sanitize_key', $allowed_roles )
+                )
+            )
+        );
+
+        if ( empty( $allowed_roles ) ) {
+            $allowed_roles = $default_roles;
+        }
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {

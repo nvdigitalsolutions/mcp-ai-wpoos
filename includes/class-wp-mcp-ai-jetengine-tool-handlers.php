@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_JetEngine_Tool_Handlers {
     const REST_NAMESPACE = 'jet-engine/v2';
+    const PROXY_HEADER   = 'X-WP-MCP-AI-Proxy';
 
     /**
      * Suppress doing_it_wrong notices for JetEngine mock routes during automated tests.
@@ -23,12 +24,24 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
     protected static $suppress_route_warnings = false;
 
     /**
+     * Track whether the proxy authentication filter has been registered.
+     *
+     * @var bool
+     */
+    protected static $proxy_filter_registered = false;
+
+    /**
      * Initialise static hooks.
      */
     public static function bootstrap() {
         if ( defined( 'PHPUNIT_COMPOSER_INSTALL' ) && ! self::$suppress_route_warnings ) {
             add_filter( 'doing_it_wrong_trigger_error', array( __CLASS__, 'maybe_suppress_route_warning' ), 10, 4 );
             self::$suppress_route_warnings = true;
+        }
+
+        if ( ! self::$proxy_filter_registered ) {
+            add_filter( 'rest_authentication_errors', array( __CLASS__, 'maybe_authenticate_proxy_request' ), 8, 3 );
+            self::$proxy_filter_registered = true;
         }
     }
 
@@ -212,7 +225,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
             }
         }
 
-        return self::dispatch_remote( $route, $config['method'], $params );
+        return self::dispatch_remote( $route, $config['method'], $params, $context );
     }
 
     /**
@@ -305,7 +318,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @param array  $params Request parameters.
      * @return array
      */
-    protected static function dispatch_remote( $route, $method, array $params ) {
+    protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
         $method = strtoupper( $method );
         $url    = rest_url( ltrim( self::REST_NAMESPACE . '/' . ltrim( $route, '/' ), '/' ) );
         $args   = array(
@@ -313,6 +326,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
             'timeout' => 20,
             'headers' => array(),
         );
+
+        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
         if ( 'GET' === $method || 'DELETE' === $method ) {
             if ( ! empty( $params ) ) {
@@ -326,6 +341,11 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
         $nonce = wp_create_nonce( 'wp_rest' );
         if ( $nonce ) {
             $args['headers']['X-WP-Nonce'] = $nonce;
+        }
+
+        $proxy_token = self::issue_proxy_token( $user_id, $context );
+        if ( ! empty( $proxy_token ) ) {
+            $args['headers'][ self::PROXY_HEADER ] = $proxy_token;
         }
 
         if ( ! empty( $_COOKIE ) && class_exists( 'WP_Http_Cookie' ) ) {
@@ -366,6 +386,98 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
         }
 
         return self::normalise_success( $data, $status, $header_array, 'http' );
+    }
+
+    /**
+     * Generate and persist a short-lived token to authenticate remote JetEngine requests.
+     *
+     * @param int   $user_id User identifier for the proxied request.
+     * @param array $context Execution context from the MCP tool.
+     * @return string|null   Raw token value to include in the proxy header.
+     */
+    protected static function issue_proxy_token( $user_id, array $context ) {
+        $user_id = absint( $user_id );
+
+        if ( ! $user_id ) {
+            return null;
+        }
+
+        $token = wp_generate_password( 32, false, false );
+        $key   = self::get_proxy_transient_key( $token );
+
+        $payload = array(
+            'user_id'      => $user_id,
+            'issued_at'    => time(),
+            'token_type'   => isset( $context['token_type'] ) ? sanitize_key( $context['token_type'] ) : '',
+            'token_context' => isset( $context['token_context'] ) && is_array( $context['token_context'] ) ? $context['token_context'] : array(),
+        );
+
+        $stored = set_transient( $key, $payload, MINUTE_IN_SECONDS );
+
+        if ( ! $stored ) {
+            return null;
+        }
+
+        return $token;
+    }
+
+    /**
+     * Retrieve the transient key associated with a proxy token.
+     *
+     * @param string $token Raw proxy token.
+     * @return string
+     */
+    protected static function get_proxy_transient_key( $token ) {
+        return 'wp_mcp_ai_jet_proxy_' . md5( $token );
+    }
+
+    /**
+     * Authenticate proxied JetEngine requests dispatched over HTTP.
+     *
+     * @param mixed                 $result  Existing authentication error.
+     * @param WP_REST_Request|null $request Current REST request, when provided.
+     * @param WP_REST_Server|null  $server  REST server instance.
+     * @return mixed
+     */
+    public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) {
+        if ( ! $request instanceof WP_REST_Request ) {
+            return $result;
+        }
+        if ( null !== $result ) {
+            return $result;
+        }
+
+        if ( is_user_logged_in() ) {
+            return $result;
+        }
+
+        $header = $request->get_header( self::PROXY_HEADER );
+        if ( empty( $header ) ) {
+            return $result;
+        }
+
+        $route = ltrim( $request->get_route(), '/' );
+        if ( 0 !== strpos( $route, self::REST_NAMESPACE ) ) {
+            return $result;
+        }
+
+        $key     = self::get_proxy_transient_key( $header );
+        $payload = get_transient( $key );
+
+        if ( false === $payload || ! is_array( $payload ) ) {
+            return $result;
+        }
+
+        delete_transient( $key );
+
+        $user_id = isset( $payload['user_id'] ) ? absint( $payload['user_id'] ) : 0;
+        if ( ! $user_id ) {
+            return $result;
+        }
+
+        wp_set_current_user( $user_id );
+
+        return $result;
     }
 
     /**

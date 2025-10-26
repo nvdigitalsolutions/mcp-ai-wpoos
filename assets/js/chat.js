@@ -1309,6 +1309,10 @@
                 return;
             }
 
+            if (listType) {
+                flushList();
+            }
+
             paragraphLines.push(formatInline(line));
         });
 

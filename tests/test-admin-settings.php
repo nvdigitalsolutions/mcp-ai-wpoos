@@ -29,6 +29,18 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure defaults include the Crawl4AI configuration keys.
+     */
+    public function test_default_settings_include_crawl4ai_configuration() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+        $this->assertArrayHasKey( 'crawl4ai_base_url', $defaults );
+        $this->assertSame( '', $defaults['crawl4ai_base_url'] );
+        $this->assertArrayHasKey( 'crawl4ai_api_key', $defaults );
+        $this->assertSame( '', $defaults['crawl4ai_api_key'] );
+    }
+
+    /**
      * Ensure sanitize_settings casts the cleanup flag to a boolean value.
      */
     public function test_sanitize_settings_casts_cleanup_flag() {
@@ -118,5 +130,22 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         );
 
         $this->assertSame( 'openai', $sanitized['default_provider'] );
+    }
+
+    /**
+     * Ensure sanitize_settings cleans Crawl4AI settings.
+     */
+    public function test_sanitize_settings_sanitizes_crawl4ai_configuration() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'crawl4ai_base_url' => ' https://example.com/crawl/ ',
+                'crawl4ai_api_key'  => '  secret token  ',
+            )
+        );
+
+        $this->assertSame( 'https://example.com/crawl/', $sanitized['crawl4ai_base_url'] );
+        $this->assertSame( 'secret token', $sanitized['crawl4ai_api_key'] );
     }
 }

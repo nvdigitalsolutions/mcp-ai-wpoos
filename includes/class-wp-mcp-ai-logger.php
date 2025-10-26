@@ -19,6 +19,13 @@ class WP_MCP_AI_Logger {
     const PREFIX = '[WP MCP AI]';
 
     /**
+     * Maximum number of characters that should be written to the PHP error log
+     * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
+     * safety margin below that threshold to avoid truncation warnings.
+     */
+    const MAX_LOG_LINE_LENGTH = 900;
+
+    /**
      * Record a generic log event when logging is enabled.
      *
      * @param string $type    Event type (chat_request, tool_result, error, etc.).
@@ -58,9 +65,41 @@ class WP_MCP_AI_Logger {
         }
 
         $line = sprintf( '%s %s: %s', self::PREFIX, strtoupper( $entry['type'] ), $entry['message'] );
+
         if ( ! empty( $entry['context'] ) ) {
-            $line .= ' ' . wp_json_encode( $entry['context'] );
+            $context_json = wp_json_encode( $entry['context'] );
+
+            if ( false !== $context_json && '' !== $context_json ) {
+                $available = self::MAX_LOG_LINE_LENGTH - self::string_length( $line ) - 1;
+
+                if ( $available > 0 ) {
+                    if ( self::string_length( $context_json ) > $available ) {
+                        $preview_limit = max( 0, $available - 40 );
+                        $preview       = $preview_limit > 0 ? self::truncate_string( $context_json, $preview_limit ) : '';
+                        $context_json  = wp_json_encode(
+                            array(
+                                'truncated' => true,
+                                'preview'   => $preview,
+                            )
+                        );
+
+                        if ( false === $context_json ) {
+                            $context_json = '';
+                        }
+                    }
+
+                    if ( '' !== $context_json ) {
+                        if ( self::string_length( $context_json ) > $available ) {
+                            $context_json = self::truncate_string( $context_json, $available );
+                        }
+
+                        $line .= ' ' . $context_json;
+                    }
+                }
+            }
         }
+
+        $line = self::truncate_string( $line, self::MAX_LOG_LINE_LENGTH );
 
         error_log( $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
     }
