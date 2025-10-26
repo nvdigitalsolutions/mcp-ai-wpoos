@@ -67,6 +67,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertNotNull( $captured_request );
         $this->assertArrayHasKey( 'body', $captured_request );
 
+        $this->assertArrayHasKey( 'headers', $captured_request );
+        $this->assertArrayNotHasKey( 'OpenAI-Beta', $captured_request['headers'] );
+
         $payload = json_decode( $captured_request['body'], true );
 
         $this->assertIsArray( $payload );
@@ -216,6 +219,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertNotEmpty( $captured_request );
         $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
 
+        $this->assertArrayHasKey( 'headers', $captured_request['args'] );
+        $this->assertArrayHasKey( 'OpenAI-Beta', $captured_request['args']['headers'] );
+        $this->assertSame( 'responses=v1', $captured_request['args']['headers']['OpenAI-Beta'] );
+
         $payload = json_decode( $captured_request['args']['body'], true );
 
         $this->assertIsArray( $payload );
@@ -293,6 +300,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertNotEmpty( $captured_request );
         $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $this->assertArrayHasKey( 'headers', $captured_request['args'] );
+        $this->assertArrayHasKey( 'OpenAI-Beta', $captured_request['args']['headers'] );
+        $this->assertSame( 'responses=v1', $captured_request['args']['headers']['OpenAI-Beta'] );
 
         $payload = json_decode( $captured_request['args']['body'], true );
 

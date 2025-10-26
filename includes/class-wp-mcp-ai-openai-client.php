@@ -115,11 +115,17 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['response_format'] = $options['response_format'];
         }
 
+        $request_headers = array(
+            'Authorization' => 'Bearer ' . $api_key,
+            'Content-Type'  => 'application/json',
+        );
+
+        if ( $should_use_responses_api ) {
+            $request_headers['OpenAI-Beta'] = 'responses=v1';
+        }
+
         $request_args = array(
-            'headers' => array(
-                'Authorization' => 'Bearer ' . $api_key,
-                'Content-Type'  => 'application/json',
-            ),
+            'headers' => $request_headers,
             'body'    => wp_json_encode( $payload ),
             'timeout' => $timeout,
         );
