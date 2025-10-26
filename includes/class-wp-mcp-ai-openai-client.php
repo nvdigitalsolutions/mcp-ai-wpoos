@@ -438,10 +438,51 @@ class WP_MCP_AI_OpenAI_Client {
                 $entry['content'] = array();
             }
 
+            if ( isset( $entry['content'] ) && is_array( $entry['content'] ) ) {
+                $entry['content'] = $this->normalise_responses_content_segments( $entry['content'] );
+            }
+
             $prepared[] = $entry;
         }
 
         return $prepared;
+    }
+
+    /**
+     * Normalise content segments for the Responses API payload.
+     *
+     * The REST layer stores text-only segments using the generic `text` type so
+     * they remain compatible with the Chat Completions API. The Responses API
+     * expects those entries to be labelled as `input_text`, so we convert them
+     * here while preserving multimodal payloads (input_file, input_image, etc.).
+     *
+     * @param array $segments Content segments for a single message.
+     * @return array
+     */
+    protected function normalise_responses_content_segments( array $segments ) {
+        $normalised = array();
+
+        foreach ( $segments as $segment ) {
+            if ( ! is_array( $segment ) ) {
+                $normalised[] = $segment;
+                continue;
+            }
+
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+            if ( '' === $type || 'text' === $type ) {
+                $segment['type'] = 'input_text';
+
+                if ( isset( $segment['content'] ) && ! isset( $segment['text'] ) ) {
+                    $segment['text'] = (string) $segment['content'];
+                    unset( $segment['content'] );
+                }
+            }
+
+            $normalised[] = $segment;
+        }
+
+        return $normalised;
     }
 
     /**
