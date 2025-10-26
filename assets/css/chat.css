@@ -235,8 +235,30 @@
     margin-top: 1rem;
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
-    align-items: center;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat__attach {
+    background: transparent;
+    border: 1px solid #c3c4c7;
+    color: #1d2327;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.wp-mcp-ai-chat__attach:hover,
+.wp-mcp-ai-chat__attach:focus {
+    background: #f0f0f0;
+    color: #1d2327;
+    border-color: #a7aaad;
+}
+
+.wp-mcp-ai-chat__attach:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 .wp-mcp-ai-chat__submit {
@@ -265,6 +287,94 @@
     box-shadow: none;
     transform: none;
     background: #9aa5ff;
+}
+
+.wp-mcp-ai-chat__attachments {
+    margin-top: 0.75rem;
+    border: 1px solid #e2e4e7;
+    border-radius: 8px;
+    padding: 0.75rem;
+    background: #f9fafb;
+}
+
+.wp-mcp-ai-chat__attachments-header {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.wp-mcp-ai-chat__attachments-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat__attachments-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    background: #fff;
+    border: 1px solid #e2e4e7;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+
+.wp-mcp-ai-chat__attachments-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.wp-mcp-ai-chat__attachments-name {
+    font-size: 0.95rem;
+    color: #1d2327;
+    word-break: break-word;
+}
+
+.wp-mcp-ai-chat__attachments-meta {
+    font-size: 0.8rem;
+    color: #646970;
+}
+
+.wp-mcp-ai-chat__attachments-remove {
+    background: transparent;
+    border: none;
+    color: #3858e9;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-chat__attachments-remove:hover,
+.wp-mcp-ai-chat__attachments-remove:focus {
+    background: rgba(56, 88, 233, 0.1);
+    color: #2b45b8;
+}
+
+.wp-mcp-ai-chat__bubble-attachments {
+    list-style: none;
+    margin: 0.75rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.wp-mcp-ai-chat__bubble-attachment a {
+    color: #3858e9;
+    text-decoration: underline;
+    word-break: break-word;
+}
+
+.wp-mcp-ai-chat__bubble-attachment a:hover,
+.wp-mcp-ai-chat__bubble-attachment a:focus {
+    text-decoration: none;
 }
 
 .wp-mcp-ai-chat__notice {
