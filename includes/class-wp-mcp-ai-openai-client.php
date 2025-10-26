@@ -554,6 +554,10 @@ class WP_MCP_AI_OpenAI_Client {
 
             $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
+            if ( isset( $segment['display_name'] ) ) {
+                unset( $segment['display_name'] );
+            }
+
             if ( '' === $type || 'text' === $type ) {
                 $segment['type'] = 'input_text';
 
