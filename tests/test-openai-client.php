@@ -457,6 +457,89 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure Responses API output items using the text field are normalised for chat rendering.
+     */
+    public function test_responses_output_text_items_are_normalised() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-output-text',
+                        'output' => array(
+                            array(
+                                'id'            => 'output-1',
+                                'type'          => 'output_text',
+                                'text'          => array(
+                                    'value'       => 'Summary generated from attachment.',
+                                    'annotations' => array(),
+                                ),
+                                'finish_reason' => 'stop',
+                            ),
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-456',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-456',
+                    'filename'  => 'handout.pdf',
+                    'mime_type' => 'application/pdf',
+                    'data'      => base64_encode( 'Attachment data' ),
+                    'bytes'     => strlen( 'Attachment data' ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertArrayHasKey( 0, $response['choices'] );
+        $this->assertArrayHasKey( 'message', $response['choices'][0] );
+        $this->assertSame( 'Summary generated from attachment.', $response['choices'][0]['message']['content'] );
+        $this->assertSame( 'assistant', $response['choices'][0]['message']['role'] );
+    }
+
+    /**
      * Ensure Responses API payloads include the tool name alongside the function definition.
      */
     public function test_responses_payload_includes_tool_name() {
