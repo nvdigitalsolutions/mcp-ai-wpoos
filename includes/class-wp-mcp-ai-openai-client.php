@@ -360,6 +360,23 @@ class WP_MCP_AI_OpenAI_Client {
                             if ( isset( $segment['display_name'] ) ) {
                                 $segment_copy['display_name'] = $segment['display_name'];
                             }
+                        } elseif ( 'input_file' === $type && isset( $segment['file_data'] ) ) {
+                            $segment_copy = array(
+                                'type'      => 'input_file',
+                                'file_data' => array(),
+                            );
+
+                            if ( isset( $segment['display_name'] ) ) {
+                                $segment_copy['display_name'] = $segment['display_name'];
+                            }
+
+                            if ( is_array( $segment['file_data'] ) ) {
+                                if ( isset( $segment['file_data']['data'] ) ) {
+                                    $segment_copy['file_data']['data'] = '[redacted]';
+                                }
+                            } else {
+                                $segment_copy['file_data'] = '[redacted]';
+                            }
                         }
 
                         $trimmed_segments[] = $segment_copy;
@@ -666,7 +683,7 @@ class WP_MCP_AI_OpenAI_Client {
             $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
 
             if ( '' !== $data ) {
-                $segment['file_data'] = $data;
+                $segment['file_data'] = array( 'data' => $data );
             }
 
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
