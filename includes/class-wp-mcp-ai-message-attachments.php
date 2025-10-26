@@ -274,6 +274,10 @@ class WP_MCP_AI_Message_Attachments {
             return true;
         }
 
+        if ( $post instanceof WP_Post && 'attachment' === $post->post_type && $this->attachment_is_publicly_accessible( $post ) ) {
+            return true;
+        }
+
         return apply_filters( 'wp_mcp_ai_can_use_attachment', false, $attachment_id );
     }
 
@@ -292,6 +296,70 @@ class WP_MCP_AI_Message_Attachments {
         $helper = new self();
 
         return $helper->current_user_can_access_attachment( $attachment_id );
+    }
+
+    /**
+     * Determine whether an attachment is publicly accessible based on its status hierarchy.
+     *
+     * @param WP_Post    $attachment      Attachment post object.
+     * @param array|null $public_statuses Optional list of statuses considered public.
+     * @param array      $visited         Optional list of visited attachment IDs to prevent recursion loops.
+     * @return bool
+     */
+    protected function attachment_is_publicly_accessible( WP_Post $attachment, $public_statuses = null, $visited = array() ) {
+        if ( null === $public_statuses ) {
+            $public_statuses = get_post_stati( array( 'public' => true ) );
+
+            if ( ! is_array( $public_statuses ) ) {
+                $public_statuses = array( 'publish' );
+            }
+        }
+
+        $visited[] = (int) $attachment->ID;
+
+        if ( in_array( $attachment->post_status, $public_statuses, true ) ) {
+            return true;
+        }
+
+        if ( 'inherit' !== $attachment->post_status ) {
+            return false;
+        }
+
+        $parent_id = (int) $attachment->post_parent;
+        if ( ! $parent_id ) {
+            return true;
+        }
+
+        $parent = get_post( $parent_id );
+        if ( ! $parent ) {
+            return true;
+        }
+
+        if ( in_array( $parent->post_status, $public_statuses, true ) ) {
+            return true;
+        }
+
+        if ( 'attachment' === $parent->post_type && ! in_array( (int) $parent->ID, $visited, true ) ) {
+            return $this->attachment_is_publicly_accessible( $parent, $public_statuses, $visited );
+        }
+
+        if ( 'inherit' === $parent->post_status ) {
+            $ancestor_ids = get_post_ancestors( $parent_id );
+
+            foreach ( $ancestor_ids as $ancestor_id ) {
+                $ancestor_status = get_post_status( $ancestor_id );
+
+                if ( $ancestor_status && in_array( $ancestor_status, $public_statuses, true ) ) {
+                    return true;
+                }
+
+                if ( ! $ancestor_status || 'inherit' !== $ancestor_status ) {
+                    break;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

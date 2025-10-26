@@ -374,6 +374,109 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure guest sessions can access public memory attachments.
+     */
+    public function test_guest_request_uses_public_memory_files() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Guest Memory Assistant',
+                'post_status' => 'publish',
+                'post_author' => $admin_id,
+            )
+        );
+
+        $attachment_id = $this->create_memory_attachment( 'guest-knowledge.txt', 'Guest visible knowledge.', $admin_id, 'inherit' );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_parent' => $assistant_id,
+            )
+        );
+
+        update_post_meta(
+            $assistant_id,
+            WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES,
+            array( $attachment_id )
+        );
+
+        $token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+        $this->assertNotEmpty( $token );
+
+        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->callback(
+                    function ( $messages ) {
+                        return is_array( $messages ) && ! empty( $messages );
+                    }
+                ),
+                $this->callback(
+                    function ( $options ) use ( $attachment_id ) {
+                        $this->assertArrayHasKey( 'memory_files', $options );
+                        $this->assertSame( array( $attachment_id ), $options['memory_files'] );
+
+                        $this->assertArrayHasKey( 'memory_documents', $options );
+                        $this->assertCount( 1, $options['memory_documents'] );
+
+                        $document = $options['memory_documents'][0];
+                        $this->assertSame( $attachment_id, $document['id'] );
+                        $this->assertIsArray( $document['chunks'] );
+                        $this->assertNotEmpty( $document['chunks'] );
+
+                        return true;
+                    }
+                )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-guest',
+                    'choices' => array(),
+                )
+            );
+
+        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
+        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
+
+        wp_set_current_user( 0 );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-MCP-AI-Guest', $token );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
      * Create an attachment for use as assistant memory.
      *
      * @param string $filename File name.
