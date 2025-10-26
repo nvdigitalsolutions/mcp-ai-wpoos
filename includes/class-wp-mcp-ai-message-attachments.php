@@ -103,6 +103,42 @@ class WP_MCP_AI_Message_Attachments {
             return $prepared;
         }
 
+        $image_file   = isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ? $segment['image_file'] : array();
+        $segment_file = isset( $segment['file'] ) && is_array( $segment['file'] ) ? $segment['file'] : array();
+
+        $file_id = '';
+
+        if ( ! empty( $image_file['file_id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $image_file['file_id'] ) );
+        } elseif ( ! empty( $image_file['id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $image_file['id'] ) );
+        } elseif ( ! empty( $segment['file_id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $segment['file_id'] ) );
+        } elseif ( ! empty( $segment_file['file_id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $segment_file['file_id'] ) );
+        }
+
+        if ( ! empty( $file_id ) ) {
+            $prepared = array(
+                'type'       => 'input_image',
+                'image_file' => array( 'file_id' => $file_id ),
+            );
+
+            if ( empty( $caption ) && isset( $image_file['caption'] ) ) {
+                $caption = $this->sanitize_caption( $image_file['caption'] );
+            }
+
+            if ( ! empty( $caption ) ) {
+                $prepared['caption'] = $caption;
+            }
+
+            if ( ! empty( $detail ) ) {
+                $prepared['detail'] = $detail;
+            }
+
+            return $prepared;
+        }
+
         if ( empty( $segment['attachment_id'] ) ) {
             return new WP_Error( 'wp_mcp_ai_missing_image_attachment', __( 'Image segments must include an attachment ID or URL.', 'wp-mcp-ai' ) );
         }
@@ -146,6 +182,32 @@ class WP_MCP_AI_Message_Attachments {
      * @return array|WP_Error
      */
     public function prepare_input_file_segment( array $segment ) {
+        $segment_file = isset( $segment['file'] ) && is_array( $segment['file'] ) ? $segment['file'] : array();
+        $file_id      = '';
+
+        if ( ! empty( $segment['file_id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $segment['file_id'] ) );
+        } elseif ( ! empty( $segment_file['file_id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $segment_file['file_id'] ) );
+        } elseif ( ! empty( $segment_file['id'] ) ) {
+            $file_id = sanitize_text_field( wp_unslash( $segment_file['id'] ) );
+        }
+
+        if ( ! empty( $file_id ) ) {
+            $segment_payload = array(
+                'type'    => 'input_file',
+                'file_id' => $file_id,
+            );
+
+            if ( ! empty( $segment['display_name'] ) ) {
+                $segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
+            } elseif ( isset( $segment_file['display_name'] ) ) {
+                $segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment_file['display_name'] ) );
+            }
+
+            return $segment_payload;
+        }
+
         if ( empty( $segment['attachment_id'] ) ) {
             return new WP_Error( 'wp_mcp_ai_missing_file_attachment', __( 'File segments must include an attachment ID.', 'wp-mcp-ai' ) );
         }

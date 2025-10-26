@@ -453,6 +453,84 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure previously referenced file segments can be resubmitted without attachment payloads.
+     */
+    public function test_existing_file_segment_is_preserved_without_attachment_payload() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'         => 'input_file',
+                            'file_id'      => 'file-123',
+                            'display_name' => 'Existing notes',
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertNotEmpty( $messages );
+
+                $segment = $messages[0]['content'][0];
+                $this->assertSame( 'input_file', $segment['type'] );
+                $this->assertSame( 'file-123', $segment['file_id'] );
+                $this->assertSame( 'Existing notes', $segment['display_name'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
+     * Ensure previously referenced image segments can be resubmitted without attachment payloads.
+     */
+    public function test_existing_image_segment_is_preserved_without_attachment_payload() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'       => 'input_image',
+                            'image_file' => array( 'file_id' => 'file-456', 'caption' => 'Prior upload' ),
+                            'detail'     => 'high',
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertNotEmpty( $messages );
+
+                $segment = $messages[0]['content'][0];
+                $this->assertSame( 'input_image', $segment['type'] );
+                $this->assertArrayHasKey( 'image_file', $segment );
+                $this->assertSame( 'file-456', $segment['image_file']['file_id'] );
+                $this->assertSame( 'Prior upload', $segment['caption'] );
+                $this->assertSame( 'high', $segment['detail'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure an invalid message role triggers a REST error response.
      */
     public function test_invalid_role_is_rejected() {
