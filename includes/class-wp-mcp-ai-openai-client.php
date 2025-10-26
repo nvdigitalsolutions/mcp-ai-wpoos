@@ -870,11 +870,19 @@ class WP_MCP_AI_OpenAI_Client {
                     continue;
                 }
 
+                $content_payload = array();
+
+                if ( isset( $item['content'] ) ) {
+                    $content_payload = $item['content'];
+                } elseif ( isset( $item['text'] ) ) {
+                    $content_payload = $item['text'];
+                }
+
                 $choices[] = array(
                     'index'         => $index,
                     'message'       => array(
                         'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
-                        'content' => $this->extract_text_from_response_content( isset( $item['content'] ) ? $item['content'] : array() ),
+                        'content' => $this->extract_text_from_response_content( $content_payload ),
                     ),
                     'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
                 );
