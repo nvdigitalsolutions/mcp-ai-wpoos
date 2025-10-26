@@ -369,6 +369,11 @@
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__bubble-attachment {
+    color: inherit;
 }
 
 .wp-mcp-ai-chat__bubble-attachment a {
@@ -380,6 +385,11 @@
 .wp-mcp-ai-chat__bubble-attachment a:hover,
 .wp-mcp-ai-chat__bubble-attachment a:focus {
     text-decoration: none;
+}
+
+.wp-mcp-ai-chat__bubble-attachments .wp-mcp-ai-chat__attachments-meta {
+    color: inherit;
+    opacity: 0.85;
 }
 
 .wp-mcp-ai-chat__notice {
