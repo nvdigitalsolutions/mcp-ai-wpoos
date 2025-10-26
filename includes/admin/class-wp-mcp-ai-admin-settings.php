@@ -46,6 +46,8 @@ class WP_MCP_AI_Admin_Settings {
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
             'crawl4ai_api_key'     => '',
+            'allowed_image_mimes'  => array(),
+            'allowed_file_mimes'   => array(),
         );
     }
 
@@ -221,6 +223,29 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_attachments_section',
+            __( 'Attachments', 'wp-mcp-ai' ),
+            '__return_false',
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'allowed_image_mimes',
+            __( 'Allowed Image MIME Types', 'wp-mcp-ai' ),
+            array( $this, 'render_allowed_image_mimes_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_attachments_section'
+        );
+
+        add_settings_field(
+            'allowed_file_mimes',
+            __( 'Allowed File MIME Types', 'wp-mcp-ai' ),
+            array( $this, 'render_allowed_file_mimes_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_attachments_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_crawl4ai_section',
             __( 'Crawl4AI Integration', 'wp-mcp-ai' ),
             '__return_false',
@@ -337,6 +362,14 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['crawl4ai_api_key'] ) ) {
             $clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+        }
+
+        if ( isset( $settings['allowed_image_mimes'] ) ) {
+            $clean['allowed_image_mimes'] = $this->parse_mime_list( $settings['allowed_image_mimes'] );
+        }
+
+        if ( isset( $settings['allowed_file_mimes'] ) ) {
+            $clean['allowed_file_mimes'] = $this->parse_mime_list( $settings['allowed_file_mimes'] );
         }
 
         return $clean;
@@ -571,5 +604,119 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return $posts;
+    }
+
+    /**
+     * Render the allowed image MIME types field.
+     */
+    public function render_allowed_image_mimes_field() {
+        $settings = self::get_settings();
+        $value    = $this->format_mime_list_for_display( $settings['allowed_image_mimes'] );
+        ?>
+        <textarea
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[allowed_image_mimes]"
+            rows="5"
+            cols="40"
+            class="large-text code"
+        ><?php echo esc_textarea( $value ); ?></textarea>
+        <p class="description">
+            <?php
+            printf(
+                '%s %s',
+                esc_html__(
+                    'Optional. Enter one MIME type per line to replace the default allowed image types.',
+                    'wp-mcp-ai'
+                ),
+                esc_html__(
+                    'Leave blank to use the plugin defaults.',
+                    'wp-mcp-ai'
+                )
+            );
+            ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render the allowed file MIME types field.
+     */
+    public function render_allowed_file_mimes_field() {
+        $settings = self::get_settings();
+        $value    = $this->format_mime_list_for_display( $settings['allowed_file_mimes'] );
+        ?>
+        <textarea
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[allowed_file_mimes]"
+            rows="6"
+            cols="40"
+            class="large-text code"
+        ><?php echo esc_textarea( $value ); ?></textarea>
+        <p class="description">
+            <?php
+            printf(
+                '%s %s',
+                esc_html__(
+                    'Optional. Enter one MIME type per line to replace the default allowed file types.',
+                    'wp-mcp-ai'
+                ),
+                esc_html__(
+                    'Leave blank to use the plugin defaults.',
+                    'wp-mcp-ai'
+                )
+            );
+            ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Parse an arbitrary value into a list of MIME types.
+     *
+     * @param mixed $value Raw submitted value.
+     * @return array
+     */
+    protected function parse_mime_list( $value ) {
+        $items = array();
+
+        if ( is_string( $value ) ) {
+            $items = preg_split( '/[\r\n]+/', $value );
+        } elseif ( is_array( $value ) ) {
+            $items = $value;
+        }
+
+        if ( ! is_array( $items ) ) {
+            $items = array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $items as $item ) {
+            $item = trim( (string) $item );
+
+            if ( '' === $item ) {
+                continue;
+            }
+
+            $item = sanitize_text_field( $item );
+
+            if ( '' !== $item ) {
+                $sanitized[] = $item;
+            }
+        }
+
+        return array_values( array_unique( $sanitized ) );
+    }
+
+    /**
+     * Convert an array of MIME types to display text.
+     *
+     * @param mixed $value Stored value.
+     * @return string
+     */
+    protected function format_mime_list_for_display( $value ) {
+        if ( ! is_array( $value ) ) {
+            return '';
+        }
+
+        return implode( "\n", array_map( 'trim', array_filter( $value ) ) );
     }
 }

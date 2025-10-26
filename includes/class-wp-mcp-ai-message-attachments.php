@@ -396,14 +396,52 @@ class WP_MCP_AI_Message_Attachments {
             'application/vnd.ms-word.document.macroEnabled.12',
             'application/vnd.ms-word.template.macroEnabled.12',
             'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/vnd.openxmlformats-officedocument.presentationml.slideshow',
             'application/vnd.openxmlformats-officedocument.presentationml.template',
             'application/vnd.ms-powerpoint',
             'application/vnd.ms-powerpoint.presentation.macroEnabled.12',
+            'application/vnd.ms-powerpoint.slideshow.macroEnabled.12',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.template',
             'application/vnd.ms-excel',
             'application/vnd.ms-excel.sheet.macroEnabled.12',
+            'application/vnd.ms-excel.sheet.binary.macroEnabled.12',
+            'application/vnd.ms-excel.template.macroEnabled.12',
+            'application/xml',
+            'text/xml',
         );
+
+        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+            if (
+                isset( $settings['allowed_image_mimes'] )
+                && is_array( $settings['allowed_image_mimes'] )
+                && ! empty( $settings['allowed_image_mimes'] )
+            ) {
+                $image_mimes = array_values(
+                    array_unique(
+                        array_filter(
+                            array_map( 'trim', $settings['allowed_image_mimes'] )
+                        )
+                    )
+                );
+            }
+
+            if (
+                isset( $settings['allowed_file_mimes'] )
+                && is_array( $settings['allowed_file_mimes'] )
+                && ! empty( $settings['allowed_file_mimes'] )
+            ) {
+                $file_mimes = array_values(
+                    array_unique(
+                        array_filter(
+                            array_map( 'trim', $settings['allowed_file_mimes'] )
+                        )
+                    )
+                );
+            }
+        }
 
         $image_mimes = apply_filters( 'wp_mcp_ai_allowed_image_mimes', $image_mimes );
         $file_mimes  = apply_filters( 'wp_mcp_ai_allowed_file_mimes', $file_mimes );
