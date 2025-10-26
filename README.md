@@ -216,9 +216,9 @@ The REST controller validates attachment ownership/permissions, enforces a defau
 `wp_mcp_ai_max_attachment_bytes`), and only allows safe MIME types by default (`image/*` formats, `text/plain`, `text/markdown`,
 `text/csv`, `application/pdf`, `application/json`).
 
-Whenever attachments are present, the plugin automatically includes an `attachments` block in the upstream OpenAI payload with
-base64-encoded blobs, file names, captions, and generated `file_id` values. Message segments that reference the attachment will
-use these `file_id` handles so integrators do not need to upload assets manually.
+Whenever attachments are present, the plugin automatically inlines the asset data when sending requests to OpenAI's Responses API.
+Image segments are converted to data URLs and file segments include the base64-encoded payload alongside the original filename,
+so integrators do not need to upload assets manually before invoking a model.
 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
