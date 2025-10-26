@@ -807,7 +807,7 @@
         var segments = [];
         if (message) {
             segments.push({
-                type: 'input_text',
+                type: 'text',
                 text: message,
             });
         }
@@ -836,7 +836,7 @@
         }
 
         var payloadContent;
-        if (segments.length === 1 && segments[0].type === 'input_text') {
+        if (segments.length === 1 && segments[0].type === 'text') {
             payloadContent = segments[0].text;
         } else {
             payloadContent = segments;
