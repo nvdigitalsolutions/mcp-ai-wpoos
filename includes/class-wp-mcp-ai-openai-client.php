@@ -817,6 +817,48 @@ class WP_MCP_AI_OpenAI_Client {
      */
     protected function convert_responses_result_to_chat_completion( array $response ) {
         if ( isset( $response['choices'] ) && is_array( $response['choices'] ) ) {
+            $normalised = array();
+
+            foreach ( $response['choices'] as $index => $choice ) {
+                if ( isset( $choice['message'] ) && is_array( $choice['message'] ) ) {
+                    if ( isset( $choice['message']['content'] ) && is_array( $choice['message']['content'] ) ) {
+                        $choice['message']['content'] = $this->extract_text_from_response_content( $choice['message']['content'] );
+                    }
+
+                    if ( ! isset( $choice['index'] ) ) {
+                        $choice['index'] = $index;
+                    }
+
+                    $normalised[] = $choice;
+                    continue;
+                }
+
+                $content = isset( $choice['content'] ) ? $choice['content'] : array();
+                $role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
+
+                $normalised_choice = $choice;
+                $normalised_choice['message'] = array(
+                    'role'    => $role,
+                    'content' => $this->extract_text_from_response_content( $content ),
+                );
+
+                if ( isset( $normalised_choice['role'] ) ) {
+                    unset( $normalised_choice['role'] );
+                }
+
+                if ( isset( $normalised_choice['content'] ) ) {
+                    unset( $normalised_choice['content'] );
+                }
+
+                if ( ! isset( $normalised_choice['index'] ) ) {
+                    $normalised_choice['index'] = $index;
+                }
+
+                $normalised[] = $normalised_choice;
+            }
+
+            $response['choices'] = $normalised;
+
             return $response;
         }
 
@@ -889,7 +931,7 @@ class WP_MCP_AI_OpenAI_Client {
             $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
             if ( isset( $segment['text'] ) && in_array( $type, array( 'output_text', 'text', 'input_text' ), true ) ) {
-                $text_segments[] = (string) $segment['text'];
+                $text_segments[] = $this->normalise_responses_text_value( $segment['text'] );
                 continue;
             }
 
@@ -903,5 +945,41 @@ class WP_MCP_AI_OpenAI_Client {
         } );
 
         return implode( "\n\n", $text_segments );
+    }
+
+    /**
+     * Normalise a Responses API text value into a scalar string.
+     *
+     * @param mixed $value Raw text payload from the Responses API.
+     * @return string
+     */
+    protected function normalise_responses_text_value( $value ) {
+        if ( is_string( $value ) || is_numeric( $value ) ) {
+            return (string) $value;
+        }
+
+        if ( is_array( $value ) ) {
+            if ( isset( $value['value'] ) && is_string( $value['value'] ) ) {
+                return $value['value'];
+            }
+
+            if ( isset( $value['text'] ) && is_string( $value['text'] ) ) {
+                return $value['text'];
+            }
+
+            $scalars = array();
+
+            foreach ( $value as $item ) {
+                if ( is_string( $item ) || is_numeric( $item ) ) {
+                    $scalars[] = (string) $item;
+                }
+            }
+
+            if ( ! empty( $scalars ) ) {
+                return implode( ' ', $scalars );
+            }
+        }
+
+        return '';
     }
 }
