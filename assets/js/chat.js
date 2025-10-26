@@ -825,8 +825,13 @@
             }
         });
 
+        var userMessageElement = null;
+
         if (message || displayAttachments.length) {
-            appendMessage(state.messagesEl, 'user', { text: message, attachments: displayAttachments });
+            userMessageElement = appendMessage(state.messagesEl, 'user', {
+                text: message,
+                attachments: displayAttachments,
+            });
         }
 
         var payloadContent;
@@ -836,16 +841,21 @@
             payloadContent = segments;
         }
 
+        var previousConversationLength = state.conversation.length;
         state.conversation.push({ role: 'user', content: payloadContent });
 
         state.pendingAttachments = [];
         renderPendingAttachments(state);
         updateAttachButtonState(state);
 
-        sendChat(state);
+        sendChat(state, {
+            previousConversationLength: previousConversationLength,
+            pendingAttachments: pending,
+            messageElement: userMessageElement,
+        });
     }
 
-    function sendChat(state) {
+    function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
         setStatus(state.container, getString('sending', 'Sending…'));
@@ -880,8 +890,29 @@
                 return result;
             }, function (error) {
                 handleError(state, error);
+                restoreSubmissionState(state, submissionContext);
                 finalize();
             });
+    }
+
+    function restoreSubmissionState(state, submissionContext) {
+        if (!submissionContext || typeof submissionContext !== 'object') {
+            return;
+        }
+
+        if (typeof submissionContext.previousConversationLength === 'number') {
+            state.conversation = state.conversation.slice(0, submissionContext.previousConversationLength);
+        }
+
+        if (Array.isArray(submissionContext.pendingAttachments)) {
+            state.pendingAttachments = submissionContext.pendingAttachments.slice();
+            renderPendingAttachments(state);
+            updateAttachButtonState(state);
+        }
+
+        if (submissionContext.messageElement && submissionContext.messageElement.parentNode) {
+            submissionContext.messageElement.parentNode.removeChild(submissionContext.messageElement);
+        }
     }
 
     function handleChatResponse(state, data) {
@@ -1074,7 +1105,7 @@
 
     function appendMessage(listEl, role, payload, allowMarkdown) {
         if (typeof payload === 'undefined' || payload === null) {
-            return;
+            return null;
         }
 
         var text = '';
@@ -1129,7 +1160,7 @@
         var hasAttachments = attachments.length > 0;
 
         if (!hasText && !hasAttachments) {
-            return;
+            return null;
         }
 
         var entry = document.createElement('div');
@@ -1184,6 +1215,8 @@
         entry.appendChild(bubble);
         listEl.appendChild(entry);
         listEl.scrollTop = listEl.scrollHeight;
+
+        return entry;
     }
 
     function renderMarkdown(text) {
