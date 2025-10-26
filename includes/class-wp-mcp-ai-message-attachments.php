@@ -70,6 +70,23 @@ class WP_MCP_AI_Message_Attachments {
                 return new WP_Error( 'wp_mcp_ai_invalid_image_url', __( 'Image segment URL is invalid.', 'wp-mcp-ai' ) );
             }
 
+            $allowed_schemes = apply_filters(
+                'wp_mcp_ai_allowed_remote_image_url_schemes',
+                array( 'http', 'https' )
+            );
+            $allowed_schemes = array_unique( array_map( 'strtolower', (array) $allowed_schemes ) );
+
+            $parsed_url = wp_parse_url( $url );
+            $scheme     = isset( $parsed_url['scheme'] ) ? strtolower( $parsed_url['scheme'] ) : '';
+
+            if ( empty( $scheme ) || ! in_array( $scheme, $allowed_schemes, true ) ) {
+                return new WP_Error(
+                    'wp_mcp_ai_unsupported_image_url_scheme',
+                    __( 'Image segment URLs must use an allowed scheme.', 'wp-mcp-ai' ),
+                    array( 'status' => 400 )
+                );
+            }
+
             $prepared = array(
                 'type'      => 'input_image',
                 'image_url' => array( 'url' => $url ),
