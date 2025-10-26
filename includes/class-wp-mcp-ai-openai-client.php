@@ -41,16 +41,26 @@ class WP_MCP_AI_OpenAI_Client {
             return new WP_Error( 'wp_mcp_ai_missing_api_key', __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ) );
         }
 
-        $settings   = WP_MCP_AI_Admin_Settings::get_settings();
-        $model      = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
-        $timeout    = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-        $timeout    = max( 5, $timeout );
-        $payload    = array(
+        $settings    = WP_MCP_AI_Admin_Settings::get_settings();
+        $model       = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
+        $timeout     = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout     = max( 5, $timeout );
+        $attachments = $this->extract_attachments_from_options( $options );
+        $payload     = array(
             'model' => $model,
         );
 
+        if ( ! empty( $attachments ) ) {
+            $options['attachments'] = $attachments;
+        }
+
         $should_use_responses_api = $this->should_use_responses_api( $messages, $options );
-        $chat_messages            = $this->normalise_messages_for_payload( $messages );
+
+        if ( ! empty( $attachments ) && ! $should_use_responses_api ) {
+            $should_use_responses_api = true;
+        }
+
+        $chat_messages = $this->normalise_messages_for_payload( $messages );
 
         if ( $should_use_responses_api ) {
             $payload['input'] = $this->prepare_responses_input( $messages, $chat_messages );
@@ -97,8 +107,8 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['tools'] = array_values( $options['tools'] );
         }
 
-        if ( $should_use_responses_api && ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
-            $payload['attachments'] = array_values( $options['attachments'] );
+        if ( $should_use_responses_api && ! empty( $attachments ) ) {
+            $payload['attachments'] = $attachments;
         }
 
         if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
@@ -360,6 +370,52 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $payload;
+    }
+
+    /**
+     * Extract attachments from the options payload in a consistent array format.
+     *
+     * @param array $options Prepared request options.
+     * @return array
+     */
+    protected function extract_attachments_from_options( array $options ) {
+        if ( empty( $options['attachments'] ) ) {
+            return array();
+        }
+
+        $attachments = $options['attachments'];
+
+        if ( $attachments instanceof \Traversable ) {
+            $attachments = iterator_to_array( $attachments );
+        }
+
+        if ( is_object( $attachments ) ) {
+            $attachments = (array) $attachments;
+        }
+
+        if ( ! is_array( $attachments ) ) {
+            return array();
+        }
+
+        $normalised = array();
+
+        foreach ( $attachments as $attachment ) {
+            if ( $attachment instanceof \Traversable ) {
+                $attachment = iterator_to_array( $attachment );
+            }
+
+            if ( is_object( $attachment ) ) {
+                $attachment = (array) $attachment;
+            }
+
+            if ( ! is_array( $attachment ) || empty( $attachment ) ) {
+                continue;
+            }
+
+            $normalised[] = $attachment;
+        }
+
+        return array_values( $normalised );
     }
 
     /**

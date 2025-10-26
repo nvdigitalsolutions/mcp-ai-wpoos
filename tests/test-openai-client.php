@@ -1,5 +1,16 @@
 <?php
 /**
+ * Helper client that forces the Chat Completions endpoint during detection.
+ */
+class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
+
+    /** @inheritDoc */
+    protected function should_use_responses_api( array $messages, array $options ) {
+        return false;
+    }
+}
+
+/**
  * Tests for the OpenAI client wrapper.
  */
 class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
@@ -216,6 +227,82 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $response );
         $this->assertArrayHasKey( 'choices', $response );
         $this->assertSame( 'Hello from Responses API.', $response['choices'][0]['message']['content'] );
+    }
+
+    /**
+     * Ensure attachments still route through the Responses API if detection is bypassed.
+     */
+    public function test_attachments_force_responses_api_when_detection_is_bypassed() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Force_Chat_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-test',
+                        'output' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-123',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-123',
+                    'filename'  => 'notes.txt',
+                    'mime_type' => 'text/plain',
+                    'data'      => base64_encode( 'Example content' ),
+                    'bytes'     => strlen( 'Example content' ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'input', $payload );
+        $this->assertArrayHasKey( 'attachments', $payload );
+        $this->assertSame( 'file-123', $payload['attachments'][0]['id'] );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'output', $response );
     }
 
     /**
