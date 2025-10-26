@@ -145,7 +145,7 @@ class WP_MCP_AI_Message_Attachments {
         );
 
         if ( ! empty( $segment['display_name'] ) ) {
-            $segment_payload['display_name'] = sanitize_text_field( $segment['display_name'] );
+            $segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
         } elseif ( ! empty( $prepared_attachment['title'] ) ) {
             $segment_payload['display_name'] = $prepared_attachment['title'];
         }
