@@ -15,6 +15,12 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 
         $this->assertWPError( $response );
         $this->assertSame( 'wp_mcp_ai_missing_gemini_api_key', $response->get_error_code() );
+
+        $data = $response->get_error_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 400, $data['status'] );
+        $this->assertArrayHasKey( 'actions', $data );
+        $this->assertArrayHasKey( 'configure_gemini_api_key', $data['actions'] );
     }
 
     /**

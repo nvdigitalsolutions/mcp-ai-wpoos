@@ -16,6 +16,37 @@ class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
 class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
     /**
+     * Ensure missing API key errors include actionable guidance.
+     */
+    public function test_create_chat_completion_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Hello',
+                    ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+
+        $data = $response->get_error_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 400, $data['status'] );
+        $this->assertArrayHasKey( 'actions', $data );
+        $this->assertArrayHasKey( 'configure_openai_api_key', $data['actions'] );
+    }
+
+    /**
      * Ensure the client falls back to the global default model when none is provided.
      */
     public function test_create_chat_completion_uses_global_default_model() {

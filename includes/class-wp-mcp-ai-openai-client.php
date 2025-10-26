@@ -38,7 +38,16 @@ class WP_MCP_AI_OpenAI_Client {
         $api_key = $this->get_api_key();
 
         if ( empty( $api_key ) ) {
-            return new WP_Error( 'wp_mcp_ai_missing_api_key', __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         $settings    = WP_MCP_AI_Admin_Settings::get_settings();
@@ -73,7 +82,16 @@ class WP_MCP_AI_OpenAI_Client {
         $message_key = $should_use_responses_api ? 'input' : 'messages';
 
         if ( empty( $payload[ $message_key ] ) ) {
-            return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_messages',
+                __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
         }
 
         if ( isset( $options['temperature'] ) && null !== $options['temperature'] && '' !== $options['temperature'] ) {
