@@ -15,6 +15,8 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
             )
         );
 
+        delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
+
         $attachments = array(
             array(
                 'id'       => 123,
@@ -107,5 +109,62 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
         $this->assertIsArray( $response['choices'] );
         $this->assertArrayHasKey( 'message', $response['choices'][0] );
         $this->assertSame( str_repeat( 'C', 800 ), $response['choices'][0]['message']['content'], 'Original response data should not be mutated.' );
+    }
+
+    /**
+     * Ensure recent error logging tracks only errors and warnings and limits the history.
+     */
+    public function test_recent_error_messages_track_latest_entries() {
+        update_option(
+            WP_MCP_AI_Admin_Settings::OPTION_NAME,
+            array(
+                'enable_logging' => true,
+            )
+        );
+
+        delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
+
+        WP_MCP_AI_Logger::log_event( 'chat_interaction', 'Should be ignored.', array() );
+        WP_MCP_AI_Logger::log_event( 'error', 'First error.' );
+        WP_MCP_AI_Logger::log_event( 'warning', 'First warning.' );
+        WP_MCP_AI_Logger::log_event( 'tool_error', 'Tool failed.' );
+
+        $recent = WP_MCP_AI_Logger::get_recent_error_messages();
+
+        $this->assertCount( 3, $recent );
+        $this->assertSame( 'tool_error', $recent[0]['type'] );
+        $this->assertSame( 'Tool failed.', $recent[0]['message'] );
+        $this->assertSame( 'warning', $recent[1]['type'] );
+        $this->assertSame( 'First warning.', $recent[1]['message'] );
+        $this->assertSame( 'error', $recent[2]['type'] );
+        $this->assertSame( 'First error.', $recent[2]['message'] );
+
+        foreach ( $recent as $entry ) {
+            $this->assertArrayHasKey( 'timestamp', $entry );
+        }
+    }
+
+    /**
+     * Ensure the recent error history never exceeds the requested limit.
+     */
+    public function test_recent_error_messages_limit_size() {
+        update_option(
+            WP_MCP_AI_Admin_Settings::OPTION_NAME,
+            array(
+                'enable_logging' => true,
+            )
+        );
+
+        delete_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION );
+
+        for ( $i = 1; $i <= 25; $i++ ) {
+            WP_MCP_AI_Logger::log_event( 'error', 'Error ' . $i );
+        }
+
+        $recent = WP_MCP_AI_Logger::get_recent_error_messages();
+
+        $this->assertCount( 20, $recent );
+        $this->assertSame( 'Error 25', $recent[0]['message'] );
+        $this->assertSame( 'Error 6', $recent[19]['message'] );
     }
 }

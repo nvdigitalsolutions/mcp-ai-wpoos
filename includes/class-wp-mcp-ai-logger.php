@@ -19,6 +19,11 @@ class WP_MCP_AI_Logger {
     const PREFIX = '[WP MCP AI]';
 
     /**
+     * Option key for persisting recent error and warning entries.
+     */
+    const RECENT_ERRORS_OPTION = 'wp_mcp_ai_recent_errors';
+
+    /**
      * Maximum number of characters that should be written to the PHP error log
      * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
      * safety margin below that threshold to avoid truncation warnings.
@@ -62,6 +67,10 @@ class WP_MCP_AI_Logger {
         $entry = apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $raw_context );
         if ( false === $entry ) {
             return;
+        }
+
+        if ( self::should_store_recent_entry( $entry ) ) {
+            self::store_recent_entry( $entry );
         }
 
         $line = sprintf( '%s %s: %s', self::PREFIX, strtoupper( $entry['type'] ), $entry['message'] );
@@ -162,6 +171,25 @@ class WP_MCP_AI_Logger {
     }
 
     /**
+     * Retrieve the most recent error and warning entries.
+     *
+     * @param int $limit Maximum number of entries to return.
+     * @return array
+     */
+    public static function get_recent_error_messages( $limit = 20 ) {
+        $limit  = max( 1, absint( $limit ) );
+        $recent = get_option( self::RECENT_ERRORS_OPTION, array() );
+
+        if ( ! is_array( $recent ) || empty( $recent ) ) {
+            return array();
+        }
+
+        $recent = array_slice( array_reverse( $recent ), 0, $limit );
+
+        return array_values( array_map( array( __CLASS__, 'prepare_recent_entry_for_output' ), $recent ) );
+    }
+
+    /**
      * Remove potentially sensitive information from the context payload.
      *
      * @param array $context Raw context data.
@@ -186,6 +214,83 @@ class WP_MCP_AI_Logger {
         }
 
         return $context;
+    }
+
+    /**
+     * Determine if the entry should be stored for quick access in the admin UI.
+     *
+     * @param array $entry Prepared log entry.
+     * @return bool
+     */
+    protected static function should_store_recent_entry( $entry ) {
+        if ( ! is_array( $entry ) ) {
+            return false;
+        }
+
+        if ( empty( $entry['type'] ) || empty( $entry['message'] ) ) {
+            return false;
+        }
+
+        $type = sanitize_key( $entry['type'] );
+
+        if ( 'warning' === $type || 'error' === $type ) {
+            return true;
+        }
+
+        return false !== strpos( $type, 'error' );
+    }
+
+    /**
+     * Persist a recent entry while keeping the buffer trimmed.
+     *
+     * @param array $entry Prepared log entry.
+     */
+    protected static function store_recent_entry( $entry ) {
+        $recent = get_option( self::RECENT_ERRORS_OPTION, array() );
+
+        if ( ! is_array( $recent ) ) {
+            $recent = array();
+        }
+
+        $stored_entry = array(
+            'timestamp' => isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '',
+            'type'      => sanitize_key( $entry['type'] ),
+            'message'   => (string) $entry['message'],
+        );
+
+        if ( ! empty( $entry['context'] ) ) {
+            $stored_entry['context'] = $entry['context'];
+        }
+
+        $recent[] = $stored_entry;
+
+        $recent = array_slice( $recent, -50 );
+
+        update_option( self::RECENT_ERRORS_OPTION, $recent, false );
+    }
+
+    /**
+     * Prepare a stored entry for safe output.
+     *
+     * @param array $entry Stored entry.
+     * @return array
+     */
+    protected static function prepare_recent_entry_for_output( $entry ) {
+        if ( ! is_array( $entry ) ) {
+            return array();
+        }
+
+        $prepared = array(
+            'timestamp' => isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '',
+            'type'      => isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '',
+            'message'   => isset( $entry['message'] ) ? (string) $entry['message'] : '',
+        );
+
+        if ( isset( $entry['context'] ) ) {
+            $prepared['context'] = $entry['context'];
+        }
+
+        return $prepared;
     }
 
     /**
