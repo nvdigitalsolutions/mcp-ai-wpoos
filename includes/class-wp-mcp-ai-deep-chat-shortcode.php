@@ -41,7 +41,11 @@ class WP_MCP_AI_Deep_Chat_Shortcode {
             self::SHORTCODE
         );
 
-        $assistant_id = absint( $atts['assistant'] );
+        if ( class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'resolve_assistant_id' ) ) {
+            $assistant_id = WP_MCP_AI_Shortcode::resolve_assistant_id( $atts['assistant'] );
+        } else {
+            $assistant_id = absint( $atts['assistant'] );
+        }
         $allow_guests = wp_validate_boolean( $atts['allow_guests'] );
 
         if ( ! $assistant_id ) {
