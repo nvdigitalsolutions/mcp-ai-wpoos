@@ -1261,11 +1261,11 @@
         }
 
         var inputValue = state.textarea.value;
-        var message = inputValue.trim();
+        var trimmedMessage = inputValue.trim();
         var pending = state.pendingAttachments.slice();
         var hasAttachments = pending.length > 0;
 
-        if (!message && !hasAttachments) {
+        if (!trimmedMessage && !hasAttachments) {
             setStatus(state.container, getString('emptyMessage', 'Enter a message before sending.'));
             return;
         }
@@ -1273,10 +1273,10 @@
         state.textarea.value = '';
 
         var segments = [];
-        if (message) {
+        if (trimmedMessage) {
             segments.push({
                 type: 'text',
-                text: message,
+                text: inputValue,
             });
         }
 
@@ -1296,9 +1296,9 @@
 
         var userMessageElement = null;
 
-        if (message || displayAttachments.length) {
+        if (trimmedMessage || displayAttachments.length) {
             userMessageElement = appendMessage(state.messagesEl, 'user', {
-                text: message,
+                text: inputValue,
                 attachments: displayAttachments,
             });
         }

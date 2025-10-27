@@ -813,4 +813,87 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             $payload['input'][0]['content'][1]['file_data']
         );
     }
+
+    /**
+     * Ensure prior assistant messages use the correct mode when calling the Responses API.
+     */
+    public function test_responses_payload_uses_output_text_for_assistant_segments() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-test',
+                        'output' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'assistant',
+                'content' => 'Earlier summary.',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Please summarise the PDF.',
+                    ),
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-123',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-123',
+                    'filename'  => 'notes.pdf',
+                    'mime_type' => 'application/pdf',
+                    'data'      => base64_encode( 'PDF contents' ),
+                    'bytes'     => strlen( 'PDF contents' ),
+                ),
+            ),
+        );
+
+        $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'input', $payload );
+        $this->assertSame( 'output_text', $payload['input'][0]['content'][0]['type'] );
+        $this->assertSame( 'Earlier summary.', $payload['input'][0]['content'][0]['text'] );
+        $this->assertSame( 'input_text', $payload['input'][1]['content'][0]['type'] );
+        $this->assertSame( 'Please summarise the PDF.', $payload['input'][1]['content'][0]['text'] );
+    }
 }
