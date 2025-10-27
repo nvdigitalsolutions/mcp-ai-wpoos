@@ -78,8 +78,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                 ),
                 'format'     => array(
                     'type'        => 'string',
-                    'description' => __( 'Image format for the generated file.', 'wp-mcp-ai' ),
-                    'enum'        => array_keys( $this->get_allowed_formats() ),
+                    'description' => __( 'Image format for the generated file. OpenAI currently only returns PNG images.', 'wp-mcp-ai' ),
+                    'enum'        => array( self::DEFAULT_FORMAT ),
                     'default'     => self::DEFAULT_FORMAT,
                 ),
                 'file_name'  => array(
@@ -126,13 +126,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'No prompt was supplied for the image request.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $format = isset( $arguments['format'] ) ? sanitize_key( $arguments['format'] ) : self::DEFAULT_FORMAT;
-        $format = $this->normalise_image_format( $format );
-
-        if ( '' === $format ) {
-            return new WP_Error( 'wp_mcp_ai_invalid_image_format', __( 'The requested image format is not supported.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
-        }
-
         $size = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : self::DEFAULT_SIZE;
         $size = $this->normalise_image_size( $size );
 
@@ -159,7 +152,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'model'      => $model,
             'size'       => $size,
             'quality'    => $quality,
-            'format'     => $format,
         );
 
         if ( '' !== $background ) {
@@ -198,7 +190,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'file_name'      => $storage['file_name'],
             'mime_type'      => $storage['mime_type'],
             'bytes'          => $storage['bytes'],
-            'format'         => $format,
+            'format'         => isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT,
             'size'           => $size,
             'quality'        => $quality,
             'model'          => $image['model'],

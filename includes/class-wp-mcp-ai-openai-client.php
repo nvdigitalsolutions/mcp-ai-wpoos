@@ -449,7 +449,7 @@ class WP_MCP_AI_OpenAI_Client {
         $size      = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
         $quality   = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : 'standard';
         $background = isset( $options['background'] ) && '' !== $options['background'] ? sanitize_key( $options['background'] ) : '';
-        $format    = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
+        $requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
         $timeout   = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
         $timeout   = max( 5, $timeout );
 
@@ -463,10 +463,6 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( '' !== $background ) {
             $payload['background'] = $background;
-        }
-
-        if ( '' !== $format ) {
-            $payload['format'] = $format;
         }
 
         if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
@@ -503,7 +499,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'size'      => $size,
                 'quality'   => $quality,
                 'background'=> $background,
-                'format'    => $format,
+                'requested_format' => $requested_format,
             )
         );
 
@@ -587,8 +583,11 @@ class WP_MCP_AI_OpenAI_Client {
                 return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
             }
 
-            $response_mime     = $this->normalise_image_mime_type( $format );
-            $response_format   = $format;
+            $response_format   = $this->detect_format_from_binary( $image_data );
+            if ( '' === $response_format ) {
+                $response_format = 'png';
+            }
+            $response_mime     = $this->normalise_image_mime_type( $response_format );
             $response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
             $response_revision = isset( $decoded['data'][0]['revised_prompt'] ) ? (string) $decoded['data'][0]['revised_prompt'] : '';
         } elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
@@ -603,7 +602,11 @@ class WP_MCP_AI_OpenAI_Client {
             $response_format = $this->detect_format_from_mime_type( $content_type );
 
             if ( '' === $response_format ) {
-                $response_format = $format;
+                $response_format = $this->detect_format_from_binary( $image_data );
+            }
+
+            if ( '' === $response_format ) {
+                $response_format = 'png';
             }
 
             $response_mime = '' !== $content_type ? $content_type : $this->normalise_image_mime_type( $response_format );
@@ -640,7 +643,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'size'       => $size,
                 'quality'    => $quality,
                 'background' => $background,
-                'format'     => $format,
+                'format'     => $response_format,
             )
         );
 
@@ -752,6 +755,59 @@ class WP_MCP_AI_OpenAI_Client {
             default:
                 return '';
         }
+    }
+
+    /**
+     * Attempt to detect an image format from raw binary data.
+     *
+     * @param string $image_data Raw image bytes.
+     * @return string
+     */
+    protected function detect_format_from_binary( $image_data ) {
+        if ( '' === $image_data ) {
+            return '';
+        }
+
+        if ( function_exists( 'getimagesizefromstring' ) ) {
+            $details = @getimagesizefromstring( $image_data ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+            if ( is_array( $details ) && ! empty( $details['mime'] ) ) {
+                $format = $this->detect_format_from_mime_type( $details['mime'] );
+
+                if ( '' !== $format ) {
+                    return $format;
+                }
+            }
+        }
+
+        if ( function_exists( 'finfo_buffer' ) && defined( 'FILEINFO_MIME_TYPE' ) && class_exists( 'finfo' ) ) {
+            $finfo = new finfo( FILEINFO_MIME_TYPE );
+            $mime  = $finfo->buffer( $image_data );
+
+            if ( $mime ) {
+                $format = $this->detect_format_from_mime_type( $mime );
+
+                if ( '' !== $format ) {
+                    return $format;
+                }
+            }
+        }
+
+        $signature = substr( $image_data, 0, 12 );
+
+        if ( 0 === strncmp( $signature, "\x89PNG", 4 ) ) {
+            return 'png';
+        }
+
+        if ( 0 === strncmp( $signature, "\xFF\xD8\xFF", 3 ) ) {
+            return 'jpeg';
+        }
+
+        if ( 0 === strncmp( $signature, 'RIFF', 4 ) && 0 === strncmp( substr( $signature, 8, 4 ), 'WEBP', 4 ) ) {
+            return 'webp';
+        }
+
+        return '';
     }
 
     /**
