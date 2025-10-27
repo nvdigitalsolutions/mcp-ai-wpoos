@@ -72,6 +72,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-repor
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deep-chat-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
@@ -101,6 +102,7 @@ function wp_mcp_ai_bootstrap() {
     $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
     $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
     $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
+    $GLOBALS['wp_mcp_ai_deep_chat_shortcode'] = new WP_MCP_AI_Deep_Chat_Shortcode();
     $GLOBALS['wp_mcp_ai_shortcode'] = new WP_MCP_AI_Shortcode();
 
     WP_MCP_AI_Usage_Tracker::init();
