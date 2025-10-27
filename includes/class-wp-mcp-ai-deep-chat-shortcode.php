@@ -83,13 +83,14 @@ class WP_MCP_AI_Deep_Chat_Shortcode {
         $upload_endpoint   = esc_url_raw( rest_url( 'wp/v2/media' ) );
         $rest_nonce        = wp_create_nonce( 'wp_rest' );
 
-        $allowed_image_mimes  = array();
-        $allowed_file_mimes   = array();
-        $allowed_extensions   = array();
-        $file_accept_tokens   = array();
-        $max_attachment_bytes = 0;
+        $allowed_image_mimes     = array();
+        $allowed_file_mimes      = array();
+        $allowed_extensions      = array();
+        $file_accept_tokens      = array();
+        $max_attachment_bytes    = 0;
+        $can_upload_attachments  = current_user_can( 'upload_files' );
 
-        if ( class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+        if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
             $allowed_mime_sets = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
 
             $allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
@@ -111,6 +112,7 @@ class WP_MCP_AI_Deep_Chat_Shortcode {
             'data-rest-nonce'          => $rest_nonce,
             'data-allow-guests'        => $allow_guests ? 'true' : 'false',
             'data-max-attachment-bytes' => $max_attachment_bytes,
+            'data-can-upload-attachments' => $can_upload_attachments ? 'true' : 'false',
         );
 
         if ( $guest_token ) {

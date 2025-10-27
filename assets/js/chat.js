@@ -144,6 +144,10 @@
     }
 
     function handleFileSelection(event, state) {
+        if (!state || !state.canUploadAttachments) {
+            return;
+        }
+
         if (!event || !event.target || !event.target.files) {
             return;
         }
@@ -208,7 +212,11 @@
     }
 
     function uploadAttachment(state, file) {
-        if (!file || !state || !state.config || !state.config.uploadEndpoint) {
+        if (!state || !state.canUploadAttachments) {
+            return Promise.resolve();
+        }
+
+        if (!file || !state.config || !state.config.uploadEndpoint) {
             return Promise.resolve();
         }
 
@@ -429,6 +437,18 @@
 
     function updateAttachButtonState(state) {
         if (!state) {
+            return;
+        }
+
+        if (!state.canUploadAttachments) {
+            if (state.attachButton) {
+                state.attachButton.disabled = true;
+            }
+
+            if (state.fileInput) {
+                state.fileInput.disabled = true;
+            }
+
             return;
         }
 
@@ -1189,6 +1209,12 @@
                 instanceConfig.uploadEndpoint = globalConfig.uploadEndpoint || '';
             }
 
+            if (!Object.prototype.hasOwnProperty.call(instanceConfig, 'canUploadAttachments')) {
+                instanceConfig.canUploadAttachments = true;
+            } else {
+                instanceConfig.canUploadAttachments = !!instanceConfig.canUploadAttachments;
+            }
+
             instanceConfig.allowedImageMimes = normaliseList(instanceConfig.allowedImageMimes);
             instanceConfig.allowedFileMimes = normaliseList(instanceConfig.allowedFileMimes);
             instanceConfig.allowedExtensions = normaliseList(instanceConfig.allowedExtensions);
@@ -1202,6 +1228,7 @@
                 busy: false,
                 uploading: 0,
                 config: instanceConfig,
+                canUploadAttachments: instanceConfig.canUploadAttachments,
                 container: container,
                 textarea: textarea,
                 messagesEl: messagesEl,
@@ -1226,7 +1253,19 @@
                 attachmentsHeader.textContent = getString('attachmentsLabel', attachmentsHeader.textContent);
             }
 
-            if (attachButton) {
+            if (!state.canUploadAttachments) {
+                if (attachmentsContainer) {
+                    attachmentsContainer.hidden = true;
+                }
+
+                if (attachButton) {
+                    attachButton.hidden = true;
+                }
+
+                if (fileInput) {
+                    fileInput.disabled = true;
+                }
+            } else if (attachButton) {
                 attachButton.textContent = getString('attachFile', attachButton.textContent);
                 attachButton.addEventListener('click', function () {
                     if (state.busy || state.uploading > 0) {
@@ -1239,7 +1278,7 @@
                 });
             }
 
-            if (fileInput) {
+            if (state.canUploadAttachments && fileInput) {
                 fileInput.addEventListener('change', function (event) {
                     handleFileSelection(event, state);
                 });
