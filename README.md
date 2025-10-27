@@ -38,6 +38,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🛍 WooCommerce-aware tools (fetch orders, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
+- 🧩 OpenAI Agent Builder launch tool for sharing objectives and quick access to the builder UI
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
 - 🧊 Elementor widget for dropping the chat UI into Elementor-powered layouts
 - 🔐 Secure REST API endpoints

@@ -185,6 +185,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Get_JetEngine_Items'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
             'WP_MCP_AI_Tool_List_JetEngine_Routes' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php',
             'WP_MCP_AI_Tool_Invoke_JetEngine_Route' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
+            'WP_MCP_AI_Tool_OpenAI_Agent_Builder'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-openai-agent-builder.php',
             'WP_MCP_AI_Tool_Run_OpenAI_External_Action' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php',
             'WP_MCP_AI_Tool_Run_Crawl4AI_Job'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
         );
