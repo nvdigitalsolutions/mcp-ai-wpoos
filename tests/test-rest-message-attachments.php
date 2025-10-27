@@ -753,6 +753,38 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 )
             );
 
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        if ( empty( $settings['openai_api_key'] ) ) {
+            $settings['openai_api_key'] = 'sk-test';
+            update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+        }
+
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+            wp_set_current_user( $user_id );
+        }
+
+        $http_stub = function ( $preempt, $args, $url ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT === $url ) {
+                return array(
+                    'body'     => wp_json_encode(
+                        array(
+                            'id'         => 'file-test',
+                            'created_at' => time(),
+                            'status'     => 'processed',
+                        )
+                    ),
+                    'response' => array( 'code' => 200 ),
+                    'headers'  => array(),
+                );
+            }
+
+            return $preempt;
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
         $this->bootstrap_rest_controller( $mock_client );
 
         $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -765,6 +797,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
         $response = rest_get_server()->dispatch( $request );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
@@ -831,6 +865,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             )
         );
 
+        $this->prime_attachment_openai_metadata( $attachment_id, $upload['file'], 'image/png' );
+
         return $attachment_id;
     }
 
@@ -855,6 +891,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             )
         );
 
+        $this->prime_attachment_openai_metadata( $attachment_id, $upload['file'], 'text/plain' );
+
         return $attachment_id;
     }
 
@@ -878,6 +916,47 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             )
         );
 
+        $this->prime_attachment_openai_metadata(
+            $attachment_id,
+            $upload['file'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+
         return array( $attachment_id, $upload['file'] );
+    }
+
+    /**
+     * Prime cached OpenAI metadata for an attachment to avoid outbound requests during tests.
+     *
+     * @param int    $attachment_id Attachment identifier.
+     * @param string $file_path     Absolute path to the file on disk.
+     * @param string $mime_type     MIME type for the attachment.
+     */
+    protected function prime_attachment_openai_metadata( $attachment_id, $file_path, $mime_type ) {
+        $attachment_id = absint( $attachment_id );
+        if ( ! $attachment_id ) {
+            return;
+        }
+
+        $bytes    = file_exists( $file_path ) ? (int) filesize( $file_path ) : 0;
+        $hash     = is_readable( $file_path ) ? md5_file( $file_path ) : ''; // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file
+        $modified = file_exists( $file_path ) ? (int) filemtime( $file_path ) : time();
+        $data     = is_readable( $file_path ) ? base64_encode( file_get_contents( $file_path ) ) : '';
+
+        $metadata = array(
+            'file_id'    => 'wp-attachment-' . $attachment_id,
+            'filename'   => wp_basename( $file_path ),
+            'mime_type'  => $mime_type,
+            'bytes'      => $bytes,
+            'hash'       => $hash,
+            'modified'   => $modified,
+            'purpose'    => 'responses',
+            'status'     => 'processed',
+            'created_at' => time(),
+        );
+
+        $metadata['data'] = $data;
+
+        update_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, $metadata );
     }
 }

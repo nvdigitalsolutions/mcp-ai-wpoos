@@ -16,6 +16,7 @@ class WP_MCP_AI_OpenAI_Client {
     const CHAT_COMPLETIONS_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
     const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
     const FILES_ENDPOINT            = 'https://api.openai.com/v1/files';
+    const AUDIO_SPEECH_ENDPOINT     = 'https://api.openai.com/v1/audio/speech';
 
     /**
      * Retrieve the configured API key.
@@ -163,6 +164,148 @@ class WP_MCP_AI_OpenAI_Client {
         );
 
         return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
+     * Generate speech audio from text using the OpenAI Text-to-Speech API.
+     *
+     * @param string $input   Text that should be converted to speech.
+     * @param array  $options Optional overrides (model, voice, format, speed, timeout).
+     * @return array|WP_Error Array containing the audio payload and metadata or WP_Error on failure.
+     */
+    public function generate_speech( $input, array $options = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $input = sanitize_textarea_field( $input );
+
+        if ( '' === $input ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_speech_input',
+                __( 'A text prompt must be supplied to generate speech.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+        $model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-4o-mini-tts';
+        $voice   = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_key( $options['voice'] ) : 'alloy';
+        $format  = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'mp3';
+        $timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout = max( 5, $timeout );
+
+        $payload = array(
+            'model'  => $model,
+            'input'  => $input,
+            'voice'  => $voice,
+            'format' => $format,
+        );
+
+        if ( isset( $options['speed'] ) && '' !== $options['speed'] ) {
+            $speed = floatval( $options['speed'] );
+            $speed = max( 0.25, min( 4, $speed ) );
+            $payload['speed'] = $speed;
+        } else {
+            $speed = null;
+        }
+
+        /**
+         * Allow third parties to filter the OpenAI speech payload prior to dispatch.
+         *
+         * @param array $payload Prepared request payload.
+         * @param array $options Original method options.
+         */
+        $payload = apply_filters( 'wp_mcp_ai_openai_speech_payload', $payload, $options );
+
+        $encoded_payload = wp_json_encode( $payload );
+        if ( false === $encoded_payload ) {
+            return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
+        }
+
+        $request_args = array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type'  => 'application/json',
+            ),
+            'timeout' => $timeout,
+            'body'    => $encoded_payload,
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_tts_request',
+            'Sending text-to-speech request to OpenAI.',
+            array(
+                'model'  => $model,
+                'voice'  => $voice,
+                'format' => $format,
+                'speed'  => $speed,
+            )
+        );
+
+        $response = wp_remote_post( self::AUDIO_SPEECH_ENDPOINT, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI text-to-speech request failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_http_error',
+                __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $decoded = json_decode( $body, true );
+            $error   = json_last_error();
+
+            if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
+                $message = $decoded['error']['message'];
+            } else {
+                $message = __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+            }
+
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI text-to-speech request returned an error.',
+                array(
+                    'status'   => $status_code,
+                    'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+                )
+            );
+
+            return new WP_Error( 'wp_mcp_ai_api_error', $message, array( 'status' => $status_code ) );
+        }
+
+        if ( '' === $body ) {
+            return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'wp-mcp-ai' ) );
+        }
+
+        $headers = wp_remote_retrieve_headers( $response );
+        $type    = isset( $headers['content-type'] ) ? sanitize_text_field( $headers['content-type'] ) : '';
+
+        return array(
+            'audio'        => $body,
+            'format'       => $format,
+            'model'        => $model,
+            'voice'        => $voice,
+            'speed'        => $speed,
+            'content_type' => $type,
+        );
     }
 
     /**
