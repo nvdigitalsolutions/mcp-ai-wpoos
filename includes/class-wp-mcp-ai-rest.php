@@ -1059,6 +1059,7 @@ class WP_MCP_AI_REST {
             'status'          => 502,
             'response_status' => $status,
             'response'        => $response,
+            'message'         => $message,
         );
 
         if ( isset( $response['last_error'] ) && is_array( $response['last_error'] ) ) {

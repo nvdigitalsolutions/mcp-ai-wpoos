@@ -242,6 +242,8 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
         $this->assertSame( 'wp_mcp_ai_chat_failed', $data['code'] );
         $this->assertSame( 'You exceeded your quota.', $data['message'] );
         $this->assertArrayHasKey( 'data', $data );
+        $this->assertArrayHasKey( 'message', $data['data'] );
+        $this->assertSame( 'You exceeded your quota.', $data['data']['message'] );
         $this->assertArrayHasKey( 'provider_error_code', $data['data'] );
         $this->assertSame( 'rate_limit_exceeded', $data['data']['provider_error_code'] );
     }
