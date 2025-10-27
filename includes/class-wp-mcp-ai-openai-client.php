@@ -1381,6 +1381,10 @@ class WP_MCP_AI_OpenAI_Client {
             unset( $segment['file'] );
         }
 
+        if ( isset( $segment['file_id'] ) && '' !== $segment['file_id'] && isset( $segment['filename'] ) ) {
+            unset( $segment['filename'] );
+        }
+
         return $segment;
     }
 
