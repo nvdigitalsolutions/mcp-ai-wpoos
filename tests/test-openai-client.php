@@ -176,6 +176,69 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure delete requests require a configured API key.
+     */
+    public function test_delete_file_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->delete_file( 'file-123' );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure delete requests target the expected endpoint and use the DELETE method.
+     */
+    public function test_delete_file_sends_delete_request() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+        $expected_file_id = 'file-delete-123';
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request, $expected_file_id ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/' . $expected_file_id !== $url ) {
+                return false;
+            }
+
+            $captured_request = $args;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => $expected_file_id,
+                        'deleted' => true,
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $response = $client->delete_file( $expected_file_id );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'deleted', $response );
+        $this->assertTrue( $response['deleted'] );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( 'DELETE', $captured_request['method'] );
+        $this->assertArrayHasKey( 'headers', $captured_request );
+        $this->assertArrayHasKey( 'Authorization', $captured_request['headers'] );
+    }
+
+    /**
      * Ensure chat completion payloads include the tool name alongside the function definition.
      */
     public function test_chat_completion_payload_includes_tool_name() {
@@ -315,6 +378,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             'attachments' => array(
                 array(
                     'id'        => 'file-123',
+                    'file_id'   => 'file-123',
                     'filename'  => 'notes.txt',
                     'mime_type' => 'text/plain',
                     'data'      => base64_encode( 'Example content' ),
@@ -349,15 +413,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $file_segment = $content[0];
 
         $this->assertSame( 'input_file', $file_segment['type'] );
-        $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertIsString( $file_segment['file_data'] );
-        $this->assertSame(
-            'data:text/plain;base64,' . base64_encode( 'Example content' ),
-            $file_segment['file_data']
-        );
+        $this->assertArrayHasKey( 'file_id', $file_segment );
+        $this->assertSame( 'file-123', $file_segment['file_id'] );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
-        $this->assertArrayNotHasKey( 'file_id', $file_segment );
+        $this->assertArrayNotHasKey( 'file_data', $file_segment );
 
         $this->assertIsArray( $response );
         $this->assertArrayHasKey( 'choices', $response );
@@ -601,6 +661,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             'attachments' => array(
                 array(
                     'id'        => 'file-123',
+                    'file_id'   => 'file-123',
                     'filename'  => 'notes.txt',
                     'mime_type' => 'text/plain',
                     'data'      => base64_encode( 'Example content' ),
@@ -714,15 +775,11 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $file_segment = $content[0];
 
         $this->assertSame( 'input_file', $file_segment['type'] );
-        $this->assertArrayHasKey( 'file_data', $file_segment );
-        $this->assertIsString( $file_segment['file_data'] );
-        $this->assertSame(
-            'data:text/plain;base64,' . base64_encode( 'Example content' ),
-            $file_segment['file_data']
-        );
+        $this->assertArrayHasKey( 'file_id', $file_segment );
+        $this->assertSame( 'file-123', $file_segment['file_id'] );
         $this->assertArrayHasKey( 'filename', $file_segment );
         $this->assertSame( 'notes.txt', $file_segment['filename'] );
-        $this->assertArrayNotHasKey( 'file_id', $file_segment );
+        $this->assertArrayNotHasKey( 'file_data', $file_segment );
 
         $this->assertIsArray( $response );
         $this->assertArrayHasKey( 'output', $response );
@@ -782,6 +839,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             'attachments' => array(
                 array(
                     'id'        => 'file-123',
+                    'file_id'   => 'file-123',
                     'filename'  => 'notes.txt',
                     'mime_type' => 'text/plain',
                     'data'      => base64_encode( 'Notes content' ),
@@ -806,12 +864,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_text', $payload['input'][0]['content'][0]['type'] );
         $this->assertSame( 'Please review the attached notes.', $payload['input'][0]['content'][0]['text'] );
         $this->assertSame( 'input_file', $payload['input'][0]['content'][1]['type'] );
-        $this->assertArrayHasKey( 'file_data', $payload['input'][0]['content'][1] );
-        $this->assertIsString( $payload['input'][0]['content'][1]['file_data'] );
-        $this->assertSame(
-            'data:text/plain;base64,' . base64_encode( 'Notes content' ),
-            $payload['input'][0]['content'][1]['file_data']
-        );
+        $this->assertArrayHasKey( 'file_id', $payload['input'][0]['content'][1] );
+        $this->assertSame( 'file-123', $payload['input'][0]['content'][1]['file_id'] );
+        $this->assertArrayNotHasKey( 'file_data', $payload['input'][0]['content'][1] );
     }
 
     /**
@@ -1053,6 +1108,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             'attachments' => array(
                 array(
                     'id'        => 'file-321',
+                    'file_id'   => 'file-321',
                     'filename'  => 'document.pdf',
                     'mime_type' => 'application/pdf',
                     'data'      => base64_encode( 'PDF content' ),
@@ -1083,10 +1139,12 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $file_segment = $payload['input'][1]['content'][1];
         $this->assertSame( 'input_file', $file_segment['type'] );
-        $this->assertArrayHasKey( 'file_data', $file_segment );
+        $this->assertArrayHasKey( 'file_id', $file_segment );
+        $this->assertSame( 'file-321', $file_segment['file_id'] );
         $this->assertArrayNotHasKey( 'mode', $assistant_segment );
         $this->assertArrayNotHasKey( 'mode', $user_text_segment );
         $this->assertArrayNotHasKey( 'mode', $file_segment );
+        $this->assertArrayNotHasKey( 'file_data', $file_segment );
     }
 
     /**

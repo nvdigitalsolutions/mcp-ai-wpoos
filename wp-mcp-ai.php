@@ -78,6 +78,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
+WP_MCP_AI_Message_Attachments::init();
+
 WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 
 /**
