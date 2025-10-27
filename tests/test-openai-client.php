@@ -1031,7 +1031,6 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                     array(
                         'type' => 'text',
                         'text' => 'Previous summary.',
-                        'mode' => 'input_text',
                     ),
                 ),
             ),
@@ -1041,12 +1040,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                     array(
                         'type' => 'text',
                         'text' => 'Please summarise the document again.',
-                        'mode' => 'output_text',
                     ),
                     array(
                         'type'    => 'input_file',
                         'file_id' => 'file-321',
-                        'mode'    => 'output_text',
                     ),
                 ),
             ),
@@ -1078,19 +1075,17 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $assistant_segment = $payload['input'][0]['content'][0];
         $this->assertSame( 'output_text', $assistant_segment['type'] );
-        $this->assertArrayHasKey( 'mode', $assistant_segment );
-        $this->assertSame( 'output_text', $assistant_segment['mode'] );
         $this->assertSame( 'Previous summary.', $assistant_segment['text'] );
 
         $user_text_segment = $payload['input'][1]['content'][0];
         $this->assertSame( 'input_text', $user_text_segment['type'] );
-        $this->assertArrayHasKey( 'mode', $user_text_segment );
-        $this->assertSame( 'input_text', $user_text_segment['mode'] );
         $this->assertSame( 'Please summarise the document again.', $user_text_segment['text'] );
 
         $file_segment = $payload['input'][1]['content'][1];
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_data', $file_segment );
+        $this->assertArrayNotHasKey( 'mode', $assistant_segment );
+        $this->assertArrayNotHasKey( 'mode', $user_text_segment );
         $this->assertArrayNotHasKey( 'mode', $file_segment );
     }
 }

@@ -703,18 +703,14 @@ class WP_MCP_AI_OpenAI_Client {
                 if ( ! isset( $segment['text'] ) ) {
                     $segment['text'] = '';
                 }
-
-                $segment['mode'] = $is_output_role ? 'output_text' : 'input_text';
             } elseif ( 'input_image' === $type ) {
                 $segment = $this->populate_responses_image_segment( $segment, $attachments );
-                if ( isset( $segment['mode'] ) ) {
-                    unset( $segment['mode'] );
-                }
             } elseif ( 'input_file' === $type ) {
                 $segment = $this->populate_responses_file_segment( $segment, $attachments );
-                if ( isset( $segment['mode'] ) ) {
-                    unset( $segment['mode'] );
-                }
+            }
+
+            if ( isset( $segment['mode'] ) ) {
+                unset( $segment['mode'] );
             }
 
             $normalised[] = $segment;
