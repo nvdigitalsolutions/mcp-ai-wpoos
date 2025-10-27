@@ -142,7 +142,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
                 'options'            => array(
                     'type'        => 'object',
                     'description' => __( 'Additional Crawl4AI options (for example, crawler configuration or hook overrides).', 'wp-mcp-ai' ),
-                    'properties'  => array(),
+                    'additionalProperties' => true,
                 ),
                 'wait_for_completion' => array(
                     'type'        => 'boolean',
