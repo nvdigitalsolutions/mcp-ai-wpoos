@@ -210,6 +210,16 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a short-lived guest token that authorises REST requests without a WordPress login.
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
+### Elementor widget
+- Elementor sites automatically gain an **MCP AI Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
+- Leaving the assistant control blank falls back to the default assistant configured in the plugin settings, and enabling **Allow Guests** injects the same temporary tokens used by the shortcode flow.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L45-L110】【F:includes/class-wp-mcp-ai-shortcode.php†L132-L224】
+
+### Deep Chat web component
+- Prefer `[mcp_ai_deep_chat]` when you want the headless [Deep Chat](https://deepchat.dev/) web component while still routing requests through the plugin’s REST API.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L15-L139】
+- Attributes mirror the classic shortcode: omit `assistant` to inherit the default from **Settings → MCP AI**, and set `allow_guests="true"` to mint guest tokens for anonymous visitors.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L35-L118】
+- The renderer forwards REST endpoints, allowed MIME types, and file size caps to the component so uploads follow the same validation rules as the standard chat UI.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L80-L134】
+- Deep Chat assets load from the bundled files when present and fall back to jsDelivr/CDN versions automatically, with filters available for custom hosting if needed.【F:includes/deep-chat-assets.php†L12-L103】
+
 ---
 
 ## 🧵 REST Chat Payloads & Attachments
@@ -252,6 +262,8 @@ so integrators do not need to upload assets manually before invoking a model.
 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
+
+Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by both the shortcode and Deep Chat renderers when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L92-L134】
 
 ---
 
