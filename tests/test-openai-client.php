@@ -1465,7 +1465,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             'A scenic landscape at sunrise',
             array(
                 'model'      => 'gpt-image-test',
-                'size'       => '512x512',
+                'size'       => '1024x1536',
                 'quality'    => 'high',
                 'background' => 'transparent',
             )
@@ -1479,7 +1479,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'png', $response['format'] );
         $this->assertSame( 'image/png', $response['mime_type'] );
         $this->assertSame( 'gpt-image-test', $response['model'] );
-        $this->assertSame( '512x512', $response['size'] );
+        $this->assertSame( '1024x1536', $response['size'] );
         $this->assertSame( 'high', $response['quality'] );
         $this->assertSame( 'transparent', $response['background'] );
         $this->assertSame( 123, $response['created'] );
@@ -1495,7 +1495,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $payload );
         $this->assertSame( 'gpt-image-test', $payload['model'] );
         $this->assertSame( 'A scenic landscape at sunrise', $payload['prompt'] );
-        $this->assertSame( '512x512', $payload['size'] );
+        $this->assertSame( '1024x1536', $payload['size'] );
         $this->assertSame( 'high', $payload['quality'] );
         $this->assertSame( 'transparent', $payload['background'] );
         $this->assertArrayNotHasKey( 'format', $payload );

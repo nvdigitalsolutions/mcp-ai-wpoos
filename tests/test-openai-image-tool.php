@@ -83,7 +83,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
             array(
                 'prompt'     => 'A friendly robot painting a portrait',
                 'model'      => 'gpt-image-test',
-                'size'       => '512x512',
+                'size'       => '1024x1536',
                 'quality'    => 'high',
                 'background' => 'transparent',
                 'format'     => 'png',
@@ -101,7 +101,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'attachment_id', $result );
         $this->assertArrayHasKey( 'url', $result );
         $this->assertSame( 'png', $result['format'] );
-        $this->assertSame( '512x512', $result['size'] );
+        $this->assertSame( '1024x1536', $result['size'] );
         $this->assertSame( 'high', $result['quality'] );
         $this->assertSame( 'gpt-image-test', $result['model'] );
         $this->assertSame( 'transparent', $result['background'] );
