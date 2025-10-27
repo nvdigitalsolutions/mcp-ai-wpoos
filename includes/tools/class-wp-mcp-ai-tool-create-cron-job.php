@@ -1,0 +1,178 @@
+<?php
+/**
+ * Tool for scheduling WordPress cron events.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+/**
+ * Allows privileged users to create WP-Cron jobs.
+ */
+class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
+    /**
+     * {@inheritdoc}
+     */
+    public function get_slug() {
+        return 'create_cron_job';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_name() {
+        return __( 'Create Cron Job', 'wp-mcp-ai' );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_description() {
+        return __( 'Schedules a WordPress cron event for a given hook, schedule, and arguments.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_parameters_schema() {
+        $schedules      = wp_get_schedules();
+        $schedule_slugs = array_keys( $schedules );
+
+        sort( $schedule_slugs );
+
+        return array(
+            'type'                 => 'object',
+            'properties'           => array(
+                'hook'      => array(
+                    'type'        => 'string',
+                    'description' => __( 'The action hook to schedule.', 'wp-mcp-ai' ),
+                    'minLength'   => 1,
+                ),
+                'timestamp' => array(
+                    'type'        => 'integer',
+                    'description' => __( 'Unix timestamp for when the event should first run. Defaults to one minute from now.', 'wp-mcp-ai' ),
+                    'minimum'     => 0,
+                ),
+                'schedule'  => array(
+                    'type'        => 'string',
+                    'description' => __( 'Recurrence schedule slug. Use "single" for a one-off event.', 'wp-mcp-ai' ),
+                    'enum'        => array_merge( array( 'single' ), $schedule_slugs ),
+                ),
+                'args'      => array(
+                    'type'                 => 'array',
+                    'description'          => __( 'Optional positional arguments passed to the action when it runs.', 'wp-mcp-ai' ),
+                    'items'                => array(
+                        'anyOf' => array(
+                            array( 'type' => 'string' ),
+                            array( 'type' => 'number' ),
+                            array( 'type' => 'boolean' ),
+                            array( 'type' => 'null' ),
+                            array(
+                                'type'                 => 'object',
+                                'additionalProperties' => true,
+                            ),
+                            array(
+                                'type'  => 'array',
+                                'items' => array(),
+                            ),
+                        ),
+                    ),
+                    'default'              => array(),
+                ),
+            ),
+            'required'             => array( 'hook' ),
+            'additionalProperties' => false,
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function execute( array $arguments = array(), array $context = array() ) {
+        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+        if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
+            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create cron jobs.', 'wp-mcp-ai' ) );
+        }
+
+        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+        }
+
+        $hook = isset( $arguments['hook'] ) ? sanitize_text_field( (string) $arguments['hook'] ) : '';
+
+        if ( '' === $hook ) {
+            return new WP_Error( 'wp_mcp_ai_invalid_hook', __( 'A valid hook name is required to schedule a cron job.', 'wp-mcp-ai' ) );
+        }
+
+        $timestamp = isset( $arguments['timestamp'] ) ? (int) $arguments['timestamp'] : 0;
+
+        if ( $timestamp <= 0 ) {
+            $timestamp = time() + MINUTE_IN_SECONDS;
+        }
+
+        $current_time = time();
+        if ( $timestamp < $current_time ) {
+            return new WP_Error( 'wp_mcp_ai_past_timestamp', __( 'The requested start time is in the past. Please choose a future timestamp.', 'wp-mcp-ai' ) );
+        }
+
+        $schedule = isset( $arguments['schedule'] ) ? sanitize_key( $arguments['schedule'] ) : 'single';
+
+        if ( empty( $schedule ) ) {
+            $schedule = 'single';
+        }
+
+        $available_schedules = wp_get_schedules();
+        if ( 'single' !== $schedule && ! isset( $available_schedules[ $schedule ] ) ) {
+            return new WP_Error( 'wp_mcp_ai_invalid_schedule', __( 'The provided schedule is not registered.', 'wp-mcp-ai' ) );
+        }
+
+        $args = array();
+        if ( isset( $arguments['args'] ) ) {
+            if ( ! is_array( $arguments['args'] ) ) {
+                return new WP_Error( 'wp_mcp_ai_invalid_args', __( 'The args parameter must be an array.', 'wp-mcp-ai' ) );
+            }
+
+            $args = $arguments['args'];
+        }
+
+        // Normalise associative arrays to pass as a single argument.
+        if ( ! empty( $args ) && array_keys( $args ) !== range( 0, count( $args ) - 1 ) ) {
+            $args = array( $args );
+        }
+
+        $existing_timestamp = wp_next_scheduled( $hook, $args );
+        if ( false !== $existing_timestamp ) {
+            return new WP_Error(
+                'wp_mcp_ai_event_exists',
+                sprintf(
+                    /* translators: %s - next scheduled datetime */
+                    __( 'An event with the same hook and arguments is already scheduled for %s.', 'wp-mcp-ai' ),
+                    wp_date( DATE_ATOM, $existing_timestamp )
+                )
+            );
+        }
+
+        if ( 'single' === $schedule ) {
+            $scheduled = wp_schedule_single_event( $timestamp, $hook, $args );
+        } else {
+            $scheduled = wp_schedule_event( $timestamp, $schedule, $hook, $args );
+        }
+
+        if ( false === $scheduled ) {
+            return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the cron event. Please try again.', 'wp-mcp-ai' ) );
+        }
+
+        return array(
+            'hook'          => $hook,
+            'schedule'      => $schedule,
+            'timestamp'     => $timestamp,
+            'scheduled_for' => wp_date( DATE_ATOM, $timestamp ),
+            'args'          => $args,
+            'message'       => __( 'Cron event scheduled successfully.', 'wp-mcp-ai' ),
+        );
+    }
+}
