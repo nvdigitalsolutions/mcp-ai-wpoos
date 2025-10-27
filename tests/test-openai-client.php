@@ -1508,6 +1508,72 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure generate_image can process binary image responses.
+     */
+    public function test_generate_image_accepts_binary_responses() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 30;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client     = new WP_MCP_AI_OpenAI_Client();
+        $png_binary = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=' );
+
+        $http_stub = function () use ( $png_binary ) {
+            return array(
+                'body'     => $png_binary,
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'image/png' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub );
+
+        $response = $client->generate_image( 'Binary payload', array( 'format' => 'png' ) );
+
+        remove_filter( 'pre_http_request', $http_stub );
+
+        $this->assertIsArray( $response );
+        $this->assertSame( $png_binary, $response['image'] );
+        $this->assertSame( 'png', $response['format'] );
+        $this->assertSame( 'image/png', $response['mime_type'] );
+        $this->assertSame( 'gpt-image-1', $response['model'] );
+        $this->assertSame( 'Binary payload', $response['prompt'] );
+        $this->assertSame( 0, $response['created'] );
+        $this->assertSame( '', $response['revised_prompt'] );
+    }
+
+    /**
+     * Ensure generate_image surfaces useful errors when the response is not JSON.
+     */
+    public function test_generate_image_handles_non_json_errors() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 15;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        $http_stub = function () {
+            return array(
+                'body'     => '<html>Internal Error</html>',
+                'response' => array( 'code' => 500 ),
+                'headers'  => array( 'content-type' => 'text/html' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub );
+
+        $response = $client->generate_image( 'Server error scenario', array() );
+
+        remove_filter( 'pre_http_request', $http_stub );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_image_error', $response->get_error_code() );
+        $this->assertStringContainsString( 'status 500', $response->get_error_message() );
+    }
+
+    /**
      * Ensure the speech helper surfaces an actionable error when no API key is configured.
      */
     public function test_generate_speech_requires_api_key() {
