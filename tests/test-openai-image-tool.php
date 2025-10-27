@@ -85,7 +85,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
                 'model'      => 'gpt-image-test',
                 'size'       => '512x512',
                 'quality'    => 'high',
-                'style'      => 'vivid',
                 'background' => 'transparent',
                 'format'     => 'png',
                 'file_name'  => 'robot-art',
@@ -105,7 +104,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( '512x512', $result['size'] );
         $this->assertSame( 'high', $result['quality'] );
         $this->assertSame( 'gpt-image-test', $result['model'] );
-        $this->assertSame( 'vivid', $result['style'] );
         $this->assertSame( 'transparent', $result['background'] );
         $this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
         $this->assertSame( 456, $result['created'] );

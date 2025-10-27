@@ -71,11 +71,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                     'enum'        => array_values( $this->get_allowed_qualities() ),
                     'default'     => self::DEFAULT_QUALITY,
                 ),
-                'style'      => array(
-                    'type'        => 'string',
-                    'description' => __( 'Optional style hint (for example vivid or natural).', 'wp-mcp-ai' ),
-                    'enum'        => array_values( $this->get_allowed_styles() ),
-                ),
                 'background' => array(
                     'type'        => 'string',
                     'description' => __( 'Optional background preference such as transparent or white.', 'wp-mcp-ai' ),
@@ -152,9 +147,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             $quality = self::DEFAULT_QUALITY;
         }
 
-        $style = isset( $arguments['style'] ) ? sanitize_key( $arguments['style'] ) : '';
-        $style = $this->normalise_style( $style );
-
         $background = isset( $arguments['background'] ) ? sanitize_key( $arguments['background'] ) : '';
         $background = $this->normalise_background( $background );
 
@@ -169,10 +161,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'quality'    => $quality,
             'format'     => $format,
         );
-
-        if ( '' !== $style ) {
-            $options['style'] = $style;
-        }
 
         if ( '' !== $background ) {
             $options['background'] = $background;
@@ -214,7 +202,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'size'           => $size,
             'quality'        => $quality,
             'model'          => $image['model'],
-            'style'          => $style,
             'background'     => $background,
             'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
             'created'        => isset( $image['created'] ) ? $image['created'] : 0,
@@ -256,19 +243,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         return array(
             'standard',
             'high',
-        );
-    }
-
-    /**
-     * Retrieve the allowed style hints.
-     *
-     * @return array
-     */
-    protected function get_allowed_styles() {
-        return array(
-            '',
-            'natural',
-            'vivid',
         );
     }
 
@@ -344,19 +318,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         $qualities = $this->get_allowed_qualities();
 
         return in_array( $quality, $qualities, true ) ? $quality : '';
-    }
-
-    /**
-     * Normalise the requested style hint.
-     *
-     * @param string $style Raw style input.
-     * @return string
-     */
-    protected function normalise_style( $style ) {
-        $style = sanitize_key( $style );
-        $styles = $this->get_allowed_styles();
-
-        return in_array( $style, $styles, true ) ? $style : '';
     }
 
     /**

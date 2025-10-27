@@ -448,7 +448,6 @@ class WP_MCP_AI_OpenAI_Client {
         $model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-image-1';
         $size      = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
         $quality   = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : 'standard';
-        $style     = isset( $options['style'] ) && '' !== $options['style'] ? sanitize_key( $options['style'] ) : '';
         $background = isset( $options['background'] ) && '' !== $options['background'] ? sanitize_key( $options['background'] ) : '';
         $format    = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
         $timeout   = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
@@ -461,10 +460,6 @@ class WP_MCP_AI_OpenAI_Client {
             'quality' => $quality,
             'n'       => 1,
         );
-
-        if ( '' !== $style ) {
-            $payload['style'] = $style;
-        }
 
         if ( '' !== $background ) {
             $payload['background'] = $background;
@@ -507,7 +502,6 @@ class WP_MCP_AI_OpenAI_Client {
                 'model'     => $model,
                 'size'      => $size,
                 'quality'   => $quality,
-                'style'     => $style,
                 'background'=> $background,
                 'format'    => $format,
             )
@@ -633,7 +627,6 @@ class WP_MCP_AI_OpenAI_Client {
             'prompt'         => $prompt,
             'size'           => $size,
             'quality'        => $quality,
-            'style'          => $style,
             'background'     => $background,
             'created'        => $response_created,
             'revised_prompt' => $response_revision,
@@ -646,7 +639,6 @@ class WP_MCP_AI_OpenAI_Client {
                 'model'      => $model,
                 'size'       => $size,
                 'quality'    => $quality,
-                'style'      => $style,
                 'background' => $background,
                 'format'     => $format,
             )
