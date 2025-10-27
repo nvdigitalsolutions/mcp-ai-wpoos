@@ -557,6 +557,39 @@ class WP_MCP_AI_Admin_Settings {
             <input id="wp-mcp-ai-enable-logging" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_logging]" value="1" <?php checked( $settings['enable_logging'] ); ?> />
             <?php esc_html_e( 'Write OpenAI request and response details to the debug log.', 'wp-mcp-ai' ); ?>
         </label>
+        <?php if ( ! empty( $settings['enable_logging'] ) ) :
+            $entries = WP_MCP_AI_Logger::get_recent_error_messages();
+            ?>
+            <p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first):', 'wp-mcp-ai' ); ?></p>
+            <?php if ( empty( $entries ) ) : ?>
+                <p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
+            <?php else : ?>
+                <ul class="wp-mcp-ai-log-preview">
+                    <?php foreach ( $entries as $entry ) :
+                        $timestamp = '';
+
+                        if ( ! empty( $entry['timestamp'] ) ) {
+                            $timestamp = get_date_from_gmt(
+                                $entry['timestamp'],
+                                get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
+                            );
+                        }
+
+                        $type_label    = strtoupper( $entry['type'] );
+                        $message_label = $entry['message'];
+                        ?>
+                        <li>
+                            <?php if ( ! empty( $timestamp ) ) : ?>
+                                <span class="wp-mcp-ai-log-preview__time"><?php echo esc_html( $timestamp ); ?></span>
+                                &mdash;
+                            <?php endif; ?>
+                            <span class="wp-mcp-ai-log-preview__type"><?php echo esc_html( $type_label ); ?></span>:
+                            <span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        <?php endif; ?>
         <?php
     }
 
