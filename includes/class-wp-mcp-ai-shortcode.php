@@ -52,6 +52,16 @@ class WP_MCP_AI_Shortcode {
         $script_path = WP_MCP_AI_URL . 'assets/js/chat.js';
         $style_path  = WP_MCP_AI_URL . 'assets/css/chat.css';
 
+        $script_dependencies = array();
+
+        if ( function_exists( 'wp_mcp_ai_register_deep_chat_assets' ) ) {
+            $deep_chat_handle = wp_mcp_ai_register_deep_chat_assets();
+
+            if ( $deep_chat_handle ) {
+                $script_dependencies[] = $deep_chat_handle;
+            }
+        }
+
         wp_register_style(
             self::STYLE_HANDLE,
             $style_path,
@@ -62,7 +72,7 @@ class WP_MCP_AI_Shortcode {
         wp_register_script(
             self::SCRIPT_HANDLE,
             $script_path,
-            array(),
+            $script_dependencies,
             WP_MCP_AI_VERSION,
             true
         );
@@ -165,6 +175,10 @@ class WP_MCP_AI_Shortcode {
             $this->register_assets();
         }
 
+        if ( function_exists( 'wp_mcp_ai_enqueue_deep_chat_assets' ) ) {
+            wp_mcp_ai_enqueue_deep_chat_assets();
+        }
+
         wp_enqueue_script( self::SCRIPT_HANDLE );
         wp_enqueue_style( self::STYLE_HANDLE );
 
@@ -176,6 +190,8 @@ class WP_MCP_AI_Shortcode {
             'assistantId'    => $assistant_id,
             'messagesEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat' ) ),
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
+            'requiredCapability' => $capability ? $capability : '',
+            'allowGuests'        => (bool) $allow_guests,
         );
 
         if ( class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
