@@ -1411,6 +1411,14 @@ class WP_MCP_AI_REST {
      * @return array|WP_Error
      */
     protected function sanitize_message_content( $content, WP_MCP_AI_Message_Attachments $attachments_helper ) {
+        if ( $content instanceof \Traversable ) {
+            $content = iterator_to_array( $content );
+        }
+
+        if ( is_object( $content ) ) {
+            $content = (array) $content;
+        }
+
         if ( is_string( $content ) || is_numeric( $content ) ) {
             $segment = $attachments_helper->prepare_input_text_segment( $content );
 
@@ -1423,6 +1431,10 @@ class WP_MCP_AI_REST {
 
         if ( ! is_array( $content ) ) {
             return new WP_Error( 'wp_mcp_ai_invalid_message_content', __( 'Message content must be a string or an array of segments.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+        }
+
+        if ( ! wp_is_numeric_array( $content ) ) {
+            $content = array( $content );
         }
 
         $segments = array();

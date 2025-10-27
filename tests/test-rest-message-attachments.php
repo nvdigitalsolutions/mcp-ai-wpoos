@@ -38,6 +38,43 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure single segment objects are normalised into arrays.
+     */
+    public function test_text_segment_object_is_normalised() {
+        $assistant_id = $this->create_assistant_post();
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        'type' => 'text',
+                        'text' => 'Hello world',
+                    ),
+                ),
+            ),
+            function ( $messages ) {
+                $this->assertNotEmpty( $messages );
+                $first = $messages[0];
+
+                $this->assertArrayHasKey( 'content', $first );
+                $this->assertIsArray( $first['content'] );
+                $this->assertCount( 1, $first['content'] );
+                $this->assertSame( 'text', $first['content'][0]['type'] );
+                $this->assertSame( 'Hello world', $first['content'][0]['text'] );
+
+                return true;
+            },
+            function ( $options ) {
+                $this->assertArrayNotHasKey( 'attachments', $options );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure remote image segments reject URLs that use unsupported schemes.
      */
     public function test_remote_image_segment_rejects_disallowed_scheme() {
@@ -314,6 +351,58 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 $this->assertSame( $resolved_file_id, $attachment['file_id'] );
                 $this->assertSame( 'image/png', $attachment['mime_type'] );
                 $this->assertArrayNotHasKey( 'data', $attachment );
+
+                return true;
+            }
+        );
+    }
+
+    /**
+     * Ensure attachment segments provided as single objects are normalised.
+     */
+    public function test_single_object_attachment_segment_is_normalised() {
+        $assistant_id  = $this->create_assistant_post();
+        $attachment_id = $this->create_image_attachment( 'normalise.png' );
+        $resolved_file_id = null;
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        'type'          => 'input_image',
+                        'attachment_id' => $attachment_id,
+                        'detail'        => 'low',
+                    ),
+                ),
+            ),
+            function ( $messages ) use ( &$resolved_file_id ) {
+                $this->assertCount( 1, $messages );
+
+                $first = $messages[0];
+                $this->assertSame( 'user', $first['role'] );
+                $this->assertArrayHasKey( 'content', $first );
+                $this->assertCount( 1, $first['content'] );
+
+                $segment = $first['content'][0];
+                $this->assertSame( 'input_image', $segment['type'] );
+                $this->assertArrayHasKey( 'image_file', $segment );
+                $this->assertArrayHasKey( 'file_id', $segment['image_file'] );
+                $resolved_file_id = $segment['image_file']['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
+                $this->assertSame( 'low', $segment['detail'] );
+
+                return true;
+            },
+            function ( $options ) use ( &$resolved_file_id ) {
+                $this->assertArrayHasKey( 'attachments', $options );
+                $this->assertCount( 1, $options['attachments'] );
+
+                $attachment = $options['attachments'][0];
+                $this->assertSame( $resolved_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['file_id'] );
+                $this->assertSame( 'image/png', $attachment['mime_type'] );
 
                 return true;
             }
