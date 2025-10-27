@@ -1503,8 +1503,61 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'vivid', $payload['style'] );
         $this->assertSame( 'transparent', $payload['background'] );
         $this->assertSame( 'webp', $payload['image_format'] );
-        $this->assertSame( 'b64_json', $payload['response_format'] );
+        $this->assertArrayNotHasKey( 'response_format', $payload );
         $this->assertSame( 1, $payload['n'] );
+    }
+
+    /**
+     * Ensure generate_image includes the response_format when explicitly supplied.
+     */
+    public function test_generate_image_honors_response_format_option() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 20;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'created' => 123,
+                'data'    => array(
+                    array(
+                        'b64_json' => base64_encode( 'stub-image' ),
+                    ),
+                ),
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $client->generate_image(
+            'Prompt with explicit response format',
+            array(
+                'response_format' => 'b64_json',
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'response_format', $payload );
+        $this->assertSame( 'b64_json', $payload['response_format'] );
     }
 
     /**

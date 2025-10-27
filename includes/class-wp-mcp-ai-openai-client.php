@@ -455,12 +455,11 @@ class WP_MCP_AI_OpenAI_Client {
         $timeout   = max( 5, $timeout );
 
         $payload = array(
-            'model'           => $model,
-            'prompt'          => $prompt,
-            'size'            => $size,
-            'quality'         => $quality,
-            'response_format' => 'b64_json',
-            'n'               => 1,
+            'model'   => $model,
+            'prompt'  => $prompt,
+            'size'    => $size,
+            'quality' => $quality,
+            'n'       => 1,
         );
 
         if ( '' !== $style ) {
@@ -473,6 +472,10 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( '' !== $format ) {
             $payload['image_format'] = $format;
+        }
+
+        if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
+            $payload['response_format'] = sanitize_key( $options['response_format'] );
         }
 
         /**
