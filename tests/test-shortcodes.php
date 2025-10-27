@@ -69,6 +69,26 @@ class Test_Shortcodes extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the Deep Chat shortcode accepts numeric slugs for the assistant attribute.
+     */
+    public function test_deep_chat_shortcode_accepts_numeric_slug_attribute() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Numeric Slug Assistant',
+                'post_name'   => '44',
+            )
+        );
+
+        $shortcode = sprintf( '[%s assistant="44"]', WP_MCP_AI_Deep_Chat_Shortcode::SHORTCODE );
+        $markup     = do_shortcode( $shortcode );
+
+        $this->assertStringContainsString( 'data-assistant-id="' . $assistant_id . '"', $markup );
+        $this->assertStringNotContainsString( 'The requested assistant is not available.', $markup );
+    }
+
+    /**
      * Ensure the Deep Chat script is always rendered with the module type.
      */
     public function test_deep_chat_script_tag_includes_module_type() {

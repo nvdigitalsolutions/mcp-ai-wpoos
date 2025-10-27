@@ -141,7 +141,7 @@ class WP_MCP_AI_Shortcode {
             $tag
         );
 
-        $assistant_id = absint( $atts['assistant'] );
+        $assistant_id = self::resolve_assistant_id( $atts['assistant'] );
         $allow_guests = wp_validate_boolean( $atts['allow_guests'] );
 
         if ( ! $assistant_id ) {
@@ -258,6 +258,49 @@ class WP_MCP_AI_Shortcode {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Resolve the assistant identifier provided via shortcode attributes.
+     *
+     * Accepts numeric IDs or assistant slugs and gracefully falls back when
+     * the supplied value cannot be resolved.
+     *
+     * @param mixed $assistant Assistant shortcode attribute value.
+     * @return int Assistant post ID when available, otherwise 0.
+     */
+    public static function resolve_assistant_id( $assistant ) {
+        $assistant = is_scalar( $assistant ) ? trim( (string) $assistant ) : '';
+
+        if ( '' === $assistant ) {
+            return 0;
+        }
+
+        $maybe_id = absint( $assistant );
+        if ( $maybe_id ) {
+            $assistant_post = get_post( $maybe_id );
+            if ( $assistant_post && WP_MCP_AI_Assistant_CPT::POST_TYPE === $assistant_post->post_type ) {
+                return $maybe_id;
+            }
+        }
+
+        $slug_candidates = array( $assistant );
+
+        if ( function_exists( 'sanitize_title' ) ) {
+            $sanitized = sanitize_title( $assistant );
+            if ( $sanitized && $sanitized !== $assistant ) {
+                $slug_candidates[] = $sanitized;
+            }
+        }
+
+        foreach ( array_unique( $slug_candidates ) as $slug ) {
+            $assistant_post = get_page_by_path( $slug, OBJECT, WP_MCP_AI_Assistant_CPT::POST_TYPE );
+            if ( $assistant_post ) {
+                return (int) $assistant_post->ID;
+            }
+        }
+
+        return 0;
     }
 
     /**
