@@ -1294,20 +1294,28 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( $file_id && isset( $attachments[ $file_id ] ) ) {
             $attachment = $attachments[ $file_id ];
-            $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
-            $mime_type  = isset( $attachment['mime_type'] ) && '' !== $attachment['mime_type'] ? (string) $attachment['mime_type'] : 'application/octet-stream';
 
-            if ( '' !== $data ) {
-                $segment['image_url'] = 'data:' . $mime_type . ';base64,' . $data;
-                unset( $segment['image_file'] );
-                unset( $segment['file_id'] );
-            } else {
-                if ( ! isset( $segment['image_file'] ) || ! is_array( $segment['image_file'] ) ) {
-                    $segment['image_file'] = array();
+            $openai_file_id = $file_id;
+
+            if ( isset( $attachment['openai_file'] ) ) {
+                if ( is_array( $attachment['openai_file'] ) && isset( $attachment['openai_file']['id'] ) ) {
+                    $openai_file_id = (string) $attachment['openai_file']['id'];
+                } elseif ( is_string( $attachment['openai_file'] ) && '' !== $attachment['openai_file'] ) {
+                    $openai_file_id = (string) $attachment['openai_file'];
                 }
+            } elseif ( isset( $attachment['file_id'] ) && '' !== $attachment['file_id'] ) {
+                $openai_file_id = (string) $attachment['file_id'];
+            }
 
-                $segment['image_file']['file_id'] = $file_id;
-                unset( $segment['file_id'] );
+            if ( ! isset( $segment['image_file'] ) || ! is_array( $segment['image_file'] ) ) {
+                $segment['image_file'] = array();
+            }
+
+            $segment['image_file']['file_id'] = $openai_file_id;
+            $segment['file_id']              = $openai_file_id;
+
+            if ( isset( $segment['image_url'] ) ) {
+                unset( $segment['image_url'] );
             }
 
             if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
