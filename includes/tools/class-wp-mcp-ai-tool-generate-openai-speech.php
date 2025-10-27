@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
                     'default'     => self::DEFAULT_MODEL,
                 ),
                 'speed'     => array(
-                    'type'        => array( 'number', 'integer' ),
+                    'type'        => 'number',
                     'description' => __( 'Playback speed multiplier (0.25 – 4).', 'wp-mcp-ai' ),
                     'minimum'     => 0.25,
                     'maximum'     => 4,
