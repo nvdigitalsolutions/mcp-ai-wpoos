@@ -1557,6 +1557,81 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure generate_image downloads images when a URL is returned.
+     */
+    public function test_generate_image_downloads_image_url_payload() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 25;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client            = new WP_MCP_AI_OpenAI_Client();
+        $captured_requests = array();
+        $png_base64        = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+        $png_binary        = base64_decode( $png_base64 );
+        $image_url         = 'https://example.com/generated-image.png';
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_requests, $png_binary, $image_url ) {
+            if ( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT === $url ) {
+                $captured_requests[] = array(
+                    'type' => 'generation',
+                    'args' => $args,
+                    'url'  => $url,
+                );
+
+                $payload = array(
+                    'created' => 456,
+                    'data'    => array(
+                        array(
+                            'url'            => $image_url,
+                            'revised_prompt' => 'Reimagined prompt',
+                        ),
+                    ),
+                );
+
+                return array(
+                    'body'     => wp_json_encode( $payload ),
+                    'response' => array( 'code' => 200 ),
+                    'headers'  => array( 'content-type' => 'application/json' ),
+                );
+            }
+
+            if ( $image_url === $url ) {
+                $captured_requests[] = array(
+                    'type' => 'download',
+                    'args' => $args,
+                    'url'  => $url,
+                );
+
+                return array(
+                    'body'     => $png_binary,
+                    'response' => array( 'code' => 200 ),
+                    'headers'  => array( 'content-type' => 'image/png' ),
+                );
+            }
+
+            return $preempt;
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $response = $client->generate_image( 'Prompt returning URL', array() );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertSame( $png_binary, $response['image'] );
+        $this->assertSame( 'png', $response['format'] );
+        $this->assertSame( 'image/png', $response['mime_type'] );
+        $this->assertSame( 456, $response['created'] );
+        $this->assertSame( 'Reimagined prompt', $response['revised_prompt'] );
+        $this->assertCount( 2, $captured_requests );
+        $this->assertSame( 'generation', $captured_requests[0]['type'] );
+        $this->assertSame( 'download', $captured_requests[1]['type'] );
+        $this->assertSame( $image_url, $captured_requests[1]['url'] );
+    }
+
+    /**
      * Ensure generate_image can process binary image responses.
      */
     public function test_generate_image_accepts_binary_responses() {
