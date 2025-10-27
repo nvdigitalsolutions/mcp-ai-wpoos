@@ -989,4 +989,108 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_text', $payload['input'][2]['content'][0]['type'] );
         $this->assertSame( 'Summarise the findings.', $payload['input'][2]['content'][0]['text'] );
     }
+
+    /**
+     * Ensure legacy mode flags are aligned with the expected segment type when using the Responses API.
+     */
+    public function test_responses_payload_updates_legacy_segment_modes() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-test',
+                        'output' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'assistant',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Previous summary.',
+                        'mode' => 'input_text',
+                    ),
+                ),
+            ),
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Please summarise the document again.',
+                        'mode' => 'output_text',
+                    ),
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-321',
+                        'mode'    => 'output_text',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-321',
+                    'filename'  => 'document.pdf',
+                    'mime_type' => 'application/pdf',
+                    'data'      => base64_encode( 'PDF content' ),
+                    'bytes'     => strlen( 'PDF content' ),
+                ),
+            ),
+        );
+
+        $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'input', $payload );
+
+        $assistant_segment = $payload['input'][0]['content'][0];
+        $this->assertSame( 'output_text', $assistant_segment['type'] );
+        $this->assertArrayHasKey( 'mode', $assistant_segment );
+        $this->assertSame( 'output_text', $assistant_segment['mode'] );
+        $this->assertSame( 'Previous summary.', $assistant_segment['text'] );
+
+        $user_text_segment = $payload['input'][1]['content'][0];
+        $this->assertSame( 'input_text', $user_text_segment['type'] );
+        $this->assertArrayHasKey( 'mode', $user_text_segment );
+        $this->assertSame( 'input_text', $user_text_segment['mode'] );
+        $this->assertSame( 'Please summarise the document again.', $user_text_segment['text'] );
+
+        $file_segment = $payload['input'][1]['content'][1];
+        $this->assertSame( 'input_file', $file_segment['type'] );
+        $this->assertArrayHasKey( 'file_data', $file_segment );
+        $this->assertArrayNotHasKey( 'mode', $file_segment );
+    }
 }
