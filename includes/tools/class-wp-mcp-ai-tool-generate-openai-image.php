@@ -73,7 +73,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                 ),
                 'background' => array(
                     'type'        => 'string',
-                    'description' => __( 'Optional background preference such as transparent or white.', 'wp-mcp-ai' ),
+                    'description' => __( 'Optional background preference such as transparent, opaque, or auto.', 'wp-mcp-ai' ),
                     'enum'        => array_values( $this->get_allowed_backgrounds() ),
                 ),
                 'format'     => array(
@@ -246,7 +246,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         return array(
             '',
             'transparent',
-            'white',
+            'opaque',
+            'auto',
         );
     }
 
