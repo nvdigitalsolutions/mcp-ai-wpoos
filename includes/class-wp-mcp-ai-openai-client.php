@@ -17,6 +17,7 @@ class WP_MCP_AI_OpenAI_Client {
     const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
     const FILES_ENDPOINT            = 'https://api.openai.com/v1/files';
     const AUDIO_SPEECH_ENDPOINT     = 'https://api.openai.com/v1/audio/speech';
+    const IMAGES_ENDPOINT           = 'https://api.openai.com/v1/images';
 
     /**
      * Retrieve the configured API key.
@@ -407,6 +408,216 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return null;
+    }
+
+    /**
+     * Generate an image using the OpenAI Images API.
+     *
+     * @param string $prompt  Text prompt describing the desired image.
+     * @param array  $options Optional overrides (model, size, quality, style, background, format, timeout).
+     * @return array|WP_Error Array containing the image payload and metadata or WP_Error on failure.
+     */
+    public function generate_image( $prompt, array $options = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $prompt = sanitize_textarea_field( $prompt );
+
+        if ( '' === $prompt ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_image_prompt',
+                __( 'A text prompt must be supplied to generate an image.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+        $model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-image-1';
+        $size      = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
+        $quality   = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : 'standard';
+        $style     = isset( $options['style'] ) && '' !== $options['style'] ? sanitize_key( $options['style'] ) : '';
+        $background = isset( $options['background'] ) && '' !== $options['background'] ? sanitize_key( $options['background'] ) : '';
+        $format    = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
+        $timeout   = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout   = max( 5, $timeout );
+
+        $payload = array(
+            'model'           => $model,
+            'prompt'          => $prompt,
+            'size'            => $size,
+            'quality'         => $quality,
+            'response_format' => 'b64_json',
+            'n'               => 1,
+        );
+
+        if ( '' !== $style ) {
+            $payload['style'] = $style;
+        }
+
+        if ( '' !== $background ) {
+            $payload['background'] = $background;
+        }
+
+        if ( '' !== $format ) {
+            $payload['image_format'] = $format;
+        }
+
+        /**
+         * Allow third parties to filter the OpenAI image payload prior to dispatch.
+         *
+         * @param array $payload Prepared request payload.
+         * @param array $options Original method options.
+         */
+        $payload = apply_filters( 'wp_mcp_ai_openai_image_payload', $payload, $options );
+
+        $encoded_payload = wp_json_encode( $payload );
+        if ( false === $encoded_payload ) {
+            return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
+        }
+
+        $request_args = array(
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type'  => 'application/json',
+            ),
+            'timeout' => $timeout,
+            'body'    => $encoded_payload,
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_image_request',
+            'Sending image generation request to OpenAI.',
+            array(
+                'model'     => $model,
+                'size'      => $size,
+                'quality'   => $quality,
+                'style'     => $style,
+                'background'=> $background,
+                'format'    => $format,
+            )
+        );
+
+        $response = wp_remote_post( self::IMAGES_ENDPOINT, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI image request failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_http_error',
+                __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+        $decoded     = json_decode( $body, true );
+        $json_error  = json_last_error();
+
+        if ( JSON_ERROR_NONE !== $json_error ) {
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image response.', array( 'body' => $body ) );
+
+            return new WP_Error( 'wp_mcp_ai_image_invalid_response', __( 'OpenAI returned malformed JSON for the image request.', 'wp-mcp-ai' ) );
+        }
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI image request failed.', 'wp-mcp-ai' );
+
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI image request returned an error.',
+                array(
+                    'code'    => $status_code,
+                    'message' => $message,
+                    'body'    => $decoded,
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_image_error',
+                $message,
+                array(
+                    'status'   => $status_code,
+                    'response' => $decoded,
+                )
+            );
+        }
+
+        if ( empty( $decoded['data'] ) || ! isset( $decoded['data'][0]['b64_json'] ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI image response missing base64 payload.', array( 'response' => $decoded ) );
+
+            return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+        }
+
+        $image_data = base64_decode( $decoded['data'][0]['b64_json'], true );
+
+        if ( false === $image_data ) {
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
+
+            return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
+        }
+
+        $result = array(
+            'image'          => $image_data,
+            'format'         => $format,
+            'mime_type'      => $this->normalise_image_mime_type( $format ),
+            'model'          => $model,
+            'prompt'         => $prompt,
+            'size'           => $size,
+            'quality'        => $quality,
+            'style'          => $style,
+            'background'     => $background,
+            'created'        => isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0,
+            'revised_prompt' => isset( $decoded['data'][0]['revised_prompt'] ) ? (string) $decoded['data'][0]['revised_prompt'] : '',
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_image_response',
+            'OpenAI image generation completed.',
+            array(
+                'model'      => $model,
+                'size'       => $size,
+                'quality'    => $quality,
+                'style'      => $style,
+                'background' => $background,
+                'format'     => $format,
+            )
+        );
+
+        return $result;
+    }
+
+    /**
+     * Normalise the image MIME type based on the requested format.
+     *
+     * @param string $format Requested format.
+     * @return string
+     */
+    protected function normalise_image_mime_type( $format ) {
+        $format = sanitize_key( $format );
+
+        switch ( $format ) {
+            case 'jpeg':
+            case 'jpg':
+                return 'image/jpeg';
+            case 'webp':
+                return 'image/webp';
+            case 'png':
+            default:
+                return 'image/png';
+        }
     }
 
     /**
