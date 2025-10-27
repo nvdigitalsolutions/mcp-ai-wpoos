@@ -991,13 +991,24 @@ class WP_MCP_AI_REST {
 
         $response = $this->client->create_chat_completion( $messages, $options );
 
+        if ( ! is_wp_error( $response ) ) {
+            $response = $this->maybe_convert_failed_chat_response( $response );
+        }
+
         if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Logger::log_error( 'Chat request failed.', array(
+            $context = array(
                 'assistant_id' => $assistant_id,
                 'user_id'      => $user_id,
                 'error_code'   => $response->get_error_code(),
                 'error'        => $response->get_error_message(),
-            ) );
+            );
+
+            $error_data = $response->get_error_data();
+            if ( is_array( $error_data ) && isset( $error_data['provider_error_code'] ) ) {
+                $context['provider_error_code'] = $error_data['provider_error_code'];
+            }
+
+            WP_MCP_AI_Logger::log_error( 'Chat request failed.', $context );
             return $response;
         }
 
@@ -1023,6 +1034,114 @@ class WP_MCP_AI_REST {
             'assistant_id' => $assistant_id,
             'data'         => $response,
         ) );
+    }
+
+    /**
+     * Convert failed chat responses into WP_Error instances so they surface in the UI.
+     *
+     * @param mixed $response Raw response from the language model router.
+     * @return mixed
+     */
+    protected function maybe_convert_failed_chat_response( $response ) {
+        if ( ! is_array( $response ) ) {
+            return $response;
+        }
+
+        $status = $this->extract_chat_response_status( $response );
+
+        if ( ! in_array( $status, array( 'failed', 'cancelled', 'expired' ), true ) ) {
+            return $response;
+        }
+
+        $message = $this->extract_failed_chat_error_message( $response );
+
+        $data = array(
+            'status'          => 502,
+            'response_status' => $status,
+            'response'        => $response,
+        );
+
+        if ( isset( $response['last_error'] ) && is_array( $response['last_error'] ) ) {
+            $data['last_error'] = $response['last_error'];
+
+            if ( isset( $response['last_error']['code'] ) && is_string( $response['last_error']['code'] ) ) {
+                $data['provider_error_code'] = sanitize_key( $response['last_error']['code'] );
+            }
+        }
+
+        if ( isset( $response['id'] ) && is_string( $response['id'] ) ) {
+            $data['response_id'] = sanitize_text_field( $response['id'] );
+        }
+
+        return new WP_Error( 'wp_mcp_ai_chat_failed', $message, $data );
+    }
+
+    /**
+     * Extract the status from a chat response payload.
+     *
+     * @param array $response Chat response payload.
+     * @return string
+     */
+    protected function extract_chat_response_status( array $response ) {
+        if ( isset( $response['status'] ) && is_string( $response['status'] ) ) {
+            return sanitize_key( $response['status'] );
+        }
+
+        if ( isset( $response['response'] ) && is_array( $response['response'] ) ) {
+            return $this->extract_chat_response_status( $response['response'] );
+        }
+
+        return '';
+    }
+
+    /**
+     * Extract a human readable error message from a failed chat response.
+     *
+     * @param array $response Chat response payload.
+     * @return string
+     */
+    protected function extract_failed_chat_error_message( array $response ) {
+        $candidates = array();
+
+        if ( isset( $response['last_error'] ) && is_array( $response['last_error'] ) ) {
+            if ( isset( $response['last_error']['message'] ) && is_string( $response['last_error']['message'] ) ) {
+                $candidates[] = $response['last_error']['message'];
+            }
+        }
+
+        if ( isset( $response['error'] ) && is_array( $response['error'] ) ) {
+            if ( isset( $response['error']['message'] ) && is_string( $response['error']['message'] ) ) {
+                $candidates[] = $response['error']['message'];
+            }
+        }
+
+        if ( isset( $response['incomplete_details'] ) && is_array( $response['incomplete_details'] ) ) {
+            if ( isset( $response['incomplete_details']['message'] ) && is_string( $response['incomplete_details']['message'] ) ) {
+                $candidates[] = $response['incomplete_details']['message'];
+            } elseif ( isset( $response['incomplete_details']['reason'] ) && is_string( $response['incomplete_details']['reason'] ) ) {
+                $candidates[] = $response['incomplete_details']['reason'];
+            }
+        }
+
+        if ( empty( $candidates ) && isset( $response['response'] ) && is_array( $response['response'] ) ) {
+            $nested_message = $this->extract_failed_chat_error_message( $response['response'] );
+            if ( $nested_message ) {
+                $candidates[] = $nested_message;
+            }
+        }
+
+        foreach ( $candidates as $candidate ) {
+            if ( ! is_string( $candidate ) ) {
+                continue;
+            }
+
+            $sanitized = trim( wp_strip_all_tags( $candidate ) );
+            if ( '' !== $sanitized ) {
+                return $sanitized;
+            }
+        }
+
+        return __( 'The assistant response failed to generate.', 'wp-mcp-ai' );
     }
 
     /**
