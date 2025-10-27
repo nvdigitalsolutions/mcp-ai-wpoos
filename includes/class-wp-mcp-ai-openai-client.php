@@ -1377,10 +1377,8 @@ class WP_MCP_AI_OpenAI_Client {
             }
         }
 
-        if ( isset( $segment['file_id'] ) && '' !== $segment['file_id'] ) {
-            $segment['file'] = array(
-                'id' => (string) $segment['file_id'],
-            );
+        if ( isset( $segment['file'] ) ) {
+            unset( $segment['file'] );
         }
 
         return $segment;
