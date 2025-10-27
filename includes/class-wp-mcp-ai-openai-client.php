@@ -82,21 +82,38 @@ class WP_MCP_AI_OpenAI_Client {
         $timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
         $timeout  = max( 5, $timeout );
 
-        if ( function_exists( 'curl_file_create' ) ) {
-            $file_field = curl_file_create( $file_path, $mime_type, $filename );
-        } elseif ( class_exists( 'CURLFile' ) ) {
-            $file_field = new CURLFile( $file_path, $mime_type, $filename );
-        } else {
-            $file_field = '@' . $file_path; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+        $file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+
+        if ( false === $file_contents ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file upload failed to read file.',
+                array(
+                    'file_path' => $file_path,
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_upload_read_failed',
+                __( 'The file to upload could not be read.', 'wp-mcp-ai' )
+            );
         }
+
+        $boundary = 'wp-mcp-ai-' . wp_generate_password( 24, false, false );
 
         $request_headers = array(
             'Authorization' => 'Bearer ' . $api_key,
+            'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
         );
 
-        $request_body = array(
-            'purpose' => $purpose,
-            'file'    => $file_field,
+        $request_body = $this->build_multipart_body(
+            array( 'purpose' => $purpose ),
+            array(
+                'name'         => 'file',
+                'filename'     => $filename,
+                'content_type' => $mime_type,
+                'contents'     => $file_contents,
+            ),
+            $boundary
         );
 
         WP_MCP_AI_Logger::log_event(
@@ -302,6 +319,45 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return wp_remote_request( $url, $args );
+    }
+
+    /**
+     * Build a multipart/form-data request body for a file upload.
+     *
+     * @param array  $fields   Associative array of scalar form fields.
+     * @param array  $file     File payload arguments (name, filename, content_type, contents).
+     * @param string $boundary Multipart boundary token.
+     * @return string
+     */
+    protected function build_multipart_body( array $fields, array $file, $boundary ) {
+        $eol      = "\r\n";
+        $boundary = (string) $boundary;
+        $body     = '';
+
+        foreach ( $fields as $name => $value ) {
+            $name  = (string) $name;
+            $value = (string) $value;
+
+            $body .= '--' . $boundary . $eol;
+            $body .= 'Content-Disposition: form-data; name="' . $name . '"' . $eol . $eol;
+            $body .= $value . $eol;
+        }
+
+        if ( isset( $file['contents'] ) && '' !== $file['contents'] ) {
+            $field_name   = isset( $file['name'] ) ? (string) $file['name'] : 'file';
+            $filename     = isset( $file['filename'] ) ? (string) $file['filename'] : 'file';
+            $content_type = isset( $file['content_type'] ) && '' !== $file['content_type'] ? (string) $file['content_type'] : 'application/octet-stream';
+            $contents     = (string) $file['contents'];
+
+            $body .= '--' . $boundary . $eol;
+            $body .= 'Content-Disposition: form-data; name="' . $field_name . '"; filename="' . $filename . '"' . $eol;
+            $body .= 'Content-Type: ' . $content_type . $eol . $eol;
+            $body .= $contents . $eol;
+        }
+
+        $body .= '--' . $boundary . '--' . $eol;
+
+        return $body;
     }
 
     /**
