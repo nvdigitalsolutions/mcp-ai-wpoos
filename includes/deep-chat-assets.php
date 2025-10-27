@@ -106,3 +106,49 @@ if ( ! function_exists( 'wp_mcp_ai_enqueue_deep_chat_assets' ) ) {
         return $handle;
     }
 }
+
+if ( ! function_exists( 'wp_mcp_ai_ensure_deep_chat_module_type' ) ) {
+    /**
+     * Ensure the Deep Chat script is always printed as an ES module.
+     *
+     * WordPress < 6.3 ignored the registered "type" data when printing script
+     * tags. This compatibility filter patches the rendered markup when the
+     * attribute is missing or incorrect while preserving other attributes such
+     * as the defer strategy.
+     *
+     * @since 1.1.1
+     *
+     * @param string $tag    The HTML script tag.
+     * @param string $handle The script handle.
+     * @param string $src    The script source URL.
+     *
+     * @return string Possibly modified script tag.
+     */
+    function wp_mcp_ai_ensure_deep_chat_module_type( $tag, $handle, $src ) {
+        if ( 'wp-mcp-ai-deep-chat' !== $handle ) {
+            return $tag;
+        }
+
+        $requires_patch = version_compare( get_bloginfo( 'version' ), '6.3', '<' );
+
+        if ( ! $requires_patch ) {
+            $has_type_attribute  = false !== stripos( $tag, 'type=' );
+            $has_module_type     = false !== stripos( $tag, 'type="module"' ) || false !== stripos( $tag, "type='module'" );
+            $requires_patch = ! $has_type_attribute || ! $has_module_type;
+        }
+
+        if ( ! $requires_patch ) {
+            return $tag;
+        }
+
+        $patched_tag = preg_replace( '/\stype=(["\']).*?\1/', ' type="module"', $tag, 1, $count );
+
+        if ( $count > 0 ) {
+            return $patched_tag;
+        }
+
+        return preg_replace( '/<script\b/', '<script type="module"', $tag, 1 );
+    }
+}
+
+add_filter( 'script_loader_tag', 'wp_mcp_ai_ensure_deep_chat_module_type', 10, 3 );
