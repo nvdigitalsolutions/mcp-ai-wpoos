@@ -186,6 +186,69 @@ class WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure failed OpenAI responses surface an actionable error message.
+     */
+    public function test_failed_openai_response_surfaces_error_message() {
+        $assistant_id = $this->create_assistant_post();
+
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'         => 'resp_failed',
+                    'status'     => 'failed',
+                    'last_error' => array(
+                        'code'    => 'rate_limit_exceeded',
+                        'message' => 'You exceeded your quota.',
+                    ),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Hello',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 502, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 'wp_mcp_ai_chat_failed', $data['code'] );
+        $this->assertSame( 'You exceeded your quota.', $data['message'] );
+        $this->assertArrayHasKey( 'data', $data );
+        $this->assertArrayHasKey( 'message', $data['data'] );
+        $this->assertSame( 'You exceeded your quota.', $data['data']['message'] );
+        $this->assertArrayHasKey( 'provider_error_code', $data['data'] );
+        $this->assertSame( 'rate_limit_exceeded', $data['data']['provider_error_code'] );
+    }
+
+    /**
      * Prepare the REST controller instance for testing.
      *
      * @param WP_MCP_AI_Language_Model_Router $mock_client Mocked language model router.

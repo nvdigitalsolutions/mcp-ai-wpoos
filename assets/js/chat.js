@@ -2041,6 +2041,45 @@
     function handleError(state, error) {
         var fallbackMessage = getString('error', 'Something went wrong.');
 
+        function extractMessage(payload) {
+            if (!payload) {
+                return '';
+            }
+
+            if (typeof payload === 'string') {
+                return payload;
+            }
+
+            if (typeof payload.message === 'string' && payload.message.trim()) {
+                return payload.message;
+            }
+
+            if (typeof payload.reason === 'string' && payload.reason.trim()) {
+                return payload.reason;
+            }
+
+            if (payload.data) {
+                var dataMessage = extractMessage(payload.data);
+                if (dataMessage) {
+                    return dataMessage;
+                }
+            }
+
+            var nestedKeys = ['last_error', 'error', 'incomplete_details', 'response'];
+
+            for (var i = 0; i < nestedKeys.length; i++) {
+                var key = nestedKeys[i];
+                if (payload[key]) {
+                    var nestedMessage = extractMessage(payload[key]);
+                    if (nestedMessage) {
+                        return nestedMessage;
+                    }
+                }
+            }
+
+            return '';
+        }
+
         function handleResolvedMessage(resolvedMessage) {
             var message = resolvedMessage;
 
@@ -2058,23 +2097,7 @@
             error
                 .json()
                 .then(function (body) {
-                    var message = '';
-
-                    if (body) {
-                        if (typeof body === 'string') {
-                            message = body;
-                        } else if (typeof body.message === 'string') {
-                            message = body.message;
-                        } else if (body.data) {
-                            if (typeof body.data === 'string') {
-                                message = body.data;
-                            } else if (typeof body.data.message === 'string') {
-                                message = body.data.message;
-                            }
-                        }
-                    }
-
-                    handleResolvedMessage(message);
+                    handleResolvedMessage(extractMessage(body));
                 })
                 .catch(function () {
                     handleResolvedMessage('');

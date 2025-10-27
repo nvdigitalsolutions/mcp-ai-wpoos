@@ -236,6 +236,47 @@
         });
     }
 
+    function extractErrorMessage(payload) {
+        if (!payload) {
+            return '';
+        }
+
+        if (typeof payload === 'string') {
+            return payload;
+        }
+
+        if (typeof payload.message === 'string' && payload.message.trim()) {
+            return payload.message;
+        }
+
+        if (typeof payload.reason === 'string' && payload.reason.trim()) {
+            return payload.reason;
+        }
+
+        if (payload.data) {
+            var dataMessage = extractErrorMessage(payload.data);
+            if (dataMessage) {
+                return dataMessage;
+            }
+        }
+
+        var nestedKeys = ['last_error', 'error', 'incomplete_details', 'response'];
+
+        for (var i = 0; i < nestedKeys.length; i++) {
+            var key = nestedKeys[i];
+
+            if (payload[key]) {
+                var nestedMessage = extractErrorMessage(payload[key]);
+
+                if (nestedMessage) {
+                    return nestedMessage;
+                }
+            }
+        }
+
+        return '';
+    }
+
     function addAssistantMessage(state, display) {
         if (!state || !state.chat || !display) {
             return;
@@ -911,7 +952,7 @@
                     error
                         .json()
                         .then(function (body) {
-                            var message = body && (body.message || (body.data && body.data.message));
+                            var message = extractErrorMessage(body);
                             addErrorMessage(state.chat, message || 'Something went wrong.');
                         })
                         .catch(function () {
