@@ -127,7 +127,7 @@ class WP_MCP_AI_OpenAI_Client {
                     }
 
                     if ( is_array( $system_message['content'] ) ) {
-                        $system_message['content'] = $this->normalise_responses_content_segments( $system_message['content'], $attachment_lookup );
+                        $system_message['content'] = $this->normalise_responses_content_segments( $system_message['content'], $attachment_lookup, isset( $system_message['role'] ) ? $system_message['role'] : 'system' );
                     } else {
                         $system_message['content'] = $this->normalise_responses_content_segments(
                             array(
@@ -136,7 +136,8 @@ class WP_MCP_AI_OpenAI_Client {
                                     'text' => (string) $system_message['content'],
                                 ),
                             ),
-                            $attachment_lookup
+                            $attachment_lookup,
+                            isset( $system_message['role'] ) ? $system_message['role'] : 'system'
                         );
                     }
                 }
@@ -430,7 +431,7 @@ class WP_MCP_AI_OpenAI_Client {
                         $segment_copy = $segment;
                         $type         = isset( $segment['type'] ) ? $segment['type'] : '';
 
-                        if ( in_array( $type, array( 'text', 'input_text' ), true ) && isset( $segment['text'] ) ) {
+                        if ( in_array( $type, array( 'text', 'input_text', 'output_text' ), true ) && isset( $segment['text'] ) ) {
                             $content = (string) $segment['text'];
                             $length  = function_exists( 'mb_strlen' ) ? mb_strlen( $content ) : strlen( $content );
                             $slice   = function_exists( 'mb_substr' ) ? mb_substr( $content, 0, 200 ) : substr( $content, 0, 200 );
@@ -619,6 +620,7 @@ class WP_MCP_AI_OpenAI_Client {
 
         foreach ( $normalised_messages as $index => $message ) {
             $entry = $message;
+            $role  = isset( $entry['role'] ) ? $entry['role'] : '';
 
             $original_content = isset( $original_messages[ $index ]['content'] ) ? $original_messages[ $index ]['content'] : null;
 
@@ -639,7 +641,7 @@ class WP_MCP_AI_OpenAI_Client {
             }
 
             if ( isset( $entry['content'] ) && is_array( $entry['content'] ) ) {
-                $entry['content'] = $this->normalise_responses_content_segments( $entry['content'], $attachment_lookup );
+                $entry['content'] = $this->normalise_responses_content_segments( $entry['content'], $attachment_lookup, $role );
             }
 
             $prepared[] = $entry;
@@ -656,16 +658,30 @@ class WP_MCP_AI_OpenAI_Client {
      * expects those entries to be labelled as `input_text`, so we convert them
      * here while preserving multimodal payloads (input_file, input_image, etc.).
      *
-     * @param array $segments Content segments for a single message.
+     * @param array  $segments    Content segments for a single message.
+     * @param array  $attachments Attachment lookup keyed by file identifier.
+     * @param string $role        Message role used to determine the text segment mode.
      * @return array
      */
-    protected function normalise_responses_content_segments( array $segments, array $attachments = array() ) {
-        $normalised = array();
+    protected function normalise_responses_content_segments( array $segments, array $attachments = array(), $role = '' ) {
+        $normalised   = array();
+        $role_key     = sanitize_key( $role );
+        $output_roles = array( 'assistant', 'tool', 'function' );
 
         foreach ( $segments as $segment ) {
+            if ( $segment instanceof \Traversable ) {
+                $segment = iterator_to_array( $segment );
+            }
+
+            if ( is_object( $segment ) ) {
+                $segment = (array) $segment;
+            }
+
             if ( ! is_array( $segment ) ) {
-                $normalised[] = $segment;
-                continue;
+                $segment = array(
+                    'type' => 'text',
+                    'text' => is_scalar( $segment ) ? (string) $segment : '',
+                );
             }
 
             $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
@@ -674,17 +690,31 @@ class WP_MCP_AI_OpenAI_Client {
                 unset( $segment['display_name'] );
             }
 
-            if ( '' === $type || 'text' === $type ) {
-                $segment['type'] = 'input_text';
+            $is_output_role = in_array( $role_key, $output_roles, true );
+
+            if ( '' === $type || 'text' === $type || 'input_text' === $type || 'output_text' === $type ) {
+                $segment['type'] = $is_output_role ? 'output_text' : 'input_text';
 
                 if ( isset( $segment['content'] ) && ! isset( $segment['text'] ) ) {
-                    $segment['text'] = (string) $segment['content'];
+                    $segment['text'] = is_scalar( $segment['content'] ) ? (string) $segment['content'] : '';
                     unset( $segment['content'] );
                 }
+
+                if ( ! isset( $segment['text'] ) ) {
+                    $segment['text'] = '';
+                }
+
+                $segment['mode'] = $is_output_role ? 'output_text' : 'input_text';
             } elseif ( 'input_image' === $type ) {
                 $segment = $this->populate_responses_image_segment( $segment, $attachments );
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
             } elseif ( 'input_file' === $type ) {
                 $segment = $this->populate_responses_file_segment( $segment, $attachments );
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
             }
 
             $normalised[] = $segment;
