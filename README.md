@@ -87,7 +87,9 @@ A dedicated router transparently forwards chat completions to the active provide
 
 ## 🌐 Crawl4AI Integration
 
-When a Crawl4AI base URL (and optional API key) is supplied in the settings, assistants gain access to the **Run Crawl4AI Job** tool for submitting crawl jobs, adjusting priorities, and optionally polling for completion results — restricted to administrators with `manage_options` capabilities.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L15-L193】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L489】 Leave the base URL blank to disable the integration; the tool explains why it is unavailable when settings are incomplete.
+Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context.
+
+Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L489】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
 ## 🧊 Elementor Widget
 
