@@ -13,7 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Prepares structured message segments and collects attachment payloads.
  */
 class WP_MCP_AI_Message_Attachments {
-    const MAX_ATTACHMENT_BYTES = 5242880; // 5MB default limit per attachment.
+    const MAX_ATTACHMENT_BYTES    = 5242880; // 5MB default limit per attachment.
+    const OPENAI_FILE_META_KEY    = '_wp_mcp_ai_openai_file';
 
     /**
      * Cached attachment payloads keyed by generated file identifier.
@@ -242,7 +243,7 @@ class WP_MCP_AI_Message_Attachments {
     protected function register_attachment( $attachment_id, $usage ) {
         if ( isset( $this->attachment_index[ $attachment_id ] ) ) {
             $file_id = $this->attachment_index[ $attachment_id ];
-            $entry   = $this->attachments[ $file_id ];
+            $entry   = isset( $this->attachments[ $file_id ] ) ? $this->attachments[ $file_id ] : array();
 
             return array(
                 'file_id' => $file_id,
@@ -281,46 +282,97 @@ class WP_MCP_AI_Message_Attachments {
             return new WP_Error( 'wp_mcp_ai_attachment_unsupported_mime', __( 'The attachment type is not supported for chat messages.', 'wp-mcp-ai' ) );
         }
 
-        $contents = $this->read_file_contents( $file_path );
-        $file_is_readable = is_readable( $file_path );
-        if ( false === $contents ) {
-            if ( 0 === (int) $file_size && $file_is_readable ) {
-                $contents = '';
-            } else {
-                $error_code    = $file_is_readable ? 'wp_mcp_ai_attachment_read_failed' : 'wp_mcp_ai_attachment_unreadable';
-                $error_message = $file_is_readable
-                    ? __( 'The attachment file could be accessed but its contents could not be read.', 'wp-mcp-ai' )
-                    : __( 'Unable to read the attachment data.', 'wp-mcp-ai' );
+        $purpose = apply_filters( 'wp_mcp_ai_openai_file_purpose', 'responses', $attachment_id, $usage );
+        $purpose = $purpose ? sanitize_key( $purpose ) : 'responses';
 
-                return new WP_Error( $error_code, $error_message );
+        $file_hash    = $this->hash_file_contents( $file_path );
+        $file_modtime = $this->get_file_modified_time( $file_path );
+
+        $cached_metadata = $this->get_cached_openai_file_metadata( $attachment_id );
+
+        $should_reuse = $this->should_reuse_openai_file( $cached_metadata, $purpose, $file_hash, $file_size, $file_modtime );
+        $file_id      = '';
+        $metadata     = $cached_metadata;
+
+        if ( $should_reuse ) {
+            $file_id  = $cached_metadata['file_id'];
+            $metadata = $cached_metadata;
+        } else {
+            if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+                require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
             }
+
+            $client = new WP_MCP_AI_OpenAI_Client();
+            $upload = $client->upload_file(
+                $file_path,
+                array(
+                    'purpose'  => $purpose,
+                    'filename' => wp_basename( $file_path ),
+                    'mime_type'=> $mime_type,
+                )
+            );
+
+            if ( is_wp_error( $upload ) ) {
+                return $upload;
+            }
+
+            $file_id = isset( $upload['id'] ) ? sanitize_text_field( $upload['id'] ) : '';
+
+            if ( '' === $file_id ) {
+                return new WP_Error( 'wp_mcp_ai_openai_file_upload_missing_id', __( 'OpenAI did not return a file identifier.', 'wp-mcp-ai' ) );
+            }
+
+            $metadata = array(
+                'file_id'    => $file_id,
+                'created_at' => isset( $upload['created_at'] ) ? (int) $upload['created_at'] : time(),
+                'status'     => isset( $upload['status'] ) ? $upload['status'] : '',
+            );
         }
 
-        $file_id = 'wp-attachment-' . $attachment_id;
+        $metadata['hash']      = $file_hash;
+        $metadata['bytes']     = (int) $file_size;
+        $metadata['purpose']   = $purpose;
+        $metadata['filename']  = wp_basename( $file_path );
+        $metadata['mime_type'] = $mime_type;
+        $metadata['modified']  = $file_modtime;
+
+        $metadata = $this->store_openai_file_metadata( $attachment_id, $metadata );
+
+        $title   = get_the_title( $attachment );
+        $caption = wp_strip_all_tags( $attachment->post_excerpt );
+
+        $resolved_file_id = isset( $metadata['file_id'] ) && '' !== $metadata['file_id'] ? $metadata['file_id'] : $file_id;
 
         $payload = array(
-            'id'        => $file_id,
-            'filename'  => wp_basename( $file_path ),
-            'mime_type' => $mime_type,
-            'data'      => base64_encode( $contents ),
-            'bytes'     => (int) $file_size,
+            'id'        => $resolved_file_id,
+            'file_id'   => $resolved_file_id,
+            'filename'  => isset( $metadata['filename'] ) && '' !== $metadata['filename'] ? $metadata['filename'] : wp_basename( $file_path ),
+            'mime_type' => isset( $metadata['mime_type'] ) && '' !== $metadata['mime_type'] ? $metadata['mime_type'] : $mime_type,
+            'bytes'     => isset( $metadata['bytes'] ) ? (int) $metadata['bytes'] : (int) $file_size,
+            'purpose'   => isset( $metadata['purpose'] ) && '' !== $metadata['purpose'] ? $metadata['purpose'] : $purpose,
         );
 
-        $title = get_the_title( $attachment );
+        if ( ! empty( $metadata['status'] ) ) {
+            $payload['status'] = $metadata['status'];
+        }
+
+        if ( ! empty( $metadata['created_at'] ) ) {
+            $payload['created_at'] = (int) $metadata['created_at'];
+        }
+
         if ( '' !== $title ) {
             $payload['title'] = $title;
         }
 
-        $caption = wp_strip_all_tags( $attachment->post_excerpt );
         if ( '' !== $caption ) {
             $payload['caption'] = $caption;
         }
 
-        $this->attachments[ $file_id ]        = $payload;
-        $this->attachment_index[ $attachment_id ] = $file_id;
+        $this->attachments[ $resolved_file_id ]        = $payload;
+        $this->attachment_index[ $attachment_id ] = $resolved_file_id;
 
         return array(
-            'file_id' => $file_id,
+            'file_id' => $resolved_file_id,
             'title'   => $title,
             'caption' => $caption,
         );
@@ -563,6 +615,191 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         return array();
+    }
+
+    /**
+     * Retrieve cached OpenAI file metadata for an attachment.
+     *
+     * @param int $attachment_id Attachment ID.
+     * @return array
+     */
+    protected function get_cached_openai_file_metadata( $attachment_id ) {
+        $raw_meta = get_post_meta( $attachment_id, self::OPENAI_FILE_META_KEY, true );
+
+        if ( is_array( $raw_meta ) ) {
+            $normalised = $this->normalise_openai_file_metadata( $raw_meta );
+        } elseif ( is_string( $raw_meta ) && '' !== $raw_meta ) {
+            $normalised = $this->normalise_openai_file_metadata( array( 'file_id' => $raw_meta ) );
+        } else {
+            $normalised = array();
+        }
+
+        if ( empty( $normalised['file_id'] ) ) {
+            return array();
+        }
+
+        return $normalised;
+    }
+
+    /**
+     * Persist OpenAI file metadata for an attachment.
+     *
+     * @param int   $attachment_id Attachment ID.
+     * @param array $metadata      Metadata to store.
+     * @return array Normalised metadata that was stored.
+     */
+    protected function store_openai_file_metadata( $attachment_id, array $metadata ) {
+        $normalised = $this->normalise_openai_file_metadata( $metadata );
+
+        if ( empty( $normalised['file_id'] ) ) {
+            delete_post_meta( $attachment_id, self::OPENAI_FILE_META_KEY );
+            return array();
+        }
+
+        update_post_meta( $attachment_id, self::OPENAI_FILE_META_KEY, $normalised );
+
+        return $normalised;
+    }
+
+    /**
+     * Normalise OpenAI file metadata.
+     *
+     * @param array $metadata Raw metadata.
+     * @return array
+     */
+    protected function normalise_openai_file_metadata( array $metadata ) {
+        $normalised = array();
+
+        if ( isset( $metadata['file_id'] ) ) {
+            $normalised['file_id'] = sanitize_text_field( $metadata['file_id'] );
+        }
+
+        if ( isset( $metadata['hash'] ) ) {
+            $normalised['hash'] = sanitize_text_field( $metadata['hash'] );
+        }
+
+        if ( isset( $metadata['bytes'] ) ) {
+            $normalised['bytes'] = max( 0, (int) $metadata['bytes'] );
+        }
+
+        if ( isset( $metadata['purpose'] ) ) {
+            $normalised['purpose'] = sanitize_key( $metadata['purpose'] );
+        }
+
+        if ( isset( $metadata['filename'] ) ) {
+            $normalised['filename'] = sanitize_file_name( $metadata['filename'] );
+        }
+
+        if ( isset( $metadata['mime_type'] ) ) {
+            if ( function_exists( 'sanitize_mime_type' ) ) {
+                $normalised['mime_type'] = sanitize_mime_type( $metadata['mime_type'] );
+            } else {
+                $normalised['mime_type'] = sanitize_text_field( $metadata['mime_type'] );
+            }
+        }
+
+        if ( isset( $metadata['modified'] ) ) {
+            $normalised['modified'] = max( 0, (int) $metadata['modified'] );
+        }
+
+        if ( isset( $metadata['created_at'] ) ) {
+            $normalised['created_at'] = max( 0, (int) $metadata['created_at'] );
+        }
+
+        if ( isset( $metadata['status'] ) ) {
+            $normalised['status'] = sanitize_key( $metadata['status'] );
+        }
+
+        return $normalised;
+    }
+
+    /**
+     * Determine if cached OpenAI metadata can be reused for the current file.
+     *
+     * @param array  $metadata     Cached metadata.
+     * @param string $purpose      Desired file purpose.
+     * @param string $file_hash    Current file hash.
+     * @param int    $file_size    Current file size.
+     * @param int    $file_modtime Current file modification time.
+     * @return bool
+     */
+    protected function should_reuse_openai_file( array $metadata, $purpose, $file_hash, $file_size, $file_modtime ) {
+        if ( empty( $metadata['file_id'] ) ) {
+            return false;
+        }
+
+        if ( ! empty( $metadata['purpose'] ) && $metadata['purpose'] !== $purpose ) {
+            return false;
+        }
+
+        $cached_hash = isset( $metadata['hash'] ) ? (string) $metadata['hash'] : '';
+
+        if ( '' !== $cached_hash && '' !== $file_hash && $this->hashes_match( $cached_hash, $file_hash ) ) {
+            return true;
+        }
+
+        $size_matches = isset( $metadata['bytes'] ) && (int) $metadata['bytes'] === (int) $file_size;
+        $time_matches = isset( $metadata['modified'] ) && (int) $metadata['modified'] === (int) $file_modtime;
+
+        return $size_matches && $time_matches;
+    }
+
+    /**
+     * Generate a hash for the given file.
+     *
+     * @param string $file_path File path.
+     * @return string
+     */
+    protected function hash_file_contents( $file_path ) {
+        if ( ! is_readable( $file_path ) ) {
+            return '';
+        }
+
+        $hash = @md5_file( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file
+
+        if ( false === $hash ) {
+            return '';
+        }
+
+        return (string) $hash;
+    }
+
+    /**
+     * Retrieve the file modification time.
+     *
+     * @param string $file_path File path.
+     * @return int
+     */
+    protected function get_file_modified_time( $file_path ) {
+        $modified = @filemtime( $file_path );
+
+        if ( false === $modified ) {
+            return 0;
+        }
+
+        return (int) $modified;
+    }
+
+    /**
+     * Timing-safe comparison for file hashes when available.
+     *
+     * @param string $hash_a First hash.
+     * @param string $hash_b Second hash.
+     * @return bool
+     */
+    protected function hashes_match( $hash_a, $hash_b ) {
+        $hash_a = (string) $hash_a;
+        $hash_b = (string) $hash_b;
+
+        if ( '' === $hash_a || '' === $hash_b ) {
+            return false;
+        }
+
+        if ( function_exists( 'hash_equals' ) ) {
+            return hash_equals( $hash_a, $hash_b );
+        }
+
+        return $hash_a === $hash_b;
     }
 
     /**
