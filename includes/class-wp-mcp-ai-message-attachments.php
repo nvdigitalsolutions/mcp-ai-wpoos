@@ -488,6 +488,10 @@ class WP_MCP_AI_Message_Attachments {
             $payload['created_at'] = (int) $metadata['created_at'];
         }
 
+        if ( array_key_exists( 'data', $metadata ) ) {
+            $payload['data'] = is_string( $metadata['data'] ) ? $metadata['data'] : '';
+        }
+
         if ( '' !== $title ) {
             $payload['title'] = $title;
         }
@@ -836,6 +840,10 @@ class WP_MCP_AI_Message_Attachments {
 
         if ( isset( $metadata['status'] ) ) {
             $normalised['status'] = sanitize_key( $metadata['status'] );
+        }
+
+        if ( isset( $metadata['data'] ) ) {
+            $normalised['data'] = is_string( $metadata['data'] ) ? $metadata['data'] : ''; // Base64 payload is expected.
         }
 
         return $normalised;

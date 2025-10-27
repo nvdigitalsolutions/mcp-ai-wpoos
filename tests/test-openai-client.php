@@ -1146,4 +1146,79 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey( 'mode', $file_segment );
         $this->assertArrayNotHasKey( 'file_data', $file_segment );
     }
+
+    /**
+     * Ensure the speech helper surfaces an actionable error when no API key is configured.
+     */
+    public function test_generate_speech_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->generate_speech( 'Hello world', array() );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure generate_speech issues the correct HTTP request payload.
+     */
+    public function test_generate_speech_sends_expected_payload() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 42;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            return array(
+                'body'     => 'FAKEAUDIO',
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'audio/mpeg' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $response = $client->generate_speech(
+            'Read me a story',
+            array(
+                'model'  => 'gpt-test-tts',
+                'voice'  => 'verse',
+                'format' => 'wav',
+                'speed'  => 1.5,
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'audio', $response );
+        $this->assertSame( 'FAKEAUDIO', $response['audio'] );
+        $this->assertSame( 'wav', $response['format'] );
+        $this->assertSame( 'verse', $response['voice'] );
+        $this->assertSame( 'gpt-test-tts', $response['model'] );
+        $this->assertSame( 1.5, $response['speed'] );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::AUDIO_SPEECH_ENDPOINT, $captured_request['url'] );
+        $this->assertSame( 42, $captured_request['args']['timeout'] );
+        $this->assertArrayHasKey( 'headers', $captured_request['args'] );
+        $this->assertSame( 'application/json', $captured_request['args']['headers']['Content-Type'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+        $this->assertIsArray( $payload );
+        $this->assertSame( 'Read me a story', $payload['input'] );
+        $this->assertSame( 'gpt-test-tts', $payload['model'] );
+        $this->assertSame( 'verse', $payload['voice'] );
+        $this->assertSame( 'wav', $payload['format'] );
+        $this->assertSame( 1.5, $payload['speed'] );
+    }
 }

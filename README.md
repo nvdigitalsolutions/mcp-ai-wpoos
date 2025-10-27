@@ -50,6 +50,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
+- 🔊 Generate speech audio via OpenAI's Text-to-Speech API and save the result to the Media Library
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
 
 ---
