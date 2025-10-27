@@ -727,11 +727,26 @@ class WP_MCP_AI_OpenAI_Client {
                             $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
                         }
 
-                        if ( 'input_file' === $type && isset( $segment['file_id'] ) ) {
-                            $segment_copy = array(
-                                'type'    => 'input_file',
-                                'file_id' => $segment['file_id'],
-                            );
+                        if ( 'input_file' === $type ) {
+                            $segment_copy = array( 'type' => 'input_file' );
+
+                            if ( isset( $segment['file_id'] ) ) {
+                                $segment_copy['file_id'] = $segment['file_id'];
+                            }
+
+                            if ( isset( $segment['file'] ) && is_array( $segment['file'] ) ) {
+                                $file_entry = array();
+
+                                if ( isset( $segment['file']['id'] ) ) {
+                                    $file_entry['id'] = $segment['file']['id'];
+                                } elseif ( isset( $segment['file']['file_id'] ) ) {
+                                    $file_entry['id'] = $segment['file']['file_id'];
+                                }
+
+                                if ( ! empty( $file_entry ) ) {
+                                    $segment_copy['file'] = $file_entry;
+                                }
+                            }
 
                             if ( isset( $segment['display_name'] ) ) {
                                 $segment_copy['display_name'] = $segment['display_name'];
@@ -740,22 +755,8 @@ class WP_MCP_AI_OpenAI_Client {
                             if ( isset( $segment['filename'] ) ) {
                                 $segment_copy['filename'] = $segment['filename'];
                             }
-                        } elseif ( 'input_file' === $type && isset( $segment['file_data'] ) ) {
-                            $segment_copy = array(
-                                'type' => 'input_file',
-                            );
 
-                            if ( isset( $segment['display_name'] ) ) {
-                                $segment_copy['display_name'] = $segment['display_name'];
-                            }
-
-                            if ( isset( $segment['filename'] ) ) {
-                                $segment_copy['filename'] = $segment['filename'];
-                            }
-
-                            if ( is_array( $segment['file_data'] ) ) {
-                                $segment_copy['file_data'] = '[redacted]';
-                            } elseif ( is_string( $segment['file_data'] ) ) {
+                            if ( isset( $segment['file_data'] ) ) {
                                 $segment_copy['file_data'] = '[redacted]';
                             }
                         }
@@ -1090,6 +1091,11 @@ class WP_MCP_AI_OpenAI_Client {
     protected function populate_responses_file_segment( array $segment, array $attachments ) {
         $file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
 
+        if ( '' === $file_id && isset( $segment['file']['id'] ) ) {
+            $file_id = (string) $segment['file']['id'];
+            $segment['file_id'] = $file_id;
+        }
+
         if ( isset( $segment['file_data'] ) ) {
             unset( $segment['file_data'] );
         }
@@ -1115,13 +1121,15 @@ class WP_MCP_AI_OpenAI_Client {
 
             $segment['file_id'] = $openai_file_id;
 
-            if ( isset( $attachment['openai_file'] ) && is_array( $attachment['openai_file'] ) ) {
-                $segment['file'] = $attachment['openai_file'];
-            }
-
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
                 $segment['filename'] = $attachment['filename'];
             }
+        }
+
+        if ( isset( $segment['file_id'] ) && '' !== $segment['file_id'] ) {
+            $segment['file'] = array(
+                'id' => (string) $segment['file_id'],
+            );
         }
 
         return $segment;
