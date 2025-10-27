@@ -725,6 +725,165 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure attachment uploads reuse cached OpenAI file metadata when unchanged.
+     */
+    public function test_attachment_upload_reuses_cached_openai_file_metadata() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $attachment_id = $this->create_text_attachment( 'notes.txt', 'Attachment contents' );
+
+        $upload_counter = 0;
+        $upload_filter  = function ( $preempt, $args, $url ) use ( &$upload_counter ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT !== $url ) {
+                return false;
+            }
+
+            $upload_counter++;
+
+            $response_body = array(
+                'id'         => 'file-reuse-' . $upload_counter,
+                'created_at' => time(),
+                'status'     => 'processed',
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( $response_body ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $upload_filter, 10, 3 );
+
+        try {
+            $first_helper  = new WP_MCP_AI_Message_Attachments();
+            $first_segment = $first_helper->prepare_input_file_segment(
+                array(
+                    'attachment_id' => $attachment_id,
+                )
+            );
+
+            $this->assertIsArray( $first_segment );
+            $this->assertArrayHasKey( 'file_id', $first_segment );
+
+            $second_helper  = new WP_MCP_AI_Message_Attachments();
+            $second_segment = $second_helper->prepare_input_file_segment(
+                array(
+                    'attachment_id' => $attachment_id,
+                )
+            );
+
+            $this->assertIsArray( $second_segment );
+            $this->assertArrayHasKey( 'file_id', $second_segment );
+            $this->assertSame( $first_segment['file_id'], $second_segment['file_id'] );
+        } finally {
+            remove_filter( 'pre_http_request', $upload_filter, 10 );
+            delete_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY );
+        }
+
+        $this->assertSame( 1, $upload_counter );
+    }
+
+    /**
+     * Ensure OpenAI files are deleted when attachment metadata is removed.
+     */
+    public function test_openai_file_deleted_when_attachment_metadata_removed() {
+        WP_MCP_AI_Message_Attachments::init();
+        WP_MCP_AI_Message_Attachments::reset_deleted_file_cache();
+
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $attachment_id = $this->create_text_attachment( 'notes-cleanup.txt', 'Cleanup contents' );
+
+        $upload_filter = function ( $preempt, $args, $url ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT !== $url ) {
+                return false;
+            }
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'         => 'file-cleanup-1',
+                        'created_at' => time(),
+                        'status'     => 'processed',
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $upload_filter, 10, 3 );
+
+        try {
+            $helper = new WP_MCP_AI_Message_Attachments();
+            $segment = $helper->prepare_input_file_segment(
+                array(
+                    'attachment_id' => $attachment_id,
+                )
+            );
+
+            $this->assertIsArray( $segment );
+            $this->assertArrayHasKey( 'file_id', $segment );
+        } finally {
+            remove_filter( 'pre_http_request', $upload_filter, 10 );
+        }
+
+        $metadata = get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true );
+
+        $this->assertIsArray( $metadata );
+        $this->assertArrayHasKey( 'file_id', $metadata );
+        $this->assertNotEmpty( $metadata['file_id'] );
+
+        $expected_file_id = $metadata['file_id'];
+        $delete_triggered = false;
+
+        $delete_filter = function ( $preempt, $args, $url ) use ( &$delete_triggered, $expected_file_id ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/' . $expected_file_id !== $url ) {
+                return false;
+            }
+
+            $delete_triggered = true;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => $expected_file_id,
+                        'deleted' => true,
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $delete_filter, 10, 3 );
+
+        try {
+            delete_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, $metadata );
+        } finally {
+            remove_filter( 'pre_http_request', $delete_filter, 10 );
+            WP_MCP_AI_Message_Attachments::reset_deleted_file_cache();
+        }
+
+        $this->assertTrue( $delete_triggered );
+        $this->assertSame( '', get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true ) );
+    }
+
+    /**
      * Dispatch the REST request and apply expectations against the payload.
      *
      * @param int      $assistant_id Assistant post ID.

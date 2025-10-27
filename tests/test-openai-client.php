@@ -176,6 +176,69 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure delete requests require a configured API key.
+     */
+    public function test_delete_file_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->delete_file( 'file-123' );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure delete requests target the expected endpoint and use the DELETE method.
+     */
+    public function test_delete_file_sends_delete_request() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+        $expected_file_id = 'file-delete-123';
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request, $expected_file_id ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/' . $expected_file_id !== $url ) {
+                return false;
+            }
+
+            $captured_request = $args;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => $expected_file_id,
+                        'deleted' => true,
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $response = $client->delete_file( $expected_file_id );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'deleted', $response );
+        $this->assertTrue( $response['deleted'] );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( 'DELETE', $captured_request['method'] );
+        $this->assertArrayHasKey( 'headers', $captured_request );
+        $this->assertArrayHasKey( 'Authorization', $captured_request['headers'] );
+    }
+
+    /**
      * Ensure chat completion payloads include the tool name alongside the function definition.
      */
     public function test_chat_completion_payload_includes_tool_name() {
