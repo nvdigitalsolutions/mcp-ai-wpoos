@@ -23,9 +23,25 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      */
     public static function is_available() {
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
-        $base_url = isset( $settings['crawl4ai_base_url'] ) ? trim( $settings['crawl4ai_base_url'] ) : '';
+        $base_url = self::resolve_base_url( $settings );
 
-        return '' !== $base_url;
+        if ( '' !== $base_url ) {
+            return true;
+        }
+
+        /**
+         * Filters whether the built-in crawler should be exposed.
+         *
+         * Returning false here disables the fallback entirely which effectively
+         * mirrors the previous behaviour where an external Crawl4AI endpoint
+         * was mandatory.
+         *
+         * @param bool  $enabled  Whether the local crawler is available.
+         * @param array $settings Plugin settings array.
+         */
+        $local_enabled = apply_filters( 'wp_mcp_ai_crawl4ai_local_enabled', true, $settings );
+
+        return (bool) $local_enabled;
     }
 
     /**
@@ -34,7 +50,46 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      * @return string
      */
     public static function get_unavailable_reason() {
-        return __( 'The Crawl4AI tool is disabled because no API endpoint has been configured.', 'wp-mcp-ai' );
+        return __( 'The Crawl4AI tool is disabled on this site.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * Resolve the configured Crawl4AI base URL.
+     *
+     * @param array $settings Plugin settings array.
+     * @param array $context  Optional execution context passed to the tool.
+     * @return string
+     */
+    protected static function resolve_base_url( array $settings, array $context = array() ) {
+        $base_url = '';
+
+        if ( isset( $settings['crawl4ai_base_url'] ) ) {
+            $base_url = (string) $settings['crawl4ai_base_url'];
+        }
+
+        /**
+         * Filters the Crawl4AI base URL used by the tool.
+         *
+         * This allows environments to provide a base URL dynamically (for example,
+         * from environment variables) when the admin setting is left blank.
+         *
+         * @param string $base_url Base URL configured in the settings.
+         * @param array  $settings Entire WP MCP AI settings array.
+         * @param array  $context  Execution context provided to the tool.
+         */
+        $base_url = apply_filters( 'wp_mcp_ai_crawl4ai_base_url', $base_url, $settings, $context );
+
+        if ( ! is_string( $base_url ) ) {
+            return '';
+        }
+
+        $sanitised = esc_url_raw( trim( $base_url ) );
+
+        if ( ! $sanitised ) {
+            return '';
+        }
+
+        return untrailingslashit( $sanitised );
     }
 
     /**
@@ -118,7 +173,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      */
     public function execute( array $arguments = array(), array $context = array() ) {
         if ( ! self::is_available() ) {
-            return new WP_Error( 'wp_mcp_ai_crawl4ai_unconfigured', __( 'Crawl4AI is not configured on this site.', 'wp-mcp-ai' ) );
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI is not available on this site.', 'wp-mcp-ai' ) );
         }
 
         $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -155,108 +210,14 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         $payload = apply_filters( 'wp_mcp_ai_crawl4ai_payload', $payload, $arguments, $context );
 
-        $encoded_payload = wp_json_encode( $payload );
-        if ( false === $encoded_payload ) {
-            return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI request payload.', 'wp-mcp-ai' ) );
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $base_url = $this->get_base_url( $settings, $context );
+
+        if ( '' !== $base_url ) {
+            return $this->execute_remote_crawl( $payload, $arguments, $context, $settings, $base_url );
         }
 
-        $settings     = WP_MCP_AI_Admin_Settings::get_settings();
-        $base_url     = $this->get_base_url( $settings );
-        $headers      = $this->build_headers( $settings, $context );
-        $timeout      = $this->get_request_timeout( $settings );
-        $crawl_url    = trailingslashit( $base_url ) . 'crawl';
-
-        $request_args = array(
-            'headers' => $headers,
-            'timeout' => $timeout,
-            'body'    => $encoded_payload,
-        );
-
-        WP_MCP_AI_Logger::log_event(
-            'crawl4ai_request',
-            'Sending Crawl4AI crawl request.',
-            array(
-                'endpoint' => $crawl_url,
-                'payload'  => $this->get_log_safe_payload( $payload ),
-            )
-        );
-
-        $response = wp_remote_post( $crawl_url, $request_args );
-
-        if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Logger::log_error( 'Crawl4AI request failed.', array( 'error' => $response->get_error_message() ) );
-
-            return new WP_Error(
-                'wp_mcp_ai_crawl4ai_http_error',
-                __( 'The Crawl4AI request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
-            );
-        }
-
-        $decoded = $this->decode_response( $response );
-        if ( is_wp_error( $decoded ) ) {
-            return $decoded;
-        }
-
-        $status_code = wp_remote_retrieve_response_code( $response );
-        if ( $status_code < 200 || $status_code >= 300 ) {
-            $message = $this->build_error_from_response( $decoded );
-
-            WP_MCP_AI_Logger::log_error(
-                'Crawl4AI returned an error response.',
-                array(
-                    'status' => $status_code,
-                    'body'   => $decoded,
-                )
-            );
-
-            return new WP_Error(
-                'wp_mcp_ai_crawl4ai_api_error',
-                $message,
-                array(
-                    'status' => $status_code,
-                    'body'   => $decoded,
-                )
-            );
-        }
-
-        if ( isset( $decoded['error'] ) && ! empty( $decoded['error'] ) ) {
-            $message = $this->build_error_from_response( $decoded );
-
-            WP_MCP_AI_Logger::log_error(
-                'Crawl4AI reported an error.',
-                array(
-                    'status' => $status_code,
-                    'body'   => $decoded,
-                )
-            );
-
-            return new WP_Error( 'wp_mcp_ai_crawl4ai_error', $message, array( 'body' => $decoded ) );
-        }
-
-        $formatted = $this->format_response( $decoded );
-
-        if ( $this->should_wait_for_results( $arguments, $context ) && ! empty( $formatted['task_id'] ) && empty( $formatted['results'] ) ) {
-            $wait_timeout  = $this->get_wait_timeout( $arguments, $context );
-            $poll_interval = $this->get_poll_interval( $arguments, $context );
-
-            $formatted = $this->poll_for_results( $formatted['task_id'], $base_url, $headers, $wait_timeout, $poll_interval, $timeout );
-
-            if ( is_wp_error( $formatted ) ) {
-                return $formatted;
-            }
-        }
-
-        WP_MCP_AI_Logger::log_event(
-            'crawl4ai_response',
-            'Crawl4AI request completed.',
-            array(
-                'status'  => $formatted['status'],
-                'task_id' => $formatted['task_id'],
-            )
-        );
-
-        return apply_filters( 'wp_mcp_ai_crawl4ai_response', $formatted, $decoded, $arguments, $context );
+        return $this->execute_local_crawl( $payload, $arguments, $context, $settings );
     }
 
     /**
@@ -388,12 +349,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      * @param array $settings Plugin settings array.
      * @return string
      */
-    protected function get_base_url( array $settings ) {
-        if ( empty( $settings['crawl4ai_base_url'] ) ) {
-            return '';
-        }
-
-        return untrailingslashit( $settings['crawl4ai_base_url'] );
+    protected function get_base_url( array $settings, array $context = array() ) {
+        return self::resolve_base_url( $settings, $context );
     }
 
     /**
@@ -486,6 +443,354 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         return self::DEFAULT_POLL_INTERVAL;
+    }
+
+    /**
+     * Build request arguments for local crawls.
+     *
+     * @param array $settings Plugin settings array.
+     * @param array $context  Execution context.
+     * @param array $arguments Tool arguments.
+     * @return array
+     */
+    protected function build_local_request_args( array $settings, array $context, array $arguments ) {
+        $language = get_bloginfo( 'language' );
+        $headers  = array(
+            'Accept'         => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language'=> $language ? str_replace( '_', '-', $language ) : 'en-US,en;q=0.9',
+            'User-Agent'     => $this->get_local_user_agent( $settings, $context ),
+        );
+
+        $args = array(
+            'headers'      => $headers,
+            'redirection'  => 5,
+            'sslverify'    => true,
+            'decompress'   => true,
+        );
+
+        /**
+         * Filters the HTTP request arguments used by the local crawler.
+         */
+        return apply_filters( 'wp_mcp_ai_crawl4ai_local_request_args', $args, $settings, $context, $arguments );
+    }
+
+    /**
+     * Determine the default User-Agent string for local crawl requests.
+     *
+     * @param array $settings Plugin settings array.
+     * @param array $context  Execution context.
+     * @return string
+     */
+    protected function get_local_user_agent( array $settings, array $context ) {
+        $site_name = get_bloginfo( 'name' );
+        $site_url  = home_url( '/' );
+
+        $user_agent = sprintf( 'WP-MCP-AI-Crawler/1.0 (+%s)', $site_url );
+
+        if ( $site_name ) {
+            $user_agent = sprintf( 'WP-MCP-AI-Crawler/1.0 (%s; +%s)', sanitize_text_field( $site_name ), $site_url );
+        }
+
+        /**
+         * Filters the User-Agent string sent by the local crawler.
+         */
+        return apply_filters( 'wp_mcp_ai_crawl4ai_local_user_agent', $user_agent, $settings, $context );
+    }
+
+    /**
+     * Build a structured result for a locally crawled URL.
+     *
+     * @param string $url      Requested URL.
+     * @param array  $response HTTP response array.
+     * @param array  $payload  Prepared payload data.
+     * @param array  $settings Plugin settings array.
+     * @param array  $context  Execution context.
+     * @return array
+     */
+    protected function build_local_result( $url, $response, array $payload, array $settings, array $context ) {
+        $status_code  = wp_remote_retrieve_response_code( $response );
+        $body         = wp_remote_retrieve_body( $response );
+        $headers      = wp_remote_retrieve_headers( $response );
+        $header_array = $this->normalise_headers( $headers );
+        $content_type = isset( $header_array['content-type'] ) ? $header_array['content-type'] : '';
+        $charset      = isset( $header_array['content-type'] ) ? $this->detect_charset_from_content_type( $header_array['content-type'] ) : '';
+
+        if ( $charset && function_exists( 'mb_convert_encoding' ) ) {
+            $body = mb_convert_encoding( $body, 'UTF-8', $charset );
+        }
+
+        $result = array(
+            'url'            => $url,
+            'status_code'    => $status_code,
+            'content_type'   => $content_type,
+            'content_length' => strlen( (string) $body ),
+            'retrieved_at'   => current_time( 'mysql', true ),
+            'html'           => '',
+            'markdown'       => '',
+            'text'           => '',
+            'metadata'       => array(
+                'headers' => $header_array,
+            ),
+        );
+
+        if ( $this->should_treat_as_html( $content_type ) ) {
+            $result['html']     = $body;
+            $result['markdown'] = $this->convert_html_to_markdown( $body );
+            $result['text']     = $this->convert_html_to_text( $body );
+        } elseif ( $this->should_treat_as_json( $content_type, $body ) ) {
+            $decoded = json_decode( $body, true );
+            if ( null !== $decoded ) {
+                $result['markdown'] = "```json\n" . wp_json_encode( $decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n```";
+                $result['text']     = wp_json_encode( $decoded );
+            } else {
+                $result['text'] = trim( (string) $body );
+            }
+        } elseif ( $this->should_treat_as_text( $content_type ) ) {
+            $result['text']     = trim( (string) $body );
+            $result['markdown'] = $result['text'];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Normalise HTTP headers from the WordPress HTTP API into an array of lowercase keys.
+     *
+     * @param array|Requests_Utility_CaseInsensitiveDictionary $headers HTTP headers.
+     * @return array
+     */
+    protected function normalise_headers( $headers ) {
+        if ( is_object( $headers ) && method_exists( $headers, 'getAll' ) ) {
+            $headers = $headers->getAll();
+        }
+
+        $normalised = array();
+
+        if ( is_array( $headers ) ) {
+            foreach ( $headers as $key => $value ) {
+                $normalised[ strtolower( (string) $key ) ] = is_array( $value ) ? array_map( 'trim', $value ) : trim( (string) $value );
+            }
+        }
+
+        return $normalised;
+    }
+
+    /**
+     * Detect the charset from a content type header string.
+     *
+     * @param string $content_type Content type header.
+     * @return string
+     */
+    protected function detect_charset_from_content_type( $content_type ) {
+        if ( preg_match( '/charset=([^;]+)/i', $content_type, $matches ) ) {
+            return trim( $matches[1] );
+        }
+
+        return '';
+    }
+
+    /**
+     * Determine if the response should be parsed as HTML.
+     *
+     * @param string $content_type Content type header.
+     * @return bool
+     */
+    protected function should_treat_as_html( $content_type ) {
+        if ( empty( $content_type ) ) {
+            return true;
+        }
+
+        return false !== strpos( strtolower( $content_type ), 'text/html' ) || false !== strpos( strtolower( $content_type ), 'application/xhtml+xml' );
+    }
+
+    /**
+     * Determine if the response should be parsed as JSON.
+     *
+     * @param string $content_type Content type header.
+     * @param string $body         Response body.
+     * @return bool
+     */
+    protected function should_treat_as_json( $content_type, $body ) {
+        if ( false !== strpos( strtolower( $content_type ), 'application/json' ) ) {
+            return true;
+        }
+
+        $trimmed = trim( (string) $body );
+        return ( '' !== $trimmed ) && ( '{' === $trimmed[0] || '[' === $trimmed[0] );
+    }
+
+    /**
+     * Determine if the response should be treated as plain text.
+     *
+     * @param string $content_type Content type header.
+     * @return bool
+     */
+    protected function should_treat_as_text( $content_type ) {
+        return false !== strpos( strtolower( $content_type ), 'text/plain' );
+    }
+
+    /**
+     * Convert HTML to Markdown.
+     *
+     * @param string $html HTML content.
+     * @return string
+     */
+    protected function convert_html_to_markdown( $html ) {
+        $html = (string) $html;
+
+        if ( '' === trim( $html ) ) {
+            return '';
+        }
+
+        if ( ! class_exists( 'DOMDocument' ) ) {
+            return $this->convert_html_to_text( $html );
+        }
+
+        $dom = new DOMDocument();
+        libxml_use_internal_errors( true );
+        $loaded = $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
+        libxml_clear_errors();
+
+        if ( ! $loaded ) {
+            return $this->convert_html_to_text( $html );
+        }
+
+        $body = $dom->getElementsByTagName( 'body' )->item( 0 );
+        if ( ! $body ) {
+            return $this->convert_html_to_text( $html );
+        }
+
+        $markdown = '';
+
+        foreach ( $body->childNodes as $child ) {
+            $markdown .= $this->render_dom_node_to_markdown( $child, 0 );
+        }
+
+        $markdown = preg_replace( "/\n{3,}/", "\n\n", $markdown );
+        $markdown = preg_replace( "/[ \t]+\n/", "\n", $markdown );
+
+        return trim( $markdown );
+    }
+
+    /**
+     * Render a DOM node to Markdown.
+     *
+     * @param DOMNode $node       DOM node.
+     * @param int     $list_depth Current list depth.
+     * @return string
+     */
+    protected function render_dom_node_to_markdown( $node, $list_depth = 0 ) {
+        if ( $node instanceof DOMText ) {
+            $text = preg_replace( '/\s+/u', ' ', $node->wholeText );
+            return $text;
+        }
+
+        if ( ! $node instanceof DOMElement ) {
+            return '';
+        }
+
+        $tag      = strtolower( $node->tagName );
+        $contents = $this->render_dom_children_to_markdown( $node, $list_depth );
+
+        switch ( $tag ) {
+            case 'h1':
+                return "\n\n# " . trim( $contents ) . "\n\n";
+            case 'h2':
+                return "\n\n## " . trim( $contents ) . "\n\n";
+            case 'h3':
+                return "\n\n### " . trim( $contents ) . "\n\n";
+            case 'h4':
+                return "\n\n#### " . trim( $contents ) . "\n\n";
+            case 'h5':
+                return "\n\n##### " . trim( $contents ) . "\n\n";
+            case 'h6':
+                return "\n\n###### " . trim( $contents ) . "\n\n";
+            case 'p':
+                return "\n\n" . trim( $contents ) . "\n\n";
+            case 'br':
+                return "  \n";
+            case 'strong':
+            case 'b':
+                return '**' . trim( $contents ) . '**';
+            case 'em':
+            case 'i':
+                return '_' . trim( $contents ) . '_';
+            case 'code':
+                if ( strtolower( $node->parentNode->nodeName ) === 'pre' ) {
+                    return $contents;
+                }
+                return '`' . trim( $contents ) . '`';
+            case 'pre':
+                $text = trim( $contents );
+                return "\n\n```\n" . $text . "\n```\n\n";
+            case 'a':
+                $href = $node->getAttribute( 'href' );
+                $href = esc_url_raw( $href );
+                $label = trim( $contents );
+                if ( '' === $label ) {
+                    $label = $href;
+                }
+                if ( '' === $href ) {
+                    return $label;
+                }
+                return '[' . $label . '](' . $href . ')';
+            case 'ul':
+            case 'ol':
+                $output = "\n";
+                foreach ( $node->childNodes as $child ) {
+                    $output .= $this->render_dom_node_to_markdown( $child, $list_depth + 1 );
+                }
+                return $output . "\n";
+            case 'li':
+                $content = trim( $contents );
+                if ( '' === $content ) {
+                    return '';
+                }
+                $indent = str_repeat( '    ', max( 0, $list_depth - 1 ) );
+                $ordered = $node->parentNode && 'ol' === strtolower( $node->parentNode->nodeName );
+                $marker  = $ordered ? '1.' : '-';
+                $content = preg_replace( '/\n+/', "\n" . $indent . '    ', $content );
+                return $indent . $marker . ' ' . $content . "\n";
+            case 'img':
+                $alt = trim( $node->getAttribute( 'alt' ) );
+                $src = esc_url_raw( $node->getAttribute( 'src' ) );
+                if ( ! $src ) {
+                    return '';
+                }
+                return '![' . $alt . '](' . $src . ')';
+            default:
+                return $contents;
+        }
+    }
+
+    /**
+     * Render the child nodes of a DOM element to Markdown.
+     *
+     * @param DOMNode $node       DOM element.
+     * @param int     $list_depth Current list depth.
+     * @return string
+     */
+    protected function render_dom_children_to_markdown( $node, $list_depth ) {
+        $buffer = '';
+
+        foreach ( $node->childNodes as $child ) {
+            $buffer .= $this->render_dom_node_to_markdown( $child, $list_depth );
+        }
+
+        return $buffer;
+    }
+
+    /**
+     * Convert HTML content to plain text.
+     *
+     * @param string $html HTML markup.
+     * @return string
+     */
+    protected function convert_html_to_text( $html ) {
+        $text = wp_strip_all_tags( (string) $html );
+        $text = preg_replace( '/\s+/u', ' ', $text );
+
+        return trim( $text );
     }
 
     /**
@@ -714,5 +1019,207 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         return $log_payload;
+    }
+    /**
+     * Execute a crawl through the remote Crawl4AI service.
+     *
+     * @param array  $payload   Prepared payload array.
+     * @param array  $arguments Tool arguments.
+     * @param array  $context   Execution context.
+     * @param array  $settings  Plugin settings array.
+     * @param string $base_url  Crawl4AI base URL.
+     * @return array|WP_Error
+     */
+    protected function execute_remote_crawl( array $payload, array $arguments, array $context, array $settings, $base_url ) {
+        $encoded_payload = wp_json_encode( $payload );
+        if ( false === $encoded_payload ) {
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI request payload.', 'wp-mcp-ai' ) );
+        }
+
+        $headers   = $this->build_headers( $settings, $context );
+        $timeout   = $this->get_request_timeout( $settings );
+        $crawl_url = trailingslashit( $base_url ) . 'crawl';
+
+        $request_args = array(
+            'headers' => $headers,
+            'timeout' => $timeout,
+            'body'    => $encoded_payload,
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'crawl4ai_request',
+            'Sending Crawl4AI crawl request.',
+            array(
+                'endpoint' => $crawl_url,
+                'payload'  => $this->get_log_safe_payload( $payload ),
+            )
+        );
+
+        $response = wp_remote_post( $crawl_url, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'Crawl4AI request failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_http_error',
+                __( 'The Crawl4AI request failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $decoded = $this->decode_response( $response );
+        if ( is_wp_error( $decoded ) ) {
+            return $decoded;
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $message = $this->build_error_from_response( $decoded );
+
+            WP_MCP_AI_Logger::log_error(
+                'Crawl4AI returned an error response.',
+                array(
+                    'status' => $status_code,
+                    'body'   => $decoded,
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_api_error',
+                $message,
+                array(
+                    'status' => $status_code,
+                    'body'   => $decoded,
+                )
+            );
+        }
+
+        if ( isset( $decoded['error'] ) && ! empty( $decoded['error'] ) ) {
+            $message = $this->build_error_from_response( $decoded );
+
+            WP_MCP_AI_Logger::log_error(
+                'Crawl4AI reported an error.',
+                array(
+                    'status' => $status_code,
+                    'body'   => $decoded,
+                )
+            );
+
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_error', $message, array( 'body' => $decoded ) );
+        }
+
+        $formatted = $this->format_response( $decoded );
+
+        if ( $this->should_wait_for_results( $arguments, $context ) && ! empty( $formatted['task_id'] ) && empty( $formatted['results'] ) ) {
+            $wait_timeout  = $this->get_wait_timeout( $arguments, $context );
+            $poll_interval = $this->get_poll_interval( $arguments, $context );
+
+            $formatted = $this->poll_for_results( $formatted['task_id'], $base_url, $headers, $wait_timeout, $poll_interval, $timeout );
+
+            if ( is_wp_error( $formatted ) ) {
+                return $formatted;
+            }
+        }
+
+        WP_MCP_AI_Logger::log_event(
+            'crawl4ai_response',
+            'Crawl4AI request completed.',
+            array(
+                'status'  => $formatted['status'],
+                'task_id' => $formatted['task_id'],
+            )
+        );
+
+        return apply_filters( 'wp_mcp_ai_crawl4ai_response', $formatted, $decoded, $arguments, $context );
+    }
+
+    /**
+     * Execute a crawl using the built-in WordPress HTTP client.
+     *
+     * @param array $payload   Prepared payload array.
+     * @param array $arguments Tool arguments.
+     * @param array $context   Execution context.
+     * @param array $settings  Plugin settings array.
+     * @return array|WP_Error
+     */
+    protected function execute_local_crawl( array $payload, array $arguments, array $context, array $settings ) {
+        $timeout      = $this->get_request_timeout( $settings );
+        $results      = array();
+        $errors       = array();
+        $urls         = isset( $payload['urls'] ) ? (array) $payload['urls'] : array();
+        $request_args = $this->build_local_request_args( $settings, $context, $arguments );
+
+        foreach ( $urls as $url ) {
+            $response = wp_remote_get(
+                $url,
+                array_merge(
+                    $request_args,
+                    array(
+                        'timeout' => $timeout,
+                    )
+                )
+            );
+
+            if ( is_wp_error( $response ) ) {
+                $errors[ $url ] = $response->get_error_message();
+                WP_MCP_AI_Logger::log_error(
+                    'Crawl4AI local crawl failed.',
+                    array(
+                        'url'   => $url,
+                        'error' => $response->get_error_message(),
+                    )
+                );
+                continue;
+            }
+
+            $result = $this->build_local_result( $url, $response, $payload, $settings, $context );
+            $results[] = apply_filters( 'wp_mcp_ai_crawl4ai_local_result', $result, $response, $url, $settings, $context, $arguments );
+        }
+
+        if ( empty( $results ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_local_failed',
+                __( 'Unable to crawl the requested URLs.', 'wp-mcp-ai' ),
+                array( 'errors' => $errors )
+            );
+        }
+
+        $metadata = array(
+            'mode'       => 'local',
+            'errors'     => $errors,
+            'fetched_at' => current_time( 'mysql', true ),
+        );
+
+        if ( isset( $request_args['headers']['User-Agent'] ) ) {
+            $metadata['user_agent'] = $request_args['headers']['User-Agent'];
+        }
+
+        if ( isset( $payload['priority'] ) ) {
+            $metadata['priority'] = $payload['priority'];
+        }
+
+        $metadata = apply_filters( 'wp_mcp_ai_crawl4ai_local_metadata', $metadata, $payload, $context, $settings );
+
+        $response = array(
+            'status'   => 'completed',
+            'task_id'  => '',
+            'results'  => $results,
+            'metadata' => $metadata,
+            'raw'      => array(
+                'results'  => $results,
+                'metadata' => $metadata,
+            ),
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'crawl4ai_local_response',
+            'Local Crawl4AI request completed.',
+            array(
+                'url_count' => count( $results ),
+                'errors'    => $errors,
+            )
+        );
+
+        return apply_filters( 'wp_mcp_ai_crawl4ai_local_response', $response, $payload, $arguments, $context, $settings );
     }
 }
