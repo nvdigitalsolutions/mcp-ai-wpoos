@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_OpenAI_Client {
     const CHAT_COMPLETIONS_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
     const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
+    const FILES_ENDPOINT            = 'https://api.openai.com/v1/files';
 
     /**
      * Retrieve the configured API key.
@@ -25,6 +26,143 @@ class WP_MCP_AI_OpenAI_Client {
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
 
         return isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
+    }
+
+    /**
+     * Upload a file to the OpenAI Files API.
+     *
+     * @param string $file_path Absolute file path on disk.
+     * @param array  $args      Optional arguments (purpose, filename, mime_type, timeout).
+     * @return array|WP_Error
+     */
+    public function upload_file( $file_path, array $args = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $file_path = (string) $file_path;
+
+        if ( '' === $file_path || ! file_exists( $file_path ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_file_upload_missing_file',
+                __( 'The file to upload could not be located.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $purpose  = isset( $args['purpose'] ) ? sanitize_key( $args['purpose'] ) : '';
+        $filename = isset( $args['filename'] ) ? sanitize_file_name( $args['filename'] ) : '';
+        $mime_type = isset( $args['mime_type'] ) ? sanitize_mime_type( $args['mime_type'] ) : '';
+
+        if ( '' === $purpose ) {
+            $purpose = 'responses';
+        }
+
+        if ( '' === $filename ) {
+            $filename = wp_basename( $file_path );
+        }
+
+        if ( '' === $mime_type ) {
+            $mime_type = 'application/octet-stream';
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout  = max( 5, $timeout );
+
+        if ( function_exists( 'curl_file_create' ) ) {
+            $file_field = curl_file_create( $file_path, $mime_type, $filename );
+        } elseif ( class_exists( 'CURLFile' ) ) {
+            $file_field = new CURLFile( $file_path, $mime_type, $filename );
+        } else {
+            $file_field = '@' . $file_path; // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+        }
+
+        $request_headers = array(
+            'Authorization' => 'Bearer ' . $api_key,
+        );
+
+        $request_body = array(
+            'purpose' => $purpose,
+            'file'    => $file_field,
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_upload',
+            'Uploading file to OpenAI.',
+            array(
+                'purpose'  => $purpose,
+                'filename' => $filename,
+            )
+        );
+
+        $response = wp_remote_post(
+            self::FILES_ENDPOINT,
+            array(
+                'headers' => $request_headers,
+                'body'    => $request_body,
+                'timeout' => $timeout,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI file upload failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_upload_http_error',
+                __( 'The OpenAI file upload failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $code     = wp_remote_retrieve_response_code( $response );
+        $body     = wp_remote_retrieve_body( $response );
+        $decoded  = json_decode( $body, true );
+        $json_err = json_last_error();
+
+        if ( JSON_ERROR_NONE !== $json_err ) {
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI file upload response.', array( 'body' => $body ) );
+
+            return new WP_Error( 'wp_mcp_ai_file_upload_invalid_response', __( 'OpenAI returned malformed JSON for the file upload.', 'wp-mcp-ai' ) );
+        }
+
+        if ( $code < 200 || $code >= 300 ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI file upload returned an error.', array( 'code' => $code, 'body' => $decoded ) );
+
+            $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file upload failed.', 'wp-mcp-ai' );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_upload_error',
+                $message,
+                array(
+                    'status'   => $code,
+                    'response' => $decoded,
+                )
+            );
+        }
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_uploaded',
+            'OpenAI file upload completed.',
+            array(
+                'file_id'  => isset( $decoded['id'] ) ? $decoded['id'] : '',
+                'purpose'  => $purpose,
+                'filename' => $filename,
+            )
+        );
+
+        return is_array( $decoded ) ? $decoded : array();
     }
 
     /**
@@ -774,14 +912,20 @@ class WP_MCP_AI_OpenAI_Client {
 
             if ( '' !== $data ) {
                 $segment['image_url'] = 'data:' . $mime_type . ';base64,' . $data;
+                unset( $segment['image_file'] );
+                unset( $segment['file_id'] );
+            } else {
+                if ( ! isset( $segment['image_file'] ) || ! is_array( $segment['image_file'] ) ) {
+                    $segment['image_file'] = array();
+                }
+
+                $segment['image_file']['file_id'] = $file_id;
+                unset( $segment['file_id'] );
             }
 
             if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
                 $segment['caption'] = $attachment['caption'];
             }
-
-            unset( $segment['image_file'] );
-            unset( $segment['file_id'] );
         } elseif ( isset( $segment['image_url']['url'] ) ) {
             $segment['image_url'] = (string) $segment['image_url']['url'];
         }
@@ -810,13 +954,14 @@ class WP_MCP_AI_OpenAI_Client {
 
             if ( '' !== $data ) {
                 $segment['file_data'] = $this->build_data_url_from_base64( $data, $mime_type );
+                unset( $segment['file_id'] );
+            } else {
+                $segment['file_id'] = $file_id;
             }
 
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
                 $segment['filename'] = $attachment['filename'];
             }
-
-            unset( $segment['file_id'] );
         }
 
         return $segment;
