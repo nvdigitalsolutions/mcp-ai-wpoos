@@ -26,6 +26,83 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the tool can be enabled via the base URL filter.
+     */
+    public function test_tool_available_when_filter_supplies_base_url() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $filter = function () {
+            return 'http://localhost:11235/';
+        };
+
+        add_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
+
+        $this->assertTrue( WP_MCP_AI_Tool_Run_Crawl4AI_Job::is_available() );
+
+        remove_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
+    }
+
+    /**
+     * Ensure the tool uses the base URL provided by the filter when executing.
+     */
+    public function test_execute_uses_base_url_from_filter() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $filter = function () {
+            return 'http://localhost:11235/';
+        };
+
+        add_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool      = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $requests  = array();
+        $responses = array(
+            'body'     => wp_json_encode(
+                array(
+                    'status'  => 'completed',
+                    'results' => array(
+                        array(
+                            'url'      => 'https://example.com',
+                            'markdown' => '# Example',
+                        ),
+                    ),
+                )
+            ),
+            'response' => array( 'code' => 200 ),
+            'headers'  => array(),
+        );
+
+        $callback = function ( $pre, $args, $url ) use ( &$requests, $responses ) {
+            $requests[] = array(
+                'url'     => $url,
+                'headers' => isset( $args['headers'] ) ? $args['headers'] : array(),
+            );
+
+            return $responses;
+        };
+
+        add_filter( 'pre_http_request', $callback, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'https://example.com' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $callback, 10 );
+        remove_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'completed', $result['status'] );
+        $this->assertNotEmpty( $requests );
+        $this->assertStringStartsWith( 'http://localhost:11235/crawl', $requests[0]['url'] );
+    }
+
+    /**
      * Ensure the tool forwards crawl requests and returns immediate results.
      */
     public function test_execute_returns_results_without_waiting() {

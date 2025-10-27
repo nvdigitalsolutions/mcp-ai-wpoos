@@ -23,7 +23,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      */
     public static function is_available() {
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
-        $base_url = isset( $settings['crawl4ai_base_url'] ) ? trim( $settings['crawl4ai_base_url'] ) : '';
+        $base_url = self::resolve_base_url( $settings );
 
         return '' !== $base_url;
     }
@@ -35,6 +35,45 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      */
     public static function get_unavailable_reason() {
         return __( 'The Crawl4AI tool is disabled because no API endpoint has been configured.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * Resolve the configured Crawl4AI base URL.
+     *
+     * @param array $settings Plugin settings array.
+     * @param array $context  Optional execution context passed to the tool.
+     * @return string
+     */
+    protected static function resolve_base_url( array $settings, array $context = array() ) {
+        $base_url = '';
+
+        if ( isset( $settings['crawl4ai_base_url'] ) ) {
+            $base_url = (string) $settings['crawl4ai_base_url'];
+        }
+
+        /**
+         * Filters the Crawl4AI base URL used by the tool.
+         *
+         * This allows environments to provide a base URL dynamically (for example,
+         * from environment variables) when the admin setting is left blank.
+         *
+         * @param string $base_url Base URL configured in the settings.
+         * @param array  $settings Entire WP MCP AI settings array.
+         * @param array  $context  Execution context provided to the tool.
+         */
+        $base_url = apply_filters( 'wp_mcp_ai_crawl4ai_base_url', $base_url, $settings, $context );
+
+        if ( ! is_string( $base_url ) ) {
+            return '';
+        }
+
+        $sanitised = esc_url_raw( trim( $base_url ) );
+
+        if ( ! $sanitised ) {
+            return '';
+        }
+
+        return untrailingslashit( $sanitised );
     }
 
     /**
@@ -161,7 +200,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         $settings     = WP_MCP_AI_Admin_Settings::get_settings();
-        $base_url     = $this->get_base_url( $settings );
+        $base_url     = $this->get_base_url( $settings, $context );
         $headers      = $this->build_headers( $settings, $context );
         $timeout      = $this->get_request_timeout( $settings );
         $crawl_url    = trailingslashit( $base_url ) . 'crawl';
@@ -388,12 +427,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      * @param array $settings Plugin settings array.
      * @return string
      */
-    protected function get_base_url( array $settings ) {
-        if ( empty( $settings['crawl4ai_base_url'] ) ) {
-            return '';
-        }
-
-        return untrailingslashit( $settings['crawl4ai_base_url'] );
+    protected function get_base_url( array $settings, array $context = array() ) {
+        return self::resolve_base_url( $settings, $context );
     }
 
     /**

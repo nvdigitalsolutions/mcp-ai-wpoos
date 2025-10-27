@@ -59,6 +59,40 @@ function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = '
     return $capability;
 }
 
+/**
+ * Provide a fallback Crawl4AI base URL from the environment when available.
+ *
+ * @param string $base_url Base URL stored in the plugin settings.
+ * @param array  $settings Entire plugin settings array.
+ * @param array  $context  Execution context passed to the tool.
+ * @return string
+ */
+function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
+    if ( ! empty( $base_url ) ) {
+        return $base_url;
+    }
+
+    if ( defined( 'WP_MCP_AI_CRAWL4AI_BASE_URL' ) && WP_MCP_AI_CRAWL4AI_BASE_URL ) {
+        return WP_MCP_AI_CRAWL4AI_BASE_URL;
+    }
+
+    $environment_candidates = array(
+        'WP_MCP_AI_CRAWL4AI_BASE_URL',
+        'CRAWL4AI_BASE_URL',
+    );
+
+    foreach ( $environment_candidates as $env_key ) {
+        $candidate = getenv( $env_key );
+        if ( is_string( $candidate ) && '' !== trim( $candidate ) ) {
+            return $candidate;
+        }
+    }
+
+    return $base_url;
+}
+
+add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';

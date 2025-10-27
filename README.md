@@ -89,6 +89,8 @@ A dedicated router transparently forwards chat completions to the active provide
 
 When a Crawl4AI base URL (and optional API key) is supplied in the settings, assistants gain access to the **Run Crawl4AI Job** tool for submitting crawl jobs, adjusting priorities, and optionally polling for completion results — restricted to administrators with `manage_options` capabilities.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L15-L193】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L489】 Leave the base URL blank to disable the integration; the tool explains why it is unavailable when settings are incomplete.
 
+Local environments can expose Crawl4AI without touching the WordPress admin by setting either the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable (for example, `http://localhost:11235/`). The tool picks up the override automatically, making it easy to run a nearby Crawl4AI service for development or testing.【F:wp-mcp-ai.php†L54-L81】【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L15-L217】
+
 ## 🧊 Elementor Widget
 
 Sites running Elementor automatically register a chat widget that mirrors the `[mcp_ai_chat]` shortcode, making it easy to drop conversations into Elementor layouts without custom HTML.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L62】 The integration boots only when Elementor is active, so it adds no overhead to non-Elementor installs.
