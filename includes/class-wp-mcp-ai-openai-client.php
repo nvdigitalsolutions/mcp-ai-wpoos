@@ -17,6 +17,8 @@ class WP_MCP_AI_OpenAI_Client {
     const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
     const FILES_ENDPOINT            = 'https://api.openai.com/v1/files';
     const AUDIO_SPEECH_ENDPOINT     = 'https://api.openai.com/v1/audio/speech';
+    const AUDIO_TRANSCRIPTIONS_ENDPOINT = 'https://api.openai.com/v1/audio/transcriptions';
+    const AUDIO_TRANSLATIONS_ENDPOINT   = 'https://api.openai.com/v1/audio/translations';
     const IMAGES_ENDPOINT           = 'https://api.openai.com/v1/images/generations';
 
     /**
@@ -449,7 +451,7 @@ class WP_MCP_AI_OpenAI_Client {
         $size      = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : '1024x1024';
         $quality   = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : 'standard';
         $background = isset( $options['background'] ) && '' !== $options['background'] ? sanitize_key( $options['background'] ) : '';
-        $format    = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
+        $requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
         $timeout   = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
         $timeout   = max( 5, $timeout );
 
@@ -463,10 +465,6 @@ class WP_MCP_AI_OpenAI_Client {
 
         if ( '' !== $background ) {
             $payload['background'] = $background;
-        }
-
-        if ( '' !== $format ) {
-            $payload['format'] = $format;
         }
 
         if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
@@ -503,7 +501,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'size'      => $size,
                 'quality'   => $quality,
                 'background'=> $background,
-                'format'    => $format,
+                'requested_format' => $requested_format,
             )
         );
 
@@ -587,8 +585,11 @@ class WP_MCP_AI_OpenAI_Client {
                 return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
             }
 
-            $response_mime     = $this->normalise_image_mime_type( $format );
-            $response_format   = $format;
+            $response_format   = $this->detect_format_from_binary( $image_data );
+            if ( '' === $response_format ) {
+                $response_format = 'png';
+            }
+            $response_mime     = $this->normalise_image_mime_type( $response_format );
             $response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
             $response_revision = isset( $decoded['data'][0]['revised_prompt'] ) ? (string) $decoded['data'][0]['revised_prompt'] : '';
         } elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
@@ -603,7 +604,11 @@ class WP_MCP_AI_OpenAI_Client {
             $response_format = $this->detect_format_from_mime_type( $content_type );
 
             if ( '' === $response_format ) {
-                $response_format = $format;
+                $response_format = $this->detect_format_from_binary( $image_data );
+            }
+
+            if ( '' === $response_format ) {
+                $response_format = 'png';
             }
 
             $response_mime = '' !== $content_type ? $content_type : $this->normalise_image_mime_type( $response_format );
@@ -640,7 +645,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'size'       => $size,
                 'quality'    => $quality,
                 'background' => $background,
-                'format'     => $format,
+                'format'     => $response_format,
             )
         );
 
@@ -752,6 +757,59 @@ class WP_MCP_AI_OpenAI_Client {
             default:
                 return '';
         }
+    }
+
+    /**
+     * Attempt to detect an image format from raw binary data.
+     *
+     * @param string $image_data Raw image bytes.
+     * @return string
+     */
+    protected function detect_format_from_binary( $image_data ) {
+        if ( '' === $image_data ) {
+            return '';
+        }
+
+        if ( function_exists( 'getimagesizefromstring' ) ) {
+            $details = @getimagesizefromstring( $image_data ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+            if ( is_array( $details ) && ! empty( $details['mime'] ) ) {
+                $format = $this->detect_format_from_mime_type( $details['mime'] );
+
+                if ( '' !== $format ) {
+                    return $format;
+                }
+            }
+        }
+
+        if ( function_exists( 'finfo_buffer' ) && defined( 'FILEINFO_MIME_TYPE' ) && class_exists( 'finfo' ) ) {
+            $finfo = new finfo( FILEINFO_MIME_TYPE );
+            $mime  = $finfo->buffer( $image_data );
+
+            if ( $mime ) {
+                $format = $this->detect_format_from_mime_type( $mime );
+
+                if ( '' !== $format ) {
+                    return $format;
+                }
+            }
+        }
+
+        $signature = substr( $image_data, 0, 12 );
+
+        if ( 0 === strncmp( $signature, "\x89PNG", 4 ) ) {
+            return 'png';
+        }
+
+        if ( 0 === strncmp( $signature, "\xFF\xD8\xFF", 3 ) ) {
+            return 'jpeg';
+        }
+
+        if ( 0 === strncmp( $signature, 'RIFF', 4 ) && 0 === strncmp( substr( $signature, 8, 4 ), 'WEBP', 4 ) ) {
+            return 'webp';
+        }
+
+        return '';
     }
 
     /**
@@ -894,6 +952,231 @@ class WP_MCP_AI_OpenAI_Client {
             'speed'        => $speed,
             'content_type' => $type,
         );
+    }
+
+    /**
+     * Transcribe or translate an audio file using the OpenAI Audio API.
+     *
+     * @param string $file_path Absolute path to the audio file on disk.
+     * @param array  $options   Optional overrides (model, translate, prompt, temperature, response_format, timeout, language, filename, mime_type).
+     * @return array|WP_Error   Array containing the transcription payload or WP_Error on failure.
+     */
+    public function transcribe_audio( $file_path, array $options = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $file_path = (string) $file_path;
+
+        if ( '' === $file_path || ! file_exists( $file_path ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcription_missing_file',
+                __( 'The audio file to transcribe could not be located.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+        $model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-4o-mini-transcribe';
+        if ( '' === $model ) {
+            $model = 'gpt-4o-mini-transcribe';
+        }
+
+        $translate = false;
+
+        if ( isset( $options['translate'] ) ) {
+            $translate = (bool) $options['translate'];
+        }
+
+        if ( isset( $options['task'] ) ) {
+            $task = strtolower( sanitize_text_field( $options['task'] ) );
+
+            if ( 'translate' === $task ) {
+                $translate = true;
+            } elseif ( 'transcribe' === $task ) {
+                $translate = false;
+            }
+        }
+
+        $timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout = max( 5, $timeout );
+
+        $response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? strtolower( sanitize_key( $options['response_format'] ) ) : 'verbose_json';
+        $allowed_formats = array( 'json', 'verbose_json' );
+
+        if ( ! in_array( $response_format, $allowed_formats, true ) ) {
+            $response_format = 'verbose_json';
+        }
+
+        $fields = array(
+            'model'           => $model,
+            'response_format' => $response_format,
+        );
+
+        if ( isset( $options['prompt'] ) && '' !== $options['prompt'] ) {
+            $fields['prompt'] = sanitize_textarea_field( $options['prompt'] );
+        }
+
+        if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
+            $temperature = floatval( $options['temperature'] );
+            $temperature = max( 0, min( 1, $temperature ) );
+            $fields['temperature'] = $temperature;
+        }
+
+        if ( ! $translate && isset( $options['language'] ) && '' !== $options['language'] ) {
+            $fields['language'] = sanitize_text_field( $options['language'] );
+        }
+
+        $filename = isset( $options['filename'] ) && '' !== $options['filename'] ? sanitize_file_name( $options['filename'] ) : wp_basename( $file_path );
+
+        $mime_type = isset( $options['mime_type'] ) && '' !== $options['mime_type'] ? sanitize_mime_type( $options['mime_type'] ) : '';
+
+        if ( '' === $mime_type ) {
+            $filetype = wp_check_filetype( $filename );
+            if ( $filetype && ! empty( $filetype['type'] ) ) {
+                $mime_type = $filetype['type'];
+            }
+        }
+
+        if ( '' === $mime_type ) {
+            $mime_type = 'application/octet-stream';
+        }
+
+        $file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_readfile
+
+        if ( false === $file_contents ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI audio transcription failed to read file.',
+                array( 'file_path' => $file_path )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_transcription_read_failed',
+                __( 'The audio file could not be read from disk.', 'wp-mcp-ai' )
+            );
+        }
+
+        $boundary = 'wp-mcp-ai-' . wp_generate_password( 24, false, false );
+
+        $request_body = $this->build_multipart_body(
+            $fields,
+            array(
+                'name'         => 'file',
+                'filename'     => $filename,
+                'content_type' => $mime_type,
+                'contents'     => $file_contents,
+            ),
+            $boundary
+        );
+
+        $request_args = array(
+            'method'  => 'POST',
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type'  => 'multipart/form-data; boundary=' . $boundary,
+            ),
+            'timeout' => $timeout,
+            'body'    => $request_body,
+        );
+
+        $endpoint = $translate ? self::AUDIO_TRANSLATIONS_ENDPOINT : self::AUDIO_TRANSCRIPTIONS_ENDPOINT;
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_audio_transcription_request',
+            'Sending audio transcription request to OpenAI.',
+            array(
+                'model'           => $model,
+                'translate'       => $translate,
+                'response_format' => $response_format,
+                'filename'        => $filename,
+            )
+        );
+
+        $response = $this->dispatch_http_request( $endpoint, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI audio transcription request failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_http_error',
+                __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $decoded = json_decode( $body, true );
+            $error   = json_last_error();
+
+            if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
+                $message = $decoded['error']['message'];
+            } else {
+                $message = __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+            }
+
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI audio transcription request returned an error.',
+                array(
+                    'status'   => $status_code,
+                    'response' => JSON_ERROR_NONE === $error ? $decoded : $body,
+                )
+            );
+
+            return new WP_Error( 'wp_mcp_ai_api_error', $message, array( 'status' => $status_code ) );
+        }
+
+        $decoded = json_decode( $body, true );
+        $error   = json_last_error();
+
+        if ( JSON_ERROR_NONE !== $error || ! is_array( $decoded ) ) {
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI audio transcription response.', array( 'body' => $body ) );
+
+            return new WP_Error( 'wp_mcp_ai_transcription_invalid_response', __( 'OpenAI returned malformed JSON for the audio transcription.', 'wp-mcp-ai' ) );
+        }
+
+        $text = isset( $decoded['text'] ) ? (string) $decoded['text'] : '';
+
+        if ( '' === $text ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI audio transcription response did not include text.', array( 'response' => $decoded ) );
+
+            return new WP_Error( 'wp_mcp_ai_transcription_empty_text', __( 'OpenAI did not return any transcription text.', 'wp-mcp-ai' ) );
+        }
+
+        $result = array(
+            'text'        => $text,
+            'model'       => $model,
+            'translated'  => $translate,
+            'format'      => $response_format,
+        );
+
+        if ( isset( $decoded['language'] ) ) {
+            $result['language'] = (string) $decoded['language'];
+        }
+
+        if ( isset( $decoded['duration'] ) && '' !== $decoded['duration'] ) {
+            $result['duration'] = floatval( $decoded['duration'] );
+        }
+
+        if ( isset( $decoded['segments'] ) && is_array( $decoded['segments'] ) ) {
+            $result['segments'] = $decoded['segments'];
+        }
+
+        return $result;
     }
 
     /**

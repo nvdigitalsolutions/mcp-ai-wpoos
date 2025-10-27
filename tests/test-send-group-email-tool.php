@@ -1,0 +1,185 @@
+<?php
+
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php';
+
+/**
+ * Tests for the send group email tool.
+ */
+class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
+    /**
+     * Reset globals between tests.
+     */
+    public function tearDown(): void {
+        wp_set_current_user( 0 );
+        remove_all_filters( 'wp_mcp_ai_send_group_email_pre_send' );
+        parent::tearDown();
+    }
+
+    /**
+     * Ensure users without the required capability cannot send emails.
+     */
+    public function test_execute_requires_permission() {
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment( array(
+            'subject'    => 'Test Subject',
+            'message'    => 'Hello team',
+            'recipients' => array( 'editor@example.com' ),
+        ) );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $user_id,
+            )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure the tool parses JSON attachments and forwards the email through the WordPress mailer.
+     */
+    public function test_execute_sends_mail_using_json_attachment() {
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment( array(
+            'subject'    => 'Weekly Update',
+            'body'       => 'OpenAI response summary.',
+            'recipients' => array(
+                'team@example.com',
+                array( 'email' => 'lead@example.com' ),
+            ),
+            'cc'         => array( 'manager@example.com' ),
+        ), 'group-email.txt' );
+
+        $captured_mail = array();
+        add_filter(
+            'wp_mcp_ai_send_group_email_pre_send',
+            function ( $pre_send, $mail_args ) use ( &$captured_mail ) {
+                $captured_mail = $mail_args;
+                return true;
+            },
+            10,
+            2
+        );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+                'message'       => 'Intro message.',
+                'from_email'    => 'noreply@example.com',
+                'from_name'     => 'AI Assistant',
+            ),
+            array(
+                'user_id' => $user_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertTrue( $result['sent'] );
+        $this->assertNotEmpty( $captured_mail );
+        $this->assertSame( array( 'team@example.com', 'lead@example.com' ), $captured_mail['to'] );
+        $this->assertSame( 'Weekly Update', $captured_mail['subject'] );
+        $this->assertStringContainsString( 'Intro message.', $captured_mail['message'] );
+        $this->assertStringContainsString( 'OpenAI response summary.', $captured_mail['message'] );
+        $this->assertContains( 'Cc: manager@example.com', $captured_mail['headers'] );
+        $this->assertContains( 'From: AI Assistant <noreply@example.com>', $captured_mail['headers'] );
+    }
+
+    /**
+     * Ensure plain text payloads that mimic email headers are parsed correctly.
+     */
+    public function test_execute_parses_plain_text_payload() {
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $contents = "Subject: Launch Plan\nTo: user1@example.com, user2@example.com\nCc: lead@example.com\nBcc: hidden@example.com\n\nHello team,\n\nOpenAI generated response.";
+        $attachment_id = $this->create_text_attachment( 'group-email.txt', $contents );
+
+        $captured_mail = array();
+        add_filter(
+            'wp_mcp_ai_send_group_email_pre_send',
+            function ( $pre_send, $mail_args ) use ( &$captured_mail ) {
+                $captured_mail = $mail_args;
+                return true;
+            },
+            10,
+            2
+        );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $user_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertTrue( $result['sent'] );
+        $this->assertSame( array( 'user1@example.com', 'user2@example.com' ), $captured_mail['to'] );
+        $this->assertSame( 'Launch Plan', $captured_mail['subject'] );
+        $this->assertSame( "Hello team,\n\nOpenAI generated response.", $captured_mail['message'] );
+        $this->assertContains( 'Cc: lead@example.com', $captured_mail['headers'] );
+        $this->assertContains( 'Bcc: hidden@example.com', $captured_mail['headers'] );
+    }
+
+    /**
+     * Create an attachment with JSON payload contents.
+     *
+     * @param array  $payload  JSON payload.
+     * @param string $filename Optional filename.
+     * @return array
+     */
+    protected function create_payload_attachment( array $payload, $filename = 'email.txt' ) {
+        $json    = wp_json_encode( $payload );
+        $upload  = wp_upload_bits( $filename, null, $json );
+        $this->assertFalse( $upload['error'] );
+
+        $attachment_id = self::factory()->attachment->create_upload_object( $upload['file'] );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_title'  => 'Email Payload',
+                'post_status' => 'inherit',
+            )
+        );
+
+        return array( $attachment_id, $upload['file'] );
+    }
+
+    /**
+     * Create a plain text attachment.
+     *
+     * @param string $filename File name.
+     * @param string $contents File contents.
+     * @return int Attachment ID.
+     */
+    protected function create_text_attachment( $filename, $contents ) {
+        $upload = wp_upload_bits( $filename, null, $contents );
+        $this->assertFalse( $upload['error'] );
+
+        $attachment_id = self::factory()->attachment->create_upload_object( $upload['file'] );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_title'  => 'Email Payload',
+                'post_status' => 'inherit',
+            )
+        );
+
+        return $attachment_id;
+    }
+}
