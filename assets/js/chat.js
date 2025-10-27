@@ -1609,18 +1609,48 @@
     }
 
     function handleError(state, error) {
+        var fallbackMessage = getString('error', 'Something went wrong.');
+
+        function handleResolvedMessage(resolvedMessage) {
+            var message = resolvedMessage;
+
+            if (typeof message !== 'string') {
+                message = '';
+            }
+
+            message = message.trim() || fallbackMessage;
+
+            appendMessage(state.messagesEl, 'system', { text: message });
+            setStatus(state.container, message);
+        }
+
         if (error && typeof error.json === 'function') {
             error
                 .json()
                 .then(function (body) {
-                    var message = body && (body.message || (body.data && body.data.message));
-                    setStatus(state.container, message || getString('error', 'Something went wrong.'));
+                    var message = '';
+
+                    if (body) {
+                        if (typeof body === 'string') {
+                            message = body;
+                        } else if (typeof body.message === 'string') {
+                            message = body.message;
+                        } else if (body.data) {
+                            if (typeof body.data === 'string') {
+                                message = body.data;
+                            } else if (typeof body.data.message === 'string') {
+                                message = body.data.message;
+                            }
+                        }
+                    }
+
+                    handleResolvedMessage(message);
                 })
                 .catch(function () {
-                    setStatus(state.container, getString('error', 'Something went wrong.'));
+                    handleResolvedMessage('');
                 });
         } else {
-            setStatus(state.container, getString('error', 'Something went wrong.'));
+            handleResolvedMessage('');
         }
     }
 
