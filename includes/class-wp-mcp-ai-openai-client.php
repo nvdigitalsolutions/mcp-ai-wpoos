@@ -67,7 +67,7 @@ class WP_MCP_AI_OpenAI_Client {
         $mime_type = isset( $args['mime_type'] ) ? sanitize_mime_type( $args['mime_type'] ) : '';
 
         if ( '' === $purpose ) {
-            $purpose = 'responses';
+            $purpose = 'assistants';
         }
 
         if ( '' === $filename ) {
