@@ -46,6 +46,22 @@ if ( ! function_exists( 'wp_mcp_ai_register_deep_chat_assets' ) ) {
             true
         );
 
+        $integration_handle = 'wp-mcp-ai-deep-chat-app';
+        if ( ! wp_script_is( $integration_handle, 'registered' ) ) {
+            $integration_path = WP_MCP_AI_PATH . 'assets/js/deep-chat/index.js';
+            $integration_url  = WP_MCP_AI_URL . 'assets/js/deep-chat/index.js';
+
+            if ( file_exists( $integration_path ) ) {
+                wp_register_script(
+                    $integration_handle,
+                    $integration_url,
+                    array( $handle ),
+                    filemtime( $integration_path ),
+                    true
+                );
+            }
+        }
+
         // Load the bundle asynchronously to avoid blocking rendering.
         wp_script_add_data( $handle, 'strategy', 'defer' );
 
@@ -73,6 +89,10 @@ if ( ! function_exists( 'wp_mcp_ai_enqueue_deep_chat_assets' ) ) {
 
         if ( $handle && ! wp_script_is( $handle, 'enqueued' ) ) {
             wp_enqueue_script( $handle );
+        }
+
+        if ( wp_script_is( 'wp-mcp-ai-deep-chat-app', 'registered' ) && ! wp_script_is( 'wp-mcp-ai-deep-chat-app', 'enqueued' ) ) {
+            wp_enqueue_script( 'wp-mcp-ai-deep-chat-app' );
         }
 
         if ( wp_style_is( 'wp-mcp-ai-deep-chat', 'registered' ) && ! wp_style_is( 'wp-mcp-ai-deep-chat', 'enqueued' ) ) {
