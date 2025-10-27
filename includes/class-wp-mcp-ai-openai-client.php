@@ -1589,14 +1589,20 @@ class WP_MCP_AI_OpenAI_Client {
 
             $scalars = array();
 
-            foreach ( $value as $item ) {
-                if ( is_string( $item ) || is_numeric( $item ) ) {
-                    $scalars[] = (string) $item;
+            foreach ( $value as $key => $item ) {
+                if ( is_string( $key ) && in_array( $key, array( 'type', 'annotations', 'mode', 'status', 'finish_reason', 'id' ), true ) ) {
+                    continue;
+                }
+
+                $normalised_item = $this->normalise_responses_text_value( $item );
+
+                if ( '' !== $normalised_item ) {
+                    $scalars[] = $normalised_item;
                 }
             }
 
             if ( ! empty( $scalars ) ) {
-                return implode( ' ', $scalars );
+                return implode( "\n\n", $scalars );
             }
         }
 
