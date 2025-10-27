@@ -15,14 +15,29 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
     /**
      * Ensure the tool reports as unavailable when no endpoint is configured.
      */
-    public function test_tool_unavailable_without_configuration() {
+    public function test_tool_available_without_configuration() {
         delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
+        $this->assertTrue( WP_MCP_AI_Tool_Run_Crawl4AI_Job::is_available() );
+    }
+
+    /**
+     * Ensure the tool can be disabled via the local enabled filter.
+     */
+    public function test_tool_can_be_disabled_via_filter() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        add_filter( 'wp_mcp_ai_crawl4ai_local_enabled', '__return_false' );
+
         $this->assertFalse( WP_MCP_AI_Tool_Run_Crawl4AI_Job::is_available() );
-        $this->assertSame(
-            __( 'The Crawl4AI tool is disabled because no API endpoint has been configured.', 'wp-mcp-ai' ),
-            WP_MCP_AI_Tool_Run_Crawl4AI_Job::get_unavailable_reason()
-        );
+
+        $tool   = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $result = $tool->execute( array( 'url' => 'https://example.com' ) );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_crawl4ai_unavailable', $result->get_error_code() );
+
+        remove_filter( 'wp_mcp_ai_crawl4ai_local_enabled', '__return_false' );
     }
 
     /**
@@ -133,6 +148,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
             $requests[] = array(
                 'url'     => $url,
                 'headers' => isset( $args['headers'] ) ? $args['headers'] : array(),
+                'method'  => isset( $args['method'] ) ? $args['method'] : 'GET',
             );
 
             return $responses;
@@ -155,6 +171,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( 'https://example.com', $result['results'][0]['url'] );
         $this->assertNotEmpty( $requests );
         $this->assertStringContainsString( '/crawl', $requests[0]['url'] );
+        $this->assertSame( 'POST', $requests[0]['method'] );
     }
 
     /**
@@ -235,6 +252,58 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( 'task-123', $result['task_id'] );
         $this->assertNotEmpty( $result['results'] );
         $this->assertGreaterThanOrEqual( 3, $call_count );
+    }
+
+    /**
+     * Ensure the tool performs a local crawl when no external endpoint exists.
+     */
+    public function test_execute_crawls_locally_without_endpoint() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool      = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $requests  = array();
+        $responses = array(
+            'body'     => '<html><body><h1>Example</h1><p>Content here.</p></body></html>',
+            'response' => array( 'code' => 200 ),
+            'headers'  => array( 'content-type' => 'text/html; charset=UTF-8' ),
+        );
+
+        $callback = function ( $pre, $args, $url ) use ( &$requests, $responses ) {
+            $method = isset( $args['method'] ) ? $args['method'] : 'GET';
+
+            if ( 'GET' !== $method ) {
+                return $pre;
+            }
+
+            $requests[] = array(
+                'url'    => $url,
+                'method' => $method,
+            );
+
+            return $responses;
+        };
+
+        add_filter( 'pre_http_request', $callback, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'https://example.com/page' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $callback, 10 );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'completed', $result['status'] );
+        $this->assertNotEmpty( $result['results'] );
+        $this->assertSame( 'https://example.com/page', $result['results'][0]['url'] );
+        $this->assertStringContainsString( '# Example', $result['results'][0]['markdown'] );
+        $this->assertNotEmpty( $requests );
+        $this->assertSame( 'GET', $requests[0]['method'] );
     }
 
     /**
