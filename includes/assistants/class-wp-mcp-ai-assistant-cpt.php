@@ -57,6 +57,25 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
         add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
         add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
+        add_action( 'admin_head', array( __CLASS__, 'print_admin_menu_icon_styles' ) );
+    }
+
+    /**
+     * Print admin menu icon styles so the CPT icon matches JetEngine's sizing.
+     */
+    public static function print_admin_menu_icon_styles() {
+        static $printed = false;
+
+        if ( $printed ) {
+            return;
+        }
+
+        $printed = true;
+
+        printf(
+            '<style id="wp-mcp-ai-admin-menu-icon-styles">#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}</style>',
+            esc_attr( self::POST_TYPE )
+        );
     }
 
     /**
