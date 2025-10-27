@@ -467,9 +467,13 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['background'] = $background;
         }
 
+        $response_format = 'b64_json';
+
         if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
-            $payload['response_format'] = sanitize_key( $options['response_format'] );
+            $response_format = sanitize_key( $options['response_format'] );
         }
+
+        $payload['response_format'] = $response_format;
 
         /**
          * Allow third parties to filter the OpenAI image payload prior to dispatch.
@@ -502,6 +506,7 @@ class WP_MCP_AI_OpenAI_Client {
                 'quality'   => $quality,
                 'background'=> $background,
                 'requested_format' => $requested_format,
+                'response_format'  => $response_format,
             )
         );
 
