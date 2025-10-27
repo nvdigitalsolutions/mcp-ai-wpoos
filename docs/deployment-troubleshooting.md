@@ -18,10 +18,16 @@ triaging production incidents.
    `edit_posts` capability to interact with MCP endpoints. If a request comes
    from a lower-privileged role (Subscriber, Customer, etc.), upgrade the role or
    create a dedicated integration account with the required permissions.
-4. **Revoked local tokens (401)** – Credential tokens issued through the
-   assistant editor are invalidated immediately after revocation. Confirm the
-   credential status in the *API Credentials* meta box or issue a new token.
-5. **JWT validation** – When relying on Auth0, ensure the tenant domain matches
+4. **Invalid or revoked assistant credentials (401)** – The REST layer returns
+   `wp_mcp_ai_invalid_token` when the credential secret no longer matches the
+   stored hash and `wp_mcp_ai_revoked_token` as soon as an administrator revokes
+   it from the *API Credentials* meta box. Generate a new credential and update
+   the integration whenever either error appears.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】【F:includes/class-wp-mcp-ai-credentials.php†L94-L297】
+5. **Assistant scope mismatch (403)** – A credential can only access the
+   assistant that issued it. If you see `wp_mcp_ai_assistant_scope_mismatch`,
+   remove any overriding `assistant_id` parameter or mint a dedicated credential
+   for the requested assistant.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】
+6. **JWT validation** – When relying on Auth0, ensure the tenant domain matches
    the MCP configuration and that the hosting environment exposes the PHP
    OpenSSL extension so the JWKS signature check can complete.
 

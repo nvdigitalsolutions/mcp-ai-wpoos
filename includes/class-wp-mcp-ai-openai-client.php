@@ -477,6 +477,8 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['response_format'] = $response_format;
         }
 
+        $payload['response_format'] = $response_format;
+
         /**
          * Allow third parties to filter the OpenAI image payload prior to dispatch.
          *
