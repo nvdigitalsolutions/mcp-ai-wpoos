@@ -410,8 +410,8 @@ class WP_MCP_AI_Message_Attachments {
             return new WP_Error( 'wp_mcp_ai_attachment_unsupported_mime', __( 'The attachment type is not supported for chat messages.', 'wp-mcp-ai' ) );
         }
 
-        $purpose = apply_filters( 'wp_mcp_ai_openai_file_purpose', 'responses', $attachment_id, $usage );
-        $purpose = $purpose ? sanitize_key( $purpose ) : 'responses';
+        $purpose = apply_filters( 'wp_mcp_ai_openai_file_purpose', 'assistants', $attachment_id, $usage );
+        $purpose = $purpose ? sanitize_key( $purpose ) : 'assistants';
 
         $file_hash    = $this->hash_file_contents( $file_path );
         $file_modtime = $this->get_file_modified_time( $file_path );

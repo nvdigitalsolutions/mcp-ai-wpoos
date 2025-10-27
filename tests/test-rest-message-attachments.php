@@ -1156,7 +1156,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             'bytes'      => $bytes,
             'hash'       => $hash,
             'modified'   => $modified,
-            'purpose'    => 'responses',
+            'purpose'    => 'assistants',
             'status'     => 'processed',
             'created_at' => time(),
         );
