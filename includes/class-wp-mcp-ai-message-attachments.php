@@ -864,6 +864,22 @@ class WP_MCP_AI_Message_Attachments {
             return false;
         }
 
+        $file_id = (string) $metadata['file_id'];
+
+        $looks_remote = 0 === strpos( $file_id, 'file-' );
+        /**
+         * Filter whether cached OpenAI metadata should be considered remote.
+         *
+         * @param bool  $looks_remote Whether the stored identifier looks like a remote file.
+         * @param string $file_id      Stored file identifier.
+         * @param array  $metadata     Cached metadata array.
+         */
+        $looks_remote = apply_filters( 'wp_mcp_ai_openai_file_looks_remote', $looks_remote, $file_id, $metadata );
+
+        if ( ! $looks_remote ) {
+            return false;
+        }
+
         if ( ! empty( $metadata['purpose'] ) && $metadata['purpose'] !== $purpose ) {
             return false;
         }

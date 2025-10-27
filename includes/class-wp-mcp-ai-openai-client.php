@@ -108,14 +108,14 @@ class WP_MCP_AI_OpenAI_Client {
             )
         );
 
-        $response = wp_remote_post(
-            self::FILES_ENDPOINT,
-            array(
-                'headers' => $request_headers,
-                'body'    => $request_body,
-                'timeout' => $timeout,
-            )
+        $request_args = array(
+            'method'  => 'POST',
+            'headers' => $request_headers,
+            'body'    => $request_body,
+            'timeout' => $timeout,
         );
+
+        $response = $this->dispatch_http_request( self::FILES_ENDPOINT, $request_args );
 
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI file upload failed.', array( 'error' => $response->get_error_message() ) );
@@ -164,6 +164,193 @@ class WP_MCP_AI_OpenAI_Client {
         );
 
         return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
+     * Delete a file from the OpenAI Files API.
+     *
+     * @param string $file_id OpenAI file identifier.
+     * @return array|WP_Error
+     */
+    public function delete_file( $file_id ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $file_id = sanitize_text_field( (string) $file_id );
+
+        if ( '' === $file_id ) {
+            return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 0;
+        $timeout  = max( 5, $timeout );
+
+        $endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_delete',
+            'Deleting OpenAI file.',
+            array( 'file_id' => $file_id )
+        );
+
+        $request_args = array(
+            'method'  => 'DELETE',
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+            'timeout' => $timeout,
+        );
+
+        $response = $this->dispatch_http_request( $endpoint, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file deletion failed.',
+                array(
+                    'file_id' => $file_id,
+                    'error'   => $response->get_error_message(),
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_delete_http_error',
+                __( 'The OpenAI file deletion request failed.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $code    = wp_remote_retrieve_response_code( $response );
+        $body    = wp_remote_retrieve_body( $response );
+        $decoded = json_decode( $body, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() ) {
+            WP_MCP_AI_Logger::log_error(
+                'Failed to decode OpenAI file deletion response.',
+                array(
+                    'file_id' => $file_id,
+                    'body'    => $body,
+                )
+            );
+
+            return new WP_Error( 'wp_mcp_ai_file_delete_invalid_response', __( 'OpenAI returned malformed JSON for the file deletion.', 'wp-mcp-ai' ) );
+        }
+
+        if ( $code < 200 || $code >= 300 ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file deletion returned an error.',
+                array(
+                    'file_id' => $file_id,
+                    'code'    => $code,
+                    'body'    => $decoded,
+                )
+            );
+
+            $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file deletion failed.', 'wp-mcp-ai' );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_delete_error',
+                $message,
+                array(
+                    'status'   => $code,
+                    'response' => $decoded,
+                )
+            );
+        }
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_deleted',
+            'OpenAI file deletion completed.',
+            array( 'file_id' => $file_id )
+        );
+
+        return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
+     * Dispatch an HTTP request while honouring preemptive short-circuit filters.
+     *
+     * @param string $url  Target URL.
+     * @param array  $args Request arguments.
+     * @return array|WP_Error
+     */
+    protected function dispatch_http_request( $url, array $args ) {
+        $url  = esc_url_raw( $url );
+        $args = apply_filters( 'http_request_args', $args, $url );
+
+        $preempt = $this->maybe_preempt_http_request( $url, $args );
+        if ( null !== $preempt ) {
+            return $preempt;
+        }
+
+        $method = isset( $args['method'] ) ? strtoupper( $args['method'] ) : 'POST';
+
+        if ( 'POST' === $method ) {
+            return wp_remote_post( $url, $args );
+        }
+
+        return wp_remote_request( $url, $args );
+    }
+
+    /**
+     * Execute the `pre_http_request` filters and return the first short-circuit response.
+     *
+     * @param string $url  Target URL.
+     * @param array  $args Prepared request arguments.
+     * @return array|WP_Error|null
+     */
+    protected function maybe_preempt_http_request( $url, array $args ) {
+        if ( ! isset( $GLOBALS['wp_filter']['pre_http_request'] ) ) {
+            return null;
+        }
+
+        $hook = $GLOBALS['wp_filter']['pre_http_request'];
+        if ( ! $hook instanceof WP_Hook ) {
+            return null;
+        }
+
+        $pre = false;
+
+        foreach ( $hook->callbacks as $priority => $callbacks ) {
+            foreach ( $callbacks as $callback ) {
+                $accepted_args = isset( $callback['accepted_args'] ) ? (int) $callback['accepted_args'] : 1;
+                $params        = array();
+
+                if ( $accepted_args >= 1 ) {
+                    $params[] = $pre;
+                }
+
+                if ( $accepted_args >= 2 ) {
+                    $params[] = $args;
+                }
+
+                if ( $accepted_args >= 3 ) {
+                    $params[] = $url;
+                }
+
+                $result = call_user_func_array( $callback['function'], $params );
+
+                if ( false !== $result ) {
+                    return $result;
+                }
+
+                $pre = $result;
+            }
+        }
+
+        return null;
     }
 
     /**
