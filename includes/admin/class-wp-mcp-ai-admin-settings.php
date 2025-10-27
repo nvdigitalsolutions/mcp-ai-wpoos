@@ -560,7 +560,7 @@ class WP_MCP_AI_Admin_Settings {
         <?php if ( ! empty( $settings['enable_logging'] ) ) :
             $entries = WP_MCP_AI_Logger::get_recent_error_messages();
             ?>
-            <p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first):', 'wp-mcp-ai' ); ?></p>
+            <p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
             <?php if ( empty( $entries ) ) : ?>
                 <p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
             <?php else : ?>
@@ -577,6 +577,25 @@ class WP_MCP_AI_Admin_Settings {
 
                         $type_label    = strtoupper( $entry['type'] );
                         $message_label = $entry['message'];
+                        $context_label = '';
+
+                        if ( isset( $entry['context'] ) && ! empty( $entry['context'] ) ) {
+                            $options = 0;
+
+                            if ( defined( 'JSON_PRETTY_PRINT' ) ) {
+                                $options |= JSON_PRETTY_PRINT;
+                            }
+
+                            if ( defined( 'JSON_UNESCAPED_SLASHES' ) ) {
+                                $options |= JSON_UNESCAPED_SLASHES;
+                            }
+
+                            $context_json = wp_json_encode( $entry['context'], $options );
+
+                            if ( false !== $context_json ) {
+                                $context_label = $context_json;
+                            }
+                        }
                         ?>
                         <li>
                             <?php if ( ! empty( $timestamp ) ) : ?>
@@ -585,6 +604,12 @@ class WP_MCP_AI_Admin_Settings {
                             <?php endif; ?>
                             <span class="wp-mcp-ai-log-preview__type"><?php echo esc_html( $type_label ); ?></span>:
                             <span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
+                            <?php if ( '' !== $context_label ) : ?>
+                                <details class="wp-mcp-ai-log-preview__context">
+                                    <summary><?php esc_html_e( 'Context details', 'wp-mcp-ai' ); ?></summary>
+                                    <pre><?php echo esc_html( $context_label ); ?></pre>
+                                </details>
+                            <?php endif; ?>
                         </li>
                     <?php endforeach; ?>
                 </ul>
