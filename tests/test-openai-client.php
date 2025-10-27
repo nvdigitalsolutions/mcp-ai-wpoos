@@ -352,8 +352,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_id', $file_segment );
         $this->assertSame( 'file-123', $file_segment['file_id'] );
-        $this->assertArrayHasKey( 'filename', $file_segment );
-        $this->assertSame( 'notes.txt', $file_segment['filename'] );
+        $this->assertArrayHasKey( 'file', $file_segment );
+        $this->assertIsArray( $file_segment['file'] );
+        $this->assertArrayHasKey( 'id', $file_segment['file'] );
+        $this->assertSame( 'file-123', $file_segment['file']['id'] );
         $this->assertArrayNotHasKey( 'file_data', $file_segment );
 
         $this->assertIsArray( $response );
@@ -714,8 +716,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_id', $file_segment );
         $this->assertSame( 'file-123', $file_segment['file_id'] );
-        $this->assertArrayHasKey( 'filename', $file_segment );
-        $this->assertSame( 'notes.txt', $file_segment['filename'] );
+        $this->assertArrayHasKey( 'file', $file_segment );
+        $this->assertIsArray( $file_segment['file'] );
+        $this->assertArrayHasKey( 'id', $file_segment['file'] );
+        $this->assertSame( 'file-123', $file_segment['file']['id'] );
         $this->assertArrayNotHasKey( 'file_data', $file_segment );
 
         $this->assertIsArray( $response );
@@ -803,6 +807,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_file', $payload['input'][0]['content'][1]['type'] );
         $this->assertArrayHasKey( 'file_id', $payload['input'][0]['content'][1] );
         $this->assertSame( 'file-123', $payload['input'][0]['content'][1]['file_id'] );
+        $this->assertArrayHasKey( 'file', $payload['input'][0]['content'][1] );
+        $this->assertIsArray( $payload['input'][0]['content'][1]['file'] );
+        $this->assertArrayHasKey( 'id', $payload['input'][0]['content'][1]['file'] );
+        $this->assertSame( 'file-123', $payload['input'][0]['content'][1]['file']['id'] );
         $this->assertArrayNotHasKey( 'file_data', $payload['input'][0]['content'][1] );
     }
 
@@ -1078,6 +1086,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'input_file', $file_segment['type'] );
         $this->assertArrayHasKey( 'file_id', $file_segment );
         $this->assertSame( 'file-321', $file_segment['file_id'] );
+        $this->assertArrayHasKey( 'file', $file_segment );
+        $this->assertIsArray( $file_segment['file'] );
+        $this->assertArrayHasKey( 'id', $file_segment['file'] );
+        $this->assertSame( 'file-321', $file_segment['file']['id'] );
         $this->assertArrayNotHasKey( 'mode', $assistant_segment );
         $this->assertArrayNotHasKey( 'mode', $user_text_segment );
         $this->assertArrayNotHasKey( 'mode', $file_segment );
