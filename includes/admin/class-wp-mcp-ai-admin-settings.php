@@ -246,9 +246,9 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
-            'wp_mcp_ai_crawl4ai_section',
-            __( 'Crawl4AI Integration', 'wp-mcp-ai' ),
-            '__return_false',
+            'wp_mcp_ai_tools_section',
+            __( 'Tools', 'wp-mcp-ai' ),
+            array( $this, 'render_tools_section_description' ),
             self::PAGE_SLUG
         );
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Admin_Settings {
             __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
             array( $this, 'render_crawl4ai_base_url_field' ),
             self::PAGE_SLUG,
-            'wp_mcp_ai_crawl4ai_section'
+            'wp_mcp_ai_tools_section'
         );
 
         add_settings_field(
@@ -265,7 +265,7 @@ class WP_MCP_AI_Admin_Settings {
             __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
             array( $this, 'render_crawl4ai_api_key_field' ),
             self::PAGE_SLUG,
-            'wp_mcp_ai_crawl4ai_section'
+            'wp_mcp_ai_tools_section'
         );
 
         add_settings_section(
@@ -475,6 +475,15 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
         <p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the tools section description.
+     */
+    public function render_tools_section_description() {
+        ?>
+        <p><?php esc_html_e( 'Configure the optional MCP tools exposed to assistants.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
