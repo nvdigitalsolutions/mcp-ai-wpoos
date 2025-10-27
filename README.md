@@ -91,7 +91,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Select a default assistant** with **Settings → MCP AI → Default Assistant** so REST and shortcode requests have a fallback.
 - [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
 - [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
-- [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Crawl4AI Integration** when you want the Crawl4AI tool to be available to assistants.
+- [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → MCP AI → Attachments** before enabling file uploads for end users.
 
 ## 🧠 Language Model Providers (OpenAI & Gemini)
@@ -102,7 +102,9 @@ A dedicated router transparently forwards chat completions to the active provide
 
 Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context.
 
-Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L489】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
+Configure remote endpoints or API keys under **Settings → MCP AI → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
+
+Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
 ## 🧊 Elementor Widget
 
