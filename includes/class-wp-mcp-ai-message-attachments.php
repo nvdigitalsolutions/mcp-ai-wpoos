@@ -17,6 +17,20 @@ class WP_MCP_AI_Message_Attachments {
     const OPENAI_FILE_META_KEY    = '_wp_mcp_ai_openai_file';
 
     /**
+     * Track whether cleanup hooks have been registered.
+     *
+     * @var bool
+     */
+    protected static $cleanup_hooks_registered = false;
+
+    /**
+     * Track OpenAI file identifiers deleted during the current request.
+     *
+     * @var array
+     */
+    protected static $deleted_file_ids = array();
+
+    /**
      * Cached attachment payloads keyed by generated file identifier.
      *
      * @var array
@@ -37,6 +51,120 @@ class WP_MCP_AI_Message_Attachments {
      */
     public function get_attachments() {
         return array_values( $this->attachments );
+    }
+
+    /**
+     * Register lifecycle hooks for managing OpenAI files associated with attachments.
+     */
+    public static function init() {
+        if ( self::$cleanup_hooks_registered ) {
+            return;
+        }
+
+        add_action( 'delete_attachment', array( __CLASS__, 'handle_delete_attachment' ) );
+        add_action( 'deleted_post_meta', array( __CLASS__, 'handle_deleted_post_meta' ), 10, 4 );
+
+        self::$cleanup_hooks_registered = true;
+    }
+
+    /**
+     * Reset the cache of deleted OpenAI file identifiers.
+     */
+    public static function reset_deleted_file_cache() {
+        self::$deleted_file_ids = array();
+    }
+
+    /**
+     * Handle attachment deletion events.
+     *
+     * @param int $attachment_id Attachment identifier.
+     */
+    public static function handle_delete_attachment( $attachment_id ) {
+        $attachment_id = absint( $attachment_id );
+
+        if ( ! $attachment_id ) {
+            return;
+        }
+
+        if ( 'attachment' !== get_post_type( $attachment_id ) ) {
+            return;
+        }
+
+        self::delete_openai_file_for_attachment( $attachment_id );
+    }
+
+    /**
+     * Handle attachment metadata removal events.
+     *
+     * @param array  $meta_ids  Deleted meta row identifiers.
+     * @param int    $object_id Attachment identifier.
+     * @param string $meta_key  Meta key being deleted.
+     * @param mixed  $meta_value Stored meta value prior to deletion.
+     */
+    public static function handle_deleted_post_meta( $meta_ids, $object_id, $meta_key, $meta_value ) {
+        if ( self::OPENAI_FILE_META_KEY !== $meta_key ) {
+            return;
+        }
+
+        $object_id = absint( $object_id );
+
+        if ( ! $object_id ) {
+            return;
+        }
+
+        $metadata = array();
+
+        if ( is_array( $meta_value ) ) {
+            $metadata = $meta_value;
+        } elseif ( is_string( $meta_value ) && '' !== $meta_value ) {
+            $maybe_unserialized = maybe_unserialize( $meta_value );
+
+            if ( is_array( $maybe_unserialized ) ) {
+                $metadata = $maybe_unserialized;
+            } elseif ( is_string( $maybe_unserialized ) && '' !== $maybe_unserialized ) {
+                $metadata = array( 'file_id' => $maybe_unserialized );
+            }
+        }
+
+        self::delete_openai_file_for_attachment( $object_id, $metadata );
+    }
+
+    /**
+     * Delete the OpenAI file associated with an attachment.
+     *
+     * @param int        $attachment_id Attachment identifier.
+     * @param array|null $metadata      Optional metadata payload.
+     */
+    public static function delete_openai_file_for_attachment( $attachment_id, $metadata = null ) {
+        $attachment_id = absint( $attachment_id );
+
+        if ( ! $attachment_id ) {
+            return;
+        }
+
+        $helper = new self();
+
+        if ( null === $metadata ) {
+            $metadata = $helper->get_cached_openai_file_metadata( $attachment_id );
+        } elseif ( is_array( $metadata ) ) {
+            $metadata = $helper->normalise_openai_file_metadata( $metadata );
+        } elseif ( is_string( $metadata ) && '' !== $metadata ) {
+            $metadata = $helper->normalise_openai_file_metadata( array( 'file_id' => $metadata ) );
+        } else {
+            $metadata = array();
+        }
+
+        if ( empty( $metadata['file_id'] ) ) {
+            return;
+        }
+
+        $file_id = $metadata['file_id'];
+
+        if ( isset( self::$deleted_file_ids[ $file_id ] ) ) {
+            return;
+        }
+
+        $helper->delete_remote_openai_file( $file_id );
     }
 
     /**
@@ -800,6 +928,51 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         return $hash_a === $hash_b;
+    }
+
+    /**
+     * Delete a remote OpenAI file associated with an attachment.
+     *
+     * @param string $file_id File identifier.
+     */
+    protected function delete_remote_openai_file( $file_id ) {
+        $file_id = sanitize_text_field( $file_id );
+
+        if ( '' === $file_id ) {
+            return;
+        }
+
+        if ( isset( self::$deleted_file_ids[ $file_id ] ) ) {
+            return;
+        }
+
+        if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+            require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
+        }
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        self::$deleted_file_ids[ $file_id ] = true;
+
+        $result = $client->delete_file( $file_id );
+
+        if ( is_wp_error( $result ) ) {
+            WP_MCP_AI_Logger::log_error(
+                'Failed to delete OpenAI file for attachment.',
+                array(
+                    'file_id' => $file_id,
+                    'error'   => $result->get_error_message(),
+                )
+            );
+
+            return;
+        }
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_cleanup',
+            'Deleted OpenAI file associated with an attachment.',
+            array( 'file_id' => $file_id )
+        );
     }
 
     /**

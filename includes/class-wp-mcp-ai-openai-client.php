@@ -166,6 +166,109 @@ class WP_MCP_AI_OpenAI_Client {
     }
 
     /**
+     * Delete a file from the OpenAI Files API.
+     *
+     * @param string $file_id File identifier returned by OpenAI.
+     * @param array  $args    Optional arguments (timeout).
+     * @return array|WP_Error
+     */
+    public function delete_file( $file_id, array $args = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $file_id = sanitize_text_field( $file_id );
+
+        if ( '' === $file_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_file_delete_missing_id',
+                __( 'An OpenAI file identifier must be provided.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout  = max( 5, $timeout );
+
+        $request_headers = array(
+            'Authorization' => 'Bearer ' . $api_key,
+        );
+
+        $request_url = self::FILES_ENDPOINT . '/' . rawurlencode( $file_id );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_delete',
+            'Deleting file from OpenAI.',
+            array( 'file_id' => $file_id )
+        );
+
+        $response = wp_remote_request(
+            $request_url,
+            array(
+                'method'  => 'DELETE',
+                'headers' => $request_headers,
+                'timeout' => $timeout,
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI file delete failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_delete_http_error',
+                __( 'The OpenAI file delete request failed to complete.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $code     = wp_remote_retrieve_response_code( $response );
+        $body     = wp_remote_retrieve_body( $response );
+        $decoded  = json_decode( $body, true );
+        $json_err = json_last_error();
+
+        if ( JSON_ERROR_NONE !== $json_err ) {
+            WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI file delete response.', array( 'body' => $body ) );
+
+            return new WP_Error( 'wp_mcp_ai_file_delete_invalid_response', __( 'OpenAI returned malformed JSON for the file delete request.', 'wp-mcp-ai' ) );
+        }
+
+        if ( $code < 200 || $code >= 300 ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI file delete returned an error.', array( 'code' => $code, 'body' => $decoded ) );
+
+            $message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file delete request failed.', 'wp-mcp-ai' );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_delete_error',
+                $message,
+                array(
+                    'status'   => $code,
+                    'response' => $decoded,
+                )
+            );
+        }
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_deleted',
+            'OpenAI file delete completed.',
+            array( 'file_id' => $file_id )
+        );
+
+        return is_array( $decoded ) ? $decoded : array();
+    }
+
+    /**
      * Perform a chat completion request.
      *
      * @param array $messages Message payload to send to OpenAI.
