@@ -557,6 +557,69 @@
         return config;
     }
 
+    function createAttachmentSegmentsFromUploads(uploads) {
+        if (!uploads || !uploads.length) {
+            return [];
+        }
+
+        return uploads
+            .map(function (item) {
+                if (!item || !item.record) {
+                    return null;
+                }
+
+                var record = item.record;
+                var rawId = typeof record.id === 'undefined' ? null : record.id;
+                var attachmentId = 0;
+
+                if (typeof rawId === 'number') {
+                    attachmentId = rawId;
+                } else if (typeof rawId === 'string' && rawId.trim()) {
+                    attachmentId = parseInt(rawId, 10);
+                }
+
+                if (!attachmentId || !isFinite(attachmentId)) {
+                    return null;
+                }
+
+                var mime = typeof record.mime === 'string' ? record.mime.toLowerCase() : '';
+                var isImage = mime.indexOf('image/') === 0;
+                var segment = {
+                    type: isImage ? 'input_image' : 'input_file',
+                    attachment_id: attachmentId,
+                };
+
+                var name = typeof record.name === 'string' ? record.name.trim() : '';
+                if (name && !isImage) {
+                    segment.display_name = name;
+                }
+
+                return segment;
+            })
+            .filter(Boolean);
+    }
+
+    function appendAttachmentSegments(message, attachmentSegments) {
+        if (!message || !attachmentSegments || !attachmentSegments.length) {
+            return;
+        }
+
+        var existing = message.content;
+        var segments = Array.isArray(existing) ? existing.slice() : [];
+
+        if (!Array.isArray(existing)) {
+            var text = extractTextFromContent(existing);
+            if (text && text.trim()) {
+                segments.push({
+                    type: 'text',
+                    text: text.trim(),
+                });
+            }
+        }
+
+        message.content = segments.concat(attachmentSegments);
+    }
+
     function onNewMessage(state, event) {
         if (!event || !event.detail || !event.detail.message) {
             return;
@@ -578,15 +641,12 @@
         }
 
         if (state.pendingUploads.length) {
-            converted.attachments = state.pendingUploads.map(function (item) {
-                return {
-                    id: item.record.id,
-                    url: item.record.url,
-                    name: item.record.name,
-                };
-            });
-
+            var attachmentSegments = createAttachmentSegmentsFromUploads(state.pendingUploads);
             state.pendingUploads = [];
+
+            if (attachmentSegments.length) {
+                appendAttachmentSegments(converted, attachmentSegments);
+            }
         }
 
         state.conversation.push(converted);
