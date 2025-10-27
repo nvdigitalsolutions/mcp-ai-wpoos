@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 
 /**
  * Provides an integration point for OpenAI external actions.
@@ -148,12 +149,14 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
             return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
         }
 
+        $timeout = $this->resolve_request_timeout( $arguments, $context );
+
         $request_args = array(
             'headers' => array(
                 'Authorization' => 'Bearer ' . $api_key,
                 'Content-Type'  => 'application/json',
             ),
-            'timeout' => 30,
+            'timeout' => $timeout,
             'body'    => $encoded_body,
         );
 
@@ -205,6 +208,53 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
             'metadata' => isset( $decoded['metadata'] ) ? $decoded['metadata'] : null,
             'raw'      => $decoded,
         );
+    }
+
+    /**
+     * Determine the HTTP request timeout for the external action call.
+     *
+     * @param array $arguments Tool arguments supplied for execution.
+     * @param array $context   Execution context for the tool run.
+     * @return int
+     */
+    protected function resolve_request_timeout( array $arguments, array $context ) {
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+
+        $candidates = array();
+
+        if ( isset( $arguments['timeout'] ) ) {
+            $candidates[] = $arguments['timeout'];
+        }
+
+        if ( isset( $arguments['request_timeout'] ) ) {
+            $candidates[] = $arguments['request_timeout'];
+        }
+
+        if ( isset( $context['assistant_config'] ) && is_array( $context['assistant_config'] ) ) {
+            if ( isset( $context['assistant_config']['external_action_request_timeout'] ) ) {
+                $candidates[] = $context['assistant_config']['external_action_request_timeout'];
+            }
+
+            if ( isset( $context['assistant_config']['request_timeout'] ) ) {
+                $candidates[] = $context['assistant_config']['request_timeout'];
+            }
+        }
+
+        if ( isset( $context['request_timeout'] ) ) {
+            $candidates[] = $context['request_timeout'];
+        }
+
+        foreach ( $candidates as $candidate ) {
+            $candidate = absint( $candidate );
+
+            if ( $candidate > 0 ) {
+                $timeout = $candidate;
+                break;
+            }
+        }
+
+        return max( 5, $timeout );
     }
 
     /**
