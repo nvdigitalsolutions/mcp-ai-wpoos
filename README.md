@@ -33,16 +33,21 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 ## 🚀 Features
 - 🧠 Create AI Assistants via a custom post type (`ai_assistant`)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
+- 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
 - 🔧 Tool Registry for registering PHP functions callable by the AI
 - 🛍 WooCommerce-aware tools (fetch orders, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
+- 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
+- 🧊 Elementor widget for dropping the chat UI into Elementor-powered layouts
 - 🔐 Secure REST API endpoints
-- 🔑 Configurable OpenAI key via settings panel
+- 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🧱 Ready for extension with ChatKit Add-on
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
+- 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- 🧷 Granular control over allowed attachment MIME types for chat uploads
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
@@ -64,11 +69,36 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 Complete these after installation to unlock every integration point:
 
 - [ ] **Add your OpenAI API key** in **Settings → MCP AI → OpenAI API Key** so API calls are authorised.
+- [ ] **Add your Gemini API key** in **Settings → MCP AI → Gemini API Key** if you plan to route assistants through Gemini.
 - [ ] **Confirm or override the default model** via **Settings → MCP AI → Default Model** (`gpt-4o-mini` ships as the default).
+- [ ] **Set a default Gemini model** under **Settings → MCP AI → Default Gemini Model** when Gemini is enabled.
+- [ ] **Choose the default provider** from **Settings → MCP AI → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
 - [ ] **Adjust the request timeout** under **Settings → MCP AI → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
 - [ ] **Select a default assistant** with **Settings → MCP AI → Default Assistant** so REST and shortcode requests have a fallback.
 - [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
 - [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
+- [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Crawl4AI Integration** when you want the Crawl4AI tool to be available to assistants.
+- [ ] **Review attachment MIME overrides** in **Settings → MCP AI → Attachments** before enabling file uploads for end users.
+
+## 🧠 Language Model Providers (OpenAI & Gemini)
+
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI or Gemini while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+
+## 🌐 Crawl4AI Integration
+
+When a Crawl4AI base URL (and optional API key) is supplied in the settings, assistants gain access to the **Run Crawl4AI Job** tool for submitting crawl jobs, adjusting priorities, and optionally polling for completion results — restricted to administrators with `manage_options` capabilities.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L15-L193】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L489】 Leave the base URL blank to disable the integration; the tool explains why it is unavailable when settings are incomplete.
+
+## 🧊 Elementor Widget
+
+Sites running Elementor automatically register a chat widget that mirrors the `[mcp_ai_chat]` shortcode, making it easy to drop conversations into Elementor layouts without custom HTML.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L62】 The integration boots only when Elementor is active, so it adds no overhead to non-Elementor installs.
+
+## 🧮 Usage Tracking
+
+The plugin records aggregate token usage per user, provider, and model whenever responses include usage metadata, simplifying internal reconciliation or billing workflows. Usage data is stored as user meta and automatically purged when accounts are deleted, and hooks are exposed for custom reporting pipelines.【F:includes/class-wp-mcp-ai-usage-tracker.php†L12-L119】
+
+## 🧷 Attachment MIME Controls
+
+Administrators can override the default image and file MIME allowlists used by the chat uploader. The settings screen accepts one MIME type per line, and the attachment helper merges the overrides with its defaults before enforcing them on upload and shortcode configuration.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L669】【F:includes/class-wp-mcp-ai-message-attachments.php†L503-L559】 Leave the fields empty to fall back to the bundled safe defaults.
 
 ## 🔒 MCP Server Authentication
 
