@@ -1395,6 +1395,16 @@ class WP_MCP_AI_OpenAI_Client {
      * @return array
      */
     protected function convert_responses_result_to_chat_completion( array $response ) {
+        if ( isset( $response['response'] ) && is_array( $response['response'] ) ) {
+            $nested_response = $this->convert_responses_result_to_chat_completion( $response['response'] );
+
+            $response['response'] = $nested_response;
+
+            if ( ! isset( $response['choices'] ) && isset( $nested_response['choices'] ) ) {
+                $response['choices'] = $nested_response['choices'];
+            }
+        }
+
         if ( isset( $response['choices'] ) && is_array( $response['choices'] ) ) {
             $normalised = array();
 
@@ -1469,14 +1479,37 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( empty( $choices ) && isset( $response['output_text'] ) ) {
-            $choices[] = array(
-                'index'         => 0,
-                'message'       => array(
-                    'role'    => 'assistant',
-                    'content' => (string) $response['output_text'],
-                ),
-                'finish_reason' => 'stop',
-            );
+            $output_text = $response['output_text'];
+
+            if ( is_array( $output_text ) ) {
+                $output_text = array_filter(
+                    array_map( static function ( $item ) {
+                        if ( is_string( $item ) || is_numeric( $item ) ) {
+                            return (string) $item;
+                        }
+
+                        return '';
+                    }, $output_text ),
+                    static function ( $part ) {
+                        return '' !== trim( $part );
+                    }
+                );
+
+                $output_text = implode( "\n\n", $output_text );
+            }
+
+            $output_text = is_string( $output_text ) || is_numeric( $output_text ) ? (string) $output_text : '';
+
+            if ( '' !== $output_text ) {
+                $choices[] = array(
+                    'index'         => 0,
+                    'message'       => array(
+                        'role'    => 'assistant',
+                        'content' => $output_text,
+                    ),
+                    'finish_reason' => 'stop',
+                );
+            }
         }
 
         if ( empty( $choices ) ) {

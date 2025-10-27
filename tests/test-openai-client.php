@@ -600,6 +600,168 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure Responses API payloads nested under the `response` key are flattened for chat rendering.
+     */
+    public function test_responses_nested_payload_is_normalised() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'       => 'resp-nested',
+                        'response' => array(
+                            'status' => 'completed',
+                            'output' => array(
+                                array(
+                                    'id'      => 'msg-1',
+                                    'type'    => 'message',
+                                    'role'    => 'assistant',
+                                    'content' => array(
+                                        array(
+                                            'type' => 'output_text',
+                                            'text' => array(
+                                                'value'       => 'Nested payload text.',
+                                                'annotations' => array(),
+                                            ),
+                                        ),
+                                    ),
+                                    'finish_reason' => 'stop',
+                                ),
+                            ),
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-789',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-789',
+                    'filename'  => 'report.pdf',
+                    'mime_type' => 'application/pdf',
+                    'data'      => base64_encode( 'PDF data' ),
+                    'bytes'     => strlen( 'PDF data' ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+        $this->assertSame( 'Nested payload text.', $response['choices'][0]['message']['content'] );
+        $this->assertArrayHasKey( 'response', $response );
+        $this->assertArrayHasKey( 'choices', $response['response'] );
+        $this->assertSame( 'Nested payload text.', $response['response']['choices'][0]['message']['content'] );
+    }
+
+    /**
+     * Ensure Responses API output_text arrays are collapsed into a single assistant message.
+     */
+    public function test_responses_output_text_arrays_are_joined() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'          => 'resp-output-array',
+                        'output_text' => array(
+                            'First paragraph.',
+                            'Second paragraph.',
+                            '',
+                            42,
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'    => 'input_file',
+                        'file_id' => 'file-123',
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-123',
+                    'filename'  => 'doc.pdf',
+                    'mime_type' => 'application/pdf',
+                    'data'      => base64_encode( 'PDF data' ),
+                    'bytes'     => strlen( 'PDF data' ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertSame( "First paragraph.\n\nSecond paragraph.\n\n42", $response['choices'][0]['message']['content'] );
+    }
+
+    /**
      * Ensure Responses API payloads include the tool name alongside the function definition.
      */
     public function test_responses_payload_includes_tool_name() {
