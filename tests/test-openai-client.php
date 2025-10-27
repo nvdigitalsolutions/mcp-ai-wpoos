@@ -1696,4 +1696,164 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'wav', $payload['format'] );
         $this->assertSame( 1.5, $payload['speed'] );
     }
+
+    /**
+     * Ensure the audio transcription helper requires an API key.
+     */
+    public function test_transcribe_audio_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->transcribe_audio( '/tmp/non-existent-file.wav', array() );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure the audio transcription helper validates the file path when an API key exists.
+     */
+    public function test_transcribe_audio_requires_existing_file() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 15;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->transcribe_audio( '/tmp/non-existent-file.wav', array() );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_transcription_missing_file', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure audio transcription requests are issued to the correct endpoint with the expected payload.
+     */
+    public function test_transcribe_audio_sends_expected_payload() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 99;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $tmp_file = wp_tempnam( 'transcription-test.mp3' );
+        file_put_contents( $tmp_file, 'FAKEAUDIO' );
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'text'     => 'Hello translated world',
+                'language' => 'en',
+                'duration' => 2.5,
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $response = $client->transcribe_audio(
+            $tmp_file,
+            array(
+                'translate'       => true,
+                'model'           => 'gpt-test-transcribe',
+                'prompt'          => 'Helpful hint',
+                'temperature'     => 0.4,
+                'response_format' => 'json',
+                'timeout'         => 123,
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        unlink( $tmp_file );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::AUDIO_TRANSLATIONS_ENDPOINT, $captured_request['url'] );
+        $this->assertArrayHasKey( 'headers', $captured_request['args'] );
+        $this->assertArrayHasKey( 'body', $captured_request['args'] );
+        $this->assertSame( 123, $captured_request['args']['timeout'] );
+
+        $content_type = $captured_request['args']['headers']['Content-Type'];
+        $this->assertStringContainsString( 'multipart/form-data', $content_type );
+        $this->assertStringContainsString( 'boundary=', $content_type );
+
+        $body = $captured_request['args']['body'];
+        $this->assertStringContainsString( 'name="model"', $body );
+        $this->assertStringContainsString( 'gpt-test-transcribe', $body );
+        $this->assertStringContainsString( 'name="prompt"', $body );
+        $this->assertStringContainsString( 'Helpful hint', $body );
+        $this->assertStringContainsString( 'name="temperature"', $body );
+        $this->assertStringContainsString( '0.4', $body );
+        $this->assertStringContainsString( 'name="response_format"', $body );
+        $this->assertStringContainsString( 'json', $body );
+
+        $this->assertIsArray( $response );
+        $this->assertSame( 'Hello translated world', $response['text'] );
+        $this->assertSame( 'gpt-test-transcribe', $response['model'] );
+        $this->assertTrue( $response['translated'] );
+        $this->assertSame( 'json', $response['format'] );
+        $this->assertSame( 'en', $response['language'] );
+        $this->assertSame( 2.5, $response['duration'] );
+    }
+
+    /**
+     * Ensure transcription requests that are not translations use the transcription endpoint.
+     */
+    public function test_transcribe_audio_transcription_endpoint_when_not_translating() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 15;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $tmp_file = wp_tempnam( 'transcription-test.wav' );
+        file_put_contents( $tmp_file, 'FAKEAUDIO' );
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            return array(
+                'body'     => wp_json_encode( array( 'text' => 'Hello world', 'language' => 'en' ) ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $response = $client->transcribe_audio(
+            $tmp_file,
+            array(
+                'translate'       => false,
+                'model'           => 'gpt-test-transcribe',
+                'response_format' => 'verbose_json',
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+        unlink( $tmp_file );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::AUDIO_TRANSCRIPTIONS_ENDPOINT, $captured_request['url'] );
+
+        $this->assertIsArray( $response );
+        $this->assertFalse( $response['translated'] );
+        $this->assertSame( 'verbose_json', $response['format'] );
+    }
 }
