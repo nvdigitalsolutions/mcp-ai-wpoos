@@ -15,6 +15,140 @@
     var SPEECH_SPINNER_ICON =
         '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
 
+    function getString(key, fallback) {
+        if (globalConfig.strings && Object.prototype.hasOwnProperty.call(globalConfig.strings, key)) {
+            return globalConfig.strings[key];
+        }
+        return fallback;
+    }
+
+    function formatBytes(bytes) {
+        if (typeof bytes !== 'number' || !isFinite(bytes) || bytes <= 0) {
+            return '';
+        }
+
+        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var exponent = Math.floor(Math.log(bytes) / Math.log(1024));
+        exponent = Math.min(units.length - 1, Math.max(exponent, 0));
+
+        var value = bytes / Math.pow(1024, exponent);
+        var decimals = exponent === 0 ? 0 : value >= 10 ? 1 : 2;
+
+        return value.toFixed(decimals) + ' ' + units[exponent];
+    }
+
+    function buildAttachmentMeta(record) {
+        if (!record) {
+            return '';
+        }
+
+        var parts = [];
+        var size = null;
+
+        if (typeof record.size === 'number') {
+            size = record.size;
+        } else if (typeof record.bytes === 'number') {
+            size = record.bytes;
+        }
+
+        if (size && size > 0) {
+            parts.push(formatBytes(size));
+        }
+
+        var mime = record.mime || record.mime_type || record.type;
+        if (mime) {
+            parts.push(mime);
+        }
+
+        return parts.join(' • ');
+    }
+
+    function normaliseToolResultForDisplay(toolName, result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        var url = typeof result.url === 'string' ? result.url : '';
+        if (!url) {
+            return null;
+        }
+
+        var label = '';
+        if (typeof result.title === 'string' && result.title.trim()) {
+            label = result.title.trim();
+        } else if (typeof result.file_name === 'string' && result.file_name.trim()) {
+            label = result.file_name.trim();
+        } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
+            label = result.fileName.trim();
+        }
+
+        var metaParts = [];
+        var metaRecord = {
+            bytes: typeof result.bytes === 'number' ? result.bytes : null,
+            mime_type: result.mime_type || result.mimeType || '',
+        };
+
+        var baseMeta = buildAttachmentMeta(metaRecord);
+        if (baseMeta) {
+            metaParts.push(baseMeta);
+        }
+
+        if (toolName === 'generate_openai_image') {
+            if (typeof result.size === 'string' && result.size.trim()) {
+                metaParts.push(result.size.trim());
+            }
+
+            if (typeof result.quality === 'string' && result.quality.trim()) {
+                metaParts.push(result.quality.trim());
+            }
+        } else if (toolName === SPEECH_TOOL_NAME) {
+            if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
+                metaParts.push(result.duration_formatted.trim());
+            }
+
+            if (typeof result.format === 'string' && result.format.trim()) {
+                metaParts.push(result.format.trim().toUpperCase());
+            }
+        }
+
+        var attachmentMeta = metaParts.join(' • ');
+        var attachment = {
+            url: url,
+            label: label || getString('downloadAttachment', 'Download attachment'),
+            name: label || getString('downloadAttachment', 'Download attachment'),
+            downloadName: result.file_name || result.fileName || '',
+            meta: attachmentMeta,
+        };
+
+        var mime = result.mime_type || result.mimeType || '';
+        if (mime) {
+            attachment.type = mime;
+        }
+
+        if (typeof result.bytes === 'number') {
+            attachment.size = result.bytes;
+            attachment.bytes = result.bytes;
+        }
+
+        var attachments = [attachment];
+        var text = '';
+
+        if (typeof result.text === 'string' && result.text.trim()) {
+            text = result.text.trim();
+        } else if (typeof result.message === 'string' && result.message.trim()) {
+            text = result.message.trim();
+        } else if (toolName === 'generate_openai_image') {
+            text = getString('imageToolSuccess', 'Image saved to the Media Library.');
+        } else if (toolName === SPEECH_TOOL_NAME) {
+            text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
+        }
+
+        return {
+            text: text,
+            attachments: attachments,
+        };
+    }
+
     function parseJsonAttribute(value) {
         if (typeof value !== 'string' || !value) {
             return null;
@@ -889,26 +1023,47 @@
             })
             .then(function (response) {
                 var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
-                var formatted = '';
+                var toolContent = '';
+                var display = { text: '', attachments: [] };
 
                 if (typeof result === 'string') {
-                    formatted = result;
+                    toolContent = result;
+                    display.text = result;
                 } else if (result !== null && typeof result !== 'undefined') {
-                    try {
-                        formatted = JSON.stringify(result, null, 2);
-                    } catch (error) {
-                        formatted = String(result);
+                    if (typeof result === 'object') {
+                        var normalised = normaliseToolResultForDisplay(toolName, result);
+
+                        try {
+                            toolContent = JSON.stringify(result, null, 2);
+                        } catch (error) {
+                            toolContent = String(result);
+                        }
+
+                        if (normalised) {
+                            display = normalised;
+                        } else {
+                            display.text = toolContent;
+                        }
+                    } else {
+                        toolContent = String(result);
+                        display.text = toolContent;
                     }
                 }
 
-                chat.addMessage({
+                var messagePayload = {
                     role: 'tool',
-                    text: formatted,
-                });
+                    text: typeof display.text === 'string' ? display.text : '',
+                };
+
+                if (display.attachments && display.attachments.length) {
+                    messagePayload.files = display.attachments;
+                }
+
+                chat.addMessage(messagePayload);
 
                 var toolMessage = {
                     role: 'tool',
-                    content: formatted,
+                    content: toolContent,
                 };
 
                 if (call && call.id) {

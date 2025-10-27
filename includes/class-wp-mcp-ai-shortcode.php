@@ -95,6 +95,8 @@ class WP_MCP_AI_Shortcode {
                     'toolExecuting'      => __( 'Running tool: %s', 'wp-mcp-ai' ),
                     'toolSuccess'        => __( 'Tool response ready.', 'wp-mcp-ai' ),
                     'toolError'          => __( 'The tool request failed.', 'wp-mcp-ai' ),
+                    'speechToolSuccess'  => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
+                    'imageToolSuccess'   => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
                     'emptyMessage'       => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
                     'attachFile'         => __( 'Attach file', 'wp-mcp-ai' ),
                     'attachmentsLabel'   => __( 'Attachments', 'wp-mcp-ai' ),

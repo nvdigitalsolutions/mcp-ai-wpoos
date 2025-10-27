@@ -1529,6 +1529,87 @@
         return parts.join(' • ');
     }
 
+    function normaliseToolResultForDisplay(toolName, result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        var url = typeof result.url === 'string' ? result.url : '';
+        if (!url) {
+            return null;
+        }
+
+        var attachments = [];
+        var label = '';
+
+        if (typeof result.title === 'string' && result.title.trim()) {
+            label = result.title.trim();
+        } else if (typeof result.file_name === 'string' && result.file_name.trim()) {
+            label = result.file_name.trim();
+        } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
+            label = result.fileName.trim();
+        }
+
+        var metaParts = [];
+        var metaRecord = {
+            bytes: typeof result.bytes === 'number' ? result.bytes : null,
+            mime_type: result.mime_type || result.mimeType || '',
+        };
+
+        var baseMeta = buildAttachmentMeta(metaRecord);
+        if (baseMeta) {
+            metaParts.push(baseMeta);
+        }
+
+        if (toolName === 'generate_openai_image') {
+            if (typeof result.size === 'string' && result.size.trim()) {
+                metaParts.push(result.size.trim());
+            }
+
+            if (typeof result.quality === 'string' && result.quality.trim()) {
+                metaParts.push(result.quality.trim());
+            }
+        } else if (toolName === SPEECH_TOOL_NAME) {
+            if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
+                metaParts.push(result.duration_formatted.trim());
+            }
+
+            if (typeof result.format === 'string' && result.format.trim()) {
+                metaParts.push(result.format.trim().toUpperCase());
+            }
+        }
+
+        var attachmentMeta = metaParts.join(' • ');
+
+        attachments.push({
+            url: url,
+            label: label || getString('downloadAttachment', 'Download attachment'),
+            downloadName: result.file_name || result.fileName || '',
+            meta: attachmentMeta,
+        });
+
+        if (!attachments.length) {
+            return null;
+        }
+
+        var text = '';
+
+        if (typeof result.text === 'string' && result.text.trim()) {
+            text = result.text.trim();
+        } else if (typeof result.message === 'string' && result.message.trim()) {
+            text = result.message.trim();
+        } else if (toolName === 'generate_openai_image') {
+            text = getString('imageToolSuccess', 'Image saved to the Media Library.');
+        } else if (toolName === SPEECH_TOOL_NAME) {
+            text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
+        }
+
+        return {
+            text: text,
+            attachments: attachments,
+        };
+    }
+
     function formatBytes(bytes) {
         if (typeof bytes !== 'number' || !isFinite(bytes) || bytes <= 0) {
             return '';
@@ -2006,23 +2087,38 @@
             })
             .then(function (response) {
                 var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
-                var formatted = '';
+                var toolContent = '';
+                var displayPayload = '';
 
                 if (typeof result === 'string') {
-                    formatted = result;
+                    toolContent = result;
+                    displayPayload = result;
                 } else if (result !== null && typeof result !== 'undefined') {
-                    try {
-                        formatted = JSON.stringify(result, null, 2);
-                    } catch (error) {
-                        formatted = String(result);
+                    if (typeof result === 'object') {
+                        var normalised = normaliseToolResultForDisplay(toolName, result);
+
+                        try {
+                            toolContent = JSON.stringify(result, null, 2);
+                        } catch (error) {
+                            toolContent = String(result);
+                        }
+
+                        if (normalised) {
+                            displayPayload = normalised;
+                        } else {
+                            displayPayload = toolContent;
+                        }
+                    } else {
+                        toolContent = String(result);
+                        displayPayload = toolContent;
                     }
                 }
 
-                appendMessage(state.messagesEl, 'tool', formatted);
+                appendMessage(state.messagesEl, 'tool', displayPayload);
 
                 var toolMessage = {
                     role: 'tool',
-                    content: formatted,
+                    content: toolContent,
                 };
 
                 if (call && call.id) {
