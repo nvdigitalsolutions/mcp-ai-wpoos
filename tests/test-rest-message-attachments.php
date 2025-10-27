@@ -406,6 +406,100 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure attachments embedded throughout a conversation are preserved.
+     */
+    public function test_conversation_with_multiple_attachments_is_normalised() {
+        $assistant_id        = $this->create_assistant_post();
+        $image_attachment_id = $this->create_image_attachment( 'scene.png' );
+        $file_attachment_id  = $this->create_text_attachment( 'outline.txt', 'Outline details.' );
+
+        $expected_image_file_id = 'wp-attachment-' . $image_attachment_id;
+        $expected_file_file_id  = 'wp-attachment-' . $file_attachment_id;
+
+        $this->dispatch_chat_request(
+            $assistant_id,
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type' => 'text',
+                            'text' => 'Please review these assets.',
+                        ),
+                        array(
+                            'type'          => 'input_image',
+                            'attachment_id' => $image_attachment_id,
+                            'detail'        => 'low',
+                            'caption'       => '  Scene reference  ',
+                        ),
+                    ),
+                ),
+                array(
+                    'role'    => 'assistant',
+                    'content' => 'Thanks, taking a look now.',
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'          => 'input_file',
+                            'attachment_id' => $file_attachment_id,
+                            'display_name'  => '  Outline draft  ',
+                        ),
+                    ),
+                ),
+            ),
+            function ( $messages ) use ( $expected_image_file_id, $expected_file_file_id ) {
+                $this->assertCount( 3, $messages );
+
+                $first_message = $messages[0];
+                $this->assertSame( 'user', $first_message['role'] );
+                $this->assertCount( 2, $first_message['content'] );
+                $this->assertSame( 'text', $first_message['content'][0]['type'] );
+                $this->assertSame( 'Please review these assets.', $first_message['content'][0]['text'] );
+
+                $image_segment = $first_message['content'][1];
+                $this->assertSame( 'input_image', $image_segment['type'] );
+                $this->assertArrayHasKey( 'image_file', $image_segment );
+                $this->assertSame( $expected_image_file_id, $image_segment['image_file']['file_id'] );
+                $this->assertSame( 'Scene reference', $image_segment['caption'] );
+                $this->assertSame( 'low', $image_segment['detail'] );
+
+                $second_message = $messages[1];
+                $this->assertSame( 'assistant', $second_message['role'] );
+                $this->assertCount( 1, $second_message['content'] );
+                $this->assertSame( 'text', $second_message['content'][0]['type'] );
+                $this->assertSame( 'Thanks, taking a look now.', $second_message['content'][0]['text'] );
+
+                $third_message = $messages[2];
+                $this->assertSame( 'user', $third_message['role'] );
+                $this->assertCount( 1, $third_message['content'] );
+                $this->assertSame( 'input_file', $third_message['content'][0]['type'] );
+                $this->assertSame( $expected_file_file_id, $third_message['content'][0]['file_id'] );
+                $this->assertSame( 'Outline draft', $third_message['content'][0]['display_name'] );
+
+                return true;
+            },
+            function ( $options ) use ( $expected_image_file_id, $expected_file_file_id ) {
+                $this->assertArrayHasKey( 'attachments', $options );
+                $this->assertCount( 2, $options['attachments'] );
+
+                $image_attachment = $options['attachments'][0];
+                $this->assertSame( $expected_image_file_id, $image_attachment['id'] );
+                $this->assertSame( 'image/png', $image_attachment['mime_type'] );
+                $this->assertNotEmpty( $image_attachment['data'] );
+
+                $file_attachment = $options['attachments'][1];
+                $this->assertSame( $expected_file_file_id, $file_attachment['id'] );
+                $this->assertSame( 'text/plain', $file_attachment['mime_type'] );
+                $this->assertSame( base64_encode( 'Outline details.' ), $file_attachment['data'] );
+
+                return true;
+            }
+        );
+    }
+
+    /**
      * Ensure DOCX file attachments are accepted and forwarded to the model.
      */
     public function test_docx_file_attachment_is_prepared() {
