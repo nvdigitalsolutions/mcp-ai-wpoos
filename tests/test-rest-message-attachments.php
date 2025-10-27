@@ -267,7 +267,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $assistant_id = $this->create_assistant_post();
         $attachment_id = $this->create_image_attachment( 'vision.png' );
 
-        $expected_file_id = 'wp-attachment-' . $attachment_id;
+        $resolved_file_id = null;
 
         $this->dispatch_chat_request(
             $assistant_id,
@@ -287,7 +287,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     ),
                 ),
             ),
-            function ( $messages ) use ( $expected_file_id ) {
+            function ( $messages ) use ( &$resolved_file_id ) {
                 $this->assertNotEmpty( $messages );
                 $segments = $messages[0]['content'];
 
@@ -297,19 +297,23 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $image_segment = $segments[1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
-                $this->assertSame( $expected_file_id, $image_segment['image_file']['file_id'] );
+                $this->assertArrayHasKey( 'image_file', $image_segment );
+                $this->assertArrayHasKey( 'file_id', $image_segment['image_file'] );
+                $resolved_file_id = $image_segment['image_file']['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
                 $this->assertSame( 'high', $image_segment['detail'] );
 
                 return true;
             },
-            function ( $options ) use ( $expected_file_id ) {
+            function ( $options ) use ( &$resolved_file_id ) {
                 $this->assertArrayHasKey( 'attachments', $options );
                 $this->assertNotEmpty( $options['attachments'] );
                 $attachment = $options['attachments'][0];
 
-                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['file_id'] );
                 $this->assertSame( 'image/png', $attachment['mime_type'] );
-                $this->assertNotEmpty( $attachment['data'] );
+                $this->assertArrayNotHasKey( 'data', $attachment );
 
                 return true;
             }
@@ -322,7 +326,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     public function test_file_attachment_segment_is_prepared() {
         $assistant_id  = $this->create_assistant_post();
         $attachment_id = $this->create_text_attachment( 'notes.txt', 'Important notes.' );
-        $expected_file_id = 'wp-attachment-' . $attachment_id;
+        $resolved_file_id = null;
 
         $this->dispatch_chat_request(
             $assistant_id,
@@ -337,23 +341,25 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     ),
                 ),
             ),
-            function ( $messages ) use ( $expected_file_id ) {
+            function ( $messages ) use ( &$resolved_file_id ) {
                 $this->assertNotEmpty( $messages );
 
                 $segment = $messages[0]['content'][0];
                 $this->assertSame( 'input_file', $segment['type'] );
-                $this->assertSame( $expected_file_id, $segment['file_id'] );
+                $resolved_file_id = $segment['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 
                 return true;
             },
-            function ( $options ) use ( $expected_file_id ) {
+            function ( $options ) use ( &$resolved_file_id ) {
                 $this->assertArrayHasKey( 'attachments', $options );
                 $this->assertNotEmpty( $options['attachments'] );
 
                 $attachment = $options['attachments'][0];
-                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['file_id'] );
                 $this->assertSame( 'text/plain', $attachment['mime_type'] );
-                $this->assertSame( base64_encode( 'Important notes.' ), $attachment['data'] );
+                $this->assertArrayNotHasKey( 'data', $attachment );
 
                 return true;
             }
@@ -366,7 +372,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     public function test_zero_byte_file_attachment_is_allowed() {
         $assistant_id  = $this->create_assistant_post();
         $attachment_id = $this->create_text_attachment( 'empty.txt', '' );
-        $expected_file_id = 'wp-attachment-' . $attachment_id;
+        $resolved_file_id = null;
 
         $this->dispatch_chat_request(
             $assistant_id,
@@ -381,24 +387,26 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     ),
                 ),
             ),
-            function ( $messages ) use ( $expected_file_id ) {
+            function ( $messages ) use ( &$resolved_file_id ) {
                 $this->assertNotEmpty( $messages );
 
                 $segment = $messages[0]['content'][0];
                 $this->assertSame( 'input_file', $segment['type'] );
-                $this->assertSame( $expected_file_id, $segment['file_id'] );
+                $resolved_file_id = $segment['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 
                 return true;
             },
-            function ( $options ) use ( $expected_file_id ) {
+            function ( $options ) use ( &$resolved_file_id ) {
                 $this->assertArrayHasKey( 'attachments', $options );
                 $this->assertNotEmpty( $options['attachments'] );
 
                 $attachment = $options['attachments'][0];
-                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['file_id'] );
                 $this->assertSame( 'text/plain', $attachment['mime_type'] );
-                $this->assertSame( '', $attachment['data'] );
                 $this->assertSame( 0, $attachment['bytes'] );
+                $this->assertArrayNotHasKey( 'data', $attachment );
 
                 return true;
             }
@@ -413,8 +421,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $image_attachment_id = $this->create_image_attachment( 'scene.png' );
         $file_attachment_id  = $this->create_text_attachment( 'outline.txt', 'Outline details.' );
 
-        $expected_image_file_id = 'wp-attachment-' . $image_attachment_id;
-        $expected_file_file_id  = 'wp-attachment-' . $file_attachment_id;
+        $image_file_id = null;
+        $file_file_id  = null;
 
         $this->dispatch_chat_request(
             $assistant_id,
@@ -449,7 +457,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     ),
                 ),
             ),
-            function ( $messages ) use ( $expected_image_file_id, $expected_file_file_id ) {
+            function ( $messages ) use ( &$image_file_id, &$file_file_id ) {
                 $this->assertCount( 3, $messages );
 
                 $first_message = $messages[0];
@@ -461,7 +469,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 $image_segment = $first_message['content'][1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
                 $this->assertArrayHasKey( 'image_file', $image_segment );
-                $this->assertSame( $expected_image_file_id, $image_segment['image_file']['file_id'] );
+                $image_file_id = $image_segment['image_file']['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $image_file_id );
                 $this->assertSame( 'Scene reference', $image_segment['caption'] );
                 $this->assertSame( 'low', $image_segment['detail'] );
 
@@ -475,24 +484,27 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 $this->assertSame( 'user', $third_message['role'] );
                 $this->assertCount( 1, $third_message['content'] );
                 $this->assertSame( 'input_file', $third_message['content'][0]['type'] );
-                $this->assertSame( $expected_file_file_id, $third_message['content'][0]['file_id'] );
+                $file_file_id = $third_message['content'][0]['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $file_file_id );
                 $this->assertSame( 'Outline draft', $third_message['content'][0]['display_name'] );
 
                 return true;
             },
-            function ( $options ) use ( $expected_image_file_id, $expected_file_file_id ) {
+            function ( $options ) use ( &$image_file_id, &$file_file_id ) {
                 $this->assertArrayHasKey( 'attachments', $options );
                 $this->assertCount( 2, $options['attachments'] );
 
                 $image_attachment = $options['attachments'][0];
-                $this->assertSame( $expected_image_file_id, $image_attachment['id'] );
+                $this->assertSame( $image_file_id, $image_attachment['id'] );
+                $this->assertSame( $image_file_id, $image_attachment['file_id'] );
                 $this->assertSame( 'image/png', $image_attachment['mime_type'] );
-                $this->assertNotEmpty( $image_attachment['data'] );
+                $this->assertArrayNotHasKey( 'data', $image_attachment );
 
                 $file_attachment = $options['attachments'][1];
-                $this->assertSame( $expected_file_file_id, $file_attachment['id'] );
+                $this->assertSame( $file_file_id, $file_attachment['id'] );
+                $this->assertSame( $file_file_id, $file_attachment['file_id'] );
                 $this->assertSame( 'text/plain', $file_attachment['mime_type'] );
-                $this->assertSame( base64_encode( 'Outline details.' ), $file_attachment['data'] );
+                $this->assertArrayNotHasKey( 'data', $file_attachment );
 
                 return true;
             }
@@ -507,8 +519,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
         list( $attachment_id, $file_path ) = $this->create_docx_attachment( 'notes.docx', "Important\nDOCX notes." );
 
-        $expected_file_id = 'wp-attachment-' . $attachment_id;
-        $expected_base64  = base64_encode( (string) file_get_contents( $file_path ) );
+        $resolved_file_id = null;
 
         $this->dispatch_chat_request(
             $assistant_id,
@@ -523,23 +534,25 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     ),
                 ),
             ),
-            function ( $messages ) use ( $expected_file_id ) {
+            function ( $messages ) use ( &$resolved_file_id ) {
                 $this->assertNotEmpty( $messages );
 
                 $segment = $messages[0]['content'][0];
                 $this->assertSame( 'input_file', $segment['type'] );
-                $this->assertSame( $expected_file_id, $segment['file_id'] );
+                $resolved_file_id = $segment['file_id'];
+                $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
 
                 return true;
             },
-            function ( $options ) use ( $expected_file_id, $expected_base64 ) {
+            function ( $options ) use ( &$resolved_file_id ) {
                 $this->assertArrayHasKey( 'attachments', $options );
                 $this->assertNotEmpty( $options['attachments'] );
 
                 $attachment = $options['attachments'][0];
-                $this->assertSame( $expected_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['id'] );
+                $this->assertSame( $resolved_file_id, $attachment['file_id'] );
                 $this->assertSame( 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', $attachment['mime_type'] );
-                $this->assertSame( $expected_base64, $attachment['data'] );
+                $this->assertArrayNotHasKey( 'data', $attachment );
 
                 return true;
             }
@@ -727,6 +740,36 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
             wp_set_current_user( $user_id );
         }
 
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $upload_counter = 0;
+        $upload_filter  = function ( $preempt, $args, $url ) use ( &$upload_counter ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT !== $url ) {
+                return false;
+            }
+
+            $upload_counter++;
+
+            $response_body = array(
+                'id'         => 'file-test-' . $upload_counter,
+                'created_at' => time(),
+                'status'     => 'processed',
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( $response_body ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $upload_filter, 10, 3 );
+
         $options_callback = function ( $options ) use ( $options_assertion ) {
             $this->assertArrayHasKey( 'provider', $options );
             $this->assertSame( 'openai', $options['provider'] );
@@ -764,7 +807,11 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         }
         $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-        $response = rest_get_server()->dispatch( $request );
+        try {
+            $response = rest_get_server()->dispatch( $request );
+        } finally {
+            remove_filter( 'pre_http_request', $upload_filter, 10 );
+        }
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
