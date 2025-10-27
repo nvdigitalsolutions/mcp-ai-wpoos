@@ -52,6 +52,19 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🔊 Generate speech audio via OpenAI's Text-to-Speech API and save the result to the Media Library
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
+- 🪟 Deep Chat front-end container powered by the `[mcp_ai_deep_chat]` shortcode for headless UI integrations
+
+---
+
+## 🗨️ Front-end chat surfaces
+
+WP MCP AI ships multiple ways to embed assistants on the front end:
+
+- **Classic chat shortcode** – `[mcp_ai_chat]` renders the bundled interface with attachment uploads, tool invocation feedback, and optional guest access via `allow_guests="true"`. When guest mode is enabled, the shortcode provisions a temporary token and injects it into the JavaScript bootstrap so visitors without WordPress accounts can continue chatting while still respecting capability checks and attachment safety limits.【F:includes/class-wp-mcp-ai-shortcode.php†L132-L258】【F:includes/class-wp-mcp-ai-shortcode.php†L188-L226】
+- **Deep Chat container** – `[mcp_ai_deep_chat]` outputs a lightweight `<div>` wired with REST endpoints, attachment limits, and the same guest token support so headless front ends or custom JavaScript renderers can consume the assistant without the bundled markup. Pair it with `window.wpMcpAiChat` or a bespoke client to build a fully custom UX.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L34-L140】
+- **Elementor widget** – Drop the chat UI anywhere Elementor is active; it shares the same `allow_guests` control for issuing temporary access tokens to visitors and hands those tokens to the REST layer automatically.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-rest.php†L289-L342】
+
+Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing Deep Chat instances and shortcodes to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
 
 ---
 
