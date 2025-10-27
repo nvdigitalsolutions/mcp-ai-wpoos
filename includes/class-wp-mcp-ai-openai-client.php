@@ -938,7 +938,7 @@ class WP_MCP_AI_OpenAI_Client {
     }
 
     /**
-     * Hydrate a file segment with inline attachment data when available.
+     * Ensure a file segment references an uploaded OpenAI file identifier.
      *
      * @param array $segment     Segment definition.
      * @param array $attachments Attachment lookup keyed by file identifier.
@@ -947,16 +947,33 @@ class WP_MCP_AI_OpenAI_Client {
     protected function populate_responses_file_segment( array $segment, array $attachments ) {
         $file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
 
-        if ( $file_id && isset( $attachments[ $file_id ] ) ) {
-            $attachment = $attachments[ $file_id ];
-            $data       = isset( $attachment['data'] ) ? (string) $attachment['data'] : '';
-            $mime_type  = isset( $attachment['mime_type'] ) ? (string) $attachment['mime_type'] : '';
+        if ( isset( $segment['file_data'] ) ) {
+            unset( $segment['file_data'] );
+        }
 
-            if ( '' !== $data ) {
-                $segment['file_data'] = $this->build_data_url_from_base64( $data, $mime_type );
-                unset( $segment['file_id'] );
-            } else {
-                $segment['file_id'] = $file_id;
+        if ( '' === $file_id ) {
+            return $segment;
+        }
+
+        if ( isset( $attachments[ $file_id ] ) ) {
+            $attachment = $attachments[ $file_id ];
+
+            $openai_file_id = $file_id;
+
+            if ( isset( $attachment['openai_file'] ) ) {
+                if ( is_array( $attachment['openai_file'] ) && isset( $attachment['openai_file']['id'] ) ) {
+                    $openai_file_id = (string) $attachment['openai_file']['id'];
+                } elseif ( is_string( $attachment['openai_file'] ) ) {
+                    $openai_file_id = (string) $attachment['openai_file'];
+                }
+            } elseif ( isset( $attachment['file_id'] ) ) {
+                $openai_file_id = (string) $attachment['file_id'];
+            }
+
+            $segment['file_id'] = $openai_file_id;
+
+            if ( isset( $attachment['openai_file'] ) && is_array( $attachment['openai_file'] ) ) {
+                $segment['file'] = $attachment['openai_file'];
             }
 
             if ( empty( $segment['filename'] ) && ! empty( $attachment['filename'] ) ) {
@@ -965,19 +982,6 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $segment;
-    }
-
-    /**
-     * Convert base64 data and mime type into a data URL string.
-     *
-     * @param string $data      Base64 encoded file contents.
-     * @param string $mime_type File mime type.
-     * @return string
-     */
-    protected function build_data_url_from_base64( $data, $mime_type ) {
-        $mime = $mime_type ? $mime_type : 'application/octet-stream';
-
-        return 'data:' . $mime . ';base64,' . $data;
     }
 
     /**
