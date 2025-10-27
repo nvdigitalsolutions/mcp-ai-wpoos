@@ -185,6 +185,8 @@ class WP_MCP_AI_Shortcode {
         $instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
         $textarea_id = $instance_id . '-input';
 
+        $can_upload_attachments = current_user_can( 'upload_files' );
+
         $config = array(
             'id'             => $instance_id,
             'assistantId'    => $assistant_id,
@@ -192,9 +194,10 @@ class WP_MCP_AI_Shortcode {
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
             'requiredCapability' => $capability ? $capability : '',
             'allowGuests'        => (bool) $allow_guests,
+            'canUploadAttachments' => (bool) $can_upload_attachments,
         );
 
-        if ( class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+        if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
             $allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
             $allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
             $allowed_file_mimes  = isset( $allowed_mime_sets['file'] ) ? (array) $allowed_mime_sets['file'] : array();

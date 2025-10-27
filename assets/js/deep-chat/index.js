@@ -47,6 +47,9 @@
             allowedExtensions: parseJsonAttribute(element.dataset.allowedExtensions) || [],
             fileAccept: element.dataset.fileAccept || '',
             maxAttachmentBytes: getNumberAttribute(element.dataset.maxAttachmentBytes || 0),
+            canUploadAttachments: element.dataset.canUploadAttachments
+                ? element.dataset.canUploadAttachments === 'true'
+                : true,
         };
     }
 
@@ -244,7 +247,11 @@
     }
 
     function uploadAttachment(state, file) {
-        if (!file || !state || !state.config.uploadEndpoint) {
+        if (!state || state.config.canUploadAttachments === false) {
+            return Promise.reject(new Error('Upload unavailable.'));
+        }
+
+        if (!file || !state.config.uploadEndpoint) {
             return Promise.reject(new Error('Upload unavailable.'));
         }
 
@@ -679,14 +686,18 @@
 
         ACTIVE_INSTANCES.set(container, state);
 
-        if (!chatElement.files || typeof chatElement.files !== 'object') {
-            chatElement.files = {};
-        }
+        if (!config.canUploadAttachments) {
+            chatElement.files = Object.assign({}, chatElement.files, { disabled: true });
+        } else {
+            if (!chatElement.files || typeof chatElement.files !== 'object') {
+                chatElement.files = {};
+            }
 
-        try {
-            chatElement.files = Object.assign({}, chatElement.files, createFilesConfig(state));
-        } catch (error) {
-            // Ignore file configuration errors.
+            try {
+                chatElement.files = Object.assign({}, chatElement.files, createFilesConfig(state));
+            } catch (error) {
+                // Ignore file configuration errors.
+            }
         }
 
         chatElement.addEventListener('message', function (event) {
