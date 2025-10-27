@@ -1410,6 +1410,104 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the image helper surfaces an actionable error when no API key is configured.
+     */
+    public function test_generate_image_requires_api_key() {
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $response = $client->generate_image( 'A scenic landscape', array() );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_missing_api_key', $response->get_error_code() );
+    }
+
+    /**
+     * Ensure generate_image issues the correct HTTP request payload.
+     */
+    public function test_generate_image_sends_expected_payload() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 42;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+        $png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+        $png_binary       = base64_decode( $png_base64 );
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'created' => 123,
+                'data'    => array(
+                    array(
+                        'b64_json'       => $png_base64,
+                        'revised_prompt' => 'A revised scenic landscape',
+                    ),
+                ),
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $response = $client->generate_image(
+            'A scenic landscape at sunrise',
+            array(
+                'model'      => 'gpt-image-test',
+                'size'       => '512x512',
+                'quality'    => 'high',
+                'style'      => 'vivid',
+                'background' => 'transparent',
+                'format'     => 'webp',
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'image', $response );
+        $this->assertSame( $png_binary, $response['image'] );
+        $this->assertSame( 'webp', $response['format'] );
+        $this->assertSame( 'image/webp', $response['mime_type'] );
+        $this->assertSame( 'gpt-image-test', $response['model'] );
+        $this->assertSame( '512x512', $response['size'] );
+        $this->assertSame( 'high', $response['quality'] );
+        $this->assertSame( 'vivid', $response['style'] );
+        $this->assertSame( 'transparent', $response['background'] );
+        $this->assertSame( 123, $response['created'] );
+        $this->assertSame( 'A revised scenic landscape', $response['revised_prompt'] );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT, $captured_request['url'] );
+        $this->assertSame( 42, $captured_request['args']['timeout'] );
+        $this->assertArrayHasKey( 'headers', $captured_request['args'] );
+        $this->assertSame( 'application/json', $captured_request['args']['headers']['Content-Type'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+        $this->assertIsArray( $payload );
+        $this->assertSame( 'gpt-image-test', $payload['model'] );
+        $this->assertSame( 'A scenic landscape at sunrise', $payload['prompt'] );
+        $this->assertSame( '512x512', $payload['size'] );
+        $this->assertSame( 'high', $payload['quality'] );
+        $this->assertSame( 'vivid', $payload['style'] );
+        $this->assertSame( 'transparent', $payload['background'] );
+        $this->assertSame( 'webp', $payload['image_format'] );
+        $this->assertSame( 'b64_json', $payload['response_format'] );
+        $this->assertSame( 1, $payload['n'] );
+    }
+
+    /**
      * Ensure the speech helper surfaces an actionable error when no API key is configured.
      */
     public function test_generate_speech_requires_api_key() {
