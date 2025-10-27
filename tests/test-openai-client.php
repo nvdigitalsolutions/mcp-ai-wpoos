@@ -1499,7 +1499,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( '512x512', $payload['size'] );
         $this->assertSame( 'high', $payload['quality'] );
         $this->assertSame( 'transparent', $payload['background'] );
-        $this->assertSame( 'webp', $payload['image_format'] );
+        $this->assertSame( 'webp', $payload['format'] );
         $this->assertArrayNotHasKey( 'response_format', $payload );
         $this->assertSame( 1, $payload['n'] );
     }

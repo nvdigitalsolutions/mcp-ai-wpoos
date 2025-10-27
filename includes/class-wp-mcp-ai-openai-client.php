@@ -466,7 +466,7 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( '' !== $format ) {
-            $payload['image_format'] = $format;
+            $payload['format'] = $format;
         }
 
         if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
