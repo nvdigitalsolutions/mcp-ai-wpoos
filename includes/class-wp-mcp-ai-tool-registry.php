@@ -190,6 +190,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Generate_OpenAI_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
             'WP_MCP_AI_Tool_Run_Crawl4AI_Job'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
             'WP_MCP_AI_Tool_Open_OpenAI_Logs'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php',
+            'WP_MCP_AI_Tool_Open_OpenAI_Usage'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
