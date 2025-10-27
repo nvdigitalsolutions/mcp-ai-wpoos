@@ -666,6 +666,7 @@ class WP_MCP_AI_OpenAI_Client {
     protected function normalise_responses_content_segments( array $segments, array $attachments = array(), $role = '' ) {
         $normalised = array();
         $role_key   = sanitize_key( $role );
+        $output_roles = array( 'assistant', 'tool', 'function' );
 
         foreach ( $segments as $segment ) {
             if ( ! is_array( $segment ) ) {
@@ -680,7 +681,7 @@ class WP_MCP_AI_OpenAI_Client {
             }
 
             if ( '' === $type || 'text' === $type || 'input_text' === $type || 'output_text' === $type ) {
-                $segment['type'] = ( 'assistant' === $role_key ) ? 'output_text' : 'input_text';
+                $segment['type'] = in_array( $role_key, $output_roles, true ) ? 'output_text' : 'input_text';
 
                 if ( isset( $segment['content'] ) && ! isset( $segment['text'] ) ) {
                     $segment['text'] = (string) $segment['content'];
