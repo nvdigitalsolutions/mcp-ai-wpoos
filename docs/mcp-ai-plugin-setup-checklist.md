@@ -16,6 +16,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 
 ## Authentication & Security
 - For remote MCP assistants, provision Auth0 bearer tokens with the API audience and scopes that match the plugin settings. Same-origin UIs continue using the WordPress REST nonce.
+- When partners cannot consume Auth0, generate assistant-specific credentials from the *API Credentials* meta box, deliver the one-time token securely, and document who received it for future revocation or rotation.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】【F:includes/class-wp-mcp-ai-credentials.php†L94-L185】
 - Familiarize yourself with the structured REST errors returned by the plugin so clients can present actionable remediation guidance when authentication fails.
 - If public visitors need access, enable `allow_guests="true"` on the chat surface and confirm the generated one-hour guest tokens reach the REST API via the `X-WP-MCP-AI-Guest` header or `guest_token` parameter so capability checks downgrade to `public` safely.【F:includes/class-wp-mcp-ai-shortcode.php†L31-L331】【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
 

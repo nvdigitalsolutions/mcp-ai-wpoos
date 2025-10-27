@@ -6,6 +6,7 @@ The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Re
 ## Credential mechanism
 
 * **Auth0 bearer tokens** are the primary mechanism for remote assistants. Provision them through your Auth0 tenant using the API identifier configured in the plugin settings.
+* **Assistant-issued tokens** are minted from the assistant editor’s **API Credentials** meta box, returned once (in the form `cred_xxxxx.SECRET`), and hashed immediately after display so secrets never persist in plain text.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】【F:includes/class-wp-mcp-ai-credentials.php†L94-L135】
 * **REST nonces** (`X-WP-Nonce`) remain available for the built-in shortcode, dashboard UI, or any same-origin script that operates on behalf of a logged-in user.
 
 
@@ -14,8 +15,15 @@ The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Re
 | Client | Required headers | Notes |
 | --- | --- | --- |
 | Remote MCP assistant | `Authorization: Bearer <Auth0 access token>` | Issue an Auth0 access token for your MCP API and transmit it with each request. |
+| Remote MCP assistant (assistant-issued credential) | `Authorization: Bearer cred_xxxxx.SECRET` | Tokens generated in the assistant editor validate directly against the MCP REST layer and automatically scope the request to the issuing assistant.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 |
 | WordPress dashboard / shortcode UI | `X-WP-Nonce: <nonce from wp_create_nonce('wp_rest')>` | Automatically injected by the plugin's UI scripts when rendering the chat interface. |
 | Guest visitors (chat shortcodes, Deep Chat, Elementor) | `X-WP-MCP-AI-Guest: <temporary token>` (or `guest_token` query/body param) | Shortcodes that enable `allow_guests="true"` mint a one-hour token and pass it to the REST layer so unauthenticated visitors can continue conversations without exposing privileged credentials.【F:includes/class-wp-mcp-ai-shortcode.php†L31-L226】【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】 |
+
+## Assistant-issued credentials
+
+Use the assistant editor’s **API Credentials** meta box to generate tokens for partners that cannot integrate with Auth0. Only administrators (`manage_options`) can view or manage the credential list, which records who created the token and allows revocation or deletion at any time.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】 Present the issued token to the integrator immediately—once the page reloads the secret is hashed and no longer recoverable.【F:includes/class-wp-mcp-ai-credentials.php†L94-L135】
+
+When a request arrives with `Authorization: Bearer cred_xxxxx.SECRET`, the REST controller validates the token, attaches the issuing assistant to the request context, and blocks attempts to override the `assistant_id` parameter with a different assistant.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 Revoked tokens fail fast with actionable errors so client applications can prompt operators to issue a replacement.【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】
 
 ## Guest access tokens
 
@@ -36,6 +44,9 @@ Every authentication failure is returned as a structured JSON error so MCP clien
 | --- | --- | --- | --- |
 | `wp_mcp_ai_missing_credentials` | `401` | No bearer token and no nonce supplied. | Include the `Authorization: Bearer` header or add the `X-WP-Nonce` header for same-origin requests. |
 | `wp_mcp_ai_invalid_bearer_token` | `401` | Token structure, signature, or issuer is invalid. | Request a new Auth0 access token and retry. |
+| `wp_mcp_ai_invalid_token` | `401` | Assistant-issued credential is malformed or does not match stored hashes. | Issue a new assistant credential from the editor and update the client’s configuration.【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 |
+| `wp_mcp_ai_revoked_token` | `401` | Assistant-issued credential was revoked in the editor UI. | Generate a fresh credential or reinstate access as needed.【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 |
+| `wp_mcp_ai_assistant_scope_mismatch` | `403` | Token tried to access a different assistant than the one that issued it. | Remove the overriding `assistant_id` or provide a credential minted for that assistant.【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】 |
 | `wp_mcp_ai_expired_bearer_token` | `401` | Token has expired. | Request a new Auth0 access token and retry. |
 | `wp_mcp_ai_invalid_bearer_audience` | `403` | Token was issued for a different API audience. | Request a token that includes the configured audience value. |
 | `wp_mcp_ai_insufficient_bearer_scope` | `403` | Token is missing the required scope. | Request a token that includes the configured scope. |
