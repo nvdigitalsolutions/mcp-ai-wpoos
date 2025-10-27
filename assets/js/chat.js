@@ -4,6 +4,13 @@
     var globalConfig = window.wpMcpAiChat || {};
     var instances = window.wpMcpAiChatInstances || {};
     var objectUrlRegistry = [];
+    var SPEECH_TOOL_NAME = 'generate_openai_speech';
+    var SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
+    var SPEECH_ENABLED_CLASS = 'wp-mcp-ai-speech-enabled';
+    var SPEECH_ERROR_CLASS = 'wp-mcp-ai-speech-button--error';
+    var SPEECH_PLAY_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4l9 6-9 6V4z"></path></svg>';
+    var SPEECH_STOP_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="5" width="8" height="10" rx="1"></rect></svg>';
+    var SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
 
     function registerObjectUrl(url) {
         if (!url) {
@@ -27,6 +34,381 @@
         });
 
         objectUrlRegistry = [];
+    }
+
+    function normalizeSpeechText(text) {
+        if (typeof text !== 'string') {
+            return '';
+        }
+
+        return text.trim();
+    }
+
+    function updateSpeechButtonIcon(button, stateName) {
+        if (!button) {
+            return;
+        }
+
+        if (button.classList) {
+            button.classList.remove(SPEECH_ERROR_CLASS);
+        }
+
+        button.dataset.state = stateName;
+
+        if (stateName === 'loading') {
+            button.innerHTML = SPEECH_SPINNER_ICON;
+            button.setAttribute('aria-label', 'Generating audio...');
+            button.setAttribute('title', 'Generating audio...');
+            button.setAttribute('aria-busy', 'true');
+            return;
+        }
+
+        button.removeAttribute('aria-busy');
+
+        if (stateName === 'playing') {
+            button.innerHTML = SPEECH_STOP_ICON;
+            button.setAttribute('aria-label', 'Stop audio playback');
+            button.setAttribute('title', 'Stop audio playback');
+            return;
+        }
+
+        button.innerHTML = SPEECH_PLAY_ICON;
+        button.setAttribute('aria-label', 'Play response audio');
+        button.setAttribute('title', 'Play response audio');
+    }
+
+    function clearSpeechCacheEntry(state, text) {
+        if (!state || !state.speechCache || !text) {
+            return;
+        }
+
+        delete state.speechCache[text];
+    }
+
+    function setSpeechButtonErrorState(state, button, text) {
+        if (!button) {
+            return;
+        }
+
+        button.dataset.state = 'error';
+        button.innerHTML = SPEECH_PLAY_ICON;
+        button.setAttribute('aria-label', 'Unable to generate audio');
+        button.setAttribute('title', 'Unable to generate audio');
+        button.removeAttribute('aria-busy');
+        button.disabled = false;
+
+        if (button.classList) {
+            button.classList.add(SPEECH_ERROR_CLASS);
+        }
+
+        if (button._wpMcpAiAudio) {
+            try {
+                button._wpMcpAiAudio.pause();
+            } catch (error) {}
+        }
+
+        button._wpMcpAiAudio = null;
+
+        if (state && state.activeSpeech && state.activeSpeech.button === button) {
+            state.activeSpeech = null;
+        }
+
+        clearSpeechCacheEntry(state, text);
+    }
+
+    function stopSpeechPlayback(state, button) {
+        if (!state || !button) {
+            return;
+        }
+
+        var audio = button._wpMcpAiAudio;
+        if (!audio && state.activeSpeech && state.activeSpeech.button === button) {
+            audio = state.activeSpeech.audio;
+        }
+
+        if (audio) {
+            try {
+                audio.pause();
+            } catch (error) {}
+
+            try {
+                audio.currentTime = 0;
+            } catch (error) {}
+        }
+
+        if (state.activeSpeech && state.activeSpeech.button === button) {
+            state.activeSpeech = null;
+        }
+
+        updateSpeechButtonIcon(button, 'idle');
+    }
+
+    function startSpeechPlayback(state, button, audio, text) {
+        if (!audio) {
+            return;
+        }
+
+        if (state.activeSpeech && state.activeSpeech.audio && state.activeSpeech.audio !== audio) {
+            try {
+                state.activeSpeech.audio.pause();
+            } catch (error) {}
+
+            if (state.activeSpeech.button) {
+                updateSpeechButtonIcon(state.activeSpeech.button, 'idle');
+            }
+        }
+
+        audio.currentTime = 0;
+
+        var playPromise = audio.play();
+        if (playPromise && typeof playPromise.then === 'function') {
+            playPromise.catch(function () {
+                var currentText = button.dataset ? button.dataset.speechText || text : text;
+                setSpeechButtonErrorState(state, button, currentText);
+            });
+        }
+    }
+
+    function createSpeechAudio(state, button, url, text) {
+        var audio = new Audio(url);
+        audio.preload = 'auto';
+
+        audio.addEventListener('ended', function () {
+            if (state.activeSpeech && state.activeSpeech.audio === audio) {
+                state.activeSpeech = null;
+            }
+            updateSpeechButtonIcon(button, 'idle');
+        });
+
+        audio.addEventListener('pause', function () {
+            if (button.dataset && button.dataset.state === 'error') {
+                return;
+            }
+
+            if (!audio.duration || audio.currentTime < audio.duration) {
+                if (state.activeSpeech && state.activeSpeech.audio === audio) {
+                    state.activeSpeech = null;
+                }
+                updateSpeechButtonIcon(button, 'idle');
+            }
+        });
+
+        audio.addEventListener('play', function () {
+            state.activeSpeech = { button: button, audio: audio, text: text };
+            updateSpeechButtonIcon(button, 'playing');
+        });
+
+        audio.addEventListener('error', function () {
+            setSpeechButtonErrorState(state, button, text);
+        });
+
+        return audio;
+    }
+
+    function ensureSpeechAudio(state, button, url, text) {
+        if (!url) {
+            return;
+        }
+
+        var audio = button._wpMcpAiAudio;
+        if (!audio || audio.src !== url) {
+            audio = createSpeechAudio(state, button, url, text);
+            button._wpMcpAiAudio = audio;
+        }
+
+        startSpeechPlayback(state, button, audio, text);
+    }
+
+    function requestSpeechAudio(state, text) {
+        if (!state || !state.config || !state.config.toolsEndpoint) {
+            return Promise.reject(new Error('Speech tool unavailable.'));
+        }
+
+        var payload = {
+            assistant_id: state.config.assistantId,
+            tool: SPEECH_TOOL_NAME,
+            arguments: {
+                text: text,
+            },
+        };
+
+        return fetch(state.config.toolsEndpoint, {
+            method: 'POST',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw response;
+                }
+                return response.json();
+            })
+            .then(function (body) {
+                if (!body || typeof body !== 'object') {
+                    return Promise.reject(new Error('Invalid response.'));
+                }
+
+                var result = Object.prototype.hasOwnProperty.call(body, 'result') ? body.result : body;
+                if (!result || typeof result !== 'object' || !result.url) {
+                    return Promise.reject(new Error('Missing audio result.'));
+                }
+
+                return {
+                    url: result.url,
+                    attachmentId: result.attachment_id,
+                    format: result.format,
+                    mimeType: result.mime_type,
+                };
+            });
+    }
+
+    function handleSpeechButtonClick(state, button) {
+        if (!state || !button) {
+            return;
+        }
+
+        var text = normalizeSpeechText(button.dataset.speechText || '');
+        if (!text) {
+            return;
+        }
+
+        var currentState = button.dataset.state;
+        if (currentState === 'loading') {
+            return;
+        }
+
+        if (currentState === 'playing') {
+            stopSpeechPlayback(state, button);
+            return;
+        }
+
+        if (!state.speechCache) {
+            state.speechCache = Object.create(null);
+        }
+
+        var cache = state.speechCache[text];
+        if (cache && cache.url) {
+            ensureSpeechAudio(state, button, cache.url, text);
+            return;
+        }
+
+        updateSpeechButtonIcon(button, 'loading');
+        button.disabled = true;
+
+        requestSpeechAudio(state, text)
+            .then(function (info) {
+                if (!info || !info.url) {
+                    throw new Error('Invalid speech response');
+                }
+
+                state.speechCache[text] = { url: info.url };
+                ensureSpeechAudio(state, button, info.url, text);
+            })
+            .catch(function () {
+                setSpeechButtonErrorState(state, button, text);
+            })
+            .finally(function () {
+                button.disabled = false;
+                if (button.dataset.state === 'loading') {
+                    updateSpeechButtonIcon(button, 'idle');
+                }
+            });
+    }
+
+    function resolveSpeechText(bubble, text) {
+        var provided = normalizeSpeechText(text || '');
+        if (provided) {
+            return provided;
+        }
+
+        if (bubble && bubble.dataset && bubble.dataset.speechText) {
+            var stored = normalizeSpeechText(bubble.dataset.speechText);
+            if (stored) {
+                return stored;
+            }
+        }
+
+        if (!bubble) {
+            return '';
+        }
+
+        var textContent = '';
+        if (typeof bubble.textContent === 'string') {
+            textContent = bubble.textContent;
+        } else if (bubble.innerText) {
+            textContent = bubble.innerText;
+        }
+
+        return normalizeSpeechText(textContent);
+    }
+
+    function attachSpeechButton(bubble, state, text) {
+        if (!bubble || !state || !state.config || !state.config.toolsEndpoint || !state.config.assistantId) {
+            return;
+        }
+
+        var normalisedText = resolveSpeechText(bubble, text);
+        if (!normalisedText) {
+            return;
+        }
+
+        if (bubble.classList) {
+            bubble.classList.add(SPEECH_ENABLED_CLASS);
+        }
+
+        if (bubble.dataset) {
+            bubble.dataset.speechText = normalisedText;
+        }
+
+        if (!state.speechCache) {
+            state.speechCache = Object.create(null);
+        }
+
+        var existing = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+        if (existing) {
+            var previousText = normalizeSpeechText(existing.dataset.speechText || '');
+
+            if (previousText && previousText !== normalisedText) {
+                stopSpeechPlayback(state, existing);
+                clearSpeechCacheEntry(state, previousText);
+            }
+
+            existing.dataset.speechText = normalisedText;
+            existing.disabled = false;
+            updateSpeechButtonIcon(existing, 'idle');
+            return;
+        }
+
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = SPEECH_BUTTON_CLASS;
+        button.dataset.speechText = normalisedText;
+        button.setAttribute('aria-label', 'Play response audio');
+        button.setAttribute('title', 'Play response audio');
+
+        updateSpeechButtonIcon(button, 'idle');
+
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            handleSpeechButtonClick(state, button);
+        });
+
+        bubble.appendChild(button);
+    }
+
+    function initialiseExistingSpeechButtons(state) {
+        if (!state || !state.messagesEl) {
+            return;
+        }
+
+        var selector = '.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble';
+        var bubbles = state.messagesEl.querySelectorAll(selector);
+
+        Array.prototype.forEach.call(bubbles, function (bubble) {
+            attachSpeechButton(bubble, state, bubble && bubble.dataset ? bubble.dataset.speechText || '' : '');
+        });
     }
 
     function normaliseList(value) {
@@ -1242,7 +1624,11 @@
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
                 validationNotice: '',
+                speechCache: Object.create(null),
+                activeSpeech: null,
             };
+
+            initialiseExistingSpeechButtons(state);
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             form.addEventListener('submit', function (event) {
@@ -1514,7 +1900,12 @@
         var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
         if (hasDisplayContent) {
-            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true);
+            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                speech: {
+                    state: state,
+                    text: assistantDisplay.text || '',
+                },
+            });
             assistantMessage.content = assistantDisplay.text || '';
         }
 
@@ -1728,7 +2119,7 @@
         statusEl.hidden = false;
     }
 
-    function appendMessage(listEl, role, payload, allowMarkdown) {
+    function appendMessage(listEl, role, payload, allowMarkdown, options) {
         if (typeof payload === 'undefined' || payload === null) {
             return null;
         }
@@ -1835,6 +2226,12 @@
             });
 
             bubble.appendChild(list);
+        }
+
+        if (role === 'assistant') {
+            var speechState = options && options.speech ? options.speech.state || null : null;
+            var speechText = options && options.speech ? options.speech.text || '' : text;
+            attachSpeechButton(bubble, speechState, speechText);
         }
 
         entry.appendChild(bubble);
