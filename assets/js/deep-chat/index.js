@@ -1245,6 +1245,30 @@
         message.content = segments.concat(attachmentSegments);
     }
 
+    function processUserMessage(state, message) {
+        if (!state || !message || message.role !== 'user') {
+            return Promise.resolve();
+        }
+
+        var converted = convertDeepChatMessage(message);
+        if (!converted) {
+            return Promise.resolve();
+        }
+
+        if (state.pendingUploads.length) {
+            var attachmentSegments = createAttachmentSegmentsFromUploads(state.pendingUploads);
+            state.pendingUploads = [];
+
+            if (attachmentSegments.length) {
+                appendAttachmentSegments(converted, attachmentSegments);
+            }
+        }
+
+        state.conversation.push(converted);
+
+        return sendChat(state);
+    }
+
     function onNewMessage(state, event) {
         if (!event || !event.detail || !event.detail.message) {
             return;
@@ -1260,22 +1284,22 @@
             return;
         }
 
-        var converted = convertDeepChatMessage(message);
-        if (!converted) {
-            return;
+        processUserMessage(state, message);
+    }
+
+    function handleConnectRequest(state, payload) {
+        if (!payload || !payload.messages || !payload.messages.length) {
+            return Promise.resolve(null);
         }
 
-        if (state.pendingUploads.length) {
-            var attachmentSegments = createAttachmentSegmentsFromUploads(state.pendingUploads);
-            state.pendingUploads = [];
-
-            if (attachmentSegments.length) {
-                appendAttachmentSegments(converted, attachmentSegments);
-            }
+        var message = payload.messages[payload.messages.length - 1];
+        if (!message || message.role !== 'user') {
+            return Promise.resolve(null);
         }
 
-        state.conversation.push(converted);
-        sendChat(state);
+        return processUserMessage(state, message).then(function () {
+            return null;
+        });
     }
 
     function isDeepChatAvailable() {
@@ -1385,8 +1409,10 @@
             }
         }
 
-        chatElement.addEventListener('message', function (event) {
-            onNewMessage(state, event);
+        chatElement.connect = Object.assign({}, chatElement.connect, {
+            handler: function (payload) {
+                return handleConnectRequest(state, payload);
+            },
         });
 
         addSystemMessage(chatElement, 'Ready.');
