@@ -46,6 +46,10 @@ if ( ! function_exists( 'wp_mcp_ai_register_deep_chat_assets' ) ) {
             true
         );
 
+        // Deep Chat ships as an ES module, so make sure WordPress prints the
+        // correct script type or the browser will choke on the "export" token.
+        wp_script_add_data( $handle, 'type', 'module' );
+
         $integration_handle = 'wp-mcp-ai-deep-chat-app';
         if ( ! wp_script_is( $integration_handle, 'registered' ) ) {
             $integration_path = WP_MCP_AI_PATH . 'assets/js/deep-chat/index.js';
