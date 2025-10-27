@@ -467,10 +467,14 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['background'] = $background;
         }
 
-        $response_format = 'b64_json';
+        $response_format = '';
 
         if ( ! empty( $options['response_format'] ) && is_string( $options['response_format'] ) ) {
             $response_format = sanitize_key( $options['response_format'] );
+        }
+
+        if ( '' !== $response_format ) {
+            $payload['response_format'] = $response_format;
         }
 
         $payload['response_format'] = $response_format;
@@ -576,27 +580,70 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         if ( ! empty( $decoded ) ) {
-            if ( empty( $decoded['data'] ) || ! isset( $decoded['data'][0]['b64_json'] ) ) {
-                WP_MCP_AI_Logger::log_error( 'OpenAI image response missing base64 payload.', array( 'response' => $decoded ) );
+            if ( empty( $decoded['data'] ) || empty( $decoded['data'][0] ) || ! is_array( $decoded['data'][0] ) ) {
+                WP_MCP_AI_Logger::log_error( 'OpenAI image response missing payload data.', array( 'response' => $decoded ) );
 
                 return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
             }
 
-            $image_data = base64_decode( $decoded['data'][0]['b64_json'], true );
+            $image_response = $decoded['data'][0];
 
-            if ( false === $image_data ) {
-                WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
+            if ( isset( $image_response['b64_json'] ) && '' !== $image_response['b64_json'] ) {
+                $image_data = base64_decode( $image_response['b64_json'], true );
 
-                return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
+                if ( false === $image_data ) {
+                    WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
+
+                    return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
+                }
+
+                $response_format = $this->detect_format_from_binary( $image_data );
+                if ( '' === $response_format ) {
+                    $response_format = 'png';
+                }
+                $response_mime = $this->normalise_image_mime_type( $response_format );
+            } elseif ( isset( $image_response['url'] ) && '' !== $image_response['url'] ) {
+                $image_url = esc_url_raw( $image_response['url'] );
+
+                if ( '' === $image_url ) {
+                    WP_MCP_AI_Logger::log_error( 'OpenAI image response returned an invalid URL.', array( 'url' => $image_response['url'] ) );
+
+                    return new WP_Error( 'wp_mcp_ai_image_invalid_url', __( 'OpenAI returned an invalid image URL.', 'wp-mcp-ai' ) );
+                }
+
+                $downloaded_image = $this->download_image_from_url( $image_url, $timeout );
+
+                if ( is_wp_error( $downloaded_image ) ) {
+                    return $downloaded_image;
+                }
+
+                $image_data      = $downloaded_image['body'];
+                $content_type    = $downloaded_image['content_type'];
+                $response_format = $this->detect_format_from_mime_type( $content_type );
+
+                if ( '' === $response_format ) {
+                    $response_format = $this->detect_format_from_binary( $image_data );
+                }
+
+                if ( '' === $response_format ) {
+                    $response_format = 'png';
+                }
+
+                $response_mime = '' !== $content_type ? $content_type : $this->normalise_image_mime_type( $response_format );
+            } else {
+                WP_MCP_AI_Logger::log_error( 'OpenAI image response missing supported payload keys.', array( 'response' => $decoded ) );
+
+                return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
             }
 
-            $response_format   = $this->detect_format_from_binary( $image_data );
-            if ( '' === $response_format ) {
-                $response_format = 'png';
+            if ( '' === $image_data ) {
+                WP_MCP_AI_Logger::log_error( 'OpenAI image response contained no data.', array( 'response' => $decoded ) );
+
+                return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
             }
-            $response_mime     = $this->normalise_image_mime_type( $response_format );
+
             $response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
-            $response_revision = isset( $decoded['data'][0]['revised_prompt'] ) ? (string) $decoded['data'][0]['revised_prompt'] : '';
+            $response_revision = isset( $image_response['revised_prompt'] ) ? (string) $image_response['revised_prompt'] : '';
         } elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
             $image_data = $body;
 
@@ -655,6 +702,73 @@ class WP_MCP_AI_OpenAI_Client {
         );
 
         return $result;
+    }
+
+    /**
+     * Download an image from a remote URL.
+     *
+     * @param string $url     Image URL.
+     * @param int    $timeout Request timeout.
+     * @return array|WP_Error Array containing body and content_type on success.
+     */
+    protected function download_image_from_url( $url, $timeout ) {
+        $request_args = array(
+            'timeout' => max( 5, absint( $timeout ) ),
+        );
+
+        $response = wp_remote_get( $url, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error(
+                'Failed to download image from OpenAI URL.',
+                array(
+                    'url'   => $url,
+                    'error' => $response->get_error_message(),
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_image_download_http_error',
+                __( 'The generated image could not be downloaded from OpenAI.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+        $headers     = wp_remote_retrieve_headers( $response );
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI image download returned an error.',
+                array(
+                    'url'    => $url,
+                    'code'   => $status_code,
+                    'body'   => $body,
+                    'header' => $headers,
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_image_download_error',
+                sprintf( __( 'OpenAI returned an HTTP %d while downloading the generated image.', 'wp-mcp-ai' ), $status_code ),
+                array(
+                    'status'   => $status_code,
+                    'response' => $body,
+                )
+            );
+        }
+
+        if ( '' === $body ) {
+            WP_MCP_AI_Logger::log_error( 'OpenAI image download returned empty content.', array( 'url' => $url ) );
+
+            return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+        }
+
+        return array(
+            'body'         => $body,
+            'content_type' => $this->extract_content_type( $headers ),
+        );
     }
 
     /**
