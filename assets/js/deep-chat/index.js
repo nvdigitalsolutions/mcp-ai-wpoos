@@ -479,6 +479,7 @@
                 return handleChatResponse(state, data);
             })
             .catch(function (error) {
+                state.busy = false;
                 if (error && typeof error.json === 'function') {
                     error
                         .json()
@@ -492,6 +493,7 @@
                 } else {
                     addErrorMessage(state.chat, 'Something went wrong.');
                 }
+                return Promise.reject(error);
             });
     }
 
