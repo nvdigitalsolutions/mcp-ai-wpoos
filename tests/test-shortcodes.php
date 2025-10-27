@@ -67,4 +67,25 @@ class Test_Shortcodes extends WP_UnitTestCase {
             }
         }
     }
+
+    /**
+     * Ensure the Deep Chat script is always rendered with the module type.
+     */
+    public function test_deep_chat_script_tag_includes_module_type() {
+        $handle = wp_mcp_ai_register_deep_chat_assets();
+
+        wp_script_add_data( $handle, 'type', 'text/javascript' );
+        wp_enqueue_script( $handle );
+
+        ob_start();
+        wp_print_footer_scripts();
+        $printed_scripts = ob_get_clean();
+
+        $this->assertMatchesRegularExpression(
+            '/<script[^>]*type="module"[^>]*id="wp-mcp-ai-deep-chat-js"[^>]*>/',
+            $printed_scripts,
+            'The Deep Chat script should be printed with type="module".'
+        );
+        $this->assertStringContainsString( 'data-wp-strategy="defer"', $printed_scripts, 'The defer strategy should be preserved.' );
+    }
 }
