@@ -1468,7 +1468,6 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                 'size'       => '512x512',
                 'quality'    => 'high',
                 'background' => 'transparent',
-                'format'     => 'webp',
             )
         );
 
@@ -1477,8 +1476,8 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $response );
         $this->assertArrayHasKey( 'image', $response );
         $this->assertSame( $png_binary, $response['image'] );
-        $this->assertSame( 'webp', $response['format'] );
-        $this->assertSame( 'image/webp', $response['mime_type'] );
+        $this->assertSame( 'png', $response['format'] );
+        $this->assertSame( 'image/png', $response['mime_type'] );
         $this->assertSame( 'gpt-image-test', $response['model'] );
         $this->assertSame( '512x512', $response['size'] );
         $this->assertSame( 'high', $response['quality'] );
@@ -1499,7 +1498,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( '512x512', $payload['size'] );
         $this->assertSame( 'high', $payload['quality'] );
         $this->assertSame( 'transparent', $payload['background'] );
-        $this->assertSame( 'webp', $payload['format'] );
+        $this->assertArrayNotHasKey( 'format', $payload );
         $this->assertArrayNotHasKey( 'response_format', $payload );
         $this->assertSame( 1, $payload['n'] );
     }
