@@ -1123,8 +1123,75 @@
         sendChat(state);
     }
 
+    function isDeepChatAvailable() {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+
+        if (window.DeepChat) {
+            return true;
+        }
+
+        if (window.customElements && typeof window.customElements.get === 'function') {
+            return Boolean(window.customElements.get('deep-chat'));
+        }
+
+        return false;
+    }
+
+    function waitForDeepChatReady(callback) {
+        if (typeof callback !== 'function') {
+            return;
+        }
+
+        if (isDeepChatAvailable()) {
+            callback();
+            return;
+        }
+
+        var attempts = 0;
+        var maxAttempts = 100;
+        var hasCustomElements = typeof window !== 'undefined' && window.customElements;
+        var whenDefinedSupported =
+            hasCustomElements && typeof window.customElements.whenDefined === 'function';
+
+        if (whenDefinedSupported) {
+            window.customElements
+                .whenDefined('deep-chat')
+                .then(function () {
+                    if (isDeepChatAvailable()) {
+                        callback();
+                    }
+                })
+                .catch(function () {
+                    // Fall back to polling if the promise rejects.
+                    pollUntilReady();
+                });
+            return;
+        }
+
+        pollUntilReady();
+
+        function pollUntilReady() {
+            if (isDeepChatAvailable()) {
+                callback();
+                return;
+            }
+
+            if (attempts >= maxAttempts) {
+                return;
+            }
+
+            attempts += 1;
+
+            setTimeout(function () {
+                pollUntilReady();
+            }, 50);
+        }
+    }
+
     function initDeepChatInstance(container) {
-        if (typeof window === 'undefined' || !window.DeepChat) {
+        if (typeof window === 'undefined' || !isDeepChatAvailable()) {
             return;
         }
 
@@ -1185,9 +1252,13 @@
         });
     }
 
+    function bootDeepChat() {
+        waitForDeepChatReady(initAll);
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAll);
+        document.addEventListener('DOMContentLoaded', bootDeepChat);
     } else {
-        initAll();
+        bootDeepChat();
     }
 })();
