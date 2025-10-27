@@ -17,7 +17,7 @@ class WP_MCP_AI_OpenAI_Client {
     const RESPONSES_ENDPOINT        = 'https://api.openai.com/v1/responses';
     const FILES_ENDPOINT            = 'https://api.openai.com/v1/files';
     const AUDIO_SPEECH_ENDPOINT     = 'https://api.openai.com/v1/audio/speech';
-    const IMAGES_ENDPOINT           = 'https://api.openai.com/v1/images';
+    const IMAGES_ENDPOINT           = 'https://api.openai.com/v1/images/generations';
 
     /**
      * Retrieve the configured API key.
