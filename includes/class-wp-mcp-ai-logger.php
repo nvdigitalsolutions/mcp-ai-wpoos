@@ -24,6 +24,11 @@ class WP_MCP_AI_Logger {
     const RECENT_ERRORS_OPTION = 'wp_mcp_ai_recent_errors';
 
     /**
+     * Option key for persisting recent activity entries such as tool executions.
+     */
+    const RECENT_ACTIVITY_OPTION = 'wp_mcp_ai_recent_activity';
+
+    /**
      * Maximum number of characters that should be written to the PHP error log
      * for a single entry. PHP-FPM buffers log lines at 1024 bytes so we keep a
      * safety margin below that threshold to avoid truncation warnings.
@@ -71,6 +76,10 @@ class WP_MCP_AI_Logger {
 
         if ( self::should_store_recent_entry( $entry ) ) {
             self::store_recent_entry( $entry );
+        }
+
+        if ( self::should_store_recent_activity_entry( $entry ) ) {
+            self::store_recent_activity_entry( $entry );
         }
 
         $line = sprintf( '%s %s: %s', self::PREFIX, strtoupper( $entry['type'] ), $entry['message'] );
@@ -190,6 +199,48 @@ class WP_MCP_AI_Logger {
     }
 
     /**
+     * Retrieve the most recent activity entries.
+     *
+     * @param int   $limit Maximum number of entries to return.
+     * @param array $types Optional list of event types to include.
+     * @return array
+     */
+    public static function get_recent_activity_entries( $limit = 20, $types = array() ) {
+        $limit = max( 1, absint( $limit ) );
+
+        $types = array_filter( array_map( 'sanitize_key', (array) $types ) );
+
+        $recent = get_option( self::RECENT_ACTIVITY_OPTION, array() );
+
+        if ( ! is_array( $recent ) || empty( $recent ) ) {
+            return array();
+        }
+
+        $recent   = array_reverse( $recent );
+        $filtered = array();
+
+        foreach ( $recent as $entry ) {
+            if ( ! is_array( $entry ) ) {
+                continue;
+            }
+
+            $type = isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '';
+
+            if ( ! empty( $types ) && ( '' === $type || ! in_array( $type, $types, true ) ) ) {
+                continue;
+            }
+
+            $filtered[] = self::prepare_activity_entry_for_output( $entry );
+
+            if ( count( $filtered ) >= $limit ) {
+                break;
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
      * Remove potentially sensitive information from the context payload.
      *
      * @param array $context Raw context data.
@@ -241,6 +292,47 @@ class WP_MCP_AI_Logger {
     }
 
     /**
+     * Determine if the entry should be stored as a recent activity item.
+     *
+     * @param array $entry Prepared log entry.
+     * @return bool
+     */
+    protected static function should_store_recent_activity_entry( $entry ) {
+        if ( ! is_array( $entry ) ) {
+            return false;
+        }
+
+        if ( empty( $entry['type'] ) || empty( $entry['message'] ) ) {
+            return false;
+        }
+
+        $type = sanitize_key( $entry['type'] );
+
+        $allowed_types = apply_filters(
+            'wp_mcp_ai_recent_activity_types',
+            array(
+                'tool_execution',
+                'tool_error',
+                'chat_interaction',
+                'openai_request',
+                'openai_response',
+                'gemini_request',
+                'gemini_response',
+                'openai_external_action_request',
+                'openai_external_action_response',
+            )
+        );
+
+        if ( ! is_array( $allowed_types ) || empty( $allowed_types ) ) {
+            return false;
+        }
+
+        $allowed_types = array_map( 'sanitize_key', $allowed_types );
+
+        return in_array( $type, $allowed_types, true );
+    }
+
+    /**
      * Persist a recent entry while keeping the buffer trimmed.
      *
      * @param array $entry Prepared log entry.
@@ -270,12 +362,65 @@ class WP_MCP_AI_Logger {
     }
 
     /**
+     * Persist a recent activity entry while keeping the buffer trimmed.
+     *
+     * @param array $entry Prepared log entry.
+     */
+    protected static function store_recent_activity_entry( $entry ) {
+        $recent = get_option( self::RECENT_ACTIVITY_OPTION, array() );
+
+        if ( ! is_array( $recent ) ) {
+            $recent = array();
+        }
+
+        $stored_entry = array(
+            'timestamp' => isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '',
+            'type'      => isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '',
+            'message'   => isset( $entry['message'] ) ? (string) $entry['message'] : '',
+        );
+
+        if ( ! empty( $entry['context'] ) ) {
+            $stored_entry['context'] = $entry['context'];
+        }
+
+        $recent[] = $stored_entry;
+
+        $recent = array_slice( $recent, -100 );
+
+        update_option( self::RECENT_ACTIVITY_OPTION, $recent, false );
+    }
+
+    /**
      * Prepare a stored entry for safe output.
      *
      * @param array $entry Stored entry.
      * @return array
      */
     protected static function prepare_recent_entry_for_output( $entry ) {
+        if ( ! is_array( $entry ) ) {
+            return array();
+        }
+
+        $prepared = array(
+            'timestamp' => isset( $entry['timestamp'] ) ? (string) $entry['timestamp'] : '',
+            'type'      => isset( $entry['type'] ) ? sanitize_key( $entry['type'] ) : '',
+            'message'   => isset( $entry['message'] ) ? (string) $entry['message'] : '',
+        );
+
+        if ( isset( $entry['context'] ) ) {
+            $prepared['context'] = $entry['context'];
+        }
+
+        return $prepared;
+    }
+
+    /**
+     * Prepare a stored activity entry for safe output.
+     *
+     * @param array $entry Stored entry.
+     * @return array
+     */
+    protected static function prepare_activity_entry_for_output( $entry ) {
         if ( ! is_array( $entry ) ) {
             return array();
         }
