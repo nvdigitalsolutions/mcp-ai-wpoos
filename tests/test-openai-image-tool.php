@@ -199,4 +199,87 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
             wp_delete_attachment( $result['attachment_id'], true );
         }
     }
+
+    /**
+     * Models that support response formats should send the configured value to OpenAI.
+     */
+    public function test_execute_respects_response_format_for_supported_models() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']               = 'sk-test';
+        $settings['openai_image_model']           = 'dall-e-3';
+        $settings['openai_image_response_format'] = 'url';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        $tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+        $captured_request = null;
+        $png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+        $png_binary       = base64_decode( $png_base64 );
+        $image_url        = 'https://example.com/generated.png';
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_binary, $image_url ) {
+            if ( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT === $url ) {
+                $captured_request = array(
+                    'args' => $args,
+                    'url'  => $url,
+                );
+
+                $payload = array(
+                    'created' => 321,
+                    'data'    => array(
+                        array(
+                            'url'            => $image_url,
+                            'revised_prompt' => 'A helpful assistant robot',
+                        ),
+                    ),
+                );
+
+                return array(
+                    'body'     => wp_json_encode( $payload ),
+                    'response' => array( 'code' => 200 ),
+                    'headers'  => array( 'content-type' => 'application/json' ),
+                );
+            }
+
+            if ( $image_url === $url ) {
+                return array(
+                    'body'     => $png_binary,
+                    'response' => array( 'code' => 200 ),
+                    'headers'  => array( 'content-type' => 'image/png' ),
+                );
+            }
+
+            return $preempt;
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'prompt' => 'A robotic assistant drafting schematics',
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'response_format', $payload );
+        $this->assertSame( 'url', $payload['response_format'] );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'dall-e-3', $result['model'] );
+        $this->assertSame( 'url', $result['response_format'] );
+        $this->assertSame( 'A helpful assistant robot', $result['revised_prompt'] );
+
+        if ( ! empty( $result['attachment_id'] ) ) {
+            wp_delete_attachment( $result['attachment_id'], true );
+        }
+    }
 }
