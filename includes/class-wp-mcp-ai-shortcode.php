@@ -69,6 +69,14 @@ class WP_MCP_AI_Shortcode {
             WP_MCP_AI_VERSION
         );
 
+        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            $color_css = WP_MCP_AI_Admin_Settings::get_chat_color_css();
+
+            if ( $color_css ) {
+                wp_add_inline_style( self::STYLE_HANDLE, $color_css );
+            }
+        }
+
         wp_register_script(
             self::SCRIPT_HANDLE,
             $script_path,

@@ -24,6 +24,7 @@ class WP_MCP_AI_Admin_Settings {
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
     }
 
@@ -58,9 +59,615 @@ class WP_MCP_AI_Admin_Settings {
             'openai_speech_model'         => 'gpt-4o-mini-tts',
             'openai_speech_voice'         => 'alloy',
             'openai_speech_format'        => 'mp3',
+            'chat_colors'           => self::get_default_chat_colors(),
             'allowed_image_mimes'  => array(),
             'allowed_file_mimes'   => array(),
         );
+    }
+
+    /**
+     * Returns metadata about configurable chat colors.
+     *
+     * @return array
+     */
+    public static function get_chat_color_definitions() {
+        return array(
+            'container-border' => array(
+                'label'       => __( 'Container border', 'wp-mcp-ai' ),
+                'group'       => 'container',
+                'default'     => '#d5d5d5',
+                'format'      => 'hex',
+                'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
+            ),
+            'container-background' => array(
+                'label'       => __( 'Container background', 'wp-mcp-ai' ),
+                'group'       => 'container',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
+            ),
+            'container-shadow' => array(
+                'label'       => __( 'Container shadow', 'wp-mcp-ai' ),
+                'group'       => 'container',
+                'default'     => 'rgba(15, 23, 42, 0.08)',
+                'format'      => 'rgba',
+                'description' => __( 'Drop shadow applied to the chat container.', 'wp-mcp-ai' ),
+            ),
+            'bubble-neutral-background' => array(
+                'label'       => __( 'Default bubble background', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#f5f5f5',
+                'format'      => 'hex',
+                'description' => __( 'Background color for neutral chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'bubble-neutral-text' => array(
+                'label'       => __( 'Default bubble text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#111827',
+                'format'      => 'hex',
+                'description' => __( 'Primary text color inside neutral chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'bubble-neutral-border' => array(
+                'label'       => __( 'Default bubble border', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => 'rgba(148, 163, 184, 0.4)',
+                'format'      => 'rgba',
+                'description' => __( 'Border color used for neutral chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'bubble-neutral-shadow' => array(
+                'label'       => __( 'Default bubble shadow', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => 'rgba(15, 23, 42, 0.06)',
+                'format'      => 'rgba',
+                'description' => __( 'Soft shadow beneath neutral chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'bubble-heading-text' => array(
+                'label'       => __( 'Bubble heading text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#1e293b',
+                'format'      => 'hex',
+                'description' => __( 'Heading color for titles inside chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'code-block-background' => array(
+                'label'       => __( 'Code block background', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#0f172a',
+                'format'      => 'hex',
+                'description' => __( 'Background for preformatted code blocks.', 'wp-mcp-ai' ),
+            ),
+            'code-block-text' => array(
+                'label'       => __( 'Code block text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#f8fafc',
+                'format'      => 'hex',
+                'description' => __( 'Text color for preformatted code blocks.', 'wp-mcp-ai' ),
+            ),
+            'code-block-border' => array(
+                'label'       => __( 'Code block border', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => 'rgba(59, 130, 246, 0.25)',
+                'format'      => 'rgba',
+                'description' => __( 'Outline applied to code blocks.', 'wp-mcp-ai' ),
+            ),
+            'blockquote-border' => array(
+                'label'       => __( 'Blockquote border', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => 'rgba(59, 130, 246, 0.4)',
+                'format'      => 'rgba',
+                'description' => __( 'Accent border for blockquotes within bubbles.', 'wp-mcp-ai' ),
+            ),
+            'blockquote-background' => array(
+                'label'       => __( 'Blockquote background', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#eef2ff',
+                'format'      => 'hex',
+                'description' => __( 'Background fill for blockquotes inside chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'blockquote-text' => array(
+                'label'       => __( 'Blockquote text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#1e293b',
+                'format'      => 'hex',
+                'description' => __( 'Text color for quoted content.', 'wp-mcp-ai' ),
+            ),
+            'inline-code-background' => array(
+                'label'       => __( 'Inline code background', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => 'rgba(15, 23, 42, 0.08)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color for inline code snippets.', 'wp-mcp-ai' ),
+            ),
+            'inline-code-text' => array(
+                'label'       => __( 'Inline code text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#0f172a',
+                'format'      => 'hex',
+                'description' => __( 'Text color for inline code snippets.', 'wp-mcp-ai' ),
+            ),
+            'bubble-link-text' => array(
+                'label'       => __( 'Default link text', 'wp-mcp-ai' ),
+                'group'       => 'default-message',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Link color inside neutral chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'speech-button-background' => array(
+                'label'       => __( 'Speech button background', 'wp-mcp-ai' ),
+                'group'       => 'speech',
+                'default'     => 'rgba(15, 23, 42, 0.82)',
+                'format'      => 'rgba',
+                'description' => __( 'Default background for the speech playback button.', 'wp-mcp-ai' ),
+            ),
+            'speech-button-text' => array(
+                'label'       => __( 'Speech button icon', 'wp-mcp-ai' ),
+                'group'       => 'speech',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Icon color within the speech playback button.', 'wp-mcp-ai' ),
+            ),
+            'speech-button-hover-background' => array(
+                'label'       => __( 'Speech button hover', 'wp-mcp-ai' ),
+                'group'       => 'speech',
+                'default'     => 'rgba(15, 23, 42, 0.94)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color when hovering over the speech button.', 'wp-mcp-ai' ),
+            ),
+            'speech-button-focus-ring' => array(
+                'label'       => __( 'Speech button focus ring', 'wp-mcp-ai' ),
+                'group'       => 'speech',
+                'default'     => 'rgba(59, 130, 246, 0.45)',
+                'format'      => 'rgba',
+                'description' => __( 'Outline color when the speech button receives focus.', 'wp-mcp-ai' ),
+            ),
+            'speech-button-error-background' => array(
+                'label'       => __( 'Speech button error', 'wp-mcp-ai' ),
+                'group'       => 'speech',
+                'default'     => 'rgba(220, 38, 38, 0.88)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color when a speech error is shown.', 'wp-mcp-ai' ),
+            ),
+            'user-bubble-gradient-start' => array(
+                'label'       => __( 'User bubble gradient start', 'wp-mcp-ai' ),
+                'group'       => 'user-message',
+                'default'     => '#2747f0',
+                'format'      => 'hex',
+                'description' => __( 'Starting color for the user message gradient.', 'wp-mcp-ai' ),
+            ),
+            'user-bubble-gradient-end' => array(
+                'label'       => __( 'User bubble gradient end', 'wp-mcp-ai' ),
+                'group'       => 'user-message',
+                'default'     => '#4855f5',
+                'format'      => 'hex',
+                'description' => __( 'Ending color for the user message gradient.', 'wp-mcp-ai' ),
+            ),
+            'user-bubble-text' => array(
+                'label'       => __( 'User bubble text', 'wp-mcp-ai' ),
+                'group'       => 'user-message',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Text and link color for user messages.', 'wp-mcp-ai' ),
+            ),
+            'user-bubble-shadow' => array(
+                'label'       => __( 'User bubble shadow', 'wp-mcp-ai' ),
+                'group'       => 'user-message',
+                'default'     => 'rgba(39, 71, 240, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow cast by user chat bubbles.', 'wp-mcp-ai' ),
+            ),
+            'assistant-bubble-background' => array(
+                'label'       => __( 'Assistant bubble background', 'wp-mcp-ai' ),
+                'group'       => 'assistant-message',
+                'default'     => '#f8faff',
+                'format'      => 'hex',
+                'description' => __( 'Background color for assistant responses.', 'wp-mcp-ai' ),
+            ),
+            'assistant-bubble-border' => array(
+                'label'       => __( 'Assistant bubble border', 'wp-mcp-ai' ),
+                'group'       => 'assistant-message',
+                'default'     => 'rgba(59, 130, 246, 0.25)',
+                'format'      => 'rgba',
+                'description' => __( 'Border color for assistant responses.', 'wp-mcp-ai' ),
+            ),
+            'assistant-bubble-shadow' => array(
+                'label'       => __( 'Assistant bubble shadow', 'wp-mcp-ai' ),
+                'group'       => 'assistant-message',
+                'default'     => 'rgba(59, 130, 246, 0.08)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow used beneath assistant responses.', 'wp-mcp-ai' ),
+            ),
+            'assistant-strong-text' => array(
+                'label'       => __( 'Assistant strong text', 'wp-mcp-ai' ),
+                'group'       => 'assistant-message',
+                'default'     => '#1d4ed8',
+                'format'      => 'hex',
+                'description' => __( 'Accent color for bold text in assistant messages.', 'wp-mcp-ai' ),
+            ),
+            'assistant-em-text' => array(
+                'label'       => __( 'Assistant emphasized text', 'wp-mcp-ai' ),
+                'group'       => 'assistant-message',
+                'default'     => '#4338ca',
+                'format'      => 'hex',
+                'description' => __( 'Accent color for italic text in assistant messages.', 'wp-mcp-ai' ),
+            ),
+            'tool-bubble-background' => array(
+                'label'       => __( 'Tool bubble background', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => '#0f172a',
+                'format'      => 'hex',
+                'description' => __( 'Background color for tool output bubbles.', 'wp-mcp-ai' ),
+            ),
+            'tool-bubble-text' => array(
+                'label'       => __( 'Tool bubble text', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => '#e2e8f0',
+                'format'      => 'hex',
+                'description' => __( 'Text color used in tool output bubbles.', 'wp-mcp-ai' ),
+            ),
+            'tool-bubble-border' => array(
+                'label'       => __( 'Tool bubble border', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => 'rgba(96, 165, 250, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Border color for tool output bubbles.', 'wp-mcp-ai' ),
+            ),
+            'tool-bubble-inner-shadow' => array(
+                'label'       => __( 'Tool bubble inner shadow', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => 'rgba(30, 64, 175, 0.4)',
+                'format'      => 'rgba',
+                'description' => __( 'Inset outline applied inside tool bubbles.', 'wp-mcp-ai' ),
+            ),
+            'tool-bubble-link-text' => array(
+                'label'       => __( 'Tool link text', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => '#93c5fd',
+                'format'      => 'hex',
+                'description' => __( 'Link color for tool output bubbles.', 'wp-mcp-ai' ),
+            ),
+            'tool-code-background' => array(
+                'label'       => __( 'Tool code background', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => 'rgba(148, 163, 184, 0.18)',
+                'format'      => 'rgba',
+                'description' => __( 'Background for inline code inside tool outputs.', 'wp-mcp-ai' ),
+            ),
+            'tool-code-text' => array(
+                'label'       => __( 'Tool code text', 'wp-mcp-ai' ),
+                'group'       => 'tool-message',
+                'default'     => '#f8fafc',
+                'format'      => 'hex',
+                'description' => __( 'Text color for inline code within tool outputs.', 'wp-mcp-ai' ),
+            ),
+            'system-bubble-background' => array(
+                'label'       => __( 'System bubble background', 'wp-mcp-ai' ),
+                'group'       => 'system-message',
+                'default'     => '#fef9c3',
+                'format'      => 'hex',
+                'description' => __( 'Background color for system messages.', 'wp-mcp-ai' ),
+            ),
+            'system-bubble-text' => array(
+                'label'       => __( 'System bubble text', 'wp-mcp-ai' ),
+                'group'       => 'system-message',
+                'default'     => '#854d0e',
+                'format'      => 'hex',
+                'description' => __( 'Text color used in system messages.', 'wp-mcp-ai' ),
+            ),
+            'system-bubble-border' => array(
+                'label'       => __( 'System bubble border', 'wp-mcp-ai' ),
+                'group'       => 'system-message',
+                'default'     => '#facc15',
+                'format'      => 'hex',
+                'description' => __( 'Accent border for system messages.', 'wp-mcp-ai' ),
+            ),
+            'status-text' => array(
+                'label'       => __( 'Status text', 'wp-mcp-ai' ),
+                'group'       => 'status',
+                'default'     => '#1d4ed8',
+                'format'      => 'hex',
+                'description' => __( 'Primary color for status messages.', 'wp-mcp-ai' ),
+            ),
+            'status-background' => array(
+                'label'       => __( 'Status background', 'wp-mcp-ai' ),
+                'group'       => 'status',
+                'default'     => '#eef2ff',
+                'format'      => 'hex',
+                'description' => __( 'Background for status notices below the transcript.', 'wp-mcp-ai' ),
+            ),
+            'status-border' => array(
+                'label'       => __( 'Status border', 'wp-mcp-ai' ),
+                'group'       => 'status',
+                'default'     => '#3b82f6',
+                'format'      => 'hex',
+                'description' => __( 'Accent border for status notices.', 'wp-mcp-ai' ),
+            ),
+            'label-text' => array(
+                'label'       => __( 'Form label text', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#0f172a',
+                'format'      => 'hex',
+                'description' => __( 'Color used for form field labels.', 'wp-mcp-ai' ),
+            ),
+            'input-border' => array(
+                'label'       => __( 'Input border', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#cbd5f5',
+                'format'      => 'hex',
+                'description' => __( 'Border color for the chat input field.', 'wp-mcp-ai' ),
+            ),
+            'input-background' => array(
+                'label'       => __( 'Input background', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#f9fafb',
+                'format'      => 'hex',
+                'description' => __( 'Background color for the chat input field.', 'wp-mcp-ai' ),
+            ),
+            'input-focus-border' => array(
+                'label'       => __( 'Input focus border', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#4361ff',
+                'format'      => 'hex',
+                'description' => __( 'Border color when the input field is focused.', 'wp-mcp-ai' ),
+            ),
+            'input-focus-shadow' => array(
+                'label'       => __( 'Input focus glow', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => 'rgba(67, 97, 255, 0.2)',
+                'format'      => 'rgba',
+                'description' => __( 'Glow applied when the input field is focused.', 'wp-mcp-ai' ),
+            ),
+            'attach-border' => array(
+                'label'       => __( 'Attachment button border', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#c3c4c7',
+                'format'      => 'hex',
+                'description' => __( 'Border for the “Attach file” button.', 'wp-mcp-ai' ),
+            ),
+            'attach-text' => array(
+                'label'       => __( 'Attachment button text', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#1d2327',
+                'format'      => 'hex',
+                'description' => __( 'Text color for the “Attach file” button and attachment titles.', 'wp-mcp-ai' ),
+            ),
+            'attach-hover-background' => array(
+                'label'       => __( 'Attachment hover background', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#f0f0f0',
+                'format'      => 'hex',
+                'description' => __( 'Background color when hovering the attachment button.', 'wp-mcp-ai' ),
+            ),
+            'attach-hover-border' => array(
+                'label'       => __( 'Attachment hover border', 'wp-mcp-ai' ),
+                'group'       => 'form',
+                'default'     => '#a7aaad',
+                'format'      => 'hex',
+                'description' => __( 'Border color when hovering the attachment button.', 'wp-mcp-ai' ),
+            ),
+            'submit-gradient-start' => array(
+                'label'       => __( 'Submit gradient start', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#3b5bff',
+                'format'      => 'hex',
+                'description' => __( 'Starting color for the Send button gradient.', 'wp-mcp-ai' ),
+            ),
+            'submit-gradient-end' => array(
+                'label'       => __( 'Submit gradient end', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#7c5cff',
+                'format'      => 'hex',
+                'description' => __( 'Ending color for the Send button gradient.', 'wp-mcp-ai' ),
+            ),
+            'submit-text' => array(
+                'label'       => __( 'Submit button text', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Text color for the Send button.', 'wp-mcp-ai' ),
+            ),
+            'submit-shadow' => array(
+                'label'       => __( 'Submit button shadow', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => 'rgba(59, 91, 255, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow below the Send button.', 'wp-mcp-ai' ),
+            ),
+            'submit-hover-gradient-start' => array(
+                'label'       => __( 'Submit hover gradient start', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#324cf8',
+                'format'      => 'hex',
+                'description' => __( 'Starting gradient color when hovering the Send button.', 'wp-mcp-ai' ),
+            ),
+            'submit-hover-gradient-end' => array(
+                'label'       => __( 'Submit hover gradient end', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#6a4bff',
+                'format'      => 'hex',
+                'description' => __( 'Ending gradient color when hovering the Send button.', 'wp-mcp-ai' ),
+            ),
+            'submit-hover-shadow' => array(
+                'label'       => __( 'Submit hover shadow', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => 'rgba(50, 76, 248, 0.4)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow applied to the Send button on hover.', 'wp-mcp-ai' ),
+            ),
+            'submit-disabled-background' => array(
+                'label'       => __( 'Submit disabled background', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#9aa5ff',
+                'format'      => 'hex',
+                'description' => __( 'Background color when the Send button is disabled.', 'wp-mcp-ai' ),
+            ),
+            'attachments-border' => array(
+                'label'       => __( 'Attachments border', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#e2e4e7',
+                'format'      => 'hex',
+                'description' => __( 'Border for the attachments container and items.', 'wp-mcp-ai' ),
+            ),
+            'attachments-background' => array(
+                'label'       => __( 'Attachments background', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#f9fafb',
+                'format'      => 'hex',
+                'description' => __( 'Background color for the attachments container.', 'wp-mcp-ai' ),
+            ),
+            'attachments-item-background' => array(
+                'label'       => __( 'Attachment item background', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Background color for individual attachment rows.', 'wp-mcp-ai' ),
+            ),
+            'attachments-meta-text' => array(
+                'label'       => __( 'Attachment meta text', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#646970',
+                'format'      => 'hex',
+                'description' => __( 'Secondary text color for attachment metadata.', 'wp-mcp-ai' ),
+            ),
+            'attachments-remove-text' => array(
+                'label'       => __( 'Remove link text', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#3858e9',
+                'format'      => 'hex',
+                'description' => __( 'Link color for removing attachments.', 'wp-mcp-ai' ),
+            ),
+            'attachments-remove-hover-background' => array(
+                'label'       => __( 'Remove link hover background', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => 'rgba(56, 88, 233, 0.1)',
+                'format'      => 'rgba',
+                'description' => __( 'Background when hovering the attachment remove link.', 'wp-mcp-ai' ),
+            ),
+            'attachments-remove-hover-text' => array(
+                'label'       => __( 'Remove link hover text', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#2b45b8',
+                'format'      => 'hex',
+                'description' => __( 'Text color when hovering the attachment remove link.', 'wp-mcp-ai' ),
+            ),
+            'bubble-attachments-text' => array(
+                'label'       => __( 'Bubble attachment text', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Text color for attachments listed inside bubbles.', 'wp-mcp-ai' ),
+            ),
+            'bubble-attachments-link-text' => array(
+                'label'       => __( 'Bubble attachment links', 'wp-mcp-ai' ),
+                'group'       => 'attachments',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Link color for attachments displayed within bubbles.', 'wp-mcp-ai' ),
+            ),
+            'notice-border' => array(
+                'label'       => __( 'Alert border', 'wp-mcp-ai' ),
+                'group'       => 'alerts',
+                'default'     => 'rgba(214, 54, 56, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Border for alert notices rendered by the shortcode.', 'wp-mcp-ai' ),
+            ),
+            'notice-background' => array(
+                'label'       => __( 'Alert background', 'wp-mcp-ai' ),
+                'group'       => 'alerts',
+                'default'     => '#fef2f2',
+                'format'      => 'hex',
+                'description' => __( 'Background for alert notices rendered by the shortcode.', 'wp-mcp-ai' ),
+            ),
+            'notice-text' => array(
+                'label'       => __( 'Alert text', 'wp-mcp-ai' ),
+                'group'       => 'alerts',
+                'default'     => '#8a1f1f',
+                'format'      => 'hex',
+                'description' => __( 'Text color for alert notices.', 'wp-mcp-ai' ),
+            ),
+            'notice-shadow' => array(
+                'label'       => __( 'Alert shadow', 'wp-mcp-ai' ),
+                'group'       => 'alerts',
+                'default'     => 'rgba(214, 54, 56, 0.12)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow applied to alert notices.', 'wp-mcp-ai' ),
+            ),
+        );
+    }
+
+    /**
+     * Returns the default chat colors indexed by color key.
+     *
+     * @return array
+     */
+    public static function get_default_chat_colors() {
+        $defaults = array();
+
+        foreach ( self::get_chat_color_definitions() as $key => $definition ) {
+            $defaults[ $key ] = $definition['default'];
+        }
+
+        return $defaults;
+    }
+
+    /**
+     * Returns the display labels for color groups.
+     *
+     * @return array
+     */
+    public static function get_chat_color_groups() {
+        return array(
+            'container'         => __( 'Chat container', 'wp-mcp-ai' ),
+            'default-message'   => __( 'Default message bubble', 'wp-mcp-ai' ),
+            'speech'            => __( 'Speech controls', 'wp-mcp-ai' ),
+            'user-message'      => __( 'User messages', 'wp-mcp-ai' ),
+            'assistant-message' => __( 'Assistant messages', 'wp-mcp-ai' ),
+            'tool-message'      => __( 'Tool messages', 'wp-mcp-ai' ),
+            'system-message'    => __( 'System messages', 'wp-mcp-ai' ),
+            'status'            => __( 'Status notice', 'wp-mcp-ai' ),
+            'form'              => __( 'Form elements', 'wp-mcp-ai' ),
+            'actions'           => __( 'Action buttons', 'wp-mcp-ai' ),
+            'attachments'       => __( 'Attachments', 'wp-mcp-ai' ),
+            'alerts'            => __( 'Alert notice', 'wp-mcp-ai' ),
+        );
+    }
+
+    /**
+     * Retrieve the saved chat colors merged with defaults.
+     *
+     * @return array
+     */
+    public static function get_chat_colors() {
+        $settings = self::get_settings();
+
+        if ( isset( $settings['chat_colors'] ) && is_array( $settings['chat_colors'] ) ) {
+            return array_merge( self::get_default_chat_colors(), $settings['chat_colors'] );
+        }
+
+        return self::get_default_chat_colors();
+    }
+
+    /**
+     * Build CSS that injects the selected chat colors.
+     *
+     * @return string
+     */
+    public static function get_chat_color_css() {
+        $colors       = self::get_chat_colors();
+        $definitions  = self::get_chat_color_definitions();
+        $declarations = array();
+
+        foreach ( $colors as $key => $value ) {
+            if ( '' === $value || ! isset( $definitions[ $key ] ) ) {
+                continue;
+            }
+
+            $declarations[] = sprintf( '    --wp-mcp-ai-color-%s: %s;', sanitize_key( $key ), $value );
+        }
+
+        if ( empty( $declarations ) ) {
+            return '';
+        }
+
+        return ".wp-mcp-ai-chat {\n" . implode( "\n", $declarations ) . "\n}\n";
     }
 
     /**
@@ -75,7 +682,15 @@ class WP_MCP_AI_Admin_Settings {
             $saved = array();
         }
 
-        return wp_parse_args( $saved, self::get_default_settings() );
+        $settings = wp_parse_args( $saved, self::get_default_settings() );
+
+        if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
+            $settings['chat_colors'] = self::get_default_chat_colors();
+        } else {
+            $settings['chat_colors'] = array_merge( self::get_default_chat_colors(), $settings['chat_colors'] );
+        }
+
+        return $settings;
     }
 
     /**
@@ -266,6 +881,21 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_chat_colors_section',
+            __( 'Chat Appearance', 'wp-mcp-ai' ),
+            array( $this, 'render_chat_colors_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'chat_colors',
+            __( 'Interface Colors', 'wp-mcp-ai' ),
+            array( $this, 'render_chat_colors_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_chat_colors_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_tools_section',
             __( 'Tools', 'wp-mcp-ai' ),
             array( $this, 'render_tools_section_description' ),
@@ -387,6 +1017,26 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( ! is_array( $settings ) ) {
             $settings = array();
+        }
+
+        $clean['chat_colors'] = self::get_default_chat_colors();
+
+        if ( isset( $settings['chat_colors'] ) && is_array( $settings['chat_colors'] ) ) {
+            $definitions = self::get_chat_color_definitions();
+
+            foreach ( $clean['chat_colors'] as $color_key => $default_value ) {
+                if ( ! isset( $definitions[ $color_key ] ) ) {
+                    continue;
+                }
+
+                if ( isset( $settings['chat_colors'][ $color_key ] ) ) {
+                    $clean['chat_colors'][ $color_key ] = self::sanitize_color_value(
+                        $settings['chat_colors'][ $color_key ],
+                        $definitions[ $color_key ]['format'],
+                        $default_value
+                    );
+                }
+            }
         }
 
         if ( isset( $settings['openai_api_key'] ) ) {
@@ -548,6 +1198,74 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Sanitize a submitted color value.
+     *
+     * @param string $value   Submitted value.
+     * @param string $format  Expected format (hex or rgba).
+     * @param string $default Default color to fall back to.
+     * @return string
+     */
+    private static function sanitize_color_value( $value, $format, $default ) {
+        $value = trim( (string) $value );
+
+        if ( '' === $value ) {
+            return $default;
+        }
+
+        if ( 'rgba' === strtolower( $format ) ) {
+            $pattern = '/^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(0|0?\.\d+|1(?:\.0+)?)\s*\)$/i';
+
+            if ( preg_match( $pattern, $value, $matches ) ) {
+                $red   = min( 255, max( 0, (int) $matches[1] ) );
+                $green = min( 255, max( 0, (int) $matches[2] ) );
+                $blue  = min( 255, max( 0, (int) $matches[3] ) );
+                $alpha = min( 1, max( 0, (float) $matches[4] ) );
+
+                $alpha_string = rtrim( rtrim( sprintf( '%.3f', $alpha ), '0' ), '.' );
+
+                if ( '' === $alpha_string ) {
+                    $alpha_string = '0';
+                }
+
+                return sprintf( 'rgba(%d, %d, %d, %s)', $red, $green, $blue, $alpha_string );
+            }
+
+            return $default;
+        }
+
+        $color = sanitize_hex_color( $value );
+
+        return $color ? $color : $default;
+    }
+
+    /**
+     * Enqueue assets used on the settings screen.
+     *
+     * @param string $hook Current admin hook suffix.
+     */
+    public function enqueue_admin_assets( $hook ) {
+        if ( 'settings_page_' . self::PAGE_SLUG !== $hook ) {
+            return;
+        }
+
+        wp_enqueue_style( 'wp-color-picker' );
+        wp_enqueue_script(
+            'wp-mcp-ai-admin-settings',
+            WP_MCP_AI_URL . 'assets/js/admin-settings.js',
+            array( 'wp-color-picker', 'jquery' ),
+            WP_MCP_AI_VERSION,
+            true
+        );
+
+        $inline_styles = '.wp-mcp-ai-chat-colors__group{margin-bottom:1.5rem;padding:1rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;}'
+            . '.wp-mcp-ai-chat-colors__group legend{font-weight:600;margin-bottom:0.5rem;}'
+            . '.wp-mcp-ai-chat-colors__field{margin-bottom:1rem;}'
+            . '.wp-mcp-ai-chat-colors__field label{display:block;font-weight:600;margin-bottom:0.25rem;}';
+
+        wp_add_inline_style( 'wp-color-picker', $inline_styles );
+    }
+
+    /**
      * Render the settings page contents.
      */
     public function render_settings_page() {
@@ -568,6 +1286,71 @@ class WP_MCP_AI_Admin_Settings {
             </form>
         </div>
         <?php
+    }
+
+    /**
+     * Render the description for the chat colors section.
+     */
+    public function render_chat_colors_section_description() {
+        echo '<p>' . esc_html__( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'wp-mcp-ai' ) . '</p>';
+    }
+
+    /**
+     * Render the chat color controls.
+     */
+    public function render_chat_colors_field() {
+        $settings    = self::get_settings();
+        $colors      = isset( $settings['chat_colors'] ) && is_array( $settings['chat_colors'] ) ? $settings['chat_colors'] : self::get_default_chat_colors();
+        $definitions = self::get_chat_color_definitions();
+        $groups      = self::get_chat_color_groups();
+
+        echo '<div class="wp-mcp-ai-chat-colors">';
+
+        foreach ( $groups as $group_key => $group_label ) {
+            $group_colors = array();
+
+            foreach ( $definitions as $color_key => $definition ) {
+                if ( isset( $definition['group'] ) && $group_key === $definition['group'] ) {
+                    $group_colors[ $color_key ] = $definition;
+                }
+            }
+
+            if ( empty( $group_colors ) ) {
+                continue;
+            }
+
+            echo '<fieldset class="wp-mcp-ai-chat-colors__group">';
+            echo '<legend>' . esc_html( $group_label ) . '</legend>';
+
+            foreach ( $group_colors as $color_key => $definition ) {
+                $input_id     = 'wp-mcp-ai-color-' . sanitize_html_class( $color_key );
+                $value        = isset( $colors[ $color_key ] ) ? $colors[ $color_key ] : $definition['default'];
+                $format       = isset( $definition['format'] ) ? strtolower( $definition['format'] ) : 'hex';
+                $descriptions = array();
+
+                if ( ! empty( $definition['description'] ) ) {
+                    $descriptions[] = $definition['description'];
+                }
+
+                if ( 'rgba' === $format ) {
+                    $descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'wp-mcp-ai' );
+                }
+
+                echo '<div class="wp-mcp-ai-chat-colors__field">';
+                echo '<label for="' . esc_attr( $input_id ) . '">' . esc_html( $definition['label'] ) . '</label>';
+                echo '<input type="text" id="' . esc_attr( $input_id ) . '" class="regular-text wp-mcp-ai-color-field" name="' . esc_attr( self::OPTION_NAME ) . '[chat_colors][' . esc_attr( $color_key ) . ']" value="' . esc_attr( $value ) . '" data-format="' . esc_attr( $format ) . '" data-default-color="' . esc_attr( $definition['default'] ) . '" />';
+
+                foreach ( $descriptions as $text ) {
+                    echo '<p class="description">' . esc_html( $text ) . '</p>';
+                }
+
+                echo '</div>';
+            }
+
+            echo '</fieldset>';
+        }
+
+        echo '</div>';
     }
 
     /**
