@@ -1332,7 +1332,7 @@ class WP_MCP_AI_Admin_Settings {
     protected function get_openai_image_quality_choices() {
         $qualities = array(
             'standard' => __( 'Standard', 'wp-mcp-ai' ),
-            'high'     => __( 'High', 'wp-mcp-ai' ),
+            'hd'       => __( 'HD (High Definition)', 'wp-mcp-ai' ),
         );
 
         $qualities = apply_filters( 'wp_mcp_ai_openai_image_qualities', $qualities );
@@ -1340,7 +1340,7 @@ class WP_MCP_AI_Admin_Settings {
         if ( ! is_array( $qualities ) || empty( $qualities ) ) {
             $qualities = array(
                 'standard' => __( 'Standard', 'wp-mcp-ai' ),
-                'high'     => __( 'High', 'wp-mcp-ai' ),
+                'hd'       => __( 'HD (High Definition)', 'wp-mcp-ai' ),
             );
         }
 

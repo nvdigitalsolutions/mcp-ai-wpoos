@@ -212,7 +212,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
             array(
                 'openai_image_model'      => 'gpt-image-1',
                 'openai_image_size'       => '1536x1024',
-                'openai_image_quality'    => 'high',
+                'openai_image_quality'    => 'hd',
                 'openai_image_background' => 'transparent',
                 'openai_image_response_format' => 'url',
             )
@@ -220,7 +220,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
         $this->assertSame( '1536x1024', $sanitized['openai_image_size'] );
-        $this->assertSame( 'high', $sanitized['openai_image_quality'] );
+        $this->assertSame( 'hd', $sanitized['openai_image_quality'] );
         $this->assertSame( 'transparent', $sanitized['openai_image_background'] );
         $this->assertSame( 'b64_json', $sanitized['openai_image_response_format'] );
     }
