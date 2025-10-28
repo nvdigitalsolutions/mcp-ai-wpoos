@@ -1111,7 +1111,7 @@ class WP_MCP_AI_Admin_Settings {
         <?php if ( ! empty( $choices ) ) : ?>
             <datalist id="<?php echo esc_attr( $datalist_id ); ?>">
                 <?php foreach ( $choices as $value => $label ) : ?>
-                    <option value="<?php echo esc_attr( $value ); ?>"><?php echo esc_html( $label ); ?></option>
+                    <option value="<?php echo esc_attr( $value ); ?>" label="<?php echo esc_attr( $label ); ?>"></option>
                 <?php endforeach; ?>
             </datalist>
         <?php endif; ?>
