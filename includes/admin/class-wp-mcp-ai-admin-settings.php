@@ -52,6 +52,9 @@ class WP_MCP_AI_Admin_Settings {
             'openai_image_size'           => '1024x1024',
             'openai_image_quality'        => 'standard',
             'openai_image_background'     => '',
+            'openai_speech_model'         => 'gpt-4o-mini-tts',
+            'openai_speech_voice'         => 'alloy',
+            'openai_speech_format'        => 'mp3',
             'allowed_image_mimes'  => array(),
             'allowed_file_mimes'   => array(),
         );
@@ -291,6 +294,30 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'openai_speech_model',
+            __( 'OpenAI Speech Model', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_speech_model_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'openai_speech_voice',
+            __( 'Default Speech Voice', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_speech_voice_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'openai_speech_format',
+            __( 'Default Speech Format', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_speech_format_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'crawl4ai_base_url',
             __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
             array( $this, 'render_crawl4ai_base_url_field' ),
@@ -459,6 +486,23 @@ class WP_MCP_AI_Admin_Settings {
 
             if ( in_array( $background, $backgrounds, true ) ) {
                 $clean['openai_image_background'] = $background;
+            }
+        }
+
+        if ( isset( $settings['openai_speech_model'] ) ) {
+            $clean['openai_speech_model'] = sanitize_text_field( $settings['openai_speech_model'] );
+        }
+
+        if ( isset( $settings['openai_speech_voice'] ) ) {
+            $clean['openai_speech_voice'] = sanitize_key( $settings['openai_speech_voice'] );
+        }
+
+        if ( isset( $settings['openai_speech_format'] ) ) {
+            $format   = sanitize_key( $settings['openai_speech_format'] );
+            $formats  = array_keys( $this->get_openai_speech_format_choices() );
+
+            if ( in_array( $format, $formats, true ) ) {
+                $clean['openai_speech_format'] = $format;
             }
         }
 
@@ -650,6 +694,59 @@ class WP_MCP_AI_Admin_Settings {
             <?php endforeach; ?>
         </select>
         <p class="description"><?php esc_html_e( 'Preferred background mode when OpenAI supports the option.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI speech model field.
+     */
+    public function render_openai_speech_model_field() {
+        $settings = self::get_settings();
+        $current  = isset( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'gpt-4o-mini-tts';
+        ?>
+        <input
+            type="text"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_speech_model]"
+            value="<?php echo esc_attr( $current ); ?>"
+            class="regular-text"
+            placeholder="gpt-4o-mini-tts"
+        />
+        <p class="description"><?php esc_html_e( 'Default text-to-speech model used by the Generate OpenAI Speech tool.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI speech voice field.
+     */
+    public function render_openai_speech_voice_field() {
+        $settings = self::get_settings();
+        $current  = isset( $settings['openai_speech_voice'] ) ? sanitize_key( $settings['openai_speech_voice'] ) : 'alloy';
+        ?>
+        <input
+            type="text"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_speech_voice]"
+            value="<?php echo esc_attr( $current ); ?>"
+            class="regular-text"
+            placeholder="alloy"
+        />
+        <p class="description"><?php esc_html_e( 'Default OpenAI voice requested for speech responses (for example, alloy, verse, or shimmer).', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI speech format field.
+     */
+    public function render_openai_speech_format_field() {
+        $settings = self::get_settings();
+        $formats  = $this->get_openai_speech_format_choices();
+        $current  = isset( $settings['openai_speech_format'] ) ? sanitize_key( $settings['openai_speech_format'] ) : 'mp3';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_speech_format]" class="regular-text">
+            <?php foreach ( $formats as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Preferred audio container when assistants omit the format.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
@@ -1138,6 +1235,55 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return $backgrounds;
+    }
+
+    /**
+     * Retrieve the allowed OpenAI speech formats.
+     *
+     * @return array
+     */
+    protected function get_openai_speech_format_choices() {
+        $formats = array(
+            'mp3'  => __( 'MP3', 'wp-mcp-ai' ),
+            'aac'  => __( 'AAC', 'wp-mcp-ai' ),
+            'flac' => __( 'FLAC', 'wp-mcp-ai' ),
+            'ogg'  => __( 'OGG', 'wp-mcp-ai' ),
+            'opus' => __( 'Opus', 'wp-mcp-ai' ),
+            'wav'  => __( 'WAV', 'wp-mcp-ai' ),
+        );
+
+        /**
+         * Filter the audio format options available in the admin settings.
+         *
+         * @param array $formats Associative array of format slugs to labels.
+         */
+        $formats = apply_filters( 'wp_mcp_ai_openai_speech_formats', $formats );
+
+        if ( ! is_array( $formats ) || empty( $formats ) ) {
+            return array(
+                'mp3' => __( 'MP3', 'wp-mcp-ai' ),
+            );
+        }
+
+        $sanitized = array();
+
+        foreach ( $formats as $key => $label ) {
+            $key = sanitize_key( $key );
+
+            if ( '' === $key ) {
+                continue;
+            }
+
+            $sanitized[ $key ] = $label;
+        }
+
+        if ( empty( $sanitized ) ) {
+            return array(
+                'mp3' => __( 'MP3', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $sanitized;
     }
 
     /**

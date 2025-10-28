@@ -969,9 +969,25 @@ class WP_MCP_AI_OpenAI_Client {
 
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-        $model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-4o-mini-tts';
-        $voice   = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_key( $options['voice'] ) : 'alloy';
-        $format  = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'mp3';
+        $default_model  = ! empty( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'gpt-4o-mini-tts';
+        $default_voice  = isset( $settings['openai_speech_voice'] ) ? sanitize_key( $settings['openai_speech_voice'] ) : 'alloy';
+        $default_format = isset( $settings['openai_speech_format'] ) ? sanitize_key( $settings['openai_speech_format'] ) : 'mp3';
+
+        if ( '' === $default_voice ) {
+            $default_voice = 'alloy';
+        }
+
+        if ( '' === $default_format ) {
+            $default_format = 'mp3';
+        }
+
+        if ( '' === $default_model ) {
+            $default_model = 'gpt-4o-mini-tts';
+        }
+
+        $model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+        $voice   = isset( $options['voice'] ) && '' !== $options['voice'] ? sanitize_key( $options['voice'] ) : $default_voice;
+        $format  = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : $default_format;
         $timeout = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
         $timeout = max( 5, $timeout );
 
