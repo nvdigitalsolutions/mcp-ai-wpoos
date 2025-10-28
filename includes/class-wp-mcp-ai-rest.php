@@ -18,6 +18,7 @@ class WP_MCP_AI_REST {
     const MEMORY_CHUNK_CHARS        = 1200;
     const MEMORY_MAX_TOTAL_CHARS    = 12000;
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
+    const DOCUMENT_PROMPT_TOOL_SLUG = 'submit_document_prompt';
 
     /**
      * Tool registry instance.
@@ -949,6 +950,11 @@ class WP_MCP_AI_REST {
         }
 
         $assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+        if ( ! empty( $attachments ) ) {
+            $assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
+        }
+
         $options          = $this->sanitize_options( $request->get_param( 'options' ), $assistant_config );
         $tools            = $this->build_tools_payload( $assistant_config );
         if ( is_wp_error( $tools ) ) {
@@ -1174,6 +1180,13 @@ class WP_MCP_AI_REST {
         $tool_slug        = sanitize_key( $request->get_param( 'tool' ) );
         $arguments        = $request->get_param( 'arguments' );
         $allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+        if ( self::DOCUMENT_PROMPT_TOOL_SLUG === $tool_slug && ! in_array( $tool_slug, $allowed_tools, true ) ) {
+            if ( $this->tool_arguments_include_document_payload( $arguments ) ) {
+                $assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
+                $allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+            }
+        }
 
         if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
             return new WP_Error( 'wp_mcp_ai_tool_forbidden', __( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
@@ -1454,6 +1467,93 @@ class WP_MCP_AI_REST {
             'messages'    => $sanitized,
             'attachments' => $attachments_helper->get_attachments(),
         );
+    }
+
+    /**
+     * Ensure the supplied assistant configuration allows a specific tool.
+     *
+     * @param array  $assistant_config Assistant configuration array.
+     * @param string $tool_slug        Tool identifier to allow.
+     * @return array
+     */
+    protected function ensure_tool_in_config( array $assistant_config, $tool_slug ) {
+        if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
+            $assistant_config['tools'] = array();
+        }
+
+        $tool_slug = sanitize_key( $tool_slug );
+
+        if ( '' === $tool_slug ) {
+            return $assistant_config;
+        }
+
+        if ( ! in_array( $tool_slug, $assistant_config['tools'], true ) ) {
+            $assistant_config['tools'][] = $tool_slug;
+        }
+
+        $assistant_config['tools'] = array_values(
+            array_filter(
+                array_unique(
+                    array_map( 'sanitize_key', $assistant_config['tools'] )
+                )
+            )
+        );
+
+        return $assistant_config;
+    }
+
+    /**
+     * Determine whether a tool request payload references document attachments.
+     *
+     * @param mixed $arguments Tool invocation arguments.
+     * @return bool
+     */
+    protected function tool_arguments_include_document_payload( $arguments ) {
+        if ( empty( $arguments ) || ! is_array( $arguments ) ) {
+            return false;
+        }
+
+        if ( ! empty( $arguments['attachment_id'] ) || ! empty( $arguments['file_id'] ) ) {
+            return true;
+        }
+
+        if ( ! empty( $arguments['attachment_ids'] ) && is_array( $arguments['attachment_ids'] ) ) {
+            foreach ( $arguments['attachment_ids'] as $value ) {
+                if ( ! empty( $value ) ) {
+                    return true;
+                }
+            }
+        }
+
+        if ( ! empty( $arguments['file_ids'] ) && is_array( $arguments['file_ids'] ) ) {
+            foreach ( $arguments['file_ids'] as $value ) {
+                if ( ! empty( $value ) ) {
+                    return true;
+                }
+            }
+        }
+
+        if ( ! empty( $arguments['attachments'] ) && is_array( $arguments['attachments'] ) ) {
+            foreach ( $arguments['attachments'] as $entry ) {
+                if ( $entry instanceof \Traversable ) {
+                    $entry = iterator_to_array( $entry );
+                }
+
+                if ( is_object( $entry ) ) {
+                    $entry = (array) $entry;
+                }
+
+                if ( ! is_array( $entry ) ) {
+                    continue;
+                }
+
+                if ( ! empty( $entry['attachment_id'] ) || ! empty( $entry['file_id'] ) || ! empty( $entry['id'] ) ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
