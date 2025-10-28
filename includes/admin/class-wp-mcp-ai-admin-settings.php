@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Handles registration and rendering of the plugin's settings page.
  */
 class WP_MCP_AI_Admin_Settings {
+    const DEFAULT_MEMORY_MAX_FILE_BYTES = 5242880; // 5 MB.
     const OPTION_NAME = 'wp_mcp_ai_settings';
     const SETTINGS_GROUP = 'wp_mcp_ai_settings_group';
     const PAGE_SLUG = 'wp-mcp-ai-settings';
@@ -23,6 +24,7 @@ class WP_MCP_AI_Admin_Settings {
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
     }
 
     /**
@@ -40,6 +42,7 @@ class WP_MCP_AI_Admin_Settings {
             'default_gemini_model' => 'gemini-1.5-flash',
             'default_provider'     => 'openai',
             'request_timeout'      => 30,
+            'memory_max_file_bytes' => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
             'auth0_domain'         => '',
             'auth0_audience'       => '',
             'auth0_required_scope' => '',
@@ -254,6 +257,14 @@ class WP_MCP_AI_Admin_Settings {
             'wp_mcp_ai_attachments_section'
         );
 
+        add_settings_field(
+            'memory_max_file_bytes',
+            __( 'Maximum Memory File Size', 'wp-mcp-ai' ),
+            array( $this, 'render_memory_max_file_bytes_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_attachments_section'
+        );
+
         add_settings_section(
             'wp_mcp_ai_tools_section',
             __( 'Tools', 'wp-mcp-ai' ),
@@ -418,6 +429,15 @@ class WP_MCP_AI_Admin_Settings {
 
             if ( $timeout > 0 ) {
                 $clean['request_timeout'] = max( 5, $timeout );
+            }
+        }
+
+        if ( isset( $settings['memory_max_file_bytes'] ) ) {
+            $choices = $this->get_memory_max_file_size_choices();
+            $choice  = absint( $settings['memory_max_file_bytes'] );
+
+            if ( isset( $choices[ $choice ] ) ) {
+                $clean['memory_max_file_bytes'] = $choice;
             }
         }
 
@@ -1243,6 +1263,67 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Render the memory file size limit field.
+     */
+    public function render_memory_max_file_bytes_field() {
+        $settings = self::get_settings();
+        $choices  = $this->get_memory_max_file_size_choices();
+        $current  = isset( $settings['memory_max_file_bytes'] ) ? absint( $settings['memory_max_file_bytes'] ) : self::DEFAULT_MEMORY_MAX_FILE_BYTES;
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[memory_max_file_bytes]" class="regular-text">
+            <?php foreach ( $choices as $bytes => $label ) : ?>
+                <option value="<?php echo esc_attr( $bytes ); ?>" <?php selected( $current, $bytes ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Largest attachment size that can be processed as assistant memory.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Retrieve the selectable memory file size limits.
+     *
+     * @return array
+     */
+    protected function get_memory_max_file_size_choices() {
+        $choices = array(
+            5 * MB_IN_BYTES   => __( '5 MB (default)', 'wp-mcp-ai' ),
+            10 * MB_IN_BYTES  => __( '10 MB', 'wp-mcp-ai' ),
+            25 * MB_IN_BYTES  => __( '25 MB', 'wp-mcp-ai' ),
+            50 * MB_IN_BYTES  => __( '50 MB', 'wp-mcp-ai' ),
+            100 * MB_IN_BYTES => __( '100 MB', 'wp-mcp-ai' ),
+        );
+
+        /**
+         * Filters the selectable memory file size limits shown in the admin.
+         *
+         * @param array $choices Associative array mapping byte sizes to labels.
+         */
+        $choices = apply_filters( 'wp_mcp_ai_memory_max_file_size_choices', $choices );
+
+        if ( ! is_array( $choices ) || empty( $choices ) ) {
+            return array( self::DEFAULT_MEMORY_MAX_FILE_BYTES => __( '5 MB (default)', 'wp-mcp-ai' ) );
+        }
+
+        $sanitized = array();
+
+        foreach ( $choices as $bytes => $label ) {
+            $bytes = absint( $bytes );
+
+            if ( $bytes <= 0 ) {
+                continue;
+            }
+
+            $sanitized[ $bytes ] = $label;
+        }
+
+        if ( empty( $sanitized ) ) {
+            $sanitized[ self::DEFAULT_MEMORY_MAX_FILE_BYTES ] = __( '5 MB (default)', 'wp-mcp-ai' );
+        }
+
+        return $sanitized;
+    }
+
+    /**
      * Retrieve the list of available OpenAI image models.
      *
      * @return array
@@ -1439,5 +1520,23 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return implode( "\n", array_map( 'trim', array_filter( $value ) ) );
+    }
+
+    /**
+     * Override the memory file size limit with the admin setting.
+     *
+     * @param int $max_bytes Default maximum bytes allowed.
+     * @param int $attachment_id Attachment ID being evaluated.
+     * @return int
+     */
+    public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+        $settings = self::get_settings();
+        $limit    = isset( $settings['memory_max_file_bytes'] ) ? absint( $settings['memory_max_file_bytes'] ) : 0;
+
+        if ( $limit > 0 ) {
+            return $limit;
+        }
+
+        return $max_bytes;
     }
 }
