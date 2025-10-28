@@ -17,6 +17,7 @@ class WP_MCP_AI_REST {
     const MEMORY_MAX_DOCUMENT_CHARS = 4000;
     const MEMORY_CHUNK_CHARS        = 1200;
     const MEMORY_MAX_TOTAL_CHARS    = 12000;
+    const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
 
     /**
      * Tool registry instance.
@@ -1775,7 +1776,7 @@ class WP_MCP_AI_REST {
      * Prepare memory documents for inclusion with a chat request.
      *
      * @param array $file_ids Attachment identifiers.
-     * @return array
+     * @return array|WP_Error
      */
     protected function prepare_memory_documents( array $file_ids ) {
         if ( empty( $file_ids ) ) {
@@ -1818,8 +1819,47 @@ class WP_MCP_AI_REST {
                 continue;
             }
 
+            $file_size = @filesize( $file_path );
+
+            if ( false === $file_size ) {
+                return new WP_Error(
+                    'wp_mcp_ai_memory_file_size_unknown',
+                    __( 'Could not determine the size of a memory file.', 'wp-mcp-ai' ),
+                    array(
+                        'status'  => 400,
+                        'file_id' => $file_id,
+                    )
+                );
+            }
+
+            $max_bytes = (int) apply_filters( 'wp_mcp_ai_memory_max_file_bytes', self::MEMORY_MAX_FILE_BYTES, $file_id );
+
+            if ( $file_size > $max_bytes ) {
+                /* translators: 1: maximum allowed size in bytes, 2: detected file size in bytes. */
+                $message = sprintf(
+                    __( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'wp-mcp-ai' ),
+                    number_format_i18n( $max_bytes ),
+                    number_format_i18n( $file_size )
+                );
+
+                return new WP_Error(
+                    'wp_mcp_ai_memory_file_too_large',
+                    $message,
+                    array(
+                        'status'    => 400,
+                        'file_id'   => $file_id,
+                        'max_bytes' => $max_bytes,
+                        'file_size' => (int) $file_size,
+                    )
+                );
+            }
+
             $mime_type = get_post_mime_type( $file_id );
             $raw_text  = $this->extract_memory_text( $file_path, $mime_type );
+
+            if ( is_wp_error( $raw_text ) ) {
+                return $raw_text;
+            }
 
             if ( '' === $raw_text ) {
                 continue;
@@ -1870,7 +1910,7 @@ class WP_MCP_AI_REST {
      *
      * @param string $file_path File system path.
      * @param string $mime_type MIME type.
-     * @return string
+     * @return string|WP_Error
      */
     protected function extract_memory_text( $file_path, $mime_type ) {
         if ( 'application/pdf' === $mime_type ) {
@@ -1915,7 +1955,13 @@ class WP_MCP_AI_REST {
             return '';
         }
 
-        return (string) $this->read_file_contents( $file_path );
+        $contents = $this->read_file_contents( $file_path );
+
+        if ( is_wp_error( $contents ) ) {
+            return $contents;
+        }
+
+        return (string) $contents;
     }
 
     /**
@@ -2004,14 +2050,45 @@ class WP_MCP_AI_REST {
 
         if ( $wp_filesystem instanceof WP_Filesystem_Base && $wp_filesystem->exists( $file_path ) ) {
             $contents = $wp_filesystem->get_contents( $file_path );
-            return is_string( $contents ) ? $contents : '';
+            if ( is_string( $contents ) ) {
+                return $contents;
+            }
+
+            return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
         }
 
         if ( is_readable( $file_path ) ) {
-            return (string) file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+            $handle = fopen( $file_path, 'rb' );
+
+            if ( ! $handle ) {
+                return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
+            }
+
+            $chunk_size = (int) apply_filters( 'wp_mcp_ai_memory_read_chunk_bytes', 1024 * 1024, $file_path );
+            if ( $chunk_size <= 0 ) {
+                $chunk_size = 1024 * 1024;
+            }
+
+            $contents = '';
+
+            while ( ! feof( $handle ) ) {
+                $chunk = fread( $handle, $chunk_size );
+
+                if ( false === $chunk ) {
+                    fclose( $handle );
+
+                    return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
+                }
+
+                $contents .= $chunk;
+            }
+
+            fclose( $handle );
+
+            return $contents;
         }
 
-        return '';
+        return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
     }
 
     /**

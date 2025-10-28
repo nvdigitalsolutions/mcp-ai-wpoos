@@ -307,6 +307,86 @@ class WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure oversized memory files are rejected before being read.
+     */
+    public function test_request_rejected_when_memory_file_too_large() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Large File Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $large_content = str_repeat( 'A', 2048 );
+        $attachment_id = $this->create_memory_attachment( 'too-large.txt', $large_content, $admin_id, 'inherit' );
+
+        update_post_meta(
+            $assistant_id,
+            WP_MCP_AI_Assistant_CPT::META_MEMORY_FILES,
+            array( $attachment_id )
+        );
+
+        $limit_filter = function ( $max_bytes, $file_id ) {
+            return 100;
+        };
+
+        add_filter( 'wp_mcp_ai_memory_max_file_bytes', $limit_filter, 10, 2 );
+
+        if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ) {
+            remove_action( 'rest_api_init', array( $GLOBALS['wp_mcp_ai_rest_controller'], 'register_routes' ) );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $registry                            = WP_MCP_AI_Tool_Registry::get_instance();
+        $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $mock_client );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
+
+        $response = null;
+
+        try {
+            $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+            $request->set_param( 'assistant_id', $assistant_id );
+            $request->set_param(
+                'messages',
+                array(
+                    array(
+                        'role'    => 'user',
+                        'content' => 'Hello',
+                    ),
+                )
+            );
+            $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+            $response = rest_get_server()->dispatch( $request );
+        } finally {
+            remove_filter( 'wp_mcp_ai_memory_max_file_bytes', $limit_filter, 10 );
+        }
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 400, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertSame( 'wp_mcp_ai_memory_file_too_large', $data['code'] );
+        $this->assertArrayHasKey( 'data', $data );
+        $this->assertArrayHasKey( 'file_id', $data['data'] );
+        $this->assertSame( $attachment_id, $data['data']['file_id'] );
+    }
+
+    /**
      * Ensure requests fail when no memory files remain after permission checks.
      */
     public function test_request_rejected_when_all_memory_files_forbidden() {
