@@ -669,19 +669,119 @@ class WP_MCP_AI_Admin_Settings {
      */
     public function render_group_email_capability_field() {
         $settings    = self::get_settings();
-        $capability  = isset( $settings['group_email_capability'] ) ? $settings['group_email_capability'] : '';
+        $capability  = isset( $settings['group_email_capability'] ) ? sanitize_key( $settings['group_email_capability'] ) : '';
+        $choices     = $this->get_group_email_capability_choices();
+
+        if ( '' !== $capability && ! in_array( $capability, $choices, true ) ) {
+            $choices[] = $capability;
+        }
         ?>
-        <input
-            type="text"
+        <select
             name="<?php echo esc_attr( self::OPTION_NAME ); ?>[group_email_capability]"
-            value="<?php echo esc_attr( $capability ); ?>"
             class="regular-text"
-            placeholder="publish_posts"
-        />
+        >
+            <option value="" <?php selected( '', $capability ); ?>>
+                <?php esc_html_e( 'Any logged-in user (no capability required)', 'wp-mcp-ai' ); ?>
+            </option>
+            <?php foreach ( $choices as $choice ) : ?>
+                <?php $label = $this->get_group_email_capability_label( $choice ); ?>
+                <option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $capability, $choice ); ?>>
+                    <?php echo esc_html( $label ); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
         <p class="description">
-            <?php esc_html_e( 'Capability required to use the Send Group Email tool. Leave blank to allow any logged-in user that passes attachment checks.', 'wp-mcp-ai' ); ?>
+            <?php esc_html_e( 'Select the capability required to use the Send Group Email tool. Choose "Any logged-in user" to allow any logged-in user that passes attachment checks.', 'wp-mcp-ai' ); ?>
         </p>
         <?php
+    }
+
+    /**
+     * Retrieve the available capability choices for the group email tool.
+     *
+     * @return string[] List of capability slugs.
+     */
+    protected function get_group_email_capability_choices() {
+        $choices = array();
+
+        if ( function_exists( 'wp_roles' ) ) {
+            $wp_roles = wp_roles();
+
+            if ( $wp_roles && is_a( $wp_roles, 'WP_Roles' ) ) {
+                foreach ( $wp_roles->roles as $role ) {
+                    if ( empty( $role['capabilities'] ) || ! is_array( $role['capabilities'] ) ) {
+                        continue;
+                    }
+
+                    foreach ( $role['capabilities'] as $capability => $granted ) {
+                        if ( empty( $granted ) ) {
+                            continue;
+                        }
+
+                        $capability = sanitize_key( $capability );
+
+                        if ( '' !== $capability ) {
+                            $choices[ $capability ] = $capability;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ( ! isset( $choices['publish_posts'] ) ) {
+            $choices['publish_posts'] = 'publish_posts';
+        }
+
+        $choices = array_values( $choices );
+        sort( $choices, SORT_NATURAL | SORT_FLAG_CASE );
+
+        /**
+         * Filter the capability options shown in the group email settings field.
+         *
+         * @param string[] $choices Capability slugs available for selection.
+         */
+        $choices = apply_filters( 'wp_mcp_ai_group_email_capability_choices', $choices );
+
+        if ( ! is_array( $choices ) ) {
+            return array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $choices as $choice ) {
+            $choice = sanitize_key( $choice );
+
+            if ( '' === $choice ) {
+                continue;
+            }
+
+            $sanitized[ $choice ] = $choice;
+        }
+
+        return array_values( $sanitized );
+    }
+
+    /**
+     * Convert a capability slug into a human-friendly label.
+     *
+     * @param string $capability Capability slug.
+     * @return string
+     */
+    protected function get_group_email_capability_label( $capability ) {
+        $readable = trim( preg_replace( '/[\-_]+/', ' ', (string) $capability ) );
+        $readable = preg_replace( '/\s+/', ' ', $readable );
+
+        if ( '' === $readable ) {
+            return $capability;
+        }
+
+        $readable = ucwords( $readable );
+
+        if ( strtolower( $readable ) === strtolower( $capability ) ) {
+            return $readable;
+        }
+
+        return sprintf( '%1$s (%2$s)', $readable, $capability );
     }
 
     /**
