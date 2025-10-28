@@ -663,6 +663,11 @@ class WP_MCP_AI_Admin_Settings {
         $settings = self::get_settings();
         $sizes    = $this->get_openai_image_size_choices();
         $current  = isset( $settings['openai_image_size'] ) ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
+
+        if ( ! isset( $sizes[ $current ] ) ) {
+            $first_key = function_exists( 'array_key_first' ) ? array_key_first( $sizes ) : '1024x1024';
+            $current   = $first_key ? $first_key : '1024x1024';
+        }
         ?>
         <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_size]" class="regular-text">
             <?php foreach ( $sizes as $value => $label ) : ?>
@@ -1270,8 +1275,8 @@ class WP_MCP_AI_Admin_Settings {
     protected function get_openai_image_size_choices() {
         $sizes = array(
             '1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-            '1024x1536' => __( '1024 × 1536 (portrait)', 'wp-mcp-ai' ),
-            '1536x1024' => __( '1536 × 1024 (landscape)', 'wp-mcp-ai' ),
+            '1024x1792' => __( '1024 × 1792 (portrait)', 'wp-mcp-ai' ),
+            '1792x1024' => __( '1792 × 1024 (landscape)', 'wp-mcp-ai' ),
             'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
         );
 
@@ -1280,8 +1285,8 @@ class WP_MCP_AI_Admin_Settings {
         if ( ! is_array( $sizes ) || empty( $sizes ) ) {
             $sizes = array(
                 '1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-                '1024x1536' => __( '1024 × 1536 (portrait)', 'wp-mcp-ai' ),
-                '1536x1024' => __( '1536 × 1024 (landscape)', 'wp-mcp-ai' ),
+                '1024x1792' => __( '1024 × 1792 (portrait)', 'wp-mcp-ai' ),
+                '1792x1024' => __( '1792 × 1024 (landscape)', 'wp-mcp-ai' ),
                 'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
             );
         }

@@ -83,7 +83,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
             array(
                 'prompt'     => 'A friendly robot painting a portrait',
                 'model'      => 'gpt-image-test',
-                'size'       => '1024x1536',
+                'size'       => '1024x1792',
                 'quality'    => 'hd',
                 'format'     => 'png',
                 'response_format' => 'b64_json',
@@ -106,7 +106,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'attachment_id', $result );
         $this->assertArrayHasKey( 'url', $result );
         $this->assertSame( 'png', $result['format'] );
-        $this->assertSame( '1024x1536', $result['size'] );
+        $this->assertSame( '1024x1792', $result['size'] );
         $this->assertSame( 'hd', $result['quality'] );
         $this->assertSame( 'gpt-image-test', $result['model'] );
         $this->assertSame( 'b64_json', $result['response_format'] );
@@ -133,7 +133,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
     public function test_execute_uses_configured_defaults_when_arguments_missing() {
         $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
         $settings['openai_api_key']        = 'sk-test';
-        $settings['openai_image_size']     = '1536x1024';
+        $settings['openai_image_size']     = '1792x1024';
         $settings['openai_image_quality']  = 'hd';
         $settings['openai_image_response_format'] = 'url';
         update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -183,7 +183,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
         $payload = json_decode( $captured_request['args']['body'], true );
         $this->assertIsArray( $payload );
-        $this->assertSame( '1536x1024', $payload['size'] );
+        $this->assertSame( '1792x1024', $payload['size'] );
         $this->assertSame( 'hd', $payload['quality'] );
         $this->assertArrayNotHasKey( 'response_format', $payload );
 
