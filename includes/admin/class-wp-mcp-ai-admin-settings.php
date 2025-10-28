@@ -52,6 +52,7 @@ class WP_MCP_AI_Admin_Settings {
             'openai_image_size'           => '1024x1024',
             'openai_image_quality'        => 'standard',
             'openai_image_background'     => '',
+            'openai_image_response_format' => 'b64_json',
             'openai_speech_model'         => 'gpt-4o-mini-tts',
             'openai_speech_voice'         => 'alloy',
             'openai_speech_format'        => 'mp3',
@@ -294,6 +295,9 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'openai_image_response_format',
+            __( 'Image Output Type', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_response_format_field' ),
             'openai_speech_model',
             __( 'OpenAI Speech Model', 'wp-mcp-ai' ),
             array( $this, 'render_openai_speech_model_field' ),
@@ -489,6 +493,12 @@ class WP_MCP_AI_Admin_Settings {
             }
         }
 
+        if ( isset( $settings['openai_image_response_format'] ) ) {
+            $response_format   = sanitize_key( $settings['openai_image_response_format'] );
+            $response_formats  = array_keys( $this->get_openai_image_response_format_choices() );
+
+            if ( in_array( $response_format, $response_formats, true ) ) {
+                $clean['openai_image_response_format'] = $response_format;
         if ( isset( $settings['openai_speech_model'] ) ) {
             $clean['openai_speech_model'] = sanitize_text_field( $settings['openai_speech_model'] );
         }
@@ -698,6 +708,19 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Render the OpenAI image response format field.
+     */
+    public function render_openai_image_response_format_field() {
+        $settings          = self::get_settings();
+        $response_formats  = $this->get_openai_image_response_format_choices();
+        $current           = isset( $settings['openai_image_response_format'] ) ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" class="regular-text">
+            <?php foreach ( $response_formats as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'wp-mcp-ai' ); ?></p>
      * Render the OpenAI speech model field.
      */
     public function render_openai_speech_model_field() {
@@ -1238,6 +1261,26 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Retrieve the list of available OpenAI image response formats.
+     *
+     * @return array
+     */
+    protected function get_openai_image_response_format_choices() {
+        $formats = array(
+            'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
+            'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+        );
+
+        $formats = apply_filters( 'wp_mcp_ai_openai_image_response_formats', $formats );
+
+        if ( ! is_array( $formats ) || empty( $formats ) ) {
+            $formats = array(
+                'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
+                'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $formats;
      * Retrieve the allowed OpenAI speech formats.
      *
      * @return array
