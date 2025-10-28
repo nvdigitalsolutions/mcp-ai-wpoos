@@ -73,7 +73,7 @@ class WP_MCP_AI_Assistant_CPT {
         $printed = true;
 
         printf(
-            '<style id="wp-mcp-ai-admin-menu-icon-styles">#adminmenu .menu-icon-%1$s .wp-menu-image{display:flex;align-items:center;justify-content:center;padding:0;}#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}</style>',
+            '<style id="wp-mcp-ai-admin-menu-icon-styles">#adminmenu .menu-icon-%1$s a.menu-top{display:flex;align-items:center;gap:8px;padding:0 12px;}#adminmenu .menu-icon-%1$s .wp-menu-image{display:flex;align-items:center;justify-content:center;width:20px;height:20px;margin:0;}#adminmenu .menu-icon-%1$s .wp-menu-name{display:flex;align-items:center;}#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}</style>',
             esc_attr( self::POST_TYPE )
         );
     }
