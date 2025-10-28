@@ -435,7 +435,7 @@ class WP_MCP_AI_OpenAI_Client {
      * Generate an image using the OpenAI Images API.
      *
      * @param string $prompt  Text prompt describing the desired image.
-     * @param array  $options Optional overrides (model, size, quality, style, background, format, timeout).
+     * @param array  $options Optional overrides (model, size, quality, format, timeout).
      * @return array|WP_Error Array containing the image payload and metadata or WP_Error on failure.
      */
     public function generate_image( $prompt, array $options = array() ) {
@@ -469,7 +469,6 @@ class WP_MCP_AI_OpenAI_Client {
         $default_model      = isset( $settings['openai_image_model'] ) && '' !== $settings['openai_image_model'] ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
         $default_size       = isset( $settings['openai_image_size'] ) && '' !== $settings['openai_image_size'] ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
         $default_quality    = isset( $settings['openai_image_quality'] ) && '' !== $settings['openai_image_quality'] ? sanitize_key( $settings['openai_image_quality'] ) : 'standard';
-        $default_background = isset( $settings['openai_image_background'] ) ? sanitize_key( $settings['openai_image_background'] ) : '';
         $default_response_format = isset( $settings['openai_image_response_format'] ) && '' !== $settings['openai_image_response_format'] ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
 
         if ( ! in_array( $default_response_format, array( 'b64_json', 'url' ), true ) ) {
@@ -479,7 +478,6 @@ class WP_MCP_AI_OpenAI_Client {
         $model     = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
         $size      = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
         $quality   = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
-        $background = isset( $options['background'] ) && '' !== $options['background'] ? sanitize_key( $options['background'] ) : $default_background;
         $requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
         $response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : $default_response_format;
 
@@ -503,10 +501,6 @@ class WP_MCP_AI_OpenAI_Client {
             'quality' => $quality,
             'n'       => 1,
         );
-
-        if ( '' !== $background ) {
-            $payload['background'] = $background;
-        }
 
         if ( $model_supports_response_format && '' !== $response_format ) {
             $payload['response_format'] = $response_format;
@@ -541,7 +535,6 @@ class WP_MCP_AI_OpenAI_Client {
                 'model'     => $model,
                 'size'      => $size,
                 'quality'   => $quality,
-                'background'=> $background,
                 'requested_format' => $requested_format,
                 'response_format'  => $response_format,
             )
@@ -717,7 +710,6 @@ class WP_MCP_AI_OpenAI_Client {
             'prompt'         => $prompt,
             'size'           => $size,
             'quality'        => $quality,
-            'background'     => $background,
             'created'        => $response_created,
             'revised_prompt' => $response_revision,
         );
@@ -729,7 +721,6 @@ class WP_MCP_AI_OpenAI_Client {
                 'model'      => $model,
                 'size'       => $size,
                 'quality'    => $quality,
-                'background' => $background,
                 'format'     => $response_format,
             )
         );

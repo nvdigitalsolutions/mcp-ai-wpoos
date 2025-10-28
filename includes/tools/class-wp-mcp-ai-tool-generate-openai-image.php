@@ -74,12 +74,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                     'enum'        => array_values( self::get_allowed_qualities() ),
                     'default'     => $defaults['quality'],
                 ),
-                'background' => array(
-                    'type'        => 'string',
-                    'description' => __( 'Optional background preference such as transparent, opaque, or auto.', 'wp-mcp-ai' ),
-                    'enum'        => array_values( self::get_allowed_backgrounds() ),
-                    'default'     => $defaults['background'],
-                ),
                 'response_format' => array(
                     'type'        => 'string',
                     'description' => __( 'Whether OpenAI should return base64 data or a hosted image URL.', 'wp-mcp-ai' ),
@@ -118,7 +112,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'model'      => self::DEFAULT_MODEL,
             'size'       => self::DEFAULT_SIZE,
             'quality'    => self::DEFAULT_QUALITY,
-            'background' => '',
             'response_format' => self::DEFAULT_RESPONSE_FORMAT,
         );
 
@@ -146,10 +139,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             if ( '' !== $quality ) {
                 $defaults['quality'] = $quality;
             }
-        }
-
-        if ( isset( $settings['openai_image_background'] ) ) {
-            $defaults['background'] = $this->normalise_background( $settings['openai_image_background'] );
         }
 
         if ( isset( $settings['openai_image_response_format'] ) ) {
@@ -211,13 +200,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             $quality = $defaults['quality'];
         }
 
-        $background = isset( $arguments['background'] ) ? sanitize_key( $arguments['background'] ) : $defaults['background'];
-        $background = $this->normalise_background( $background );
-
-        if ( '' === $background ) {
-            $background = $defaults['background'];
-        }
-
         $response_format = isset( $arguments['response_format'] ) ? sanitize_key( $arguments['response_format'] ) : $defaults['response_format'];
         $response_format = $this->normalise_response_format( $response_format );
 
@@ -242,10 +224,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
 
         if ( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
             $options['response_format'] = $response_format;
-        }
-
-        if ( '' !== $background ) {
-            $options['background'] = $background;
         }
 
         if ( isset( $arguments['timeout'] ) && '' !== $arguments['timeout'] ) {
@@ -284,7 +262,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'size'           => $size,
             'quality'        => $quality,
             'model'          => $image['model'],
-            'background'     => $background,
             'response_format'=> $response_format,
             'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
             'created'        => isset( $image['created'] ) ? $image['created'] : 0,
@@ -325,20 +302,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         return array(
             'standard',
             'hd',
-        );
-    }
-
-    /**
-     * Retrieve the allowed background options.
-     *
-     * @return array
-     */
-    protected static function get_allowed_backgrounds() {
-        return array(
-            '',
-            'transparent',
-            'opaque',
-            'auto',
         );
     }
 
@@ -413,19 +376,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         $qualities = self::get_allowed_qualities();
 
         return in_array( $quality, $qualities, true ) ? $quality : '';
-    }
-
-    /**
-     * Normalise the requested background option.
-     *
-     * @param string $background Raw background input.
-     * @return string
-     */
-    protected function normalise_background( $background ) {
-        $background = sanitize_key( $background );
-        $backgrounds = self::get_allowed_backgrounds();
-
-        return in_array( $background, $backgrounds, true ) ? $background : '';
     }
 
     /**
