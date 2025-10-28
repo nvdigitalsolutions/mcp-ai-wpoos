@@ -54,10 +54,30 @@ class WP_MCP_AI_Elementor_Integration {
             return;
         }
 
-        require_once WP_MCP_AI_PATH . 'includes/elementor/class-wp-mcp-ai-elementor-widget.php';
+        $widget_files = array(
+            'class-wp-mcp-ai-elementor-widget.php',
+            'class-wp-mcp-ai-elementor-chat-intro-widget.php',
+            'class-wp-mcp-ai-elementor-chat-faq-widget.php',
+        );
 
-        if ( class_exists( 'WP_MCP_AI_Elementor_Widget' ) ) {
-            $widgets_manager->register( new WP_MCP_AI_Elementor_Widget() );
+        foreach ( $widget_files as $file ) {
+            $path = WP_MCP_AI_PATH . 'includes/elementor/' . $file;
+
+            if ( file_exists( $path ) ) {
+                require_once $path;
+            }
+        }
+
+        $widget_classes = array(
+            'WP_MCP_AI_Elementor_Widget',
+            'WP_MCP_AI_Elementor_Chat_Intro_Widget',
+            'WP_MCP_AI_Elementor_Chat_FAQ_Widget',
+        );
+
+        foreach ( $widget_classes as $widget_class ) {
+            if ( class_exists( $widget_class ) ) {
+                $widgets_manager->register( new $widget_class() );
+            }
         }
     }
 }
