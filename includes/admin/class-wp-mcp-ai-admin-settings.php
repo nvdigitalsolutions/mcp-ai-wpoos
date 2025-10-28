@@ -1096,11 +1096,83 @@ class WP_MCP_AI_Admin_Settings {
      * Render the default model field.
      */
     public function render_default_model_field() {
-        $settings = self::get_settings();
+        $settings    = self::get_settings();
+        $current     = isset( $settings['default_model'] ) ? sanitize_text_field( $settings['default_model'] ) : '';
+        $choices     = $this->get_openai_default_model_choices();
+        $datalist_id = 'wp-mcp-ai-default-openai-models';
         ?>
-        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_model]" value="<?php echo esc_attr( $settings['default_model'] ); ?>" class="regular-text" />
+        <input
+            type="text"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_model]"
+            value="<?php echo esc_attr( $current ); ?>"
+            class="regular-text"
+            list="<?php echo esc_attr( $datalist_id ); ?>"
+        />
+        <?php if ( ! empty( $choices ) ) : ?>
+            <datalist id="<?php echo esc_attr( $datalist_id ); ?>">
+                <?php foreach ( $choices as $value => $label ) : ?>
+                    <option value="<?php echo esc_attr( $value ); ?>" label="<?php echo esc_attr( $label ); ?>"><?php echo esc_html( $label ); ?></option>
+                <?php endforeach; ?>
+            </datalist>
+        <?php endif; ?>
         <p class="description"><?php esc_html_e( 'The Chat Completions model to use when assistants do not specify one.', 'wp-mcp-ai' ); ?></p>
         <?php
+    }
+
+    /**
+     * Retrieve suggested OpenAI chat completion models for the default model field.
+     *
+     * @return array<string, string> Associative array of model slugs mapped to display labels.
+     */
+    protected function get_openai_default_model_choices() {
+        $choices = array(
+            'gpt-4o'                   => __( 'GPT-4o', 'wp-mcp-ai' ),
+            'gpt-4o-mini'              => __( 'GPT-4o mini', 'wp-mcp-ai' ),
+            'gpt-4.1'                  => __( 'GPT-4.1', 'wp-mcp-ai' ),
+            'gpt-4.1-mini'             => __( 'GPT-4.1 mini', 'wp-mcp-ai' ),
+            'o4-mini'                  => __( 'o4 mini', 'wp-mcp-ai' ),
+            'gpt-4o-audio-preview'     => __( 'GPT-4o audio preview', 'wp-mcp-ai' ),
+            'gpt-4o-realtime-preview'  => __( 'GPT-4o realtime preview', 'wp-mcp-ai' ),
+        );
+
+        /**
+         * Filter the default OpenAI model choices displayed in the settings UI.
+         *
+         * @param array<string, string> $choices Associative array of model values mapped to human-readable labels.
+         */
+        $choices = apply_filters( 'wp_mcp_ai_default_openai_model_choices', $choices );
+
+        if ( ! is_array( $choices ) ) {
+            return array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $choices as $value => $label ) {
+            $value = sanitize_text_field( (string) $value );
+
+            if ( '' === $value ) {
+                continue;
+            }
+
+            if ( is_object( $label ) && method_exists( $label, '__toString' ) ) {
+                $label = (string) $label;
+            } elseif ( is_scalar( $label ) ) {
+                $label = (string) $label;
+            } else {
+                $label = $value;
+            }
+
+            $label = wp_strip_all_tags( $label );
+
+            if ( '' === $label ) {
+                $label = $value;
+            }
+
+            $sanitized[ $value ] = $label;
+        }
+
+        return $sanitized;
     }
 
     /**
