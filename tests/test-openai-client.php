@@ -1499,7 +1499,8 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'high', $payload['quality'] );
         $this->assertSame( 'transparent', $payload['background'] );
         $this->assertArrayNotHasKey( 'format', $payload );
-        $this->assertArrayNotHasKey( 'response_format', $payload );
+        $this->assertArrayHasKey( 'response_format', $payload );
+        $this->assertSame( 'b64_json', $payload['response_format'] );
         $this->assertSame( 1, $payload['n'] );
     }
 
@@ -1542,7 +1543,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $client->generate_image(
             'Prompt with explicit response format',
             array(
-                'response_format' => 'b64_json',
+                'response_format' => 'url',
             )
         );
 
@@ -1553,7 +1554,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertIsArray( $payload );
         $this->assertArrayHasKey( 'response_format', $payload );
-        $this->assertSame( 'b64_json', $payload['response_format'] );
+        $this->assertSame( 'url', $payload['response_format'] );
     }
 
     /**

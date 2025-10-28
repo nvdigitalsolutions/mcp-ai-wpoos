@@ -52,6 +52,7 @@ class WP_MCP_AI_Admin_Settings {
             'openai_image_size'           => '1024x1024',
             'openai_image_quality'        => 'standard',
             'openai_image_background'     => '',
+            'openai_image_response_format' => 'b64_json',
             'allowed_image_mimes'  => array(),
             'allowed_file_mimes'   => array(),
         );
@@ -291,6 +292,14 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'openai_image_response_format',
+            __( 'Image Output Type', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_response_format_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'crawl4ai_base_url',
             __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
             array( $this, 'render_crawl4ai_base_url_field' ),
@@ -459,6 +468,15 @@ class WP_MCP_AI_Admin_Settings {
 
             if ( in_array( $background, $backgrounds, true ) ) {
                 $clean['openai_image_background'] = $background;
+            }
+        }
+
+        if ( isset( $settings['openai_image_response_format'] ) ) {
+            $response_format   = sanitize_key( $settings['openai_image_response_format'] );
+            $response_formats  = array_keys( $this->get_openai_image_response_format_choices() );
+
+            if ( in_array( $response_format, $response_formats, true ) ) {
+                $clean['openai_image_response_format'] = $response_format;
             }
         }
 
@@ -650,6 +668,23 @@ class WP_MCP_AI_Admin_Settings {
             <?php endforeach; ?>
         </select>
         <p class="description"><?php esc_html_e( 'Preferred background mode when OpenAI supports the option.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI image response format field.
+     */
+    public function render_openai_image_response_format_field() {
+        $settings          = self::get_settings();
+        $response_formats  = $this->get_openai_image_response_format_choices();
+        $current           = isset( $settings['openai_image_response_format'] ) ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" class="regular-text">
+            <?php foreach ( $response_formats as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
@@ -1138,6 +1173,29 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return $backgrounds;
+    }
+
+    /**
+     * Retrieve the list of available OpenAI image response formats.
+     *
+     * @return array
+     */
+    protected function get_openai_image_response_format_choices() {
+        $formats = array(
+            'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
+            'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+        );
+
+        $formats = apply_filters( 'wp_mcp_ai_openai_image_response_formats', $formats );
+
+        if ( ! is_array( $formats ) || empty( $formats ) ) {
+            $formats = array(
+                'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
+                'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $formats;
     }
 
     /**

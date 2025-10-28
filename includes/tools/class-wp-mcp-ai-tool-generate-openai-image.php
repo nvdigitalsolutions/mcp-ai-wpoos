@@ -17,10 +17,11 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
-    const DEFAULT_MODEL   = 'gpt-image-1';
-    const DEFAULT_SIZE    = '1024x1024';
-    const DEFAULT_QUALITY = 'standard';
-    const DEFAULT_FORMAT  = 'png';
+    const DEFAULT_MODEL            = 'gpt-image-1';
+    const DEFAULT_SIZE             = '1024x1024';
+    const DEFAULT_QUALITY          = 'standard';
+    const DEFAULT_FORMAT           = 'png';
+    const DEFAULT_RESPONSE_FORMAT  = 'b64_json';
 
     /**
      * {@inheritdoc}
@@ -79,6 +80,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                     'enum'        => array_values( self::get_allowed_backgrounds() ),
                     'default'     => $defaults['background'],
                 ),
+                'response_format' => array(
+                    'type'        => 'string',
+                    'description' => __( 'Whether OpenAI should return base64 data or a hosted image URL.', 'wp-mcp-ai' ),
+                    'enum'        => self::get_allowed_response_formats(),
+                    'default'     => $defaults['response_format'],
+                ),
                 'format'     => array(
                     'type'        => 'string',
                     'description' => __( 'Image format for the generated file. OpenAI currently only returns PNG images.', 'wp-mcp-ai' ),
@@ -112,6 +119,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'size'       => self::DEFAULT_SIZE,
             'quality'    => self::DEFAULT_QUALITY,
             'background' => '',
+            'response_format' => self::DEFAULT_RESPONSE_FORMAT,
         );
 
         if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -142,6 +150,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
 
         if ( isset( $settings['openai_image_background'] ) ) {
             $defaults['background'] = $this->normalise_background( $settings['openai_image_background'] );
+        }
+
+        if ( isset( $settings['openai_image_response_format'] ) ) {
+            $response_format = $this->normalise_response_format( $settings['openai_image_response_format'] );
+
+            if ( '' !== $response_format ) {
+                $defaults['response_format'] = $response_format;
+            }
         }
 
         return $defaults;
@@ -198,6 +214,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             $background = $defaults['background'];
         }
 
+        $response_format = isset( $arguments['response_format'] ) ? sanitize_key( $arguments['response_format'] ) : $defaults['response_format'];
+        $response_format = $this->normalise_response_format( $response_format );
+
+        if ( '' === $response_format ) {
+            $response_format = $defaults['response_format'];
+        }
+
         $model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
         if ( '' === $model ) {
             $model = $defaults['model'];
@@ -207,6 +230,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'model'      => $model,
             'size'       => $size,
             'quality'    => $quality,
+            'response_format' => $response_format,
         );
 
         if ( '' !== $background ) {
@@ -250,6 +274,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'quality'        => $quality,
             'model'          => $image['model'],
             'background'     => $background,
+            'response_format'=> $response_format,
             'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
             'created'        => isset( $image['created'] ) ? $image['created'] : 0,
         );
@@ -303,6 +328,18 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'transparent',
             'opaque',
             'auto',
+        );
+    }
+
+    /**
+     * Retrieve the allowed OpenAI response formats for image generation.
+     *
+     * @return array
+     */
+    protected static function get_allowed_response_formats() {
+        return array(
+            'b64_json',
+            'url',
         );
     }
 
@@ -378,6 +415,19 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         $backgrounds = self::get_allowed_backgrounds();
 
         return in_array( $background, $backgrounds, true ) ? $background : '';
+    }
+
+    /**
+     * Normalise the requested response format.
+     *
+     * @param string $response_format Raw response format input.
+     * @return string
+     */
+    protected function normalise_response_format( $response_format ) {
+        $response_format = sanitize_key( $response_format );
+        $formats         = self::get_allowed_response_formats();
+
+        return in_array( $response_format, $formats, true ) ? $response_format : '';
     }
 
     /**
