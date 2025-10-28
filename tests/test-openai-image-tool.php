@@ -189,11 +189,11 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( '1536x1024', $payload['size'] );
         $this->assertSame( 'high', $payload['quality'] );
         $this->assertSame( 'opaque', $payload['background'] );
-        $this->assertSame( 'url', $payload['response_format'] );
+        $this->assertArrayNotHasKey( 'response_format', $payload );
 
         $this->assertIsArray( $result );
         $this->assertArrayHasKey( 'url', $result );
-        $this->assertSame( 'url', $result['response_format'] );
+        $this->assertSame( 'b64_json', $result['response_format'] );
 
         if ( ! empty( $result['attachment_id'] ) ) {
             wp_delete_attachment( $result['attachment_id'], true );

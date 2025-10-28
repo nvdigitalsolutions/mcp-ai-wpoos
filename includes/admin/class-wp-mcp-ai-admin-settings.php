@@ -503,7 +503,17 @@ class WP_MCP_AI_Admin_Settings {
             $response_formats = array_keys( $this->get_openai_image_response_format_choices() );
 
             if ( in_array( $response_format, $response_formats, true ) ) {
-                $clean['openai_image_response_format'] = $response_format;
+                $supports_response_format = true;
+
+                if ( class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+                    $supports_response_format = WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $clean['openai_image_model'] );
+                }
+
+                if ( $supports_response_format ) {
+                    $clean['openai_image_response_format'] = $response_format;
+                } else {
+                    $clean['openai_image_response_format'] = 'b64_json';
+                }
             }
         }
 
@@ -722,13 +732,29 @@ class WP_MCP_AI_Admin_Settings {
         $settings          = self::get_settings();
         $response_formats  = $this->get_openai_image_response_format_choices();
         $current           = isset( $settings['openai_image_response_format'] ) ? sanitize_key( $settings['openai_image_response_format'] ) : 'b64_json';
+        $model             = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+        $supports_response_format = true;
+
+        if ( class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+            $supports_response_format = WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model );
+        }
+
+        if ( ! $supports_response_format && isset( $response_formats['b64_json'] ) ) {
+            $response_formats = array( 'b64_json' => $response_formats['b64_json'] );
+            $current          = 'b64_json';
+        }
         ?>
-        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" class="regular-text">
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" class="regular-text" <?php disabled( ! $supports_response_format ); ?>>
             <?php foreach ( $response_formats as $value => $label ) : ?>
                 <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
             <?php endforeach; ?>
         </select>
-        <p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'wp-mcp-ai' ); ?></p>
+        <?php if ( ! $supports_response_format ) : ?>
+            <input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" value="b64_json" />
+            <p class="description"><?php esc_html_e( 'The selected image model currently returns base64 data only.', 'wp-mcp-ai' ); ?></p>
+        <?php else : ?>
+            <p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'wp-mcp-ai' ); ?></p>
+        <?php endif; ?>
         <?php
     }
 

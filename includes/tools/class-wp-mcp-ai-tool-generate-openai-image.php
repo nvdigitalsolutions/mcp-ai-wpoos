@@ -155,9 +155,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
         if ( isset( $settings['openai_image_response_format'] ) ) {
             $response_format = $this->normalise_response_format( $settings['openai_image_response_format'] );
 
-            if ( '' !== $response_format ) {
+            if ( '' !== $response_format && WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $defaults['model'] ) ) {
                 $defaults['response_format'] = $response_format;
             }
+        }
+
+        if ( ! WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $defaults['model'] ) ) {
+            $defaults['response_format'] = self::DEFAULT_RESPONSE_FORMAT;
         }
 
         return $defaults;
@@ -226,12 +230,19 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             $model = $defaults['model'];
         }
 
+        if ( ! WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
+            $response_format = self::DEFAULT_RESPONSE_FORMAT;
+        }
+
         $options = array(
-            'model'      => $model,
-            'size'       => $size,
-            'quality'    => $quality,
-            'response_format' => $response_format,
+            'model'   => $model,
+            'size'    => $size,
+            'quality' => $quality,
         );
+
+        if ( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
+            $options['response_format'] = $response_format;
+        }
 
         if ( '' !== $background ) {
             $options['background'] = $background;
