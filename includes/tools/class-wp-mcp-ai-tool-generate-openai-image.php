@@ -47,6 +47,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      * {@inheritdoc}
      */
     public function get_parameters_schema() {
+        $defaults = $this->get_configured_defaults();
+
         return array(
             'type'                 => 'object',
             'properties'           => array(
@@ -57,24 +59,25 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
                 'model'      => array(
                     'type'        => 'string',
                     'description' => __( 'OpenAI image model to use.', 'wp-mcp-ai' ),
-                    'default'     => self::DEFAULT_MODEL,
+                    'default'     => $defaults['model'],
                 ),
                 'size'       => array(
                     'type'        => 'string',
                     'description' => __( 'Size of the generated image.', 'wp-mcp-ai' ),
-                    'enum'        => array_values( $this->get_allowed_sizes() ),
-                    'default'     => self::DEFAULT_SIZE,
+                    'enum'        => array_values( self::get_allowed_sizes() ),
+                    'default'     => $defaults['size'],
                 ),
                 'quality'    => array(
                     'type'        => 'string',
                     'description' => __( 'Image quality setting.', 'wp-mcp-ai' ),
-                    'enum'        => array_values( $this->get_allowed_qualities() ),
-                    'default'     => self::DEFAULT_QUALITY,
+                    'enum'        => array_values( self::get_allowed_qualities() ),
+                    'default'     => $defaults['quality'],
                 ),
                 'background' => array(
                     'type'        => 'string',
                     'description' => __( 'Optional background preference such as transparent, opaque, or auto.', 'wp-mcp-ai' ),
-                    'enum'        => array_values( $this->get_allowed_backgrounds() ),
+                    'enum'        => array_values( self::get_allowed_backgrounds() ),
+                    'default'     => $defaults['background'],
                 ),
                 'format'     => array(
                     'type'        => 'string',
@@ -96,6 +99,52 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             'required'             => array( 'prompt' ),
             'additionalProperties' => false,
         );
+    }
+
+    /**
+     * Retrieve the configured defaults for image generation.
+     *
+     * @return array
+     */
+    protected function get_configured_defaults() {
+        $defaults = array(
+            'model'      => self::DEFAULT_MODEL,
+            'size'       => self::DEFAULT_SIZE,
+            'quality'    => self::DEFAULT_QUALITY,
+            'background' => '',
+        );
+
+        if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            return $defaults;
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+        if ( ! empty( $settings['openai_image_model'] ) ) {
+            $defaults['model'] = sanitize_text_field( $settings['openai_image_model'] );
+        }
+
+        if ( ! empty( $settings['openai_image_size'] ) ) {
+            $size = $this->normalise_image_size( $settings['openai_image_size'] );
+
+            if ( '' !== $size ) {
+                $defaults['size'] = $size;
+            }
+        }
+
+        if ( ! empty( $settings['openai_image_quality'] ) ) {
+            $quality = $this->normalise_image_quality( $settings['openai_image_quality'] );
+
+            if ( '' !== $quality ) {
+                $defaults['quality'] = $quality;
+            }
+        }
+
+        if ( isset( $settings['openai_image_background'] ) ) {
+            $defaults['background'] = $this->normalise_background( $settings['openai_image_background'] );
+        }
+
+        return $defaults;
     }
 
     /**
@@ -126,26 +175,32 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'No prompt was supplied for the image request.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $size = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : self::DEFAULT_SIZE;
+        $defaults = $this->get_configured_defaults();
+
+        $size = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : $defaults['size'];
         $size = $this->normalise_image_size( $size );
 
         if ( '' === $size ) {
-            $size = self::DEFAULT_SIZE;
+            $size = $defaults['size'];
         }
 
-        $quality = isset( $arguments['quality'] ) ? sanitize_key( $arguments['quality'] ) : self::DEFAULT_QUALITY;
+        $quality = isset( $arguments['quality'] ) ? sanitize_key( $arguments['quality'] ) : $defaults['quality'];
         $quality = $this->normalise_image_quality( $quality );
 
         if ( '' === $quality ) {
-            $quality = self::DEFAULT_QUALITY;
+            $quality = $defaults['quality'];
         }
 
-        $background = isset( $arguments['background'] ) ? sanitize_key( $arguments['background'] ) : '';
+        $background = isset( $arguments['background'] ) ? sanitize_key( $arguments['background'] ) : $defaults['background'];
         $background = $this->normalise_background( $background );
 
-        $model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : self::DEFAULT_MODEL;
+        if ( '' === $background ) {
+            $background = $defaults['background'];
+        }
+
+        $model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
         if ( '' === $model ) {
-            $model = self::DEFAULT_MODEL;
+            $model = $defaults['model'];
         }
 
         $options = array(
@@ -216,7 +271,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      *
      * @return array
      */
-    protected function get_allowed_sizes() {
+    protected static function get_allowed_sizes() {
         return array(
             '1024x1024',
             '1024x1536',
@@ -230,7 +285,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      *
      * @return array
      */
-    protected function get_allowed_qualities() {
+    protected static function get_allowed_qualities() {
         return array(
             'standard',
             'high',
@@ -242,7 +297,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      *
      * @return array
      */
-    protected function get_allowed_backgrounds() {
+    protected static function get_allowed_backgrounds() {
         return array(
             '',
             'transparent',
@@ -256,7 +311,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      *
      * @return array
      */
-    protected function get_allowed_formats() {
+    protected static function get_allowed_formats() {
         return array(
             'png'  => array(
                 'extension' => 'png',
@@ -281,7 +336,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      */
     protected function normalise_image_size( $size ) {
         $size   = strtolower( (string) $size );
-        $sizes  = $this->get_allowed_sizes();
+        $sizes  = self::get_allowed_sizes();
 
         return in_array( $size, $sizes, true ) ? $size : '';
     }
@@ -294,7 +349,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      */
     protected function normalise_image_format( $format ) {
         $format = sanitize_key( $format );
-        $formats = $this->get_allowed_formats();
+        $formats = self::get_allowed_formats();
 
         return isset( $formats[ $format ] ) ? $format : '';
     }
@@ -307,7 +362,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      */
     protected function normalise_image_quality( $quality ) {
         $quality = sanitize_key( $quality );
-        $qualities = $this->get_allowed_qualities();
+        $qualities = self::get_allowed_qualities();
 
         return in_array( $quality, $qualities, true ) ? $quality : '';
     }
@@ -320,7 +375,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
      */
     protected function normalise_background( $background ) {
         $background = sanitize_key( $background );
-        $backgrounds = $this->get_allowed_backgrounds();
+        $backgrounds = self::get_allowed_backgrounds();
 
         return in_array( $background, $backgrounds, true ) ? $background : '';
     }
@@ -337,7 +392,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
     protected function store_image_attachment( array $image, $file_name, $prompt, $user_id ) {
         $data    = isset( $image['image'] ) ? $image['image'] : '';
         $format  = isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT;
-        $formats = $this->get_allowed_formats();
+        $formats = self::get_allowed_formats();
 
         if ( '' === $data || '' === $format || ! isset( $formats[ $format ] ) ) {
             return new WP_Error( 'wp_mcp_ai_image_storage_error', __( 'Unable to determine the image format for storage.', 'wp-mcp-ai' ) );
