@@ -58,6 +58,12 @@ class WP_MCP_AI_Elementor_Integration {
             'class-wp-mcp-ai-elementor-widget.php',
             'class-wp-mcp-ai-elementor-chat-intro-widget.php',
             'class-wp-mcp-ai-elementor-chat-faq-widget.php',
+            'class-wp-mcp-ai-elementor-chat-usage-timer-widget.php',
+            'class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php',
+            'class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php',
+            'class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php',
+            'class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php',
+            'class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php',
         );
 
         foreach ( $widget_files as $file ) {
@@ -72,6 +78,12 @@ class WP_MCP_AI_Elementor_Integration {
             'WP_MCP_AI_Elementor_Widget',
             'WP_MCP_AI_Elementor_Chat_Intro_Widget',
             'WP_MCP_AI_Elementor_Chat_FAQ_Widget',
+            'WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget',
+            'WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget',
+            'WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget',
+            'WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget',
+            'WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget',
+            'WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget',
         );
 
         foreach ( $widget_classes as $widget_class ) {
