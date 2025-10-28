@@ -281,6 +281,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
             $requests[] = array(
                 'url'    => $url,
                 'method' => $method,
+                'args'   => $args,
             );
 
             return $responses;
@@ -304,6 +305,50 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( '# Example', $result['results'][0]['markdown'] );
         $this->assertNotEmpty( $requests );
         $this->assertSame( 'GET', $requests[0]['method'] );
+        $this->assertArrayHasKey( 'reject_unsafe_urls', $requests[0]['args'] );
+        $this->assertTrue( $requests[0]['args']['reject_unsafe_urls'] );
+    }
+
+    /**
+     * Ensure loopback URLs are rejected when executing a crawl.
+     */
+    public function test_execute_rejects_loopback_urls() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool   = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $result = $tool->execute(
+            array(
+                'url' => 'http://127.0.0.1/internal',
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_crawl4ai_unsafe_url', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure private network URLs are rejected when executing a crawl.
+     */
+    public function test_execute_rejects_private_network_urls() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool   = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'http://192.168.1.50/dashboard' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_crawl4ai_unsafe_url', $result->get_error_code() );
     }
 
     /**
