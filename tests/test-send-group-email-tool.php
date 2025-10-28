@@ -1,11 +1,21 @@
 <?php
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**
  * Tests for the send group email tool.
  */
 class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
+    /**
+     * Ensure plugin settings are reset before each test.
+     */
+    public function setUp(): void {
+        parent::setUp();
+
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+    }
+
     /**
      * Reset globals between tests.
      */
@@ -183,6 +193,99 @@ class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( "Hello team,\n\nOpenAI generated response.", $captured_mail['message'] );
         $this->assertContains( 'Cc: lead@example.com', $captured_mail['headers'] );
         $this->assertContains( 'Bcc: hidden@example.com', $captured_mail['headers'] );
+    }
+
+    /**
+     * Ensure the capability requirement can be configured through settings.
+     */
+    public function test_execute_honors_capability_setting() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['group_email_capability'] = 'manage_options';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $editor_id = self::factory()->user->create( array( 'role' => 'editor' ) );
+        wp_set_current_user( $editor_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment(
+            array(
+                'subject'    => 'Weekly Update',
+                'message'    => 'Hello team',
+                'recipients' => array( 'team@example.com' ),
+            )
+        );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $editor_id,
+            )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        $captured_mail = array();
+        add_filter(
+            'wp_mcp_ai_send_group_email_pre_send',
+            function ( $pre_send, $mail_args ) use ( &$captured_mail ) {
+                $captured_mail = $mail_args;
+                return true;
+            },
+            10,
+            2
+        );
+
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertTrue( $result['sent'] );
+        $this->assertSame( array( 'team@example.com' ), $captured_mail['to'] );
+    }
+
+    /**
+     * Ensure the recipient limit can be adjusted via settings.
+     */
+    public function test_execute_respects_max_recipient_setting() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['group_email_max_recipients'] = 1;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment(
+            array(
+                'subject'    => 'Weekly Update',
+                'message'    => 'Hello team',
+                'recipients' => array( 'team@example.com', 'lead@example.com' ),
+            )
+        );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_recipient_limit_exceeded', $result->get_error_code() );
     }
 
     /**
