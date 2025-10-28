@@ -51,7 +51,6 @@ class WP_MCP_AI_Admin_Settings {
             'openai_image_model'          => 'gpt-image-1',
             'openai_image_size'           => '1024x1024',
             'openai_image_quality'        => 'standard',
-            'openai_image_background'     => '',
             'openai_image_response_format' => 'b64_json',
             'openai_speech_model'         => 'gpt-4o-mini-tts',
             'openai_speech_voice'         => 'alloy',
@@ -287,14 +286,6 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
-            'openai_image_background',
-            __( 'Background Preference', 'wp-mcp-ai' ),
-            array( $this, 'render_openai_image_background_field' ),
-            self::PAGE_SLUG,
-            'wp_mcp_ai_tools_section'
-        );
-
-        add_settings_field(
             'openai_image_response_format',
             __( 'Image Output Type', 'wp-mcp-ai' ),
             array( $this, 'render_openai_image_response_format_field' ),
@@ -486,15 +477,6 @@ class WP_MCP_AI_Admin_Settings {
 
             if ( in_array( $quality, $qualities, true ) ) {
                 $clean['openai_image_quality'] = $quality;
-            }
-        }
-
-        if ( isset( $settings['openai_image_background'] ) ) {
-            $background   = sanitize_key( $settings['openai_image_background'] );
-            $backgrounds  = array_keys( $this->get_openai_image_background_choices() );
-
-            if ( in_array( $background, $backgrounds, true ) ) {
-                $clean['openai_image_background'] = $background;
             }
         }
 
@@ -705,23 +687,6 @@ class WP_MCP_AI_Admin_Settings {
             <?php endforeach; ?>
         </select>
         <p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images.', 'wp-mcp-ai' ); ?></p>
-        <?php
-    }
-
-    /**
-     * Render the OpenAI image background field.
-     */
-    public function render_openai_image_background_field() {
-        $settings    = self::get_settings();
-        $backgrounds = $this->get_openai_image_background_choices();
-        $current     = isset( $settings['openai_image_background'] ) ? sanitize_key( $settings['openai_image_background'] ) : '';
-        ?>
-        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_background]" class="regular-text">
-            <?php foreach ( $backgrounds as $value => $label ) : ?>
-                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
-            <?php endforeach; ?>
-        </select>
-        <p class="description"><?php esc_html_e( 'Preferred background mode when OpenAI supports the option.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
@@ -1345,33 +1310,6 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return $qualities;
-    }
-
-    /**
-     * Retrieve the list of available OpenAI image background preferences.
-     *
-     * @return array
-     */
-    protected function get_openai_image_background_choices() {
-        $backgrounds = array(
-            ''            => __( 'No preference (OpenAI default)', 'wp-mcp-ai' ),
-            'transparent' => __( 'Transparent', 'wp-mcp-ai' ),
-            'opaque'      => __( 'Opaque', 'wp-mcp-ai' ),
-            'auto'        => __( 'Auto', 'wp-mcp-ai' ),
-        );
-
-        $backgrounds = apply_filters( 'wp_mcp_ai_openai_image_backgrounds', $backgrounds );
-
-        if ( ! is_array( $backgrounds ) || empty( $backgrounds ) ) {
-            $backgrounds = array(
-                ''            => __( 'No preference (OpenAI default)', 'wp-mcp-ai' ),
-                'transparent' => __( 'Transparent', 'wp-mcp-ai' ),
-                'opaque'      => __( 'Opaque', 'wp-mcp-ai' ),
-                'auto'        => __( 'Auto', 'wp-mcp-ai' ),
-            );
-        }
-
-        return $backgrounds;
     }
 
     /**

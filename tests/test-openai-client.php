@@ -1467,7 +1467,6 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                 'model'      => 'gpt-image-test',
                 'size'       => '1024x1536',
                 'quality'    => 'hd',
-                'background' => 'transparent',
             )
         );
 
@@ -1481,7 +1480,6 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'gpt-image-test', $response['model'] );
         $this->assertSame( '1024x1536', $response['size'] );
         $this->assertSame( 'hd', $response['quality'] );
-        $this->assertSame( 'transparent', $response['background'] );
         $this->assertSame( 123, $response['created'] );
         $this->assertSame( 'A revised scenic landscape', $response['revised_prompt'] );
 
@@ -1497,7 +1495,6 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertSame( 'A scenic landscape at sunrise', $payload['prompt'] );
         $this->assertSame( '1024x1536', $payload['size'] );
         $this->assertSame( 'hd', $payload['quality'] );
-        $this->assertSame( 'transparent', $payload['background'] );
         $this->assertArrayNotHasKey( 'format', $payload );
         $this->assertArrayHasKey( 'response_format', $payload );
         $this->assertSame( 'b64_json', $payload['response_format'] );

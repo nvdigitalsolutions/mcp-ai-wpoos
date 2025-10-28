@@ -32,8 +32,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $this->assertSame( '1024x1024', $defaults['openai_image_size'] );
         $this->assertArrayHasKey( 'openai_image_quality', $defaults );
         $this->assertSame( 'standard', $defaults['openai_image_quality'] );
-        $this->assertArrayHasKey( 'openai_image_background', $defaults );
-        $this->assertSame( '', $defaults['openai_image_background'] );
         $this->assertArrayHasKey( 'openai_image_response_format', $defaults );
         $this->assertSame( 'b64_json', $defaults['openai_image_response_format'] );
     }
@@ -214,7 +212,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
                 'openai_image_model'      => 'gpt-image-1',
                 'openai_image_size'       => '1536x1024',
                 'openai_image_quality'    => 'hd',
-                'openai_image_background' => 'transparent',
                 'openai_image_response_format' => 'url',
             )
         );
@@ -222,7 +219,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
         $this->assertSame( '1536x1024', $sanitized['openai_image_size'] );
         $this->assertSame( 'hd', $sanitized['openai_image_quality'] );
-        $this->assertSame( 'transparent', $sanitized['openai_image_background'] );
         $this->assertSame( 'b64_json', $sanitized['openai_image_response_format'] );
     }
 
@@ -238,7 +234,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
                 'openai_image_model'      => 'unknown-model',
                 'openai_image_size'       => '200x200',
                 'openai_image_quality'    => 'ultra',
-                'openai_image_background' => 'invalid',
                 'openai_image_response_format' => 'xml',
             )
         );
@@ -246,7 +241,6 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $this->assertSame( $defaults['openai_image_model'], $sanitized['openai_image_model'] );
         $this->assertSame( $defaults['openai_image_size'], $sanitized['openai_image_size'] );
         $this->assertSame( $defaults['openai_image_quality'], $sanitized['openai_image_quality'] );
-        $this->assertSame( $defaults['openai_image_background'], $sanitized['openai_image_background'] );
         $this->assertSame( $defaults['openai_image_response_format'], $sanitized['openai_image_response_format'] );
     }
 

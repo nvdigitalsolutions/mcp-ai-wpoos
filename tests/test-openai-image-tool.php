@@ -85,7 +85,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
                 'model'      => 'gpt-image-test',
                 'size'       => '1024x1536',
                 'quality'    => 'hd',
-                'background' => 'transparent',
                 'format'     => 'png',
                 'response_format' => 'b64_json',
                 'file_name'  => 'robot-art',
@@ -110,7 +109,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( '1024x1536', $result['size'] );
         $this->assertSame( 'hd', $result['quality'] );
         $this->assertSame( 'gpt-image-test', $result['model'] );
-        $this->assertSame( 'transparent', $result['background'] );
         $this->assertSame( 'b64_json', $result['response_format'] );
         $this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
         $this->assertSame( 456, $result['created'] );
@@ -137,7 +135,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $settings['openai_api_key']        = 'sk-test';
         $settings['openai_image_size']     = '1536x1024';
         $settings['openai_image_quality']  = 'hd';
-        $settings['openai_image_background'] = 'opaque';
         $settings['openai_image_response_format'] = 'url';
         update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -188,7 +185,6 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertIsArray( $payload );
         $this->assertSame( '1536x1024', $payload['size'] );
         $this->assertSame( 'hd', $payload['quality'] );
-        $this->assertSame( 'opaque', $payload['background'] );
         $this->assertArrayNotHasKey( 'response_format', $payload );
 
         $this->assertIsArray( $result );
