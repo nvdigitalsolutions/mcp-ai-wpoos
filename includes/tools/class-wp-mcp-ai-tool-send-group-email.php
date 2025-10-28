@@ -323,6 +323,18 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The provided attachment is not accessible.', 'wp-mcp-ai' ) );
         }
 
+        if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+            require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+        }
+
+        if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_attachment_forbidden',
+                __( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+                array( 'status' => 403 )
+            );
+        }
+
         $file_path = get_attached_file( $attachment_id );
 
         if ( ! $file_path || ! file_exists( $file_path ) ) {

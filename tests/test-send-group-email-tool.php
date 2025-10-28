@@ -43,6 +43,57 @@ class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure attachments that the current user cannot access are rejected.
+     */
+    public function test_execute_requires_attachment_access() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment( array(
+            'subject'    => 'Restricted Subject',
+            'message'    => 'Restricted message',
+            'recipients' => array( 'user@example.com' ),
+        ) );
+
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_author' => $admin_id,
+                'post_status' => 'private',
+            )
+        );
+
+        $subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+        $capability_filter = static function () {
+            return '';
+        };
+
+        add_filter( 'wp_mcp_ai_send_group_email_capability', $capability_filter );
+
+        wp_set_current_user( $subscriber_id );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $subscriber_id,
+            )
+        );
+
+        remove_filter( 'wp_mcp_ai_send_group_email_capability', $capability_filter );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_attachment_forbidden', $result->get_error_code() );
+
+        $error_data = $result->get_error_data();
+        $this->assertIsArray( $error_data );
+        $this->assertSame( 403, isset( $error_data['status'] ) ? $error_data['status'] : null );
+    }
+
+    /**
      * Ensure the tool parses JSON attachments and forwards the email through the WordPress mailer.
      */
     public function test_execute_sends_mail_using_json_attachment() {
