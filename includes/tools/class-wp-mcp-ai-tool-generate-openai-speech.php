@@ -22,6 +22,48 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
     const DEFAULT_FORMAT = 'mp3';
 
     /**
+     * Retrieve the configured defaults for speech generation.
+     *
+     * @return array
+     */
+    protected function get_configured_defaults() {
+        $defaults = array(
+            'model'  => self::DEFAULT_MODEL,
+            'voice'  => self::DEFAULT_VOICE,
+            'format' => self::DEFAULT_FORMAT,
+        );
+
+        if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            return $defaults;
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+        if ( ! empty( $settings['openai_speech_model'] ) ) {
+            $defaults['model'] = sanitize_text_field( $settings['openai_speech_model'] );
+        }
+
+        if ( isset( $settings['openai_speech_voice'] ) && '' !== $settings['openai_speech_voice'] ) {
+            $voice = sanitize_key( $settings['openai_speech_voice'] );
+
+            if ( '' !== $voice ) {
+                $defaults['voice'] = $voice;
+            }
+        }
+
+        if ( isset( $settings['openai_speech_format'] ) && '' !== $settings['openai_speech_format'] ) {
+            $format = sanitize_key( $settings['openai_speech_format'] );
+            $format = $this->normalise_audio_format( $format );
+
+            if ( '' !== $format ) {
+                $defaults['format'] = $format;
+            }
+        }
+
+        return $defaults;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function get_slug() {
@@ -46,6 +88,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
      * {@inheritdoc}
      */
     public function get_parameters_schema() {
+        $defaults = $this->get_configured_defaults();
+
         return array(
             'type'                 => 'object',
             'properties'           => array(
@@ -56,17 +100,18 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
                 'voice'     => array(
                     'type'        => 'string',
                     'description' => __( 'Optional OpenAI voice to use (for example, alloy, verse, or shimmer).', 'wp-mcp-ai' ),
+                    'default'     => $defaults['voice'],
                 ),
                 'format'    => array(
                     'type'        => 'string',
                     'description' => __( 'Audio format for the generated file.', 'wp-mcp-ai' ),
                     'enum'        => array_keys( $this->get_allowed_formats() ),
-                    'default'     => self::DEFAULT_FORMAT,
+                    'default'     => $defaults['format'],
                 ),
                 'model'     => array(
                     'type'        => 'string',
                     'description' => __( 'OpenAI speech model to use.', 'wp-mcp-ai' ),
-                    'default'     => self::DEFAULT_MODEL,
+                    'default'     => $defaults['model'],
                 ),
                 'speed'     => array(
                     'type'        => 'number',
@@ -98,6 +143,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
         $has_token  = ! empty( $context['token_authenticated'] );
         $text       = isset( $arguments['text'] ) ? sanitize_textarea_field( $arguments['text'] ) : '';
         $text       = trim( $text );
+        $defaults   = $this->get_configured_defaults();
 
         if ( ! $user_id && ! $has_token ) {
             return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to generate speech audio.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
@@ -117,21 +163,25 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface 
             return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $format = isset( $arguments['format'] ) ? sanitize_key( $arguments['format'] ) : self::DEFAULT_FORMAT;
+        $format = isset( $arguments['format'] ) && '' !== $arguments['format'] ? sanitize_key( $arguments['format'] ) : $defaults['format'];
         $format = $this->normalise_audio_format( $format );
 
         if ( '' === $format ) {
-            return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'The requested audio format is not supported.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+            $format = $defaults['format'];
+
+            if ( '' === $this->normalise_audio_format( $format ) ) {
+                return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'The requested audio format is not supported.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+            }
         }
 
-        $voice = isset( $arguments['voice'] ) ? sanitize_key( $arguments['voice'] ) : self::DEFAULT_VOICE;
+        $voice = isset( $arguments['voice'] ) && '' !== $arguments['voice'] ? sanitize_key( $arguments['voice'] ) : $defaults['voice'];
         if ( '' === $voice ) {
-            $voice = self::DEFAULT_VOICE;
+            $voice = $defaults['voice'];
         }
 
-        $model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : self::DEFAULT_MODEL;
+        $model = isset( $arguments['model'] ) && '' !== $arguments['model'] ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
         if ( '' === $model ) {
-            $model = self::DEFAULT_MODEL;
+            $model = $defaults['model'];
         }
 
         $options = array(
