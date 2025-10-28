@@ -93,6 +93,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
 - [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → MCP AI → Attachments** before enabling file uploads for end users.
+- [ ] **Review Send Group Email permissions** in **Settings → MCP AI → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
 
 ## 🧠 Language Model Providers (OpenAI & Gemini)
 
@@ -284,10 +285,25 @@ Whenever attachments are present, the plugin automatically inlines the asset dat
 Image segments are converted to data URLs and file segments include the base64-encoded payload alongside the original filename,
 so integrators do not need to upload assets manually before invoking a model.
 
+REST requests that include attachments automatically gain access to the bundled **Submit Document Prompt** tool so the files reach OpenAI even when the assistant has the tool disabled in its configuration.【F:includes/class-wp-mcp-ai-rest.php†L22-L29】【F:includes/class-wp-mcp-ai-rest.php†L963-L991】
+
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
 Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by both the shortcode and Deep Chat renderers when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L92-L134】
+
+---
+
+## 🛠 Built-in tools & automations
+
+The core tool registry loads several assistant-ready utilities that cover editorial, operational, and support workflows out of the box:
+
+- **Submit Document Prompt** – Sends a user-supplied prompt alongside uploaded WordPress attachments or existing OpenAI file IDs, ensuring each request includes at least one file segment before streaming the conversation to OpenAI.【F:includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php†L20-L214】
+- **Create Cron Job** – Allows privileged users to schedule single-run or recurring WP-Cron events with sanitised hooks, arguments, and schedule validation, rejecting duplicate events and unauthorised callers.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】
+- **Send Group Email** – Parses uploaded instructions (JSON or plaintext) to assemble the subject, message, and recipient lists before dispatching the message through `wp_mail()`, honouring site-wide capability and recipient limits exposed in the settings screen.【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L818-L954】
+- **Open OpenAI Dashboards** – Provides quick links to the OpenAI logs and usage dashboards for administrators so they can audit API behaviour without leaving the assistant workflow.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】
+
+Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
 ---
 

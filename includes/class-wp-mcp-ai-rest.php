@@ -18,6 +18,14 @@ class WP_MCP_AI_REST {
     const MEMORY_CHUNK_CHARS        = 1200;
     const MEMORY_MAX_TOTAL_CHARS    = 12000;
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
+
+    /**
+     * Tool slug used for document + prompt submissions.
+     *
+     * Requests that include attachments are temporarily granted access to this
+     * tool so the OpenAI client can forward the files without requiring admins
+     * to manually toggle the capability for every assistant.
+     */
     const DOCUMENT_PROMPT_TOOL_SLUG = 'submit_document_prompt';
 
     /**
@@ -914,7 +922,8 @@ class WP_MCP_AI_REST {
     }
 
     /**
-     * Handle chat completion requests.
+     * Handle chat completion requests, normalising attachments and auto-enabling
+     * the document prompt tool whenever uploads are detected.
      *
      * @param WP_REST_Request $request REST request.
      * @return WP_REST_Response|WP_Error
@@ -1153,7 +1162,8 @@ class WP_MCP_AI_REST {
     }
 
     /**
-     * Handle requests to execute a specific tool.
+     * Handle requests to execute a specific tool, temporarily granting access to
+     * the document prompt helper when the payload includes attachments.
      *
      * @param WP_REST_Request $request REST request.
      * @return WP_REST_Response|WP_Error
@@ -1504,6 +1514,9 @@ class WP_MCP_AI_REST {
 
     /**
      * Determine whether a tool request payload references document attachments.
+     *
+     * Recognises the attachment_id, attachment_ids, file_id, file_ids, and
+     * attachments keys so the REST layer mirrors the tool schema.
      *
      * @param mixed $arguments Tool invocation arguments.
      * @return bool
