@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 
 /**
  * Provides a tool for sending a group email based on an uploaded file.
@@ -108,7 +109,9 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
     public function execute( array $arguments = array(), array $context = array() ) {
         $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-        $required_capability = apply_filters( 'wp_mcp_ai_send_group_email_capability', 'publish_posts', $context, $arguments, $this );
+        $settings            = WP_MCP_AI_Admin_Settings::get_settings();
+        $default_capability  = isset( $settings['group_email_capability'] ) ? $settings['group_email_capability'] : 'publish_posts';
+        $required_capability = apply_filters( 'wp_mcp_ai_send_group_email_capability', $default_capability, $context, $arguments, $this );
         if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
             return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send group emails.', 'wp-mcp-ai' ) );
         }
@@ -170,7 +173,8 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_missing_recipients', __( 'No recipients were provided for the group email.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
-        $max_recipients = apply_filters( 'wp_mcp_ai_send_group_email_max_recipients', self::DEFAULT_MAX_RECIPIENTS, $context, $arguments, $this );
+        $configured_max = isset( $settings['group_email_max_recipients'] ) ? absint( $settings['group_email_max_recipients'] ) : self::DEFAULT_MAX_RECIPIENTS;
+        $max_recipients = apply_filters( 'wp_mcp_ai_send_group_email_max_recipients', $configured_max, $context, $arguments, $this );
         if ( is_numeric( $max_recipients ) && $max_recipients > 0 && count( $email_request['recipients'] ) > absint( $max_recipients ) ) {
             return new WP_Error( 'wp_mcp_ai_recipient_limit_exceeded', __( 'The group email includes more recipients than allowed.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }

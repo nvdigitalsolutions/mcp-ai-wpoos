@@ -46,6 +46,8 @@ class WP_MCP_AI_Admin_Settings {
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
             'crawl4ai_api_key'     => '',
+            'group_email_capability'      => 'publish_posts',
+            'group_email_max_recipients'  => 100,
             'allowed_image_mimes'  => array(),
             'allowed_file_mimes'   => array(),
         );
@@ -268,6 +270,22 @@ class WP_MCP_AI_Admin_Settings {
             'wp_mcp_ai_tools_section'
         );
 
+        add_settings_field(
+            'group_email_capability',
+            __( 'Group Email Capability', 'wp-mcp-ai' ),
+            array( $this, 'render_group_email_capability_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'group_email_max_recipients',
+            __( 'Group Email Recipient Limit', 'wp-mcp-ai' ),
+            array( $this, 'render_group_email_max_recipients_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
         add_settings_section(
             'wp_mcp_ai_maintenance_section',
             __( 'Maintenance', 'wp-mcp-ai' ),
@@ -362,6 +380,14 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['crawl4ai_api_key'] ) ) {
             $clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+        }
+
+        if ( isset( $settings['group_email_capability'] ) ) {
+            $clean['group_email_capability'] = sanitize_key( $settings['group_email_capability'] );
+        }
+
+        if ( isset( $settings['group_email_max_recipients'] ) ) {
+            $clean['group_email_max_recipients'] = absint( $settings['group_email_max_recipients'] );
         }
 
         if ( isset( $settings['allowed_image_mimes'] ) ) {
@@ -495,6 +521,47 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the group email capability field.
+     */
+    public function render_group_email_capability_field() {
+        $settings    = self::get_settings();
+        $capability  = isset( $settings['group_email_capability'] ) ? $settings['group_email_capability'] : '';
+        ?>
+        <input
+            type="text"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[group_email_capability]"
+            value="<?php echo esc_attr( $capability ); ?>"
+            class="regular-text"
+            placeholder="publish_posts"
+        />
+        <p class="description">
+            <?php esc_html_e( 'Capability required to use the Send Group Email tool. Leave blank to allow any logged-in user that passes attachment checks.', 'wp-mcp-ai' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render the group email max recipients field.
+     */
+    public function render_group_email_max_recipients_field() {
+        $settings        = self::get_settings();
+        $max_recipients  = isset( $settings['group_email_max_recipients'] ) ? (int) $settings['group_email_max_recipients'] : 0;
+        ?>
+        <input
+            type="number"
+            min="0"
+            step="1"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[group_email_max_recipients]"
+            value="<?php echo esc_attr( $max_recipients ); ?>"
+            class="small-text"
+        />
+        <p class="description">
+            <?php esc_html_e( 'Maximum number of recipients allowed per Send Group Email request. Set to 0 to disable the limit.', 'wp-mcp-ai' ); ?>
+        </p>
         <?php
     }
 

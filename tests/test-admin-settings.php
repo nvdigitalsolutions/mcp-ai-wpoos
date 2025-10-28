@@ -41,6 +41,18 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure defaults include configuration for the group email tool.
+     */
+    public function test_default_settings_include_group_email_configuration() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+        $this->assertArrayHasKey( 'group_email_capability', $defaults );
+        $this->assertSame( 'publish_posts', $defaults['group_email_capability'] );
+        $this->assertArrayHasKey( 'group_email_max_recipients', $defaults );
+        $this->assertSame( 100, $defaults['group_email_max_recipients'] );
+    }
+
+    /**
      * Ensure sanitize_settings casts the cleanup flag to a boolean value.
      */
     public function test_sanitize_settings_casts_cleanup_flag() {
@@ -147,5 +159,22 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'https://example.com/crawl/', $sanitized['crawl4ai_base_url'] );
         $this->assertSame( 'secret token', $sanitized['crawl4ai_api_key'] );
+    }
+
+    /**
+     * Ensure sanitize_settings cleans group email configuration values.
+     */
+    public function test_sanitize_settings_sanitizes_group_email_configuration() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'group_email_capability'     => ' Manage_Options ',
+                'group_email_max_recipients' => ' 250 ',
+            )
+        );
+
+        $this->assertSame( 'manage_options', $sanitized['group_email_capability'] );
+        $this->assertSame( 250, $sanitized['group_email_max_recipients'] );
     }
 }

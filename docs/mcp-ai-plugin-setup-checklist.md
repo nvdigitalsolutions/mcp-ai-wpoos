@@ -10,6 +10,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 - Choose the global default provider in **Settings → MCP AI → Default Provider** so new assistants inherit the preferred vendor.
 - Adjust **Settings → MCP AI → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
 - Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types.
+- Configure the **Settings → MCP AI → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
 - Set a fallback assistant in **Settings → MCP AI → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
 - Decide whether to enable request logging at **Settings → MCP AI → Enable Logging** for diagnostics.
 - Choose an uninstall behavior in **Settings → MCP AI → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
