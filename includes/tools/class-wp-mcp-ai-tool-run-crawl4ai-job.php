@@ -236,6 +236,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
             foreach ( $arguments['urls'] as $url ) {
                 $sanitised = $this->sanitize_url( $url );
+
+                if ( is_wp_error( $sanitised ) ) {
+                    return $sanitised;
+                }
+
                 if ( $sanitised ) {
                     $urls[] = $sanitised;
                 }
@@ -244,6 +249,10 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         if ( empty( $urls ) && ! empty( $arguments['url'] ) ) {
             $single = $this->sanitize_url( $arguments['url'] );
+            if ( is_wp_error( $single ) ) {
+                return $single;
+            }
+
             if ( $single ) {
                 $urls[] = $single;
             }
@@ -262,7 +271,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
      * Sanitise a URL string.
      *
      * @param mixed $value Potential URL value.
-     * @return string
+     * @return string|WP_Error
      */
     protected function sanitize_url( $value ) {
         if ( ! is_string( $value ) ) {
@@ -276,7 +285,203 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         $sanitised = esc_url_raw( $value );
 
-        return $sanitised ? $sanitised : '';
+        if ( ! $sanitised ) {
+            return '';
+        }
+
+        $parts = wp_parse_url( $sanitised );
+
+        if ( false === $parts || empty( $parts['host'] ) ) {
+            return '';
+        }
+
+        $scheme = isset( $parts['scheme'] ) ? strtolower( $parts['scheme'] ) : '';
+
+        if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+            return '';
+        }
+
+        if ( $this->is_url_trusted_host( $sanitised, $parts ) ) {
+            return $sanitised;
+        }
+
+        if ( ! $this->is_url_network_safe( $sanitised, $parts ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_unsafe_url',
+                __( 'Crawl4AI cannot access loopback, link-local, or private network URLs.', 'wp-mcp-ai' ),
+                array( 'url' => $sanitised )
+            );
+        }
+
+        return $sanitised;
+    }
+
+    /**
+     * Determine whether the provided URL points to a trusted host.
+     *
+     * @param string $url   Sanitised URL string.
+     * @param array  $parts Parsed URL parts.
+     * @return bool
+     */
+    protected function is_url_trusted_host( $url, array $parts ) {
+        $host = strtolower( $parts['host'] );
+
+        /**
+         * Filters the list of trusted hosts that the crawler may access.
+         *
+         * Returning one or more hostnames here restricts crawling to the
+         * provided values. Hostnames may include a leading wildcard (e.g.
+         * `*.example.com`).
+         *
+         * @param string[] $trusted_hosts Array of trusted host patterns.
+         * @param string   $url           Sanitised URL string.
+         * @param array    $parts         Parsed URL parts from wp_parse_url().
+         */
+        $trusted_hosts = apply_filters( 'wp_mcp_ai_crawl4ai_trusted_hosts', array(), $url, $parts );
+
+        if ( empty( $trusted_hosts ) || ! is_array( $trusted_hosts ) ) {
+            return false;
+        }
+
+        foreach ( $trusted_hosts as $trusted ) {
+            if ( ! is_string( $trusted ) ) {
+                continue;
+            }
+
+            $trusted = strtolower( trim( $trusted ) );
+
+            if ( '' === $trusted ) {
+                continue;
+            }
+
+            if ( $trusted === $host ) {
+                return true;
+            }
+
+            if ( 0 === strpos( $trusted, '*.' ) ) {
+                $suffix = substr( $trusted, 1 );
+
+                if ( '' !== $suffix && substr( $host, -strlen( $suffix ) ) === $suffix ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine whether the URL resolves to a public network destination.
+     *
+     * @param string $url   Sanitised URL string.
+     * @param array  $parts Parsed URL parts.
+     * @return bool
+     */
+    protected function is_url_network_safe( $url, array $parts ) {
+        $host = $parts['host'];
+
+        if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+            return $this->is_ip_public( $host );
+        }
+
+        $ips = $this->resolve_host_ips( $host );
+
+        if ( empty( $ips ) ) {
+            return true;
+        }
+
+        foreach ( $ips as $ip ) {
+            if ( ! $this->is_ip_public( $ip ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Resolve a hostname to a set of IP addresses.
+     *
+     * @param string $host Hostname to resolve.
+     * @return string[]
+     */
+    protected function resolve_host_ips( $host ) {
+        $ips = array();
+
+        if ( function_exists( 'dns_get_record' ) && defined( 'DNS_A' ) ) {
+            $type = DNS_A;
+
+            if ( defined( 'DNS_AAAA' ) ) {
+                $type |= DNS_AAAA;
+            }
+
+            $records = @dns_get_record( $host, $type );
+
+            if ( is_array( $records ) ) {
+                foreach ( $records as $record ) {
+                    if ( isset( $record['ip'] ) ) {
+                        $ips[] = $record['ip'];
+                    } elseif ( isset( $record['ipv6'] ) ) {
+                        $ips[] = $record['ipv6'];
+                    }
+                }
+            }
+        }
+
+        if ( function_exists( 'gethostbynamel' ) ) {
+            $ipv4 = @gethostbynamel( $host );
+
+            if ( is_array( $ipv4 ) ) {
+                $ips = array_merge( $ips, $ipv4 );
+            }
+        }
+
+        return array_values( array_unique( $ips ) );
+    }
+
+    /**
+     * Determine whether an IP address is routable on the public internet.
+     *
+     * @param string $ip IP address (IPv4 or IPv6).
+     * @return bool
+     */
+    protected function is_ip_public( $ip ) {
+        $validated = filter_var( $ip, FILTER_VALIDATE_IP );
+
+        if ( false === $validated ) {
+            return false;
+        }
+
+        $flags = FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE;
+
+        if ( false === filter_var( $ip, FILTER_VALIDATE_IP, $flags ) ) {
+            return false;
+        }
+
+        if ( false === strpos( $ip, ':' ) ) {
+            // IPv4 specific exclusions.
+            if ( 0 === strpos( $ip, '127.' ) ) {
+                return false;
+            }
+
+            if ( 0 === strpos( $ip, '169.254.' ) ) {
+                return false;
+            }
+
+            return true;
+        }
+
+        $lower = strtolower( $ip );
+
+        if ( '::1' === $lower ) {
+            return false;
+        }
+
+        if ( 0 === strpos( $lower, 'fe80:' ) ) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -462,10 +667,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         );
 
         $args = array(
-            'headers'      => $headers,
-            'redirection'  => 5,
-            'sslverify'    => true,
-            'decompress'   => true,
+            'headers'            => $headers,
+            'redirection'        => 5,
+            'sslverify'          => true,
+            'decompress'         => true,
+            'reject_unsafe_urls' => true,
         );
 
         /**
