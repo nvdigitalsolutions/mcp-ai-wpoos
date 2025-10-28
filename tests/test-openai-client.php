@@ -1543,6 +1543,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $client->generate_image(
             'Prompt with explicit response format',
             array(
+                'model'           => 'gpt-image-test',
                 'response_format' => 'url',
             )
         );
@@ -1555,6 +1556,59 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $payload );
         $this->assertArrayHasKey( 'response_format', $payload );
         $this->assertSame( 'url', $payload['response_format'] );
+    }
+
+    /**
+     * Ensure generate_image omits response_format for models that do not support it.
+     */
+    public function test_generate_image_omits_response_format_when_model_lacks_support() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']  = 'sk-test';
+        $settings['request_timeout'] = 20;
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'created' => 123,
+                'data'    => array(
+                    array(
+                        'b64_json' => base64_encode( 'stub-image' ),
+                    ),
+                ),
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $client->generate_image(
+            'Prompt with unsupported response format',
+            array(
+                'model'           => 'gpt-image-1',
+                'response_format' => 'url',
+            )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayNotHasKey( 'response_format', $payload );
     }
 
     /**

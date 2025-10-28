@@ -22,6 +22,25 @@ class WP_MCP_AI_OpenAI_Client {
     const IMAGES_ENDPOINT           = 'https://api.openai.com/v1/images/generations';
 
     /**
+     * Determine whether a given image model accepts the response_format parameter.
+     *
+     * @param string $model Image model identifier.
+     * @return bool
+     */
+    public static function image_model_supports_response_format( $model ) {
+        $model     = sanitize_text_field( $model );
+        $supported = 'gpt-image-1' !== $model;
+
+        /**
+         * Filter whether the supplied image model supports the response_format parameter.
+         *
+         * @param bool   $supported Whether the response_format parameter is supported.
+         * @param string $model     Model identifier.
+         */
+        return (bool) apply_filters( 'wp_mcp_ai_image_model_supports_response_format', $supported, $model );
+    }
+
+    /**
      * Retrieve the configured API key.
      *
      * @return string
@@ -464,8 +483,14 @@ class WP_MCP_AI_OpenAI_Client {
         $requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
         $response_format = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : $default_response_format;
 
+        $model_supports_response_format = self::image_model_supports_response_format( $model );
+
         if ( ! in_array( $response_format, array( 'b64_json', 'url' ), true ) ) {
             $response_format = $default_response_format;
+        }
+
+        if ( ! $model_supports_response_format ) {
+            $response_format = 'b64_json';
         }
 
         $timeout   = isset( $options['timeout'] ) && '' !== $options['timeout'] ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
@@ -483,7 +508,7 @@ class WP_MCP_AI_OpenAI_Client {
             $payload['background'] = $background;
         }
 
-        if ( '' !== $response_format ) {
+        if ( $model_supports_response_format && '' !== $response_format ) {
             $payload['response_format'] = $response_format;
         }
 
