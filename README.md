@@ -1,9 +1,27 @@
 # WP MCP AI (WPOS)
 
 **Version:** 1.0.0 (Beta)
-**Maintained by [NV Digital](https://nvdigitalsolutions.com)**  
-**License:** GPLv2 or later  
+**Maintained by [NV Digital](https://nvdigitalsolutions.com)**
+**License:** GPLv2 or later
 **Requires:** WordPress 6.0+, PHP 7.4+
+
+## 📑 Table of Contents
+
+- [🧩 Overview](#-overview)
+- [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
+- [🚀 Features](#-features)
+- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
+- [📦 Installation](#-installation)
+- [⚙️ Configuration Checklist (Action Items)](#-configuration-checklist-action-items)
+- [🧊 Elementor Widget](#-elementor-widget)
+- [🧮 Usage Tracking](#-usage-tracking)
+- [🧷 Attachment MIME Controls](#-attachment-mime-controls)
+- [🔒 MCP Server Authentication](#-mcp-server-authentication)
+- [🛠 Assistant Editor Overview](#-assistant-editor-overview)
+- [🔑 Assistant API credentials](#-assistant-api-credentials)
+- [🐳 Local Development with Docker](#-local-development-with-docker)
+  - [🔁 Codex environment startup script](#-codex-environment-startup-script)
+- [🧑‍💻 Development Tooling](#-development-tooling)
 
 ---
 
