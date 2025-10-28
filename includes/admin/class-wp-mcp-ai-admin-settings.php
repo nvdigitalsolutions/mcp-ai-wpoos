@@ -1280,6 +1280,8 @@ class WP_MCP_AI_Admin_Settings {
     protected function get_openai_image_model_choices() {
         $models = array(
             'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+            'dall-e-3'    => __( 'DALL·E 3', 'wp-mcp-ai' ),
+            'dall-e-2'    => __( 'DALL·E 2', 'wp-mcp-ai' ),
         );
 
         $models = apply_filters( 'wp_mcp_ai_openai_image_models', $models );
@@ -1287,6 +1289,8 @@ class WP_MCP_AI_Admin_Settings {
         if ( ! is_array( $models ) || empty( $models ) ) {
             $models = array(
                 'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+                'dall-e-3'    => __( 'DALL·E 3', 'wp-mcp-ai' ),
+                'dall-e-2'    => __( 'DALL·E 2', 'wp-mcp-ai' ),
             );
         }
 
