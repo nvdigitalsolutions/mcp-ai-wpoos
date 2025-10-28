@@ -54,3 +54,5 @@ Every authentication failure is returned as a structured JSON error so MCP clien
 | `wp_mcp_ai_insufficient_permissions` | `403` | WordPress-authenticated user lacks the `edit_posts` capability. | Promote the account (e.g., Author/Editor) or switch to a different user. |
 
 Each error also contains an `actions` array that mirrors these remediation steps so MCP clients can surface actionable guidance to end users.
+
+Refer to [docs/rest-api.md](rest-api.md) for endpoint-specific payload shapes and integration guidance.
