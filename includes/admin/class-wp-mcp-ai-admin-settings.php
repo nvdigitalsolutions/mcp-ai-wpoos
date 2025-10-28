@@ -48,6 +48,10 @@ class WP_MCP_AI_Admin_Settings {
             'crawl4ai_api_key'     => '',
             'group_email_capability'      => 'publish_posts',
             'group_email_max_recipients'  => 100,
+            'openai_image_model'          => 'gpt-image-1',
+            'openai_image_size'           => '1024x1024',
+            'openai_image_quality'        => 'standard',
+            'openai_image_background'     => '',
             'allowed_image_mimes'  => array(),
             'allowed_file_mimes'   => array(),
         );
@@ -255,6 +259,38 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'openai_image_model',
+            __( 'OpenAI Image Model', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_model_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'openai_image_size',
+            __( 'Default Image Size', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_size_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'openai_image_quality',
+            __( 'Default Image Quality', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_quality_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'openai_image_background',
+            __( 'Background Preference', 'wp-mcp-ai' ),
+            array( $this, 'render_openai_image_background_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'crawl4ai_base_url',
             __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
             array( $this, 'render_crawl4ai_base_url_field' ),
@@ -390,6 +426,42 @@ class WP_MCP_AI_Admin_Settings {
             $clean['group_email_max_recipients'] = absint( $settings['group_email_max_recipients'] );
         }
 
+        if ( isset( $settings['openai_image_model'] ) ) {
+            $model  = sanitize_text_field( $settings['openai_image_model'] );
+            $models = $this->get_openai_image_model_choices();
+
+            if ( isset( $models[ $model ] ) ) {
+                $clean['openai_image_model'] = $model;
+            }
+        }
+
+        if ( isset( $settings['openai_image_size'] ) ) {
+            $size   = sanitize_text_field( $settings['openai_image_size'] );
+            $sizes  = array_keys( $this->get_openai_image_size_choices() );
+
+            if ( in_array( $size, $sizes, true ) ) {
+                $clean['openai_image_size'] = $size;
+            }
+        }
+
+        if ( isset( $settings['openai_image_quality'] ) ) {
+            $quality   = sanitize_key( $settings['openai_image_quality'] );
+            $qualities = array_keys( $this->get_openai_image_quality_choices() );
+
+            if ( in_array( $quality, $qualities, true ) ) {
+                $clean['openai_image_quality'] = $quality;
+            }
+        }
+
+        if ( isset( $settings['openai_image_background'] ) ) {
+            $background   = sanitize_key( $settings['openai_image_background'] );
+            $backgrounds  = array_keys( $this->get_openai_image_background_choices() );
+
+            if ( in_array( $background, $backgrounds, true ) ) {
+                $clean['openai_image_background'] = $background;
+            }
+        }
+
         if ( isset( $settings['allowed_image_mimes'] ) ) {
             $clean['allowed_image_mimes'] = $this->parse_mime_list( $settings['allowed_image_mimes'] );
         }
@@ -510,6 +582,74 @@ class WP_MCP_AI_Admin_Settings {
     public function render_tools_section_description() {
         ?>
         <p><?php esc_html_e( 'Configure the optional MCP tools exposed to assistants.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI image model field.
+     */
+    public function render_openai_image_model_field() {
+        $settings = self::get_settings();
+        $models   = $this->get_openai_image_model_choices();
+        $current  = isset( $settings['openai_image_model'] ) ? sanitize_text_field( $settings['openai_image_model'] ) : 'gpt-image-1';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_model]" class="regular-text">
+            <?php foreach ( $models as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Default OpenAI model used by the Generate OpenAI Image tool.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI image size field.
+     */
+    public function render_openai_image_size_field() {
+        $settings = self::get_settings();
+        $sizes    = $this->get_openai_image_size_choices();
+        $current  = isset( $settings['openai_image_size'] ) ? sanitize_text_field( $settings['openai_image_size'] ) : '1024x1024';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_size]" class="regular-text">
+            <?php foreach ( $sizes as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Image dimensions requested from OpenAI when size is not supplied explicitly.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI image quality field.
+     */
+    public function render_openai_image_quality_field() {
+        $settings  = self::get_settings();
+        $qualities = $this->get_openai_image_quality_choices();
+        $current   = isset( $settings['openai_image_quality'] ) ? sanitize_key( $settings['openai_image_quality'] ) : 'standard';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_quality]" class="regular-text">
+            <?php foreach ( $qualities as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the OpenAI image background field.
+     */
+    public function render_openai_image_background_field() {
+        $settings    = self::get_settings();
+        $backgrounds = $this->get_openai_image_background_choices();
+        $current     = isset( $settings['openai_image_background'] ) ? sanitize_key( $settings['openai_image_background'] ) : '';
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_background]" class="regular-text">
+            <?php foreach ( $backgrounds as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Preferred background mode when OpenAI supports the option.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
@@ -800,6 +940,104 @@ class WP_MCP_AI_Admin_Settings {
             ?>
         </p>
         <?php
+    }
+
+    /**
+     * Retrieve the list of available OpenAI image models.
+     *
+     * @return array
+     */
+    protected function get_openai_image_model_choices() {
+        $models = array(
+            'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+        );
+
+        $models = apply_filters( 'wp_mcp_ai_openai_image_models', $models );
+
+        if ( ! is_array( $models ) || empty( $models ) ) {
+            $models = array(
+                'gpt-image-1' => __( 'GPT-Image-1', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $models;
+    }
+
+    /**
+     * Retrieve the list of available OpenAI image sizes.
+     *
+     * @return array
+     */
+    protected function get_openai_image_size_choices() {
+        $sizes = array(
+            '1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
+            '1024x1536' => __( '1024 × 1536 (portrait)', 'wp-mcp-ai' ),
+            '1536x1024' => __( '1536 × 1024 (landscape)', 'wp-mcp-ai' ),
+            'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
+        );
+
+        $sizes = apply_filters( 'wp_mcp_ai_openai_image_sizes', $sizes );
+
+        if ( ! is_array( $sizes ) || empty( $sizes ) ) {
+            $sizes = array(
+                '1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
+                '1024x1536' => __( '1024 × 1536 (portrait)', 'wp-mcp-ai' ),
+                '1536x1024' => __( '1536 × 1024 (landscape)', 'wp-mcp-ai' ),
+                'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $sizes;
+    }
+
+    /**
+     * Retrieve the list of available OpenAI image quality options.
+     *
+     * @return array
+     */
+    protected function get_openai_image_quality_choices() {
+        $qualities = array(
+            'standard' => __( 'Standard', 'wp-mcp-ai' ),
+            'high'     => __( 'High', 'wp-mcp-ai' ),
+        );
+
+        $qualities = apply_filters( 'wp_mcp_ai_openai_image_qualities', $qualities );
+
+        if ( ! is_array( $qualities ) || empty( $qualities ) ) {
+            $qualities = array(
+                'standard' => __( 'Standard', 'wp-mcp-ai' ),
+                'high'     => __( 'High', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $qualities;
+    }
+
+    /**
+     * Retrieve the list of available OpenAI image background preferences.
+     *
+     * @return array
+     */
+    protected function get_openai_image_background_choices() {
+        $backgrounds = array(
+            ''            => __( 'No preference (OpenAI default)', 'wp-mcp-ai' ),
+            'transparent' => __( 'Transparent', 'wp-mcp-ai' ),
+            'opaque'      => __( 'Opaque', 'wp-mcp-ai' ),
+            'auto'        => __( 'Auto', 'wp-mcp-ai' ),
+        );
+
+        $backgrounds = apply_filters( 'wp_mcp_ai_openai_image_backgrounds', $backgrounds );
+
+        if ( ! is_array( $backgrounds ) || empty( $backgrounds ) ) {
+            $backgrounds = array(
+                ''            => __( 'No preference (OpenAI default)', 'wp-mcp-ai' ),
+                'transparent' => __( 'Transparent', 'wp-mcp-ai' ),
+                'opaque'      => __( 'Opaque', 'wp-mcp-ai' ),
+                'auto'        => __( 'Auto', 'wp-mcp-ai' ),
+            );
+        }
+
+        return $backgrounds;
     }
 
     /**

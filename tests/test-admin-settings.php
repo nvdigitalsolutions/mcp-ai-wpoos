@@ -26,6 +26,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $this->assertSame( 'gemini-1.5-flash', $defaults['default_gemini_model'] );
         $this->assertArrayHasKey( 'default_provider', $defaults );
         $this->assertSame( 'openai', $defaults['default_provider'] );
+        $this->assertArrayHasKey( 'openai_image_model', $defaults );
+        $this->assertSame( 'gpt-image-1', $defaults['openai_image_model'] );
+        $this->assertArrayHasKey( 'openai_image_size', $defaults );
+        $this->assertSame( '1024x1024', $defaults['openai_image_size'] );
+        $this->assertArrayHasKey( 'openai_image_quality', $defaults );
+        $this->assertSame( 'standard', $defaults['openai_image_quality'] );
+        $this->assertArrayHasKey( 'openai_image_background', $defaults );
+        $this->assertSame( '', $defaults['openai_image_background'] );
     }
 
     /**
@@ -176,5 +184,48 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'manage_options', $sanitized['group_email_capability'] );
         $this->assertSame( 250, $sanitized['group_email_max_recipients'] );
+    }
+
+    /**
+     * Ensure sanitize_settings accepts valid OpenAI image configuration values.
+     */
+    public function test_sanitize_settings_accepts_openai_image_configuration() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'openai_image_model'      => 'gpt-image-1',
+                'openai_image_size'       => '1536x1024',
+                'openai_image_quality'    => 'high',
+                'openai_image_background' => 'transparent',
+            )
+        );
+
+        $this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
+        $this->assertSame( '1536x1024', $sanitized['openai_image_size'] );
+        $this->assertSame( 'high', $sanitized['openai_image_quality'] );
+        $this->assertSame( 'transparent', $sanitized['openai_image_background'] );
+    }
+
+    /**
+     * Ensure sanitize_settings rejects invalid OpenAI image configuration values.
+     */
+    public function test_sanitize_settings_rejects_invalid_openai_image_configuration() {
+        $admin_settings = new WP_MCP_AI_Admin_Settings();
+        $defaults       = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+        $sanitized = $admin_settings->sanitize_settings(
+            array(
+                'openai_image_model'      => 'unknown-model',
+                'openai_image_size'       => '200x200',
+                'openai_image_quality'    => 'ultra',
+                'openai_image_background' => 'invalid',
+            )
+        );
+
+        $this->assertSame( $defaults['openai_image_model'], $sanitized['openai_image_model'] );
+        $this->assertSame( $defaults['openai_image_size'], $sanitized['openai_image_size'] );
+        $this->assertSame( $defaults['openai_image_quality'], $sanitized['openai_image_quality'] );
+        $this->assertSame( $defaults['openai_image_background'], $sanitized['openai_image_background'] );
     }
 }

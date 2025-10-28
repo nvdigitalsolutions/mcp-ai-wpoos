@@ -121,4 +121,72 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
         wp_delete_attachment( $attachment_id, true );
     }
+
+    /**
+     * The tool should fall back to the configured image defaults when optional arguments are omitted.
+     */
+    public function test_execute_uses_configured_defaults_when_arguments_missing() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key']        = 'sk-test';
+        $settings['openai_image_size']     = '1536x1024';
+        $settings['openai_image_quality']  = 'high';
+        $settings['openai_image_background'] = 'opaque';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        $tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+        $captured_request = null;
+        $png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'created' => 999,
+                'data'    => array(
+                    array(
+                        'b64_json' => $png_base64,
+                    ),
+                ),
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'prompt' => 'A robot sketching a blueprint',
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::IMAGES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+        $this->assertIsArray( $payload );
+        $this->assertSame( '1536x1024', $payload['size'] );
+        $this->assertSame( 'high', $payload['quality'] );
+        $this->assertSame( 'opaque', $payload['background'] );
+
+        $this->assertIsArray( $result );
+        $this->assertArrayHasKey( 'url', $result );
+
+        if ( ! empty( $result['attachment_id'] ) ) {
+            wp_delete_attachment( $result['attachment_id'], true );
+        }
+    }
 }
