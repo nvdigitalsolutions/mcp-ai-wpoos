@@ -12,6 +12,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 - Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types.
 - Configure the **Settings → MCP AI → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
 - Set the defaults for generated speech audio under **Settings → MCP AI → OpenAI Speech Model / Default Speech Voice / Default Speech Format** so text-to-speech results match your publishing requirements.
+- Tune the OpenAI image defaults under **Settings → MCP AI → OpenAI Image Model / Size / Quality / Response Format** before exposing image generation to assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
 - Set a fallback assistant in **Settings → MCP AI → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
 - Decide whether to enable request logging at **Settings → MCP AI → Enable Logging** for diagnostics.
 - Choose an uninstall behavior in **Settings → MCP AI → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
