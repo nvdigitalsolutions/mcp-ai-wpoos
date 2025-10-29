@@ -50,6 +50,10 @@ class WP_MCP_AI_Admin_Settings {
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
             'crawl4ai_api_key'     => '',
+            'mailjet_api_key'      => '',
+            'mailjet_api_secret'   => '',
+            'mailjet_from_email'   => '',
+            'mailjet_from_name'    => '',
             'quickbooks_company_id' => '',
             'quickbooks_api_key'    => '',
             'group_email_capability'      => 'publish_posts',
@@ -1000,6 +1004,38 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'mailjet_api_key',
+            __( 'Mailjet API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'mailjet_api_secret',
+            __( 'Mailjet API Secret', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_api_secret_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'mailjet_from_email',
+            __( 'Mailjet From Email', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_from_email_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'mailjet_from_name',
+            __( 'Mailjet From Name', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_from_name_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'group_email_capability',
             __( 'Group Email Capability', 'wp-mcp-ai' ),
             array( $this, 'render_group_email_capability_field' ),
@@ -1140,6 +1176,20 @@ class WP_MCP_AI_Admin_Settings {
             $clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
         }
 
+        if ( isset( $settings['mailjet_api_key'] ) ) {
+            $clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
+        }
+
+        if ( isset( $settings['mailjet_api_secret'] ) ) {
+            $clean['mailjet_api_secret'] = trim( sanitize_text_field( $settings['mailjet_api_secret'] ) );
+        }
+
+        if ( isset( $settings['mailjet_from_email'] ) ) {
+            $clean['mailjet_from_email'] = sanitize_email( $settings['mailjet_from_email'] );
+        }
+
+        if ( isset( $settings['mailjet_from_name'] ) ) {
+            $clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
         if ( isset( $settings['quickbooks_company_id'] ) ) {
             $clean['quickbooks_company_id'] = trim( sanitize_text_field( $settings['quickbooks_company_id'] ) );
         }
@@ -1656,6 +1706,50 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet API key field.
+     */
+    public function render_mailjet_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet API secret field.
+     */
+    public function render_mailjet_api_secret_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_secret]" value="<?php echo esc_attr( $settings['mailjet_api_secret'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Private Mailjet API secret paired with the API key.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet from email field.
+     */
+    public function render_mailjet_from_email_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_email]" value="<?php echo esc_attr( $settings['mailjet_from_email'] ); ?>" class="regular-text" placeholder="sender@example.com" />
+        <p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet from name field.
+     */
+    public function render_mailjet_from_name_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP MCP AI" />
+        <p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
