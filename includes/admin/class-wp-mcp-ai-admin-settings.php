@@ -52,6 +52,12 @@ class WP_MCP_AI_Admin_Settings {
             'crawl4ai_api_key'     => '',
             'cloudflare_api_token' => '',
             'cloudflare_zone_id'   => '',
+            'mailjet_api_key'      => '',
+            'mailjet_api_secret'   => '',
+            'mailjet_from_email'   => '',
+            'mailjet_from_name'    => '',
+            'quickbooks_company_id' => '',
+            'quickbooks_api_key'    => '',
             'group_email_capability'      => 'publish_posts',
             'group_email_max_recipients'  => 100,
             'openai_image_model'          => 'gpt-image-1',
@@ -898,6 +904,29 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_quickbooks_section',
+            __( 'QuickBooks Online', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'quickbooks_company_id',
+            __( 'Company ID', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_company_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_quickbooks_section'
+        );
+
+        add_settings_field(
+            'quickbooks_api_key',
+            __( 'API Key / Access Token', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_quickbooks_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_tools_section',
             __( 'Tools', 'wp-mcp-ai' ),
             array( $this, 'render_tools_section_description' ),
@@ -980,6 +1009,9 @@ class WP_MCP_AI_Admin_Settings {
             'cloudflare_zone_id',
             __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
             array( $this, 'render_cloudflare_zone_id_field' ),
+            'mailjet_api_key',
+            __( 'Mailjet API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_api_key_field' ),
             self::PAGE_SLUG,
             'wp_mcp_ai_tools_section'
         );
@@ -988,6 +1020,25 @@ class WP_MCP_AI_Admin_Settings {
             'cloudflare_api_token',
             __( 'Cloudflare API Token', 'wp-mcp-ai' ),
             array( $this, 'render_cloudflare_api_token_field' ),
+            'mailjet_api_secret',
+            __( 'Mailjet API Secret', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_api_secret_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'mailjet_from_email',
+            __( 'Mailjet From Email', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_from_email_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'mailjet_from_name',
+            __( 'Mailjet From Name', 'wp-mcp-ai' ),
+            array( $this, 'render_mailjet_from_name_field' ),
             self::PAGE_SLUG,
             'wp_mcp_ai_tools_section'
         );
@@ -1139,6 +1190,26 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['cloudflare_zone_id'] ) ) {
             $clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
+        if ( isset( $settings['mailjet_api_key'] ) ) {
+            $clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
+        }
+
+        if ( isset( $settings['mailjet_api_secret'] ) ) {
+            $clean['mailjet_api_secret'] = trim( sanitize_text_field( $settings['mailjet_api_secret'] ) );
+        }
+
+        if ( isset( $settings['mailjet_from_email'] ) ) {
+            $clean['mailjet_from_email'] = sanitize_email( $settings['mailjet_from_email'] );
+        }
+
+        if ( isset( $settings['mailjet_from_name'] ) ) {
+            $clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+        if ( isset( $settings['quickbooks_company_id'] ) ) {
+            $clean['quickbooks_company_id'] = trim( sanitize_text_field( $settings['quickbooks_company_id'] ) );
+        }
+
+        if ( isset( $settings['quickbooks_api_key'] ) ) {
+            $clean['quickbooks_api_key'] = trim( sanitize_text_field( $settings['quickbooks_api_key'] ) );
         }
 
         if ( isset( $settings['group_email_capability'] ) ) {
@@ -1460,6 +1531,37 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Render the QuickBooks section description.
+     */
+    public function render_quickbooks_section_description() {
+        ?>
+        <p><?php esc_html_e( 'Configure the credentials used by the QuickBooks Online reporting tool.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the QuickBooks company ID field.
+     */
+    public function render_quickbooks_company_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_company_id]" value="<?php echo esc_attr( $settings['quickbooks_company_id'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Enter the QuickBooks Online company ID that should be used for report requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the QuickBooks API key field.
+     */
+    public function render_quickbooks_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $settings['quickbooks_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
      * Render the tools section description.
      */
     public function render_tools_section_description() {
@@ -1629,6 +1731,13 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_zone_id]" value="<?php echo esc_attr( $settings['cloudflare_zone_id'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Cloudflare zone identifier (a 32 character string) for the site you wish to purge.', 'wp-mcp-ai' ); ?></p>
+     * Render the Mailjet API key field.
+     */
+    public function render_mailjet_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
@@ -1640,6 +1749,35 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?></p>
+     * Render the Mailjet API secret field.
+     */
+    public function render_mailjet_api_secret_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_secret]" value="<?php echo esc_attr( $settings['mailjet_api_secret'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Private Mailjet API secret paired with the API key.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet from email field.
+     */
+    public function render_mailjet_from_email_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_email]" value="<?php echo esc_attr( $settings['mailjet_from_email'] ); ?>" class="regular-text" placeholder="sender@example.com" />
+        <p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Mailjet from name field.
+     */
+    public function render_mailjet_from_name_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP MCP AI" />
+        <p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
