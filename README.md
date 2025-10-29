@@ -93,6 +93,7 @@ Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` 
 ## 📦 Installation
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
 2. Activate **WP MCP AI** from the WordPress admin
+   - Ensure [JetEngine](https://crocoblock.com/plugins/jetengine/) is active with the **Custom Content Types** module enabled before switching the plugin on. WP MCP AI automatically provisions the `ai_chat_transcripts` CCT on JetEngine init, so no manual setup is required beyond enabling the module; existing CCT definitions are left untouched if you have already created one manually.
 3. Go to **Settings → MCP AI**
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
