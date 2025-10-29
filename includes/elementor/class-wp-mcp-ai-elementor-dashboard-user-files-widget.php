@@ -262,7 +262,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
             }
 
             if ( ! empty( $meta ) ) {
-                echo '<span class="wp-mcp-ai-user-files__meta">' . esc_html( implode( ' • ', $meta ) ) . '</span>';
+                echo '<div class="wp-mcp-ai-user-files__meta">' . esc_html( implode( ' • ', $meta ) ) . '</div>';
             }
 
             echo '</li>';
