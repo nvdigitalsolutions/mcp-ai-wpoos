@@ -9,7 +9,7 @@ All endpoints honour the authentication modes described in [docs/mcp-server-auth
 - **Auth0 bearer tokens** – Supply `Authorization: Bearer <token>` with an access token whose issuer, audience, and scopes match the plugin settings.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L520-L823】
 - **Assistant-issued credentials** – Pass the one-time token generated in the assistant editor (`cred_xxxxx.SECRET`). The REST controller hashes and validates the credential, scopes the request to the issuing assistant, and records an audit log entry for successful usage.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L426-L520】
 - **WordPress REST nonces** – Same-origin clients (dashboard UI, shortcodes) may send the `X-WP-Nonce` header tied to the authenticated session. Capabilities are enforced after nonce verification.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L360-L401】
-- **Guest tokens** – Shortcodes, the Deep Chat container, and the Elementor widget mint one-hour guest tokens when `allow_guests="true"` is enabled. Include the token via the `X-WP-MCP-AI-Guest` header or `guest_token` parameter to bypass the default `edit_posts` requirement safely.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
+- **Guest tokens** – Shortcodes and the Elementor widget mint one-hour guest tokens when `allow_guests="true"` is enabled. Include the token via the `X-WP-MCP-AI-Guest` header or `guest_token` parameter to bypass the default `edit_posts` requirement safely.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
 
 ## POST `/chat`
 

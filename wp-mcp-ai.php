@@ -16,8 +16,6 @@ define( 'WP_MCP_AI_VERSION', '1.0.0' );
 define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
 
-require_once WP_MCP_AI_PATH . 'includes/deep-chat-assets.php';
-
 /**
  * Retrieve the capability required to access the chat interface.
  *
@@ -108,7 +106,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deep-chat-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
