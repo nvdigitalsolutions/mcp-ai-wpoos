@@ -49,6 +49,11 @@
     padding-right: 3rem;
 }
 
+.wp-mcp-ai-chat__bubble.wp-mcp-ai-copy-enabled {
+    position: relative;
+    padding-bottom: 3rem;
+}
+
 .wp-mcp-ai-speech-button {
     position: absolute;
     top: 0.5rem;
@@ -99,6 +104,48 @@
     border: 2px solid currentColor;
     border-top-color: transparent;
     animation: wp-mcp-ai-speech-spin 0.75s linear infinite;
+}
+
+.wp-mcp-ai-copy-button {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--wp-mcp-ai-color-copy-button-background, rgba(15, 23, 42, 0.82));
+    color: var(--wp-mcp-ai-color-copy-button-text, #fff);
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    padding: 0;
+}
+
+.wp-mcp-ai-copy-button:hover {
+    background: var(--wp-mcp-ai-color-copy-button-hover-background, rgba(15, 23, 42, 0.94));
+}
+
+.wp-mcp-ai-copy-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-copy-button-focus-ring, rgba(59, 130, 246, 0.45));
+}
+
+.wp-mcp-ai-copy-button:disabled {
+    opacity: 0.65;
+    cursor: default;
+}
+
+.wp-mcp-ai-copy-button.wp-mcp-ai-copy-button--error {
+    background: var(--wp-mcp-ai-color-copy-button-error-background, rgba(220, 38, 38, 0.88));
+}
+
+.wp-mcp-ai-copy-button .wp-mcp-ai-copy-icon {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
 }
 
 @keyframes wp-mcp-ai-speech-spin {
