@@ -58,7 +58,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
-- 🧊 Elementor widget for dropping the chat UI into Elementor-powered layouts
+- 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
 - 🔐 Secure REST API endpoints
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🧱 Ready for extension with ChatKit Add-on
@@ -84,7 +84,7 @@ WP MCP AI ships multiple ways to embed assistants on the front end:
 
 - **Classic chat shortcode** – `[mcp_ai_chat]` renders the bundled interface with attachment uploads, tool invocation feedback, and optional guest access via `allow_guests="true"`. When guest mode is enabled, the shortcode provisions a temporary token and injects it into the JavaScript bootstrap so visitors without WordPress accounts can continue chatting while still respecting capability checks and attachment safety limits.【F:includes/class-wp-mcp-ai-shortcode.php†L132-L258】【F:includes/class-wp-mcp-ai-shortcode.php†L188-L226】
 - **Deep Chat container** – `[mcp_ai_deep_chat]` outputs a lightweight `<div>` wired with REST endpoints, attachment limits, and the same guest token support so headless front ends or custom JavaScript renderers can consume the assistant without the bundled markup. Pair it with `window.wpMcpAiChat` or a bespoke client to build a fully custom UX.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L34-L140】
-- **Elementor widget** – Drop the chat UI anywhere Elementor is active; it shares the same `allow_guests` control for issuing temporary access tokens to visitors and hands those tokens to the REST layer automatically.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-rest.php†L289-L342】
+- **Elementor widgets** – Drop the chat UI anywhere Elementor is active, pair it with intro/FAQ blocks, and surface dashboard telemetry without custom code. The chat widget mirrors the shortcode controls (including `allow_guests`), and companion widgets expose onboarding content, usage timers, provider quick links, and activity feeds for operational views.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-elementor-integration.php†L48-L98】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L140】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L226】【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L167】
 
 Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing Deep Chat instances and shortcodes to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
 
@@ -129,9 +129,22 @@ Configure remote endpoints or API keys under **Settings → MCP AI → Tools** t
 
 Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
-## 🧊 Elementor Widget
+## 🧊 Elementor Widgets
 
-Sites running Elementor automatically register a chat widget that mirrors the `[mcp_ai_chat]` shortcode, making it easy to drop conversations into Elementor layouts without custom HTML.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L62】 The integration boots only when Elementor is active, so it adds no overhead to non-Elementor installs.
+Sites running Elementor automatically register a suite of MCP blocks so you can assemble onboarding pages, operational dashboards, and standalone chat layouts without writing markup.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】 The integration only boots when Elementor is present, so non-Elementor installs avoid any overhead.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】
+
+### Chat surfaces and companion blocks
+- **MCP AI Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
+- **MCP AI Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
+- **MCP AI Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
+- **MCP AI Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
+
+### Operations dashboards
+- **MCP AI Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L210】
+- **MCP AI User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L262】
+- **MCP AI Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
+- **MCP AI Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
+- **MCP AI Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
 ## 🧮 Usage Tracking
 
