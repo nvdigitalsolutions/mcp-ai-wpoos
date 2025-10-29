@@ -345,6 +345,26 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_missing_file', __( 'The attachment file could not be found.', 'wp-mcp-ai' ) );
         }
 
+        $max_bytes = apply_filters( 'wp_mcp_ai_email_definition_attachment_max_bytes', 1024 * 1024, $attachment_id, $this );
+        $max_bytes = absint( $max_bytes );
+
+        if ( $max_bytes < 1 ) {
+            $max_bytes = 1024 * 1024;
+        }
+        $file_size = filesize( $file_path );
+
+        if ( false !== $file_size && $file_size > $max_bytes ) {
+            return new WP_Error(
+                'wp_mcp_ai_attachment_too_large',
+                sprintf(
+                    /* translators: %s: formatted file size limit. */
+                    __( 'The attachment file is too large. The maximum allowed size is %s.', 'wp-mcp-ai' ),
+                    size_format( $max_bytes )
+                ),
+                array( 'status' => 413 )
+            );
+        }
+
         $contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
         if ( false === $contents ) {
             return new WP_Error( 'wp_mcp_ai_unreadable_file', __( 'The attachment file could not be read.', 'wp-mcp-ai' ) );
