@@ -18,3 +18,7 @@ All built-in controllers enforce the `manage_options` capability inside their pe
 * Each data-modifying route (`add-item`, `edit-item`, `delete-item`) delegates the heavy lifting to instance-specific filters. Make sure the relevant module attaches a handler to the matching `jet-engine/rest-api/{operation}/{instance}` hook.
 * The `instance` argument acts as a routing key between JetEngine and your integration. Any request missing this value fails with a descriptive error message.
 * Cross-reference the [Crocoblock REST API overview](https://crocoblock.com/knowledge-base/features/rest-api-overview/) for broader context on managing Custom Content Type data with these endpoints.
+
+## AI chat transcript storage
+
+WP MCP AI seeds an `ai_chat_transcripts` Custom Content Type (CCT) under JetEngine for recording individual chat turns and debugging metadata. The helper `WP_MCP_AI_JetEngine_CCT::get_slug()` returns the slug while `WP_MCP_AI_JetEngine_CCT::get_item_handler()` exposes the JetEngine item handler (equivalent to calling `jet_engine()->cct->item_handler` after the CCT registers) for programmatic inserts or lookups.

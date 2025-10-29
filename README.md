@@ -322,8 +322,9 @@ The `/wp-json/mcp-ai/v1/chat` endpoint accepts rich, multi-part messages. Each m
 - `input_file` – Reference an uploaded attachment that should be streamed to the model.
 
 The REST controller validates attachment ownership/permissions, enforces a default 5 MB size cap (filterable via
-`wp_mcp_ai_max_attachment_bytes`), and only allows safe MIME types by default (`image/*` formats, `text/plain`, `text/markdown`,
-`text/csv`, `application/pdf`, `application/json`).
+`wp_mcp_ai_max_attachment_bytes`), and only allows safe MIME types by default. Text and structured data formats include
+Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, and XML; binary documents cover PDFs and Microsoft Word/PowerPoint/Excel variants;
+and audio/video uploads accept AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM plus MP4 or QuickTime sources. 【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L709】
 
 Whenever attachments are present, the plugin automatically inlines the asset data when sending requests to OpenAI's Responses API.
 Image segments are converted to data URLs and file segments include the base64-encoded payload alongside the original filename,
@@ -334,7 +335,7 @@ REST requests that include attachments automatically gain access to the bundled 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
-Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by both the shortcode and Deep Chat renderers when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L92-L134】
+Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by both the shortcode and Deep Chat renderers when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L92-L134】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
 
 ---
 
