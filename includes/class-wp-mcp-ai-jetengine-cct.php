@@ -19,7 +19,9 @@ class WP_MCP_AI_JetEngine_CCT {
      * Hook into JetEngine to provision the transcript content type.
      */
     public static function bootstrap() {
-        add_action( 'jet-engine/init', array( __CLASS__, 'maybe_register_cct' ), 99 );
+        // Run after JetEngine initialises the Custom Content Types module but before
+        // the manager registers existing instances (priority 10).
+        add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
     }
 
     /**
@@ -46,6 +48,10 @@ class WP_MCP_AI_JetEngine_CCT {
             return null;
         }
 
+        if ( empty( $module->manager ) ) {
+            return null;
+        }
+
         $instance = $module->manager->get_content_types( self::SLUG );
 
         if ( ! $instance ) {
@@ -62,6 +68,10 @@ class WP_MCP_AI_JetEngine_CCT {
         $module = self::get_cct_module();
 
         if ( ! $module ) {
+            return;
+        }
+
+        if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
             return;
         }
 
