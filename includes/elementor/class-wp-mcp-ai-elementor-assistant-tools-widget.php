@@ -173,9 +173,17 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
                 }
 
                 if ( '' !== $slug ) {
+                    /* translators: %s: tool slug. */
+                    $copy_label   = sprintf( esc_html__( 'Copy the %s tool slug', 'wp-mcp-ai' ), $slug );
+                    $success_text = esc_html__( 'Copied!', 'wp-mcp-ai' );
+                    $failure_text = esc_html__( 'Copy failed', 'wp-mcp-ai' );
+
                     echo '<span class="wp-mcp-ai-assistant-tools__slug">';
                     echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'wp-mcp-ai' ) . '</span> ';
+                    echo '<button type="button" class="wp-mcp-ai-assistant-tools__copy-button" data-slug="' . esc_attr( $slug ) . '" data-success-message="' . esc_attr( $success_text ) . '" data-failure-message="' . esc_attr( $failure_text ) . '" aria-label="' . esc_attr( $copy_label ) . '">';
                     echo '<code class="wp-mcp-ai-assistant-tools__slug-code">' . esc_html( $slug ) . '</code>';
+                    echo '<span class="wp-mcp-ai-assistant-tools__copy-feedback" aria-hidden="true" style="display:none;">' . esc_html( $success_text ) . '</span>';
+                    echo '</button>';
                     echo '</span>';
                 }
 
@@ -208,6 +216,166 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
         }
 
         echo '</div>';
+
+        self::maybe_print_copy_script();
+    }
+
+    /**
+     * Ensure the inline copy-to-clipboard script is only printed once.
+     */
+    protected static function maybe_print_copy_script() {
+        static $printed = false;
+
+        if ( $printed ) {
+            return;
+        }
+
+        $printed = true;
+
+        $style = <<<'CSS'
+.wp-mcp-ai-assistant-tools__copy-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.wp-mcp-ai-assistant-tools__copy-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+.wp-mcp-ai-assistant-tools__copy-feedback {
+    margin-left: 0.5rem;
+    font-size: 0.85em;
+}
+CSS;
+
+        echo '<style>' . $style . '</style>';
+
+        $script = <<<'JS'
+( function() {
+    var selector = '.wp-mcp-ai-assistant-tools__copy-button';
+
+    function setFeedback( button, isSuccess ) {
+        var feedback = button.querySelector( '.wp-mcp-ai-assistant-tools__copy-feedback' );
+
+        if ( ! feedback ) {
+            return;
+        }
+
+        var message = isSuccess ? button.getAttribute( 'data-success-message' ) : button.getAttribute( 'data-failure-message' );
+
+        if ( ! message ) {
+            return;
+        }
+
+        feedback.textContent = message;
+        feedback.style.display = '';
+        feedback.setAttribute( 'aria-hidden', 'false' );
+
+        clearTimeout( button._wpMcpAiCopyTimeout );
+        button._wpMcpAiCopyTimeout = setTimeout( function() {
+            feedback.style.display = 'none';
+            feedback.setAttribute( 'aria-hidden', 'true' );
+        }, 2000 );
+    }
+
+    function copyWithFallback( text ) {
+        return new Promise( function( resolve, reject ) {
+            try {
+                var textarea = document.createElement( 'textarea' );
+                textarea.value = text;
+                textarea.setAttribute( 'readonly', '' );
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                document.body.appendChild( textarea );
+                textarea.select();
+
+                var successful = document.execCommand( 'copy' );
+                document.body.removeChild( textarea );
+
+                if ( successful ) {
+                    resolve();
+                    return;
+                }
+
+                reject();
+            } catch ( error ) {
+                reject( error );
+            }
+        } );
+    }
+
+    function copySlug( slug ) {
+        if ( navigator.clipboard && navigator.clipboard.writeText ) {
+            return navigator.clipboard.writeText( slug ).catch( function() {
+                return copyWithFallback( slug );
+            } );
+        }
+
+        return copyWithFallback( slug );
+    }
+
+    function bindCopy( button ) {
+        if ( button.dataset.wpMcpAiCopyBound ) {
+            return;
+        }
+
+        button.dataset.wpMcpAiCopyBound = '1';
+
+        button.addEventListener( 'click', function() {
+            var slug = button.getAttribute( 'data-slug' );
+
+            if ( ! slug ) {
+                return;
+            }
+
+            copySlug( slug )
+                .then( function() {
+                    setFeedback( button, true );
+                } )
+                .catch( function() {
+                    setFeedback( button, false );
+                } );
+        } );
+    }
+
+    function init( context ) {
+        var scope = context || document;
+        var buttons = scope.querySelectorAll( selector );
+
+        if ( ! buttons.length ) {
+            return;
+        }
+
+        buttons.forEach( bindCopy );
+    }
+
+    if ( document.readyState !== 'loading' ) {
+        init();
+    } else {
+        document.addEventListener( 'DOMContentLoaded', function() {
+            init();
+        } );
+    }
+
+    document.addEventListener( 'elementor/popup/show', function( event ) {
+        init( event && event.target ? event.target : document );
+    } );
+} )();
+JS;
+
+        if ( function_exists( 'wp_print_inline_script_tag' ) ) {
+            wp_print_inline_script_tag( $script );
+            return;
+        }
+
+        echo '<script>' . $script . '</script>';
     }
 
     /**
