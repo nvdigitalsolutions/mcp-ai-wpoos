@@ -9,7 +9,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 - Pick a default Gemini model in **Settings → MCP AI → Default Gemini Model** before activating Gemini-powered assistants.
 - Choose the global default provider in **Settings → MCP AI → Default Provider** so new assistants inherit the preferred vendor.
 - Adjust **Settings → MCP AI → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
-- Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types.
+- Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types. The default profile accepts Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, XML, PDFs, Microsoft Office documents, AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM audio, and MP4 or QuickTime video, and enabling JSON Lines support automatically registers the `.jsonl`/`.ndjson` extensions with WordPress for uploads.【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L703】【F:wp-mcp-ai.php†L236-L272】
 - Configure the **Settings → MCP AI → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
 - Set the defaults for generated speech audio under **Settings → MCP AI → OpenAI Speech Model / Default Speech Voice / Default Speech Format** so text-to-speech results match your publishing requirements.
 - Tune the OpenAI image defaults under **Settings → MCP AI → OpenAI Image Model / Size / Quality / Response Format** before exposing image generation to assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
