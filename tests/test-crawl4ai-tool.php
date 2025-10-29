@@ -360,6 +360,85 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure large results are truncated when they exceed the configured token budget.
+     */
+    public function test_execute_truncates_large_results_to_token_limit() {
+        $this->configure_crawl4ai_settings();
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+
+        $limit_filter = function ( $limit, $response ) {
+            return 10;
+        };
+
+        $chars_filter = function ( $chars_per_token, $response ) {
+            return 1;
+        };
+
+        add_filter( 'wp_mcp_ai_crawl4ai_result_token_limit', $limit_filter, 10, 2 );
+        add_filter( 'wp_mcp_ai_crawl4ai_chars_per_token', $chars_filter, 10, 2 );
+
+        $long_content = str_repeat( 'A', 200 );
+
+        $responses = array(
+            'body'     => wp_json_encode(
+                array(
+                    'task_id' => 'instant-456',
+                    'status'  => 'completed',
+                    'results' => array(
+                        array(
+                            'url'      => 'https://example.com',
+                            'markdown' => $long_content,
+                            'text'     => $long_content,
+                            'html'     => '<p>' . $long_content . '</p>',
+                        ),
+                    ),
+                )
+            ),
+            'response' => array( 'code' => 200 ),
+            'headers'  => array(),
+        );
+
+        $callback = function ( $preempt, $args, $url ) use ( $responses ) {
+            return $responses;
+        };
+
+        add_filter( 'pre_http_request', $callback, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'https://example.com' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $callback, 10 );
+        remove_filter( 'wp_mcp_ai_crawl4ai_result_token_limit', $limit_filter, 10 );
+        remove_filter( 'wp_mcp_ai_crawl4ai_chars_per_token', $chars_filter, 10 );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'completed', $result['status'] );
+        $this->assertArrayHasKey( 'metadata', $result );
+        $this->assertTrue( $result['metadata']['truncated'] );
+        $this->assertSame( 10, $result['metadata']['approximate_token_limit'] );
+
+        $this->assertSame( 10, strlen( $result['results'][0]['markdown'] ) );
+        $this->assertSame( 0, strlen( $result['results'][0]['text'] ) );
+        $this->assertSame( 0, strlen( $result['results'][0]['html'] ) );
+
+        $this->assertArrayHasKey( 'metadata', $result['results'][0] );
+        $this->assertContains( 'markdown', $result['results'][0]['metadata']['truncated_fields'] );
+        $this->assertContains( 'text', $result['results'][0]['metadata']['truncated_fields'] );
+        $this->assertContains( 'html', $result['results'][0]['metadata']['truncated_fields'] );
+
+        $this->assertArrayHasKey( 'raw', $result );
+        $this->assertSame( $result['results'], $result['raw']['results'] );
+    }
+
+    /**
      * Ensure private network URLs are rejected when executing a crawl.
      */
     public function test_execute_rejects_private_network_urls() {

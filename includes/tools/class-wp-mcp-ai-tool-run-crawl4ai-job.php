@@ -1158,6 +1158,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         $formatted = $this->format_response( $decoded );
         $formatted['task_id'] = $task_id;
+        $formatted = $this->enforce_result_size_limits( $formatted );
 
         WP_MCP_AI_Logger::log_event(
             'crawl4ai_poll_response',
@@ -1192,6 +1193,135 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         return $log_payload;
     }
+
+    /**
+     * Ensure the response payload respects approximate token limits.
+     *
+     * @param array $response Response array that will be returned to the assistant.
+     * @return array
+     */
+    protected function enforce_result_size_limits( array $response ) {
+        if ( empty( $response['results'] ) || ! is_array( $response['results'] ) ) {
+            return $response;
+        }
+
+        $limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 450000, $response );
+
+        if ( $limit_tokens <= 0 ) {
+            return $response;
+        }
+
+        $chars_per_token = (int) apply_filters( 'wp_mcp_ai_crawl4ai_chars_per_token', 4, $response );
+        if ( $chars_per_token <= 0 ) {
+            $chars_per_token = 4;
+        }
+
+        $max_chars   = $limit_tokens * $chars_per_token;
+        $total_chars = 0;
+        $truncated   = false;
+
+        foreach ( $response['results'] as $index => &$result ) {
+            if ( ! is_array( $result ) ) {
+                continue;
+            }
+
+            foreach ( array( 'markdown', 'text', 'html' ) as $field ) {
+                if ( empty( $result[ $field ] ) || ! is_string( $result[ $field ] ) ) {
+                    continue;
+                }
+
+                $length = $this->get_string_length( $result[ $field ] );
+
+                if ( ( $total_chars + $length ) <= $max_chars ) {
+                    $total_chars += $length;
+                    continue;
+                }
+
+                $remaining = $max_chars - $total_chars;
+
+                if ( $remaining <= 0 ) {
+                    $result[ $field ] = '';
+                } else {
+                    $result[ $field ] = $this->truncate_string( $result[ $field ], $remaining );
+                    $total_chars      = $max_chars;
+                }
+
+                $truncated = true;
+
+                if ( ! isset( $result['metadata'] ) || ! is_array( $result['metadata'] ) ) {
+                    $result['metadata'] = array();
+                }
+
+                if ( ! isset( $result['metadata']['truncated_fields'] ) || ! is_array( $result['metadata']['truncated_fields'] ) ) {
+                    $result['metadata']['truncated_fields'] = array();
+                }
+
+                if ( ! in_array( $field, $result['metadata']['truncated_fields'], true ) ) {
+                    $result['metadata']['truncated_fields'][] = $field;
+                }
+            }
+        }
+
+        unset( $result );
+
+        if ( ! $truncated ) {
+            return $response;
+        }
+
+        if ( ! isset( $response['metadata'] ) || ! is_array( $response['metadata'] ) ) {
+            $response['metadata'] = array();
+        }
+
+        $response['metadata']['truncated']               = true;
+        $response['metadata']['truncated_reason']        = __( 'Results trimmed to satisfy model token limits.', 'wp-mcp-ai' );
+        $response['metadata']['approximate_token_limit'] = $limit_tokens;
+
+        if ( ! isset( $response['raw'] ) || ! is_array( $response['raw'] ) ) {
+            $response['raw'] = array();
+        }
+
+        $response['raw']['results'] = $response['results'];
+
+        if ( isset( $response['metadata'] ) ) {
+            $response['raw']['metadata'] = $response['metadata'];
+        }
+
+        return $response;
+    }
+
+    /**
+     * Determine the length of a string, accounting for multibyte support when available.
+     *
+     * @param string $value String value.
+     * @return int
+     */
+    protected function get_string_length( $value ) {
+        if ( function_exists( 'mb_strlen' ) ) {
+            return (int) mb_strlen( $value, 'UTF-8' );
+        }
+
+        return strlen( $value );
+    }
+
+    /**
+     * Truncate a string to the requested length, preferring multibyte functions when available.
+     *
+     * @param string $value     Original string value.
+     * @param int    $max_chars Maximum character count to keep.
+     * @return string
+     */
+    protected function truncate_string( $value, $max_chars ) {
+        if ( $max_chars <= 0 ) {
+            return '';
+        }
+
+        if ( function_exists( 'mb_substr' ) ) {
+            return mb_substr( $value, 0, $max_chars, 'UTF-8' );
+        }
+
+        return substr( $value, 0, $max_chars );
+    }
+
     /**
      * Execute a crawl through the remote Crawl4AI service.
      *
@@ -1282,6 +1412,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
         $formatted = $this->format_response( $decoded );
         $filtered  = apply_filters( 'wp_mcp_ai_crawl4ai_response', $formatted, $decoded, $arguments, $context );
+
+        $filtered = $this->enforce_result_size_limits( $filtered );
 
         if ( empty( $filtered['task_id'] ) && ! empty( $formatted['task_id'] ) ) {
             $filtered['task_id'] = $formatted['task_id'];
@@ -1459,7 +1591,9 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
             )
         );
 
-        return apply_filters( 'wp_mcp_ai_crawl4ai_local_response', $response, $payload, $arguments, $context, $settings );
+        $response = apply_filters( 'wp_mcp_ai_crawl4ai_local_response', $response, $payload, $arguments, $context, $settings );
+
+        return $this->enforce_result_size_limits( $response );
     }
 
     /**
