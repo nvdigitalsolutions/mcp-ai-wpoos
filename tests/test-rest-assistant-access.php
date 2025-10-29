@@ -624,6 +624,104 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the attachment search tool excludes files the user cannot access.
+     */
+    public function test_search_attachments_tool_respects_permissions() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Attachment Helper',
+                'post_status' => 'publish',
+            )
+        );
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->register_tool( 'WP_MCP_AI_Tool_Search_Attachments' );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_attachments' ) );
+
+        $author_id = self::factory()->user->create( array( 'role' => 'author' ) );
+        wp_set_current_user( $author_id );
+
+        $other_author = self::factory()->user->create( array( 'role' => 'author' ) );
+
+        $public_parent = self::factory()->post->create(
+            array(
+                'post_author' => $author_id,
+                'post_status' => 'publish',
+            )
+        );
+
+        $private_parent = self::factory()->post->create(
+            array(
+                'post_author' => $other_author,
+                'post_status' => 'private',
+            )
+        );
+
+        $public_upload = wp_upload_bits( 'search-public-' . uniqid() . '.txt', null, 'Accessible file' );
+        $this->assertIsArray( $public_upload );
+        $this->assertArrayHasKey( 'file', $public_upload );
+        $this->assertFalse( $public_upload['error'] );
+
+        $public_id = self::factory()->attachment->create_upload_object( $public_upload['file'], $public_parent );
+        wp_update_post(
+            array(
+                'ID'            => $public_id,
+                'post_title'    => 'Public Knowledge',
+                'post_author'   => $author_id,
+                'post_mime_type'=> 'text/plain',
+            )
+        );
+
+        $private_upload = wp_upload_bits( 'search-private-' . uniqid() . '.txt', null, 'Restricted file' );
+        $this->assertIsArray( $private_upload );
+        $this->assertArrayHasKey( 'file', $private_upload );
+        $this->assertFalse( $private_upload['error'] );
+
+        $private_id = self::factory()->attachment->create_upload_object( $private_upload['file'], $private_parent );
+        wp_update_post(
+            array(
+                'ID'            => $private_id,
+                'post_title'    => 'Private Knowledge',
+                'post_author'   => $other_author,
+                'post_parent'   => $private_parent,
+                'post_mime_type'=> 'text/plain',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'tool', 'search_attachments' );
+        $request->set_param( 'arguments', array( 'limit' => 5 ) );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertArrayHasKey( 'result', $data );
+        $this->assertIsArray( $data['result'] );
+        $this->assertNotEmpty( $data['result'] );
+        $this->assertSame( $public_id, $data['result'][0]['id'] );
+
+        $returned_ids = wp_list_pluck( $data['result'], 'id' );
+        $this->assertNotContains( $private_id, $returned_ids );
+        $this->assertNotEmpty( $data['result'][0]['download_url'] );
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
      * Tool requests authenticated with local tokens should not require a WordPress user.
      */
     public function test_tool_request_allows_local_token_without_user() {

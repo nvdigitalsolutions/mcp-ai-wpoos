@@ -10,6 +10,7 @@ WP MCP AI registers a suite of default tools through the central registry so eve
 - **Get Recent WooCommerce Orders** (`get_woo_recent_orders`) summarises recent orders with totals, billing details, and ISO timestamps. The helper only activates when WooCommerce is loaded and restricts access to users who can manage or report on orders.【F:includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php†L12-L117】
 - **Get Site Summary** (`get_site_summary`) captures the site name, description, URL, admin email, and basic content/user counts. Because the payload exposes administrative metadata, the tool requires `manage_options` access.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】
 - **Get User Information** (`get_user_info`) inspects profile data for the requested user ID (defaulting to the acting user) while respecting multisite membership and the `list_users` / `manage_options` capability checks when viewing other accounts.【F:includes/tools/class-wp-mcp-ai-tool-get-user-info.php†L12-L89】
+- **Search Attachments** (`search_attachments`) scans the Media Library with optional keyword or MIME filters and returns download URLs for files that pass `WP_MCP_AI_Message_Attachments::user_can_access_attachment()`, keeping private knowledge assets hidden from unauthorised requests.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 
 ## Media generation and transcription
 

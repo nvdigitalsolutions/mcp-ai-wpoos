@@ -68,4 +68,90 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
         $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
     }
+
+    /**
+     * Ensure guest access tokens cannot surface non-public attachments via the search tool.
+     */
+    public function test_guest_token_attachment_search_only_returns_public_files() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Guest Knowledge Assistant',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_attachments' ) );
+
+        $public_parent = self::factory()->post->create(
+            array(
+                'post_author' => $this->admin_id,
+                'post_status' => 'publish',
+            )
+        );
+
+        $private_parent = self::factory()->post->create(
+            array(
+                'post_author' => $this->admin_id,
+                'post_status' => 'private',
+            )
+        );
+
+        $public_upload = wp_upload_bits( 'guest-public-' . uniqid() . '.txt', null, 'Public guest file' );
+        $this->assertIsArray( $public_upload );
+        $this->assertArrayHasKey( 'file', $public_upload );
+        $this->assertFalse( $public_upload['error'] );
+
+        $public_id = self::factory()->attachment->create_upload_object( $public_upload['file'], $public_parent );
+        wp_update_post(
+            array(
+                'ID'            => $public_id,
+                'post_title'    => 'Guest Visible File',
+                'post_author'   => $this->admin_id,
+                'post_mime_type'=> 'text/plain',
+            )
+        );
+
+        $private_upload = wp_upload_bits( 'guest-private-' . uniqid() . '.txt', null, 'Hidden guest file' );
+        $this->assertIsArray( $private_upload );
+        $this->assertArrayHasKey( 'file', $private_upload );
+        $this->assertFalse( $private_upload['error'] );
+
+        $private_id = self::factory()->attachment->create_upload_object( $private_upload['file'], $private_parent );
+        wp_update_post(
+            array(
+                'ID'            => $private_id,
+                'post_title'    => 'Guest Hidden File',
+                'post_author'   => $this->admin_id,
+                'post_parent'   => $private_parent,
+                'post_mime_type'=> 'text/plain',
+            )
+        );
+
+        $guest_token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+        $this->assertNotEmpty( $guest_token );
+        $this->assertSame( $assistant_id, WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id ) );
+
+        wp_set_current_user( 0 );
+
+        rest_get_server();
+        do_action( 'rest_api_init' );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'tool', 'search_attachments' );
+        $request->set_param( 'guest_token', $guest_token );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 401, $response->get_status(), 'Guest tokens should not gain direct tool access.' );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertArrayHasKey( 'code', $data );
+        $this->assertSame( 'wp_mcp_ai_anonymous_user', $data['code'] );
+
+        wp_set_current_user( $this->admin_id );
+    }
 }
