@@ -50,6 +50,8 @@ class WP_MCP_AI_Admin_Settings {
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
             'crawl4ai_api_key'     => '',
+            'cloudflare_api_token' => '',
+            'cloudflare_zone_id'   => '',
             'group_email_capability'      => 'publish_posts',
             'group_email_max_recipients'  => 100,
             'openai_image_model'          => 'gpt-image-1',
@@ -975,6 +977,22 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'cloudflare_zone_id',
+            __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
+            array( $this, 'render_cloudflare_zone_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'cloudflare_api_token',
+            __( 'Cloudflare API Token', 'wp-mcp-ai' ),
+            array( $this, 'render_cloudflare_api_token_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'group_email_capability',
             __( 'Group Email Capability', 'wp-mcp-ai' ),
             array( $this, 'render_group_email_capability_field' ),
@@ -1113,6 +1131,14 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['crawl4ai_api_key'] ) ) {
             $clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
+        }
+
+        if ( isset( $settings['cloudflare_api_token'] ) ) {
+            $clean['cloudflare_api_token'] = trim( sanitize_text_field( $settings['cloudflare_api_token'] ) );
+        }
+
+        if ( isset( $settings['cloudflare_zone_id'] ) ) {
+            $clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
         }
 
         if ( isset( $settings['group_email_capability'] ) ) {
@@ -1592,6 +1618,28 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Cloudflare zone ID field.
+     */
+    public function render_cloudflare_zone_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_zone_id]" value="<?php echo esc_attr( $settings['cloudflare_zone_id'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Cloudflare zone identifier (a 32 character string) for the site you wish to purge.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Cloudflare API token field.
+     */
+    public function render_cloudflare_api_token_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
