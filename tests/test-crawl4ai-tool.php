@@ -310,6 +310,46 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure local crawl failures surface the first error for easier debugging.
+     */
+    public function test_execute_local_crawl_reports_first_error() {
+        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+
+        $callback = function ( $preempt, $args, $url ) {
+            return new WP_Error( 'http_request_failed', 'Connection refused' );
+        };
+
+        add_filter( 'pre_http_request', $callback, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'https://example.com/fail' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $callback, 10 );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_crawl4ai_local_failed', $result->get_error_code() );
+
+        $message = $result->get_error_message();
+        $this->assertStringContainsString( 'Unable to crawl the requested URLs.', $message );
+        $this->assertStringContainsString( 'https://example.com/fail', $message );
+        $this->assertStringContainsString( 'Connection refused', $message );
+
+        $data = $result->get_error_data();
+        $this->assertIsArray( $data );
+        $this->assertArrayHasKey( 'errors', $data );
+        $this->assertArrayHasKey( 'https://example.com/fail', $data['errors'] );
+    }
+
+    /**
      * Ensure loopback URLs are rejected when executing a crawl.
      */
     public function test_execute_rejects_loopback_urls() {
