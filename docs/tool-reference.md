@@ -34,6 +34,7 @@ WP MCP AI registers a suite of default tools through the central registry so eve
 ## Operational helpers
 
 - **Create Cron Job** (`create_cron_job`) sanitises hook names, schedules single-run or recurring events, and blocks duplicates so assistants can safely automate WP-Cron tasks for privileged operators.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】
+- **Purge Cloudflare Cache** (`purge_cloudflare_cache`) submits cache purge jobs for a configured Cloudflare zone, supporting targeted URL, host, or tag purges as well as full-zone invalidations while enforcing administrator-only access and configurable request timeouts.【F:includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php†L17-L292】
 - **Send Group Email** (`send_group_email`) parses structured or free-form instructions to assemble subject lines, bodies, and recipient lists while enforcing capability and recipient limits from the admin settings.【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L818-L954】
 - **Open OpenAI Logs** (`open_openai_logs`) and **Open OpenAI Usage** (`open_openai_usage`) surface dashboard links so administrators can audit provider activity without leaving the assistant interface.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】
 
