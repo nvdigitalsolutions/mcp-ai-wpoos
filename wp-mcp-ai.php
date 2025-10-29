@@ -104,6 +104,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-deep-chat-shortcode.php';
@@ -138,7 +139,8 @@ function wp_mcp_ai_bootstrap() {
 
     $GLOBALS['wp_mcp_ai_admin_settings'] = new WP_MCP_AI_Admin_Settings();
     $GLOBALS['wp_mcp_ai_assistant_cpt']  = new WP_MCP_AI_Assistant_CPT( $registry );
-    $GLOBALS['wp_mcp_ai_rest_controller'] = new WP_MCP_AI_REST( $registry, $router );
+    $GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = new WP_MCP_AI_Crawl4AI_Local_API();
+    $GLOBALS['wp_mcp_ai_rest_controller']    = new WP_MCP_AI_REST( $registry, $router );
     $GLOBALS['wp_mcp_ai_shortcodes'] = new WP_MCP_AI_Shortcodes();
 
     WP_MCP_AI_Usage_Tracker::init();
