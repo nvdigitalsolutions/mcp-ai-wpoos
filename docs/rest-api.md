@@ -30,10 +30,10 @@ Send a chat payload to the configured language model while inheriting assistant 
 ```
 
 - `assistant_id` is optional; when omitted the REST layer falls back to the default assistant configured in plugin settings.【F:includes/class-wp-mcp-ai-rest.php†L1162-L1237】
-- `messages` must be an array of role/content pairs. The controller normalises text segments, validates attachments, and enforces upload safety rules before hitting the model.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1031】
+- `messages` must be an array of role/content pairs. The controller normalises text segments, validates attachments, and enforces upload safety rules before hitting the model. Default allowlists cover Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, XML, PDFs, Microsoft Office documents, AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM audio, and MP4 or QuickTime video so assistants can reason over a broad set of media formats.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1031】【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L703】
 - `options` inherit the assistant’s stored defaults and can include overrides for model, temperature, response format, and additional attachments or memory files.【F:includes/class-wp-mcp-ai-rest.php†L931-L1095】
 
-Whenever attachments are included, the controller temporarily adds the Submit Document Prompt tool to the assistant so uploads reach the model without requiring administrators to toggle the tool manually.【F:includes/class-wp-mcp-ai-rest.php†L931-L1007】
+Whenever attachments are included, the controller temporarily adds the Submit Document Prompt tool to the assistant so uploads reach the model without requiring administrators to toggle the tool manually.【F:includes/class-wp-mcp-ai-rest.php†L931-L1007】 If JSON Lines files are permitted in the settings the plugin also registers the `.jsonl` and `.ndjson` extensions with WordPress to keep Media Library uploads compatible.【F:wp-mcp-ai.php†L236-L272】
 
 ### Response
 
