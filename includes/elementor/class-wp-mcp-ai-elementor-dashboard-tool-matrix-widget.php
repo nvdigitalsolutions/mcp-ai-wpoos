@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for the assistant tool matrix.
  */
 class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -172,7 +173,11 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
         }
 
         if ( ! empty( $description ) ) {
-            echo '<p class="wp-mcp-ai-tool-matrix__description">' . esc_html( $description ) . '</p>';
+            $description_output = $this->format_text_block( $description );
+
+            if ( '' !== $description_output ) {
+                echo '<div class="wp-mcp-ai-tool-matrix__description">' . $description_output . '</div>';
+            }
         }
 
         foreach ( $grouped as $group_label => $entries ) {
