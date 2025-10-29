@@ -35,9 +35,9 @@ class Test_Shortcodes extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure that rendering both shortcodes does not enqueue duplicate scripts.
+     * Ensure that rendering the chat shortcode enqueues the assets once.
      */
-    public function test_shortcodes_enqueue_scripts_once() {
+    public function test_chat_shortcode_enqueues_scripts_once() {
         $assistant_id = self::factory()->post->create(
             array(
                 'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -47,65 +47,25 @@ class Test_Shortcodes extends WP_UnitTestCase {
         );
 
         $chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
-        $deep_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Deep_Chat_Shortcode::SHORTCODE, $assistant_id ) );
-
         $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
-        $this->assertStringContainsString( 'data-wp-mcp-ai-deep-chat', $deep_markup );
 
         $this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ) );
-        $this->assertTrue( wp_script_is( 'wp-mcp-ai-deep-chat', 'enqueued' ) );
-
-        if ( wp_script_is( 'wp-mcp-ai-deep-chat-app', 'registered' ) ) {
-            $this->assertTrue( wp_script_is( 'wp-mcp-ai-deep-chat-app', 'enqueued' ) );
-        }
 
         $script_counts = array_count_values( wp_scripts()->queue );
-        foreach ( array( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'wp-mcp-ai-deep-chat', 'wp-mcp-ai-deep-chat-app' ) as $handle ) {
-            if ( wp_script_is( $handle, 'enqueued' ) ) {
-                $this->assertArrayHasKey( $handle, $script_counts );
-                $this->assertSame( 1, $script_counts[ $handle ], sprintf( '%s should be enqueued exactly once.', $handle ) );
-            }
-        }
+        $handle        = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+        $this->assertArrayHasKey( $handle, $script_counts );
+        $this->assertSame( 1, $script_counts[ $handle ], sprintf( '%s should be enqueued exactly once.', $handle ) );
+
+        wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+        $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
     }
 
     /**
-     * Ensure the Deep Chat shortcode accepts numeric slugs for the assistant attribute.
+     * Ensure the chat stylesheet can be enqueued when requested.
      */
-    public function test_deep_chat_shortcode_accepts_numeric_slug_attribute() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Numeric Slug Assistant',
-                'post_name'   => '44',
-            )
-        );
+    public function test_chat_stylesheet_can_be_enqueued() {
+        wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 
-        $shortcode = sprintf( '[%s assistant="44"]', WP_MCP_AI_Deep_Chat_Shortcode::SHORTCODE );
-        $markup     = do_shortcode( $shortcode );
-
-        $this->assertStringContainsString( 'data-assistant-id="' . $assistant_id . '"', $markup );
-        $this->assertStringNotContainsString( 'The requested assistant is not available.', $markup );
-    }
-
-    /**
-     * Ensure the Deep Chat script is always rendered with the module type.
-     */
-    public function test_deep_chat_script_tag_includes_module_type() {
-        $handle = wp_mcp_ai_register_deep_chat_assets();
-
-        wp_script_add_data( $handle, 'type', 'text/javascript' );
-        wp_enqueue_script( $handle );
-
-        ob_start();
-        wp_print_footer_scripts();
-        $printed_scripts = ob_get_clean();
-
-        $this->assertMatchesRegularExpression(
-            '/<script[^>]*type="module"[^>]*id="wp-mcp-ai-deep-chat-js"[^>]*>/',
-            $printed_scripts,
-            'The Deep Chat script should be printed with type="module".'
-        );
-        $this->assertStringContainsString( 'data-wp-strategy="defer"', $printed_scripts, 'The defer strategy should be preserved.' );
+        $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
     }
 }

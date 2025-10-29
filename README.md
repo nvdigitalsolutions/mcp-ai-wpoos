@@ -75,7 +75,6 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
 - 🔎 Perform lightweight DuckDuckGo searches without leaving the assistant conversation
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
-- 🪟 Deep Chat front-end container powered by the `[mcp_ai_deep_chat]` shortcode for headless UI integrations
 
 ---
 
@@ -84,10 +83,9 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 WP MCP AI ships multiple ways to embed assistants on the front end:
 
 - **Classic chat shortcode** – `[mcp_ai_chat]` renders the bundled interface with attachment uploads, tool invocation feedback, and optional guest access via `allow_guests="true"`. When guest mode is enabled, the shortcode provisions a temporary token and injects it into the JavaScript bootstrap so visitors without WordPress accounts can continue chatting while still respecting capability checks and attachment safety limits.【F:includes/class-wp-mcp-ai-shortcode.php†L132-L258】【F:includes/class-wp-mcp-ai-shortcode.php†L188-L226】
-- **Deep Chat container** – `[mcp_ai_deep_chat]` outputs a lightweight `<div>` wired with REST endpoints, attachment limits, and the same guest token support so headless front ends or custom JavaScript renderers can consume the assistant without the bundled markup. Pair it with `window.wpMcpAiChat` or a bespoke client to build a fully custom UX.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L34-L140】
 - **Elementor widgets** – Drop the chat UI anywhere Elementor is active, pair it with intro/FAQ blocks, and surface dashboard telemetry without custom code. The chat widget mirrors the shortcode controls (including `allow_guests`), and companion widgets expose onboarding content, usage timers, provider quick links, and activity feeds for operational views.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-elementor-integration.php†L48-L98】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L140】【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L226】【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L167】
 
-Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing Deep Chat instances and shortcodes to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
+Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing the chat shortcode and Elementor widget to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
 
 ---
 
@@ -168,7 +166,7 @@ Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Auth
 
 ## 🛰 REST API Endpoints
 
-All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/mcp-ai/v1`, which exposes dedicated endpoints for chat completions and direct tool execution. Both routes share the same authentication rules described above: supply an Auth0 bearer token, a plugin-issued assistant credential, or a WordPress REST nonce for same-origin requests. Guest tokens issued by the shortcode, Deep Chat surface, or Elementor widget continue to be honoured when `allow_guests="true"` is enabled.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
+All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/mcp-ai/v1`, which exposes dedicated endpoints for chat completions and direct tool execution. Both routes share the same authentication rules described above: supply an Auth0 bearer token, a plugin-issued assistant credential, or a WordPress REST nonce for same-origin requests. Guest tokens issued by the shortcode or Elementor widget continue to be honoured when `allow_guests="true"` is enabled.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
 
 - **`POST /chat`** – Normalises structured `messages`, injects assistant defaults, auto-enables the Submit Document Prompt tool when uploads are present, and forwards the request through the language model router. Responses include the assistant ID and the raw provider payload so clients can stream or render messages as needed.【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1095】
 - **`POST /tools`** – Executes a specific registered tool outside of a chat turn. The endpoint enforces assistant tool allowlists, scopes credential-based requests to the issuing assistant, merges assistant defaults (such as external action identifiers), and returns the tool result with execution metadata.【F:includes/class-wp-mcp-ai-rest.php†L264-L322】【F:includes/class-wp-mcp-ai-rest.php†L1162-L1321】
@@ -291,12 +289,6 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - Elementor sites automatically gain an **MCP AI Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
 - Leaving the assistant control blank falls back to the default assistant configured in the plugin settings, and enabling **Allow Guests** injects the same temporary tokens used by the shortcode flow.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L45-L110】【F:includes/class-wp-mcp-ai-shortcode.php†L132-L224】
 
-### Deep Chat web component
-- Prefer `[mcp_ai_deep_chat]` when you want the headless [Deep Chat](https://deepchat.dev/) web component while still routing requests through the plugin’s REST API.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L15-L139】
-- Attributes mirror the classic shortcode: omit `assistant` to inherit the default from **Settings → MCP AI**, and set `allow_guests="true"` to mint guest tokens for anonymous visitors.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L35-L118】
-- The renderer forwards REST endpoints, allowed MIME types, and file size caps to the component so uploads follow the same validation rules as the standard chat UI.【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L80-L134】
-- Deep Chat assets load from the bundled files when present and fall back to jsDelivr/CDN versions automatically, with filters available for custom hosting if needed.【F:includes/deep-chat-assets.php†L12-L103】
-
 ---
 
 ## 🧵 REST Chat Payloads & Attachments
@@ -343,7 +335,7 @@ REST requests that include attachments automatically gain access to the bundled 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
-Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by both the shortcode and Deep Chat renderers when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】【F:includes/class-wp-mcp-ai-deep-chat-shortcode.php†L92-L134】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
+Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
 
 ---
 
