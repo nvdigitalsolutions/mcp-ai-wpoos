@@ -1610,6 +1610,217 @@
         };
     }
 
+    function parseNumberValue(value) {
+        if (typeof value === 'number' && isFinite(value)) {
+            return value;
+        }
+
+        if (typeof value === 'string') {
+            var parsed = parseFloat(value);
+            if (!isNaN(parsed) && isFinite(parsed)) {
+                return parsed;
+            }
+        }
+
+        return NaN;
+    }
+
+    function getCrawl4aiPollDelay(metadata, state) {
+        var poll = metadata && Object.prototype.hasOwnProperty.call(metadata, 'poll_interval') ? metadata.poll_interval : null;
+        var parsed = parseNumberValue(poll);
+        if (isNaN(parsed) || parsed <= 0) {
+            var fallback = state && state.config ? parseInt(state.config.crawl4aiDefaultPollMs, 10) : 0;
+            if (!fallback || fallback < 1000) {
+                fallback = 5000;
+            }
+            return fallback;
+        }
+
+        return Math.max(1000, Math.round(parsed * 1000));
+    }
+
+    function getCrawl4aiTimeout(metadata) {
+        var timeout = metadata && Object.prototype.hasOwnProperty.call(metadata, 'wait_timeout') ? metadata.wait_timeout : null;
+        var parsed = parseNumberValue(timeout);
+        if (isNaN(parsed) || parsed <= 0) {
+            return 600000;
+        }
+
+        return Math.max(10000, Math.round(parsed * 1000));
+    }
+
+    function isCrawl4aiPendingResult(result) {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+
+        var taskId = typeof result.task_id === 'string' ? result.task_id : '';
+        if (!taskId) {
+            return false;
+        }
+
+        if (Array.isArray(result.results) && result.results.length) {
+            return false;
+        }
+
+        var status = typeof result.status === 'string' ? result.status.toLowerCase() : '';
+        return !status || status === 'pending' || status === 'queued' || status === 'running';
+    }
+
+    function buildCrawl4aiTaskUrl(state, taskId) {
+        if (!state || !state.config || !state.config.crawl4aiTaskEndpoint) {
+            return '';
+        }
+
+        var base = state.config.crawl4aiTaskEndpoint;
+        if (base.charAt(base.length - 1) !== '/') {
+            base += '/';
+        }
+
+        return base + encodeURIComponent(taskId);
+    }
+
+    function fetchCrawl4aiTask(state, taskId) {
+        var url = buildCrawl4aiTaskUrl(state, taskId);
+        if (!url) {
+            return Promise.reject(new Error('Crawl4AI endpoint not configured.'));
+        }
+
+        return fetch(url, {
+            method: 'GET',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+        }).then(function (response) {
+            if (response.status === 404) {
+                return null;
+            }
+
+            if (!response.ok) {
+                var error = new Error('HTTP ' + response.status);
+                error.status = response.status;
+                throw error;
+            }
+
+            return response.json();
+        });
+    }
+
+    function updatePendingTaskEntry(entry, message) {
+        if (!entry) {
+            return;
+        }
+
+        var bubble = entry.querySelector('.wp-mcp-ai-chat__bubble');
+        if (!bubble) {
+            return;
+        }
+
+        bubble.textContent = message;
+    }
+
+    function waitForCrawl4aiTask(state, toolName, result) {
+        if (!isCrawl4aiPendingResult(result)) {
+            return Promise.resolve(result);
+        }
+
+        if (!state || !state.config || !state.config.crawl4aiTaskEndpoint) {
+            return Promise.resolve(result);
+        }
+
+        var taskId = result.task_id;
+        var metadata = result && typeof result === 'object' && result.metadata ? result.metadata : {};
+        var pollDelay = getCrawl4aiPollDelay(metadata, state);
+        var timeout = getCrawl4aiTimeout(metadata);
+        var startTime = Date.now();
+        var pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Crawl queued. Results will appear shortly.'));
+
+        state.pendingCrawlTasks[taskId] = {
+            entry: pendingEntry,
+            pollDelay: pollDelay,
+            timeout: timeout,
+            start: startTime,
+            timer: null,
+        };
+
+        return new Promise(function (resolve, reject) {
+            function cleanup() {
+                var record = state.pendingCrawlTasks[taskId];
+                if (record && record.timer) {
+                    clearTimeout(record.timer);
+                }
+
+                delete state.pendingCrawlTasks[taskId];
+            }
+
+            function scheduleNext() {
+                var record = state.pendingCrawlTasks[taskId];
+                if (!record) {
+                    return;
+                }
+
+                record.timer = setTimeout(poll, record.pollDelay);
+            }
+
+            function poll() {
+                var record = state.pendingCrawlTasks[taskId];
+                if (!record) {
+                    return;
+                }
+
+                if (Date.now() - record.start >= record.timeout) {
+                    cleanup();
+                    updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Crawl timed out before completing.'));
+                    reject(new Error('timeout'));
+                    return;
+                }
+
+                fetchCrawl4aiTask(state, taskId)
+                    .then(function (payload) {
+                        if (!payload) {
+                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Crawl in progress…'));
+                            scheduleNext();
+                            return;
+                        }
+
+                        var status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+                        if (status === 'failed' || status === 'error') {
+                            cleanup();
+                            var errorMessage = payload && payload.metadata && payload.metadata.error ? payload.metadata.error : getString('toolError', 'The tool request failed.');
+                            updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), errorMessage));
+                            reject(new Error(errorMessage));
+                            return;
+                        }
+
+                        if (status === 'timeout') {
+                            cleanup();
+                            updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Crawl timed out before completing.'));
+                            reject(new Error('timeout'));
+                            return;
+                        }
+
+                        if (Array.isArray(payload.results) && payload.results.length) {
+                            cleanup();
+                            updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool response ready.'));
+                            resolve(payload);
+                            return;
+                        }
+
+                        updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Crawl in progress…'));
+                        record.pollDelay = getCrawl4aiPollDelay(payload.metadata || {}, state);
+                        scheduleNext();
+                    })
+                    .catch(function (error) {
+                        cleanup();
+                        var message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
+                        updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), message));
+                        reject(error);
+                    });
+            }
+
+            poll();
+        });
+    }
+
     function formatBytes(bytes) {
         if (typeof bytes !== 'number' || !isFinite(bytes) || bytes <= 0) {
             return '';
@@ -1672,6 +1883,14 @@
                 instanceConfig.uploadEndpoint = globalConfig.uploadEndpoint || '';
             }
 
+            if (!instanceConfig.crawl4aiTaskEndpoint) {
+                instanceConfig.crawl4aiTaskEndpoint = '';
+            }
+
+            if (!instanceConfig.crawl4aiDefaultPollMs || instanceConfig.crawl4aiDefaultPollMs < 1000) {
+                instanceConfig.crawl4aiDefaultPollMs = globalConfig.crawl4aiDefaultPollMs || 5000;
+            }
+
             if (!Object.prototype.hasOwnProperty.call(instanceConfig, 'canUploadAttachments')) {
                 instanceConfig.canUploadAttachments = true;
             } else {
@@ -1707,6 +1926,7 @@
                 validationNotice: '',
                 speechCache: Object.create(null),
                 activeSpeech: null,
+                pendingCrawlTasks: Object.create(null),
             };
 
             initialiseExistingSpeechButtons(state);
@@ -2087,6 +2307,9 @@
             })
             .then(function (response) {
                 var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
+                return waitForCrawl4aiTask(state, toolName, result);
+            })
+            .then(function (result) {
                 var toolContent = '';
                 var displayPayload = '';
 

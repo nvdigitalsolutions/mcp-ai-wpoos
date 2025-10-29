@@ -132,7 +132,7 @@ class WP_MCP_AI_Crawl4AI_Local_API {
 
         $result['task_id'] = $task_id;
 
-        $this->store_task_result( $task_id, $result );
+        self::store_task_result( $task_id, $result );
 
         return rest_ensure_response( $result );
     }
@@ -154,7 +154,7 @@ class WP_MCP_AI_Crawl4AI_Local_API {
             );
         }
 
-        $result = $this->get_task_result( $task_id );
+        $result = self::get_task_result( $task_id );
 
         if ( empty( $result ) ) {
             return new WP_Error(
@@ -250,15 +250,15 @@ class WP_MCP_AI_Crawl4AI_Local_API {
      * @param string $task_id Task identifier.
      * @param array  $result  Result array.
      */
-    protected function store_task_result( $task_id, array $result ) {
-        $result = $this->filter_result_for_storage( $result );
+    protected static function store_task_result( $task_id, array $result ) {
+        $result = self::filter_result_for_storage( $result );
 
         $ttl = (int) apply_filters( 'wp_mcp_ai_crawl4ai_task_ttl', DAY_IN_SECONDS );
         if ( $ttl <= 0 ) {
             $ttl = DAY_IN_SECONDS;
         }
 
-        $key = $this->get_task_storage_key( $task_id );
+        $key = self::get_task_storage_key( $task_id );
 
         if ( is_multisite() ) {
             set_site_transient( $key, $result, $ttl );
@@ -273,8 +273,8 @@ class WP_MCP_AI_Crawl4AI_Local_API {
      * @param string $task_id Task identifier.
      * @return array|null
      */
-    protected function get_task_result( $task_id ) {
-        $key = $this->get_task_storage_key( $task_id );
+    protected static function get_task_result( $task_id ) {
+        $key = self::get_task_storage_key( $task_id );
 
         if ( is_multisite() ) {
             $result = get_site_transient( $key );
@@ -295,7 +295,7 @@ class WP_MCP_AI_Crawl4AI_Local_API {
      * @param string $task_id Task identifier.
      * @return string
      */
-    protected function get_task_storage_key( $task_id ) {
+    protected static function get_task_storage_key( $task_id ) {
         $hash = md5( $task_id );
 
         if ( is_multisite() ) {
@@ -313,7 +313,7 @@ class WP_MCP_AI_Crawl4AI_Local_API {
      * @param array $result Result payload.
      * @return array
      */
-    protected function filter_result_for_storage( array $result ) {
+    protected static function filter_result_for_storage( array $result ) {
         $allowed = array( 'status', 'task_id', 'results', 'metadata', 'raw' );
         $clean   = array();
 
@@ -326,5 +326,25 @@ class WP_MCP_AI_Crawl4AI_Local_API {
         $clean['stored_at'] = current_time( 'mysql', true );
 
         return $clean;
+    }
+
+    /**
+     * Allow external callers to cache Crawl4AI task results.
+     *
+     * @param string $task_id Task identifier.
+     * @param array  $result  Result payload.
+     */
+    public static function cache_task_result( $task_id, array $result ) {
+        self::store_task_result( $task_id, $result );
+    }
+
+    /**
+     * Retrieve a cached task result without instantiating the controller.
+     *
+     * @param string $task_id Task identifier.
+     * @return array|null
+     */
+    public static function retrieve_task_result( $task_id ) {
+        return self::get_task_result( $task_id );
     }
 }
