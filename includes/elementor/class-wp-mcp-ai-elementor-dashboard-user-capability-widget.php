@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for the user capability snapshot.
  */
 class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -117,7 +118,11 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
         }
 
         if ( ! empty( $description ) ) {
-            echo '<p class="wp-mcp-ai-user-capabilities__description">' . esc_html( $description ) . '</p>';
+            $description_output = $this->format_text_block( $description );
+
+            if ( '' !== $description_output ) {
+                echo '<div class="wp-mcp-ai-user-capabilities__description">' . $description_output . '</div>';
+            }
         }
 
         if ( ! $user_id ) {
@@ -184,9 +189,21 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
         echo '<div class="wp-mcp-ai-user-capabilities__section">';
         echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'JetEngine access', 'wp-mcp-ai' ) . '</h4>';
-        echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html( $jetengine_details['summary'] ) . '</p>';
+        $jetengine_summary = '';
+
+        if ( isset( $jetengine_details['summary'] ) ) {
+            $jetengine_summary = $this->format_text_block( $jetengine_details['summary'] );
+        }
+
+        if ( '' !== $jetengine_summary ) {
+            echo '<div class="wp-mcp-ai-user-capabilities__section-body">' . $jetengine_summary . '</div>';
+        }
         if ( ! empty( $jetengine_details['capability'] ) ) {
-            echo '<p class="wp-mcp-ai-user-capabilities__section-note">' . esc_html__( 'Capability checked:', 'wp-mcp-ai' ) . ' <code>' . esc_html( $jetengine_details['capability'] ) . '</code></p>';
+            printf(
+                '<p class="wp-mcp-ai-user-capabilities__section-note">%1$s <code>%2$s</code></p>',
+                esc_html__( 'Capability checked:', 'wp-mcp-ai' ),
+                esc_html( $jetengine_details['capability'] )
+            );
         }
         echo '</div>';
 
@@ -199,7 +216,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
                 $status_class = $granted ? 'granted' : 'denied';
                 $label        = $granted ? __( 'Granted', 'wp-mcp-ai' ) : __( 'Not granted', 'wp-mcp-ai' );
                 echo '<li class="wp-mcp-ai-user-capabilities__capability-item wp-mcp-ai-user-capabilities__capability-item--' . esc_attr( $status_class ) . '">';
-                echo '<span class="wp-mcp-ai-user-capabilities__capability-name"><code>' . esc_html( $capability ) . '</code></span>';
+                echo '<span class="wp-mcp-ai-user-capabilities__capability-name"><code>' . esc_html( $capability ) . '</code></span> ';
                 echo '<span class="wp-mcp-ai-user-capabilities__capability-status">' . esc_html( $label ) . '</span>';
                 echo '</li>';
             }
