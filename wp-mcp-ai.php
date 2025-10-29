@@ -269,6 +269,11 @@ function wp_mcp_ai_extend_upload_mimes( $mimes ) {
         $mimes['ndjson'] = $selected_jsonl_mime;
     }
 
+    if ( in_array( 'text/markdown', $file_mimes, true ) ) {
+        $mimes['md']       = 'text/markdown';
+        $mimes['markdown'] = 'text/markdown';
+    }
+
     return $mimes;
 }
 
