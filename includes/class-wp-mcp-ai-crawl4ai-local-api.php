@@ -296,7 +296,15 @@ class WP_MCP_AI_Crawl4AI_Local_API {
      * @return string
      */
     protected function get_task_storage_key( $task_id ) {
-        return self::TASK_STORAGE_PREFIX . md5( $task_id );
+        $hash = md5( $task_id );
+
+        if ( is_multisite() ) {
+            $blog_id = absint( get_current_blog_id() );
+
+            return sprintf( '%s%s_%s', self::TASK_STORAGE_PREFIX, $blog_id, $hash );
+        }
+
+        return self::TASK_STORAGE_PREFIX . $hash;
     }
 
     /**
