@@ -197,6 +197,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Open_OpenAI_Usage'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php',
             'WP_MCP_AI_Tool_Create_Cron_Job'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job.php',
             'WP_MCP_AI_Tool_Send_Group_Email'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php',
+            'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
