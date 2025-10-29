@@ -345,7 +345,6 @@ Need to relax or tighten the allowed file types? Administrators can override the
 
 ---
 
-
 ## 🔐 JetEngine Capability Reference
 
 When the plugin interacts with JetEngine objects it defers to the capabilities enforced by JetEngine’s own REST handlers and editor interfaces. Use the following table to review the specific capability checks that gate each object type:
