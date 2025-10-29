@@ -185,22 +185,26 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
             echo '<h4 class="wp-mcp-ai-tool-matrix__group-title">' . esc_html( $group_label ) . '</h4>';
             echo '<div class="wp-mcp-ai-tool-matrix__table">';
             echo '<div class="wp-mcp-ai-tool-matrix__table-row wp-mcp-ai-tool-matrix__table-row--head">';
-            echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html__( 'Tool', 'wp-mcp-ai' ) . '</span>';
-            echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug">' . esc_html__( 'Slug', 'wp-mcp-ai' ) . '</span>';
+            echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html__( 'Tool', 'wp-mcp-ai' ) . '</div>';
+            echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug">' . esc_html__( 'Slug', 'wp-mcp-ai' ) . '</div>';
             if ( $show_capabilities ) {
-                echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html__( 'Required capability', 'wp-mcp-ai' ) . '</span>';
+                echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html__( 'Required capability', 'wp-mcp-ai' ) . '</div>';
             }
             echo '</div>';
 
             foreach ( $entries as $entry ) {
                 echo '<div class="wp-mcp-ai-tool-matrix__table-row">';
-                echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html( $entry['name'] ) . '</span>';
-                echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug"><code>' . esc_html( $entry['slug'] ) . '</code></span>';
+                echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--name">' . esc_html( $entry['name'] ) . '</div>';
+                echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug"><code>' . esc_html( $entry['slug'] ) . '</code></div>';
                 if ( $show_capabilities ) {
-                    echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html( $entry['capability'] ) . '</span>';
+                    echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . esc_html( $entry['capability'] ) . '</div>';
                 }
                 if ( ! empty( $entry['description'] ) ) {
-                    echo '<span class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--description">' . esc_html( $entry['description'] ) . '</span>';
+                    $description_output = $this->format_text_block( $entry['description'] );
+
+                    if ( '' !== $description_output ) {
+                        echo '<div class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--description">' . $description_output . '</div>';
+                    }
                 }
                 echo '</div>';
             }
