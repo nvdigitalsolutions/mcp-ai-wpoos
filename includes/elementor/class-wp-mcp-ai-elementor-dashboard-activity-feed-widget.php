@@ -175,6 +175,9 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
                 echo '<span class="wp-mcp-ai-activity-feed__badge">' . esc_html( $type ) . '</span>';
             }
             if ( $formatted_time ) {
+                if ( $type ) {
+                    echo '<span class="wp-mcp-ai-activity-feed__meta-separator" aria-hidden="true"> </span>';
+                }
                 echo '<span class="wp-mcp-ai-activity-feed__timestamp">' . esc_html( $formatted_time ) . '</span>';
             }
             echo '</div>';
