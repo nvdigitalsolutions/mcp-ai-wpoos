@@ -581,10 +581,28 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 
         if ( ! empty( $arguments['headers'] ) && is_array( $arguments['headers'] ) ) {
             foreach ( $arguments['headers'] as $header ) {
-                $header = trim( (string) $header );
-                if ( '' !== $header ) {
-                    $headers[] = $header;
+                $header = wp_kses_nohtml( (string) $header );
+                $header = trim( $header );
+
+                if ( '' === $header ) {
+                    continue;
                 }
+
+                if ( preg_match( '/[\r\n]/', $header ) ) {
+                    continue;
+                }
+
+                if ( false === strpos( $header, ':' ) ) {
+                    continue;
+                }
+
+                list( $header_name, $header_value ) = array_map( 'trim', explode( ':', $header, 2 ) );
+
+                if ( '' === $header_name || '' === $header_value ) {
+                    continue;
+                }
+
+                $headers[] = sprintf( '%s: %s', $header_name, $header_value );
             }
         }
 
