@@ -183,6 +183,11 @@ class WP_MCP_AI_Shortcode {
 
         $can_upload_attachments = current_user_can( 'upload_files' );
 
+        $assistant_content = get_post_field( 'post_content', $assistant_id );
+        if ( $assistant_content ) {
+            $assistant_content = apply_filters( 'the_content', $assistant_content );
+        }
+
         $config = array(
             'id'             => $instance_id,
             'assistantId'    => $assistant_id,
@@ -231,9 +236,16 @@ class WP_MCP_AI_Shortcode {
             <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
             <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
-                <label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
-                    <?php echo esc_html( get_the_title( $assistant_id ) ); ?>
-                </label>
+                <div class="wp-mcp-ai-chat__assistant">
+                    <label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
+                        <?php echo esc_html( get_the_title( $assistant_id ) ); ?>
+                    </label>
+                    <?php if ( $assistant_content ) : ?>
+                        <div class="wp-mcp-ai-chat__assistant-content">
+                            <?php echo $assistant_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
                 <textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
                 <div class="wp-mcp-ai-chat__attachments" hidden>
                     <div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'wp-mcp-ai' ); ?></div>
