@@ -41,10 +41,12 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
+- 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
 - 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
 - 🔐 Secure REST API endpoints
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
+- ✉️ Mailjet-powered outbound email automation with granular capability enforcement and sender defaults configurable in the MCP settings.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - 🧱 Ready for extension with ChatKit Add-on
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
@@ -77,6 +79,8 @@ The core tool registry loads several assistant-ready utilities that cover editor
 - **Site & content summaries** – Pull recent posts, JetEngine entries, WooCommerce orders, or a high-level site snapshot so assistants can respond with current editorial, catalog, or analytics context.【F:includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php†L12-L104】【F:includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php†L12-L118】【F:includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php†L12-L117】【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】
 - **User insight tools** – Inspect the active user or a specific account (respecting capabilities), expose JetEngine REST route metadata, or proxy route invocations through the authenticated MCP context.【F:includes/tools/class-wp-mcp-ai-tool-get-user-info.php†L12-L89】【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】
 - **Operational helpers** – Schedule WP-Cron jobs, orchestrate group emails with capability and recipient limits, or surface OpenAI dashboard shortcuts for administrators.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】
+- **QuickBooks Online Reporting** – Pull Profit and Loss, Balance Sheet, or any supported report with optional date windows and accounting method filters so finance teams can review structured ledgers without leaving the assistant. Capability checks ensure only privileged operators can access the data, and the payload is sanitised for model consumption.【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】
+- **Send Mailjet Email** – Deliver transactional or announcement emails via Mailjet using the configured sender defaults, optional CC/BCC routing, and pre-flight filters that let developers short-circuit or audit messages. Requests honour capability filters and return rich status metadata from Mailjet for assistant follow-ups.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】
 
 Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
@@ -123,6 +127,8 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → MCP AI → Attachments** before enabling file uploads for end users.
 - [ ] **Review Send Group Email permissions** in **Settings → MCP AI → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
+- [ ] **Connect QuickBooks Online** under **Settings → MCP AI → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- [ ] **Configure Mailjet credentials** in **Settings → MCP AI → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 
 ## 🧠 Language Model Providers (OpenAI & Gemini)
 
