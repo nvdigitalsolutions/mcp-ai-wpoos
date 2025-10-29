@@ -188,7 +188,7 @@ class WP_MCP_AI_JetEngine_CCT {
             'rest_put_enabled'    => false,
             'rest_post_enabled'   => false,
             'rest_delete_enabled' => false,
-            'rest_get_access'     => 'read',
+            'rest_get_access'     => 'manage_options',
             'rest_put_access'     => 'edit_posts',
             'rest_post_access'    => 'edit_posts',
             'rest_delete_access'  => 'edit_posts',
