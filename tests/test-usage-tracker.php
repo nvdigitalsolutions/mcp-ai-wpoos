@@ -148,4 +148,29 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 
         $this->assertSame( array(), WP_MCP_AI_Usage_Tracker::get_usage_for_user( 0 ) );
     }
+
+    public function test_record_chat_usage_tracks_cached_tokens() {
+        $user_id      = self::factory()->user->create();
+        $assistant_id = 21;
+
+        $response = array(
+            'usage' => array(
+                'cached_tokens' => 25,
+            ),
+            'provider' => 'openai',
+        );
+
+        WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, $assistant_id, array(), $response );
+
+        $totals = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+        $this->assertArrayHasKey( 'openai', $totals );
+        $this->assertNotEmpty( $totals['openai'] );
+
+        $model_totals = reset( $totals['openai'] );
+
+        $this->assertSame( 25, $model_totals['cached_tokens'] );
+        $this->assertArrayHasKey( $assistant_id, $model_totals['assistants'] );
+        $this->assertSame( 25, $model_totals['assistants'][ $assistant_id ]['cached_tokens'] );
+    }
 }

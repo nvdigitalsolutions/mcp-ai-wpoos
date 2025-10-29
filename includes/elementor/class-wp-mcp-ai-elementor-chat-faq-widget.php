@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for chat FAQs.
  */
 class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -150,7 +151,11 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
                 }
 
                 if ( ! empty( $item['answer'] ) ) {
-                    echo '<dd class="wp-mcp-ai-chat-faq__answer">' . wp_kses_post( $item['answer'] ) . '</dd>';
+                    $answer = $this->format_text_block( $item['answer'] );
+
+                    if ( '' !== $answer ) {
+                        echo '<dd class="wp-mcp-ai-chat-faq__answer">' . $answer . '</dd>';
+                    }
                 }
             }
             echo '</dl>';

@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for chat usage and timer information.
  */
 class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -252,7 +253,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
         }
 
         if ( ! empty( $description ) ) {
-            echo '<p class="wp-mcp-ai-chat-usage-timer__description">' . wp_kses_post( $description ) . '</p>';
+            $description_output = $this->format_text_block( $description );
+
+            if ( '' !== $description_output ) {
+                echo '<div class="wp-mcp-ai-chat-usage-timer__description">' . $description_output . '</div>';
+            }
         }
 
         if ( $show_timer && $timer_duration > 0 ) {
@@ -288,6 +293,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 
         if ( ! empty( $label ) ) {
             echo '<span class="wp-mcp-ai-chat-usage-timer__timer-label">' . esc_html( $label ) . '</span>';
+            echo ' ';
         }
 
         echo '<span id="' . esc_attr( $timer_id_attr ) . '" class="wp-mcp-ai-chat-usage-timer__time" aria-live="polite">' . esc_html( $this->format_time_remaining( $duration_seconds ) ) . '</span>';
@@ -347,7 +353,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
         echo '<div class="wp-mcp-ai-chat-usage-timer__usage">';
 
         if ( ! empty( $heading ) ) {
-            echo '<span class="wp-mcp-ai-chat-usage-timer__usage-heading">' . esc_html( $heading ) . '</span>';
+            echo '<div class="wp-mcp-ai-chat-usage-timer__usage-heading">' . esc_html( $heading ) . '</div>';
         }
 
         if ( ! empty( $summary['unavailable'] ) ) {
@@ -380,6 +386,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
             . '</div>';
 
         echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
+            . '<dt>' . esc_html__( 'Cached tokens', 'wp-mcp-ai' ) . '</dt>'
+            . '<dd>' . esc_html( number_format_i18n( $summary['totals']['cached_tokens'] ) ) . '</dd>'
+            . '</div>';
+
+        echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
             . '<dt>' . esc_html__( 'Total tokens', 'wp-mcp-ai' ) . '</dt>'
             . '<dd>' . esc_html( number_format_i18n( $summary['totals']['total_tokens'] ) ) . '</dd>'
             . '</div>';
@@ -403,6 +414,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
                     'prompt_tokens'    => 0,
                     'completion_tokens' => 0,
                     'total_tokens'     => 0,
+                    'cached_tokens'    => 0,
                 ),
             );
         }
@@ -416,6 +428,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
                     'prompt_tokens'    => 0,
                     'completion_tokens' => 0,
                     'total_tokens'     => 0,
+                    'cached_tokens'    => 0,
                 ),
             );
         }
@@ -431,6 +444,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
                     'prompt_tokens'    => 0,
                     'completion_tokens' => 0,
                     'total_tokens'     => 0,
+                    'cached_tokens'    => 0,
                 ),
             );
         }
@@ -439,6 +453,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
             'prompt_tokens'    => 0,
             'completion_tokens' => 0,
             'total_tokens'     => 0,
+            'cached_tokens'    => 0,
         );
 
         foreach ( $user_usage as $provider_usage ) {
@@ -454,10 +469,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
                 $totals['prompt_tokens']    += isset( $model_usage['prompt_tokens'] ) ? (int) $model_usage['prompt_tokens'] : 0;
                 $totals['completion_tokens'] += isset( $model_usage['completion_tokens'] ) ? (int) $model_usage['completion_tokens'] : 0;
                 $totals['total_tokens']     += isset( $model_usage['total_tokens'] ) ? (int) $model_usage['total_tokens'] : 0;
+                $totals['cached_tokens']    += isset( $model_usage['cached_tokens'] ) ? (int) $model_usage['cached_tokens'] : 0;
             }
         }
 
-        $has_usage = ( $totals['prompt_tokens'] + $totals['completion_tokens'] + $totals['total_tokens'] ) > 0;
+        $has_usage = ( $totals['prompt_tokens'] + $totals['completion_tokens'] + $totals['total_tokens'] + $totals['cached_tokens'] ) > 0;
 
         return array(
             'unavailable'     => false,
