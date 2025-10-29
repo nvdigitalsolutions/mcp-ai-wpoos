@@ -594,25 +594,6 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
     }
 
     /**
-     * Determine whether the tool should wait for job completion.
-     *
-     * @param array $arguments Tool arguments.
-     * @param array $context   Execution context.
-     * @return bool
-     */
-    protected function should_wait_for_results( array $arguments, array $context ) {
-        if ( isset( $arguments['wait_for_completion'] ) ) {
-            return (bool) $arguments['wait_for_completion'];
-        }
-
-        if ( isset( $context['assistant_config']['crawl4ai_wait_for_completion'] ) ) {
-            return (bool) $context['assistant_config']['crawl4ai_wait_for_completion'];
-        }
-
-        return false;
-    }
-
-    /**
      * Retrieve the polling timeout in seconds.
      *
      * @param array $arguments Tool arguments.
@@ -1101,111 +1082,96 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
     }
 
     /**
-     * Poll Crawl4AI for job completion.
+     * Request the latest status for a remote Crawl4AI task.
      *
-     * @param string $task_id       Task identifier returned by Crawl4AI.
-     * @param string $base_url      Crawl4AI base URL.
-     * @param array  $headers       Request headers.
-     * @param int    $timeout       Maximum seconds to wait.
-     * @param int    $poll_interval Seconds between polls.
-     * @param int    $request_timeout HTTP timeout for individual poll requests.
-     * @return array|WP_Error
+     * @param string $task_id  Task identifier returned by Crawl4AI.
+     * @param string $base_url Crawl4AI base URL.
+     * @param array  $settings Plugin settings array.
+     * @param array  $arguments Tool arguments provided to the job.
+     * @param array  $context  Execution context.
+     * @return array|WP_Error  Array with 'formatted' and 'decoded' keys on success.
      */
-    protected function poll_for_results( $task_id, $base_url, array $headers, $timeout, $poll_interval, $request_timeout ) {
+    public function check_remote_task( $task_id, $base_url, array $settings, array $arguments, array $context ) {
+        $headers = $this->build_headers( $settings, $context );
+        $timeout = $this->get_request_timeout( $settings );
         $endpoint = trailingslashit( $base_url ) . 'task/' . rawurlencode( $task_id );
-        $deadline = time() + max( 0, (int) $timeout );
 
-        do {
-            WP_MCP_AI_Logger::log_event(
-                'crawl4ai_poll_request',
-                'Polling Crawl4AI for task status.',
+        WP_MCP_AI_Logger::log_event(
+            'crawl4ai_poll_request',
+            'Polling Crawl4AI for task status.',
+            array(
+                'task_id' => $task_id,
+            )
+        );
+
+        $response = wp_remote_get(
+            $endpoint,
+            array(
+                'headers' => $headers,
+                'timeout' => max( 5, $timeout ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error( 'Crawl4AI polling request failed.', array( 'error' => $response->get_error_message() ) );
+
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_poll_error',
+                __( 'The Crawl4AI status check failed.', 'wp-mcp-ai' ),
+                array( 'error' => $response )
+            );
+        }
+
+        $decoded = $this->decode_response( $response );
+        if ( is_wp_error( $decoded ) ) {
+            return $decoded;
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $message = $this->build_error_from_response( $decoded );
+
+            return new WP_Error(
+                'wp_mcp_ai_crawl4ai_poll_http_error',
+                $message,
                 array(
-                    'task_id' => $task_id,
+                    'status' => $status_code,
+                    'body'   => $decoded,
                 )
             );
+        }
 
-            $response = wp_remote_get(
-                $endpoint,
-                array(
-                    'headers' => $headers,
-                    'timeout' => max( 5, $request_timeout ),
-                )
-            );
-
-            if ( is_wp_error( $response ) ) {
-                WP_MCP_AI_Logger::log_error( 'Crawl4AI polling request failed.', array( 'error' => $response->get_error_message() ) );
-
-                return new WP_Error(
-                    'wp_mcp_ai_crawl4ai_poll_error',
-                    __( 'The Crawl4AI status check failed.', 'wp-mcp-ai' ),
-                    array( 'error' => $response )
-                );
-            }
-
-            $decoded = $this->decode_response( $response );
-            if ( is_wp_error( $decoded ) ) {
-                return $decoded;
-            }
-
-            $status_code = wp_remote_retrieve_response_code( $response );
-            if ( $status_code < 200 || $status_code >= 300 ) {
-                $message = $this->build_error_from_response( $decoded );
-
-                return new WP_Error(
-                    'wp_mcp_ai_crawl4ai_poll_http_error',
-                    $message,
-                    array(
-                        'status' => $status_code,
-                        'body'   => $decoded,
-                    )
-                );
-            }
-
-            if ( isset( $decoded['status'] ) && is_string( $decoded['status'] ) ) {
-                $status = strtolower( $decoded['status'] );
-                if ( in_array( $status, array( 'failed', 'error' ), true ) ) {
-                    $message = $this->build_error_from_response( $decoded );
-
-                    return new WP_Error( 'wp_mcp_ai_crawl4ai_failed', $message, array( 'body' => $decoded ) );
-                }
-            }
-
-            if ( isset( $decoded['error'] ) && ! empty( $decoded['error'] ) ) {
+        if ( isset( $decoded['status'] ) && is_string( $decoded['status'] ) ) {
+            $status = strtolower( $decoded['status'] );
+            if ( in_array( $status, array( 'failed', 'error' ), true ) ) {
                 $message = $this->build_error_from_response( $decoded );
 
                 return new WP_Error( 'wp_mcp_ai_crawl4ai_failed', $message, array( 'body' => $decoded ) );
             }
-
-            $formatted          = $this->format_response( $decoded );
-            $formatted['task_id'] = $task_id;
-
-            if ( ! empty( $formatted['results'] ) ) {
-                return $formatted;
-            }
-
-            if ( time() >= $deadline ) {
-                break;
-            }
-
-            if ( $poll_interval > 0 ) {
-                $this->sleep( $poll_interval );
-            }
-        } while ( time() <= $deadline );
-
-        return new WP_Error( 'wp_mcp_ai_crawl4ai_timeout', __( 'Timed out while waiting for Crawl4AI to finish the job.', 'wp-mcp-ai' ) );
-    }
-
-    /**
-     * Sleep for a number of seconds.
-     *
-     * @param int $seconds Seconds to sleep.
-     */
-    protected function sleep( $seconds ) {
-        if ( function_exists( 'wp_sleep' ) ) {
-            wp_sleep( $seconds );
-        } else {
-            sleep( $seconds );
         }
+
+        if ( isset( $decoded['error'] ) && ! empty( $decoded['error'] ) ) {
+            $message = $this->build_error_from_response( $decoded );
+
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_failed', $message, array( 'body' => $decoded ) );
+        }
+
+        $formatted = $this->format_response( $decoded );
+        $formatted['task_id'] = $task_id;
+
+        WP_MCP_AI_Logger::log_event(
+            'crawl4ai_poll_response',
+            'Received Crawl4AI task status.',
+            array(
+                'status'  => isset( $formatted['status'] ) ? $formatted['status'] : '',
+                'task_id' => $task_id,
+            )
+        );
+
+        return array(
+            'formatted' => $formatted,
+            'decoded'   => $decoded,
+        );
     }
 
     /**
@@ -1315,28 +1281,93 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         $formatted = $this->format_response( $decoded );
+        $filtered  = apply_filters( 'wp_mcp_ai_crawl4ai_response', $formatted, $decoded, $arguments, $context );
 
-        if ( $this->should_wait_for_results( $arguments, $context ) && ! empty( $formatted['task_id'] ) && empty( $formatted['results'] ) ) {
-            $wait_timeout  = $this->get_wait_timeout( $arguments, $context );
-            $poll_interval = $this->get_poll_interval( $arguments, $context );
+        if ( empty( $filtered['task_id'] ) && ! empty( $formatted['task_id'] ) ) {
+            $filtered['task_id'] = $formatted['task_id'];
+        }
 
-            $formatted = $this->poll_for_results( $formatted['task_id'], $base_url, $headers, $wait_timeout, $poll_interval, $timeout );
+        $has_results = ! empty( $filtered['results'] );
 
-            if ( is_wp_error( $formatted ) ) {
-                return $formatted;
-            }
+        if ( empty( $filtered['task_id'] ) && $has_results ) {
+            $filtered['task_id'] = '';
+        }
+
+        if ( empty( $filtered['task_id'] ) && ! $has_results ) {
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_missing_task', __( 'Crawl4AI did not return a task identifier.', 'wp-mcp-ai' ) );
+        }
+
+        if ( empty( $filtered['status'] ) ) {
+            $filtered['status'] = 'pending';
+        }
+
+        if ( $has_results || 'completed' === $filtered['status'] ) {
+            WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $filtered['task_id'], $filtered );
+
+            WP_MCP_AI_Logger::log_event(
+                'crawl4ai_response',
+                'Crawl4AI request completed synchronously.',
+                array(
+                    'status'  => $filtered['status'],
+                    'task_id' => $filtered['task_id'],
+                )
+            );
+
+            return $filtered;
+        }
+
+        $wait_timeout  = $this->get_wait_timeout( $arguments, $context );
+        $poll_interval = $this->get_poll_interval( $arguments, $context );
+
+        if ( $wait_timeout <= 0 ) {
+            $wait_timeout = self::DEFAULT_WAIT_TIMEOUT;
+        }
+
+        if ( $poll_interval <= 0 ) {
+            $poll_interval = self::DEFAULT_POLL_INTERVAL;
+        }
+
+        $metadata = isset( $filtered['metadata'] ) && is_array( $filtered['metadata'] ) ? $filtered['metadata'] : array();
+        $metadata['poll_interval'] = $poll_interval;
+        $metadata['wait_timeout']  = $wait_timeout;
+        $metadata['queued_at']     = current_time( 'mysql', true );
+
+        $pending_result = array(
+            'status'   => $filtered['status'],
+            'task_id'  => $filtered['task_id'],
+            'results'  => array(),
+            'metadata' => $metadata,
+            'raw'      => isset( $filtered['raw'] ) ? $filtered['raw'] : $formatted['raw'],
+        );
+
+        $queued = WP_MCP_AI_Crawler::register_remote_job(
+            $filtered['task_id'],
+            array(
+                'base_url'       => $base_url,
+                'arguments'      => $arguments,
+                'context'        => $context,
+                'poll_interval'  => $poll_interval,
+                'wait_timeout'   => $wait_timeout,
+                'status'         => $filtered['status'],
+                'initial_result' => $pending_result,
+                'raw_response'   => $decoded,
+            )
+        );
+
+        if ( ! $queued ) {
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_queue_failed', __( 'Failed to queue the Crawl4AI job for background processing.', 'wp-mcp-ai' ) );
         }
 
         WP_MCP_AI_Logger::log_event(
             'crawl4ai_response',
-            'Crawl4AI request completed.',
+            'Crawl4AI request queued for background polling.',
             array(
-                'status'  => $formatted['status'],
-                'task_id' => $formatted['task_id'],
+                'status'  => $filtered['status'],
+                'task_id' => $filtered['task_id'],
             )
         );
 
-        return apply_filters( 'wp_mcp_ai_crawl4ai_response', $formatted, $decoded, $arguments, $context );
+        return $pending_result;
     }
 
     /**

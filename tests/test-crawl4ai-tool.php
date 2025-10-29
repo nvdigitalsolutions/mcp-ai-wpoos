@@ -77,6 +77,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $responses = array(
             'body'     => wp_json_encode(
                 array(
+                    'task_id' => 'immediate-123',
                     'status'  => 'completed',
                     'results' => array(
                         array(
@@ -131,6 +132,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $responses = array(
             'body'     => wp_json_encode(
                 array(
+                    'task_id' => 'instant-123',
                     'status'  => 'completed',
                     'results' => array(
                         array(
@@ -202,33 +204,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
                 );
             }
 
-            if ( false !== strpos( $url, '/task/task-123' ) ) {
-                $call_count++;
-
-                if ( 2 === $call_count ) {
-                    return array(
-                        'body'     => wp_json_encode( array( 'status' => 'running' ) ),
-                        'response' => array( 'code' => 200 ),
-                        'headers'  => array(),
-                    );
-                }
-
-                return array(
-                    'body'     => wp_json_encode(
-                        array(
-                            'status'  => 'completed',
-                            'results' => array(
-                                array(
-                                    'url'      => 'https://example.com/page',
-                                    'markdown' => 'Done',
-                                ),
-                            ),
-                        )
-                    ),
-                    'response' => array( 'code' => 200 ),
-                    'headers'  => array(),
-                );
-            }
+            $this->fail( 'Unexpected HTTP request to ' . $url );
 
             return $pre;
         };
@@ -248,10 +224,23 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         remove_filter( 'pre_http_request', $poll_callback, 10 );
 
         $this->assertIsArray( $result );
-        $this->assertSame( 'completed', $result['status'] );
+        $this->assertSame( 'pending', $result['status'] );
         $this->assertSame( 'task-123', $result['task_id'] );
-        $this->assertNotEmpty( $result['results'] );
-        $this->assertGreaterThanOrEqual( 3, $call_count );
+        $this->assertEmpty( $result['results'] );
+        $this->assertSame( 1, $call_count );
+
+        $job_status = WP_MCP_AI_Crawler::get_job_status( 'task-123' );
+        $this->assertNotNull( $job_status );
+        $this->assertSame( 'pending', $job_status['status'] );
+
+        $cached = WP_MCP_AI_Crawl4AI_Local_API::retrieve_task_result( 'task-123' );
+        $this->assertIsArray( $cached );
+        $this->assertSame( 'pending', $cached['status'] );
+        $this->assertArrayHasKey( 'metadata', $cached );
+        $this->assertArrayHasKey( 'poll_interval', $cached['metadata'] );
+
+        $scheduled = wp_next_scheduled( WP_MCP_AI_Crawler::CRON_HOOK, array( 'task-123' ) );
+        $this->assertNotFalse( $scheduled );
     }
 
     /**
