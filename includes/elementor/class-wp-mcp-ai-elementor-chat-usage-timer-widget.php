@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for chat usage and timer information.
  */
 class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -252,7 +253,11 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
         }
 
         if ( ! empty( $description ) ) {
-            echo '<p class="wp-mcp-ai-chat-usage-timer__description">' . wp_kses_post( $description ) . '</p>';
+            $description_output = $this->format_text_block( $description );
+
+            if ( '' !== $description_output ) {
+                echo '<div class="wp-mcp-ai-chat-usage-timer__description">' . $description_output . '</div>';
+            }
         }
 
         if ( $show_timer && $timer_duration > 0 ) {
