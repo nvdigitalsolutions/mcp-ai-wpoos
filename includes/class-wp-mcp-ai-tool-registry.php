@@ -179,6 +179,7 @@ class WP_MCP_AI_Tool_Registry {
     protected function load_default_tools() {
         $default_tools = array(
             'WP_MCP_AI_Tool_Get_Recent_Posts'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
+            'WP_MCP_AI_Tool_Search_Content'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content.php',
             'WP_MCP_AI_Tool_Get_User_Info'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
             'WP_MCP_AI_Tool_Get_Site_Summary'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
             'WP_MCP_AI_Tool_Web_Search'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
@@ -198,6 +199,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Open_OpenAI_Usage'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php',
             'WP_MCP_AI_Tool_Create_Cron_Job'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job.php',
             'WP_MCP_AI_Tool_Send_Group_Email'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php',
+            'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
