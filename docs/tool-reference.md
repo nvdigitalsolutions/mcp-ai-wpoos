@@ -26,7 +26,7 @@ WP MCP AI registers a suite of default tools through the central registry so eve
 ## JetEngine REST utilities
 
 - **List JetEngine REST Routes** (`list_jetengine_rest_routes`) returns metadata about JetEngine’s REST namespace, including method, callback, and capability guidance for each bundled route. Access is limited to users with `manage_options` permissions.【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】
-- **Invoke JetEngine REST Route** (`invoke_jetengine_route`) proxies CRUD operations to JetEngine controllers using the authenticated user context, validates required identifiers and instance keys, and supports REST or HTTP fallbacks when routes are unavailable.【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】【F:includes/class-wp-mcp-ai-jetengine-tool-handlers.php†L12-L213】
+- **Invoke JetEngine REST Route** (`invoke_jetengine_route`) proxies CRUD operations to JetEngine controllers using the authenticated user context, validates required identifiers and instance keys, and supports REST or HTTP fallbacks when routes are unavailable.【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】【F:includes/class-wp-mcp-ai-jetengine-tool-handlers.php†L12-L213】 When the helper falls back to an HTTP request it forwards all cookies from the operator's session to the JetEngine endpoint so hosts with strict cookie policies can account for the behaviour in their governance controls.【F:includes/class-wp-mcp-ai-jetengine-tool-handlers.php†L330-L367】
 
 ## Operational helpers
 
