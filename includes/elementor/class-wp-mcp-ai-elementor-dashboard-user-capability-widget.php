@@ -216,7 +216,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
                 $status_class = $granted ? 'granted' : 'denied';
                 $label        = $granted ? __( 'Granted', 'wp-mcp-ai' ) : __( 'Not granted', 'wp-mcp-ai' );
                 echo '<li class="wp-mcp-ai-user-capabilities__capability-item wp-mcp-ai-user-capabilities__capability-item--' . esc_attr( $status_class ) . '">';
-                echo '<span class="wp-mcp-ai-user-capabilities__capability-name"><code>' . esc_html( $capability ) . '</code></span>';
+                echo '<span class="wp-mcp-ai-user-capabilities__capability-name"><code>' . esc_html( $capability ) . '</code></span> ';
                 echo '<span class="wp-mcp-ai-user-capabilities__capability-status">' . esc_html( $label ) . '</span>';
                 echo '</li>';
             }
