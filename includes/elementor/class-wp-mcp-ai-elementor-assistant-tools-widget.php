@@ -173,7 +173,10 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
                 }
 
                 if ( '' !== $slug ) {
-                    echo '<span class="wp-mcp-ai-assistant-tools__slug">' . esc_html( $slug ) . '</span>';
+                    echo '<span class="wp-mcp-ai-assistant-tools__slug">';
+                    echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'wp-mcp-ai' ) . '</span> ';
+                    echo '<code class="wp-mcp-ai-assistant-tools__slug-code">' . esc_html( $slug ) . '</code>';
+                    echo '</span>';
                 }
 
                 echo '</div>';
