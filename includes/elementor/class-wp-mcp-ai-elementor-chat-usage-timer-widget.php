@@ -474,7 +474,13 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
             }
         }
 
-        $has_usage = ( $totals['prompt_tokens'] + $totals['completion_tokens'] + $totals['cached_prompt_tokens'] + $totals['total_tokens'] ) > 0;
+        $calculated_total = $totals['prompt_tokens'] + $totals['completion_tokens'] + $totals['cached_prompt_tokens'];
+
+        if ( $calculated_total > 0 ) {
+            $totals['total_tokens'] = $calculated_total;
+        }
+
+        $has_usage = $totals['total_tokens'] > 0;
 
         return array(
             'unavailable'     => false,
