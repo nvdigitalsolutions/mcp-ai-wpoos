@@ -59,6 +59,38 @@ class WP_MCP_AI_Memory_Streaming_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure byte accounting reflects actual I/O even when text is truncated to the character limit.
+     */
+    public function test_prepare_memory_documents_counts_bytes_before_truncation() {
+        add_filter( 'wp_mcp_ai_memory_max_total_bytes', array( $this, 'limit_total_bytes_truncation' ) );
+        add_filter( 'wp_mcp_ai_memory_max_document_bytes', array( $this, 'limit_document_bytes_truncation' ) );
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $client   = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
+        $rest     = new WP_MCP_AI_REST( $registry, $client );
+
+        $large_upload = wp_upload_bits( 'memory-large.txt', null, str_repeat( 'A', 20000 ) );
+        $this->assertFalse( $large_upload['error'] );
+        $large_id = self::factory()->attachment->create_upload_object( $large_upload['file'] );
+
+        $second_upload = wp_upload_bits( 'memory-second.txt', null, str_repeat( 'B', 4096 ) );
+        $this->assertFalse( $second_upload['error'] );
+        $second_id = self::factory()->attachment->create_upload_object( $second_upload['file'] );
+
+        $method = new ReflectionMethod( WP_MCP_AI_REST::class, 'prepare_memory_documents' );
+        $method->setAccessible( true );
+
+        $documents = $method->invoke( $rest, array( $large_id, $second_id ) );
+
+        remove_filter( 'wp_mcp_ai_memory_max_total_bytes', array( $this, 'limit_total_bytes_truncation' ) );
+        remove_filter( 'wp_mcp_ai_memory_max_document_bytes', array( $this, 'limit_document_bytes_truncation' ) );
+
+        $this->assertCount( 1, $documents, 'Second document should be skipped once the byte budget is fully consumed.' );
+        $this->assertSame( $large_id, $documents[0]['id'] );
+        $this->assertArrayHasKey( 'truncated', $documents[0] );
+    }
+
+    /**
      * Restrict total bytes for testing.
      *
      * @return int
@@ -74,5 +106,23 @@ class WP_MCP_AI_Memory_Streaming_Test extends WP_UnitTestCase {
      */
     public function limit_document_bytes() {
         return 1024;
+    }
+
+    /**
+     * Restrict total bytes for truncation accounting test.
+     *
+     * @return int
+     */
+    public function limit_total_bytes_truncation() {
+        return 8192;
+    }
+
+    /**
+     * Restrict per-document bytes for truncation accounting test.
+     *
+     * @return int
+     */
+    public function limit_document_bytes_truncation() {
+        return 65536;
     }
 }

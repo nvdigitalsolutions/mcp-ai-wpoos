@@ -7,9 +7,9 @@ WP MCP AI now reads assistant memory attachments incrementally to reduce peak me
 | Limit | Value | Notes |
 | ----- | ----- | ----- |
 | Per document characters | `4,000` | Matches the existing `MEMORY_MAX_DOCUMENT_CHARS` constant. |
-| Per document bytes | `16,384` | Approximately four bytes per character to accommodate UTF-8 strings. Filterable via `wp_mcp_ai_memory_max_document_bytes`. |
+| Per document bytes | `262,144` | Provides room for markup-heavy formats while collecting the first 4K characters. Filterable via `wp_mcp_ai_memory_max_document_bytes`. |
 | Aggregate characters | `12,000` | `MEMORY_MAX_TOTAL_CHARS`, unchanged. |
-| Aggregate bytes | `65,536` | New streaming guard across all files. Filterable via `wp_mcp_ai_memory_max_total_bytes`. |
+| Aggregate bytes | `1,048,576` | Default ~1MB budget that comfortably covers three 4K character documents. Filterable via `wp_mcp_ai_memory_max_total_bytes`. |
 
 If the byte budget is exhausted before all attachments are processed, remaining files are skipped for that request. Documents that exceed their byte budget are truncated to the collected portion; chunk metadata is still produced so the model can reference the available text.
 

@@ -18,8 +18,8 @@ class WP_MCP_AI_REST {
     const MEMORY_CHUNK_CHARS        = 1200;
     const MEMORY_MAX_TOTAL_CHARS    = 12000;
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
-    const MEMORY_MAX_DOCUMENT_BYTES = 16384; // Roughly 4 bytes per UTF-8 character.
-    const MEMORY_MAX_TOTAL_BYTES    = 65536; // Aggregate budget for all memory documents.
+    const MEMORY_MAX_DOCUMENT_BYTES = 262144; // ~256KB, enough headroom for markup around 4K characters of text.
+    const MEMORY_MAX_TOTAL_BYTES    = 1048576; // ~1MB aggregate streaming budget across attachments.
 
     /**
      * Tool slug used for document + prompt submissions.
@@ -2139,13 +2139,10 @@ class WP_MCP_AI_REST {
             } else {
                 $text = substr( $text, 0, $byte_budget );
             }
-
-            $bytes_consumed = min( strlen( $text ), $bytes_consumed );
         }
 
         if ( $char_budget > 0 && $this->mb_strlen( $text ) > $char_budget ) {
-            $text           = $this->mb_substr( $text, 0, $char_budget );
-            $bytes_consumed = min( $bytes_consumed, strlen( $text ) );
+            $text = $this->mb_substr( $text, 0, $char_budget );
         }
 
         return $text;
@@ -2246,7 +2243,7 @@ class WP_MCP_AI_REST {
             $text = $this->mb_substr( $text, 0, $char_budget );
         }
 
-        $bytes_consumed = strlen( $text );
+        $bytes_consumed = max( $bytes_consumed, strlen( $text ) );
 
         return $text;
     }
