@@ -10,7 +10,7 @@
 - [🧩 Overview](#-overview)
 - [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
 - [🚀 Features](#-features)
-- [🛠 Built-in tools & automations] (#-built-in-tools-automations)
+- [🛠 Built-in tools & automations](#-built-in-tools-automations)
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
 - [📦 Installation](#-installation)
 - [⚙️ Configuration Checklist (Action Items)](#-configuration-checklist-action-items)
