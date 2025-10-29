@@ -17,6 +17,7 @@ if ( ! class_exists( '\\Elementor\\Widget_Base' ) ) {
  * Elementor widget definition for the theme and branding preview.
  */
 class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widget_Base {
+    use WP_MCP_AI_Elementor_Text_Formatting;
     /**
      * Widget slug.
      */
@@ -119,7 +120,11 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
         }
 
         if ( ! empty( $description ) ) {
-            echo '<p class="wp-mcp-ai-theme-preview__description">' . esc_html( $description ) . '</p>';
+            $description_output = $this->format_text_block( $description );
+
+            if ( '' !== $description_output ) {
+                echo '<div class="wp-mcp-ai-theme-preview__description">' . $description_output . '</div>';
+            }
         }
 
         echo '<div class="wp-mcp-ai-theme-preview__chat"' . $container_css . '>';
