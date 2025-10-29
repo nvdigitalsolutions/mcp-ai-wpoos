@@ -38,7 +38,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
 - 🔧 Tool Registry for registering PHP functions callable by the AI
-- 🛍 WooCommerce-aware tools (fetch orders, requires WooCommerce)
+- 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
 - 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
@@ -412,7 +412,7 @@ Each filter receives the full data set so you can extend or replace the output w
 
 The plugin registers several tools automatically. Tools that rely on third-party plugins only load when their dependency is active:
 
-- **WooCommerce Orders Tool** – Visible only when WooCommerce is active. If WooCommerce is missing, an informational notice is shown to administrators and the tool will not be listed for assistants.
+- **WooCommerce Catalog Tools** – Visible only when WooCommerce is active. If WooCommerce is missing, an informational notice is shown to administrators and the order and product tools will not be listed for assistants.
 - **JetEngine Items Tool** – Visible only when JetEngine is active. Administrators are informed when JetEngine is not detected and the tool remains unavailable to assistants.
 
 Each tool description in the admin UI reiterates the dependency so editors understand why a tool might be unavailable.
@@ -429,13 +429,13 @@ The project currently relies on manual verification. Run these checks after upda
    - Visit the WordPress dashboard to confirm the informational notices explain why optional tools are disabled.
 2. **WooCommerce enabled**
    - Activate WooCommerce.
-   - Reload the Assistant editor and ensure the WooCommerce Orders tool appears and can be selected.
-   - Trigger the tool (e.g., via an assistant conversation) and confirm recent orders return without errors.
+   - Reload the Assistant editor and ensure the WooCommerce Orders and Products tools appear and can be selected.
+   - Trigger each tool (e.g., via an assistant conversation) and confirm recent orders and product summaries return without errors.
 3. **JetEngine enabled**
    - Activate JetEngine.
    - Confirm the JetEngine Items tool appears for assistants and returns data for a configured JetEngine post type.
 4. **Tool call retry resilience**
-   - Initiate a chat conversation that triggers a tool call (for example, request an operation that requires the WooCommerce Orders tool).
+   - Initiate a chat conversation that triggers a tool call (for example, request an operation that requires either WooCommerce tool).
    - After the tool output appears, send a follow-up message that prompts the assistant to continue without invoking another tool.
    - Confirm the follow-up succeeds without a JavaScript console error referencing a missing `tool_call_id`.
 
