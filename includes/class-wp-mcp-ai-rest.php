@@ -2139,13 +2139,10 @@ class WP_MCP_AI_REST {
             } else {
                 $text = substr( $text, 0, $byte_budget );
             }
-
-            $bytes_consumed = min( strlen( $text ), $bytes_consumed );
         }
 
         if ( $char_budget > 0 && $this->mb_strlen( $text ) > $char_budget ) {
-            $text           = $this->mb_substr( $text, 0, $char_budget );
-            $bytes_consumed = min( $bytes_consumed, strlen( $text ) );
+            $text = $this->mb_substr( $text, 0, $char_budget );
         }
 
         return $text;
@@ -2246,7 +2243,7 @@ class WP_MCP_AI_REST {
             $text = $this->mb_substr( $text, 0, $char_budget );
         }
 
-        $bytes_consumed = strlen( $text );
+        $bytes_consumed = max( $bytes_consumed, strlen( $text ) );
 
         return $text;
     }
