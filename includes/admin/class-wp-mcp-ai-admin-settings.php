@@ -58,6 +58,10 @@ class WP_MCP_AI_Admin_Settings {
             'mailjet_from_name'    => '',
             'quickbooks_company_id' => '',
             'quickbooks_api_key'    => '',
+            'gmail_client_id'       => '',
+            'gmail_client_secret'   => '',
+            'gmail_refresh_token'   => '',
+            'gmail_user_email'      => '',
             'group_email_capability'      => 'publish_posts',
             'group_email_max_recipients'  => 100,
             'openai_image_model'          => 'gpt-image-1',
@@ -1060,6 +1064,45 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_gmail_section',
+            __( 'Gmail Integration', 'wp-mcp-ai' ),
+            array( $this, 'render_gmail_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'gmail_client_id',
+            __( 'Gmail Client ID', 'wp-mcp-ai' ),
+            array( $this, 'render_gmail_client_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gmail_section'
+        );
+
+        add_settings_field(
+            'gmail_client_secret',
+            __( 'Gmail Client Secret', 'wp-mcp-ai' ),
+            array( $this, 'render_gmail_client_secret_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gmail_section'
+        );
+
+        add_settings_field(
+            'gmail_refresh_token',
+            __( 'Gmail Refresh Token', 'wp-mcp-ai' ),
+            array( $this, 'render_gmail_refresh_token_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gmail_section'
+        );
+
+        add_settings_field(
+            'gmail_user_email',
+            __( 'Gmail User Email', 'wp-mcp-ai' ),
+            array( $this, 'render_gmail_user_email_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_gmail_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_maintenance_section',
             __( 'Maintenance', 'wp-mcp-ai' ),
             '__return_false',
@@ -1210,6 +1253,31 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['quickbooks_api_key'] ) ) {
             $clean['quickbooks_api_key'] = trim( sanitize_text_field( $settings['quickbooks_api_key'] ) );
+        }
+
+        if ( isset( $settings['gmail_client_id'] ) ) {
+            $clean['gmail_client_id'] = trim( sanitize_text_field( $settings['gmail_client_id'] ) );
+        }
+
+        if ( isset( $settings['gmail_client_secret'] ) ) {
+            $clean['gmail_client_secret'] = trim( sanitize_text_field( $settings['gmail_client_secret'] ) );
+        }
+
+        if ( isset( $settings['gmail_refresh_token'] ) ) {
+            $clean['gmail_refresh_token'] = trim( sanitize_text_field( $settings['gmail_refresh_token'] ) );
+        }
+
+        if ( isset( $settings['gmail_user_email'] ) ) {
+            $email = trim( (string) $settings['gmail_user_email'] );
+
+            if ( '' === $email ) {
+                $clean['gmail_user_email'] = '';
+            } elseif ( 'me' === strtolower( $email ) ) {
+                $clean['gmail_user_email'] = 'me';
+            } else {
+                $sanitized_email = sanitize_email( $email );
+                $clean['gmail_user_email'] = $sanitized_email ? $sanitized_email : '';
+            }
         }
 
         if ( isset( $settings['group_email_capability'] ) ) {
@@ -1558,6 +1626,59 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $settings['quickbooks_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gmail integration section description.
+     */
+    public function render_gmail_section_description() {
+        ?>
+        <p><?php esc_html_e( 'Provide OAuth credentials for the Gmail API. These are used by assistants to search email on your behalf.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gmail client ID field.
+     */
+    public function render_gmail_client_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_id]" value="<?php echo esc_attr( $settings['gmail_client_id'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Enter the OAuth client ID from your Google Cloud project.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gmail client secret field.
+     */
+    public function render_gmail_client_secret_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_secret]" value="<?php echo esc_attr( $settings['gmail_client_secret'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gmail refresh token field.
+     */
+    public function render_gmail_refresh_token_field() {
+        $settings = self::get_settings();
+        ?>
+        <textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $settings['gmail_refresh_token'] ); ?></textarea>
+        <p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Gmail API with the https://www.googleapis.com/auth/gmail.readonly scope.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Gmail user email field.
+     */
+    public function render_gmail_user_email_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_user_email]" value="<?php echo esc_attr( $settings['gmail_user_email'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Specify the Gmail account email address associated with the refresh token. Leave blank or enter “me” to use the authenticated account.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 

@@ -180,6 +180,7 @@ class WP_MCP_AI_Tool_Registry {
         $default_tools = array(
             'WP_MCP_AI_Tool_Get_Recent_Posts'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
             'WP_MCP_AI_Tool_Search_Content'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content.php',
+            'WP_MCP_AI_Tool_Search_Gmail'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php',
             'WP_MCP_AI_Tool_Get_User_Info'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
             'WP_MCP_AI_Tool_Get_Site_Summary'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
             'WP_MCP_AI_Tool_Search_Attachments'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
