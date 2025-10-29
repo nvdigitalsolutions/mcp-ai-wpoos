@@ -70,7 +70,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🔊 Generate speech audio via OpenAI's Text-to-Speech API and save the result to the Media Library
-- 🎨 Generate on-brand imagery with OpenAI's Images API and store the files as WordPress attachments
+- 🎨 Generate on-brand imagery with OpenAI's Images API, honouring the configured response format (including GPT-Image-1's `url` responses) and storing the files as WordPress attachments
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
 - 🔎 Perform lightweight DuckDuckGo searches without leaving the assistant conversation
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically

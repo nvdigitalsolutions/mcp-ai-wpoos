@@ -28,8 +28,11 @@ class WP_MCP_AI_OpenAI_Client {
      * @return bool
      */
     public static function image_model_supports_response_format( $model ) {
-        $model     = sanitize_text_field( $model );
-        $supported = 'gpt-image-1' !== $model;
+        $model = sanitize_text_field( $model );
+
+        // GPT-Image-1 and the current DALL·E variants all accept response_format, so
+        // default to allowing the flag unless site owners opt out via the filter.
+        $supported = true;
 
         /**
          * Filter whether the supplied image model supports the response_format parameter.

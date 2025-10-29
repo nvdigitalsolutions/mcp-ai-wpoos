@@ -47,6 +47,13 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * GPT-Image-1 should allow callers to control the response_format flag.
+     */
+    public function test_image_model_supports_response_format_for_gpt_image() {
+        $this->assertTrue( WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( 'gpt-image-1' ) );
+    }
+
+    /**
      * Ensure the client falls back to the global default model when none is provided.
      */
     public function test_create_chat_completion_uses_global_default_model() {
@@ -1591,15 +1598,26 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
+        $override = function ( $supported, $model ) {
+            if ( 'legacy-model' === $model ) {
+                return false;
+            }
+
+            return $supported;
+        };
+
+        add_filter( 'wp_mcp_ai_image_model_supports_response_format', $override, 10, 2 );
+
         $client->generate_image(
             'Prompt with unsupported response format',
             array(
-                'model'           => 'gpt-image-1',
+                'model'           => 'legacy-model',
                 'response_format' => 'url',
             )
         );
 
         remove_filter( 'pre_http_request', $http_stub, 10 );
+        remove_filter( 'wp_mcp_ai_image_model_supports_response_format', $override, 10 );
 
         $this->assertNotNull( $captured_request );
         $payload = json_decode( $captured_request['args']['body'], true );
