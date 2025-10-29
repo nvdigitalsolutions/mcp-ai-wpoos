@@ -219,7 +219,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
         $this->assertSame( '1792x1024', $sanitized['openai_image_size'] );
         $this->assertSame( 'hd', $sanitized['openai_image_quality'] );
-        $this->assertSame( 'b64_json', $sanitized['openai_image_response_format'] );
+        $this->assertSame( 'url', $sanitized['openai_image_response_format'] );
     }
 
     /**
