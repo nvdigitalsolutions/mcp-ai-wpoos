@@ -46,4 +46,37 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
 
         return apply_filters( 'wp_mcp_ai_elementor_formatted_text', $formatted, $content, $this );
     }
+
+    /**
+     * Prepare inline text for display.
+     *
+     * Normalises whitespace and escapes content so single-line strings that
+     * include dynamic values read cleanly within inline containers.
+     *
+     * @param string $content Raw content entered in the Elementor control.
+     *
+     * @return string Sanitised string ready for inline output. Empty string
+     *                when there is no content to display.
+     */
+    protected function format_text_inline( $content ) {
+        if ( ! is_string( $content ) ) {
+            return '';
+        }
+
+        $content = trim( $content );
+
+        if ( '' === $content ) {
+            return '';
+        }
+
+        $normalised = preg_replace( '/\s+/u', ' ', $content );
+
+        if ( ! is_string( $normalised ) || '' === $normalised ) {
+            return '';
+        }
+
+        $sanitised = esc_html( $normalised );
+
+        return apply_filters( 'wp_mcp_ai_elementor_inline_text', $sanitised, $content, $this );
+    }
 }
