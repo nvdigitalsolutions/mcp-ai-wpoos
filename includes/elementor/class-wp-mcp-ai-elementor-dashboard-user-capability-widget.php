@@ -146,44 +146,62 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
             }
         }
 
-        echo '<dl class="wp-mcp-ai-user-capabilities__summary">';
+        $summary_items = array();
 
         if ( ! empty( $user_info['display_name'] ) ) {
-            echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
-            echo '<dt>' . esc_html__( 'Name', 'wp-mcp-ai' ) . '</dt>';
-            echo '<dd>' . esc_html( $user_info['display_name'] ) . '</dd>';
-            echo '</div>';
+            $summary_items[] = array(
+                'label' => __( 'Name', 'wp-mcp-ai' ),
+                'value' => $user_info['display_name'],
+            );
         }
 
         if ( ! empty( $user_info['user_email'] ) ) {
-            echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
-            echo '<dt>' . esc_html__( 'Email', 'wp-mcp-ai' ) . '</dt>';
-            echo '<dd>' . esc_html( $user_info['user_email'] ) . '</dd>';
-            echo '</div>';
+            $summary_items[] = array(
+                'label' => __( 'Email', 'wp-mcp-ai' ),
+                'value' => $user_info['user_email'],
+            );
         }
 
         if ( ! empty( $roles ) ) {
-            echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
-            echo '<dt>' . esc_html__( 'Roles', 'wp-mcp-ai' ) . '</dt>';
-            echo '<dd>' . esc_html( implode( ', ', $roles ) ) . '</dd>';
-            echo '</div>';
+            $summary_items[] = array(
+                'label' => __( 'Roles', 'wp-mcp-ai' ),
+                'value' => implode( ', ', $roles ),
+            );
         }
 
         if ( ! empty( $user_info['user_login'] ) ) {
-            echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
-            echo '<dt>' . esc_html__( 'Username', 'wp-mcp-ai' ) . '</dt>';
-            echo '<dd>' . esc_html( $user_info['user_login'] ) . '</dd>';
-            echo '</div>';
+            $summary_items[] = array(
+                'label' => __( 'Username', 'wp-mcp-ai' ),
+                'value' => $user_info['user_login'],
+            );
         }
 
         if ( ! empty( $user_info['registered'] ) ) {
-            echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
-            echo '<dt>' . esc_html__( 'Registered', 'wp-mcp-ai' ) . '</dt>';
-            echo '<dd>' . esc_html( $this->format_timestamp( $user_info['registered'] ) ) . '</dd>';
-            echo '</div>';
+            $summary_items[] = array(
+                'label' => __( 'Registered', 'wp-mcp-ai' ),
+                'value' => $this->format_timestamp( $user_info['registered'] ),
+            );
         }
 
-        echo '</dl>';
+        if ( ! empty( $summary_items ) ) {
+            echo '<div class="wp-mcp-ai-user-capabilities__summary">';
+
+            foreach ( $summary_items as $item ) {
+                $label = isset( $item['label'] ) ? $item['label'] : '';
+                $value = isset( $item['value'] ) ? $item['value'] : '';
+
+                if ( '' === $label || '' === $value ) {
+                    continue;
+                }
+
+                echo '<div class="wp-mcp-ai-user-capabilities__summary-item">';
+                echo '<span class="wp-mcp-ai-user-capabilities__summary-label">' . esc_html( $label ) . ':</span> ';
+                echo '<span class="wp-mcp-ai-user-capabilities__summary-value">' . esc_html( $value ) . '</span>';
+                echo '</div>';
+            }
+
+            echo '</div>';
+        }
 
         $jetengine_details = $this->get_jetengine_details( $user_id );
 
