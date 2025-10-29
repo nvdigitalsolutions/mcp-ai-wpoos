@@ -289,10 +289,14 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
         $sanitised = array();
 
         foreach ( $variables as $key => $value ) {
-            $clean_key = sanitize_key( $key );
+            if ( is_int( $key ) ) {
+                $clean_key = $key;
+            } else {
+                $clean_key = preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $key );
 
-            if ( '' === $clean_key ) {
-                continue;
+                if ( '' === $clean_key ) {
+                    continue;
+                }
             }
 
             $sanitised[ $clean_key ] = $this->sanitize_variable_value( $value );
