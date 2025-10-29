@@ -230,12 +230,13 @@ class WP_MCP_AI_Usage_Tracker {
 		$prompt_tokens     = isset( $usage['prompt_tokens'] ) ? max( 0, (int) $usage['prompt_tokens'] ) : 0;
 		$completion_tokens = isset( $usage['completion_tokens'] ) ? max( 0, (int) $usage['completion_tokens'] ) : 0;
 		$total_tokens      = isset( $usage['total_tokens'] ) ? max( 0, (int) $usage['total_tokens'] ) : 0;
+		$cached_tokens     = isset( $usage['cached_tokens'] ) ? max( 0, (int) $usage['cached_tokens'] ) : 0;
 
 		if ( 0 === $total_tokens ) {
 			$total_tokens = $prompt_tokens + $completion_tokens;
 		}
 
-		if ( 0 === $prompt_tokens && 0 === $completion_tokens && 0 === $total_tokens ) {
+		if ( 0 === $prompt_tokens && 0 === $completion_tokens && 0 === $total_tokens && 0 === $cached_tokens ) {
 			return array();
 		}
 
@@ -243,6 +244,7 @@ class WP_MCP_AI_Usage_Tracker {
 			'prompt_tokens'     => $prompt_tokens,
 			'completion_tokens' => $completion_tokens,
 			'total_tokens'      => $total_tokens,
+			'cached_tokens'     => $cached_tokens,
 		);
 	}
 
@@ -257,6 +259,7 @@ class WP_MCP_AI_Usage_Tracker {
 			'prompt_tokens'    => 0,
 			'completion_tokens'=> 0,
 			'total_tokens'     => 0,
+			'cached_tokens'    => 0,
 			'last_used_gmt'    => '',
 			'assistants'       => array(),
 		);
@@ -273,6 +276,7 @@ class WP_MCP_AI_Usage_Tracker {
 			'prompt_tokens' => 0,
 			'completion_tokens' => 0,
 			'total_tokens'  => 0,
+			'cached_tokens' => 0,
 			'last_used_gmt' => '',
 		);
 	}
@@ -296,10 +300,12 @@ class WP_MCP_AI_Usage_Tracker {
 		$existing_totals['prompt_tokens'] = isset( $existing_totals['prompt_tokens'] ) ? (int) $existing_totals['prompt_tokens'] : 0;
 		$existing_totals['completion_tokens'] = isset( $existing_totals['completion_tokens'] ) ? (int) $existing_totals['completion_tokens'] : 0;
 		$existing_totals['total_tokens'] = isset( $existing_totals['total_tokens'] ) ? (int) $existing_totals['total_tokens'] : 0;
+		$existing_totals['cached_tokens'] = isset( $existing_totals['cached_tokens'] ) ? (int) $existing_totals['cached_tokens'] : 0;
 
-		$existing_totals['prompt_tokens']    += $usage['prompt_tokens'];
-		$existing_totals['completion_tokens'] += $usage['completion_tokens'];
-		$existing_totals['total_tokens']     += $usage['total_tokens'];
+		$existing_totals['prompt_tokens']    += isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0;
+		$existing_totals['completion_tokens'] += isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0;
+		$existing_totals['total_tokens']     += isset( $usage['total_tokens'] ) ? (int) $usage['total_tokens'] : 0;
+		$existing_totals['cached_tokens']    += isset( $usage['cached_tokens'] ) ? (int) $usage['cached_tokens'] : 0;
 		$existing_totals['last_used_gmt']     = $timestamp;
 
 		if ( ! isset( $existing_totals['assistants'] ) || ! is_array( $existing_totals['assistants'] ) ) {
@@ -322,10 +328,12 @@ class WP_MCP_AI_Usage_Tracker {
 			$assistant_totals['prompt_tokens'] = isset( $assistant_totals['prompt_tokens'] ) ? (int) $assistant_totals['prompt_tokens'] : 0;
 			$assistant_totals['completion_tokens'] = isset( $assistant_totals['completion_tokens'] ) ? (int) $assistant_totals['completion_tokens'] : 0;
 			$assistant_totals['total_tokens'] = isset( $assistant_totals['total_tokens'] ) ? (int) $assistant_totals['total_tokens'] : 0;
+			$assistant_totals['cached_tokens'] = isset( $assistant_totals['cached_tokens'] ) ? (int) $assistant_totals['cached_tokens'] : 0;
 
-			$assistant_totals['prompt_tokens']    += $usage['prompt_tokens'];
-			$assistant_totals['completion_tokens'] += $usage['completion_tokens'];
-			$assistant_totals['total_tokens']     += $usage['total_tokens'];
+			$assistant_totals['prompt_tokens']    += isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0;
+			$assistant_totals['completion_tokens'] += isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0;
+			$assistant_totals['total_tokens']     += isset( $usage['total_tokens'] ) ? (int) $usage['total_tokens'] : 0;
+			$assistant_totals['cached_tokens']    += isset( $usage['cached_tokens'] ) ? (int) $usage['cached_tokens'] : 0;
 			$assistant_totals['last_used_gmt']     = $timestamp;
 
 			$existing_totals['assistants'][ $assistant_id ] = $assistant_totals;
