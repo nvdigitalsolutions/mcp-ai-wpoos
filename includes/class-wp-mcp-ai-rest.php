@@ -18,6 +18,8 @@ class WP_MCP_AI_REST {
     const MEMORY_CHUNK_CHARS        = 1200;
     const MEMORY_MAX_TOTAL_CHARS    = 12000;
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
+    const MEMORY_MAX_DOCUMENT_BYTES = 262144; // ~256KB, enough headroom for markup around 4K characters of text.
+    const MEMORY_MAX_TOTAL_BYTES    = 1048576; // ~1MB aggregate streaming budget across attachments.
 
     /**
      * Tool slug used for document + prompt submissions.
@@ -1904,10 +1906,21 @@ class WP_MCP_AI_REST {
             WP_Filesystem();
         }
 
-        $documents            = array();
-        $total_chars          = 0;
-        $forbidden_file_ids   = array();
+        $documents             = array();
+        $total_chars           = 0;
+        $total_bytes           = 0;
+        $forbidden_file_ids    = array();
         $encountered_permitted = false;
+
+        $max_total_bytes = (int) apply_filters( 'wp_mcp_ai_memory_max_total_bytes', self::MEMORY_MAX_TOTAL_BYTES, $file_ids );
+        if ( $max_total_bytes <= 0 ) {
+            $max_total_bytes = 0;
+        }
+
+        $max_document_bytes = (int) apply_filters( 'wp_mcp_ai_memory_max_document_bytes', self::MEMORY_MAX_DOCUMENT_BYTES, $file_ids );
+        if ( $max_document_bytes <= 0 ) {
+            $max_document_bytes = 0;
+        }
 
         foreach ( $file_ids as $file_id ) {
             $file_id = absint( $file_id );
@@ -1968,7 +1981,28 @@ class WP_MCP_AI_REST {
             }
 
             $mime_type = get_post_mime_type( $file_id );
-            $raw_text  = $this->extract_memory_text( $file_path, $mime_type );
+            $remaining_chars = self::MEMORY_MAX_TOTAL_CHARS - $total_chars;
+            if ( $remaining_chars <= 0 ) {
+                break;
+            }
+
+            $remaining_bytes = $max_total_bytes > 0 ? $max_total_bytes - $total_bytes : PHP_INT_MAX;
+            if ( $remaining_bytes <= 0 ) {
+                break;
+            }
+
+            $document_char_budget = min( self::MEMORY_MAX_DOCUMENT_CHARS, $remaining_chars );
+            if ( $document_char_budget <= 0 ) {
+                break;
+            }
+
+            $document_byte_budget = $max_document_bytes > 0 ? min( $max_document_bytes, $remaining_bytes ) : $remaining_bytes;
+            if ( $document_byte_budget <= 0 ) {
+                break;
+            }
+
+            $bytes_consumed = 0;
+            $raw_text       = $this->extract_memory_text( $file_path, $mime_type, $document_char_budget, $document_byte_budget, $bytes_consumed );
 
             if ( is_wp_error( $raw_text ) ) {
                 return $raw_text;
@@ -1990,6 +2024,7 @@ class WP_MCP_AI_REST {
             }
 
             $total_chars = $chunk_data['total_chars'];
+            $total_bytes += max( 0, (int) $bytes_consumed );
 
             $documents[] = array(
                 'id'        => $file_id,
@@ -2025,17 +2060,39 @@ class WP_MCP_AI_REST {
      * @param string $mime_type MIME type.
      * @return string|WP_Error
      */
-    protected function extract_memory_text( $file_path, $mime_type ) {
+    protected function extract_memory_text( $file_path, $mime_type, $char_budget = 0, $byte_budget = 0, &$bytes_consumed = 0 ) {
+        $char_budget = (int) $char_budget;
+        $byte_budget = (int) $byte_budget;
+        $bytes_consumed = 0;
+
         if ( 'application/pdf' === $mime_type ) {
             if ( function_exists( 'wp_read_pdf' ) ) {
                 $pdf_content = wp_read_pdf( $file_path );
 
                 if ( is_array( $pdf_content ) && isset( $pdf_content['text'] ) ) {
-                    return (string) $pdf_content['text'];
+                    $text = (string) $pdf_content['text'];
                 }
 
-                if ( is_string( $pdf_content ) ) {
-                    return $pdf_content;
+                if ( ! isset( $text ) && is_string( $pdf_content ) ) {
+                    $text = $pdf_content;
+                }
+
+                if ( isset( $text ) ) {
+                    if ( $byte_budget > 0 && strlen( $text ) > $byte_budget ) {
+                        if ( function_exists( 'mb_strcut' ) ) {
+                            $text = mb_strcut( $text, 0, $byte_budget, 'UTF-8' );
+                        } else {
+                            $text = substr( $text, 0, $byte_budget );
+                        }
+                    }
+
+                    if ( $char_budget > 0 && $this->mb_strlen( $text ) > $char_budget ) {
+                        $text = $this->mb_substr( $text, 0, $char_budget );
+                    }
+
+                    $bytes_consumed = strlen( $text );
+
+                    return $text;
                 }
             }
 
@@ -2050,7 +2107,7 @@ class WP_MCP_AI_REST {
         );
 
         if ( in_array( $mime_type, $docx_mimes, true ) ) {
-            return $this->extract_docx_text( $file_path );
+            return $this->extract_docx_text( $file_path, $char_budget, $byte_budget, $bytes_consumed );
         }
 
         $textual_mimes = array(
@@ -2068,137 +2125,200 @@ class WP_MCP_AI_REST {
             return '';
         }
 
-        $contents = $this->read_file_contents( $file_path );
+        $contents = $this->read_file_contents( $file_path, $byte_budget, $bytes_consumed );
 
         if ( is_wp_error( $contents ) ) {
             return $contents;
         }
 
-        return (string) $contents;
+        $text = (string) $contents;
+
+        if ( $byte_budget > 0 && strlen( $text ) > $byte_budget ) {
+            if ( function_exists( 'mb_strcut' ) ) {
+                $text = mb_strcut( $text, 0, $byte_budget, 'UTF-8' );
+            } else {
+                $text = substr( $text, 0, $byte_budget );
+            }
+
+            $bytes_consumed = min( strlen( $text ), $bytes_consumed );
+        }
+
+        if ( $char_budget > 0 && $this->mb_strlen( $text ) > $char_budget ) {
+            $text           = $this->mb_substr( $text, 0, $char_budget );
+            $bytes_consumed = min( $bytes_consumed, strlen( $text ) );
+        }
+
+        return $text;
     }
 
     /**
      * Extract text from a DOCX-based file.
      *
      * @param string $file_path File system path.
+     * @param int    $char_budget Maximum characters to extract.
+     * @param int    $byte_budget Maximum bytes to read from the underlying XML stream.
+     * @param int   &$bytes_consumed Bytes consumed while reading the document.
      * @return string
      */
-    protected function extract_docx_text( $file_path ) {
+    protected function extract_docx_text( $file_path, $char_budget = 0, $byte_budget = 0, &$bytes_consumed = 0 ) {
         if ( ! class_exists( 'ZipArchive' ) ) {
             return '';
         }
 
-        $zip = new ZipArchive();
-        $opened = $zip->open( $file_path );
+        $char_budget   = (int) $char_budget;
+        $byte_budget   = (int) $byte_budget;
+        $bytes_consumed = 0;
 
-        if ( true !== $opened ) {
+        $stream_path = 'zip://' . $file_path . '#word/document.xml';
+
+        $reader = new XMLReader();
+        if ( ! $reader->open( $stream_path, null, LIBXML_NONET ) ) {
             return '';
         }
 
-        $flags = 0;
+        $paragraph_open = false;
+        $text           = '';
 
-        if ( defined( 'ZipArchive::FL_NOCASE' ) ) {
-            $flags |= ZipArchive::FL_NOCASE;
+        while ( $reader->read() ) {
+            if ( $byte_budget > 0 && $bytes_consumed >= $byte_budget ) {
+                break;
+            }
+
+            switch ( $reader->nodeType ) {
+                case XMLReader::ELEMENT:
+                    switch ( $reader->name ) {
+                        case 'w:br':
+                        case 'w:cr':
+                            $text          .= "\n";
+                            $bytes_consumed += strlen( "\n" );
+                            break;
+                        case 'w:tab':
+                            $text          .= "\t";
+                            $bytes_consumed += strlen( "\t" );
+                            break;
+                        case 'w:p':
+                            $paragraph_open = true;
+                            break;
+                    }
+                    break;
+                case XMLReader::END_ELEMENT:
+                    if ( 'w:p' === $reader->name && $paragraph_open ) {
+                        $paragraph_open = false;
+                        $text          .= "\n";
+                        $bytes_consumed += strlen( "\n" );
+                    }
+                    break;
+                case XMLReader::TEXT:
+                case XMLReader::CDATA:
+                case XMLReader::SIGNIFICANT_WHITESPACE:
+                case XMLReader::WHITESPACE:
+                    $value = $reader->value;
+                    if ( '' === $value ) {
+                        break;
+                    }
+
+                    $value_bytes = strlen( $value );
+                    if ( $byte_budget > 0 && $bytes_consumed + $value_bytes > $byte_budget ) {
+                        $allowed     = max( 0, $byte_budget - $bytes_consumed );
+                        $value       = substr( $value, 0, $allowed );
+                        $value_bytes = strlen( $value );
+                    }
+
+                    $text          .= $value;
+                    $bytes_consumed += $value_bytes;
+                    break;
+            }
+
+            if ( $char_budget > 0 && $this->mb_strlen( $text ) >= $char_budget ) {
+                break;
+            }
         }
 
-        if ( defined( 'ZipArchive::FL_NODIR' ) ) {
-            $flags |= ZipArchive::FL_NODIR;
-        }
+        $reader->close();
 
-        $document_index = $zip->locateName( 'word/document.xml', $flags );
-
-        if ( false === $document_index && 0 !== $flags ) {
-            $document_index = $zip->locateName( 'word/document.xml' );
-        }
-
-        if ( false === $document_index ) {
-            $zip->close();
+        if ( '' === $text ) {
             return '';
         }
 
-        $xml_content = $zip->getFromIndex( $document_index );
-        $zip->close();
+        $text = trim( $text );
 
-        if ( false === $xml_content || '' === $xml_content ) {
-            return '';
+        if ( $char_budget > 0 && $this->mb_strlen( $text ) > $char_budget ) {
+            $text = $this->mb_substr( $text, 0, $char_budget );
         }
 
-        $xml_content = preg_replace( '/<w:br[^>]*\/>/i', "\n", $xml_content );
-        $xml_content = preg_replace( '/<w:cr[^>]*\/>/i', "\n", $xml_content );
-        $xml_content = preg_replace( '/<w:tab[^>]*\/>/i', "\t", $xml_content );
-        $xml_content = preg_replace( '/<\/w:p>/i', "</w:p>\n", $xml_content );
+        $bytes_consumed = strlen( $text );
 
-        $previous = libxml_use_internal_errors( true );
-
-        $document = new DOMDocument();
-        $document->preserveWhiteSpace = false;
-        $loaded = $document->loadXML( $xml_content );
-
-        if ( ! $loaded ) {
-            libxml_clear_errors();
-            libxml_use_internal_errors( $previous );
-            return '';
-        }
-
-        $text = $document->textContent;
-
-        libxml_clear_errors();
-        libxml_use_internal_errors( $previous );
-
-        if ( ! is_string( $text ) ) {
-            return '';
-        }
-
-        return trim( $text );
+        return $text;
     }
 
     /**
      * Read a file from disk using the WordPress filesystem when available.
      *
      * @param string $file_path File path.
+     * @param int    $byte_budget Maximum bytes to read.
+     * @param int   &$bytes_consumed Bytes consumed while reading the file.
      * @return string
      */
-    protected function read_file_contents( $file_path ) {
+    protected function read_file_contents( $file_path, $byte_budget = 0, &$bytes_consumed = 0 ) {
         global $wp_filesystem;
+
+        $byte_budget    = (int) $byte_budget;
+        $bytes_consumed = 0;
+
+        if ( $byte_budget <= 0 ) {
+            $byte_budget = PHP_INT_MAX;
+        }
+
+        $chunk_size = (int) apply_filters( 'wp_mcp_ai_memory_read_chunk_bytes', 1024 * 1024, $file_path );
+        if ( $chunk_size <= 0 ) {
+            $chunk_size = 1024 * 1024;
+        }
+
+        if ( is_readable( $file_path ) ) {
+            try {
+                $file = new SplFileObject( $file_path, 'rb' );
+            } catch ( RuntimeException $exception ) {
+                return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
+            }
+
+            $contents      = '';
+            $bytes_allowed = $byte_budget;
+
+            while ( ! $file->eof() && $bytes_allowed > 0 ) {
+                $read_length = min( $chunk_size, $bytes_allowed );
+                $chunk       = $file->fread( $read_length );
+
+                if ( false === $chunk ) {
+                    return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
+                }
+
+                $length = strlen( $chunk );
+
+                if ( 0 === $length ) {
+                    break;
+                }
+
+                $contents      .= $chunk;
+                $bytes_consumed += $length;
+                $bytes_allowed  -= $length;
+            }
+
+            return $contents;
+        }
 
         if ( $wp_filesystem instanceof WP_Filesystem_Base && $wp_filesystem->exists( $file_path ) ) {
             $contents = $wp_filesystem->get_contents( $file_path );
             if ( is_string( $contents ) ) {
+                if ( $byte_budget < PHP_INT_MAX ) {
+                    $contents = substr( $contents, 0, $byte_budget );
+                }
+
+                $bytes_consumed = strlen( $contents );
+
                 return $contents;
             }
 
             return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
-        }
-
-        if ( is_readable( $file_path ) ) {
-            $handle = fopen( $file_path, 'rb' );
-
-            if ( ! $handle ) {
-                return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
-            }
-
-            $chunk_size = (int) apply_filters( 'wp_mcp_ai_memory_read_chunk_bytes', 1024 * 1024, $file_path );
-            if ( $chunk_size <= 0 ) {
-                $chunk_size = 1024 * 1024;
-            }
-
-            $contents = '';
-
-            while ( ! feof( $handle ) ) {
-                $chunk = fread( $handle, $chunk_size );
-
-                if ( false === $chunk ) {
-                    fclose( $handle );
-
-                    return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
-                }
-
-                $contents .= $chunk;
-            }
-
-            fclose( $handle );
-
-            return $contents;
         }
 
         return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
