@@ -50,6 +50,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- 🔍 Search Media Library knowledge attachments with permission-aware download URLs
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
@@ -342,6 +343,8 @@ Assistant memory files configured on the post (`memory_files`) are also promoted
 system channel, retaining the existing chunking/truncation safeguards.
 
 Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
+
+Assistants can also query existing knowledge files with the **Search Attachments** tool, which reuses `WP_MCP_AI_Message_Attachments::user_can_access_attachment()` so only publicly accessible or user-owned media is returned alongside download URLs and file metadata for the model to reuse.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 
 ---
 
