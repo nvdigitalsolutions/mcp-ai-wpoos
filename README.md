@@ -16,6 +16,7 @@
 - [🧊 Elementor Widget](#-elementor-widget)
 - [🧮 Usage Tracking](#-usage-tracking)
 - [🧷 Attachment MIME Controls](#-attachment-mime-controls)
+- [🕵️ Code Review](#-code-review)
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
@@ -153,6 +154,12 @@ The plugin records aggregate token usage per user, provider, and model whenever 
 ## 🧷 Attachment MIME Controls
 
 Administrators can override the default image and file MIME allowlists used by the chat uploader. The settings screen accepts one MIME type per line, and the attachment helper merges the overrides with its defaults before enforcing them on upload and shortcode configuration.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L669】【F:includes/class-wp-mcp-ai-message-attachments.php†L503-L559】 Leave the fields empty to fall back to the bundled safe defaults.
+
+## 🕵️ Code Review
+
+The latest internal code review captures high-priority hardening tasks and positive architectural notes. Highlights include tightening the group email tool’s custom header handling, guarding against oversized recipient definition files, and preserving case-sensitive variable names when triggering OpenAI workflows.【F:docs/code-review-report.md†L3-L33】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L348-L351】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L582-L589】【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L288-L301】
+
+➡️ See [docs/code-review-report.md](docs/code-review-report.md) for the complete findings, recommendations, and follow-up notes.【F:docs/code-review-report.md†L1-L33】
 
 ## 🔒 MCP Server Authentication
 
