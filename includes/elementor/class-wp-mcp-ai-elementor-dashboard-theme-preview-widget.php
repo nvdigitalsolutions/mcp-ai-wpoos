@@ -150,6 +150,7 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
                     echo '<span class="wp-mcp-ai-theme-preview__legend-token"><code>' . esc_html( $token['token'] ) . '</code></span>';
                     echo '<span class="wp-mcp-ai-theme-preview__legend-label">' . esc_html( $token['label'] ) . '</span>';
                     if ( '' !== $token['value'] ) {
+                        echo '<span class="wp-mcp-ai-theme-preview__legend-separator">: </span>';
                         echo '<span class="wp-mcp-ai-theme-preview__legend-value">' . esc_html( $token['value'] ) . '</span>';
                     }
                     echo '</li>';
