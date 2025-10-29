@@ -179,10 +179,12 @@ class WP_MCP_AI_Tool_Registry {
     protected function load_default_tools() {
         $default_tools = array(
             'WP_MCP_AI_Tool_Get_Recent_Posts'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
+            'WP_MCP_AI_Tool_Search_Content'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content.php',
             'WP_MCP_AI_Tool_Get_User_Info'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
             'WP_MCP_AI_Tool_Get_Site_Summary'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
             'WP_MCP_AI_Tool_Web_Search'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
             'WP_MCP_AI_Tool_Get_Woo_Orders'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
+            'WP_MCP_AI_Tool_Get_Woo_Products'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
             'WP_MCP_AI_Tool_Get_JetEngine_Items'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
             'WP_MCP_AI_Tool_List_JetEngine_Routes' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php',
             'WP_MCP_AI_Tool_Invoke_JetEngine_Route' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php',
@@ -198,6 +200,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Create_Cron_Job'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job.php',
             'WP_MCP_AI_Tool_Send_Group_Email'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php',
             'WP_MCP_AI_Tool_Send_Mailjet_Email'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php',
+            'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
         );
 
         foreach ( $default_tools as $class => $file ) {

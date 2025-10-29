@@ -54,6 +54,8 @@ class WP_MCP_AI_Admin_Settings {
             'mailjet_api_secret'   => '',
             'mailjet_from_email'   => '',
             'mailjet_from_name'    => '',
+            'quickbooks_company_id' => '',
+            'quickbooks_api_key'    => '',
             'group_email_capability'      => 'publish_posts',
             'group_email_max_recipients'  => 100,
             'openai_image_model'          => 'gpt-image-1',
@@ -900,6 +902,29 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
+            'wp_mcp_ai_quickbooks_section',
+            __( 'QuickBooks Online', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'quickbooks_company_id',
+            __( 'Company ID', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_company_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_quickbooks_section'
+        );
+
+        add_settings_field(
+            'quickbooks_api_key',
+            __( 'API Key / Access Token', 'wp-mcp-ai' ),
+            array( $this, 'render_quickbooks_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_quickbooks_section'
+        );
+
+        add_settings_section(
             'wp_mcp_ai_tools_section',
             __( 'Tools', 'wp-mcp-ai' ),
             array( $this, 'render_tools_section_description' ),
@@ -1165,6 +1190,12 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['mailjet_from_name'] ) ) {
             $clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+        if ( isset( $settings['quickbooks_company_id'] ) ) {
+            $clean['quickbooks_company_id'] = trim( sanitize_text_field( $settings['quickbooks_company_id'] ) );
+        }
+
+        if ( isset( $settings['quickbooks_api_key'] ) ) {
+            $clean['quickbooks_api_key'] = trim( sanitize_text_field( $settings['quickbooks_api_key'] ) );
         }
 
         if ( isset( $settings['group_email_capability'] ) ) {
@@ -1482,6 +1513,37 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
         <p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the QuickBooks section description.
+     */
+    public function render_quickbooks_section_description() {
+        ?>
+        <p><?php esc_html_e( 'Configure the credentials used by the QuickBooks Online reporting tool.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the QuickBooks company ID field.
+     */
+    public function render_quickbooks_company_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_company_id]" value="<?php echo esc_attr( $settings['quickbooks_company_id'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Enter the QuickBooks Online company ID that should be used for report requests.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the QuickBooks API key field.
+     */
+    public function render_quickbooks_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $settings['quickbooks_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
