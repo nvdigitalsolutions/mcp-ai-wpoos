@@ -385,6 +385,13 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
             . '<dd>' . esc_html( number_format_i18n( $summary['totals']['completion_tokens'] ) ) . '</dd>'
             . '</div>';
 
+        if ( $summary['totals']['cached_prompt_tokens'] > 0 ) {
+            echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
+                . '<dt>' . esc_html__( 'Cached prompt tokens', 'wp-mcp-ai' ) . '</dt>'
+                . '<dd>' . esc_html( number_format_i18n( $summary['totals']['cached_prompt_tokens'] ) ) . '</dd>'
+                . '</div>';
+        }
+
         echo '<div class="wp-mcp-ai-chat-usage-timer__usage-total">'
             . '<dt>' . esc_html__( 'Cached tokens', 'wp-mcp-ai' ) . '</dt>'
             . '<dd>' . esc_html( number_format_i18n( $summary['totals']['cached_tokens'] ) ) . '</dd>'
@@ -468,6 +475,7 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 
                 $totals['prompt_tokens']    += isset( $model_usage['prompt_tokens'] ) ? (int) $model_usage['prompt_tokens'] : 0;
                 $totals['completion_tokens'] += isset( $model_usage['completion_tokens'] ) ? (int) $model_usage['completion_tokens'] : 0;
+                $totals['cached_prompt_tokens'] += isset( $model_usage['cached_prompt_tokens'] ) ? (int) $model_usage['cached_prompt_tokens'] : 0;
                 $totals['total_tokens']     += isset( $model_usage['total_tokens'] ) ? (int) $model_usage['total_tokens'] : 0;
                 $totals['cached_tokens']    += isset( $model_usage['cached_tokens'] ) ? (int) $model_usage['cached_tokens'] : 0;
             }

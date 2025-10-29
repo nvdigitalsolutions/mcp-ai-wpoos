@@ -9,7 +9,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 - Pick a default Gemini model in **Settings → MCP AI → Default Gemini Model** before activating Gemini-powered assistants.
 - Choose the global default provider in **Settings → MCP AI → Default Provider** so new assistants inherit the preferred vendor.
 - Adjust **Settings → MCP AI → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
-- Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types.
+- Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types. The default profile accepts Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, XML, PDFs, Microsoft Office documents, AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM audio, and MP4 or QuickTime video, and enabling JSON Lines support automatically registers the `.jsonl`/`.ndjson` extensions with WordPress for uploads.【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L703】【F:wp-mcp-ai.php†L236-L272】
 - Configure the **Settings → MCP AI → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
 - Set the defaults for generated speech audio under **Settings → MCP AI → OpenAI Speech Model / Default Speech Voice / Default Speech Format** so text-to-speech results match your publishing requirements.
 - Tune the OpenAI image defaults under **Settings → MCP AI → OpenAI Image Model / Size / Quality / Response Format** before exposing image generation to assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
@@ -26,7 +26,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 ## Assistant Content & Tools
 - For each AI Assistant post, curate the allowed tools (core, WooCommerce, JetEngine, or custom), set the assistant defaults (model, temperature, system prompt), and attach any media knowledge or vector store IDs needed for retrieval workflows.
 - Remember that REST or shortcode requests without an explicit `assistant` parameter fall back to the default assistant configured earlier.
-- Decide whether public visitors should chat with the assistant by enabling `allow_guests="true"` on the shortcode, the Elementor widget, or the Deep Chat component when appropriate.
+- Decide whether public visitors should chat with the assistant by enabling `allow_guests="true"` on the shortcode or the Elementor widget when appropriate.
 - Confirm any headless integrations can call both `POST /wp-json/mcp-ai/v1/chat` and `POST /wp-json/mcp-ai/v1/tools`, handle structured errors, and supply the authentication scheme outlined in [docs/rest-api.md](rest-api.md).【F:includes/class-wp-mcp-ai-rest.php†L230-L322】【F:includes/class-wp-mcp-ai-rest.php†L931-L1321】
 
 ## Optional Local Development Setup
