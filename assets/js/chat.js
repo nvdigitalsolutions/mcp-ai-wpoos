@@ -11,6 +11,11 @@
     var SPEECH_PLAY_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4l9 6-9 6V4z"></path></svg>';
     var SPEECH_STOP_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="5" width="8" height="10" rx="1"></rect></svg>';
     var SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
+    var COPY_BUTTON_CLASS = 'wp-mcp-ai-copy-button';
+    var COPY_ENABLED_CLASS = 'wp-mcp-ai-copy-enabled';
+    var COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
+    var COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
+    var COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
 
     function registerObjectUrl(url) {
         if (!url) {
@@ -398,6 +403,161 @@
         bubble.appendChild(button);
     }
 
+    function updateCopyButtonState(button, stateName) {
+        if (!button) {
+            return;
+        }
+
+        button.classList.remove(COPY_ERROR_CLASS);
+        button.dataset.state = stateName;
+
+        if (stateName === 'copied') {
+            button.innerHTML = COPY_SUCCESS_ICON;
+            button.setAttribute('aria-label', 'Copied response');
+            button.setAttribute('title', 'Copied response');
+            return;
+        }
+
+        if (stateName === 'error') {
+            button.innerHTML = COPY_ICON;
+            button.setAttribute('aria-label', 'Unable to copy');
+            button.setAttribute('title', 'Unable to copy');
+            button.classList.add(COPY_ERROR_CLASS);
+            return;
+        }
+
+        button.innerHTML = COPY_ICON;
+        button.setAttribute('aria-label', 'Copy response');
+        button.setAttribute('title', 'Copy response');
+    }
+
+    function copyTextToClipboard(text) {
+        if (!text) {
+            return Promise.resolve(false);
+        }
+
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            return navigator.clipboard
+                .writeText(text)
+                .then(function () {
+                    return true;
+                })
+                .catch(function () {
+                    return fallbackCopyText(text);
+                });
+        }
+
+        return fallbackCopyText(text);
+    }
+
+    function fallbackCopyText(text) {
+        return new Promise(function (resolve) {
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+
+            document.body.appendChild(textarea);
+
+            var selection = document.getSelection ? document.getSelection().rangeCount : 0;
+
+            textarea.select();
+            textarea.setSelectionRange(0, textarea.value.length);
+
+            var succeeded = false;
+
+            try {
+                succeeded = document.execCommand('copy');
+            } catch (error) {
+                succeeded = false;
+            }
+
+            document.body.removeChild(textarea);
+
+            if (selection && document.getSelection) {
+                try {
+                    document.getSelection().removeAllRanges();
+                } catch (error) {}
+            }
+
+            resolve(Boolean(succeeded));
+        });
+    }
+
+    function attachCopyButton(bubble, text) {
+        if (!bubble) {
+            return;
+        }
+
+        var normalisedText = resolveSpeechText(bubble, text);
+        if (!normalisedText) {
+            return;
+        }
+
+        if (bubble.classList) {
+            bubble.classList.add(COPY_ENABLED_CLASS);
+        }
+
+        if (bubble.dataset) {
+            bubble.dataset.copyText = normalisedText;
+        }
+
+        var existing = bubble.querySelector('.' + COPY_BUTTON_CLASS);
+        if (existing) {
+            existing.dataset.copyText = normalisedText;
+            existing.disabled = false;
+            updateCopyButtonState(existing, 'idle');
+            return;
+        }
+
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = COPY_BUTTON_CLASS;
+        button.dataset.copyText = normalisedText;
+
+        updateCopyButtonState(button, 'idle');
+
+        button.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            var textToCopy = resolveSpeechText(bubble, button.dataset.copyText || text);
+            if (!textToCopy) {
+                updateCopyButtonState(button, 'error');
+                setTimeout(function () {
+                    updateCopyButtonState(button, 'idle');
+                }, 2000);
+                return;
+            }
+
+            button.disabled = true;
+
+            copyTextToClipboard(textToCopy)
+                .then(function (success) {
+                    if (success) {
+                        updateCopyButtonState(button, 'copied');
+                    } else {
+                        updateCopyButtonState(button, 'error');
+                    }
+
+                    setTimeout(function () {
+                        updateCopyButtonState(button, 'idle');
+                        button.disabled = false;
+                    }, 2000);
+                })
+                .catch(function () {
+                    updateCopyButtonState(button, 'error');
+                    setTimeout(function () {
+                        updateCopyButtonState(button, 'idle');
+                        button.disabled = false;
+                    }, 2000);
+                });
+        });
+
+        bubble.appendChild(button);
+    }
+
     function initialiseExistingSpeechButtons(state) {
         if (!state || !state.messagesEl) {
             return;
@@ -407,7 +567,9 @@
         var bubbles = state.messagesEl.querySelectorAll(selector);
 
         Array.prototype.forEach.call(bubbles, function (bubble) {
-            attachSpeechButton(bubble, state, bubble && bubble.dataset ? bubble.dataset.speechText || '' : '');
+            var storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
+            attachSpeechButton(bubble, state, storedText);
+            attachCopyButton(bubble, storedText);
         });
     }
 
@@ -2574,6 +2736,7 @@
             var speechState = options && options.speech ? options.speech.state || null : null;
             var speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(bubble, speechState, speechText);
+            attachCopyButton(bubble, speechText);
         }
 
         entry.appendChild(bubble);
