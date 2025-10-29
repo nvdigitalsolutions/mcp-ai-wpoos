@@ -40,7 +40,7 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface {
     public function get_parameters_schema() {
         return array(
             'type'                 => 'object',
-            'properties'           => array(),
+            'properties'           => new stdClass(),
             'additionalProperties' => false,
         );
     }
