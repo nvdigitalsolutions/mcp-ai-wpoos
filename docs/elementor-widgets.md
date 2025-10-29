@@ -34,6 +34,10 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 - Summarises the current operator’s account details, roles, JetEngine access, and highlighted capabilities such as `manage_options`, `upload_files`, and `manage_woocommerce`.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L262】
 - Supports multisite by listing every site membership the user belongs to, plus capability checks for network admins when relevant.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L204-L330】
 
+### MCP AI User File List
+- Lists the attachments owned by a selected operator so support teams can audit knowledge files without leaving Elementor.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-files-widget.php†L17-L214】
+- Supports current-user and explicit user ID modes, optional file size and upload date metadata, and custom empty states for lean dashboards.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-files-widget.php†L71-L207】
+
 ### MCP AI Theme Preview
 - Renders a mock conversation using the stored chat color tokens so teams can validate branding changes without leaving Elementor.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
 - Optional token legend outputs every token label/value combination grouped by usage to accelerate QA reviews.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L100-L198】
