@@ -1383,9 +1383,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         if ( empty( $results ) ) {
+            $message = $this->build_local_failure_message( $errors );
+
             return new WP_Error(
                 'wp_mcp_ai_crawl4ai_local_failed',
-                __( 'Unable to crawl the requested URLs.', 'wp-mcp-ai' ),
+                $message,
                 array( 'errors' => $errors )
             );
         }
@@ -1427,5 +1429,59 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         );
 
         return apply_filters( 'wp_mcp_ai_crawl4ai_local_response', $response, $payload, $arguments, $context, $settings );
+    }
+
+    /**
+     * Build a detailed error message when all local crawl attempts fail.
+     *
+     * @param array $errors Map of URL => error message pairs.
+     * @return string
+     */
+    protected function build_local_failure_message( array $errors ) {
+        $message = __( 'Unable to crawl the requested URLs.', 'wp-mcp-ai' );
+
+        if ( empty( $errors ) ) {
+            return $message;
+        }
+
+        if ( function_exists( 'array_key_first' ) ) {
+            $first_url = array_key_first( $errors );
+        } else {
+            $keys      = array_keys( $errors );
+            $first_url = reset( $keys );
+        }
+
+        $first_error = '';
+
+        if ( null !== $first_url && isset( $errors[ $first_url ] ) ) {
+            $first_error = $errors[ $first_url ];
+        }
+
+        $first_url   = is_scalar( $first_url ) ? trim( (string) $first_url ) : '';
+        $first_error = is_scalar( $first_error ) ? trim( (string) $first_error ) : '';
+
+        if ( $first_url && $first_error ) {
+            return sprintf(
+                __( 'Unable to crawl the requested URLs. Example: %1$s (%2$s).', 'wp-mcp-ai' ),
+                $first_url,
+                $first_error
+            );
+        }
+
+        if ( $first_url ) {
+            return sprintf(
+                __( 'Unable to crawl the requested URLs. Example URL: %s.', 'wp-mcp-ai' ),
+                $first_url
+            );
+        }
+
+        if ( $first_error ) {
+            return sprintf(
+                __( 'Unable to crawl the requested URLs. Example error: %s.', 'wp-mcp-ai' ),
+                $first_error
+            );
+        }
+
+        return $message;
     }
 }
