@@ -55,6 +55,7 @@ class WP_MCP_AI_Elementor_Integration {
         }
 
         $widget_files = array(
+            'trait-wp-mcp-ai-elementor-text-formatting.php',
             'class-wp-mcp-ai-elementor-widget.php',
             'class-wp-mcp-ai-elementor-chat-intro-widget.php',
             'class-wp-mcp-ai-elementor-chat-faq-widget.php',
