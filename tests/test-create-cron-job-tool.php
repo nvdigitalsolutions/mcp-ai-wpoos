@@ -46,6 +46,24 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure a valid hook is required when scheduling.
+     */
+    public function test_execute_requires_valid_hook() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+        $tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+        $result = $tool->execute(
+            array(),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_invalid_hook', $result->get_error_code() );
+    }
+
+    /**
      * Ensure timestamps in the past are rejected.
      */
     public function test_execute_rejects_past_timestamp() {
@@ -100,6 +118,34 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure missing timestamps default to one minute in the future.
+     */
+    public function test_execute_defaults_timestamp_when_missing() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        $hook     = 'wp_mcp_ai_default_timestamp';
+        $before   = time();
+
+        $tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+        $result = $tool->execute(
+            array(
+                'hook' => $hook,
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertSame( $hook, $result['hook'] );
+        $this->assertSame( 'single', $result['schedule'] );
+        $this->assertGreaterThanOrEqual( $before + MINUTE_IN_SECONDS, $result['timestamp'] );
+
+        $next_run = wp_next_scheduled( $hook, array() );
+        $this->assertNotFalse( $next_run );
+        $this->assertGreaterThanOrEqual( $before + MINUTE_IN_SECONDS, $next_run );
+    }
+
+    /**
      * Ensure duplicate events with the same hook and arguments are blocked.
      */
     public function test_execute_prevents_duplicate_events() {
@@ -139,6 +185,34 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure positional arguments are preserved without re-indexing.
+     */
+    public function test_execute_preserves_positional_arguments() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        $hook     = 'wp_mcp_ai_positional_args';
+        $args     = array( 'one', 'two' );
+        $future   = time() + HOUR_IN_SECONDS;
+
+        $tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+        $result = $tool->execute(
+            array(
+                'hook'      => $hook,
+                'timestamp' => $future,
+                'args'      => $args,
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertSame( $args, $result['args'] );
+
+        $scheduled_time = wp_next_scheduled( $hook, $args );
+        $this->assertSame( $future, $scheduled_time );
+    }
+
+    /**
      * Ensure invalid schedules are rejected with a clear error.
      */
     public function test_execute_rejects_invalid_schedule() {
@@ -157,5 +231,54 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
 
         $this->assertWPError( $result );
         $this->assertSame( 'wp_mcp_ai_invalid_schedule', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure invalid argument types are rejected.
+     */
+    public function test_execute_rejects_non_array_arguments() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+        $tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+        $result = $tool->execute(
+            array(
+                'hook' => 'wp_mcp_ai_invalid_args',
+                'args' => 'nope',
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_invalid_args', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure recurring events can be scheduled when using a valid schedule.
+     */
+    public function test_execute_schedules_recurring_event() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        $hook     = 'wp_mcp_ai_recurring_event';
+        $future   = time() + 5 * MINUTE_IN_SECONDS;
+
+        $tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+        $result = $tool->execute(
+            array(
+                'hook'      => $hook,
+                'timestamp' => $future,
+                'schedule'  => 'hourly',
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        $this->assertNotWPError( $result );
+        $this->assertSame( 'hourly', $result['schedule'] );
+        $this->assertSame( $hook, $result['hook'] );
+
+        $scheduled_time = wp_next_scheduled( $hook );
+        $this->assertSame( $future, $scheduled_time );
     }
 }

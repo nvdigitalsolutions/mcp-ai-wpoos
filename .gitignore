@@ -1,1 +1,3 @@
 /.codex-wordpress/
+/vendor/
+/.phpunit.result.cache
