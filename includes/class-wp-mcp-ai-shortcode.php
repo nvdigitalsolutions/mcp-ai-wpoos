@@ -287,6 +287,19 @@ class WP_MCP_AI_Shortcode {
                     </div>
                 <?php endif; ?>
             </div>
+            <div class="wp-mcp-ai-chat__transcript-controls">
+                <button
+                    type="button"
+                    class="wp-mcp-ai-chat__transcript-toggle"
+                    aria-expanded="false"
+                    aria-label="<?php echo esc_attr__( 'Expand conversation', 'wp-mcp-ai' ); ?>"
+                >
+                    <svg class="wp-mcp-ai-chat__transcript-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
+                    </svg>
+                    <span class="screen-reader-text"><?php esc_html_e( 'Expand conversation', 'wp-mcp-ai' ); ?></span>
+                </button>
+            </div>
             <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
                 <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
