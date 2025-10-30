@@ -39,7 +39,7 @@
   - [Supported segment types](#supported-segment-types)
 - [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
 - [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
-- [🪵 Logging](#-logging)
+- [🧾 Logging](#-logging)
 - [🧾 JetEngine REST Endpoint Report Helper](#-jetengine-rest-endpoint-report-helper)
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
 - [✅ Manual QA Scenarios](#-manual-qa-scenarios)
