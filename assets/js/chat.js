@@ -3450,6 +3450,181 @@
         return '';
     }
 
+    function extractNestedText(value, depth) {
+        if (depth > 5) {
+            return [];
+        }
+
+        if (typeof value === 'string' || typeof value === 'number') {
+            var normalised = String(value).trim();
+            return normalised ? [normalised] : [];
+        }
+
+        if (!value) {
+            return [];
+        }
+
+        if (Array.isArray(value)) {
+            return value.reduce(function (parts, item) {
+                return parts.concat(extractNestedText(item, depth + 1));
+            }, []);
+        }
+
+        if (typeof value === 'object') {
+            var segments = [];
+
+            if (typeof value.text === 'string') {
+                segments.push(value.text);
+            } else if (value.text && typeof value.text.value === 'string') {
+                segments.push(value.text.value);
+            }
+
+            if (typeof value.value === 'string') {
+                segments.push(value.value);
+            }
+
+            if (typeof value.message === 'string') {
+                segments.push(value.message);
+            }
+
+            if (typeof value.reason === 'string') {
+                segments.push(value.reason);
+            }
+
+            if (typeof value.explanation === 'string') {
+                segments.push(value.explanation);
+            }
+
+            if (typeof value.summary === 'string') {
+                segments.push(value.summary);
+            }
+
+            if (typeof value.content === 'string') {
+                segments.push(value.content);
+            }
+
+            var nestedKeys = ['summary', 'reasoning', 'content', 'steps', 'output', 'parts', 'messages'];
+            nestedKeys.forEach(function (key) {
+                if (value[key] && value[key] !== value) {
+                    segments = segments.concat(extractNestedText(value[key], depth + 1));
+                }
+            });
+
+            return segments;
+        }
+
+        return [];
+    }
+
+    function dedupeTextParts(parts) {
+        var seen = Object.create(null);
+
+        return parts
+            .map(function (part) {
+                return typeof part === 'string' ? part.trim() : '';
+            })
+            .filter(function (part) {
+                if (!part) {
+                    return false;
+                }
+
+                if (seen[part]) {
+                    return false;
+                }
+
+                seen[part] = true;
+                return true;
+            });
+    }
+
+    function renderReasoningSegment(piece) {
+        if (!piece || typeof piece !== 'object') {
+            return '';
+        }
+
+        var fragments = [];
+
+        fragments = fragments.concat(extractNestedText(piece.summary, 0));
+        fragments = fragments.concat(extractNestedText(piece.reasoning, 0));
+        fragments = fragments.concat(extractNestedText(piece.text, 0));
+        fragments = fragments.concat(extractNestedText(piece.output, 0));
+        fragments = fragments.concat(extractNestedText(piece.content, 0));
+
+        var unique = dedupeTextParts(fragments);
+
+        if (!unique.length) {
+            return '';
+        }
+
+        var heading = getString('reasoningLabel', 'Reasoning');
+        return heading + ':\n\n' + unique.join('\n\n');
+    }
+
+    function renderFunctionCallSegment(piece) {
+        if (!piece || typeof piece !== 'object') {
+            return '';
+        }
+
+        var parts = [];
+        var name = typeof piece.name === 'string' ? piece.name.trim() : '';
+        var status = typeof piece.status === 'string' ? piece.status.trim() : '';
+        var callId = typeof piece.call_id === 'string' ? piece.call_id.trim() : '';
+        var identifier = typeof piece.id === 'string' ? piece.id.trim() : '';
+
+        if (name) {
+            parts.push(formatString(getString('functionCallTitle', 'Function call: %s'), name));
+        } else {
+            parts.push(getString('functionCallFallback', 'Function call'));
+        }
+
+        if (status) {
+            parts.push(formatString(getString('functionCallStatus', 'Status: %s'), status));
+        }
+
+        if (callId) {
+            parts.push(formatString(getString('functionCallId', 'Call ID: %s'), callId));
+        } else if (identifier) {
+            parts.push(formatString(getString('functionCallId', 'Call ID: %s'), identifier));
+        }
+
+        var rawArguments = typeof piece.arguments !== 'undefined' ? piece.arguments : null;
+        var argumentText = '';
+        var parsedArguments = null;
+
+        if (typeof rawArguments === 'string') {
+            var trimmed = rawArguments.trim();
+
+            if (trimmed) {
+                try {
+                    parsedArguments = JSON.parse(trimmed);
+                } catch (error) {
+                    parsedArguments = null;
+                }
+
+                argumentText = parsedArguments ? JSON.stringify(parsedArguments, null, 2) : trimmed;
+            }
+        } else if (rawArguments && typeof rawArguments === 'object') {
+            try {
+                argumentText = JSON.stringify(rawArguments, null, 2);
+                parsedArguments = rawArguments;
+            } catch (error) {
+                argumentText = String(rawArguments);
+            }
+        }
+
+        if (argumentText) {
+            var argumentsLabel = getString('functionCallArgumentsLabel', 'Arguments:');
+
+            if (parsedArguments) {
+                parts.push(argumentsLabel + '\n```json\n' + argumentText + '\n```');
+            } else {
+                parts.push(argumentsLabel + ' ' + argumentText);
+            }
+        }
+
+        return parts.join('\n\n');
+    }
+
     function renderContentPiece(piece) {
         if (typeof piece === 'string') {
             return piece;
@@ -3485,6 +3660,14 @@
         }
 
         var type = typeof piece.type === 'string' ? piece.type : '';
+
+        if (type === 'reasoning') {
+            return renderReasoningSegment(piece);
+        }
+
+        if (type === 'function_call') {
+            return renderFunctionCallSegment(piece);
+        }
 
         if (type === 'image_file') {
             var label = '';
