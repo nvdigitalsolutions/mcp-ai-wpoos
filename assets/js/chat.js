@@ -16,6 +16,8 @@
     var COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
     var COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
     var COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
+    var TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
+    var TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
 
     function registerObjectUrl(url) {
         if (!url) {
@@ -556,6 +558,123 @@
         });
 
         bubble.appendChild(button);
+    }
+
+    function handleToolShortcutClick(state, button) {
+        if (!state || !button || !state.textarea) {
+            return;
+        }
+
+        var payload = '';
+
+        if (button.dataset) {
+            payload = button.dataset.shortcutPayload || button.dataset.shortcutTool || '';
+        }
+
+        if (typeof payload !== 'string') {
+            payload = '';
+        }
+
+        payload = payload.trim();
+
+        if (!payload) {
+            return;
+        }
+
+        state.textarea.value = payload;
+        state.textarea.focus();
+
+        try {
+            var caret = state.textarea.value.length;
+            state.textarea.setSelectionRange(caret, caret);
+        } catch (error) {}
+
+        copyTextToClipboard(payload).catch(function () {});
+    }
+
+    function renderToolShortcuts(state) {
+        if (!state || !state.toolShortcutsContainer) {
+            return;
+        }
+
+        var container = state.toolShortcutsContainer;
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
+
+        var shortcuts = [];
+        if (state.config && Array.isArray(state.config.toolShortcuts)) {
+            shortcuts = state.config.toolShortcuts;
+        }
+
+        shortcuts.forEach(function (shortcut) {
+            if (!shortcut) {
+                return;
+            }
+
+            var label = '';
+            var payload = '';
+            var tool = '';
+
+            if (typeof shortcut === 'string') {
+                label = shortcut;
+                payload = shortcut;
+            } else if (typeof shortcut === 'object') {
+                if (typeof shortcut.label === 'string') {
+                    label = shortcut.label;
+                }
+
+                if (typeof shortcut.payload === 'string') {
+                    payload = shortcut.payload;
+                }
+
+                if (typeof shortcut.tool === 'string') {
+                    tool = shortcut.tool;
+                }
+            }
+
+            label = label ? label.trim() : '';
+            payload = payload ? payload.trim() : '';
+            tool = tool ? tool.trim() : '';
+
+            if (!label && tool) {
+                label = tool;
+            }
+
+            if (!label && !payload) {
+                return;
+            }
+
+            if (!payload) {
+                payload = tool || label;
+            }
+
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = TOOL_SHORTCUT_BUTTON_CLASS;
+            button.textContent = label;
+
+            if (tool) {
+                button.dataset.shortcutTool = tool;
+            }
+
+            if (payload) {
+                button.dataset.shortcutPayload = payload;
+            }
+
+            var ariaTemplate = getString('toolShortcutLabel', 'Insert task: %s');
+            button.setAttribute('aria-label', formatString(ariaTemplate, label));
+            button.setAttribute('title', label);
+
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                handleToolShortcutClick(state, button);
+            });
+
+            container.appendChild(button);
+        });
+
+        container.hidden = !container.children.length;
     }
 
     function initialiseExistingSpeechButtons(state) {
@@ -2035,6 +2154,7 @@
             var attachmentsHeader = container.querySelector('.wp-mcp-ai-chat__attachments-header');
             var attachButton = container.querySelector('.wp-mcp-ai-chat__attach');
             var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
+            var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -2062,6 +2182,9 @@
             instanceConfig.allowedImageMimes = normaliseList(instanceConfig.allowedImageMimes);
             instanceConfig.allowedFileMimes = normaliseList(instanceConfig.allowedFileMimes);
             instanceConfig.allowedExtensions = normaliseList(instanceConfig.allowedExtensions);
+            if (!Array.isArray(instanceConfig.toolShortcuts)) {
+                instanceConfig.toolShortcuts = [];
+            }
 
             if (fileInput && instanceConfig.fileAccept) {
                 fileInput.setAttribute('accept', instanceConfig.fileAccept);
@@ -2082,6 +2205,7 @@
                 attachmentsHeader: attachmentsHeader,
                 attachButton: attachButton,
                 fileInput: fileInput,
+                toolShortcutsContainer: toolShortcutsContainer,
                 pendingAttachments: [],
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
@@ -2092,6 +2216,7 @@
             };
 
             initialiseExistingSpeechButtons(state);
+            renderToolShortcuts(state);
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             form.addEventListener('submit', function (event) {

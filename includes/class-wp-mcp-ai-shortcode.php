@@ -99,6 +99,7 @@ class WP_MCP_AI_Shortcode {
                     'toolFailed'         => __( 'The crawl failed: %s', 'wp-mcp-ai' ),
                     'speechToolSuccess'  => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
                     'imageToolSuccess'   => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
+                    'toolShortcutLabel'  => __( 'Insert task: %s', 'wp-mcp-ai' ),
                     'emptyMessage'       => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
                     'attachFile'         => __( 'Attach file', 'wp-mcp-ai' ),
                     'attachmentsLabel'   => __( 'Attachments', 'wp-mcp-ai' ),
@@ -204,6 +205,11 @@ class WP_MCP_AI_Shortcode {
             'canUploadAttachments' => (bool) $can_upload_attachments,
         );
 
+        $tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
+        if ( ! empty( $tool_shortcuts ) ) {
+            $config['toolShortcuts'] = $tool_shortcuts;
+        }
+
         if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
             $allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
             $allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
@@ -252,6 +258,7 @@ class WP_MCP_AI_Shortcode {
                         </div>
                     <?php endif; ?>
                 </div>
+                <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
                 <textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
                 <div class="wp-mcp-ai-chat__attachments" hidden>
                     <div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'wp-mcp-ai' ); ?></div>
@@ -387,6 +394,118 @@ class WP_MCP_AI_Shortcode {
      */
     protected static function build_guest_token_key( $token ) {
         return self::GUEST_TOKEN_TRANSIENT_PREFIX . md5( $token );
+    }
+
+    /**
+     * Retrieve tool shortcut metadata for the supplied assistant.
+     *
+     * @param int $assistant_id Assistant post ID.
+     * @return array[]
+     */
+    public static function get_assistant_tool_shortcuts( $assistant_id ) {
+        $assistant_id = absint( $assistant_id );
+
+        if ( ! $assistant_id ) {
+            return array();
+        }
+
+        if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+            return array();
+        }
+
+        $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+        if ( empty( $config['tools'] ) || ! is_array( $config['tools'] ) ) {
+            return array();
+        }
+
+        $registry  = WP_MCP_AI_Tool_Registry::get_instance();
+        $shortcuts = array();
+
+        foreach ( $config['tools'] as $tool_slug ) {
+            $tool_slug = sanitize_key( $tool_slug );
+
+            if ( '' === $tool_slug ) {
+                continue;
+            }
+
+            $tool = $registry->get_tool( $tool_slug );
+
+            if ( ! $tool ) {
+                continue;
+            }
+
+            $tasks = array();
+
+            if ( $tool instanceof WP_MCP_AI_Tool_Shortcuts_Interface ) {
+                $tasks = $tool->get_shortcut_tasks();
+            } elseif ( method_exists( $tool, 'get_shortcut_tasks' ) ) {
+                $tasks = $tool->get_shortcut_tasks();
+            }
+
+            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
+            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
+
+            if ( empty( $tasks ) || ! is_array( $tasks ) ) {
+                $shortcuts[] = array(
+                    'tool'    => $tool->get_slug(),
+                    'label'   => $tool->get_slug(),
+                    'payload' => $tool->get_slug(),
+                );
+                continue;
+            }
+
+            foreach ( $tasks as $task ) {
+                if ( ! is_array( $task ) ) {
+                    continue;
+                }
+
+                $label = isset( $task['label'] ) && is_string( $task['label'] ) ? sanitize_text_field( $task['label'] ) : '';
+                $payload = isset( $task['payload'] ) && is_string( $task['payload'] ) ? sanitize_textarea_field( $task['payload'] ) : '';
+
+                if ( '' === $label && '' === $payload ) {
+                    continue;
+                }
+
+                if ( '' === $label ) {
+                    $label = $tool->get_slug();
+                }
+
+                if ( '' === $payload ) {
+                    $payload = $tool->get_slug();
+                }
+
+                $entry = array(
+                    'tool'    => $tool->get_slug(),
+                    'label'   => $label,
+                    'payload' => $payload,
+                );
+
+                if ( isset( $task['description'] ) && is_string( $task['description'] ) ) {
+                    $entry['description'] = sanitize_textarea_field( $task['description'] );
+                }
+
+                $shortcuts[] = $entry;
+            }
+        }
+
+        $shortcuts = apply_filters( 'wp_mcp_ai_assistant_tool_shortcuts', $shortcuts, $assistant_id );
+
+        return array_values(
+            array_filter(
+                $shortcuts,
+                static function ( $shortcut ) {
+                    if ( empty( $shortcut ) || ! is_array( $shortcut ) ) {
+                        return false;
+                    }
+
+                    if ( empty( $shortcut['label'] ) || empty( $shortcut['payload'] ) ) {
+                        return false;
+                    }
+
+                    return true;
+                }
+            )
+        );
     }
 
     /**

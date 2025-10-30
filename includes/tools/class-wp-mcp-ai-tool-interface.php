@@ -50,3 +50,15 @@ interface WP_MCP_AI_Tool_Interface {
      */
     public function execute( array $arguments = array(), array $context = array() );
 }
+
+/**
+ * Optional interface for tools that expose predefined shortcut tasks.
+ */
+interface WP_MCP_AI_Tool_Shortcuts_Interface {
+    /**
+     * Provide shortcut task metadata for this tool.
+     *
+     * @return array[] Array of associative arrays containing task metadata.
+     */
+    public function get_shortcut_tasks();
+}
