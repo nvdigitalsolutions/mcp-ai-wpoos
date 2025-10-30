@@ -1186,16 +1186,39 @@ class WP_MCP_AI_Assistant_CPT {
             $vector_store_id = '';
         }
 
+        $memory_entries     = array();
+        $memory_size_bytes  = 0;
+
+        foreach ( $memory_files as $file_id ) {
+            $file_id    = absint( $file_id );
+            $attachment = get_post( $file_id );
+
+            if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+                continue;
+            }
+
+            $memory_entries[] = array(
+                'id'    => $file_id,
+                'title' => get_the_title( $attachment ),
+            );
+
+            $file_path = get_attached_file( $file_id );
+            if ( $file_path && file_exists( $file_path ) ) {
+                $file_size = filesize( $file_path );
+                if ( false !== $file_size ) {
+                    $memory_size_bytes += (int) $file_size;
+                }
+            }
+        }
+
+        $memory_size_label = size_format( $memory_size_bytes );
+
         ?>
         <p><?php esc_html_e( 'Select Media Library items that should be preloaded as reference material for this assistant.', 'wp-mcp-ai' ); ?></p>
         <ul id="wp-mcp-ai-memory-files-list" class="wp-mcp-ai-memory-files">
-            <?php foreach ( $memory_files as $file_id ) :
-                $file_id     = absint( $file_id );
-                $attachment  = get_post( $file_id );
-                if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
-                    continue;
-                }
-                $title = get_the_title( $attachment );
+            <?php foreach ( $memory_entries as $entry ) :
+                $file_id = $entry['id'];
+                $title   = $entry['title'];
                 ?>
                 <li data-id="<?php echo esc_attr( $file_id ); ?>">
                     <span class="wp-mcp-ai-memory-file-title"><?php echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) ); ?></span>
@@ -1204,6 +1227,15 @@ class WP_MCP_AI_Assistant_CPT {
                 </li>
             <?php endforeach; ?>
         </ul>
+        <p class="description">
+            <?php
+            printf(
+                /* translators: %s: Human-readable size of the memory payload. */
+                esc_html__( 'Total memory size sent with each request: %s.', 'wp-mcp-ai' ),
+                esc_html( $memory_size_label )
+            );
+            ?>
+        </p>
         <p>
             <button type="button" class="button" id="wp-mcp-ai-memory-select">
                 <?php esc_html_e( 'Add Knowledge Files', 'wp-mcp-ai' ); ?>
