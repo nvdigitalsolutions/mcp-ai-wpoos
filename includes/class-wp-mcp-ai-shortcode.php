@@ -117,6 +117,8 @@ class WP_MCP_AI_Shortcode {
                     'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
                     'unsupportedMultipleFiles' => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
                     'unsupportedFileLabel' => __( 'This file', 'wp-mcp-ai' ),
+                    'expandTranscript'  => __( 'Expand conversation', 'wp-mcp-ai' ),
+                    'collapseTranscript' => __( 'Collapse conversation', 'wp-mcp-ai' ),
                 ),
             )
         );
@@ -272,6 +274,7 @@ class WP_MCP_AI_Shortcode {
         wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
 
         ob_start();
+        $messages_id = $instance_id . '-messages';
         ?>
         <div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
             <div class="wp-mcp-ai-chat__assistant">
