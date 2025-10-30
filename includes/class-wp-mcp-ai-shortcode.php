@@ -582,6 +582,39 @@ class WP_MCP_AI_Shortcode {
             }
 
             if ( ! $has_default_shortcut ) {
+        if ( empty( $shortcuts ) ) {
+            $default_shortcut = array(
+                'tool'    => 'default',
+                'label'   => sanitize_text_field( __( 'What are some things you can do?', 'wp-mcp-ai' ) ),
+                'payload' => sanitize_textarea_field( 'what are some things you can do' ),
+            );
+
+            /**
+             * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+             *
+             * @since 1.0.1
+             *
+             * @param array $default_shortcut Default shortcut configuration.
+             * @param int   $assistant_id     Assistant post ID.
+             */
+            $default_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $default_shortcut, $assistant_id );
+
+            if ( is_array( $default_shortcut ) && ! empty( $default_shortcut['label'] ) && ! empty( $default_shortcut['payload'] ) ) {
+                $default_shortcut['tool'] = isset( $default_shortcut['tool'] ) && is_string( $default_shortcut['tool'] )
+                    ? sanitize_key( $default_shortcut['tool'] )
+                    : 'default';
+
+                $default_shortcut['label'] = sanitize_text_field( $default_shortcut['label'] );
+                $default_shortcut['payload'] = sanitize_textarea_field( $default_shortcut['payload'] );
+
+                if ( isset( $default_shortcut['description'] ) ) {
+                    if ( is_string( $default_shortcut['description'] ) ) {
+                        $default_shortcut['description'] = sanitize_textarea_field( $default_shortcut['description'] );
+                    } else {
+                        unset( $default_shortcut['description'] );
+                    }
+                }
+
                 $shortcuts[] = $default_shortcut;
             }
         }
