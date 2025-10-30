@@ -183,9 +183,11 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Search_Gmail'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php',
             'WP_MCP_AI_Tool_Get_User_Info'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-user-info.php',
             'WP_MCP_AI_Tool_Get_Site_Summary'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-summary.php',
+            'WP_MCP_AI_Tool_Get_NHC_Active_Storms' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
             'WP_MCP_AI_Tool_Search_Attachments'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
             'WP_MCP_AI_Tool_Web_Search'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
             'WP_MCP_AI_Tool_Get_GDACS_Events'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php',
+            'WP_MCP_AI_Tool_Get_Open_Meteo_Forecast' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php',
             'WP_MCP_AI_Tool_Get_Woo_Orders'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
             'WP_MCP_AI_Tool_Get_Woo_Products'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
             'WP_MCP_AI_Tool_Get_JetEngine_Items'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
@@ -206,6 +208,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Send_Group_Email'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php',
             'WP_MCP_AI_Tool_Purge_Cloudflare_Cache' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php',
             'WP_MCP_AI_Tool_Send_Mailjet_Email'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php',
+            'WP_MCP_AI_Tool_Send_Telegram_Message' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php',
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
         );
 
