@@ -44,6 +44,7 @@
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
 - [✅ Manual QA Scenarios](#-manual-qa-scenarios)
 - [🧩 Hooks & Filters](#-hooks--filters)
+- [🧰 WP-CLI Commands](#-wp-cli-commands)
 
 ---
 
@@ -514,5 +515,20 @@ Use the following hooks to extend the plugin:
 | `apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context )` | Filter | Inspect or transform tool output before it is returned. |
 | `do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result )` | Action | Runs after a tool completes execution. |
 | `apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $context )` | Filter | Intercept or redirect logging output. |
+
+---
+
+## 🧰 WP-CLI Commands
+
+Manage the MCP AI environment from the command line when WP-CLI is available.
+
+| Command | Description |
+| --- | --- |
+| `wp mcp-ai status` | Summarises WordPress core details, PHP version, and MCP AI supported plugin coverage. |
+| `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
+| `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
+| `wp mcp-ai plugins deactivate <slug>` | Deactivates a supported plugin; pass `--network` on multisite installations. |
+
+Filter `wp_mcp_ai_supported_plugins` to expose additional managed dependencies to the CLI helpers.
 
 Each hook receives sanitized data and respects the current user's permissions and multisite membership.
