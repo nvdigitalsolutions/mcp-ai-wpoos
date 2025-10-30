@@ -192,6 +192,7 @@ class WP_MCP_AI_Tool_Registry {
             'open_openai_logs'           => 'operations',
             'create_cron_job'            => 'operations',
             'purge_cloudflare_cache'     => 'operations',
+            'check_wp_cli'               => 'operations',
             'run_openai_external_action' => 'automation',
             'run_crawl4ai_job'           => 'automation',
             'create_google_calendar_event' => 'automation',
@@ -287,6 +288,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Send_Telegram_Message' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php',
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
             'WP_MCP_AI_Tool_ReliefWeb_Reports'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
+            'WP_MCP_AI_Tool_Check_WP_CLI'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
