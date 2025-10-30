@@ -739,6 +739,10 @@
                 state.mediaRecorder.addEventListener('stop', function () {
                     var chunks = state.recordedChunks || [];
                     var mimeType = state.mediaRecorder && state.mediaRecorder.mimeType ? state.mediaRecorder.mimeType : 'audio/webm';
+                    var baseMimeType = typeof mimeType === 'string' ? mimeType.split(';')[0] : '';
+                    if (!baseMimeType && typeof mimeType === 'string') {
+                        baseMimeType = mimeType;
+                    }
 
                     stopRecordingStream(state);
                     setTranscribeRecordingState(state, false);
@@ -751,7 +755,11 @@
 
                     var blob = null;
                     try {
-                        blob = new Blob(chunks, { type: mimeType });
+                        var blobType = baseMimeType || mimeType;
+                        if (blobType && typeof blobType === 'string') {
+                            blobType = blobType.split(';')[0];
+                        }
+                        blob = new Blob(chunks, { type: blobType || 'audio/webm' });
                     } catch (error) {}
 
                     state.mediaRecorder = null;
@@ -763,19 +771,32 @@
                     }
 
                     var extension = '';
-                    if (mimeType && mimeType.indexOf('audio/') === 0) {
-                        extension = mimeType.split('/')[1] || '';
+                    if (baseMimeType && baseMimeType.indexOf('/') !== -1) {
+                        extension = baseMimeType.split('/')[1] || '';
                     }
 
                     var safeExtension = extension ? extension.replace(/[^a-z0-9]/gi, '') : 'webm';
+                    if (!safeExtension) {
+                        safeExtension = 'webm';
+                    }
                     var fileName = 'transcription-' + Date.now() + '.' + safeExtension;
 
                     var file = null;
                     try {
-                        file = new File([blob], fileName, { type: blob.type || 'audio/webm' });
+                        var fileType = blob && blob.type ? blob.type : baseMimeType || 'audio/webm';
+                        if (fileType && typeof fileType === 'string') {
+                            fileType = fileType.split(';')[0];
+                        }
+                        file = new File([blob], fileName, { type: fileType || 'audio/webm' });
                     } catch (error) {
                         file = blob;
                         file.name = fileName;
+                        if (file && file.type && typeof file.type === 'string') {
+                            file.type = file.type.split(';')[0];
+                        }
+                        if (file && !file.type && baseMimeType) {
+                            file.type = baseMimeType;
+                        }
                     }
 
                     transcribeAudioFile(state, file);
@@ -927,7 +948,12 @@
             headers['Content-Disposition'] = contentDisposition;
         }
 
-        headers['Content-Type'] = file.type || 'audio/webm';
+        var contentType = '';
+        if (file && file.type && typeof file.type === 'string') {
+            contentType = file.type.split(';')[0];
+        }
+
+        headers['Content-Type'] = contentType || 'audio/webm';
 
         return fetch(state.config.uploadEndpoint, {
             method: 'POST',
