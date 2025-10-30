@@ -117,6 +117,8 @@ class WP_MCP_AI_Shortcode {
                     'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
                     'unsupportedMultipleFiles' => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
                     'unsupportedFileLabel' => __( 'This file', 'wp-mcp-ai' ),
+                    'expandTranscript'  => __( 'Expand conversation', 'wp-mcp-ai' ),
+                    'collapseTranscript' => __( 'Collapse conversation', 'wp-mcp-ai' ),
                 ),
             )
         );
@@ -272,6 +274,7 @@ class WP_MCP_AI_Shortcode {
         wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
 
         ob_start();
+        $messages_id = $instance_id . '-messages';
         ?>
         <div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
             <div class="wp-mcp-ai-chat__assistant">
@@ -284,7 +287,13 @@ class WP_MCP_AI_Shortcode {
                     </div>
                 <?php endif; ?>
             </div>
-            <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
+            <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
+            <div class="wp-mcp-ai-chat__messages" id="<?php echo esc_attr( $messages_id ); ?>" aria-live="polite"></div>
+            <div class="wp-mcp-ai-chat__transcript-controls">
+                <button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $messages_id ); ?>">
+                    <?php esc_html_e( 'Expand conversation', 'wp-mcp-ai' ); ?>
+                </button>
+            </div>
             <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
                 <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
