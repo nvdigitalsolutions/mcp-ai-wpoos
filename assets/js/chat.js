@@ -16,6 +16,9 @@
     var COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
     var COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
     var COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
+    var TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
+    var TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
+    var MAX_TRANSCRIBE_BYTES = 26214400;
     var TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     var TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
 
@@ -558,6 +561,556 @@
         });
 
         bubble.appendChild(button);
+    }
+
+    function supportsAudioRecording() {
+        return (
+            typeof window !== 'undefined' &&
+            window.navigator &&
+            navigator.mediaDevices &&
+            typeof navigator.mediaDevices.getUserMedia === 'function' &&
+            typeof window.MediaRecorder !== 'undefined'
+        );
+    }
+
+    function stopRecordingStream(state) {
+        if (!state || !state.recordingStream) {
+            return;
+        }
+
+        var tracks = state.recordingStream.getTracks ? state.recordingStream.getTracks() : [];
+        tracks.forEach(function (track) {
+            try {
+                track.stop();
+            } catch (error) {}
+        });
+
+        state.recordingStream = null;
+    }
+
+    function setTranscribeRecordingState(state, recording) {
+        if (!state) {
+            return;
+        }
+
+        state.isRecording = !!recording;
+
+        var button = state.transcribeButton;
+        if (button && button.classList) {
+            if (state.isRecording) {
+                button.classList.add(TRANSCRIBE_RECORDING_CLASS);
+            } else {
+                button.classList.remove(TRANSCRIBE_RECORDING_CLASS);
+            }
+        }
+
+        if (button) {
+            var label = state.isRecording
+                ? getString('stopRecording', 'Stop recording')
+                : getString('transcribeAudio', 'Transcribe audio');
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
+        }
+
+        if (state.container) {
+            if (state.isRecording) {
+                setStatus(state.container, getString('recording', 'Recording… tap to stop.'));
+            } else if (!state.transcribing && !state.busy) {
+                setStatus(state.container, '');
+            }
+        }
+    }
+
+    function updateTranscribeButtonState(state) {
+        if (!state) {
+            return;
+        }
+
+        var button = state.transcribeButton;
+        var input = state.transcribeInput;
+
+        var canUse = !!state.canUploadAttachments;
+        var disabled = !canUse || state.busy || state.uploading > 0 || state.transcribing;
+
+        if (state.isRecording) {
+            disabled = false;
+        }
+
+        if (button) {
+            button.disabled = disabled;
+
+            if (!canUse) {
+                button.hidden = true;
+            } else {
+                button.hidden = false;
+            }
+        }
+
+        if (input) {
+            input.disabled = !canUse || state.busy || state.uploading > 0 || state.transcribing || state.isRecording;
+        }
+    }
+
+    function handleTranscribeButtonClick(state) {
+        if (!state || state.transcribing) {
+            return;
+        }
+
+        if (state.isRecording) {
+            stopTranscribeRecording(state);
+            return;
+        }
+
+        if (!state.canUploadAttachments) {
+            return;
+        }
+
+        if (supportsAudioRecording()) {
+            var shouldRecord = true;
+
+            if (state.transcribeInput) {
+                var message = getString(
+                    'transcribeChooseSource',
+                    'Press OK to record with your microphone, or Cancel to choose an audio file.'
+                );
+
+                if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+                    shouldRecord = window.confirm(message);
+                }
+            }
+
+            if (shouldRecord) {
+                startTranscribeRecording(state);
+                return;
+            }
+        }
+
+        if (state.transcribeInput && !state.transcribeInput.disabled) {
+            state.transcribeInput.click();
+        }
+    }
+
+    function startTranscribeRecording(state) {
+        if (!state || !supportsAudioRecording()) {
+            return;
+        }
+
+        state.recordingShouldProcess = false;
+
+        if (state.transcribeButton) {
+            state.transcribeButton.disabled = true;
+        }
+
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then(function (stream) {
+                state.recordingStream = stream;
+                state.recordedChunks = [];
+
+                try {
+                    state.mediaRecorder = new MediaRecorder(stream);
+                } catch (error) {
+                    stopRecordingStream(state);
+                    setStatus(
+                        state.container,
+                        getString(
+                            'recordingError',
+                            'Could not access your microphone. Please allow access or upload an audio file instead.'
+                        )
+                    );
+                    updateTranscribeButtonState(state);
+                    return;
+                }
+
+                if (!state.mediaRecorder) {
+                    stopRecordingStream(state);
+                    updateTranscribeButtonState(state);
+                    return;
+                }
+
+                state.recordingShouldProcess = true;
+
+                state.mediaRecorder.addEventListener('dataavailable', function (event) {
+                    if (event && event.data && event.data.size) {
+                        state.recordedChunks.push(event.data);
+                    }
+                });
+
+                state.mediaRecorder.addEventListener('stop', function () {
+                    var chunks = state.recordedChunks || [];
+                    var mimeType = state.mediaRecorder && state.mediaRecorder.mimeType ? state.mediaRecorder.mimeType : 'audio/webm';
+
+                    stopRecordingStream(state);
+                    setTranscribeRecordingState(state, false);
+
+                    if (!state.recordingShouldProcess) {
+                        state.mediaRecorder = null;
+                        state.recordedChunks = [];
+                        return;
+                    }
+
+                    var blob = null;
+                    try {
+                        blob = new Blob(chunks, { type: mimeType });
+                    } catch (error) {}
+
+                    state.mediaRecorder = null;
+                    state.recordedChunks = [];
+
+                    if (!blob || !blob.size) {
+                        updateTranscribeButtonState(state);
+                        return;
+                    }
+
+                    var extension = '';
+                    if (mimeType && mimeType.indexOf('audio/') === 0) {
+                        extension = mimeType.split('/')[1] || '';
+                    }
+
+                    var safeExtension = extension ? extension.replace(/[^a-z0-9]/gi, '') : 'webm';
+                    var fileName = 'transcription-' + Date.now() + '.' + safeExtension;
+
+                    var file = null;
+                    try {
+                        file = new File([blob], fileName, { type: blob.type || 'audio/webm' });
+                    } catch (error) {
+                        file = blob;
+                        file.name = fileName;
+                    }
+
+                    transcribeAudioFile(state, file);
+                });
+
+                state.mediaRecorder.start();
+                setTranscribeRecordingState(state, true);
+                updateTranscribeButtonState(state);
+            })
+            .catch(function () {
+                stopRecordingStream(state);
+                setStatus(
+                    state.container,
+                    getString(
+                        'recordingError',
+                        'Could not access your microphone. Please allow access or upload an audio file instead.'
+                    )
+                );
+
+                if (state.transcribeInput && !state.transcribeInput.disabled) {
+                    state.transcribeInput.click();
+                }
+
+                updateTranscribeButtonState(state);
+            });
+    }
+
+    function stopTranscribeRecording(state) {
+        if (!state || !state.mediaRecorder) {
+            return;
+        }
+
+        state.recordingShouldProcess = true;
+
+        try {
+            if (state.mediaRecorder.state !== 'inactive') {
+                state.mediaRecorder.stop();
+            }
+        } catch (error) {
+            stopRecordingStream(state);
+            setTranscribeRecordingState(state, false);
+            updateTranscribeButtonState(state);
+        }
+    }
+
+    function handleTranscribeFileSelection(event, state) {
+        if (!state || !state.canUploadAttachments) {
+            return;
+        }
+
+        if (!event || !event.target || !event.target.files) {
+            return;
+        }
+
+        var files = Array.prototype.slice.call(event.target.files);
+        event.target.value = '';
+
+        if (!files.length) {
+            return;
+        }
+
+        var file = files[0];
+        transcribeAudioFile(state, file);
+    }
+
+    function transcribeAudioFile(state, file) {
+        if (!state || !file || !state.canUploadAttachments || state.transcribing) {
+            return;
+        }
+
+        if (file.size && file.size > MAX_TRANSCRIBE_BYTES) {
+            setStatus(
+                state.container,
+                getString(
+                    'transcriptionFileTooLarge',
+                    'The selected audio file is too large. Please choose a file under 25MB.'
+                )
+            );
+            updateTranscribeButtonState(state);
+            return;
+        }
+
+        state.transcribing = true;
+        updateTranscribeButtonState(state);
+
+        setStatus(state.container, getString('transcribing', 'Transcribing audio…'));
+
+        var uploadedRecord = null;
+
+        uploadAudioForTranscription(state, file)
+            .then(function (record) {
+                uploadedRecord = record;
+                if (!record || typeof record.id === 'undefined') {
+                    throw new Error('Upload failed');
+                }
+
+                if (state.attachmentLibrary && record.fileId) {
+                    state.attachmentLibrary[record.fileId] = record;
+                }
+
+                return requestTranscription(state, record);
+            })
+            .then(function (response) {
+                var result = extractTranscriptionResult(response);
+                insertTranscriptionResult(state, result, uploadedRecord || file);
+
+                var label = '';
+                if (uploadedRecord && uploadedRecord.name) {
+                    label = uploadedRecord.name;
+                } else if (file && file.name) {
+                    label = file.name;
+                }
+
+                var messageLabel = label || getString('transcribeAudio', 'Transcribe audio');
+                var message = formatString(
+                    getString('transcriptionSuccess', 'Inserted transcription from “%s”.'),
+                    messageLabel
+                );
+                setStatus(state.container, message);
+            })
+            .catch(function (error) {
+                setStatus(
+                    state.container,
+                    getString('transcriptionError', 'The transcription request failed. Please try again.')
+                );
+
+                if (window.console && console.error) {
+                    console.error('Transcription failed', error);
+                }
+            })
+            .finally(function () {
+                state.transcribing = false;
+                updateTranscribeButtonState(state);
+            });
+    }
+
+    function uploadAudioForTranscription(state, file) {
+        if (!state || !file || !state.config || !state.config.uploadEndpoint) {
+            return Promise.reject(new Error('Upload unavailable'));
+        }
+
+        var headers = {
+            'X-WP-Nonce': globalConfig.nonce || '',
+            Accept: 'application/json',
+        };
+
+        var contentDisposition = createContentDispositionHeader(file.name || 'audio');
+        if (contentDisposition) {
+            headers['Content-Disposition'] = contentDisposition;
+        }
+
+        headers['Content-Type'] = file.type || 'audio/webm';
+
+        return fetch(state.config.uploadEndpoint, {
+            method: 'POST',
+            headers: headers,
+            body: file,
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    var error = new Error('Upload failed');
+                    error.response = response;
+                    throw error;
+                }
+
+                return response.json();
+            })
+            .then(function (data) {
+                return normaliseUploadResponse(data, file);
+            });
+    }
+
+    function requestTranscription(state, record) {
+        if (!state || !record || typeof record.id === 'undefined') {
+            return Promise.reject(new Error('Missing attachment id'));
+        }
+
+        if (!state.config || !state.config.toolsEndpoint) {
+            return Promise.reject(new Error('Tools endpoint unavailable'));
+        }
+
+        var payload = {
+            assistant_id: state.config.assistantId,
+            tool: TRANSCRIBE_TOOL_NAME,
+            arguments: {
+                attachment_id: record.id,
+            },
+        };
+
+        return fetch(state.config.toolsEndpoint, {
+            method: 'POST',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        }).then(function (response) {
+            if (!response.ok) {
+                throw response;
+            }
+
+            return response.json();
+        });
+    }
+
+    function extractTranscriptionResult(body) {
+        if (!body || typeof body !== 'object') {
+            return null;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(body, 'result')) {
+            return body.result;
+        }
+
+        return body;
+    }
+
+    function insertTranscriptionResult(state, result, record) {
+        if (!state || !state.textarea) {
+            return;
+        }
+
+        var payload = result || {};
+        var text = '';
+
+        if (payload && typeof payload.text === 'string') {
+            text = payload.text.trim();
+        }
+
+        var metaParts = [];
+        if (record && record.name) {
+            metaParts.push(record.name);
+        }
+
+        if (payload.language) {
+            metaParts.push('Language: ' + payload.language);
+        }
+
+        if (typeof payload.duration === 'number') {
+            var duration = formatDuration(payload.duration);
+            if (duration) {
+                metaParts.push('Duration: ' + duration);
+            }
+        }
+
+        if (payload.translated) {
+            metaParts.push('Translated to English');
+        }
+
+        var segmentsText = '';
+        if (Array.isArray(payload.segments) && payload.segments.length) {
+            segmentsText = payload.segments
+                .map(function (segment) {
+                    if (!segment) {
+                        return '';
+                    }
+
+                    var start = formatDuration(segment.start);
+                    var end = formatDuration(segment.end);
+                    var segmentText = segment.text || '';
+                    var prefix = '';
+
+                    if (start && end) {
+                        prefix = start + '–' + end;
+                    } else if (start) {
+                        prefix = start;
+                    }
+
+                    if (prefix) {
+                        return prefix + ': ' + segmentText;
+                    }
+
+                    return segmentText;
+                })
+                .filter(function (segmentText) {
+                    return segmentText && segmentText.trim();
+                })
+                .join('\n');
+        }
+
+        var hasTextContent = Boolean(text) || Boolean(segmentsText);
+        if (!hasTextContent) {
+            return;
+        }
+
+        var sections = [];
+        if (metaParts.length) {
+            sections.push(metaParts.join(' • '));
+        }
+
+        if (text) {
+            sections.push(text);
+        }
+
+        if (segmentsText) {
+            sections.push(segmentsText);
+        }
+
+        var combined = sections.join('\n\n').trim();
+        if (!combined) {
+            return;
+        }
+
+        var existing = state.textarea.value || '';
+        var trimmedExisting = existing.replace(/\s+$/, '');
+        var newValue = trimmedExisting ? trimmedExisting + '\n\n' + combined : combined;
+
+        state.textarea.value = newValue;
+        state.textarea.focus();
+
+        try {
+            var caret = newValue.length;
+            state.textarea.setSelectionRange(caret, caret);
+        } catch (error) {}
+    }
+
+    function formatDuration(value) {
+        var seconds = Number(value);
+        if (!isFinite(seconds) || seconds < 0) {
+            return '';
+        }
+
+        var totalSeconds = Math.round(seconds);
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var secs = totalSeconds % 60;
+
+        var parts = [];
+        if (hours) {
+            parts.push(hours);
+        }
+
+        parts.push(hours ? String(minutes).padStart(2, '0') : String(minutes));
+        parts.push(String(secs).padStart(2, '0'));
+
+        return parts.join(':');
     }
 
     function handleToolShortcutClick(state, button) {
@@ -1161,6 +1714,7 @@
                 state.fileInput.disabled = true;
             }
 
+            updateTranscribeButtonState(state);
             return;
         }
 
@@ -1180,6 +1734,8 @@
                 button.disabled = disabled;
             });
         }
+
+        updateTranscribeButtonState(state);
     }
 
     function buildDisplayAttachment(attachment, state) {
@@ -2288,6 +2844,8 @@
             var attachmentsHeader = container.querySelector('.wp-mcp-ai-chat__attachments-header');
             var attachButton = container.querySelector('.wp-mcp-ai-chat__attach');
             var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
+            var transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
+            var transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
             var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
 
@@ -2348,6 +2906,8 @@
                 attachmentsHeader: attachmentsHeader,
                 attachButton: attachButton,
                 fileInput: fileInput,
+                transcribeButton: transcribeButton,
+                transcribeInput: transcribeInput,
                 toolShortcutsContainer: toolShortcutsContainer,
                 transcriptToggle: transcriptToggle,
                 transcriptExpanded: false,
@@ -2358,6 +2918,12 @@
                 speechCache: Object.create(null),
                 activeSpeech: null,
                 pendingCrawlTasks: Object.create(null),
+                transcribing: false,
+                isRecording: false,
+                recordingStream: null,
+                recordedChunks: [],
+                mediaRecorder: null,
+                recordingShouldProcess: false,
             };
 
             initialiseExistingSpeechButtons(state);
@@ -2396,6 +2962,15 @@
                 if (fileInput) {
                     fileInput.disabled = true;
                 }
+
+                if (transcribeButton) {
+                    transcribeButton.hidden = true;
+                    transcribeButton.disabled = true;
+                }
+
+                if (transcribeInput) {
+                    transcribeInput.disabled = true;
+                }
             } else if (attachButton) {
                 attachButton.textContent = getString('attachFile', attachButton.textContent);
                 attachButton.addEventListener('click', function () {
@@ -2415,7 +2990,22 @@
                 });
             }
 
+            if (state.canUploadAttachments && transcribeButton) {
+                transcribeButton.hidden = false;
+                transcribeButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    handleTranscribeButtonClick(state);
+                });
+            }
+
+            if (state.canUploadAttachments && transcribeInput) {
+                transcribeInput.addEventListener('change', function (event) {
+                    handleTranscribeFileSelection(event, state);
+                });
+            }
+
             updateAttachButtonState(state);
+            updateTranscribeButtonState(state);
         });
     }
 
