@@ -72,14 +72,6 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface {
                     'description' => __( 'Sort order for the ReliefWeb API (newest first by default).', 'wp-mcp-ai' ),
                 ),
             ),
-            'anyOf'               => array(
-                array(
-                    'required' => array( 'country' ),
-                ),
-                array(
-                    'required' => array( 'disaster_type' ),
-                ),
-            ),
             'additionalProperties' => false,
         );
     }
