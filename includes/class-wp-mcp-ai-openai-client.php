@@ -1766,10 +1766,12 @@ class WP_MCP_AI_OpenAI_Client {
                                 $segment_copy['image_url'] = esc_url_raw( $segment['image_url'] );
                             }
 
-                            if ( isset( $segment['image_file']['file_id'] ) ) {
-                                $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                            if ( isset( $segment['file_id'] ) ) {
+                                $segment_copy['file_id'] = (string) $segment['file_id'];
+                            } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+                                $segment_copy['file_id'] = (string) $segment['image_file']['file_id'];
                             } elseif ( isset( $segment['image']['file_id'] ) ) {
-                                $segment_copy['image_file'] = array( 'file_id' => $segment['image']['file_id'] );
+                                $segment_copy['file_id'] = (string) $segment['image']['file_id'];
                             }
                         }
 
@@ -2031,8 +2033,30 @@ class WP_MCP_AI_OpenAI_Client {
                 if ( ! isset( $segment['text'] ) ) {
                     $segment['text'] = '';
                 }
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_image' === $type ) {
-                $segment = $this->populate_responses_image_segment( $segment, $attachments );
+                $caption_text = $this->extract_responses_image_caption( $segment, $attachments );
+                $segment      = $this->populate_responses_image_segment( $segment, $attachments );
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                if ( '' !== $caption_text ) {
+                    $normalised[] = array(
+                        'type' => $is_output_role ? 'output_text' : 'input_text',
+                        'text' => $caption_text,
+                    );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_file' === $type ) {
                 $segment = $this->populate_responses_file_segment( $segment, $attachments );
             }
@@ -2045,6 +2069,51 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $normalised;
+    }
+
+    /**
+     * Extract a caption value for an image segment.
+     *
+     * @param array $segment     Original segment definition.
+     * @param array $attachments Attachment lookup keyed by file identifier.
+     * @return string
+     */
+    protected function extract_responses_image_caption( array $segment, array $attachments ) {
+        $caption = '';
+
+        if ( isset( $segment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $segment['caption'] );
+        }
+
+        if ( '' !== $caption ) {
+            return $caption;
+        }
+
+        $file_id = '';
+
+        if ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        } elseif ( isset( $segment['image']['file_id'] ) ) {
+            $file_id = (string) $segment['image']['file_id'];
+        } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+            $file_id = (string) $segment['image_file']['file_id'];
+        }
+
+        if ( '' === $file_id || ! isset( $attachments[ $file_id ] ) ) {
+            return '';
+        }
+
+        $attachment = $attachments[ $file_id ];
+
+        if ( isset( $attachment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['caption'] );
+        }
+
+        if ( '' === $caption && isset( $attachment['title'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['title'] );
+        }
+
+        return $caption;
     }
 
     /**
@@ -2089,12 +2158,12 @@ class WP_MCP_AI_OpenAI_Client {
     protected function populate_responses_image_segment( array $segment, array $attachments ) {
         $file_id = '';
 
-        if ( isset( $segment['image']['file_id'] ) ) {
+        if ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        } elseif ( isset( $segment['image']['file_id'] ) ) {
             $file_id = (string) $segment['image']['file_id'];
         } elseif ( isset( $segment['image_file']['file_id'] ) ) {
             $file_id = (string) $segment['image_file']['file_id'];
-        } elseif ( isset( $segment['file_id'] ) ) {
-            $file_id = (string) $segment['file_id'];
         }
 
         if ( $file_id && isset( $attachments[ $file_id ] ) ) {
@@ -2112,11 +2181,12 @@ class WP_MCP_AI_OpenAI_Client {
                 $openai_file_id = (string) $attachment['file_id'];
             }
 
-            if ( ! isset( $segment['image'] ) || ! is_array( $segment['image'] ) ) {
-                $segment['image'] = array();
-            }
+            $segment['file_id'] = $openai_file_id;
+            $file_id            = $openai_file_id;
 
-            $segment['image']['file_id'] = $openai_file_id;
+            if ( isset( $segment['image'] ) ) {
+                unset( $segment['image'] );
+            }
 
             if ( isset( $segment['image_file'] ) ) {
                 unset( $segment['image_file'] );
@@ -2125,38 +2195,59 @@ class WP_MCP_AI_OpenAI_Client {
             if ( isset( $segment['image_url'] ) ) {
                 unset( $segment['image_url'] );
             }
-
-            if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
-                $segment['caption'] = $attachment['caption'];
-            }
         } elseif ( isset( $segment['image_url']['url'] ) ) {
             $segment['image_url'] = array( 'url' => esc_url_raw( (string) $segment['image_url']['url'] ) );
         } elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
             $segment['image_url'] = array( 'url' => esc_url_raw( $segment['image_url'] ) );
-        } elseif ( isset( $segment['image']['file_id'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['image']['file_id'] );
-        } elseif ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) && isset( $segment['image_file']['file_id'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['image_file']['file_id'] );
+        }
+
+        if ( isset( $segment['image'] ) && is_array( $segment['image'] ) ) {
+            if ( isset( $segment['image']['file_id'] ) && '' === $file_id ) {
+                $segment['file_id'] = (string) $segment['image']['file_id'];
+            }
+
+            unset( $segment['image'] );
+        }
+
+        if ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ) {
+            if ( isset( $segment['image_file']['file_id'] ) && '' === $file_id ) {
+                $segment['file_id'] = (string) $segment['image_file']['file_id'];
+            }
+
             unset( $segment['image_file'] );
-        }
-
-        if ( isset( $segment['file_id'] ) && ! isset( $segment['image'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['file_id'] );
-        }
-
-        if ( isset( $segment['image_file'] ) ) {
-            unset( $segment['image_file'] );
-        }
-
-        if ( isset( $segment['file_id'] ) ) {
-            unset( $segment['file_id'] );
         }
 
         if ( empty( $segment['detail'] ) ) {
             $segment['detail'] = 'auto';
         }
 
+        if ( isset( $segment['caption'] ) ) {
+            unset( $segment['caption'] );
+        }
+
         return $segment;
+    }
+
+    /**
+     * Normalise a caption payload for safe inclusion alongside Responses segments.
+     *
+     * @param mixed $caption Raw caption payload.
+     * @return string
+     */
+    protected function normalise_responses_segment_caption( $caption ) {
+        if ( is_string( $caption ) || is_numeric( $caption ) ) {
+            $caption_text = (string) $caption;
+        } elseif ( is_array( $caption ) || is_object( $caption ) ) {
+            $caption_text = $this->normalise_responses_text_value( $caption );
+        } else {
+            $caption_text = '';
+        }
+
+        if ( '' === $caption_text ) {
+            return '';
+        }
+
+        return trim( wp_strip_all_tags( $caption_text ) );
     }
 
     /**
@@ -2238,7 +2329,13 @@ class WP_MCP_AI_OpenAI_Client {
             foreach ( $response['choices'] as $index => $choice ) {
                 if ( isset( $choice['message'] ) && is_array( $choice['message'] ) ) {
                     if ( isset( $choice['message']['content'] ) && is_array( $choice['message']['content'] ) ) {
-                        $choice['message']['content'] = $this->extract_text_from_response_content( $choice['message']['content'] );
+                        $content_text = $this->extract_text_from_response_content( $choice['message']['content'] );
+
+                        if ( '' !== $content_text ) {
+                            $choice['message']['content'] = $content_text;
+                        } else {
+                            $choice['message']['content'] = array_values( $choice['message']['content'] );
+                        }
                     }
 
                     if ( ! isset( $choice['index'] ) ) {
@@ -2253,9 +2350,11 @@ class WP_MCP_AI_OpenAI_Client {
                 $role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
 
                 $normalised_choice = $choice;
+                $content_text      = $this->extract_text_from_response_content( $content );
+                $content_fallback  = is_array( $content ) ? array_values( $content ) : $content;
                 $normalised_choice['message'] = array(
                     'role'    => $role,
-                    'content' => $this->extract_text_from_response_content( $content ),
+                    'content' => '' !== $content_text ? $content_text : $content_fallback,
                 );
 
                 if ( isset( $normalised_choice['role'] ) ) {
@@ -2294,11 +2393,14 @@ class WP_MCP_AI_OpenAI_Client {
                     $content_payload = $item['text'];
                 }
 
+                $content_text     = $this->extract_text_from_response_content( $content_payload );
+                $content_fallback = is_array( $content_payload ) ? array_values( $content_payload ) : $content_payload;
+
                 $choices[] = array(
                     'index'         => $index,
                     'message'       => array(
                         'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
-                        'content' => $this->extract_text_from_response_content( $content_payload ),
+                        'content' => '' !== $content_text ? $content_text : $content_fallback,
                     ),
                     'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
                 );

@@ -475,9 +475,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure image segments target the `image_file` key when building Responses payloads.
+     * Ensure image segments expose the `file_id` key when building Responses payloads.
      */
-    public function test_responses_payload_uses_image_key() {
+    public function test_responses_payload_uses_file_id_key() {
         $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
         $defaults['openai_api_key'] = 'sk-test';
         update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -513,11 +513,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                 'role'    => 'user',
                 'content' => array(
                     array(
-                        'type'       => 'input_image',
-                        'caption'    => 'Reference still',
-                        'detail'     => 'high',
-                        'image'      => array( 'file_id' => 'file-img-123' ),
-                        'image_file' => array( 'file_id' => 'file-img-123' ),
+                        'type'     => 'input_image',
+                        'caption'  => 'Reference still',
+                        'detail'   => 'high',
+                        'file_id'  => 'file-img-123',
                     ),
                 ),
             ),
@@ -554,13 +553,19 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $input_message['content'] );
         $this->assertArrayHasKey( 0, $input_message['content'] );
 
-        $image_segment = $input_message['content'][0];
+        $caption_segment = $input_message['content'][0];
+        $this->assertSame( 'input_text', $caption_segment['type'] );
+        $this->assertSame( 'Reference still', $caption_segment['text'] );
+
+        $this->assertArrayHasKey( 1, $input_message['content'] );
+
+        $image_segment = $input_message['content'][1];
         $this->assertSame( 'input_image', $image_segment['type'] );
-        $this->assertArrayHasKey( 'image', $image_segment );
-        $this->assertSame( 'file-img-123', $image_segment['image']['file_id'] );
-        $this->assertArrayNotHasKey( 'image_file', $image_segment );
+        $this->assertArrayHasKey( 'file_id', $image_segment );
+        $this->assertSame( 'file-img-123', $image_segment['file_id'] );
+        $this->assertArrayNotHasKey( 'image', $image_segment );
         $this->assertArrayNotHasKey( 'image_url', $image_segment );
-        $this->assertSame( 'Reference still', $image_segment['caption'] );
+        $this->assertArrayNotHasKey( 'caption', $image_segment );
         $this->assertSame( 'high', $image_segment['detail'] );
 
         $this->assertIsArray( $response );
@@ -739,6 +744,86 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'message', $response['choices'][0] );
         $this->assertSame( 'Summary generated from attachment.', $response['choices'][0]['message']['content'] );
         $this->assertSame( 'assistant', $response['choices'][0]['message']['role'] );
+    }
+
+    /**
+     * Ensure Responses API payloads without textual content preserve their original segments.
+     */
+    public function test_responses_choices_preserve_non_text_segments() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'resp-non-text',
+                        'choices' => array(
+                            array(
+                                'id'            => 'choice-1',
+                                'type'          => 'message',
+                                'role'          => 'assistant',
+                                'content'       => array(
+                                    array(
+                                        'type'  => 'output_image',
+                                        'image' => array(
+                                            'id' => 'file-img-123',
+                                        ),
+                                    ),
+                                ),
+                                'finish_reason' => 'stop',
+                            ),
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $response = $client->create_chat_completion(
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'    => 'input_file',
+                            'file_id' => 'file-123',
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertCount( 1, $response['choices'] );
+
+        $choice = $response['choices'][0];
+
+        $this->assertArrayHasKey( 'message', $choice );
+        $message = $choice['message'];
+
+        $this->assertSame( 'assistant', $message['role'] );
+        $this->assertIsArray( $message['content'] );
+        $this->assertSame( 'output_image', $message['content'][0]['type'] );
+        $this->assertSame( 'file-img-123', $message['content'][0]['image']['id'] );
     }
 
     /**

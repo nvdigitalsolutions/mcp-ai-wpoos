@@ -1512,13 +1512,18 @@
             }
 
             if (type === 'input_image' || type === 'image_file' || type === 'output_image') {
-                var imageFile = segment.image_file || segment.image || segment.file || null;
-                if (imageFile) {
-                    var imageId = imageFile.file_id || imageFile.id || '';
-                    if (imageId && lookup[imageId]) {
-                        addAttachment(lookup[imageId], segment.caption || imageFile.display_name || imageFile.filename, segment.quote || '');
-                        return;
+                var inlineFileId = segment.file_id || '';
+                if (!inlineFileId) {
+                    var imageFile = segment.image_file || segment.image || segment.file || null;
+                    if (imageFile) {
+                        inlineFileId = imageFile.file_id || imageFile.id || '';
                     }
+                }
+
+                if (inlineFileId && lookup[inlineFileId]) {
+                    var imageMeta = segment.image_file || segment.image || segment.file || {};
+                    addAttachment(lookup[inlineFileId], segment.caption || imageMeta.display_name || imageMeta.filename, segment.quote || '');
+                    return;
                 }
 
                 var url = '';
@@ -2551,6 +2556,84 @@
         var hasDisplayContent = hasDisplayText || hasDisplayAttachments;
         var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
+        if (!hasDisplayContent) {
+            var fallbackText = '';
+
+            function normaliseCandidate(candidate) {
+                if (candidate === null || typeof candidate === 'undefined') {
+                    return '';
+                }
+
+                if (typeof candidate === 'string') {
+                    return candidate;
+                }
+
+                if (Array.isArray(candidate)) {
+                    return normaliseContent(candidate);
+                }
+
+                if (typeof candidate === 'object') {
+                    if (typeof candidate.text !== 'undefined') {
+                        return normaliseCandidate(candidate.text);
+                    }
+
+                    if (typeof candidate.content !== 'undefined') {
+                        return normaliseCandidate(candidate.content);
+                    }
+
+                    if (typeof candidate.value !== 'undefined') {
+                        return normaliseCandidate(candidate.value);
+                    }
+
+                    return normaliseContent(candidate);
+                }
+
+                return '';
+            }
+
+            if (chatData && typeof chatData.output_text !== 'undefined' && chatData.output_text !== null) {
+                fallbackText = normaliseCandidate(chatData.output_text).trim();
+            }
+
+            if (!fallbackText && chatData && Array.isArray(chatData.output)) {
+                fallbackText = chatData.output
+                    .map(function (item) {
+                        return normaliseCandidate(item).trim();
+                    })
+                    .filter(function (value) {
+                        return value;
+                    })
+                    .join('\n\n')
+                    .trim();
+            }
+
+            if (!fallbackText && chatData && chatData.response && typeof chatData.response === 'object') {
+                var nestedResponse = chatData.response;
+
+                if (typeof nestedResponse.output_text !== 'undefined' && nestedResponse.output_text !== null) {
+                    fallbackText = normaliseCandidate(nestedResponse.output_text).trim();
+                }
+
+                if (!fallbackText && Array.isArray(nestedResponse.output)) {
+                    fallbackText = nestedResponse.output
+                        .map(function (item) {
+                            return normaliseCandidate(item).trim();
+                        })
+                        .filter(function (value) {
+                            return value;
+                        })
+                        .join('\n\n')
+                        .trim();
+                }
+            }
+
+            if (fallbackText) {
+                assistantDisplay.text = fallbackText;
+                hasDisplayText = true;
+                hasDisplayContent = true;
+            }
+        }
+
         if (hasDisplayContent) {
             appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
@@ -3248,6 +3331,8 @@
 
             if (piece.caption && typeof piece.caption === 'string') {
                 label = piece.caption;
+            } else if (typeof piece.file_id === 'string' && piece.file_id) {
+                label = piece.file_id;
             } else if (piece.image_file && typeof piece.image_file === 'object') {
                 if (typeof piece.image_file.display_name === 'string') {
                     label = piece.image_file.display_name;
