@@ -285,8 +285,8 @@ class WP_MCP_AI_Shortcode {
                 <?php endif; ?>
             </div>
             <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
-            <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
+                <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
                 <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
                 <textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
                 <div class="wp-mcp-ai-chat__attachments" hidden>
