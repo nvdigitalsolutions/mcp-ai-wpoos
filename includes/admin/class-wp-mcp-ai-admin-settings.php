@@ -1233,6 +1233,8 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['cloudflare_zone_id'] ) ) {
             $clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
+        }
+
         if ( isset( $settings['mailjet_api_key'] ) ) {
             $clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
         }
@@ -1247,6 +1249,8 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['mailjet_from_name'] ) ) {
             $clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+        }
+
         if ( isset( $settings['quickbooks_company_id'] ) ) {
             $clean['quickbooks_company_id'] = trim( sanitize_text_field( $settings['quickbooks_company_id'] ) );
         }
