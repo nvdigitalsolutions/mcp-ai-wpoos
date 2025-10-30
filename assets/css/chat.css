@@ -51,12 +51,6 @@
 
 .wp-mcp-ai-chat__bubble.wp-mcp-ai-copy-enabled {
     position: relative;
-    padding-right: 3rem;
-    padding-bottom: 3rem;
-}
-
-.wp-mcp-ai-chat__bubble.wp-mcp-ai-copy-enabled.wp-mcp-ai-speech-enabled {
-    padding-right: 3rem;
     padding-bottom: 3rem;
 }
 
@@ -114,8 +108,8 @@
 
 .wp-mcp-ai-copy-button {
     position: absolute;
-    right: 0.5rem;
     bottom: 0.5rem;
+    right: 0.5rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
