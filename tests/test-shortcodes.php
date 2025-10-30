@@ -35,6 +35,21 @@ class Test_Shortcodes extends WP_UnitTestCase {
     }
 
     /**
+     * Retrieve the DOMXPath helper for inspecting generated markup.
+     *
+     * @param string $html Rendered HTML snippet.
+     * @return DOMXPath
+     */
+    protected function get_dom_xpath( $html ) {
+        $dom = new DOMDocument();
+        libxml_use_internal_errors( true );
+        $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
+        libxml_clear_errors();
+
+        return new DOMXPath( $dom );
+    }
+
+    /**
      * Ensure that rendering the chat shortcode enqueues the assets once.
      */
     public function test_chat_shortcode_enqueues_scripts_once() {
@@ -46,7 +61,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
             )
         );
 
-        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
         $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
 
         $this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ) );
@@ -58,6 +73,67 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
         wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
         $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
+    }
+
+    /**
+     * Ensure the transcription controls remain visible for users that can upload files.
+     */
+    public function test_chat_shortcode_transcription_controls_visible_for_upload_capability() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Transcription Enabled Assistant',
+            )
+        );
+
+        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+        $xpath        = $this->get_dom_xpath( $chat_markup );
+        $button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
+        $this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
+
+        $button = $button_nodes->item( 0 );
+        $this->assertFalse( $button->hasAttribute( 'hidden' ), 'Transcription button should be visible when uploads are allowed.' );
+        $this->assertFalse( $button->hasAttribute( 'disabled' ), 'Transcription button should be enabled when uploads are allowed.' );
+
+        $input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
+        $this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
+        $this->assertFalse( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be enabled for upload-capable users.' );
+    }
+
+    /**
+     * Ensure the transcription controls are hidden and disabled when uploads are disallowed.
+     */
+    public function test_chat_shortcode_transcription_controls_hidden_without_upload_capability() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Transcription Restricted Assistant',
+            )
+        );
+
+        $subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $subscriber_id );
+
+        wp_scripts()->reset();
+
+        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+        $xpath        = $this->get_dom_xpath( $chat_markup );
+        $button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
+        $this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
+
+        $button = $button_nodes->item( 0 );
+        $this->assertTrue( $button->hasAttribute( 'hidden' ), 'Transcription button should be hidden when uploads are disallowed.' );
+        $this->assertTrue( $button->hasAttribute( 'disabled' ), 'Transcription button should be disabled when uploads are disallowed.' );
+
+        $input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
+        $this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
+        $this->assertTrue( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be disabled when uploads are disallowed.' );
+
+        wp_set_current_user( $this->admin_id );
     }
 
     /**
