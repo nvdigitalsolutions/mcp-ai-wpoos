@@ -205,6 +205,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Send_Group_Email'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-group-email.php',
             'WP_MCP_AI_Tool_Purge_Cloudflare_Cache' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php',
             'WP_MCP_AI_Tool_Send_Mailjet_Email'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php',
+            'WP_MCP_AI_Tool_Send_Telegram_Message' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php',
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
         );
 
