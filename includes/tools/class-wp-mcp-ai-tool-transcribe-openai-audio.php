@@ -209,32 +209,56 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
         $attachment_id = absint( $attachment_id );
 
         if ( ! $attachment_id ) {
-            return new WP_Error( 'wp_mcp_ai_missing_audio_attachment', __( 'You must supply an audio attachment ID.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_missing_audio_attachment',
+                __( 'You must supply an audio attachment ID.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
         }
 
         if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_forbidden', __( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_forbidden',
+                __( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+                array( 'status' => 403 )
+            );
         }
 
         $post = get_post( $attachment_id );
         if ( ! $post || 'attachment' !== $post->post_type ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_missing', __( 'Attachment not found.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_missing',
+                __( 'Attachment not found.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
         }
 
         $file_path = get_attached_file( $attachment_id );
         if ( ! $file_path || ! file_exists( $file_path ) ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_missing_file', __( 'The attachment file could not be located.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_missing_file',
+                __( 'The attachment file could not be located.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
         }
 
         $file_size = @filesize( $file_path );
         if ( false === $file_size ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_size_unknown', __( 'Could not determine attachment size.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_size_unknown',
+                __( 'Could not determine attachment size.', 'wp-mcp-ai' ),
+                array( 'status' => 500 )
+            );
         }
 
         $max_bytes = apply_filters( 'wp_mcp_ai_audio_transcription_max_bytes', self::MAX_AUDIO_BYTES, $attachment_id );
         if ( $file_size > $max_bytes ) {
             /* translators: %s: maximum bytes allowed for an audio attachment. */
-            return new WP_Error( 'wp_mcp_ai_attachment_too_large', sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_too_large',
+                sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ),
+                array( 'status' => 413 )
+            );
         }
 
         $mime_type = strtolower( (string) get_post_mime_type( $attachment_id ) );
@@ -262,7 +286,11 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
         }
 
         if ( '' === $mime_type || ! in_array( $mime_type, $allowed, true ) ) {
-            return new WP_Error( 'wp_mcp_ai_attachment_unsupported_mime', __( 'The attachment is not a supported audio format.', 'wp-mcp-ai' ) );
+            return new WP_Error(
+                'wp_mcp_ai_attachment_unsupported_mime',
+                __( 'The attachment is not a supported audio format.', 'wp-mcp-ai' ),
+                array( 'status' => 415 )
+            );
         }
 
         return array(
