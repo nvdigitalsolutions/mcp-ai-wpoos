@@ -88,10 +88,11 @@ class WP_MCP_AI_Gemini_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'Gemini request failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_http_error',
                 __( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'Gemini', 'wp-mcp-ai' )
             );
         }
 
