@@ -251,7 +251,6 @@ class WP_MCP_AI_Message_Attachments {
             $prepared = array(
                 'type'       => 'input_image',
                 'image_file' => array( 'file_id' => $file_id ),
-                'image'      => array( 'file_id' => $file_id ),
             );
 
             if ( empty( $caption ) && isset( $image_file['caption'] ) ) {
@@ -282,7 +281,6 @@ class WP_MCP_AI_Message_Attachments {
         $prepared = array(
             'type'       => 'input_image',
             'image_file' => array( 'file_id' => $prepared_attachment['file_id'] ),
-            'image'      => array( 'file_id' => $prepared_attachment['file_id'] ),
         );
 
         $resolved_caption = $caption;
