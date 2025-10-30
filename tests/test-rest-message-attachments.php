@@ -334,9 +334,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $image_segment = $segments[1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
+                $this->assertArrayHasKey( 'image', $image_segment );
+                $this->assertArrayHasKey( 'file_id', $image_segment['image'] );
+                $resolved_file_id = $image_segment['image']['file_id'];
                 $this->assertArrayHasKey( 'image_file', $image_segment );
                 $this->assertArrayHasKey( 'file_id', $image_segment['image_file'] );
-                $resolved_file_id = $image_segment['image_file']['file_id'];
+                $this->assertSame( $resolved_file_id, $image_segment['image_file']['file_id'] );
                 $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
                 $this->assertSame( 'high', $image_segment['detail'] );
 
@@ -387,9 +390,12 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $segment = $first['content'][0];
                 $this->assertSame( 'input_image', $segment['type'] );
+                $this->assertArrayHasKey( 'image', $segment );
+                $this->assertArrayHasKey( 'file_id', $segment['image'] );
+                $resolved_file_id = $segment['image']['file_id'];
                 $this->assertArrayHasKey( 'image_file', $segment );
                 $this->assertArrayHasKey( 'file_id', $segment['image_file'] );
-                $resolved_file_id = $segment['image_file']['file_id'];
+                $this->assertSame( $resolved_file_id, $segment['image_file']['file_id'] );
                 $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
                 $this->assertSame( 'low', $segment['detail'] );
 
@@ -557,8 +563,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $image_segment = $first_message['content'][1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
+                $this->assertArrayHasKey( 'image', $image_segment );
+                $image_file_id = $image_segment['image']['file_id'];
                 $this->assertArrayHasKey( 'image_file', $image_segment );
-                $image_file_id = $image_segment['image_file']['file_id'];
+                $this->assertSame( $image_file_id, $image_segment['image_file']['file_id'] );
                 $this->assertStringStartsWith( 'file-test-', $image_file_id );
                 $this->assertSame( 'Scene reference', $image_segment['caption'] );
                 $this->assertSame( 'low', $image_segment['detail'] );
@@ -711,6 +719,8 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $segment = $messages[0]['content'][0];
                 $this->assertSame( 'input_image', $segment['type'] );
+                $this->assertArrayHasKey( 'image', $segment );
+                $this->assertSame( 'file-456', $segment['image']['file_id'] );
                 $this->assertArrayHasKey( 'image_file', $segment );
                 $this->assertSame( 'file-456', $segment['image_file']['file_id'] );
                 $this->assertSame( 'Prior upload', $segment['caption'] );
