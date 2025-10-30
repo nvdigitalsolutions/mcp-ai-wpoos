@@ -237,10 +237,31 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
             return new WP_Error( 'wp_mcp_ai_attachment_too_large', sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ) );
         }
 
-        $mime_type = get_post_mime_type( $attachment_id );
+        $mime_type = strtolower( (string) get_post_mime_type( $attachment_id ) );
         $allowed   = $this->get_allowed_audio_mime_types( $attachment_id );
 
-        if ( empty( $mime_type ) || ! in_array( strtolower( $mime_type ), $allowed, true ) ) {
+        if ( '' === $mime_type || ! in_array( $mime_type, $allowed, true ) ) {
+            $detected_mime = '';
+            $file_info     = wp_check_filetype_and_ext( $file_path, wp_basename( $file_path ), wp_get_mime_types() );
+
+            if ( ! empty( $file_info['type'] ) ) {
+                $detected_mime = strtolower( $file_info['type'] );
+            }
+
+            if ( '' === $detected_mime ) {
+                $filetype = wp_check_filetype( wp_basename( $file_path ), wp_get_mime_types() );
+
+                if ( $filetype && ! empty( $filetype['type'] ) ) {
+                    $detected_mime = strtolower( $filetype['type'] );
+                }
+            }
+
+            if ( '' !== $detected_mime && in_array( $detected_mime, $allowed, true ) ) {
+                $mime_type = $detected_mime;
+            }
+        }
+
+        if ( '' === $mime_type || ! in_array( $mime_type, $allowed, true ) ) {
             return new WP_Error( 'wp_mcp_ai_attachment_unsupported_mime', __( 'The attachment is not a supported audio format.', 'wp-mcp-ai' ) );
         }
 
