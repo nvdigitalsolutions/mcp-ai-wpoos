@@ -324,8 +324,8 @@ class WP_MCP_AI_Shortcode {
                 </div>
                 <div class="wp-mcp-ai-chat__actions">
                     <input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
-                    <input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden />
-                    <button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'wp-mcp-ai' ); ?>">
+                    <input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden<?php echo $can_upload_attachments ? '' : ' disabled'; ?> />
+                    <button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'wp-mcp-ai' ); ?>"<?php echo $can_upload_attachments ? '' : ' disabled hidden'; ?>>
                         <svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
                             <path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>
