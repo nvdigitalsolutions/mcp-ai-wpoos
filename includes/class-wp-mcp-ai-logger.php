@@ -264,7 +264,118 @@ class WP_MCP_AI_Logger {
             $context['response'] = self::limit_response_payload( $context['response'] );
         }
 
-        return $context;
+        return self::redact_sensitive_data( $context );
+    }
+
+    /**
+     * Recursively redact sensitive information from a payload.
+     *
+     * @param mixed $value Value to inspect.
+     * @return mixed
+     */
+    protected static function redact_sensitive_data( $value ) {
+        if ( $value instanceof \Traversable ) {
+            $value = iterator_to_array( $value );
+        }
+
+        if ( is_array( $value ) ) {
+            $sanitized = array();
+
+            foreach ( $value as $key => $child ) {
+                if ( self::is_sensitive_context_key( $key ) ) {
+                    $sanitized[ $key ] = self::redact_sensitive_value( $child );
+                    continue;
+                }
+
+                $sanitized[ $key ] = self::redact_sensitive_data( $child );
+            }
+
+            return $sanitized;
+        }
+
+        if ( is_object( $value ) ) {
+            return self::redact_sensitive_data( get_object_vars( $value ) );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Determine whether a context key should be treated as sensitive.
+     *
+     * @param mixed $key Context key.
+     * @return bool
+     */
+    protected static function is_sensitive_context_key( $key ) {
+        if ( is_int( $key ) ) {
+            return false;
+        }
+
+        if ( ! is_string( $key ) ) {
+            return false;
+        }
+
+        $normalized = strtolower( $key );
+
+        $exact_matches = array(
+            'api_key',
+            'apikey',
+            'api-key',
+            'access_token',
+            'refresh_token',
+            'auth_token',
+            'authorization',
+            'proxy-authorization',
+            'proxy_authorization',
+            'client_secret',
+            'secret',
+            'bearer_token',
+            'password',
+            'private_key',
+        );
+
+        if ( in_array( $normalized, $exact_matches, true ) ) {
+            return true;
+        }
+
+        $suffix_matches = array(
+            '_api_key',
+            '_apikey',
+            '_api-key',
+            '_access_token',
+            '_refresh_token',
+            '_auth_token',
+            '_bearer_token',
+            '_client_secret',
+            '_secret',
+            '_password',
+            '-api-key',
+            '-access-token',
+            '-refresh-token',
+            '-auth-token',
+            '-bearer-token',
+            '-client-secret',
+            '-secret',
+            '-password',
+        );
+
+        foreach ( $suffix_matches as $suffix ) {
+            if ( self::string_ends_with( $normalized, $suffix ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Replace sensitive payload values with a generic placeholder.
+     *
+     * @param mixed $value Raw value.
+     * @return string
+     */
+    protected static function redact_sensitive_value( $value ) {
+        return '[redacted]';
     }
 
     /**
@@ -783,6 +894,30 @@ class WP_MCP_AI_Logger {
         }
 
         return strlen( $value );
+    }
+
+    /**
+     * Determine whether the given string ends with the provided suffix.
+     *
+     * @param string $value  Full string.
+     * @param string $suffix Suffix to compare.
+     * @return bool
+     */
+    protected static function string_ends_with( $value, $suffix ) {
+        $value  = (string) $value;
+        $suffix = (string) $suffix;
+
+        if ( '' === $suffix ) {
+            return true;
+        }
+
+        $suffix_length = strlen( $suffix );
+
+        if ( $suffix_length > strlen( $value ) ) {
+            return false;
+        }
+
+        return substr( $value, -$suffix_length ) === $suffix;
     }
 
     /**
