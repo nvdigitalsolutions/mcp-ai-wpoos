@@ -49,14 +49,20 @@ class WP_MCP_AI_Shortcode {
      * Register assets used by the shortcode.
      */
     public function register_assets() {
-        $script_path = WP_MCP_AI_URL . 'assets/js/chat.js';
-        $style_path  = WP_MCP_AI_URL . 'assets/css/chat.css';
+        $script_relative = 'assets/js/chat.js';
+        $style_relative  = 'assets/css/chat.css';
+
+        $script_path = WP_MCP_AI_URL . $script_relative;
+        $style_path  = WP_MCP_AI_URL . $style_relative;
+
+        $script_version = $this->get_asset_version( $script_relative );
+        $style_version  = $this->get_asset_version( $style_relative );
 
         wp_register_style(
             self::STYLE_HANDLE,
             $style_path,
             array(),
-            WP_MCP_AI_VERSION
+            $style_version
         );
 
         if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -71,7 +77,7 @@ class WP_MCP_AI_Shortcode {
             self::SCRIPT_HANDLE,
             $script_path,
             array(),
-            WP_MCP_AI_VERSION,
+            $script_version,
             true
         );
 
@@ -113,6 +119,29 @@ class WP_MCP_AI_Shortcode {
                 ),
             )
         );
+    }
+
+    /**
+     * Determine the version string for an asset, using the file modification time when available.
+     *
+     * Falls back to the plugin version when the asset does not exist on disk.
+     *
+     * @param string $relative_path Asset path relative to the plugin root.
+     * @return string
+     */
+    protected function get_asset_version( $relative_path ) {
+        $relative_path = ltrim( $relative_path, '/' );
+        $absolute_path = WP_MCP_AI_PATH . $relative_path;
+
+        if ( file_exists( $absolute_path ) ) {
+            $modified = filemtime( $absolute_path );
+
+            if ( $modified ) {
+                return WP_MCP_AI_VERSION . '.' . $modified;
+            }
+        }
+
+        return WP_MCP_AI_VERSION;
     }
 
     /**
