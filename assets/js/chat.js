@@ -2950,6 +2950,10 @@
 
         var hasText = text.trim() !== '';
         var hasAttachments = attachments.length > 0;
+        var showJsonResponse =
+            hasText &&
+            !hasAttachments &&
+            shouldDisplayJsonResponse(role, text, allowMarkdown);
 
         if (!hasText && !hasAttachments) {
             return null;
@@ -2961,7 +2965,10 @@
         var bubble = document.createElement('div');
         bubble.className = 'wp-mcp-ai-chat__bubble';
 
-        if (hasText) {
+        if (showJsonResponse) {
+            bubble.classList.add('wp-mcp-ai-chat__bubble--json');
+            bubble.appendChild(createJsonResponseElement(text));
+        } else if (hasText) {
             if (allowMarkdown) {
                 bubble.innerHTML = renderMarkdown(text);
             } else {
@@ -3016,6 +3023,71 @@
         listEl.scrollTop = listEl.scrollHeight;
 
         return entry;
+    }
+
+    function shouldDisplayJsonResponse(role, text, allowMarkdown) {
+        if (allowMarkdown) {
+            return false;
+        }
+
+        if (role !== 'tool') {
+            return false;
+        }
+
+        return isLikelyJson(text);
+    }
+
+    function isLikelyJson(text) {
+        if (!text || typeof text !== 'string') {
+            return false;
+        }
+
+        var trimmed = text.trim();
+        if (!trimmed) {
+            return false;
+        }
+
+        var firstChar = trimmed.charAt(0);
+        if (firstChar !== '{' && firstChar !== '[') {
+            return false;
+        }
+
+        try {
+            JSON.parse(trimmed);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function createJsonResponseElement(text) {
+        var details = document.createElement('details');
+        details.className = 'wp-mcp-ai-chat__json-response';
+
+        var summary = document.createElement('summary');
+        summary.className = 'wp-mcp-ai-chat__json-summary';
+
+        var icon = document.createElement('span');
+        icon.className = 'wp-mcp-ai-chat__json-icon';
+        icon.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path d="M12 8.5a1 1 0 0 1 .7.29l5 5a1 1 0 0 1-1.4 1.42L12 10.91l-4.3 4.3a1 1 0 1 1-1.4-1.42l5-5a1 1 0 0 1 .7-.29z" />' +
+            '</svg>';
+        summary.appendChild(icon);
+
+        var label = document.createElement('span');
+        label.className = 'wp-mcp-ai-chat__json-label';
+        label.textContent = getString('jsonResponse', 'JSON response');
+        summary.appendChild(label);
+
+        details.appendChild(summary);
+
+        var pre = document.createElement('pre');
+        pre.className = 'wp-mcp-ai-chat__json-content';
+        pre.textContent = text;
+        details.appendChild(pre);
+
+        return details;
     }
 
     function renderMarkdown(text) {
