@@ -42,6 +42,8 @@ class WP_MCP_AI_Admin_Settings {
             'default_model'        => 'gpt-4o-mini',
             'default_gemini_model' => 'gemini-1.5-flash',
             'default_provider'     => 'openai',
+            'web_search_provider'  => 'duckduckgo',
+            'brave_search_api_key' => '',
             'request_timeout'      => 30,
             'memory_max_file_bytes' => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
             'auth0_domain'         => '',
@@ -938,6 +940,22 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'web_search_provider',
+            __( 'Web Search Provider', 'wp-mcp-ai' ),
+            array( $this, 'render_web_search_provider_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
+            'brave_search_api_key',
+            __( 'Brave Search API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_brave_search_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'openai_image_model',
             __( 'OpenAI Image Model', 'wp-mcp-ai' ),
             array( $this, 'render_openai_image_model_field' ),
@@ -1184,6 +1202,19 @@ class WP_MCP_AI_Admin_Settings {
             if ( in_array( $provider, $allowed, true ) ) {
                 $clean['default_provider'] = $provider;
             }
+        }
+
+        if ( isset( $settings['web_search_provider'] ) ) {
+            $provider = sanitize_key( $settings['web_search_provider'] );
+            $allowed  = array( 'duckduckgo', 'brave' );
+
+            if ( in_array( $provider, $allowed, true ) ) {
+                $clean['web_search_provider'] = $provider;
+            }
+        }
+
+        if ( isset( $settings['brave_search_api_key'] ) ) {
+            $clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
         }
 
         if ( isset( $settings['request_timeout'] ) ) {
@@ -1692,6 +1723,37 @@ class WP_MCP_AI_Admin_Settings {
     public function render_tools_section_description() {
         ?>
         <p><?php esc_html_e( 'Configure the optional MCP tools exposed to assistants.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the web search provider selector.
+     */
+    public function render_web_search_provider_field() {
+        $settings  = self::get_settings();
+        $current   = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
+        $providers = array(
+            'duckduckgo' => __( 'DuckDuckGo Instant Answer API', 'wp-mcp-ai' ),
+            'brave'      => __( 'Brave Search API', 'wp-mcp-ai' ),
+        );
+        ?>
+        <select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
+            <?php foreach ( $providers as $value => $label ) : ?>
+                <option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description"><?php esc_html_e( 'Choose the web search backend used by the Web Search tool.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Brave Search API key field.
+     */
+    public function render_brave_search_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
