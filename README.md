@@ -1,4 +1,4 @@
-# WP MCP AI (WPOS)
+# OpenWP Operator Sytem (WPOS)
 
 **Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com)**
