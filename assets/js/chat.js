@@ -828,6 +828,11 @@
             var label = state.transcriptExpanded
                 ? getString('collapseTranscript', 'Collapse conversation')
                 : getString('expandTranscript', 'Expand conversation');
+            if (state.transcriptToggleLabel) {
+                state.transcriptToggleLabel.textContent = label;
+            } else {
+                state.transcriptToggle.textContent = label;
+            }
             state.transcriptToggle.textContent = label;
             state.transcriptToggle.setAttribute('aria-expanded', state.transcriptExpanded ? 'true' : 'false');
         }
@@ -2200,6 +2205,9 @@
             var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
+            var transcriptToggleLabel = transcriptToggle
+                ? transcriptToggle.querySelector('.wp-mcp-ai-chat__transcript-toggle-label')
+                : null;
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -2252,6 +2260,7 @@
                 fileInput: fileInput,
                 toolShortcutsContainer: toolShortcutsContainer,
                 transcriptToggle: transcriptToggle,
+                transcriptToggleLabel: transcriptToggleLabel,
                 transcriptExpanded: false,
                 pendingAttachments: [],
                 attachmentLibrary: {},

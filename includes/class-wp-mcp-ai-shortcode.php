@@ -287,6 +287,17 @@ class WP_MCP_AI_Shortcode {
                     </div>
                 <?php endif; ?>
             </div>
+            <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
+            <div class="wp-mcp-ai-chat__messages" id="<?php echo esc_attr( $messages_id ); ?>" aria-live="polite"></div>
+            <div class="wp-mcp-ai-chat__transcript-controls">
+                <button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $messages_id ); ?>">
+                    <span class="wp-mcp-ai-chat__transcript-toggle-label"><?php esc_html_e( 'Expand conversation', 'wp-mcp-ai' ); ?></span>
+                    <span class="wp-mcp-ai-chat__transcript-toggle-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20" focusable="false"><path d="M10 13.75a.75.75 0 01-.53-.22l-3.5-3.5 1.06-1.06L10 11.94l2.97-2.97 1.06 1.06-3.5 3.5a.75.75 0 01-.53.22z"></path></svg>
+                    </span>
+                </button>
+            </div>
+            <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
             <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
                 <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
