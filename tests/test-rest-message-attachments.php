@@ -334,12 +334,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $image_segment = $segments[1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
-                $this->assertArrayHasKey( 'image', $image_segment );
-                $this->assertArrayHasKey( 'file_id', $image_segment['image'] );
-                $resolved_file_id = $image_segment['image']['file_id'];
-                $this->assertArrayHasKey( 'image_file', $image_segment );
-                $this->assertArrayHasKey( 'file_id', $image_segment['image_file'] );
-                $this->assertSame( $resolved_file_id, $image_segment['image_file']['file_id'] );
+                $this->assertArrayHasKey( 'file_id', $image_segment );
+                $resolved_file_id = $image_segment['file_id'];
+                $this->assertArrayNotHasKey( 'image', $image_segment );
                 $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
                 $this->assertSame( 'high', $image_segment['detail'] );
 
@@ -390,12 +387,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $segment = $first['content'][0];
                 $this->assertSame( 'input_image', $segment['type'] );
-                $this->assertArrayHasKey( 'image', $segment );
-                $this->assertArrayHasKey( 'file_id', $segment['image'] );
-                $resolved_file_id = $segment['image']['file_id'];
-                $this->assertArrayHasKey( 'image_file', $segment );
-                $this->assertArrayHasKey( 'file_id', $segment['image_file'] );
-                $this->assertSame( $resolved_file_id, $segment['image_file']['file_id'] );
+                $this->assertArrayHasKey( 'file_id', $segment );
+                $resolved_file_id = $segment['file_id'];
+                $this->assertArrayNotHasKey( 'image', $segment );
                 $this->assertStringStartsWith( 'file-test-', $resolved_file_id );
                 $this->assertSame( 'low', $segment['detail'] );
 
@@ -563,10 +557,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $image_segment = $first_message['content'][1];
                 $this->assertSame( 'input_image', $image_segment['type'] );
-                $this->assertArrayHasKey( 'image', $image_segment );
-                $image_file_id = $image_segment['image']['file_id'];
-                $this->assertArrayHasKey( 'image_file', $image_segment );
-                $this->assertSame( $image_file_id, $image_segment['image_file']['file_id'] );
+                $this->assertArrayHasKey( 'file_id', $image_segment );
+                $image_file_id = $image_segment['file_id'];
+                $this->assertArrayNotHasKey( 'image', $image_segment );
                 $this->assertStringStartsWith( 'file-test-', $image_file_id );
                 $this->assertSame( 'Scene reference', $image_segment['caption'] );
                 $this->assertSame( 'low', $image_segment['detail'] );
@@ -707,9 +700,10 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                     'role'    => 'user',
                     'content' => array(
                         array(
-                            'type'       => 'input_image',
-                            'image_file' => array( 'file_id' => 'file-456', 'caption' => 'Prior upload' ),
-                            'detail'     => 'high',
+                            'type'     => 'input_image',
+                            'file_id'  => 'file-456',
+                            'caption'  => 'Prior upload',
+                            'detail'   => 'high',
                         ),
                     ),
                 ),
@@ -719,10 +713,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
                 $segment = $messages[0]['content'][0];
                 $this->assertSame( 'input_image', $segment['type'] );
-                $this->assertArrayHasKey( 'image', $segment );
-                $this->assertSame( 'file-456', $segment['image']['file_id'] );
-                $this->assertArrayHasKey( 'image_file', $segment );
-                $this->assertSame( 'file-456', $segment['image_file']['file_id'] );
+                $this->assertArrayHasKey( 'file_id', $segment );
+                $this->assertSame( 'file-456', $segment['file_id'] );
+                $this->assertArrayNotHasKey( 'image', $segment );
                 $this->assertSame( 'Prior upload', $segment['caption'] );
                 $this->assertSame( 'high', $segment['detail'] );
 
@@ -886,6 +879,89 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         }
 
         $this->assertSame( 1, $upload_counter );
+    }
+
+    /**
+     * Ensure the file download REST route proxies OpenAI content responses.
+     */
+    public function test_file_download_route_streams_openai_file() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $assistant_id = $this->create_assistant_post();
+        $user_id      = get_current_user_id();
+
+        if ( ! $user_id ) {
+            $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+            wp_set_current_user( $user_id );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $filter_callback = function ( $preempt, $args, $url ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-download-456/content' !== $url ) {
+                return null;
+            }
+
+            return array(
+                'headers'  => array(
+                    'Content-Type' => 'text/plain',
+                ),
+                'body'     => 'Example content',
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/files/file-download-456/download' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( '_wpnonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        $this->assertInstanceOf( WP_Hook::class, $hook );
+
+        $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+        $added_keys   = array_diff( $current_keys, $existing_keys );
+
+        $this->assertNotEmpty( $added_keys );
+
+        $closure_key = array_pop( $added_keys );
+        $closure     = $hook->callbacks[10][ $closure_key ]['function'];
+
+        ob_start();
+        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
+        $output = ob_get_clean();
+
+        $this->assertTrue( $served );
+        $this->assertSame( 'Example content', $output );
+
+        unset( $hook->callbacks[10][ $closure_key ] );
+
+        wp_set_current_user( 0 );
     }
 
     /**

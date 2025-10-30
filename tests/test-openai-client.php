@@ -289,6 +289,123 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure download_file requests the file content endpoint and normalises the response headers.
+     */
+    public function test_download_file_requests_content_endpoint() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-download-123/content' !== $url ) {
+                return null;
+            }
+
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(
+                    'Content-Type'        => 'text/plain',
+                    'Content-Disposition' => 'attachment; filename="notes.txt"',
+                ),
+                'body'     => 'Example content',
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $result = $client->download_file( 'file-download-123' );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-download-123/content', $captured_request['url'] );
+        $this->assertSame( 'GET', strtoupper( $captured_request['args']['method'] ) );
+        $this->assertSame( 'Bearer sk-test', $captured_request['args']['headers']['Authorization'] );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'Example content', $result['body'] );
+        $this->assertSame( 'text/plain', $result['content_type'] );
+        $this->assertSame( 'notes.txt', $result['filename'] );
+        $this->assertSame( 200, $result['status_code'] );
+        $this->assertArrayHasKey( 'headers', $result );
+        $this->assertSame( 'text/plain', $result['headers']['content-type'] );
+        $this->assertSame( 'attachment; filename="notes.txt"', $result['headers']['content-disposition'] );
+    }
+
+    /**
+     * Ensure download_file propagates error responses from the Files API.
+     */
+    public function test_download_file_handles_error_status() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        $filter_callback = function () {
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Not found' ) ) ),
+                'response' => array(
+                    'code'    => 404,
+                    'message' => 'Not Found',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback );
+
+        $result = $client->download_file( 'file-missing' );
+
+        remove_filter( 'pre_http_request', $filter_callback );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_file_download_failed', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure download_file rejects empty responses even when the status code succeeds.
+     */
+    public function test_download_file_rejects_empty_body() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        $filter_callback = function () {
+            return array(
+                'headers'  => array( 'Content-Type' => 'application/octet-stream' ),
+                'body'     => '',
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback );
+
+        $result = $client->download_file( 'file-empty' );
+
+        remove_filter( 'pre_http_request', $filter_callback );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_file_download_empty', $result->get_error_code() );
+    }
+
+    /**
      * Ensure chat completion payloads include the tool name alongside the function definition.
      */
     public function test_chat_completion_payload_includes_tool_name() {
@@ -475,9 +592,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure image segments target the `image_file` key when building Responses payloads.
+     * Ensure image segments expose the `file_id` key when building Responses payloads.
      */
-    public function test_responses_payload_uses_image_key() {
+    public function test_responses_payload_uses_file_id_key() {
         $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
         $defaults['openai_api_key'] = 'sk-test';
         update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -513,11 +630,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                 'role'    => 'user',
                 'content' => array(
                     array(
-                        'type'       => 'input_image',
-                        'caption'    => 'Reference still',
-                        'detail'     => 'high',
-                        'image'      => array( 'file_id' => 'file-img-123' ),
-                        'image_file' => array( 'file_id' => 'file-img-123' ),
+                        'type'     => 'input_image',
+                        'caption'  => 'Reference still',
+                        'detail'   => 'high',
+                        'file_id'  => 'file-img-123',
                     ),
                 ),
             ),
@@ -554,13 +670,19 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $input_message['content'] );
         $this->assertArrayHasKey( 0, $input_message['content'] );
 
-        $image_segment = $input_message['content'][0];
+        $caption_segment = $input_message['content'][0];
+        $this->assertSame( 'input_text', $caption_segment['type'] );
+        $this->assertSame( 'Reference still', $caption_segment['text'] );
+
+        $this->assertArrayHasKey( 1, $input_message['content'] );
+
+        $image_segment = $input_message['content'][1];
         $this->assertSame( 'input_image', $image_segment['type'] );
-        $this->assertArrayHasKey( 'image', $image_segment );
-        $this->assertSame( 'file-img-123', $image_segment['image']['file_id'] );
-        $this->assertArrayNotHasKey( 'image_file', $image_segment );
+        $this->assertArrayHasKey( 'file_id', $image_segment );
+        $this->assertSame( 'file-img-123', $image_segment['file_id'] );
+        $this->assertArrayNotHasKey( 'image', $image_segment );
         $this->assertArrayNotHasKey( 'image_url', $image_segment );
-        $this->assertSame( 'Reference still', $image_segment['caption'] );
+        $this->assertArrayNotHasKey( 'caption', $image_segment );
         $this->assertSame( 'high', $image_segment['detail'] );
 
         $this->assertIsArray( $response );
@@ -739,6 +861,86 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'message', $response['choices'][0] );
         $this->assertSame( 'Summary generated from attachment.', $response['choices'][0]['message']['content'] );
         $this->assertSame( 'assistant', $response['choices'][0]['message']['role'] );
+    }
+
+    /**
+     * Ensure Responses API payloads without textual content preserve their original segments.
+     */
+    public function test_responses_choices_preserve_non_text_segments() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'resp-non-text',
+                        'choices' => array(
+                            array(
+                                'id'            => 'choice-1',
+                                'type'          => 'message',
+                                'role'          => 'assistant',
+                                'content'       => array(
+                                    array(
+                                        'type'  => 'output_image',
+                                        'image' => array(
+                                            'id' => 'file-img-123',
+                                        ),
+                                    ),
+                                ),
+                                'finish_reason' => 'stop',
+                            ),
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $response = $client->create_chat_completion(
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'    => 'input_file',
+                            'file_id' => 'file-123',
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertCount( 1, $response['choices'] );
+
+        $choice = $response['choices'][0];
+
+        $this->assertArrayHasKey( 'message', $choice );
+        $message = $choice['message'];
+
+        $this->assertSame( 'assistant', $message['role'] );
+        $this->assertIsArray( $message['content'] );
+        $this->assertSame( 'output_image', $message['content'][0]['type'] );
+        $this->assertSame( 'file-img-123', $message['content'][0]['image']['id'] );
     }
 
     /**

@@ -324,6 +324,145 @@ class WP_MCP_AI_OpenAI_Client {
     }
 
     /**
+     * Download a stored file from the OpenAI Files API.
+     *
+     * @param string $file_id OpenAI file identifier.
+     * @param array  $args    Optional arguments (timeout).
+     * @return array|WP_Error Array containing body, headers, and metadata or WP_Error on failure.
+     */
+    public function download_file( $file_id, array $args = array() ) {
+        $api_key = $this->get_api_key();
+
+        if ( empty( $api_key ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_missing_api_key',
+                __( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $file_id = sanitize_text_field( (string) $file_id );
+
+        if ( '' === $file_id ) {
+            return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+        }
+
+        $settings = WP_MCP_AI_Admin_Settings::get_settings();
+        $timeout  = isset( $args['timeout'] ) && '' !== $args['timeout'] ? absint( $args['timeout'] ) : absint( $settings['request_timeout'] );
+        $timeout  = max( 5, $timeout );
+
+        $endpoint = trailingslashit( self::FILES_ENDPOINT ) . rawurlencode( $file_id ) . '/content';
+
+        $request_args = array(
+            'method'  => 'GET',
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $api_key,
+            ),
+            'timeout' => $timeout,
+        );
+
+        WP_MCP_AI_Logger::log_event(
+            'openai_file_download',
+            'Downloading file from OpenAI.',
+            array( 'file_id' => $file_id )
+        );
+
+        $response = $this->dispatch_http_request( $endpoint, $request_args );
+
+        if ( is_wp_error( $response ) ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file download request failed.',
+                array(
+                    'file_id' => $file_id,
+                    'error'   => $response->get_error_message(),
+                )
+            );
+
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
+                'wp_mcp_ai_http_error',
+                __( 'The OpenAI file could not be downloaded.', 'wp-mcp-ai' ),
+                __( 'OpenAI', 'wp-mcp-ai' )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body        = wp_remote_retrieve_body( $response );
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $decoded = json_decode( $body, true );
+            $message = __( 'OpenAI returned an unexpected response while downloading the file.', 'wp-mcp-ai' );
+
+            if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) && '' !== $decoded['error']['message'] ) {
+                $message = $decoded['error']['message'];
+            }
+
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file download returned an error.',
+                array(
+                    'file_id' => $file_id,
+                    'status'  => $status_code,
+                    'body'    => is_array( $decoded ) ? $decoded : $body,
+                )
+            );
+
+            return new WP_Error(
+                'wp_mcp_ai_file_download_failed',
+                $message,
+                array(
+                    'status'  => $status_code,
+                    'file_id' => $file_id,
+                    'body'    => $decoded,
+                )
+            );
+        }
+
+        if ( '' === $body ) {
+            WP_MCP_AI_Logger::log_error(
+                'OpenAI file download returned an empty body.',
+                array( 'file_id' => $file_id )
+            );
+
+            return new WP_Error( 'wp_mcp_ai_file_download_empty', __( 'The downloaded OpenAI file was empty.', 'wp-mcp-ai' ) );
+        }
+
+        $headers = wp_remote_retrieve_headers( $response );
+        if ( $headers instanceof WP_HTTP_Headers ) {
+            $headers = $headers->getAll();
+        }
+
+        $normalised_headers = array();
+        if ( is_array( $headers ) ) {
+            foreach ( $headers as $key => $value ) {
+                $key   = strtolower( (string) $key );
+                $value = is_array( $value ) ? implode( ',', $value ) : (string) $value;
+                $normalised_headers[ $key ] = $value;
+            }
+        }
+
+        $content_type = isset( $normalised_headers['content-type'] ) ? $normalised_headers['content-type'] : 'application/octet-stream';
+        $filename     = '';
+
+        if ( isset( $normalised_headers['content-disposition'] ) ) {
+            $filename = $this->parse_content_disposition_filename( $normalised_headers['content-disposition'] );
+        }
+
+        return array(
+            'body'          => $body,
+            'headers'       => $normalised_headers,
+            'content_type'  => $content_type,
+            'filename'      => $filename,
+            'status_code'   => $status_code,
+            'file_id'       => $file_id,
+        );
+    }
+
+    /**
      * Dispatch an HTTP request while honouring preemptive short-circuit filters.
      *
      * @param string $url  Target URL.
@@ -800,6 +939,36 @@ class WP_MCP_AI_OpenAI_Client {
             'body'         => $body,
             'content_type' => $this->extract_content_type( $headers ),
         );
+    }
+
+    /**
+     * Extract a filename from a Content-Disposition header when available.
+     *
+     * @param string $header Raw Content-Disposition header value.
+     * @return string Sanitised filename or empty string when unavailable.
+     */
+    protected function parse_content_disposition_filename( $header ) {
+        $header = (string) $header;
+
+        if ( '' === $header ) {
+            return '';
+        }
+
+        $filename = '';
+
+        if ( preg_match( "/filename\\*=([^\\s]+)''([^;]+)/i", $header, $matches ) ) {
+            $filename = rawurldecode( $matches[2] );
+        } elseif ( preg_match( '/filename="?([^";]+)"?/i', $header, $matches ) ) {
+            $filename = $matches[1];
+        }
+
+        $filename = trim( wp_strip_all_tags( (string) $filename ) );
+
+        if ( '' === $filename ) {
+            return '';
+        }
+
+        return sanitize_file_name( $filename );
     }
 
     /**
@@ -1766,10 +1935,12 @@ class WP_MCP_AI_OpenAI_Client {
                                 $segment_copy['image_url'] = esc_url_raw( $segment['image_url'] );
                             }
 
-                            if ( isset( $segment['image_file']['file_id'] ) ) {
-                                $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                            if ( isset( $segment['file_id'] ) ) {
+                                $segment_copy['file_id'] = (string) $segment['file_id'];
+                            } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+                                $segment_copy['file_id'] = (string) $segment['image_file']['file_id'];
                             } elseif ( isset( $segment['image']['file_id'] ) ) {
-                                $segment_copy['image_file'] = array( 'file_id' => $segment['image']['file_id'] );
+                                $segment_copy['file_id'] = (string) $segment['image']['file_id'];
                             }
                         }
 
@@ -2031,8 +2202,30 @@ class WP_MCP_AI_OpenAI_Client {
                 if ( ! isset( $segment['text'] ) ) {
                     $segment['text'] = '';
                 }
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_image' === $type ) {
-                $segment = $this->populate_responses_image_segment( $segment, $attachments );
+                $caption_text = $this->extract_responses_image_caption( $segment, $attachments );
+                $segment      = $this->populate_responses_image_segment( $segment, $attachments );
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                if ( '' !== $caption_text ) {
+                    $normalised[] = array(
+                        'type' => $is_output_role ? 'output_text' : 'input_text',
+                        'text' => $caption_text,
+                    );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_file' === $type ) {
                 $segment = $this->populate_responses_file_segment( $segment, $attachments );
             }
@@ -2045,6 +2238,51 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $normalised;
+    }
+
+    /**
+     * Extract a caption value for an image segment.
+     *
+     * @param array $segment     Original segment definition.
+     * @param array $attachments Attachment lookup keyed by file identifier.
+     * @return string
+     */
+    protected function extract_responses_image_caption( array $segment, array $attachments ) {
+        $caption = '';
+
+        if ( isset( $segment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $segment['caption'] );
+        }
+
+        if ( '' !== $caption ) {
+            return $caption;
+        }
+
+        $file_id = '';
+
+        if ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        } elseif ( isset( $segment['image']['file_id'] ) ) {
+            $file_id = (string) $segment['image']['file_id'];
+        } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+            $file_id = (string) $segment['image_file']['file_id'];
+        }
+
+        if ( '' === $file_id || ! isset( $attachments[ $file_id ] ) ) {
+            return '';
+        }
+
+        $attachment = $attachments[ $file_id ];
+
+        if ( isset( $attachment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['caption'] );
+        }
+
+        if ( '' === $caption && isset( $attachment['title'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['title'] );
+        }
+
+        return $caption;
     }
 
     /**
@@ -2089,12 +2327,12 @@ class WP_MCP_AI_OpenAI_Client {
     protected function populate_responses_image_segment( array $segment, array $attachments ) {
         $file_id = '';
 
-        if ( isset( $segment['image']['file_id'] ) ) {
+        if ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        } elseif ( isset( $segment['image']['file_id'] ) ) {
             $file_id = (string) $segment['image']['file_id'];
         } elseif ( isset( $segment['image_file']['file_id'] ) ) {
             $file_id = (string) $segment['image_file']['file_id'];
-        } elseif ( isset( $segment['file_id'] ) ) {
-            $file_id = (string) $segment['file_id'];
         }
 
         if ( $file_id && isset( $attachments[ $file_id ] ) ) {
@@ -2112,11 +2350,12 @@ class WP_MCP_AI_OpenAI_Client {
                 $openai_file_id = (string) $attachment['file_id'];
             }
 
-            if ( ! isset( $segment['image'] ) || ! is_array( $segment['image'] ) ) {
-                $segment['image'] = array();
-            }
+            $segment['file_id'] = $openai_file_id;
+            $file_id            = $openai_file_id;
 
-            $segment['image']['file_id'] = $openai_file_id;
+            if ( isset( $segment['image'] ) ) {
+                unset( $segment['image'] );
+            }
 
             if ( isset( $segment['image_file'] ) ) {
                 unset( $segment['image_file'] );
@@ -2125,38 +2364,59 @@ class WP_MCP_AI_OpenAI_Client {
             if ( isset( $segment['image_url'] ) ) {
                 unset( $segment['image_url'] );
             }
-
-            if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
-                $segment['caption'] = $attachment['caption'];
-            }
         } elseif ( isset( $segment['image_url']['url'] ) ) {
             $segment['image_url'] = array( 'url' => esc_url_raw( (string) $segment['image_url']['url'] ) );
         } elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
             $segment['image_url'] = array( 'url' => esc_url_raw( $segment['image_url'] ) );
-        } elseif ( isset( $segment['image']['file_id'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['image']['file_id'] );
-        } elseif ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) && isset( $segment['image_file']['file_id'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['image_file']['file_id'] );
+        }
+
+        if ( isset( $segment['image'] ) && is_array( $segment['image'] ) ) {
+            if ( isset( $segment['image']['file_id'] ) && '' === $file_id ) {
+                $segment['file_id'] = (string) $segment['image']['file_id'];
+            }
+
+            unset( $segment['image'] );
+        }
+
+        if ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ) {
+            if ( isset( $segment['image_file']['file_id'] ) && '' === $file_id ) {
+                $segment['file_id'] = (string) $segment['image_file']['file_id'];
+            }
+
             unset( $segment['image_file'] );
-        }
-
-        if ( isset( $segment['file_id'] ) && ! isset( $segment['image'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['file_id'] );
-        }
-
-        if ( isset( $segment['image_file'] ) ) {
-            unset( $segment['image_file'] );
-        }
-
-        if ( isset( $segment['file_id'] ) ) {
-            unset( $segment['file_id'] );
         }
 
         if ( empty( $segment['detail'] ) ) {
             $segment['detail'] = 'auto';
         }
 
+        if ( isset( $segment['caption'] ) ) {
+            unset( $segment['caption'] );
+        }
+
         return $segment;
+    }
+
+    /**
+     * Normalise a caption payload for safe inclusion alongside Responses segments.
+     *
+     * @param mixed $caption Raw caption payload.
+     * @return string
+     */
+    protected function normalise_responses_segment_caption( $caption ) {
+        if ( is_string( $caption ) || is_numeric( $caption ) ) {
+            $caption_text = (string) $caption;
+        } elseif ( is_array( $caption ) || is_object( $caption ) ) {
+            $caption_text = $this->normalise_responses_text_value( $caption );
+        } else {
+            $caption_text = '';
+        }
+
+        if ( '' === $caption_text ) {
+            return '';
+        }
+
+        return trim( wp_strip_all_tags( $caption_text ) );
     }
 
     /**
@@ -2238,7 +2498,13 @@ class WP_MCP_AI_OpenAI_Client {
             foreach ( $response['choices'] as $index => $choice ) {
                 if ( isset( $choice['message'] ) && is_array( $choice['message'] ) ) {
                     if ( isset( $choice['message']['content'] ) && is_array( $choice['message']['content'] ) ) {
-                        $choice['message']['content'] = $this->extract_text_from_response_content( $choice['message']['content'] );
+                        $content_text = $this->extract_text_from_response_content( $choice['message']['content'] );
+
+                        if ( '' !== $content_text ) {
+                            $choice['message']['content'] = $content_text;
+                        } else {
+                            $choice['message']['content'] = array_values( $choice['message']['content'] );
+                        }
                     }
 
                     if ( ! isset( $choice['index'] ) ) {
@@ -2253,9 +2519,11 @@ class WP_MCP_AI_OpenAI_Client {
                 $role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
 
                 $normalised_choice = $choice;
+                $content_text      = $this->extract_text_from_response_content( $content );
+                $content_fallback  = is_array( $content ) ? array_values( $content ) : $content;
                 $normalised_choice['message'] = array(
                     'role'    => $role,
-                    'content' => $this->extract_text_from_response_content( $content ),
+                    'content' => '' !== $content_text ? $content_text : $content_fallback,
                 );
 
                 if ( isset( $normalised_choice['role'] ) ) {
@@ -2294,11 +2562,14 @@ class WP_MCP_AI_OpenAI_Client {
                     $content_payload = $item['text'];
                 }
 
+                $content_text     = $this->extract_text_from_response_content( $content_payload );
+                $content_fallback = is_array( $content_payload ) ? array_values( $content_payload ) : $content_payload;
+
                 $choices[] = array(
                     'index'         => $index,
                     'message'       => array(
                         'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
-                        'content' => $this->extract_text_from_response_content( $content_payload ),
+                        'content' => '' !== $content_text ? $content_text : $content_fallback,
                     ),
                     'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
                 );
