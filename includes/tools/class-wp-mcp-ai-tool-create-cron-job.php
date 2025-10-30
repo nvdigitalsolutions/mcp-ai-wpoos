@@ -75,7 +75,8 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
                                 'additionalProperties' => true,
                             ),
                             array(
-                                'type' => 'array',
+                                'type'  => 'array',
+                                'items' => array(),
                             ),
                         ),
                     ),
