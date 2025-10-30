@@ -112,6 +112,71 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure sensitive values are redacted from log context payloads.
+     */
+    public function test_log_event_redacts_sensitive_values_in_context() {
+        update_option(
+            WP_MCP_AI_Admin_Settings::OPTION_NAME,
+            array(
+                'enable_logging' => true,
+            )
+        );
+
+        $context = array(
+            'api_key' => 'sk-secret',
+            'nested'  => array(
+                'access_token' => 'token-123',
+                'headers'      => array(
+                    'Authorization' => 'Bearer sensitive',
+                    'X-Test'        => 'keep-me',
+                ),
+                'data'         => array(
+                    'client_secret' => 'client-secret',
+                    'inner'         => (object) array(
+                        'refresh_token' => 'refresh-me',
+                        'allowed'       => 'visible',
+                    ),
+                ),
+            ),
+            'regular' => 'value',
+        );
+
+        $captured_entry = null;
+        $filter         = function( $entry ) use ( &$captured_entry ) {
+            $captured_entry = $entry;
+            return false;
+        };
+
+        add_filter( 'wp_mcp_ai_log_entry', $filter );
+
+        try {
+            WP_MCP_AI_Logger::log_event( 'tool_error', 'Context redaction.', $context );
+        } finally {
+            remove_filter( 'wp_mcp_ai_log_entry', $filter );
+        }
+
+        $this->assertNotNull( $captured_entry );
+        $this->assertArrayHasKey( 'context', $captured_entry );
+
+        $sanitized = $captured_entry['context'];
+
+        $this->assertSame( '[redacted]', $sanitized['api_key'] );
+        $this->assertSame( '[redacted]', $sanitized['nested']['access_token'] );
+        $this->assertSame( '[redacted]', $sanitized['nested']['headers']['Authorization'] );
+        $this->assertSame( 'keep-me', $sanitized['nested']['headers']['X-Test'] );
+        $this->assertSame( '[redacted]', $sanitized['nested']['data']['client_secret'] );
+        $this->assertSame( '[redacted]', $sanitized['nested']['data']['inner']['refresh_token'] );
+        $this->assertSame( 'visible', $sanitized['nested']['data']['inner']['allowed'] );
+        $this->assertSame( 'value', $sanitized['regular'] );
+
+        $this->assertSame( 'sk-secret', $context['api_key'], 'Original context should remain untouched.' );
+        $this->assertSame( 'token-123', $context['nested']['access_token'], 'Original nested value should not be mutated.' );
+        $this->assertSame( 'Bearer sensitive', $context['nested']['headers']['Authorization'] );
+        $this->assertSame( 'client-secret', $context['nested']['data']['client_secret'] );
+        $this->assertSame( 'refresh-me', $context['nested']['data']['inner']->refresh_token );
+    }
+
+    /**
      * Ensure recent error logging tracks only errors and warnings and limits the history.
      */
     public function test_recent_error_messages_track_latest_entries() {
