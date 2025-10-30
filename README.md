@@ -25,6 +25,7 @@
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
+- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
 - [🔑 Assistant API credentials](#-assistant-api-credentials)
 - [🐳 Local Development with Docker](#-local-development-with-docker)
   - [🔁 Codex environment startup script](#-codex-environment-startup-script)
@@ -82,6 +83,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
 - 🔎 Perform lightweight DuckDuckGo searches without leaving the assistant conversation
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
+- ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -232,8 +234,17 @@ Assistant posts ship with dedicated controls that map directly to runtime behavi
 - **Available Tools** – Choose which registered tools (core, WooCommerce, JetEngine, or custom) the model may invoke. Dependency-aware notices explain why certain tools are unavailable.
 - **Model Defaults** – Provide assistant-specific overrides for the OpenAI model, temperature (0–2), and system prompt applied to every conversation.
 - **Base Knowledge** – Attach Media Library items that are chunked, truncated, and streamed as memory context, and optionally store an external **Vector Store ID** to coordinate retrieval workflows.
+- **Prompt Shortcuts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 
 If an API or shortcode request omits the `assistant` parameter, the plugin automatically uses the default assistant configured in the global settings.
+
+## ⚡ Assistant Tool Shortcuts
+
+Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate prewritten instructions, scope them to registered tools, and add operator-facing descriptions that appear as tooltips and screen reader hints in the chat UI.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】 The shortcode merges these custom prompts with each tool’s declared shortcut tasks and always appends a safe fallback so assistants remain usable even without bespoke entries.【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】
+
+Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
+
+➡️ [Read the full guide to assistant prompt shortcuts.](docs/assistant-tool-shortcuts.md)
 
 ## 🔑 Assistant API credentials
 

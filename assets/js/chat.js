@@ -615,6 +615,7 @@
             var label = '';
             var payload = '';
             var tool = '';
+            var description = '';
 
             if (typeof shortcut === 'string') {
                 label = shortcut;
@@ -631,11 +632,16 @@
                 if (typeof shortcut.tool === 'string') {
                     tool = shortcut.tool;
                 }
+
+                if (typeof shortcut.description === 'string') {
+                    description = shortcut.description;
+                }
             }
 
             label = label ? label.trim() : '';
             payload = payload ? payload.trim() : '';
             tool = tool ? tool.trim() : '';
+            description = description ? description.trim() : '';
 
             if (!label && tool) {
                 label = tool;
@@ -662,9 +668,19 @@
                 button.dataset.shortcutPayload = payload;
             }
 
+            if (description) {
+                button.dataset.shortcutDescription = description;
+            }
+
             var ariaTemplate = getString('toolShortcutLabel', 'Insert task: %s');
-            button.setAttribute('aria-label', formatString(ariaTemplate, label));
-            button.setAttribute('title', label);
+            var ariaLabel = formatString(ariaTemplate, label);
+
+            if (description) {
+                ariaLabel += '. ' + description;
+            }
+
+            button.setAttribute('aria-label', ariaLabel);
+            button.setAttribute('title', description || label);
 
             button.addEventListener('click', function (event) {
                 event.preventDefault();
