@@ -828,8 +828,13 @@
             var label = state.transcriptExpanded
                 ? getString('collapseTranscript', 'Collapse conversation')
                 : getString('expandTranscript', 'Expand conversation');
-            state.transcriptToggle.textContent = label;
             state.transcriptToggle.setAttribute('aria-expanded', state.transcriptExpanded ? 'true' : 'false');
+            state.transcriptToggle.setAttribute('aria-label', label);
+
+            var screenReaderText = state.transcriptToggle.querySelector('.screen-reader-text');
+            if (screenReaderText) {
+                screenReaderText.textContent = label;
+            }
         }
 
         if (state.transcriptExpanded && state.messagesEl) {
