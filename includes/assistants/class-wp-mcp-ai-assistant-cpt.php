@@ -22,6 +22,7 @@ class WP_MCP_AI_Assistant_CPT {
     const META_MEMORY_FILES          = '_wp_mcp_ai_memory_files';
     const META_VECTOR_STORE_ID       = '_wp_mcp_ai_vector_store_id';
     const META_TOOL_SHORTCUTS        = '_wp_mcp_ai_tool_shortcuts';
+    const META_TOOL_ROLE_RULES       = '_wp_mcp_ai_tool_role_rules';
     const META_CREDENTIALS           = WP_MCP_AI_Credentials::META_KEY;
     const META_EXTERNAL_ACTION_ID    = '_wp_mcp_ai_external_action_id';
     const META_EXTERNAL_ACTION_TYPE  = '_wp_mcp_ai_external_action_type';
@@ -271,6 +272,59 @@ class WP_MCP_AI_Assistant_CPT {
                     ),
                 ),
                 'sanitize_callback' => array( __CLASS__, 'sanitize_tool_shortcuts_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        $flag_schema = array(
+            'type'  => 'array',
+            'items' => array(
+                'type' => 'string',
+            ),
+        );
+
+        $allowed_flags = self::get_allowed_tool_role_flags();
+
+        if ( ! empty( $allowed_flags ) ) {
+            $flag_schema['items']['enum'] = $allowed_flags;
+        }
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_TOOL_ROLE_RULES,
+            array(
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => array(
+                    'schema' => array(
+                        'type'  => 'array',
+                        'items' => array(
+                            'type'                 => 'object',
+                            'properties'           => array(
+                                'tool'   => array(
+                                    'type' => 'string',
+                                ),
+                                'roles'  => array(
+                                    'type'  => 'array',
+                                    'items' => array(
+                                        'type' => 'string',
+                                    ),
+                                ),
+                                'groups' => array(
+                                    'type'  => 'array',
+                                    'items' => array(
+                                        'type'    => 'integer',
+                                        'minimum' => 1,
+                                    ),
+                                ),
+                                'flags'  => $flag_schema,
+                            ),
+                            'additionalProperties' => false,
+                            'required'             => array( 'tool' ),
+                        ),
+                    ),
+                ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_tool_role_rules_meta' ),
                 'auth_callback'     => $auth_callback,
             )
         );
@@ -1623,6 +1677,18 @@ class WP_MCP_AI_Assistant_CPT {
             } else {
                 update_post_meta( $post_id, self::META_EXTERNAL_ACTION_TYPE, $external_action_type );
             }
+
+            $tool_role_rules = array();
+
+            if ( isset( $_POST['wp_mcp_ai_tool_role_rules'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $tool_role_rules = self::sanitize_tool_role_rules_meta( wp_unslash( $_POST['wp_mcp_ai_tool_role_rules'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            }
+
+            if ( empty( $tool_role_rules ) ) {
+                delete_post_meta( $post_id, self::META_TOOL_ROLE_RULES );
+            } else {
+                update_post_meta( $post_id, self::META_TOOL_ROLE_RULES, $tool_role_rules );
+            }
         }
 
         if ( $shortcuts_nonce_verified ) {
@@ -1702,6 +1768,7 @@ class WP_MCP_AI_Assistant_CPT {
             'memory_files'                => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
             'vector_store_id'             => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
             'tool_shortcuts'              => get_post_meta( $assistant_id, self::META_TOOL_SHORTCUTS, true ),
+            'tool_role_rules'             => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
             'external_action_identifier'  => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
             'external_action_type'        => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
         );
@@ -1746,6 +1813,12 @@ class WP_MCP_AI_Assistant_CPT {
             $config['tool_shortcuts'] = array();
         } else {
             $config['tool_shortcuts'] = self::sanitize_tool_shortcuts_meta( $config['tool_shortcuts'] );
+        }
+
+        if ( ! is_array( $config['tool_role_rules'] ) ) {
+            $config['tool_role_rules'] = array();
+        } else {
+            $config['tool_role_rules'] = self::sanitize_tool_role_rules_meta( $config['tool_role_rules'] );
         }
 
         if ( ! is_string( $config['external_action_identifier'] ) ) {
@@ -1835,5 +1908,202 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return array_values( $sanitized );
+    }
+
+    /**
+     * Sanitize tool role rule metadata values.
+     *
+     * @param mixed $rules Raw rules value.
+     * @return array
+     */
+    public static function sanitize_tool_role_rules_meta( $rules ) {
+        if ( is_string( $rules ) ) {
+            $decoded_rules = json_decode( $rules, true );
+            if ( is_array( $decoded_rules ) ) {
+                $rules = $decoded_rules;
+            }
+        }
+
+        if ( ! is_array( $rules ) ) {
+            return array();
+        }
+
+        $registry = null;
+
+        if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+            $registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+            if ( method_exists( $registry, 'init' ) ) {
+                $registry->init();
+            }
+        }
+
+        $allowed_roles = self::get_registered_role_slugs();
+        $allowed_flags = self::get_allowed_tool_role_flags();
+
+        $sanitized = array();
+
+        foreach ( $rules as $rule ) {
+            if ( ! is_array( $rule ) ) {
+                continue;
+            }
+
+            $tool_slug = isset( $rule['tool'] ) ? sanitize_key( $rule['tool'] ) : '';
+
+            if ( '' === $tool_slug ) {
+                continue;
+            }
+
+            $is_known_tool = true;
+
+            if ( null !== $registry && method_exists( $registry, 'get_tool' ) ) {
+                $is_known_tool = ( null !== $registry->get_tool( $tool_slug ) );
+            }
+
+            if ( ! $is_known_tool ) {
+                continue;
+            }
+
+            $entry = array(
+                'tool' => $tool_slug,
+            );
+
+            if ( isset( $rule['roles'] ) && is_array( $rule['roles'] ) ) {
+                $valid_roles = array();
+
+                foreach ( $rule['roles'] as $role ) {
+                    $role_slug = sanitize_key( $role );
+
+                    if ( '' === $role_slug ) {
+                        continue;
+                    }
+
+                    if ( empty( $allowed_roles ) || in_array( $role_slug, $allowed_roles, true ) ) {
+                        $valid_roles[] = $role_slug;
+                    }
+                }
+
+                if ( ! empty( $valid_roles ) ) {
+                    $entry['roles'] = array_values( array_unique( $valid_roles ) );
+                }
+            }
+
+            if ( isset( $rule['groups'] ) ) {
+                $raw_groups = $rule['groups'];
+
+                if ( is_string( $raw_groups ) || is_numeric( $raw_groups ) ) {
+                    $raw_groups = array( $raw_groups );
+                }
+
+                if ( is_array( $raw_groups ) ) {
+                    $valid_groups = array();
+
+                    foreach ( $raw_groups as $group_id ) {
+                        $group_id = absint( $group_id );
+
+                        if ( $group_id > 0 ) {
+                            $valid_groups[] = $group_id;
+                        }
+                    }
+
+                    if ( ! empty( $valid_groups ) ) {
+                        $entry['groups'] = array_values( array_unique( $valid_groups ) );
+                    }
+                }
+            }
+
+            $flags = array();
+
+            if ( isset( $rule['flags'] ) ) {
+                $raw_flags = $rule['flags'];
+
+                if ( is_string( $raw_flags ) ) {
+                    $raw_flags = array( $raw_flags );
+                }
+
+                if ( is_array( $raw_flags ) ) {
+                    foreach ( $raw_flags as $flag ) {
+                        $flag_slug = sanitize_key( $flag );
+
+                        if ( '' !== $flag_slug && in_array( $flag_slug, $allowed_flags, true ) ) {
+                            $flags[] = $flag_slug;
+                        }
+                    }
+                }
+            }
+
+            foreach ( $allowed_flags as $flag_slug ) {
+                if ( isset( $rule[ $flag_slug ] ) && wp_validate_boolean( $rule[ $flag_slug ] ) ) {
+                    $flags[] = $flag_slug;
+                }
+            }
+
+            if ( ! empty( $flags ) ) {
+                $entry['flags'] = array_values( array_unique( $flags ) );
+            }
+
+            $sanitized[] = $entry;
+        }
+
+        return array_values( $sanitized );
+    }
+
+    /**
+     * Retrieve the allowlist of tool role rule flags.
+     *
+     * @return array
+     */
+    protected static function get_allowed_tool_role_flags() {
+        $default_flags = array(
+            'allow_authenticated',
+            'allow_guests',
+            'allow_all_roles',
+        );
+
+        $flags = apply_filters( 'wp_mcp_ai_tool_role_rule_flags', $default_flags );
+
+        if ( ! is_array( $flags ) ) {
+            return array();
+        }
+
+        $flags = array_map( 'sanitize_key', $flags );
+        $flags = array_filter( $flags, static function( $flag ) {
+            return '' !== $flag;
+        } );
+
+        return array_values( array_unique( $flags ) );
+    }
+
+    /**
+     * Retrieve the registered WordPress role slugs.
+     *
+     * @return array
+     */
+    protected static function get_registered_role_slugs() {
+        static $role_slugs = null;
+
+        if ( null !== $role_slugs ) {
+            return $role_slugs;
+        }
+
+        $role_slugs = array();
+
+        if ( function_exists( 'wp_roles' ) ) {
+            $wp_roles = wp_roles();
+
+            if ( $wp_roles && is_a( $wp_roles, 'WP_Roles' ) && isset( $wp_roles->roles ) && is_array( $wp_roles->roles ) ) {
+                $role_slugs = array_keys( $wp_roles->roles );
+            }
+        }
+
+        if ( ! empty( $role_slugs ) ) {
+            $role_slugs = array_map( 'sanitize_key', $role_slugs );
+            $role_slugs = array_filter( $role_slugs, static function( $role ) {
+                return '' !== $role;
+            } );
+            $role_slugs = array_values( array_unique( $role_slugs ) );
+        }
+
+        return $role_slugs;
     }
 }
