@@ -133,9 +133,14 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
         }
 
-        $content = isset( $arguments['content'] ) ? wp_kses_post( $arguments['content'] ) : '';
+        $raw_content = isset( $arguments['content'] ) ? $arguments['content'] : '';
+        $content     = wp_kses_post( $raw_content );
         if ( '' === $content ) {
             return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'wp-mcp-ai' ) );
+        }
+
+        if ( 'post' === $post_type ) {
+            $content = $this->ensure_post_content_uses_blocks( $content, $raw_content );
         }
 
         $post_data = array(
@@ -204,5 +209,93 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface {
         }
 
         return $response;
+    }
+
+    /**
+     * Ensures post content uses block markup when working with the core `post` post type.
+     *
+     * @param string $sanitized_content The sanitized post content.
+     * @param string $raw_content       The raw post content, prior to sanitization.
+     *
+     * @return string
+     */
+    private function ensure_post_content_uses_blocks( $sanitized_content, $raw_content ) {
+        if ( $this->content_contains_blocks( $raw_content ) || $this->content_contains_blocks( $sanitized_content ) ) {
+            return $sanitized_content;
+        }
+
+        $sanitized_content = trim( $sanitized_content );
+
+        if ( '' === $sanitized_content ) {
+            return $sanitized_content;
+        }
+
+        $is_plain_text = ( false === strpos( $sanitized_content, '<' ) );
+
+        if ( $is_plain_text ) {
+            return $this->convert_plain_text_to_paragraph_blocks( $sanitized_content );
+        }
+
+        return sprintf(
+            "<!-- wp:html -->\n%s\n<!-- /wp:html -->",
+            $sanitized_content
+        );
+    }
+
+    /**
+     * Determines whether a piece of content already contains block markup.
+     *
+     * @param string $content The content to evaluate.
+     *
+     * @return bool
+     */
+    private function content_contains_blocks( $content ) {
+        if ( '' === $content ) {
+            return false;
+        }
+
+        if ( false !== strpos( $content, '<!-- wp:' ) ) {
+            return true;
+        }
+
+        if ( function_exists( 'has_blocks' ) && has_blocks( $content ) ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Converts plain text content into a sequence of core paragraph blocks.
+     *
+     * @param string $content Plain text content.
+     *
+     * @return string
+     */
+    private function convert_plain_text_to_paragraph_blocks( $content ) {
+        $normalized_content = preg_replace( "/\r\n?/", "\n", $content );
+        $paragraphs         = preg_split( "/\n{2,}/", trim( $normalized_content ) );
+        $blocks             = array();
+
+        foreach ( $paragraphs as $paragraph ) {
+            $paragraph = trim( $paragraph );
+
+            if ( '' === $paragraph ) {
+                continue;
+            }
+
+            $paragraph = str_replace( "\n", "<br />\n", $paragraph );
+
+            $blocks[] = sprintf(
+                "<!-- wp:paragraph -->\n<p>%s</p>\n<!-- /wp:paragraph -->",
+                $paragraph
+            );
+        }
+
+        if ( empty( $blocks ) ) {
+            return "<!-- wp:paragraph -->\n<p></p>\n<!-- /wp:paragraph -->";
+        }
+
+        return implode( "\n\n", $blocks );
     }
 }
