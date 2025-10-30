@@ -71,4 +71,115 @@ class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
             );
         }
     }
+
+    /**
+     * Ensure tool role rules remove unknown entries and normalise values.
+     */
+    public function test_sanitize_tool_role_rules_meta_filters_invalid_entries() {
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->init();
+
+        $sanitized = WP_MCP_AI_Assistant_CPT::sanitize_tool_role_rules_meta(
+            array(
+                array(
+                    'tool'                => 'get_recent_posts',
+                    'roles'               => array( 'administrator', 'invalid-role', 'editor', '' ),
+                    'groups'              => array( '15', 'foo', 0, 29 ),
+                    'flags'               => array( 'allow_guests', 'invalid-flag', 'allow_guests' ),
+                    'allow_authenticated' => '1',
+                ),
+                array(
+                    'tool'  => 'not-a-tool',
+                    'roles' => array( 'administrator' ),
+                    'flags' => array( 'allow_guests' ),
+                ),
+                'string-entry',
+            )
+        );
+
+        $this->assertSame(
+            array(
+                array(
+                    'tool'   => 'get_recent_posts',
+                    'roles'  => array( 'administrator', 'editor' ),
+                    'groups' => array( 15, 29 ),
+                    'flags'  => array( 'allow_guests', 'allow_authenticated' ),
+                ),
+            ),
+            $sanitized
+        );
+    }
+
+    /**
+     * Ensure saving an assistant persists tool role rules and exposes them via configuration helpers.
+     */
+    public function test_save_post_persists_tool_role_rules_meta() {
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->init();
+
+        $assistant_id = $this->factory->post->create(
+            array(
+                'post_type' => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+            )
+        );
+
+        $admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        $_POST['wp_mcp_ai_tools_meta_nonce'] = wp_create_nonce( 'wp_mcp_ai_tools_meta' );
+        $_POST['wp_mcp_ai_tools']            = array( 'get_recent_posts' );
+        $_POST['wp_mcp_ai_tool_role_rules']  = array(
+            array(
+                'tool'   => 'get_recent_posts',
+                'roles'  => array( 'administrator', 'subscriber' ),
+                'groups' => array( '42', '42', '3' ),
+                'flags'  => array( 'allow_authenticated' ),
+            ),
+        );
+
+        $cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+        $cpt->save_post( $assistant_id, get_post( $assistant_id ) );
+
+        $expected_rules = array(
+            array(
+                'tool'   => 'get_recent_posts',
+                'roles'  => array( 'administrator', 'subscriber' ),
+                'groups' => array( 42, 3 ),
+                'flags'  => array( 'allow_authenticated' ),
+            ),
+        );
+
+        $this->assertSame(
+            $expected_rules,
+            get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOL_ROLE_RULES, true )
+        );
+
+        $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+        $this->assertArrayHasKey( 'tool_role_rules', $config );
+        $this->assertSame( $expected_rules, $config['tool_role_rules'] );
+
+        $_POST = array();
+        wp_set_current_user( 0 );
+    }
+
+    /**
+     * Ensure assistant configuration continues to expose an empty array when no tool role rules exist.
+     */
+    public function test_get_assistant_configuration_handles_missing_tool_role_rules() {
+        $assistant_id = $this->factory->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+            )
+        );
+
+        delete_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOL_ROLE_RULES );
+
+        $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+        $this->assertArrayHasKey( 'tool_role_rules', $config );
+        $this->assertSame( array(), $config['tool_role_rules'] );
+    }
 }
