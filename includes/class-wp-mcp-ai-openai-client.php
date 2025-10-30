@@ -1759,15 +1759,17 @@ class WP_MCP_AI_OpenAI_Client {
                             $segment_copy['text'] = $slice . ( $length > 200 ? '…' : '' );
                         }
 
-                        if ( 'input_image' === $type && isset( $segment['image_url']['url'] ) ) {
-                            $segment_copy['image_url']['url'] = esc_url_raw( $segment['image_url']['url'] );
-                        }
-
                         if ( 'input_image' === $type ) {
-                            if ( isset( $segment['image']['file_id'] ) ) {
-                                $segment_copy['image'] = array( 'file_id' => $segment['image']['file_id'] );
-                            } elseif ( isset( $segment['image_file']['file_id'] ) ) {
-                                $segment_copy['image'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                            if ( isset( $segment['image_url']['url'] ) ) {
+                                $segment_copy['image_url']['url'] = esc_url_raw( $segment['image_url']['url'] );
+                            } elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
+                                $segment_copy['image_url'] = esc_url_raw( $segment['image_url'] );
+                            }
+
+                            if ( isset( $segment['image_file']['file_id'] ) ) {
+                                $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                            } elseif ( isset( $segment['image']['file_id'] ) ) {
+                                $segment_copy['image_file'] = array( 'file_id' => $segment['image']['file_id'] );
                             }
                         }
 
@@ -2110,11 +2112,15 @@ class WP_MCP_AI_OpenAI_Client {
                 $openai_file_id = (string) $attachment['file_id'];
             }
 
-            if ( ! isset( $segment['image'] ) || ! is_array( $segment['image'] ) ) {
-                $segment['image'] = array();
+            if ( ! isset( $segment['image_file'] ) || ! is_array( $segment['image_file'] ) ) {
+                $segment['image_file'] = array();
             }
 
-            $segment['image']['file_id'] = $openai_file_id;
+            $segment['image_file']['file_id'] = $openai_file_id;
+
+            if ( isset( $segment['image'] ) ) {
+                unset( $segment['image'] );
+            }
 
             if ( isset( $segment['image_url'] ) ) {
                 unset( $segment['image_url'] );
@@ -2124,17 +2130,21 @@ class WP_MCP_AI_OpenAI_Client {
                 $segment['caption'] = $attachment['caption'];
             }
         } elseif ( isset( $segment['image_url']['url'] ) ) {
-            $segment['image_url'] = (string) $segment['image_url']['url'];
-        } elseif ( isset( $segment['image_file']['file_id'] ) && ! isset( $segment['image'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['image_file']['file_id'] );
+            $segment['image_url'] = array( 'url' => esc_url_raw( (string) $segment['image_url']['url'] ) );
+        } elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
+            $segment['image_url'] = array( 'url' => esc_url_raw( $segment['image_url'] ) );
+        } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+            $segment['image_file'] = array( 'file_id' => (string) $segment['image_file']['file_id'] );
+        } elseif ( isset( $segment['image'] ) && is_array( $segment['image'] ) && isset( $segment['image']['file_id'] ) ) {
+            $segment['image_file'] = array( 'file_id' => (string) $segment['image']['file_id'] );
         }
 
-        if ( isset( $segment['file_id'] ) && ! isset( $segment['image'] ) ) {
-            $segment['image'] = array( 'file_id' => (string) $segment['file_id'] );
+        if ( isset( $segment['file_id'] ) && ! isset( $segment['image_file'] ) ) {
+            $segment['image_file'] = array( 'file_id' => (string) $segment['file_id'] );
         }
 
-        if ( isset( $segment['image_file'] ) ) {
-            unset( $segment['image_file'] );
+        if ( isset( $segment['image'] ) ) {
+            unset( $segment['image'] );
         }
 
         if ( isset( $segment['file_id'] ) ) {
