@@ -475,9 +475,9 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure image segments target the `image_file` key when building Responses payloads.
+     * Ensure image segments expose the `file_id` key when building Responses payloads.
      */
-    public function test_responses_payload_uses_image_file_key() {
+    public function test_responses_payload_uses_file_id_key() {
         $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
         $defaults['openai_api_key'] = 'sk-test';
         update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
@@ -513,10 +513,10 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
                 'role'    => 'user',
                 'content' => array(
                     array(
-                        'type'       => 'input_image',
-                        'caption'    => 'Reference still',
-                        'detail'     => 'high',
-                        'image_file' => array( 'file_id' => 'file-img-123' ),
+                        'type'     => 'input_image',
+                        'caption'  => 'Reference still',
+                        'detail'   => 'high',
+                        'file_id'  => 'file-img-123',
                     ),
                 ),
             ),
@@ -555,8 +555,8 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $image_segment = $input_message['content'][0];
         $this->assertSame( 'input_image', $image_segment['type'] );
-        $this->assertArrayHasKey( 'image_file', $image_segment );
-        $this->assertSame( 'file-img-123', $image_segment['image_file']['file_id'] );
+        $this->assertArrayHasKey( 'file_id', $image_segment );
+        $this->assertSame( 'file-img-123', $image_segment['file_id'] );
         $this->assertArrayNotHasKey( 'image', $image_segment );
         $this->assertArrayNotHasKey( 'image_url', $image_segment );
         $this->assertSame( 'Reference still', $image_segment['caption'] );

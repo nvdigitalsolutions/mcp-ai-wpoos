@@ -1512,13 +1512,18 @@
             }
 
             if (type === 'input_image' || type === 'image_file' || type === 'output_image') {
-                var imageFile = segment.image_file || segment.image || segment.file || null;
-                if (imageFile) {
-                    var imageId = imageFile.file_id || imageFile.id || '';
-                    if (imageId && lookup[imageId]) {
-                        addAttachment(lookup[imageId], segment.caption || imageFile.display_name || imageFile.filename, segment.quote || '');
-                        return;
+                var inlineFileId = segment.file_id || '';
+                if (!inlineFileId) {
+                    var imageFile = segment.image_file || segment.image || segment.file || null;
+                    if (imageFile) {
+                        inlineFileId = imageFile.file_id || imageFile.id || '';
                     }
+                }
+
+                if (inlineFileId && lookup[inlineFileId]) {
+                    var imageMeta = segment.image_file || segment.image || segment.file || {};
+                    addAttachment(lookup[inlineFileId], segment.caption || imageMeta.display_name || imageMeta.filename, segment.quote || '');
+                    return;
                 }
 
                 var url = '';
@@ -3320,6 +3325,8 @@
 
             if (piece.caption && typeof piece.caption === 'string') {
                 label = piece.caption;
+            } else if (typeof piece.file_id === 'string' && piece.file_id) {
+                label = piece.file_id;
             } else if (piece.image_file && typeof piece.image_file === 'object') {
                 if (typeof piece.image_file.display_name === 'string') {
                     label = piece.image_file.display_name;

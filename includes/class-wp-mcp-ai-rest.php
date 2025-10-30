@@ -1909,7 +1909,9 @@ class WP_MCP_AI_REST {
                 if ( 'input_image' === $type ) {
                     $file_id = '';
 
-                    if ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ) {
+                    if ( isset( $segment['file_id'] ) ) {
+                        $file_id = (string) $segment['file_id'];
+                    } elseif ( isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ) {
                         $file_id = isset( $segment['image_file']['file_id'] ) ? (string) $segment['image_file']['file_id'] : '';
                     } elseif ( isset( $segment['image']['file_id'] ) ) {
                         $file_id = (string) $segment['image']['file_id'];
