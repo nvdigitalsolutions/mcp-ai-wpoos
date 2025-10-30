@@ -266,26 +266,56 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
      * @return array
      */
     protected function get_tool_group_map() {
+        if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+            $registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+            if ( method_exists( $registry, 'init' ) ) {
+                $registry->init();
+            }
+
+            if ( method_exists( $registry, 'get_tool_group_map' ) ) {
+                $registry_map = $registry->get_tool_group_map();
+
+                if ( is_array( $registry_map ) && ! empty( $registry_map ) ) {
+                    return $registry_map;
+                }
+            }
+        }
+
         return array(
-            'submit_document_prompt'        => 'content',
-            'get_recent_posts'              => 'content',
-            'get_user_info'                 => 'content',
-            'get_site_summary'              => 'content',
-            'get_jetengine_items'           => 'content',
-            'get_woo_recent_orders'         => 'content',
-            'get_woo_products'              => 'content',
-            'generate_openai_image'         => 'media',
-            'generate_openai_speech'        => 'media',
-            'transcribe_openai_audio'       => 'media',
-            'run_openai_external_action'    => 'automation',
-            'run_crawl4ai_job'              => 'automation',
-            'web_search'                    => 'automation',
-            'list_jetengine_rest_routes'    => 'jetengine',
-            'invoke_jetengine_route'        => 'jetengine',
-            'create_cron_job'               => 'operations',
-            'send_group_email'              => 'operations',
-            'open_openai_usage'             => 'operations',
-            'open_openai_logs'              => 'operations',
+            'submit_document_prompt'     => 'content',
+            'search_content'             => 'content',
+            'search_attachments'         => 'content',
+            'get_recent_posts'           => 'content',
+            'save_post'                  => 'content',
+            'get_user_info'              => 'operations',
+            'get_site_summary'           => 'operations',
+            'get_system_logs'            => 'operations',
+            'open_openai_usage'          => 'operations',
+            'open_openai_logs'           => 'operations',
+            'create_cron_job'            => 'operations',
+            'purge_cloudflare_cache'     => 'operations',
+            'run_openai_external_action' => 'automation',
+            'run_crawl4ai_job'           => 'automation',
+            'create_google_calendar_event' => 'automation',
+            'web_search'                 => 'external-data',
+            'get_gdacs_events'           => 'external-data',
+            'get_open_meteo_forecast'    => 'external-data',
+            'get_nhc_active_storms'      => 'external-data',
+            'reliefweb_reports'          => 'external-data',
+            'generate_openai_image'      => 'media',
+            'generate_openai_speech'     => 'media',
+            'transcribe_openai_audio'    => 'media',
+            'get_jetengine_items'        => 'jetengine',
+            'list_jetengine_rest_routes' => 'jetengine',
+            'invoke_jetengine_route'     => 'jetengine',
+            'get_woo_recent_orders'      => 'commerce',
+            'get_woo_products'           => 'commerce',
+            'quickbooks_report'          => 'commerce',
+            'search_gmail'               => 'communication',
+            'send_group_email'           => 'communication',
+            'send_mailjet_email'         => 'communication',
+            'send_telegram_message'      => 'communication',
         );
     }
 
@@ -295,13 +325,32 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
      * @return array
      */
     protected function get_group_labels() {
+        if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+            $registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+            if ( method_exists( $registry, 'init' ) ) {
+                $registry->init();
+            }
+
+            if ( method_exists( $registry, 'get_tool_group_labels' ) ) {
+                $registry_labels = $registry->get_tool_group_labels();
+
+                if ( is_array( $registry_labels ) && ! empty( $registry_labels ) ) {
+                    return $registry_labels;
+                }
+            }
+        }
+
         return array(
-            'content'    => __( 'Content ingestion & retrieval', 'wp-mcp-ai' ),
-            'media'      => __( 'Media generation & transcription', 'wp-mcp-ai' ),
-            'automation' => __( 'External data & automations', 'wp-mcp-ai' ),
-            'jetengine'  => __( 'JetEngine REST utilities', 'wp-mcp-ai' ),
-            'operations' => __( 'Operational helpers', 'wp-mcp-ai' ),
-            'other'      => __( 'Other tools', 'wp-mcp-ai' ),
+            'content'       => __( 'Content ingestion & search', 'wp-mcp-ai' ),
+            'media'         => __( 'Media generation & transcription', 'wp-mcp-ai' ),
+            'automation'    => __( 'Automations & workflows', 'wp-mcp-ai' ),
+            'jetengine'     => __( 'JetEngine REST utilities', 'wp-mcp-ai' ),
+            'commerce'      => __( 'Commerce & finance', 'wp-mcp-ai' ),
+            'communication' => __( 'Communications & outreach', 'wp-mcp-ai' ),
+            'external-data' => __( 'External data sources', 'wp-mcp-ai' ),
+            'operations'    => __( 'Site operations & maintenance', 'wp-mcp-ai' ),
+            'other'         => __( 'Other tools', 'wp-mcp-ai' ),
         );
     }
 

@@ -844,6 +844,21 @@ class WP_MCP_AI_Assistant_CPT {
 
         $tools = $this->registry->get_tools();
 
+        $tool_role_rules = get_post_meta( $post->ID, self::META_TOOL_ROLE_RULES, true );
+        if ( ! is_array( $tool_role_rules ) ) {
+            $tool_role_rules = array();
+        }
+
+        $tool_role_rules = self::sanitize_tool_role_rules_meta( $tool_role_rules );
+
+        $tool_role_rules_by_slug = array();
+
+        foreach ( $tool_role_rules as $rule ) {
+            if ( isset( $rule['tool'] ) ) {
+                $tool_role_rules_by_slug[ $rule['tool'] ] = $rule;
+            }
+        }
+
         $external_action_id   = get_post_meta( $post->ID, self::META_EXTERNAL_ACTION_ID, true );
         $external_action_id   = self::sanitize_external_action_id_meta( $external_action_id );
         $external_action_type = get_post_meta( $post->ID, self::META_EXTERNAL_ACTION_TYPE, true );
@@ -855,63 +870,336 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         echo '<p>' . esc_html__( 'Select the tools this assistant is permitted to invoke.', 'wp-mcp-ai' ) . '</p>';
+        echo '<p class="description">' . esc_html__( 'Expand a group to review related capabilities. You can optionally limit who can call each tool by assigning WordPress roles.', 'wp-mcp-ai' ) . '</p>';
 
-        echo '<ul class="wp-mcp-ai-tools">';
+        $group_map = array();
+        if ( method_exists( $this->registry, 'get_tool_group_map' ) ) {
+            $group_map = $this->registry->get_tool_group_map();
+        }
+        if ( ! is_array( $group_map ) ) {
+            $group_map = array();
+        }
+
+        $group_labels = array();
+        if ( method_exists( $this->registry, 'get_tool_group_labels' ) ) {
+            $group_labels = $this->registry->get_tool_group_labels();
+        }
+        if ( ! is_array( $group_labels ) ) {
+            $group_labels = array();
+        }
+        if ( ! isset( $group_labels['other'] ) ) {
+            $group_labels['other'] = __( 'Other tools', 'wp-mcp-ai' );
+        }
+
+        $grouped_tools = array();
+
         foreach ( $tools as $tool ) {
-            $slug        = $tool->get_slug();
-            $is_selected = in_array( $slug, $selected_tools, true );
-
-            echo '<li>';
-            echo '<label>';
-            printf(
-                '<input type="checkbox" name="wp_mcp_ai_tools[]" value="%1$s" %2$s /> <strong>%3$s</strong><br/><span class="description">%4$s</span>',
-                esc_attr( $slug ),
-                checked( $is_selected, true, false ),
-                esc_html( $tool->get_name() ),
-                esc_html( $tool->get_description() )
-            );
-            echo '</label>';
-
-            if ( 'run_openai_external_action' === $slug ) {
-                $identifier_field_id = 'wp-mcp-ai-external-action-id';
-                $type_field_id       = 'wp-mcp-ai-external-action-type';
-                ?>
-                <div class="wp-mcp-ai-tool-defaults">
-                    <p>
-                        <label for="<?php echo esc_attr( $identifier_field_id ); ?>">
-                            <strong><?php esc_html_e( 'Default workflow or assistant ID', 'wp-mcp-ai' ); ?></strong>
-                        </label>
-                        <input
-                            type="text"
-                            id="<?php echo esc_attr( $identifier_field_id ); ?>"
-                            name="wp_mcp_ai_external_action_identifier"
-                            value="<?php echo esc_attr( $external_action_id ); ?>"
-                            class="widefat"
-                        />
-                    </p>
-                    <p>
-                        <label for="<?php echo esc_attr( $type_field_id ); ?>">
-                            <strong><?php esc_html_e( 'Default action type', 'wp-mcp-ai' ); ?></strong>
-                        </label>
-                        <select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat">
-                            <option value="">
-                                <?php esc_html_e( 'Use runtime choice', 'wp-mcp-ai' ); ?>
-                            </option>
-                            <option value="workflow" <?php selected( $external_action_type, 'workflow' ); ?>>
-                                <?php esc_html_e( 'Workflow', 'wp-mcp-ai' ); ?>
-                            </option>
-                            <option value="assistant" <?php selected( $external_action_type, 'assistant' ); ?>>
-                                <?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?>
-                            </option>
-                        </select>
-                    </p>
-                </div>
-                <?php
+            if ( ! $tool instanceof WP_MCP_AI_Tool_Interface ) {
+                continue;
             }
 
-            echo '</li>';
+            $slug = $tool->get_slug();
+
+            if ( '' === $slug ) {
+                continue;
+            }
+
+            $group_id = isset( $group_map[ $slug ] ) ? (string) $group_map[ $slug ] : 'other';
+
+            if ( '' === $group_id ) {
+                $group_id = 'other';
+            }
+
+            if ( ! isset( $grouped_tools[ $group_id ] ) ) {
+                $grouped_tools[ $group_id ] = array();
+            }
+
+            $grouped_tools[ $group_id ][] = $tool;
         }
-        echo '</ul>';
+
+        if ( empty( $grouped_tools ) ) {
+            echo '<p>' . esc_html__( 'No tools are currently registered.', 'wp-mcp-ai' ) . '</p>';
+            return;
+        }
+
+        $ordered_group_ids = array();
+
+        foreach ( $group_labels as $group_id => $label ) {
+            if ( isset( $grouped_tools[ $group_id ] ) ) {
+                $ordered_group_ids[] = (string) $group_id;
+            }
+        }
+
+        foreach ( $grouped_tools as $group_id => $unused ) {
+            if ( ! in_array( $group_id, $ordered_group_ids, true ) ) {
+                $ordered_group_ids[] = (string) $group_id;
+            }
+        }
+
+        $role_options = array();
+
+        if ( function_exists( 'get_editable_roles' ) ) {
+            $editable_roles = get_editable_roles();
+
+            if ( is_array( $editable_roles ) ) {
+                foreach ( $editable_roles as $role_slug => $role_details ) {
+                    $role_slug = sanitize_key( $role_slug );
+
+                    if ( '' === $role_slug ) {
+                        continue;
+                    }
+
+                    $role_name = isset( $role_details['name'] ) ? (string) $role_details['name'] : $role_slug;
+
+                    $role_options[ $role_slug ] = translate_user_role( $role_name );
+                }
+            }
+        }
+
+        if ( empty( $role_options ) ) {
+            $registered_roles = self::get_registered_role_slugs();
+
+            foreach ( $registered_roles as $role_slug ) {
+                if ( '' === $role_slug ) {
+                    continue;
+                }
+
+                $role_options[ $role_slug ] = ucwords( str_replace( '_', ' ', $role_slug ) );
+            }
+        }
+
+        if ( ! empty( $role_options ) ) {
+            uasort( $role_options, 'strnatcasecmp' );
+        }
+
+        static $tools_styles_printed = false;
+
+        if ( ! $tools_styles_printed ) {
+            $tools_styles_printed = true;
+            ?>
+            <style>
+            .wp-mcp-ai-tools{display:flex;flex-direction:column;gap:1rem;margin-top:1rem}
+            .wp-mcp-ai-tools__group{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
+            .wp-mcp-ai-tools__group summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
+            .wp-mcp-ai-tools__group summary::-webkit-details-marker{display:none}
+            .wp-mcp-ai-tools__summary-title{flex:1 1 auto}
+            .wp-mcp-ai-tools__summary-count{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
+            .wp-mcp-ai-tools__group[open]{background:#fff}
+            .wp-mcp-ai-tools__group[open] summary{border-bottom:1px solid #dcdcde}
+            .wp-mcp-ai-tools__list{margin:0;padding:1rem;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+            .wp-mcp-ai-tools__item{border:1px solid #dcdcde;border-radius:4px;background:#fff;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;transition:box-shadow 0.2s ease}
+            .wp-mcp-ai-tools__item:focus-within{box-shadow:0 0 0 1px #2271b1}
+            .wp-mcp-ai-tools__header{display:flex;align-items:flex-start;gap:0.75rem}
+            .wp-mcp-ai-tools__checkbox{margin-top:0.2rem}
+            .wp-mcp-ai-tools__name{display:block;font-weight:600;font-size:14px}
+            .wp-mcp-ai-tools__description{margin:0;color:#50575e;font-size:13px}
+            .wp-mcp-ai-tools__controls label{font-weight:600;font-size:13px;margin-bottom:0.25rem;display:block}
+            .wp-mcp-ai-tools__role-select{width:100%}
+            .wp-mcp-ai-tools__helper{margin:0;color:#646970;font-size:12px}
+            .wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}
+            .wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}
+            .wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}
+            @media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}
+            </style>
+            <?php
+        }
+
+        static $tools_script_printed = false;
+
+        if ( ! $tools_script_printed ) {
+            $tools_script_printed = true;
+            ?>
+            <script>
+            ( function() {
+                function syncToolControls( container ) {
+                    if ( ! container ) {
+                        return;
+                    }
+
+                    var checkbox = container.querySelector( '.wp-mcp-ai-tools__checkbox' );
+                    if ( ! checkbox ) {
+                        return;
+                    }
+
+                    var controls = container.querySelectorAll( '[data-tool-control]' );
+                    var selected = checkbox.checked;
+
+                    container.setAttribute( 'data-tool-selected', selected ? 'true' : 'false' );
+
+                    controls.forEach( function( control ) {
+                        if ( selected ) {
+                            control.removeAttribute( 'disabled' );
+                            control.setAttribute( 'aria-disabled', 'false' );
+                        } else {
+                            control.setAttribute( 'disabled', 'disabled' );
+                            control.setAttribute( 'aria-disabled', 'true' );
+                        }
+                    } );
+                }
+
+                document.addEventListener( 'DOMContentLoaded', function() {
+                    var toolItems = document.querySelectorAll( '.wp-mcp-ai-tools__item' );
+
+                    toolItems.forEach( function( item ) {
+                        var checkbox = item.querySelector( '.wp-mcp-ai-tools__checkbox' );
+
+                        if ( ! checkbox ) {
+                            return;
+                        }
+
+                        syncToolControls( item );
+
+                        checkbox.addEventListener( 'change', function() {
+                            syncToolControls( item );
+                        } );
+                    } );
+                } );
+            } )();
+            </script>
+            <?php
+        }
+
+        echo '<div class="wp-mcp-ai-tools" role="group" aria-label="' . esc_attr__( 'Assistant tool permissions', 'wp-mcp-ai' ) . '">';
+
+        foreach ( $ordered_group_ids as $group_index => $group_id ) {
+            if ( ! isset( $grouped_tools[ $group_id ] ) || empty( $grouped_tools[ $group_id ] ) ) {
+                continue;
+            }
+
+            $group_label = isset( $group_labels[ $group_id ] ) ? $group_labels[ $group_id ] : ucwords( str_replace( '-', ' ', (string) $group_id ) );
+            $group_label = (string) $group_label;
+            $group_count = count( $grouped_tools[ $group_id ] );
+            $group_suffix = sanitize_html_class( $group_id );
+            $summary_id  = 'wp-mcp-ai-tools-summary-' . $group_suffix;
+            $list_id     = 'wp-mcp-ai-tools-list-' . $group_suffix;
+            $open_attr   = 0 === $group_index ? ' open' : '';
+
+            echo '<details class="wp-mcp-ai-tools__group" role="group" aria-labelledby="' . esc_attr( $summary_id ) . '"' . $open_attr . '>';
+            echo '<summary id="' . esc_attr( $summary_id ) . '" class="wp-mcp-ai-tools__summary">';
+            echo '<span class="wp-mcp-ai-tools__summary-title">' . esc_html( $group_label ) . '</span>';
+            echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">' . esc_html( number_format_i18n( $group_count ) ) . '</span>';
+            echo '<span class="screen-reader-text">' . esc_html( sprintf( _n( '%d tool in this group', '%d tools in this group', $group_count, 'wp-mcp-ai' ), $group_count ) ) . '</span>';
+            echo '</summary>';
+            echo '<ul class="wp-mcp-ai-tools__list" id="' . esc_attr( $list_id ) . '" role="group" aria-label="' . esc_attr( $group_label ) . '">';
+
+            foreach ( $grouped_tools[ $group_id ] as $tool ) {
+                $slug = $tool->get_slug();
+
+                if ( '' === $slug ) {
+                    continue;
+                }
+
+                $is_selected     = in_array( $slug, $selected_tools, true );
+                $checkbox_id     = 'wp-mcp-ai-tool-' . sanitize_html_class( $slug );
+                $description_id  = 'wp-mcp-ai-tool-description-' . sanitize_html_class( $slug );
+                $role_select_id  = 'wp-mcp-ai-tool-roles-' . sanitize_html_class( $slug );
+                $role_helper_id  = $role_select_id . '-help';
+                $control_disabled = $is_selected ? '' : ' disabled="disabled"';
+                $aria_disabled    = $is_selected ? 'false' : 'true';
+                $selected_roles   = isset( $tool_role_rules_by_slug[ $slug ]['roles'] ) ? (array) $tool_role_rules_by_slug[ $slug ]['roles'] : array();
+                $persisted_groups = isset( $tool_role_rules_by_slug[ $slug ]['groups'] ) ? (array) $tool_role_rules_by_slug[ $slug ]['groups'] : array();
+                $persisted_flags  = isset( $tool_role_rules_by_slug[ $slug ]['flags'] ) ? (array) $tool_role_rules_by_slug[ $slug ]['flags'] : array();
+                $select_size      = ! empty( $role_options ) ? min( max( count( $role_options ), 4 ), 8 ) : 4;
+
+                echo '<li class="wp-mcp-ai-tools__item" data-tool-selected="' . ( $is_selected ? 'true' : 'false' ) . '">';
+                echo '<div class="wp-mcp-ai-tools__header">';
+                printf(
+                    '<input type="checkbox" class="wp-mcp-ai-tools__checkbox" id="%1$s" name="wp_mcp_ai_tools[]" value="%2$s" %3$s aria-describedby="%4$s" />',
+                    esc_attr( $checkbox_id ),
+                    esc_attr( $slug ),
+                    checked( $is_selected, true, false ),
+                    esc_attr( $description_id )
+                );
+                echo '<label for="' . esc_attr( $checkbox_id ) . '">';
+                echo '<span class="wp-mcp-ai-tools__name">' . esc_html( $tool->get_name() ) . '</span>';
+                echo '<p class="wp-mcp-ai-tools__description" id="' . esc_attr( $description_id ) . '">' . esc_html( $tool->get_description() ) . '</p>';
+                echo '</label>';
+                echo '</div>';
+
+                echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][tool]" value="' . esc_attr( $slug ) . '" data-tool-control="1"' . $control_disabled . ' />';
+
+                foreach ( $persisted_groups as $group_value ) {
+                    echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][groups][]" value="' . esc_attr( (string) absint( $group_value ) ) . '" data-tool-control="1"' . $control_disabled . ' />';
+                }
+
+                foreach ( $persisted_flags as $flag_value ) {
+                    $flag_value = sanitize_key( $flag_value );
+
+                    if ( '' === $flag_value ) {
+                        continue;
+                    }
+
+                    echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][flags][]" value="' . esc_attr( $flag_value ) . '" data-tool-control="1"' . $control_disabled . ' />';
+                }
+
+                echo '<div class="wp-mcp-ai-tools__controls">';
+
+                if ( ! empty( $role_options ) ) {
+                    echo '<label for="' . esc_attr( $role_select_id ) . '">' . esc_html__( 'Limit to selected roles', 'wp-mcp-ai' ) . '</label>';
+                    echo '<select id="' . esc_attr( $role_select_id ) . '" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][roles][]" class="wp-mcp-ai-tools__role-select" multiple size="' . esc_attr( $select_size ) . '" data-tool-control="1"' . $control_disabled . ' aria-describedby="' . esc_attr( $role_helper_id ) . '" aria-disabled="' . esc_attr( $aria_disabled ) . '">';
+
+                    foreach ( $role_options as $role_slug => $role_label ) {
+                        printf(
+                            '<option value="%1$s" %2$s>%3$s</option>',
+                            esc_attr( $role_slug ),
+                            selected( in_array( $role_slug, $selected_roles, true ), true, false ),
+                            esc_html( $role_label )
+                        );
+                    }
+
+                    echo '</select>';
+                    echo '<p class="description wp-mcp-ai-tools__helper" id="' . esc_attr( $role_helper_id ) . '">' . esc_html__( 'Hold Ctrl (Windows) or Command (macOS) to toggle multiple roles. Leave blank to allow any role with access to the assistant interface.', 'wp-mcp-ai' ) . '</p>';
+                } else {
+                    echo '<p class="description wp-mcp-ai-tools__helper" id="' . esc_attr( $role_helper_id ) . '">' . esc_html__( 'No editable roles are available. All authenticated operators will be able to request this tool.', 'wp-mcp-ai' ) . '</p>';
+                }
+
+                if ( 'run_openai_external_action' === $slug ) {
+                    $identifier_field_id = 'wp-mcp-ai-external-action-id';
+                    $type_field_id       = 'wp-mcp-ai-external-action-type';
+                    ?>
+                    <div class="wp-mcp-ai-tools__extra">
+                        <p>
+                            <label for="<?php echo esc_attr( $identifier_field_id ); ?>">
+                                <strong><?php esc_html_e( 'Default workflow or assistant ID', 'wp-mcp-ai' ); ?></strong>
+                            </label>
+                            <input
+                                type="text"
+                                id="<?php echo esc_attr( $identifier_field_id ); ?>"
+                                name="wp_mcp_ai_external_action_identifier"
+                                value="<?php echo esc_attr( $external_action_id ); ?>"
+                                class="widefat"
+                                data-tool-control="1"<?php echo $control_disabled; ?>
+                            />
+                        </p>
+                        <p>
+                            <label for="<?php echo esc_attr( $type_field_id ); ?>">
+                                <strong><?php esc_html_e( 'Default action type', 'wp-mcp-ai' ); ?></strong>
+                            </label>
+                            <select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; ?>>
+                                <option value="">
+                                    <?php esc_html_e( 'Use runtime choice', 'wp-mcp-ai' ); ?>
+                                </option>
+                                <option value="workflow" <?php selected( $external_action_type, 'workflow' ); ?>>
+                                    <?php esc_html_e( 'Workflow', 'wp-mcp-ai' ); ?>
+                                </option>
+                                <option value="assistant" <?php selected( $external_action_type, 'assistant' ); ?>>
+                                    <?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?>
+                                </option>
+                            </select>
+                        </p>
+                    </div>
+                    <?php
+                }
+
+                echo '</div>';
+                echo '</li>';
+            }
+
+            echo '</ul>';
+            echo '</details>';
+        }
+
+        echo '</div>';
     }
 
     /**
@@ -2040,6 +2328,10 @@ class WP_MCP_AI_Assistant_CPT {
 
             if ( ! empty( $flags ) ) {
                 $entry['flags'] = array_values( array_unique( $flags ) );
+            }
+
+            if ( empty( $entry['roles'] ) && empty( $entry['groups'] ) && empty( $entry['flags'] ) ) {
+                continue;
             }
 
             $sanitized[] = $entry;

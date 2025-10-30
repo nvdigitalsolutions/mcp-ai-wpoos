@@ -111,6 +111,24 @@ class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure role rule entries without any constraints are discarded.
+     */
+    public function test_sanitize_tool_role_rules_meta_discards_empty_entries() {
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->init();
+
+        $sanitized = WP_MCP_AI_Assistant_CPT::sanitize_tool_role_rules_meta(
+            array(
+                array(
+                    'tool' => 'get_recent_posts',
+                ),
+            )
+        );
+
+        $this->assertSame( array(), $sanitized );
+    }
+
+    /**
      * Ensure saving an assistant persists tool role rules and exposes them via configuration helpers.
      */
     public function test_save_post_persists_tool_role_rules_meta() {

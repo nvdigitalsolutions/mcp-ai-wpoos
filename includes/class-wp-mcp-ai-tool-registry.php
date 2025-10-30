@@ -174,6 +174,82 @@ class WP_MCP_AI_Tool_Registry {
     }
 
     /**
+     * Retrieve the default tool grouping map keyed by tool slug.
+     *
+     * @return array<string, string>
+     */
+    public function get_tool_group_map() {
+        $default_map = array(
+            'submit_document_prompt'     => 'content',
+            'search_content'             => 'content',
+            'search_attachments'         => 'content',
+            'get_recent_posts'           => 'content',
+            'save_post'                  => 'content',
+            'get_user_info'              => 'operations',
+            'get_site_summary'           => 'operations',
+            'get_system_logs'            => 'operations',
+            'open_openai_usage'          => 'operations',
+            'open_openai_logs'           => 'operations',
+            'create_cron_job'            => 'operations',
+            'purge_cloudflare_cache'     => 'operations',
+            'run_openai_external_action' => 'automation',
+            'run_crawl4ai_job'           => 'automation',
+            'create_google_calendar_event' => 'automation',
+            'web_search'                 => 'external-data',
+            'get_gdacs_events'           => 'external-data',
+            'get_open_meteo_forecast'    => 'external-data',
+            'get_nhc_active_storms'      => 'external-data',
+            'reliefweb_reports'          => 'external-data',
+            'generate_openai_image'      => 'media',
+            'generate_openai_speech'     => 'media',
+            'transcribe_openai_audio'    => 'media',
+            'get_jetengine_items'        => 'jetengine',
+            'list_jetengine_rest_routes' => 'jetengine',
+            'invoke_jetengine_route'     => 'jetengine',
+            'get_woo_recent_orders'      => 'commerce',
+            'get_woo_products'           => 'commerce',
+            'quickbooks_report'          => 'commerce',
+            'search_gmail'               => 'communication',
+            'send_group_email'           => 'communication',
+            'send_mailjet_email'         => 'communication',
+            'send_telegram_message'      => 'communication',
+        );
+
+        /**
+         * Filter the tool grouping map used throughout the admin UI.
+         *
+         * @param array<string, string> $default_map Associative array of tool slugs to group identifiers.
+         */
+        return apply_filters( 'wp_mcp_ai_tool_group_map', $default_map );
+    }
+
+    /**
+     * Retrieve the default labels for tool groups.
+     *
+     * @return array<string, string>
+     */
+    public function get_tool_group_labels() {
+        $default_labels = array(
+            'content'       => __( 'Content ingestion & search', 'wp-mcp-ai' ),
+            'media'         => __( 'Media generation & transcription', 'wp-mcp-ai' ),
+            'automation'    => __( 'Automations & workflows', 'wp-mcp-ai' ),
+            'jetengine'     => __( 'JetEngine REST utilities', 'wp-mcp-ai' ),
+            'commerce'      => __( 'Commerce & finance', 'wp-mcp-ai' ),
+            'communication' => __( 'Communications & outreach', 'wp-mcp-ai' ),
+            'external-data' => __( 'External data sources', 'wp-mcp-ai' ),
+            'operations'    => __( 'Site operations & maintenance', 'wp-mcp-ai' ),
+            'other'         => __( 'Other tools', 'wp-mcp-ai' ),
+        );
+
+        /**
+         * Filter the tool group labels used throughout the admin UI.
+         *
+         * @param array<string, string> $default_labels Associative array of group identifiers to labels.
+         */
+        return apply_filters( 'wp_mcp_ai_tool_group_labels', $default_labels );
+    }
+
+    /**
      * Load the plugin's default tool providers.
      */
     protected function load_default_tools() {
