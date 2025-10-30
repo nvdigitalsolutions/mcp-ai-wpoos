@@ -1,4 +1,4 @@
-# OpenWP Operator Sytem (WPOS)
+# OpenWP Operator Sytem (oWPOS)
 
 **Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com)**
