@@ -162,10 +162,11 @@ class WP_MCP_AI_OpenAI_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI file upload failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_file_upload_http_error',
                 __( 'The OpenAI file upload failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -267,10 +268,11 @@ class WP_MCP_AI_OpenAI_Client {
                 )
             );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_file_delete_http_error',
                 __( 'The OpenAI file deletion request failed.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -548,10 +550,11 @@ class WP_MCP_AI_OpenAI_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI image request failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_http_error',
                 __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -754,10 +757,11 @@ class WP_MCP_AI_OpenAI_Client {
                 )
             );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_image_download_http_error',
                 __( 'The generated image could not be downloaded from OpenAI.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -1068,10 +1072,11 @@ class WP_MCP_AI_OpenAI_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI text-to-speech request failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_http_error',
                 __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -1271,10 +1276,11 @@ class WP_MCP_AI_OpenAI_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI audio transcription request failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_http_error',
                 __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 
@@ -1492,10 +1498,11 @@ class WP_MCP_AI_OpenAI_Client {
         if ( is_wp_error( $response ) ) {
             WP_MCP_AI_Logger::log_error( 'OpenAI request failed.', array( 'error' => $response->get_error_message() ) );
 
-            return new WP_Error(
+            return WP_MCP_AI_HTTP::prepare_transport_error(
+                $response,
                 'wp_mcp_ai_http_error',
                 __( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-                array( 'error' => $response )
+                __( 'OpenAI', 'wp-mcp-ai' )
             );
         }
 

@@ -47,6 +47,49 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure WordPress transport timeouts surface actionable guidance.
+     */
+    public function test_create_chat_completion_exposes_wordpress_timeout_guidance() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key'] = 'sk-timeout';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $client   = new WP_MCP_AI_OpenAI_Client();
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Hello',
+                    ),
+                ),
+            ),
+        );
+
+        $filter = function( $preempt, $args, $url ) {
+            return new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out after 1000 milliseconds with 0 bytes received' );
+        };
+
+        add_filter( 'pre_http_request', $filter, 10, 3 );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter, 10 );
+
+        $this->assertWPError( $response );
+        $this->assertSame( 'wp_mcp_ai_wordpress_timeout', $response->get_error_code() );
+        $this->assertSame( 'WordPress timed out waiting for a response from OpenAI.', $response->get_error_message() );
+
+        $data = $response->get_error_data();
+        $this->assertIsArray( $data );
+        $this->assertArrayHasKey( 'status', $data );
+        $this->assertSame( 504, $data['status'] );
+        $this->assertArrayHasKey( 'actions', $data );
+        $this->assertArrayHasKey( 'configure_request_timeout', $data['actions'] );
+    }
+
+    /**
      * GPT-Image-1 should allow callers to control the response_format flag.
      */
     public function test_image_model_supports_response_format_for_gpt_image() {
