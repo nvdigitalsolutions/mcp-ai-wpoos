@@ -1756,8 +1756,12 @@ class WP_MCP_AI_OpenAI_Client {
                             $segment_copy['image_url']['url'] = esc_url_raw( $segment['image_url']['url'] );
                         }
 
-                        if ( 'input_image' === $type && isset( $segment['image_file']['file_id'] ) ) {
-                            $segment_copy['image_file'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                        if ( 'input_image' === $type ) {
+                            if ( isset( $segment['image']['file_id'] ) ) {
+                                $segment_copy['image'] = array( 'file_id' => $segment['image']['file_id'] );
+                            } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+                                $segment_copy['image'] = array( 'file_id' => $segment['image_file']['file_id'] );
+                            }
                         }
 
                         if ( 'input_file' === $type ) {
@@ -1905,11 +1909,11 @@ class WP_MCP_AI_OpenAI_Client {
                     return true;
                 }
 
-                if ( isset( $segment['image_file']['file_id'] ) ) {
+                if ( isset( $segment['image']['file_id'] ) || isset( $segment['image_file']['file_id'] ) ) {
                     return true;
                 }
 
-                if ( strpos( $type, 'input_' ) === 0 && ( isset( $segment['file_id'] ) || isset( $segment['image_file'] ) ) ) {
+                if ( strpos( $type, 'input_' ) === 0 && ( isset( $segment['file_id'] ) || isset( $segment['image'] ) || isset( $segment['image_file'] ) ) ) {
                     return true;
                 }
 
@@ -2076,7 +2080,9 @@ class WP_MCP_AI_OpenAI_Client {
     protected function populate_responses_image_segment( array $segment, array $attachments ) {
         $file_id = '';
 
-        if ( isset( $segment['image_file']['file_id'] ) ) {
+        if ( isset( $segment['image']['file_id'] ) ) {
+            $file_id = (string) $segment['image']['file_id'];
+        } elseif ( isset( $segment['image_file']['file_id'] ) ) {
             $file_id = (string) $segment['image_file']['file_id'];
         } elseif ( isset( $segment['file_id'] ) ) {
             $file_id = (string) $segment['file_id'];
@@ -2097,12 +2103,11 @@ class WP_MCP_AI_OpenAI_Client {
                 $openai_file_id = (string) $attachment['file_id'];
             }
 
-            if ( ! isset( $segment['image_file'] ) || ! is_array( $segment['image_file'] ) ) {
-                $segment['image_file'] = array();
+            if ( ! isset( $segment['image'] ) || ! is_array( $segment['image'] ) ) {
+                $segment['image'] = array();
             }
 
-            $segment['image_file']['file_id'] = $openai_file_id;
-            $segment['file_id']              = $openai_file_id;
+            $segment['image']['file_id'] = $openai_file_id;
 
             if ( isset( $segment['image_url'] ) ) {
                 unset( $segment['image_url'] );
@@ -2113,6 +2118,20 @@ class WP_MCP_AI_OpenAI_Client {
             }
         } elseif ( isset( $segment['image_url']['url'] ) ) {
             $segment['image_url'] = (string) $segment['image_url']['url'];
+        } elseif ( isset( $segment['image_file']['file_id'] ) && ! isset( $segment['image'] ) ) {
+            $segment['image'] = array( 'file_id' => (string) $segment['image_file']['file_id'] );
+        }
+
+        if ( isset( $segment['file_id'] ) && ! isset( $segment['image'] ) ) {
+            $segment['image'] = array( 'file_id' => (string) $segment['file_id'] );
+        }
+
+        if ( isset( $segment['image_file'] ) ) {
+            unset( $segment['image_file'] );
+        }
+
+        if ( isset( $segment['file_id'] ) ) {
+            unset( $segment['file_id'] );
         }
 
         if ( empty( $segment['detail'] ) ) {
