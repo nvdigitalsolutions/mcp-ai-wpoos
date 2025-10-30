@@ -20,6 +20,8 @@ class WP_MCP_AI_REST {
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
     const MEMORY_MAX_DOCUMENT_BYTES = 262144; // ~256KB, enough headroom for markup around 4K characters of text.
     const MEMORY_MAX_TOTAL_BYTES    = 1048576; // ~1MB aggregate streaming budget across attachments.
+    const CHAT_MAX_REQUEST_TOKENS   = 480000;  // Leave headroom beneath default GPT-5 TPM limit.
+    const CHAT_APPROX_CHARS_PER_TOKEN = 4;     // Rough heuristic used when trimming oversized chats.
 
     /**
      * Tool slug used for document + prompt submissions.
@@ -1475,10 +1477,456 @@ class WP_MCP_AI_REST {
             );
         }
 
-        return array(
-            'messages'    => $sanitized,
+        $result = array(
+            'messages'    => array_values( $sanitized ),
             'attachments' => $attachments_helper->get_attachments(),
         );
+
+        return $this->enforce_chat_request_limits( $result['messages'], $result['attachments'] );
+    }
+
+    /**
+     * Ensure chat requests stay within approximate token limits before dispatching to the model.
+     *
+     * @param array $messages    Sanitized chat messages.
+     * @param array $attachments Attachment payloads associated with the request.
+     * @return array|WP_Error
+     */
+    protected function enforce_chat_request_limits( array $messages, array $attachments ) {
+        $messages    = array_values( $messages );
+        $attachments = array_values( $attachments );
+
+        $limit_tokens = (int) apply_filters( 'wp_mcp_ai_chat_request_token_limit', self::CHAT_MAX_REQUEST_TOKENS, $messages, $attachments );
+
+        if ( $limit_tokens <= 0 ) {
+            return array(
+                'messages'    => $messages,
+                'attachments' => $attachments,
+            );
+        }
+
+        $chars_per_token = (int) apply_filters( 'wp_mcp_ai_chat_request_chars_per_token', self::CHAT_APPROX_CHARS_PER_TOKEN, $messages, $attachments );
+
+        if ( $chars_per_token <= 0 ) {
+            $chars_per_token = self::CHAT_APPROX_CHARS_PER_TOKEN;
+        }
+
+        $max_chars = (int) $limit_tokens * $chars_per_token;
+
+        if ( $max_chars <= 0 ) {
+            return array(
+                'messages'    => $messages,
+                'attachments' => $attachments,
+            );
+        }
+
+        $message_lengths = array();
+        $total_chars     = 0;
+
+        foreach ( $messages as $index => $message ) {
+            $length                     = $this->calculate_message_character_length( $message );
+            $message_lengths[ $index ]   = $length;
+            $total_chars                += $length;
+        }
+
+        if ( $total_chars <= $max_chars ) {
+            return array(
+                'messages'    => $messages,
+                'attachments' => $attachments,
+            );
+        }
+
+        $original_total_chars   = $total_chars;
+        $original_message_count = count( $messages );
+        $trimmed                = false;
+
+        $removal_order = array();
+        $system_indexes = array();
+
+        foreach ( array_keys( $messages ) as $index ) {
+            $role = isset( $messages[ $index ]['role'] ) ? sanitize_key( $messages[ $index ]['role'] ) : '';
+
+            if ( 'system' === $role ) {
+                $system_indexes[] = $index;
+            } else {
+                $removal_order[] = $index;
+            }
+        }
+
+        $removal_order = array_merge( $removal_order, $system_indexes );
+
+        foreach ( $removal_order as $index ) {
+            if ( $total_chars <= $max_chars ) {
+                break;
+            }
+
+            if ( ! isset( $messages[ $index ] ) ) {
+                continue;
+            }
+
+            $length = isset( $message_lengths[ $index ] ) ? (int) $message_lengths[ $index ] : 0;
+            $remaining_without_message = $total_chars - $length;
+
+            if ( $remaining_without_message >= $max_chars || $length <= 0 ) {
+                unset( $messages[ $index ], $message_lengths[ $index ] );
+                $total_chars = max( 0, $remaining_without_message );
+                $trimmed     = true;
+                continue;
+            }
+
+            $available_for_message = max( 0, $max_chars - $remaining_without_message );
+            $updated_message       = $this->truncate_message_to_length( $messages[ $index ], $available_for_message );
+
+            if ( empty( $updated_message ) ) {
+                unset( $messages[ $index ], $message_lengths[ $index ] );
+                $total_chars = max( 0, $remaining_without_message );
+                $trimmed     = true;
+                continue;
+            }
+
+            $new_length = $this->calculate_message_character_length( $updated_message );
+            $messages[ $index ]        = $updated_message;
+            $message_lengths[ $index ] = $new_length;
+            $total_chars               = $remaining_without_message + $new_length;
+            $trimmed                   = true;
+        }
+
+        if ( $total_chars > $max_chars ) {
+            foreach ( array_keys( $messages ) as $index ) {
+                if ( $total_chars <= $max_chars ) {
+                    break;
+                }
+
+                if ( ! isset( $messages[ $index ] ) ) {
+                    continue;
+                }
+
+                $length = isset( $message_lengths[ $index ] ) ? (int) $message_lengths[ $index ] : 0;
+                unset( $messages[ $index ], $message_lengths[ $index ] );
+                $total_chars = max( 0, $total_chars - $length );
+                $trimmed     = true;
+            }
+        }
+
+        $messages = array_values( $messages );
+
+        if ( empty( $messages ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_request_too_large',
+                __( 'The chat request exceeds the maximum allowed size.', 'wp-mcp-ai' ),
+                array(
+                    'status'  => 400,
+                    'actions' => array(
+                        'reduce_request_size' => __( 'Reduce the length of the conversation before retrying.', 'wp-mcp-ai' ),
+                    ),
+                )
+            );
+        }
+
+        $trimmed_total_chars = 0;
+
+        foreach ( $messages as $message ) {
+            $trimmed_total_chars += $this->calculate_message_character_length( $message );
+        }
+
+        $filtered_attachments = $this->filter_attachments_for_messages( $attachments, $messages );
+
+        if ( $trimmed ) {
+            WP_MCP_AI_Logger::log_event(
+                'chat_request_trimmed',
+                'Chat request trimmed to satisfy token limits.',
+                array(
+                    'original_total_chars'   => $original_total_chars,
+                    'trimmed_total_chars'    => $trimmed_total_chars,
+                    'max_chars'              => $max_chars,
+                    'original_message_count' => $original_message_count,
+                    'trimmed_message_count'  => count( $messages ),
+                )
+            );
+        }
+
+        return array(
+            'messages'    => $messages,
+            'attachments' => $filtered_attachments,
+        );
+    }
+
+    /**
+     * Estimate the number of characters contributed by a chat message.
+     *
+     * @param array $message Chat message payload.
+     * @return int
+     */
+    protected function calculate_message_character_length( array $message ) {
+        if ( empty( $message['content'] ) ) {
+            return 0;
+        }
+
+        $content = $message['content'];
+
+        if ( is_string( $content ) ) {
+            return $this->mb_strlen( $content );
+        }
+
+        if ( ! is_array( $content ) ) {
+            return 0;
+        }
+
+        $length = 0;
+
+        foreach ( $content as $segment ) {
+            if ( is_string( $segment ) ) {
+                $length += $this->mb_strlen( $segment );
+                continue;
+            }
+
+            if ( ! is_array( $segment ) ) {
+                continue;
+            }
+
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+            switch ( $type ) {
+                case 'text':
+                case 'input_text':
+                    if ( isset( $segment['text'] ) ) {
+                        $length += $this->mb_strlen( (string) $segment['text'] );
+                    }
+                    break;
+                case 'input_image':
+                    if ( isset( $segment['caption'] ) ) {
+                        $length += $this->mb_strlen( (string) $segment['caption'] );
+                    }
+
+                    if ( isset( $segment['detail'] ) ) {
+                        $length += $this->mb_strlen( (string) $segment['detail'] );
+                    }
+                    break;
+                case 'input_file':
+                    if ( isset( $segment['display_name'] ) ) {
+                        $length += $this->mb_strlen( (string) $segment['display_name'] );
+                    }
+                    break;
+            }
+        }
+
+        return $length;
+    }
+
+    /**
+     * Truncate a message's text segments so they fit within the supplied character budget.
+     *
+     * @param array $message   Chat message payload.
+     * @param int   $max_chars Maximum characters to retain.
+     * @return array
+     */
+    protected function truncate_message_to_length( array $message, $max_chars ) {
+        $max_chars = (int) $max_chars;
+
+        if ( $max_chars <= 0 ) {
+            return array();
+        }
+
+        if ( ! isset( $message['content'] ) ) {
+            return array();
+        }
+
+        $current_length = $this->calculate_message_character_length( $message );
+
+        if ( $current_length <= $max_chars ) {
+            return $message;
+        }
+
+        $content = $message['content'];
+
+        if ( ! is_array( $content ) ) {
+            $content = array();
+        }
+
+        $note        = '[' . __( 'Truncated', 'wp-mcp-ai' ) . '] ';
+        $note_length = $this->mb_strlen( $note );
+
+        if ( $note_length >= $max_chars ) {
+            $note        = '';
+            $note_length = 0;
+        }
+
+        $available  = max( 0, $max_chars - $note_length );
+        $kept       = array();
+        $remaining  = $available;
+        $truncated  = false;
+
+        for ( $index = count( $content ) - 1; $index >= 0; $index-- ) {
+            $segment = $content[ $index ];
+
+            if ( ! is_array( $segment ) ) {
+                continue;
+            }
+
+            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+            if ( in_array( $type, array( 'text', 'input_text' ), true ) ) {
+                $text   = isset( $segment['text'] ) ? (string) $segment['text'] : '';
+                $length = $this->mb_strlen( $text );
+
+                if ( $length <= 0 ) {
+                    array_unshift( $kept, $segment );
+                    continue;
+                }
+
+                if ( $remaining <= 0 ) {
+                    $truncated = true;
+                    continue;
+                }
+
+                if ( $length <= $remaining ) {
+                    $remaining -= $length;
+                    array_unshift( $kept, $segment );
+                } else {
+                    $offset             = max( 0, $length - $remaining );
+                    $trimmed_text       = $this->mb_substr( $text, $offset, $remaining );
+                    $trimmed_text       = ltrim( $trimmed_text );
+                    $modified_segment   = $segment;
+                    $modified_segment['text'] = $trimmed_text;
+
+                    array_unshift( $kept, $modified_segment );
+                    $remaining  = 0;
+                    $truncated  = true;
+                }
+
+                continue;
+            }
+
+            array_unshift( $kept, $segment );
+        }
+
+        if ( empty( $kept ) ) {
+            return array();
+        }
+
+        if ( $note_length > 0 && $truncated ) {
+            $note_added = false;
+
+            foreach ( $kept as &$segment ) {
+                if ( ! is_array( $segment ) ) {
+                    continue;
+                }
+
+                $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+                if ( in_array( $type, array( 'text', 'input_text' ), true ) ) {
+                    $segment['text'] = $note . ltrim( (string) $segment['text'] );
+                    $note_added      = true;
+                    break;
+                }
+            }
+
+            unset( $segment );
+
+            if ( ! $note_added ) {
+                array_unshift(
+                    $kept,
+                    array(
+                        'type' => 'text',
+                        'text' => $note,
+                    )
+                );
+            }
+        }
+
+        $message['content'] = array_values( $kept );
+
+        return $message;
+    }
+
+    /**
+     * Remove attachments that are no longer referenced by the trimmed message payload.
+     *
+     * @param array $attachments Attachment payloads from the request.
+     * @param array $messages    Trimmed chat messages.
+     * @return array
+     */
+    protected function filter_attachments_for_messages( array $attachments, array $messages ) {
+        if ( empty( $attachments ) ) {
+            return array();
+        }
+
+        $referenced_ids = $this->collect_message_attachment_ids( $messages );
+
+        if ( empty( $referenced_ids ) ) {
+            return array();
+        }
+
+        $referenced_lookup = array_flip( $referenced_ids );
+        $filtered          = array();
+
+        foreach ( $attachments as $attachment ) {
+            if ( ! is_array( $attachment ) ) {
+                continue;
+            }
+
+            $file_id = '';
+
+            if ( isset( $attachment['file_id'] ) && '' !== $attachment['file_id'] ) {
+                $file_id = (string) $attachment['file_id'];
+            } elseif ( isset( $attachment['id'] ) && '' !== $attachment['id'] ) {
+                $file_id = (string) $attachment['id'];
+            }
+
+            if ( '' === $file_id ) {
+                continue;
+            }
+
+            if ( isset( $referenced_lookup[ $file_id ] ) ) {
+                $filtered[] = $attachment;
+            }
+        }
+
+        return array_values( $filtered );
+    }
+
+    /**
+     * Collect attachment identifiers referenced in a set of messages.
+     *
+     * @param array $messages Chat messages.
+     * @return array
+     */
+    protected function collect_message_attachment_ids( array $messages ) {
+        $file_ids = array();
+
+        foreach ( $messages as $message ) {
+            if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
+                continue;
+            }
+
+            foreach ( $message['content'] as $segment ) {
+                if ( ! is_array( $segment ) ) {
+                    continue;
+                }
+
+                $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+                if ( 'input_image' === $type && isset( $segment['image_file'] ) && is_array( $segment['image_file'] ) ) {
+                    $file_id = isset( $segment['image_file']['file_id'] ) ? (string) $segment['image_file']['file_id'] : '';
+
+                    if ( '' !== $file_id ) {
+                        $file_ids[] = $file_id;
+                    }
+
+                    continue;
+                }
+
+                if ( 'input_file' === $type ) {
+                    $file_id = isset( $segment['file_id'] ) ? (string) $segment['file_id'] : '';
+
+                    if ( '' !== $file_id ) {
+                        $file_ids[] = $file_id;
+                    }
+                }
+            }
+        }
+
+        return array_values( array_unique( $file_ids ) );
     }
 
     /**

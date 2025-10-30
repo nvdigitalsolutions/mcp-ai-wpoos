@@ -213,6 +213,115 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure oversized conversations are trimmed before hitting the language model.
+     */
+    public function test_chat_request_trims_messages_exceeding_token_limit() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Published Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $token_limit_filter = static function( $limit ) {
+            return 60;
+        };
+
+        $chars_per_token_filter = static function( $chars ) {
+            return 1;
+        };
+
+        add_filter( 'wp_mcp_ai_chat_request_token_limit', $token_limit_filter, 10, 3 );
+        add_filter( 'wp_mcp_ai_chat_request_chars_per_token', $chars_per_token_filter, 10, 3 );
+
+        $captured_messages = array();
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->callback( function( $messages ) use ( &$captured_messages ) {
+                    $captured_messages = $messages;
+
+                    return true;
+                } ),
+                $this->anything()
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'system',
+                    'content' => str_repeat( 'S', 40 ),
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => str_repeat( 'A', 40 ),
+                ),
+                array(
+                    'role'    => 'assistant',
+                    'content' => str_repeat( 'B', 40 ),
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => str_repeat( 'C', 10 ),
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        try {
+            $response = rest_get_server()->dispatch( $request );
+        } finally {
+            remove_filter( 'wp_mcp_ai_chat_request_token_limit', $token_limit_filter, 10 );
+            remove_filter( 'wp_mcp_ai_chat_request_chars_per_token', $chars_per_token_filter, 10 );
+        }
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+
+        $this->assertCount( 3, $captured_messages );
+        $this->assertSame( 'system', $captured_messages[0]['role'] );
+        $this->assertSame( 'assistant', $captured_messages[1]['role'] );
+        $this->assertSame( 'user', $captured_messages[2]['role'] );
+
+        $this->assertArrayHasKey( 'content', $captured_messages[0] );
+        $this->assertArrayHasKey( 'content', $captured_messages[1] );
+        $this->assertArrayHasKey( 'content', $captured_messages[2] );
+        $this->assertCount( 1, $captured_messages[0]['content'] );
+        $this->assertCount( 1, $captured_messages[1]['content'] );
+        $this->assertCount( 1, $captured_messages[2]['content'] );
+
+        $this->assertSame( str_repeat( 'S', 40 ), $captured_messages[0]['content'][0]['text'] );
+        $this->assertLessThanOrEqual( 12, strlen( $captured_messages[1]['content'][0]['text'] ) );
+        $this->assertSame( str_repeat( 'C', 10 ), $captured_messages[2]['content'][0]['text'] );
+
+        foreach ( $captured_messages as $message ) {
+            $this->assertStringNotContainsString( str_repeat( 'A', 40 ), wp_json_encode( $message ) );
+        }
+    }
+
+    /**
      * Ensure out-of-range temperatures fall back to the assistant default.
      */
     public function test_chat_request_uses_assistant_temperature_for_out_of_range_request() {
