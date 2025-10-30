@@ -120,6 +120,7 @@ class WP_MCP_AI_Shortcode {
                     'unsupportedFileLabel' => __( 'This file', 'wp-mcp-ai' ),
                     'expandTranscript'  => __( 'Expand conversation', 'wp-mcp-ai' ),
                     'collapseTranscript' => __( 'Collapse conversation', 'wp-mcp-ai' ),
+                    'jsonResponse'      => __( 'JSON response', 'wp-mcp-ai' ),
                 ),
             )
         );
