@@ -87,6 +87,7 @@ class WP_MCP_AI_Shortcode {
             array(
                 'restUrl' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ),
                 'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+                'filesEndpoint'  => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
                 'nonce'   => wp_create_nonce( 'wp_rest' ),
                 'strings' => array(
                     'placeholder'        => __( 'Ask something…', 'wp-mcp-ai' ),
@@ -230,6 +231,7 @@ class WP_MCP_AI_Shortcode {
             'assistantId'    => $assistant_id,
             'messagesEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat' ) ),
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
+            'filesEndpoint'    => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
             'crawl4aiTaskEndpoint' => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ),
             'crawl4aiDefaultPollMs' => 5000,
             'requiredCapability' => $capability ? $capability : '',

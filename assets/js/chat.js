@@ -1591,12 +1591,33 @@
                 return;
             }
 
+            var downloadUrl = record.url || '';
+            if (!downloadUrl) {
+                downloadUrl = buildFileDownloadUrl(state, record.fileId);
+                if (downloadUrl) {
+                    record.url = downloadUrl;
+                }
+            }
+
+            if (!record.downloadName) {
+                if (record.name) {
+                    record.downloadName = record.name;
+                } else {
+                    record.downloadName = record.fileId;
+                }
+            }
+
             if (!lookup[record.fileId] || shouldReplace(lookup[record.fileId], record)) {
                 lookup[record.fileId] = record;
+            } else if (!lookup[record.fileId].url && downloadUrl) {
+                lookup[record.fileId].url = downloadUrl;
             }
 
             if (state && state.attachmentLibrary) {
                 var existing = state.attachmentLibrary[record.fileId];
+                if (existing && !existing.url && downloadUrl) {
+                    existing.url = downloadUrl;
+                }
                 if (!existing || shouldReplace(existing, record)) {
                     state.attachmentLibrary[record.fileId] = record;
                 }
@@ -1651,6 +1672,57 @@
         }
 
         return lookup;
+    }
+
+    function buildFileDownloadUrl(state, fileId) {
+        if (!fileId) {
+            return '';
+        }
+
+        var base = '';
+
+        if (state && state.config && state.config.filesEndpoint) {
+            base = state.config.filesEndpoint;
+        } else if (globalConfig.filesEndpoint) {
+            base = globalConfig.filesEndpoint;
+        }
+
+        if (!base) {
+            return '';
+        }
+
+        if (base.charAt(base.length - 1) === '/') {
+            base = base.slice(0, -1);
+        }
+
+        var url = base + '/' + encodeURIComponent(String(fileId)) + '/download';
+        var params = [];
+
+        if (state && state.config && state.config.assistantId) {
+            params.push('assistant_id=' + encodeURIComponent(state.config.assistantId));
+        }
+
+        var guestToken = state && state.config ? state.config.guestToken : '';
+        if (guestToken) {
+            params.push('guest_token=' + encodeURIComponent(guestToken));
+        } else {
+            var nonce = '';
+            if (state && state.config && state.config.restNonce) {
+                nonce = state.config.restNonce;
+            } else if (globalConfig.nonce) {
+                nonce = globalConfig.nonce;
+            }
+
+            if (nonce) {
+                params.push('_wpnonce=' + encodeURIComponent(nonce));
+            }
+        }
+
+        if (params.length) {
+            url += '?' + params.join('&');
+        }
+
+        return url;
     }
 
     function normaliseAttachmentRecord(raw) {
@@ -1797,6 +1869,14 @@
 
         if (record.url) {
             return record.url;
+        }
+
+        if (record.fileId) {
+            var fallbackUrl = buildFileDownloadUrl(state, record.fileId);
+            if (fallbackUrl) {
+                record.url = fallbackUrl;
+                return record.url;
+            }
         }
 
         if (record.data) {
@@ -2218,6 +2298,14 @@
             var instanceConfig = Object.assign({}, config);
             if (!instanceConfig.uploadEndpoint) {
                 instanceConfig.uploadEndpoint = globalConfig.uploadEndpoint || '';
+            }
+
+            if (!instanceConfig.filesEndpoint) {
+                instanceConfig.filesEndpoint = globalConfig.filesEndpoint || '';
+            }
+
+            if (!instanceConfig.restNonce) {
+                instanceConfig.restNonce = globalConfig.nonce || '';
             }
 
             if (!instanceConfig.crawl4aiTaskEndpoint) {

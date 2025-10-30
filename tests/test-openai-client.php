@@ -289,6 +289,123 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure download_file requests the file content endpoint and normalises the response headers.
+     */
+    public function test_download_file_requests_content_endpoint() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-download-123/content' !== $url ) {
+                return null;
+            }
+
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(
+                    'Content-Type'        => 'text/plain',
+                    'Content-Disposition' => 'attachment; filename="notes.txt"',
+                ),
+                'body'     => 'Example content',
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $result = $client->download_file( 'file-download-123' );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-download-123/content', $captured_request['url'] );
+        $this->assertSame( 'GET', strtoupper( $captured_request['args']['method'] ) );
+        $this->assertSame( 'Bearer sk-test', $captured_request['args']['headers']['Authorization'] );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'Example content', $result['body'] );
+        $this->assertSame( 'text/plain', $result['content_type'] );
+        $this->assertSame( 'notes.txt', $result['filename'] );
+        $this->assertSame( 200, $result['status_code'] );
+        $this->assertArrayHasKey( 'headers', $result );
+        $this->assertSame( 'text/plain', $result['headers']['content-type'] );
+        $this->assertSame( 'attachment; filename="notes.txt"', $result['headers']['content-disposition'] );
+    }
+
+    /**
+     * Ensure download_file propagates error responses from the Files API.
+     */
+    public function test_download_file_handles_error_status() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        $filter_callback = function () {
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( array( 'error' => array( 'message' => 'Not found' ) ) ),
+                'response' => array(
+                    'code'    => 404,
+                    'message' => 'Not Found',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback );
+
+        $result = $client->download_file( 'file-missing' );
+
+        remove_filter( 'pre_http_request', $filter_callback );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_file_download_failed', $result->get_error_code() );
+    }
+
+    /**
+     * Ensure download_file rejects empty responses even when the status code succeeds.
+     */
+    public function test_download_file_rejects_empty_body() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client = new WP_MCP_AI_OpenAI_Client();
+
+        $filter_callback = function () {
+            return array(
+                'headers'  => array( 'Content-Type' => 'application/octet-stream' ),
+                'body'     => '',
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback );
+
+        $result = $client->download_file( 'file-empty' );
+
+        remove_filter( 'pre_http_request', $filter_callback );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_file_download_empty', $result->get_error_code() );
+    }
+
+    /**
      * Ensure chat completion payloads include the tool name alongside the function definition.
      */
     public function test_chat_completion_payload_includes_tool_name() {
