@@ -475,6 +475,98 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure image segments target the `image_file` key when building Responses payloads.
+     */
+    public function test_responses_payload_uses_image_file_key() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'     => 'resp-image',
+                        'output' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type'       => 'input_image',
+                        'caption'    => 'Reference still',
+                        'detail'     => 'high',
+                        'image_file' => array( 'file_id' => 'file-img-123' ),
+                        'image'      => array( 'file_id' => 'file-img-123' ),
+                    ),
+                ),
+            ),
+        );
+
+        $options = array(
+            'attachments' => array(
+                array(
+                    'id'        => 'file-img-123',
+                    'file_id'   => 'file-img-123',
+                    'filename'  => 'reference.png',
+                    'mime_type' => 'image/png',
+                    'data'      => base64_encode( 'image-data' ),
+                    'bytes'     => strlen( 'image-data' ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, $options );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertNotEmpty( $captured_request );
+        $this->assertSame( WP_MCP_AI_OpenAI_Client::RESPONSES_ENDPOINT, $captured_request['url'] );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'input', $payload );
+        $this->assertArrayHasKey( 0, $payload['input'] );
+
+        $input_message = $payload['input'][0];
+        $this->assertArrayHasKey( 'content', $input_message );
+        $this->assertIsArray( $input_message['content'] );
+        $this->assertArrayHasKey( 0, $input_message['content'] );
+
+        $image_segment = $input_message['content'][0];
+        $this->assertSame( 'input_image', $image_segment['type'] );
+        $this->assertArrayHasKey( 'image_file', $image_segment );
+        $this->assertSame( 'file-img-123', $image_segment['image_file']['file_id'] );
+        $this->assertArrayNotHasKey( 'image', $image_segment );
+        $this->assertArrayNotHasKey( 'image_url', $image_segment );
+        $this->assertSame( 'Reference still', $image_segment['caption'] );
+        $this->assertSame( 'high', $image_segment['detail'] );
+
+        $this->assertIsArray( $response );
+    }
+
+    /**
      * Ensure Responses API choices without message payloads are normalised for the chat UI.
      */
     public function test_responses_choices_are_transformed_into_chat_completion_shape() {
