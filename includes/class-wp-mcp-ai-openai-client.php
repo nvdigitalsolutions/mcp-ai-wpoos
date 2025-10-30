@@ -2121,8 +2121,8 @@ class WP_MCP_AI_OpenAI_Client {
                 unset( $segment['image'] );
             }
 
-            if ( isset( $segment['image_file'] ) ) {
-                unset( $segment['image_file'] );
+            if ( isset( $segment['image'] ) ) {
+                unset( $segment['image'] );
             }
 
             if ( isset( $segment['image_url'] ) ) {
