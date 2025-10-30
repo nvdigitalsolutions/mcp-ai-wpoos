@@ -553,13 +553,19 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
         $this->assertIsArray( $input_message['content'] );
         $this->assertArrayHasKey( 0, $input_message['content'] );
 
-        $image_segment = $input_message['content'][0];
+        $caption_segment = $input_message['content'][0];
+        $this->assertSame( 'input_text', $caption_segment['type'] );
+        $this->assertSame( 'Reference still', $caption_segment['text'] );
+
+        $this->assertArrayHasKey( 1, $input_message['content'] );
+
+        $image_segment = $input_message['content'][1];
         $this->assertSame( 'input_image', $image_segment['type'] );
         $this->assertArrayHasKey( 'file_id', $image_segment );
         $this->assertSame( 'file-img-123', $image_segment['file_id'] );
         $this->assertArrayNotHasKey( 'image', $image_segment );
         $this->assertArrayNotHasKey( 'image_url', $image_segment );
-        $this->assertSame( 'Reference still', $image_segment['caption'] );
+        $this->assertArrayNotHasKey( 'caption', $image_segment );
         $this->assertSame( 'high', $image_segment['detail'] );
 
         $this->assertIsArray( $response );

@@ -2033,8 +2033,30 @@ class WP_MCP_AI_OpenAI_Client {
                 if ( ! isset( $segment['text'] ) ) {
                     $segment['text'] = '';
                 }
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_image' === $type ) {
-                $segment = $this->populate_responses_image_segment( $segment, $attachments );
+                $caption_text = $this->extract_responses_image_caption( $segment, $attachments );
+                $segment      = $this->populate_responses_image_segment( $segment, $attachments );
+
+                if ( isset( $segment['mode'] ) ) {
+                    unset( $segment['mode'] );
+                }
+
+                if ( '' !== $caption_text ) {
+                    $normalised[] = array(
+                        'type' => $is_output_role ? 'output_text' : 'input_text',
+                        'text' => $caption_text,
+                    );
+                }
+
+                $normalised[] = $segment;
+                continue;
             } elseif ( 'input_file' === $type ) {
                 $segment = $this->populate_responses_file_segment( $segment, $attachments );
             }
@@ -2047,6 +2069,51 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $normalised;
+    }
+
+    /**
+     * Extract a caption value for an image segment.
+     *
+     * @param array $segment     Original segment definition.
+     * @param array $attachments Attachment lookup keyed by file identifier.
+     * @return string
+     */
+    protected function extract_responses_image_caption( array $segment, array $attachments ) {
+        $caption = '';
+
+        if ( isset( $segment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $segment['caption'] );
+        }
+
+        if ( '' !== $caption ) {
+            return $caption;
+        }
+
+        $file_id = '';
+
+        if ( isset( $segment['file_id'] ) ) {
+            $file_id = (string) $segment['file_id'];
+        } elseif ( isset( $segment['image']['file_id'] ) ) {
+            $file_id = (string) $segment['image']['file_id'];
+        } elseif ( isset( $segment['image_file']['file_id'] ) ) {
+            $file_id = (string) $segment['image_file']['file_id'];
+        }
+
+        if ( '' === $file_id || ! isset( $attachments[ $file_id ] ) ) {
+            return '';
+        }
+
+        $attachment = $attachments[ $file_id ];
+
+        if ( isset( $attachment['caption'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['caption'] );
+        }
+
+        if ( '' === $caption && isset( $attachment['title'] ) ) {
+            $caption = $this->normalise_responses_segment_caption( $attachment['title'] );
+        }
+
+        return $caption;
     }
 
     /**
@@ -2128,10 +2195,6 @@ class WP_MCP_AI_OpenAI_Client {
             if ( isset( $segment['image_url'] ) ) {
                 unset( $segment['image_url'] );
             }
-
-            if ( empty( $segment['caption'] ) && ! empty( $attachment['caption'] ) ) {
-                $segment['caption'] = $attachment['caption'];
-            }
         } elseif ( isset( $segment['image_url']['url'] ) ) {
             $segment['image_url'] = array( 'url' => esc_url_raw( (string) $segment['image_url']['url'] ) );
         } elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
@@ -2158,7 +2221,33 @@ class WP_MCP_AI_OpenAI_Client {
             $segment['detail'] = 'auto';
         }
 
+        if ( isset( $segment['caption'] ) ) {
+            unset( $segment['caption'] );
+        }
+
         return $segment;
+    }
+
+    /**
+     * Normalise a caption payload for safe inclusion alongside Responses segments.
+     *
+     * @param mixed $caption Raw caption payload.
+     * @return string
+     */
+    protected function normalise_responses_segment_caption( $caption ) {
+        if ( is_string( $caption ) || is_numeric( $caption ) ) {
+            $caption_text = (string) $caption;
+        } elseif ( is_array( $caption ) || is_object( $caption ) ) {
+            $caption_text = $this->normalise_responses_text_value( $caption );
+        } else {
+            $caption_text = '';
+        }
+
+        if ( '' === $caption_text ) {
+            return '';
+        }
+
+        return trim( wp_strip_all_tags( $caption_text ) );
     }
 
     /**
