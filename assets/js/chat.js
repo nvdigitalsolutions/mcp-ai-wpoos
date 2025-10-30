@@ -809,6 +809,38 @@
         return fallback;
     }
 
+    function setTranscriptExpanded(state, expanded) {
+        if (!state) {
+            return;
+        }
+
+        state.transcriptExpanded = !!expanded;
+
+        if (state.container && state.container.classList) {
+            if (state.transcriptExpanded) {
+                state.container.classList.add('wp-mcp-ai-chat--expanded');
+            } else {
+                state.container.classList.remove('wp-mcp-ai-chat--expanded');
+            }
+        }
+
+        if (state.transcriptToggle) {
+            var label = state.transcriptExpanded
+                ? getString('collapseTranscript', 'Collapse conversation')
+                : getString('expandTranscript', 'Expand conversation');
+            if (state.transcriptToggleLabel) {
+                state.transcriptToggleLabel.textContent = label;
+            } else {
+                state.transcriptToggle.textContent = label;
+            }
+            state.transcriptToggle.setAttribute('aria-expanded', state.transcriptExpanded ? 'true' : 'false');
+        }
+
+        if (state.transcriptExpanded && state.messagesEl) {
+            state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
+        }
+    }
+
     function buildJsonHeaders(state) {
         var headers = {
             'Content-Type': 'application/json',
@@ -2171,6 +2203,10 @@
             var attachButton = container.querySelector('.wp-mcp-ai-chat__attach');
             var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
+            var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
+            var transcriptToggleLabel = transcriptToggle
+                ? transcriptToggle.querySelector('.wp-mcp-ai-chat__transcript-toggle-label')
+                : null;
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -2222,6 +2258,9 @@
                 attachButton: attachButton,
                 fileInput: fileInput,
                 toolShortcutsContainer: toolShortcutsContainer,
+                transcriptToggle: transcriptToggle,
+                transcriptToggleLabel: transcriptToggleLabel,
+                transcriptExpanded: false,
                 pendingAttachments: [],
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
@@ -2233,6 +2272,18 @@
 
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
+
+            setTranscriptExpanded(state, false);
+
+            if (transcriptToggle) {
+                transcriptToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    setTranscriptExpanded(state, !state.transcriptExpanded);
+                });
+            }
 
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             form.addEventListener('submit', function (event) {

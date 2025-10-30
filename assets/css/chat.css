@@ -11,11 +11,76 @@
 .wp-mcp-ai-chat__messages {
     max-height: 360px;
     overflow-y: auto;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
     padding-right: 4px;
+}
+
+.wp-mcp-ai-chat__transcript-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.25rem;
+}
+
+.wp-mcp-ai-chat__transcript-toggle {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
+    background: var(--wp-mcp-ai-color-shortcut-background, rgba(148, 163, 184, 0.16));
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.wp-mcp-ai-chat__transcript-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 999px;
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    color: inherit;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.wp-mcp-ai-chat__transcript-toggle-icon svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    fill: currentColor;
+}
+
+.wp-mcp-ai-chat--expanded .wp-mcp-ai-chat__transcript-toggle-icon {
+    transform: rotate(180deg);
+}
+
+.wp-mcp-ai-chat__transcript-toggle:hover {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
+    color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__transcript-toggle:hover .wp-mcp-ai-chat__transcript-toggle-icon,
+.wp-mcp-ai-chat__transcript-toggle:focus .wp-mcp-ai-chat__transcript-toggle-icon {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.2));
+}
+
+.wp-mcp-ai-chat__transcript-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
+}
+
+.wp-mcp-ai-chat--expanded .wp-mcp-ai-chat__messages {
+    max-height: none;
 }
 
 .wp-mcp-ai-chat__assistant {
