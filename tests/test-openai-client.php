@@ -747,6 +747,86 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure Responses API payloads without textual content preserve their original segments.
+     */
+    public function test_responses_choices_preserve_non_text_segments() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_OpenAI_Client();
+        $captured_request = array();
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'url'  => $url,
+                'args' => $args,
+            );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'resp-non-text',
+                        'choices' => array(
+                            array(
+                                'id'            => 'choice-1',
+                                'type'          => 'message',
+                                'role'          => 'assistant',
+                                'content'       => array(
+                                    array(
+                                        'type'  => 'output_image',
+                                        'image' => array(
+                                            'id' => 'file-img-123',
+                                        ),
+                                    ),
+                                ),
+                                'finish_reason' => 'stop',
+                            ),
+                        ),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $response = $client->create_chat_completion(
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'    => 'input_file',
+                            'file_id' => 'file-123',
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertCount( 1, $response['choices'] );
+
+        $choice = $response['choices'][0];
+
+        $this->assertArrayHasKey( 'message', $choice );
+        $message = $choice['message'];
+
+        $this->assertSame( 'assistant', $message['role'] );
+        $this->assertIsArray( $message['content'] );
+        $this->assertSame( 'output_image', $message['content'][0]['type'] );
+        $this->assertSame( 'file-img-123', $message['content'][0]['image']['id'] );
+    }
+
+    /**
      * Ensure Responses API payloads nested under the `response` key are flattened for chat rendering.
      */
     public function test_responses_nested_payload_is_normalised() {

@@ -2329,7 +2329,13 @@ class WP_MCP_AI_OpenAI_Client {
             foreach ( $response['choices'] as $index => $choice ) {
                 if ( isset( $choice['message'] ) && is_array( $choice['message'] ) ) {
                     if ( isset( $choice['message']['content'] ) && is_array( $choice['message']['content'] ) ) {
-                        $choice['message']['content'] = $this->extract_text_from_response_content( $choice['message']['content'] );
+                        $content_text = $this->extract_text_from_response_content( $choice['message']['content'] );
+
+                        if ( '' !== $content_text ) {
+                            $choice['message']['content'] = $content_text;
+                        } else {
+                            $choice['message']['content'] = array_values( $choice['message']['content'] );
+                        }
                     }
 
                     if ( ! isset( $choice['index'] ) ) {
@@ -2344,9 +2350,11 @@ class WP_MCP_AI_OpenAI_Client {
                 $role    = isset( $choice['role'] ) ? sanitize_key( $choice['role'] ) : 'assistant';
 
                 $normalised_choice = $choice;
+                $content_text      = $this->extract_text_from_response_content( $content );
+                $content_fallback  = is_array( $content ) ? array_values( $content ) : $content;
                 $normalised_choice['message'] = array(
                     'role'    => $role,
-                    'content' => $this->extract_text_from_response_content( $content ),
+                    'content' => '' !== $content_text ? $content_text : $content_fallback,
                 );
 
                 if ( isset( $normalised_choice['role'] ) ) {
@@ -2385,11 +2393,14 @@ class WP_MCP_AI_OpenAI_Client {
                     $content_payload = $item['text'];
                 }
 
+                $content_text     = $this->extract_text_from_response_content( $content_payload );
+                $content_fallback = is_array( $content_payload ) ? array_values( $content_payload ) : $content_payload;
+
                 $choices[] = array(
                     'index'         => $index,
                     'message'       => array(
                         'role'    => isset( $item['role'] ) ? sanitize_key( $item['role'] ) : 'assistant',
-                        'content' => $this->extract_text_from_response_content( $content_payload ),
+                        'content' => '' !== $content_text ? $content_text : $content_fallback,
                     ),
                     'finish_reason' => isset( $item['finish_reason'] ) ? $item['finish_reason'] : 'stop',
                 );
