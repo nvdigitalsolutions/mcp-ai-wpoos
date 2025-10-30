@@ -109,6 +109,16 @@ class WP_MCP_AI_Shortcode {
                     'toolShortcutLabel'  => __( 'Insert task: %s', 'wp-mcp-ai' ),
                     'emptyMessage'       => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
                     'attachFile'         => __( 'Attach file', 'wp-mcp-ai' ),
+                    'transcribe'         => __( 'Transcribe', 'wp-mcp-ai' ),
+                    'transcribeAudio'    => __( 'Transcribe audio', 'wp-mcp-ai' ),
+                    'transcribing'       => __( 'Transcribing audio…', 'wp-mcp-ai' ),
+                    'recording'          => __( 'Recording… tap to stop.', 'wp-mcp-ai' ),
+                    'stopRecording'      => __( 'Stop recording', 'wp-mcp-ai' ),
+                    'recordingError'     => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'wp-mcp-ai' ),
+                    'transcriptionError' => __( 'The transcription request failed. Please try again.', 'wp-mcp-ai' ),
+                    'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'wp-mcp-ai' ),
+                    'transcriptionFileTooLarge' => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'wp-mcp-ai' ),
+                    'transcribeChooseSource' => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'wp-mcp-ai' ),
                     'attachmentsLabel'   => __( 'Attachments', 'wp-mcp-ai' ),
                     'removeAttachment'   => __( 'Remove', 'wp-mcp-ai' ),
                     'uploadingFile'      => __( 'Uploading “%s”…', 'wp-mcp-ai' ),
@@ -314,6 +324,14 @@ class WP_MCP_AI_Shortcode {
                 </div>
                 <div class="wp-mcp-ai-chat__actions">
                     <input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />
+                    <input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden />
+                    <button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="<?php echo esc_attr__( 'Transcribe audio', 'wp-mcp-ai' ); ?>">
+                        <svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>
+                            <path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>
+                        </svg>
+                        <span class="screen-reader-text"><?php esc_html_e( 'Transcribe audio', 'wp-mcp-ai' ); ?></span>
+                    </button>
                     <button type="button" class="wp-mcp-ai-chat__attach">
                         <?php esc_html_e( 'Attach file', 'wp-mcp-ai' ); ?>
                     </button>
