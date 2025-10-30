@@ -443,20 +443,85 @@ class WP_MCP_AI_Shortcode {
         }
 
         $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-        if ( empty( $config['tools'] ) || ! is_array( $config['tools'] ) ) {
-            return array();
-        }
+        $shortcuts      = array();
+        $selected_tools = array();
 
-        $registry  = WP_MCP_AI_Tool_Registry::get_instance();
-        $shortcuts = array();
+        if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
+            foreach ( $config['tools'] as $tool_slug ) {
+                $tool_slug = sanitize_key( $tool_slug );
 
-        foreach ( $config['tools'] as $tool_slug ) {
-            $tool_slug = sanitize_key( $tool_slug );
+                if ( '' === $tool_slug ) {
+                    continue;
+                }
 
-            if ( '' === $tool_slug ) {
-                continue;
+                $selected_tools[] = $tool_slug;
             }
 
+            $selected_tools = array_values( array_unique( $selected_tools ) );
+        }
+
+        if ( ! empty( $config['tool_shortcuts'] ) && is_array( $config['tool_shortcuts'] ) ) {
+            $custom_shortcuts = $config['tool_shortcuts'];
+
+            if ( method_exists( 'WP_MCP_AI_Assistant_CPT', 'sanitize_tool_shortcuts_meta' ) ) {
+                $custom_shortcuts = WP_MCP_AI_Assistant_CPT::sanitize_tool_shortcuts_meta( $custom_shortcuts );
+            }
+
+            /**
+             * Filter the list of custom prompt shortcuts configured for an assistant.
+             *
+             * @since 1.1.0
+             *
+             * @param array $custom_shortcuts Sanitized custom shortcuts.
+             * @param int   $assistant_id     Assistant post ID.
+             * @param array $config           Assistant configuration array.
+             */
+            $custom_shortcuts = apply_filters( 'wp_mcp_ai_assistant_custom_tool_shortcuts', $custom_shortcuts, $assistant_id, $config );
+
+            if ( is_array( $custom_shortcuts ) ) {
+                foreach ( $custom_shortcuts as $custom_shortcut ) {
+                    if ( ! is_array( $custom_shortcut ) ) {
+                        continue;
+                    }
+
+                    $label = isset( $custom_shortcut['label'] ) ? sanitize_text_field( $custom_shortcut['label'] ) : '';
+                    $payload = isset( $custom_shortcut['payload'] ) ? sanitize_textarea_field( $custom_shortcut['payload'] ) : '';
+
+                    if ( '' === $label || '' === $payload ) {
+                        continue;
+                    }
+
+                    $tool_slug = '';
+                    if ( isset( $custom_shortcut['tool'] ) && is_string( $custom_shortcut['tool'] ) ) {
+                        $tool_slug = sanitize_key( $custom_shortcut['tool'] );
+                    }
+
+                    if ( '' !== $tool_slug && ! in_array( $tool_slug, $selected_tools, true ) ) {
+                        continue;
+                    }
+
+                    $entry = array(
+                        'tool'    => ( '' !== $tool_slug ) ? $tool_slug : 'custom',
+                        'label'   => $label,
+                        'payload' => $payload,
+                    );
+
+                    if ( isset( $custom_shortcut['description'] ) && is_string( $custom_shortcut['description'] ) ) {
+                        $entry['description'] = sanitize_textarea_field( $custom_shortcut['description'] );
+                    }
+
+                    $shortcuts[] = $entry;
+                }
+            }
+        }
+
+        if ( empty( $selected_tools ) ) {
+            return $shortcuts;
+        }
+
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+        foreach ( $selected_tools as $tool_slug ) {
             $tool = $registry->get_tool( $tool_slug );
 
             if ( ! $tool ) {
