@@ -8,6 +8,7 @@
 ## 📑 Table of Contents
 
 - [🧩 Overview](#-overview)
+- [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🚀 Features](#-features)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
@@ -42,6 +43,22 @@
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
 - [✅ Manual QA Scenarios](#-manual-qa-scenarios)
 - [🧩 Hooks & Filters](#-hooks--filters)
+
+---
+
+## 🧠 Memory & Tool Stack Overview
+
+### Model defaults
+
+Global settings capture the default provider, model, and timeout used when assistants are created, ensuring every conversation inherits stable generation behaviour until explicitly overridden. These defaults ship with sensible values for OpenAI and Gemini out of the box and can be tailored from the MCP AI settings screen.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L77】
+
+### Base knowledge
+
+Each assistant can preload Media Library files and optionally link to an external vector store, giving the model persistent project context before a chat begins. Editors manage these knowledge sources from the assistant post type via the “Base Knowledge” meta box, which supports multiple attachments and vector store identifiers.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L892-L1002】
+
+### Available tools
+
+The tool registry boots with a curated catalogue of content, commerce, automation, and research utilities, then exposes hooks so developers can register their own providers. During initialisation the registry loads each bundled tool class—ranging from JetEngine accessors to Crawl4AI jobs and Mailjet automations—and makes them callable within conversations.【F:includes/class-wp-mcp-ai-tool-registry.php†L74-L220】
 
 ---
 
