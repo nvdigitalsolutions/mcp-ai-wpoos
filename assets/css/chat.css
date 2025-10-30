@@ -18,6 +18,10 @@
     padding-right: 4px;
 }
 
+.wp-mcp-ai-chat__assistant {
+    margin-bottom: 1.25rem;
+}
+
 .wp-mcp-ai-chat__tool-shortcuts {
     display: flex;
     flex-wrap: wrap;
