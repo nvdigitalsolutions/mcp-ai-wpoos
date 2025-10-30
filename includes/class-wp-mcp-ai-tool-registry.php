@@ -186,6 +186,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Get_NHC_Active_Storms' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
             'WP_MCP_AI_Tool_Search_Attachments'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
             'WP_MCP_AI_Tool_Web_Search'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
+            'WP_MCP_AI_Tool_Get_GDACS_Events'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php',
             'WP_MCP_AI_Tool_Get_Open_Meteo_Forecast' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php',
             'WP_MCP_AI_Tool_Get_Woo_Orders'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
             'WP_MCP_AI_Tool_Get_Woo_Products'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
