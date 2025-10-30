@@ -833,6 +833,7 @@
             } else {
                 state.transcriptToggle.textContent = label;
             }
+            state.transcriptToggle.textContent = label;
             state.transcriptToggle.setAttribute('aria-expanded', state.transcriptExpanded ? 'true' : 'false');
         }
 

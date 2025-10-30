@@ -109,14 +109,33 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface {
             );
         }
 
-        $status_code = wp_remote_retrieve_response_code( $response );
+        $status_code = (int) wp_remote_retrieve_response_code( $response );
+
+        if ( 202 === $status_code ) {
+            $retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+
+            $error_data = array(
+                'status' => 202,
+            );
+
+            if ( ! empty( $retry_after ) ) {
+                $error_data['retry_after'] = $retry_after;
+            }
+
+            return new WP_Error(
+                'wp_mcp_ai_search_pending',
+                __( 'The web search results are not ready yet. Try again in a few seconds.', 'wp-mcp-ai' ),
+                $error_data
+            );
+        }
+
         if ( 200 !== $status_code ) {
             return new WP_Error(
                 'wp_mcp_ai_search_http_error',
                 sprintf(
                     /* translators: %d: HTTP status code */
                     __( 'The web search service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
-                    (int) $status_code
+                    $status_code
                 )
             );
         }
