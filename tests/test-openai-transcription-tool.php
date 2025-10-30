@@ -210,28 +210,78 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Unsupported file types should return an error with an appropriate HTTP status code.
+     */
+    public function test_execute_rejects_unsupported_mime_with_status() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        $attachment_id = $this->create_text_attachment( $user_id );
+
+        $tool   = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+        $result = $tool->execute( array( 'attachment_id' => $attachment_id ), array( 'user_id' => $user_id ) );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_attachment_unsupported_mime', $result->get_error_code() );
+
+        $data = $result->get_error_data();
+        $this->assertIsArray( $data );
+        $this->assertArrayHasKey( 'status', $data );
+        $this->assertSame( 415, $data['status'] );
+
+        wp_delete_attachment( $attachment_id, true );
+    }
+
+    /**
      * Helper to create a dummy audio attachment for testing.
      *
      * @param int $author_id Optional author identifier.
      * @return int Attachment ID.
      */
     protected function create_audio_attachment( $author_id = 0, $mime_type_override = null ) {
+        return $this->create_test_attachment( 'tool-audio.mp3', 'FAKEAUDIO', $author_id, $mime_type_override );
+    }
+
+    /**
+     * Helper to create a dummy text attachment for testing unsupported types.
+     *
+     * @param int $author_id Optional author identifier.
+     * @return int Attachment ID.
+     */
+    protected function create_text_attachment( $author_id = 0 ) {
+        return $this->create_test_attachment( 'notes.txt', 'Sample text content', $author_id );
+    }
+
+    /**
+     * Generic helper to create attachments backed by a file on disk.
+     *
+     * @param string      $filename           Base filename for the attachment.
+     * @param string      $contents           File contents to write.
+     * @param int         $author_id          Optional author identifier.
+     * @param string|null $mime_type_override Optional MIME override.
+     * @return int Attachment ID.
+     */
+    protected function create_test_attachment( $filename, $contents, $author_id = 0, $mime_type_override = null ) {
         $upload_dir = wp_upload_dir();
 
-        $tmp_file = wp_tempnam( 'tool-audio.mp3' );
-        file_put_contents( $tmp_file, 'FAKEAUDIO' );
+        $tmp_file = wp_tempnam( $filename );
+        file_put_contents( $tmp_file, $contents );
 
-        $filename     = 'tool-audio-' . wp_generate_password( 8, false, false ) . '.mp3';
-        $destination  = trailingslashit( $upload_dir['path'] ) . $filename;
+        $unique_name = wp_unique_filename( $upload_dir['path'], $filename );
+        $destination = trailingslashit( $upload_dir['path'] ) . $unique_name;
         wp_mkdir_p( dirname( $destination ) );
         copy( $tmp_file, $destination );
         unlink( $tmp_file );
 
-        $filetype = wp_check_filetype( $filename, null );
+        $filetype = wp_check_filetype( $unique_name, null );
 
         $attachment = array(
             'post_mime_type' => null === $mime_type_override ? $filetype['type'] : $mime_type_override,
-            'post_title'     => 'Sample Audio',
+            'post_title'     => 'Sample Attachment',
             'post_content'   => '',
             'post_status'    => 'inherit',
             'post_author'    => $author_id,
