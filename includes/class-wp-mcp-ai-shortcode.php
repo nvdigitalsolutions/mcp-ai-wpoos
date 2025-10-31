@@ -552,6 +552,10 @@ class WP_MCP_AI_Shortcode {
             }
         }
 
+        if ( ! empty( $config['disable_prebuilt_shortcuts'] ) ) {
+            return $shortcuts;
+        }
+
         if ( empty( $selected_tools ) ) {
             return $shortcuts;
         }
