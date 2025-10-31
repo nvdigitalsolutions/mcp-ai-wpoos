@@ -438,8 +438,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#3b5bff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-gradient-start: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-gradient-start: {{VALUE}};',
                 ),
             )
         );
@@ -449,8 +450,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#7c5cff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-gradient-end: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-gradient-end: {{VALUE}};',
                 ),
             )
         );
@@ -460,8 +462,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Text Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#ffffff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-text: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-text: {{VALUE}};',
                 ),
             )
         );
@@ -471,8 +474,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(59, 91, 255, 0.35)',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-shadow: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-shadow: {{VALUE}};',
                 ),
             )
         );
@@ -491,8 +495,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#324cf8',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-hover-gradient-start: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-hover-gradient-start: {{VALUE}};',
                 ),
             )
         );
@@ -502,8 +507,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#6a4bff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-hover-gradient-end: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-hover-gradient-end: {{VALUE}};',
                 ),
             )
         );
@@ -513,8 +519,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Text Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#ffffff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-hover-text: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-hover-text: {{VALUE}};',
                 ),
             )
         );
@@ -524,8 +531,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(50, 76, 248, 0.4)',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-hover-shadow: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-hover-shadow: {{VALUE}};',
                 ),
             )
         );
@@ -544,8 +552,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#2f44f0',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-active-gradient-start: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-active-gradient-start: {{VALUE}};',
                 ),
             )
         );
@@ -555,8 +564,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#5b3eff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-active-gradient-end: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-active-gradient-end: {{VALUE}};',
                 ),
             )
         );
@@ -566,8 +576,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Text Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#ffffff',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-active-text: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-active-text: {{VALUE}};',
                 ),
             )
         );
@@ -577,8 +588,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             array(
                 'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
                 'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(47, 68, 240, 0.38)',
                 'selectors' => array(
-                    '{{WRAPPER}} .wp-mcp-ai-chat-widget' => '--wp-mcp-ai-color-submit-active-shadow: {{VALUE}};',
+                    '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__submit' => '--wp-mcp-ai-color-submit-active-shadow: {{VALUE}};',
                 ),
             )
         );
