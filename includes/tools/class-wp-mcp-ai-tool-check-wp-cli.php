@@ -280,6 +280,17 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
         $plugin_root = untrailingslashit( WP_MCP_AI_PATH );
         $candidates[] = $plugin_root . '../vendor/bin/wp';
 
+        // Cloudways environments ship a preinstalled WP-CLI binary outside the default PATH.
+        $cloudways_paths = array(
+            '/usr/local/bin/wp',
+            '/home/master/bin/wp',
+            '/home/master/.wp-cli/wp-cli.phar',
+        );
+
+        foreach ( $cloudways_paths as $cloudways_path ) {
+            $candidates[] = $cloudways_path;
+        }
+
         $path_env = getenv( 'PATH' );
 
         if ( is_string( $path_env ) && '' !== trim( $path_env ) ) {

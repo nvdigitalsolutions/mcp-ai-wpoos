@@ -103,6 +103,22 @@ class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure Cloudways-specific installation paths are included by default.
+     */
+    public function test_candidate_paths_include_cloudways_locations() {
+        $tool = new WP_MCP_AI_Tool_Check_WP_CLI();
+
+        $method = new ReflectionMethod( $tool, 'get_candidate_paths' );
+        $method->setAccessible( true );
+
+        $candidates = $method->invoke( $tool );
+
+        $this->assertContains( wp_normalize_path( '/usr/local/bin/wp' ), $candidates );
+        $this->assertContains( wp_normalize_path( '/home/master/bin/wp' ), $candidates );
+        $this->assertContains( wp_normalize_path( '/home/master/.wp-cli/wp-cli.phar' ), $candidates );
+    }
+
+    /**
      * Determine whether proc_open is available.
      *
      * @return bool
