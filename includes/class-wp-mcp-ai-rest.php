@@ -2229,12 +2229,18 @@ class WP_MCP_AI_REST {
             return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
         }
 
+        $local_attachment = $this->resolve_local_attachment_for_openai_file( $file_id );
+
+        if ( is_wp_error( $local_attachment ) ) {
+            return $local_attachment;
+        }
+
         if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
             require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
         }
 
-        $client  = new WP_MCP_AI_OpenAI_Client();
-        $result  = $client->download_file( $file_id );
+        $client = new WP_MCP_AI_OpenAI_Client();
+        $result = $client->download_file( $file_id );
 
         if ( is_wp_error( $result ) ) {
             return $result;
@@ -2248,6 +2254,14 @@ class WP_MCP_AI_REST {
 
         $content_type = isset( $result['content_type'] ) && '' !== $result['content_type'] ? $result['content_type'] : 'application/octet-stream';
 
+        if ( 'application/octet-stream' === $content_type && ! empty( $local_attachment['metadata']['mime_type'] ) ) {
+            if ( function_exists( 'sanitize_mime_type' ) ) {
+                $content_type = sanitize_mime_type( $local_attachment['metadata']['mime_type'] );
+            } else {
+                $content_type = sanitize_text_field( $local_attachment['metadata']['mime_type'] );
+            }
+        }
+
         $requested_name = $request->get_param( 'download_name' );
         $download_name  = '';
 
@@ -2259,6 +2273,8 @@ class WP_MCP_AI_REST {
 
         if ( isset( $result['filename'] ) && '' !== $result['filename'] ) {
             $filename = sanitize_file_name( $result['filename'] );
+        } elseif ( ! empty( $local_attachment['metadata']['filename'] ) ) {
+            $filename = sanitize_file_name( $local_attachment['metadata']['filename'] );
         }
 
         if ( '' === $filename && '' !== $download_name ) {
@@ -2315,6 +2331,117 @@ class WP_MCP_AI_REST {
         );
 
         return new WP_REST_Response( null, 200 );
+    }
+
+    /**
+     * Locate the local attachment associated with an OpenAI file identifier and ensure it is accessible.
+     *
+     * @param string $file_id OpenAI file identifier.
+     * @return array|WP_Error Array containing the attachment ID and metadata, or WP_Error on failure.
+     */
+    protected function resolve_local_attachment_for_openai_file( $file_id ) {
+        if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+            require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+        }
+
+        $file_id = sanitize_text_field( (string) $file_id );
+
+        if ( '' === $file_id ) {
+            return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+        }
+
+        global $wpdb;
+
+        $meta_key = WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY;
+        $like     = '%' . $wpdb->esc_like( $file_id ) . '%';
+
+        $post_ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value LIKE %s",
+                $meta_key,
+                $like
+            )
+        );
+
+        if ( empty( $post_ids ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_file_download_not_found',
+                __( 'The requested file could not be located or is no longer available.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $post_ids        = array_values( array_unique( array_map( 'absint', $post_ids ) ) );
+        $unauthorised_id = 0;
+
+        foreach ( $post_ids as $attachment_id ) {
+            if ( ! $attachment_id ) {
+                continue;
+            }
+
+            $attachment = get_post( $attachment_id );
+            if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+                continue;
+            }
+
+            $raw_meta = get_post_meta( $attachment_id, $meta_key, true );
+
+            if ( is_string( $raw_meta ) && '' !== $raw_meta ) {
+                $maybe_unserialized = maybe_unserialize( $raw_meta );
+
+                if ( is_array( $maybe_unserialized ) ) {
+                    $metadata = $maybe_unserialized;
+                } else {
+                    $metadata = array( 'file_id' => (string) $raw_meta );
+                }
+            } elseif ( is_array( $raw_meta ) ) {
+                $metadata = $raw_meta;
+            } else {
+                $metadata = array();
+            }
+
+            $meta_file_id = '';
+            if ( isset( $metadata['file_id'] ) ) {
+                $meta_file_id = sanitize_text_field( (string) $metadata['file_id'] );
+            }
+
+            if ( $file_id !== $meta_file_id ) {
+                continue;
+            }
+
+            if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
+                $unauthorised_id = $attachment_id;
+                continue;
+            }
+
+            if ( ! is_array( $metadata ) ) {
+                $metadata = array();
+            }
+
+            $metadata['file_id'] = $meta_file_id;
+
+            return array(
+                'attachment_id' => $attachment_id,
+                'metadata'      => $metadata,
+            );
+        }
+
+        if ( $unauthorised_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_file_download_forbidden',
+                __( 'You do not have permission to download this file.', 'wp-mcp-ai' ),
+                array(
+                    'status'        => 403,
+                    'attachment_id' => $unauthorised_id,
+                )
+            );
+        }
+
+        return new WP_Error(
+            'wp_mcp_ai_file_download_not_found',
+            __( 'The requested file could not be located or is no longer available.', 'wp-mcp-ai' ),
+            array( 'status' => 404 )
+        );
     }
 
     /**

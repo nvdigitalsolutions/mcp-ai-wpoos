@@ -927,6 +927,14 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
         add_filter( 'pre_http_request', $filter_callback, 10, 3 );
 
+        $attachment_id = $this->create_text_attachment( 'download.txt', 'Attachment contents' );
+        $metadata      = get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true );
+        $this->assertIsArray( $metadata );
+        $metadata['file_id']   = 'file-download-456';
+        $metadata['filename']  = 'download.txt';
+        $metadata['mime_type'] = 'text/plain';
+        update_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, $metadata );
+
         $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/files/file-download-456/download' );
         $request->set_param( 'assistant_id', $assistant_id );
         $request->set_param( '_wpnonce', wp_create_nonce( 'wp_rest' ) );
@@ -960,6 +968,135 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $this->assertSame( 'Example content', $output );
 
         unset( $hook->callbacks[10][ $closure_key ] );
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
+     * Ensure downloads fail when the OpenAI file is not associated with a local attachment.
+     */
+    public function test_file_download_route_requires_local_attachment() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $assistant_id = $this->create_assistant_post();
+        $user_id      = get_current_user_id();
+
+        if ( ! $user_id ) {
+            $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+            wp_set_current_user( $user_id );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $download_counter = 0;
+        $filter_callback  = function ( $preempt, $args, $url ) use ( &$download_counter ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-missing-123/content' === $url ) {
+                $download_counter++;
+            }
+
+            return null;
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/files/file-missing-123/download' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( '_wpnonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 404, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 'wp_mcp_ai_file_download_not_found', $data['code'] );
+        $this->assertSame( 0, $download_counter );
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
+     * Ensure downloads honour attachment access permissions.
+     */
+    public function test_file_download_route_respects_attachment_permissions() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $assistant_id = $this->create_assistant_post();
+
+        $admin_id = get_current_user_id();
+        if ( ! $admin_id ) {
+            $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        }
+
+        wp_set_current_user( $admin_id );
+
+        $attachment_id = $this->create_text_attachment( 'private-download.txt', 'Private attachment contents' );
+        $metadata      = get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true );
+        $this->assertIsArray( $metadata );
+        $metadata['file_id']   = 'file-private-789';
+        $metadata['filename']  = 'private-download.txt';
+        $metadata['mime_type'] = 'text/plain';
+        update_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, $metadata );
+        wp_update_post(
+            array(
+                'ID'          => $attachment_id,
+                'post_status' => 'private',
+            )
+        );
+
+        $subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        $capability_filter = function ( $capability, $assistant, $context ) {
+            return 'read';
+        };
+
+        add_filter( 'wp_mcp_ai_chat_capability', $capability_filter, 10, 3 );
+
+        wp_set_current_user( $subscriber_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $download_counter = 0;
+        $filter_callback  = function ( $preempt, $args, $url ) use ( &$download_counter ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-private-789/content' === $url ) {
+                $download_counter++;
+            }
+
+            return null;
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/files/file-private-789/download' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( '_wpnonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+        remove_filter( 'wp_mcp_ai_chat_capability', $capability_filter, 10 );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 403, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( 'wp_mcp_ai_file_download_forbidden', $data['code'] );
+        $this->assertSame( 0, $download_counter );
 
         wp_set_current_user( 0 );
     }
