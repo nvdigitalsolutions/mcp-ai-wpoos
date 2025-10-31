@@ -20,7 +20,7 @@ class WP_MCP_AI_REST {
     const MEMORY_MAX_FILE_BYTES     = 5242880; // 5MB default memory file size limit.
     const MEMORY_MAX_DOCUMENT_BYTES = 262144; // ~256KB, enough headroom for markup around 4K characters of text.
     const MEMORY_MAX_TOTAL_BYTES    = 1048576; // ~1MB aggregate streaming budget across attachments.
-    const CHAT_MAX_REQUEST_TOKENS   = 480000;  // Leave headroom beneath default GPT-5 TPM limit.
+    const CHAT_MAX_REQUEST_TOKENS   = 480000;  // Fallback ceiling when no model-specific limit is available.
     const CHAT_APPROX_CHARS_PER_TOKEN = 4;     // Rough heuristic used when trimming oversized chats.
 
     /**
@@ -1016,12 +1016,23 @@ class WP_MCP_AI_REST {
 
         $assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
+        $options = $this->sanitize_options( $request->get_param( 'options' ), $assistant_config );
+
+        $limit_context = $this->build_chat_limit_context( $assistant_id, $options );
+        $enforced      = $this->enforce_chat_request_limits( $messages, $attachments, $limit_context );
+
+        if ( is_wp_error( $enforced ) ) {
+            return $enforced;
+        }
+
+        $messages    = $enforced['messages'];
+        $attachments = $enforced['attachments'];
+
         if ( ! empty( $attachments ) ) {
             $assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
         }
 
-        $options          = $this->sanitize_options( $request->get_param( 'options' ), $assistant_config );
-        $tools            = $this->build_tools_payload( $assistant_config );
+        $tools = $this->build_tools_payload( $assistant_config );
         if ( is_wp_error( $tools ) ) {
             return $tools;
         }
@@ -1787,12 +1798,25 @@ class WP_MCP_AI_REST {
             );
         }
 
-        $result = array(
+        return array(
             'messages'    => array_values( $sanitized ),
             'attachments' => $attachments_helper->get_attachments(),
         );
+    }
 
-        return $this->enforce_chat_request_limits( $result['messages'], $result['attachments'] );
+    /**
+     * Build the context array used when enforcing chat request limits.
+     *
+     * @param int   $assistant_id Assistant identifier.
+     * @param array $options      Prepared chat options.
+     * @return array
+     */
+    protected function build_chat_limit_context( $assistant_id, array $options ) {
+        return array(
+            'assistant_id' => absint( $assistant_id ),
+            'provider'     => isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '',
+            'model'        => isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : '',
+        );
     }
 
     /**
@@ -1800,13 +1824,20 @@ class WP_MCP_AI_REST {
      *
      * @param array $messages    Sanitized chat messages.
      * @param array $attachments Attachment payloads associated with the request.
+     * @param array $context     Contextual information about the request (assistant, provider, model).
      * @return array|WP_Error
      */
-    protected function enforce_chat_request_limits( array $messages, array $attachments ) {
+    protected function enforce_chat_request_limits( array $messages, array $attachments, array $context = array() ) {
         $messages    = array_values( $messages );
         $attachments = array_values( $attachments );
+        $context     = is_array( $context ) ? $context : array();
 
-        $limit_tokens = (int) apply_filters( 'wp_mcp_ai_chat_request_token_limit', self::CHAT_MAX_REQUEST_TOKENS, $messages, $attachments );
+        $context['assistant_id'] = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
+        $context['provider']     = isset( $context['provider'] ) ? sanitize_key( $context['provider'] ) : '';
+        $context['model']        = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
+
+        $limit_tokens = $this->determine_chat_request_token_limit( $context );
+        $limit_tokens = (int) apply_filters( 'wp_mcp_ai_chat_request_token_limit', $limit_tokens, $messages, $attachments, $context );
 
         if ( $limit_tokens <= 0 ) {
             return array(
@@ -1959,6 +1990,74 @@ class WP_MCP_AI_REST {
             'messages'    => $messages,
             'attachments' => $filtered_attachments,
         );
+    }
+
+    /**
+     * Determine the maximum token budget for a chat request.
+     *
+     * @param array $context Contextual information about the request.
+     * @return int
+     */
+    protected function determine_chat_request_token_limit( array $context ) {
+        $limit = self::CHAT_MAX_REQUEST_TOKENS;
+
+        $provider_limits = array();
+
+        if ( 'openai' === $context['provider'] ) {
+            $provider_limits = array(
+                'gpt-5-nano' => 200000,
+            );
+        }
+
+        /**
+         * Filter the provider-specific token ceilings used when trimming chat requests.
+         *
+         * @param array $provider_limits Associative array of model identifiers mapped to token limits.
+         * @param array $context         Contextual information about the request (assistant, provider, model).
+         */
+        $provider_limits = apply_filters( 'wp_mcp_ai_provider_chat_token_limits', $provider_limits, $context );
+
+        if ( ! is_array( $provider_limits ) ) {
+            $provider_limits = array();
+        }
+
+        $matched_limit = null;
+
+        if ( ! empty( $context['model'] ) ) {
+            $normalized_model = strtolower( $context['model'] );
+
+            foreach ( $provider_limits as $candidate_model => $candidate_limit ) {
+                $candidate_model = is_string( $candidate_model ) ? strtolower( $candidate_model ) : '';
+                $candidate_limit = (int) $candidate_limit;
+
+                if ( '' === $candidate_model || $candidate_limit <= 0 ) {
+                    continue;
+                }
+
+                if ( $normalized_model === $candidate_model ) {
+                    $matched_limit = $candidate_limit;
+                    break;
+                }
+            }
+        }
+
+        if ( null === $matched_limit ) {
+            foreach ( array( 'default', '*' ) as $fallback_key ) {
+                if ( isset( $provider_limits[ $fallback_key ] ) ) {
+                    $fallback_limit = (int) $provider_limits[ $fallback_key ];
+                    if ( $fallback_limit > 0 ) {
+                        $matched_limit = $fallback_limit;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ( null !== $matched_limit && $matched_limit > 0 ) {
+            $limit = min( $limit, $matched_limit );
+        }
+
+        return (int) $limit;
     }
 
     /**
