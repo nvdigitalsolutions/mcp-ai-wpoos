@@ -237,6 +237,32 @@ class WP_MCP_AI_REST {
     public function register_routes() {
         register_rest_route(
             self::REST_NAMESPACE,
+            '/assistants',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_assistants_index' ),
+                    'args'                => array(
+                        'search' => array(
+                            'type'     => 'string',
+                            'required' => false,
+                        ),
+                        'include' => array(
+                            'type'     => 'array',
+                            'required' => false,
+                            'items'    => array(
+                                'type' => 'integer',
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            true
+        );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
             '/chat',
             array(
                 array(
@@ -324,6 +350,262 @@ class WP_MCP_AI_REST {
             ),
             true
         );
+    }
+
+    /**
+     * Provide a directory of assistants the authenticated client can access.
+     *
+     * Credential-scoped requests are limited to the issuing assistant while
+     * traditional authentication modes return every published assistant the
+     * caller can read.
+     *
+     * @param WP_REST_Request $request REST request instance.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_assistants_index( WP_REST_Request $request ) {
+        $settings          = WP_MCP_AI_Admin_Settings::get_settings();
+        $default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+        $auth_context      = $this->get_auth_context();
+
+        $scoped_assistant = $this->apply_token_assistant_scope( 0 );
+        if ( is_wp_error( $scoped_assistant ) ) {
+            return $scoped_assistant;
+        }
+
+        $posts = array();
+
+        if ( $scoped_assistant ) {
+            $assistant_post = $this->validate_assistant_access( $scoped_assistant );
+
+            if ( is_wp_error( $assistant_post ) ) {
+                return $assistant_post;
+            }
+
+            $posts = array( $assistant_post );
+        } else {
+            $query_args = array(
+                'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status'    => array( 'publish' ),
+                'posts_per_page' => -1,
+                'orderby'        => 'title',
+                'order'          => 'ASC',
+            );
+
+            $search = $request->get_param( 'search' );
+            if ( is_string( $search ) && '' !== $search ) {
+                $query_args['s'] = sanitize_text_field( $search );
+            }
+
+            $include = $request->get_param( 'include' );
+            if ( ! empty( $include ) ) {
+                $include_ids = array();
+
+                if ( is_string( $include ) ) {
+                    $include = explode( ',', $include );
+                }
+
+                foreach ( (array) $include as $candidate ) {
+                    $candidate = absint( $candidate );
+
+                    if ( $candidate ) {
+                        $include_ids[] = $candidate;
+                    }
+                }
+
+                if ( ! empty( $include_ids ) ) {
+                    $query_args['post__in'] = $include_ids;
+                    $query_args['orderby']  = 'post__in';
+                }
+            }
+
+            /**
+             * Allow developers to adjust the assistant directory query.
+             *
+             * @since 1.0.0
+             *
+             * @param array           $query_args   WP_Query arguments.
+             * @param WP_REST_Request $request      Current REST request.
+             * @param array           $auth_context Authentication context for the caller.
+             */
+            $query_args = apply_filters( 'wp_mcp_ai_rest_assistant_query_args', $query_args, $request, $auth_context );
+
+            $query = new WP_Query( $query_args );
+            $posts = $query->posts;
+
+            if ( ! is_array( $posts ) ) {
+                $posts = array();
+            }
+
+            $filtered = array();
+            foreach ( $posts as $post ) {
+                if ( ! $post instanceof WP_Post ) {
+                    $post = get_post( $post );
+                }
+
+                if ( ! $post instanceof WP_Post ) {
+                    continue;
+                }
+
+                $accessible = $this->validate_assistant_access( $post->ID );
+
+                if ( $accessible instanceof WP_Post ) {
+                    $filtered[] = $accessible;
+                }
+            }
+
+            $posts = $filtered;
+        }
+
+        $assistants = array();
+
+        foreach ( $posts as $assistant_post ) {
+            if ( ! $assistant_post instanceof WP_Post ) {
+                continue;
+            }
+
+            $summary      = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+            $assistants[] = $summary;
+        }
+
+        $assistants = array_values( $assistants );
+
+        $response_data = array(
+            'assistants'        => $assistants,
+            'default_assistant' => $default_assistant,
+            'rest'              => array(
+                'namespace'        => self::REST_NAMESPACE,
+                'base'             => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
+                'chat'             => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
+                'tools'            => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
+                'file_download'    => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
+            ),
+        );
+
+        if ( ! empty( $auth_context['token_authenticated'] ) ) {
+            $token_scope = array(
+                'type' => $auth_context['token_type'],
+            );
+
+            if ( 'local_token' === $auth_context['token_type'] && $scoped_assistant ) {
+                $token_scope['assistant_id'] = $scoped_assistant;
+            }
+
+            $response_data['token_scope'] = $token_scope;
+        }
+
+        /**
+         * Filter the assistant directory response payload before it is returned.
+         *
+         * @since 1.0.0
+         *
+         * @param array           $response_data Response payload.
+         * @param WP_REST_Request $request       Current REST request.
+         * @param array           $auth_context  Authentication context for the caller.
+         */
+        $response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
+
+        return new WP_REST_Response( $response_data, 200 );
+    }
+
+    /**
+     * Convert an assistant post into a safe directory summary.
+     *
+     * @param WP_Post         $assistant_post   Assistant post object.
+     * @param int             $default_assistant Default assistant identifier.
+     * @param array           $settings          Plugin settings array.
+     * @param WP_REST_Request $request           Current REST request.
+     * @return array
+     */
+    protected function summarize_assistant_for_directory( WP_Post $assistant_post, $default_assistant, array $settings, WP_REST_Request $request ) {
+        $assistant_id = absint( $assistant_post->ID );
+        $config       = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+        $provider = isset( $config['provider'] ) ? sanitize_key( $config['provider'] ) : '';
+        if ( '' === $provider ) {
+            $provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+        }
+
+        $model = isset( $config['model'] ) ? (string) $config['model'] : '';
+        if ( '' === $model ) {
+            if ( 'gemini' === $provider ) {
+                $model = isset( $settings['default_gemini_model'] ) ? (string) $settings['default_gemini_model'] : '';
+            } else {
+                $model = isset( $settings['default_model'] ) ? (string) $settings['default_model'] : '';
+            }
+        }
+
+        $temperature = isset( $config['temperature'] ) ? $config['temperature'] : null;
+        if ( null !== $temperature ) {
+            $temperature = floatval( $temperature );
+        }
+
+        $tools = array();
+        if ( isset( $config['tools'] ) && is_array( $config['tools'] ) ) {
+            foreach ( $config['tools'] as $tool_slug ) {
+                $tool_slug = sanitize_key( $tool_slug );
+                if ( '' !== $tool_slug ) {
+                    $tools[] = $tool_slug;
+                }
+            }
+
+            $tools = array_values( array_unique( $tools ) );
+        }
+
+        $memory_files = 0;
+        if ( isset( $config['memory_files'] ) && is_array( $config['memory_files'] ) ) {
+            $memory_files = count( array_filter( array_map( 'absint', $config['memory_files'] ) ) );
+        }
+
+        $summary = array(
+            'id'                 => $assistant_id,
+            'title'              => get_the_title( $assistant_post ),
+            'slug'               => $assistant_post->post_name,
+            'status'             => $assistant_post->post_status,
+            'is_default'         => ( $assistant_id === absint( $default_assistant ) ),
+            'provider'           => $provider,
+            'model'              => $model,
+            'temperature'        => ( null === $temperature ? null : $temperature ),
+            'tools'              => $tools,
+            'tool_count'         => count( $tools ),
+            'memory_file_count'  => $memory_files,
+            'has_vector_store'   => ( isset( $config['vector_store_id'] ) && '' !== $config['vector_store_id'] ),
+            'has_external_action'=> ( ! empty( $config['external_action_identifier'] ) ),
+            'description'        => $this->get_assistant_directory_description( $assistant_post ),
+            'updated_at'         => get_post_modified_time( 'c', true, $assistant_post ),
+            'permalink'          => get_permalink( $assistant_post ),
+        );
+
+        /**
+         * Filter the assistant summary returned by the directory endpoint.
+         *
+         * @since 1.0.0
+         *
+         * @param array           $summary        Assistant summary array.
+         * @param WP_Post         $assistant_post Assistant post object.
+         * @param array           $config         Assistant configuration array.
+         * @param array           $settings       Plugin settings array.
+         * @param WP_REST_Request $request        Current REST request.
+         */
+        return apply_filters( 'wp_mcp_ai_rest_assistant_summary', $summary, $assistant_post, $config, $settings, $request );
+    }
+
+    /**
+     * Generate a trimmed description for an assistant directory entry.
+     *
+     * @param WP_Post $assistant_post Assistant post object.
+     * @return string
+     */
+    protected function get_assistant_directory_description( WP_Post $assistant_post ) {
+        $excerpt = get_post_field( 'post_excerpt', $assistant_post->ID );
+
+        if ( '' === $excerpt ) {
+            $content = get_post_field( 'post_content', $assistant_post->ID );
+            $excerpt = wp_trim_words( wp_strip_all_tags( (string) $content ), 30, '&hellip;' );
+        }
+
+        $excerpt = wp_strip_all_tags( (string) $excerpt );
+
+        return $excerpt;
     }
 
     /**
