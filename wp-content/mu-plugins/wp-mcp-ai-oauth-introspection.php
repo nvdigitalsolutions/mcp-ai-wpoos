@@ -205,8 +205,27 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
                 }
             }
 
-            if ( ! empty( $settings['required_scope'] ) && isset( $introspection['scope'] ) ) {
-                $scopes = preg_split( '/\s+/', (string) $introspection['scope'] );
+            if ( ! empty( $settings['required_scope'] ) ) {
+                if ( empty( $introspection['scope'] ) ) {
+                    return new WP_Error(
+                        'wp_mcp_ai_oauth_missing_scope',
+                        __( 'The bearer token is missing a required scope.', 'wp-mcp-ai' ),
+                        array( 'status' => 403 )
+                    );
+                }
+
+                $scope_field = $introspection['scope'];
+                if ( is_string( $scope_field ) ) {
+                    $scopes = preg_split( '/\s+/', $scope_field, -1, PREG_SPLIT_NO_EMPTY );
+                    if ( false === $scopes ) {
+                        $scopes = array();
+                    }
+                } elseif ( is_array( $scope_field ) ) {
+                    $scopes = array_map( 'strval', $scope_field );
+                } else {
+                    $scopes = array( (string) $scope_field );
+                }
+
                 if ( ! in_array( $settings['required_scope'], $scopes, true ) ) {
                     return new WP_Error(
                         'wp_mcp_ai_oauth_missing_scope',
