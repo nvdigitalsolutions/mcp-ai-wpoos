@@ -67,3 +67,20 @@ interface WP_MCP_AI_Tool_Shortcuts_Interface {
      */
     public function get_shortcut_tasks();
 }
+
+/**
+ * Optional interface for tools that want to control automatic fallback shortcuts.
+ */
+interface WP_MCP_AI_Tool_Fallback_Shortcut_Interface {
+    /**
+     * Decide whether a fallback shortcut should be registered automatically.
+     *
+     * Returning false opts the tool out of the generic fallback entry that
+     * mirrors the tool slug, while still allowing the global "What can you do?"
+     * shortcut to be appended later in the process.
+     *
+     * @param int $assistant_id Assistant post ID.
+     * @return bool
+     */
+    public function should_register_fallback_shortcut( $assistant_id );
+}
