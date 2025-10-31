@@ -13,6 +13,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
     require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 }
 
+if ( ! class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
+    require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php';
+}
+
 /**
  * Finds pricing information for BJ's, Sam's Club, and Costco by querying Crawl4AI's web search endpoint.
  */
@@ -53,7 +57,21 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
     public static function is_available() {
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-        return '' !== self::resolve_base_url( $settings );
+        if ( '' !== self::resolve_base_url( $settings ) ) {
+            return true;
+        }
+
+        /**
+         * Filters whether the local web search fallback should be enabled.
+         *
+         * @since 1.7.0
+         *
+         * @param bool  $enabled  Whether the local fallback is enabled. Default true.
+         * @param array $settings Plugin settings array.
+         */
+        $local_enabled = apply_filters( 'wp_mcp_ai_crawl4ai_price_lookup_local_enabled', true, $settings );
+
+        return (bool) $local_enabled;
     }
 
     /**
@@ -62,7 +80,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
      * @return string
      */
     public static function get_unavailable_reason() {
-        return __( 'Configure the Crawl4AI base URL to enable the wholesale club price lookup tool.', 'wp-mcp-ai' );
+        return __( 'The wholesale club price lookup tool requires Crawl4AI web search or the local fallback to be enabled.', 'wp-mcp-ai' );
     }
 
     /**
@@ -144,11 +162,23 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
         $settings = WP_MCP_AI_Admin_Settings::get_settings();
         $base_url = self::resolve_base_url( $settings, $context );
 
-        if ( '' === $base_url ) {
-            return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI web search is not available on this site.', 'wp-mcp-ai' ) );
-        }
-
         $results = array();
+
+        if ( '' === $base_url ) {
+            foreach ( $this->get_brands() as $brand ) {
+                $results[] = $this->lookup_brand_price_local( $brand, $product, $max_results, $settings, $context );
+            }
+
+            return array(
+                'product'  => $product,
+                'queried'  => current_time( 'mysql', true ),
+                'brands'   => $results,
+                'metadata' => array(
+                    'max_results'      => $max_results,
+                    'lookup_provider'  => 'local',
+                ),
+            );
+        }
 
         foreach ( $this->get_brands() as $brand ) {
             $results[] = $this->lookup_brand_price( $brand, $product, $max_results, $settings, $context, $base_url );
@@ -159,7 +189,8 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
             'queried'  => current_time( 'mysql', true ),
             'brands'   => $results,
             'metadata' => array(
-                'max_results' => $max_results,
+                'max_results'     => $max_results,
+                'lookup_provider' => 'crawl4ai',
             ),
         );
     }
@@ -214,6 +245,64 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
             $result['raw_price'] = $price['raw'];
             $result['currency'] = 'USD';
             $result['source']   = $price['source'];
+        } else {
+            $result['note'] = __( 'No price was detected in the top results.', 'wp-mcp-ai' );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Query the local web search fallback for a single brand and extract pricing information.
+     *
+     * @param array  $brand       Brand metadata.
+     * @param string $product     Sanitised product query.
+     * @param int    $max_results Maximum number of results to request.
+     * @param array  $settings    Plugin settings.
+     * @param array  $context     Execution context.
+     *
+     * @return array
+     */
+    protected function lookup_brand_price_local( array $brand, $product, $max_results, array $settings, array $context ) {
+        unset( $settings );
+
+        $query   = $this->build_brand_query( $brand, $product );
+        $payload = array(
+            'query'       => $query,
+            'max_results' => $max_results,
+        );
+
+        $payload = apply_filters( 'wp_mcp_ai_crawl4ai_price_lookup_local_payload', $payload, $brand, $product, $max_results, $context );
+
+        $response = $this->perform_local_web_search( $payload, $context );
+
+        if ( is_wp_error( $response ) ) {
+            return array(
+                'brand'   => $brand['name'],
+                'domain'  => $brand['domain'],
+                'query'   => $query,
+                'status'  => 'error',
+                'error'   => $response->get_error_message(),
+                'details' => $response->get_error_data(),
+            );
+        }
+
+        $parsed = $this->summarise_results( $response, $max_results );
+        $price  = $this->extract_price_from_results( $parsed );
+
+        $result = array(
+            'brand'  => $brand['name'],
+            'domain' => $brand['domain'],
+            'query'  => $query,
+            'status' => $price ? 'success' : 'not-found',
+            'items'  => $parsed,
+        );
+
+        if ( $price ) {
+            $result['price']     = $price['amount'];
+            $result['raw_price'] = $price['raw'];
+            $result['currency']  = 'USD';
+            $result['source']    = $price['source'];
         } else {
             $result['note'] = __( 'No price was detected in the top results.', 'wp-mcp-ai' );
         }
@@ -355,6 +444,39 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
         }
 
         return $summary;
+    }
+
+    /**
+     * Perform a local web search using the bundled web search tool.
+     *
+     * @param array $payload Prepared payload.
+     * @param array $context Execution context.
+     *
+     * @return array|WP_Error
+     */
+    protected function perform_local_web_search( array $payload, array $context ) {
+        $tool = new WP_MCP_AI_Tool_Web_Search();
+
+        $arguments = array(
+            'query'       => isset( $payload['query'] ) ? $payload['query'] : '',
+            'max_results' => isset( $payload['max_results'] ) ? absint( $payload['max_results'] ) : self::DEFAULT_MAX_RESULTS,
+        );
+
+        $result = $tool->execute( $arguments, $context );
+
+        if ( is_wp_error( $result ) ) {
+            return $result;
+        }
+
+        if ( ! is_array( $result ) ) {
+            return new WP_Error( 'wp_mcp_ai_crawl4ai_local_invalid_response', __( 'The local web search returned an unexpected response.', 'wp-mcp-ai' ) );
+        }
+
+        $results = isset( $result['results'] ) && is_array( $result['results'] ) ? $result['results'] : array();
+
+        return array(
+            'results' => $results,
+        );
     }
 
     /**
