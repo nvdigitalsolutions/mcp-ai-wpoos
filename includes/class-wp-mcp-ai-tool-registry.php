@@ -185,12 +185,14 @@ class WP_MCP_AI_Tool_Registry {
             'search_attachments'         => 'content',
             'get_recent_posts'           => 'content',
             'save_post'                  => 'content',
+            'get_rankmath_seo'           => 'content',
             'get_user_info'              => 'operations',
             'get_site_summary'           => 'operations',
             'get_system_logs'            => 'operations',
             'open_openai_usage'          => 'operations',
             'open_openai_logs'           => 'operations',
             'create_cron_job'            => 'operations',
+            'create_wpcode_snippet'      => 'operations',
             'purge_cloudflare_cache'     => 'operations',
             'check_wp_cli'               => 'operations',
             'run_openai_external_action' => 'automation',
@@ -276,6 +278,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Generate_OpenAI_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
             'WP_MCP_AI_Tool_Submit_Document_Prompt' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
             'WP_MCP_AI_Tool_Create_Google_Calendar_Event' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php',
+            'WP_MCP_AI_Tool_Get_RankMath_SEO' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php',
             'WP_MCP_AI_Tool_Save_Post'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
             'WP_MCP_AI_Tool_Run_Crawl4AI_Job'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
             'WP_MCP_AI_Tool_Open_OpenAI_Logs'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php',
@@ -289,6 +292,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
             'WP_MCP_AI_Tool_ReliefWeb_Reports'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
             'WP_MCP_AI_Tool_Check_WP_CLI'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
+            'WP_MCP_AI_Tool_Create_WPCode_Snippet' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
