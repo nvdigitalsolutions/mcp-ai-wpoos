@@ -1587,12 +1587,33 @@ class WP_MCP_AI_REST {
      * @return bool
      */
     protected function request_wants_event_stream( WP_REST_Request $request ) {
-        $stream_param = $request->get_param( 'stream' );
+        $stream_param    = $request->get_param( 'stream' );
+        $explicit_stream = null;
 
         if ( null !== $stream_param ) {
-            $normalized_stream = rest_sanitize_boolean( $stream_param );
+            if ( is_array( $stream_param ) || is_object( $stream_param ) ) {
+                $stream_data = (array) $stream_param;
 
-            if ( true === $normalized_stream ) {
+                if ( array_key_exists( 'enabled', $stream_data ) ) {
+                    $normalized_enabled = rest_sanitize_boolean( $stream_data['enabled'] );
+
+                    if ( null !== $normalized_enabled ) {
+                        $explicit_stream = $normalized_enabled;
+                    }
+                }
+
+                if ( null === $explicit_stream && ! empty( $stream_data ) ) {
+                    $explicit_stream = true;
+                }
+            } else {
+                $normalized_stream = rest_sanitize_boolean( $stream_param );
+
+                if ( null !== $normalized_stream ) {
+                    $explicit_stream = $normalized_stream;
+                }
+            }
+
+            if ( true === $explicit_stream ) {
                 return true;
             }
         }
@@ -1613,6 +1634,10 @@ class WP_MCP_AI_REST {
             if ( false !== strpos( $part, 'text/event-stream' ) ) {
                 return true;
             }
+        }
+
+        if ( false === $explicit_stream ) {
+            return false;
         }
 
         return false;
