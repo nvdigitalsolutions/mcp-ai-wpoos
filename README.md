@@ -214,9 +214,9 @@ Administrators can override the default image and file MIME allowlists used by t
 
 ## 🕵️ Code Review
 
-The latest internal code review captures high-priority hardening tasks and positive architectural notes. Highlights include tightening the group email tool’s custom header handling, guarding against oversized recipient definition files, and preserving case-sensitive variable names when triggering OpenAI workflows.【F:docs/code-review-report.md†L3-L33】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L348-L351】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L582-L589】【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L288-L301】
+The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds.【F:docs/code-review-report.md†L5-L28】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L348-L644】【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L288-L338】【F:includes/class-wp-mcp-ai-shortcode.php†L209-L473】 One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.【F:docs/code-review-report.md†L23-L28】
 
-➡️ See [docs/code-review-report.md](docs/code-review-report.md) for the complete findings, recommendations, and follow-up notes.【F:docs/code-review-report.md†L1-L33】
+➡️ See [docs/code-review-report.md](docs/code-review-report.md) for the complete findings, recommendations, and action items.【F:docs/code-review-report.md†L1-L28】
 
 ## 🔒 MCP Server Authentication
 
@@ -443,7 +443,8 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
   - Chat requests and responses processed by the REST API.
   - Tool executions (including permission denials).
   - Errors returned from the OpenAI API and internal validation.
-- Log entries are written via PHP's `error_log()` and can be filtered with `wp_mcp_ai_log_entry` to route them elsewhere.
+- Log entries are written via PHP's `error_log()` and can be filtered with `wp_mcp_ai_log_entry` to route them elsewhere.【F:includes/class-wp-mcp-ai-logger.php†L16-L118】
+- Recent errors and activity snapshots are also persisted in the `wp_mcp_ai_recent_errors` (50 entries) and `wp_mcp_ai_recent_activity` (100 entries) options for dashboards and widgets, keeping autoload disabled to avoid bloating frontend requests.【F:includes/class-wp-mcp-ai-logger.php†L388-L470】
 
 ---
 
