@@ -19,6 +19,11 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
     const EVENTS_ENDPOINT = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP';
 
     /**
+     * Recommended chat completion model for assistants consuming the payload.
+     */
+    const DEFAULT_MODEL = 'gpt-5';
+
+    /**
      * {@inheritdoc}
      */
     public function get_slug() {
@@ -145,6 +150,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
         $sanitised_events = $this->sanitize_payload( $decoded );
 
         return array(
+            'model'    => self::DEFAULT_MODEL,
             'from_date' => isset( $query_args['fromdate'] ) ? $query_args['fromdate'] : null,
             'to_date'   => isset( $query_args['todate'] ) ? $query_args['todate'] : null,
             'events'    => $sanitised_events,

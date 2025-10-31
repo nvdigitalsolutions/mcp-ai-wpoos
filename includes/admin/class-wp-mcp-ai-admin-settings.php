@@ -2272,6 +2272,7 @@ class WP_MCP_AI_Admin_Settings {
      */
     protected function get_openai_default_model_choices() {
         $choices = array(
+            'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
             'gpt-4o'                   => __( 'GPT-4o', 'wp-mcp-ai' ),
             'gpt-4o-mini'              => __( 'GPT-4o mini', 'wp-mcp-ai' ),
             'gpt-4.1'                  => __( 'GPT-4.1', 'wp-mcp-ai' ),

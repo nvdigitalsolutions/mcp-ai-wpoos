@@ -45,6 +45,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
         $output = $this->capture_field_output( array( $admin_settings, 'render_default_model_field' ) );
 
         $this->assertStringContainsString( 'datalist id="wp-mcp-ai-default-openai-models"', $output );
+        $this->assertStringContainsString( 'value="gpt-5"', $output );
+        $this->assertStringContainsString( 'label="GPT-5"', $output );
         $this->assertStringContainsString( 'value="gpt-4o"', $output );
         $this->assertStringContainsString( 'value="gpt-4.1-mini"', $output );
         $this->assertStringContainsString( 'label="GPT-4o mini"', $output );
