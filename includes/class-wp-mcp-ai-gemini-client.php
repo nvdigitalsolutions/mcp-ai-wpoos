@@ -662,6 +662,8 @@ class WP_MCP_AI_Gemini_Client {
         }
 
         foreach ( $response['candidates'] as $candidate ) {
+            $revised_prompt = $this->extract_revised_prompt_from_candidate( $candidate, $response );
+
             if ( empty( $candidate['content']['parts'] ) || ! is_array( $candidate['content']['parts'] ) ) {
                 continue;
             }
@@ -690,7 +692,7 @@ class WP_MCP_AI_Gemini_Client {
                         'data'           => $decoded_data,
                         'mime_type'      => $mime_type,
                         'format'         => $this->map_mime_type_to_format( $mime_type ),
-                        'revised_prompt' => '',
+                        'revised_prompt' => $revised_prompt,
                     );
                 }
 
@@ -722,7 +724,7 @@ class WP_MCP_AI_Gemini_Client {
                         'data'           => $download['body'],
                         'mime_type'      => $mime_type,
                         'format'         => $this->map_mime_type_to_format( $mime_type ),
-                        'revised_prompt' => '',
+                        'revised_prompt' => $revised_prompt,
                     );
                 }
             }
@@ -731,6 +733,59 @@ class WP_MCP_AI_Gemini_Client {
         WP_MCP_AI_Logger::log_error( 'Gemini image response missing supported payload keys.', array( 'response' => $response ) );
 
         return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
+    }
+
+    /**
+     * Extract any revised prompt text that Gemini returned alongside an image payload.
+     *
+     * @param array $candidate Individual candidate payload from Gemini.
+     * @param array $response  Full decoded Gemini response payload.
+     * @return string
+     */
+    protected function extract_revised_prompt_from_candidate( array $candidate, array $response ) {
+        $fragments = array();
+
+        if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
+            foreach ( $candidate['content']['parts'] as $part ) {
+                if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+                    $text = sanitize_textarea_field( $part['text'] );
+
+                    if ( '' !== $text ) {
+                        $fragments[] = $text;
+                    }
+                }
+            }
+        }
+
+        if ( empty( $fragments ) && isset( $response['promptFeedback'] ) && is_array( $response['promptFeedback'] ) ) {
+            if ( isset( $response['promptFeedback']['blockReasonMessage'] ) ) {
+                $text = sanitize_textarea_field( $response['promptFeedback']['blockReasonMessage'] );
+
+                if ( '' !== $text ) {
+                    $fragments[] = $text;
+                }
+            }
+
+            if ( isset( $response['promptFeedback']['safetyFeedback'] ) && is_array( $response['promptFeedback']['safetyFeedback'] ) ) {
+                foreach ( $response['promptFeedback']['safetyFeedback'] as $feedback ) {
+                    if ( isset( $feedback['description'] ) ) {
+                        $text = sanitize_textarea_field( $feedback['description'] );
+
+                        if ( '' !== $text ) {
+                            $fragments[] = $text;
+                        }
+                    }
+                }
+            }
+        }
+
+        $fragments = array_values( array_unique( array_filter( $fragments, 'strlen' ) ) );
+
+        if ( empty( $fragments ) ) {
+            return '';
+        }
+
+        return implode( "\n\n", $fragments );
     }
 
     /**
