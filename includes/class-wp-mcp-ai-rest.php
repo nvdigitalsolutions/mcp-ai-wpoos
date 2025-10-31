@@ -1589,12 +1589,12 @@ class WP_MCP_AI_REST {
     protected function request_wants_event_stream( WP_REST_Request $request ) {
         $stream_param = $request->get_param( 'stream' );
 
-        if ( is_string( $stream_param ) && '' !== $stream_param ) {
-            if ( in_array( strtolower( $stream_param ), array( '1', 'true', 'yes', 'on' ), true ) ) {
+        if ( null !== $stream_param ) {
+            $normalized_stream = rest_sanitize_boolean( $stream_param );
+
+            if ( true === $normalized_stream ) {
                 return true;
             }
-        } elseif ( is_bool( $stream_param ) && true === $stream_param ) {
-            return true;
         }
 
         $accept_header = $request->get_header( 'accept' );
