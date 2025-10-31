@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for generating images via Gemini and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
     const DEFAULT_MODEL       = 'gemini-2.5-flash-image';
     const DEFAULT_MIME_TYPE   = 'image/png';
     const DEFAULT_ASPECT_RATIO = '1:1';
@@ -88,6 +88,26 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface {
             ),
             'required'             => array( 'prompt' ),
             'additionalProperties' => false,
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function get_shortcut_tasks() {
+        return array(
+            array(
+                'label'   => __( 'Design campaign visual', 'wp-mcp-ai' ),
+                'payload' => __( 'Use the `generate_gemini_image` tool to create a fresh campaign visual. Confirm the key subject, target audience, desired style, and any brand cues before running the tool. Summarise our agreed prompt before you call it.', 'wp-mcp-ai' ),
+            ),
+            array(
+                'label'   => __( 'Refresh concept with Gemini', 'wp-mcp-ai' ),
+                'payload' => __( 'Use the `generate_gemini_image` tool to iterate on an existing concept. Ask what should evolve, gather any updated art direction, then present the revised prompt before invoking the tool.', 'wp-mcp-ai' ),
+            ),
+            array(
+                'label'   => __( 'Storyboard a scene', 'wp-mcp-ai' ),
+                'payload' => __( 'Use the `generate_gemini_image` tool to storyboard a scene. Collect the setting, characters, mood, and aspect ratio requirements, then restate the final prompt before triggering the tool.', 'wp-mcp-ai' ),
+            ),
         );
     }
 
