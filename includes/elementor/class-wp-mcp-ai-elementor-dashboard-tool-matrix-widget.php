@@ -360,6 +360,32 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
      * @return array
      */
     protected function get_capability_notes() {
+        $group_email = $this->get_group_email_configuration();
+
+        if ( '' === $group_email['label'] && '' !== $group_email['capability'] ) {
+            $group_email['label'] = $this->format_capability_label( $group_email['capability'] );
+        }
+
+        if ( '' === $group_email['capability'] ) {
+            $group_capability_note = __( 'Allows any logged-in user to send group emails.', 'wp-mcp-ai' );
+        } else {
+            $group_capability_note = sprintf(
+                /* translators: %s: capability label. */
+                __( 'Requires the %s capability configured in the settings.', 'wp-mcp-ai' ),
+                $group_email['label']
+            );
+        }
+
+        if ( $group_email['limit'] > 0 ) {
+            $group_limit_note = sprintf(
+                /* translators: %d: maximum recipients per request. */
+                __( 'Limited to %d recipients per request.', 'wp-mcp-ai' ),
+                $group_email['limit']
+            );
+        } else {
+            $group_limit_note = __( 'No recipient limit is enforced.', 'wp-mcp-ai' );
+        }
+
         return array(
             'default'                         => __( 'Requires authenticated access.', 'wp-mcp-ai' ),
             'submit_document_prompt'          => __( 'Requires upload permissions matching attachment handling.', 'wp-mcp-ai' ),
@@ -378,9 +404,94 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
             'list_jetengine_rest_routes'      => __( 'Requires the "manage_options" capability and JetEngine.', 'wp-mcp-ai' ),
             'invoke_jetengine_route'          => __( 'Requires JetEngine access for the requested operation.', 'wp-mcp-ai' ),
             'create_cron_job'                 => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
-            'send_group_email'                => __( 'Requires the configured group email capability (defaults to "publish_posts").', 'wp-mcp-ai' ),
+            'send_group_email'                => trim( $group_capability_note . ' ' . $group_limit_note ),
             'open_openai_usage'               => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
             'open_openai_logs'                => __( 'Requires the "manage_options" capability.', 'wp-mcp-ai' ),
         );
+    }
+
+    /**
+     * Retrieve the Send Group Email capability and limit from settings.
+     *
+     * @return array{
+     *     capability: string,
+     *     label: string,
+     *     limit: int
+     * }
+     */
+    protected function get_group_email_configuration() {
+        $capability = 'publish_posts';
+        $limit      = 100;
+
+        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+            if ( isset( $settings['group_email_capability'] ) ) {
+                $capability = sanitize_key( $settings['group_email_capability'] );
+            }
+
+            if ( isset( $settings['group_email_max_recipients'] ) ) {
+                $limit = absint( $settings['group_email_max_recipients'] );
+            }
+        }
+
+        $context    = array( 'user_id' => get_current_user_id() );
+        $capability = apply_filters( 'wp_mcp_ai_send_group_email_capability', $capability, $context, array(), null );
+        $limit      = apply_filters( 'wp_mcp_ai_send_group_email_max_recipients', $limit, $context, array(), null );
+
+        if ( ! is_string( $capability ) ) {
+            $capability = '';
+        }
+
+        $capability = sanitize_key( $capability );
+
+        if ( ! is_numeric( $limit ) ) {
+            $limit = 0;
+        }
+
+        $limit = max( 0, absint( $limit ) );
+
+        $label = '';
+
+        if ( '' === $capability ) {
+            $label = __( 'Any logged-in user', 'wp-mcp-ai' );
+        } else {
+            $label = $this->format_capability_label( $capability );
+        }
+
+        return array(
+            'capability' => $capability,
+            'label'      => $label,
+            'limit'      => $limit,
+        );
+    }
+
+    /**
+     * Convert a capability slug into a readable label.
+     *
+     * @param string $capability Capability slug.
+     * @return string
+     */
+    protected function format_capability_label( $capability ) {
+        $capability = sanitize_key( $capability );
+
+        if ( '' === $capability ) {
+            return '';
+        }
+
+        $readable = trim( preg_replace( '/[\-_]+/', ' ', (string) $capability ) );
+        $readable = preg_replace( '/\s+/', ' ', $readable );
+
+        if ( '' === $readable ) {
+            return $capability;
+        }
+
+        $readable = ucwords( $readable );
+
+        if ( strtolower( $readable ) === strtolower( $capability ) ) {
+            return $readable;
+        }
+
+        return sprintf( '%1$s (%2$s)', $readable, $capability );
     }
 }

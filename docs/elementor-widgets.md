@@ -27,12 +27,14 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 ## Operations dashboard widgets
 
 ### MCP AI Tool Matrix
-- Fetches every registered tool from the tool registry, groups them by focus area, and lists the capability string required to activate each integration.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L210】
+- Fetches every registered tool from the tool registry, groups them by focus area, and lists the capability string required to activate each integration.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
+- Pulls the Send Group Email capability and recipient cap directly from the MCP settings (including filter overrides) so the dashboard always reflects the current enforcement rules.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L362-L440】
 - Toggle capability notes directly inside Elementor to hide or reveal the required capability column depending on your audience.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L66-L124】
 
 ### MCP AI User Capability Snapshot
-- Summarises the current operator’s account details, roles, JetEngine access, and highlighted capabilities such as `manage_options`, `upload_files`, and `manage_woocommerce`.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L262】
-- Supports multisite by listing every site membership the user belongs to, plus capability checks for network admins when relevant.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L204-L330】
+- Summarises the current operator’s account details, roles, JetEngine access, and highlighted capabilities such as `manage_options`, `upload_files`, and `manage_woocommerce`.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
+- Surfaces the configured Send Group Email capability and limit in-line so reviewers can confirm whether the current user may trigger bulk emails and how many recipients are allowed.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L180-L306】
+- Supports multisite by listing every site membership the user belongs to, plus capability checks for network admins when relevant.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L240-L330】
 
 ### MCP AI User File List
 - Lists the attachments owned by a selected operator so support teams can audit knowledge files without leaving Elementor.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-files-widget.php†L17-L214】

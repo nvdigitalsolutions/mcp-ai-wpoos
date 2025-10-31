@@ -203,6 +203,48 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
             echo '</div>';
         }
 
+        $group_email_settings = $this->get_group_email_configuration();
+
+        echo '<div class="wp-mcp-ai-user-capabilities__section">';
+        echo '<h4 class="wp-mcp-ai-user-capabilities__section-title">' . esc_html__( 'Send Group Email requirements', 'wp-mcp-ai' ) . '</h4>';
+
+        if ( '' === $group_email_settings['capability'] ) {
+            echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Any logged-in user can run the Send Group Email tool when attachments pass validation.', 'wp-mcp-ai' ) . '</p>';
+        } elseif ( '' !== $group_email_settings['label'] ) {
+            printf(
+                '<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
+                sprintf(
+                    /* translators: %s: capability label. */
+                    esc_html__( 'Required capability: %s', 'wp-mcp-ai' ),
+                    esc_html( $group_email_settings['label'] )
+                )
+            );
+        } else {
+            printf(
+                '<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
+                sprintf(
+                    /* translators: %s: capability slug. */
+                    esc_html__( 'Required capability: %s', 'wp-mcp-ai' ),
+                    esc_html( $group_email_settings['capability'] )
+                )
+            );
+        }
+
+        if ( $group_email_settings['limit'] > 0 ) {
+            printf(
+                '<p class="wp-mcp-ai-user-capabilities__section-body">%s</p>',
+                sprintf(
+                    /* translators: %d: maximum recipients allowed. */
+                    esc_html__( 'Recipient limit: %d per request.', 'wp-mcp-ai' ),
+                    $group_email_settings['limit']
+                )
+            );
+        } else {
+            echo '<p class="wp-mcp-ai-user-capabilities__section-body">' . esc_html__( 'Recipient limit: No limit enforced.', 'wp-mcp-ai' ) . '</p>';
+        }
+
+        echo '</div>';
+
         $jetengine_details = $this->get_jetengine_details( $user_id );
 
         echo '<div class="wp-mcp-ai-user-capabilities__section">';
@@ -325,6 +367,91 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
     }
 
     /**
+     * Retrieve the Send Group Email capability and limit from settings.
+     *
+     * @return array{
+     *     capability: string,
+     *     label: string,
+     *     limit: int
+     * }
+     */
+    protected function get_group_email_configuration() {
+        $capability = 'publish_posts';
+        $limit      = 100;
+
+        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+            $settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+            if ( isset( $settings['group_email_capability'] ) ) {
+                $capability = sanitize_key( $settings['group_email_capability'] );
+            }
+
+            if ( isset( $settings['group_email_max_recipients'] ) ) {
+                $limit = absint( $settings['group_email_max_recipients'] );
+            }
+        }
+
+        $context    = array( 'user_id' => get_current_user_id() );
+        $capability = apply_filters( 'wp_mcp_ai_send_group_email_capability', $capability, $context, array(), null );
+        $limit      = apply_filters( 'wp_mcp_ai_send_group_email_max_recipients', $limit, $context, array(), null );
+
+        if ( ! is_string( $capability ) ) {
+            $capability = '';
+        }
+
+        $capability = sanitize_key( $capability );
+
+        if ( ! is_numeric( $limit ) ) {
+            $limit = 0;
+        }
+
+        $limit = max( 0, absint( $limit ) );
+
+        $label = '';
+
+        if ( '' === $capability ) {
+            $label = __( 'Any logged-in user', 'wp-mcp-ai' );
+        } else {
+            $label = $this->format_capability_label( $capability );
+        }
+
+        return array(
+            'capability' => $capability,
+            'label'      => $label,
+            'limit'      => $limit,
+        );
+    }
+
+    /**
+     * Convert a capability slug into a readable label.
+     *
+     * @param string $capability Capability slug.
+     * @return string
+     */
+    protected function format_capability_label( $capability ) {
+        $capability = sanitize_key( $capability );
+
+        if ( '' === $capability ) {
+            return '';
+        }
+
+        $readable = trim( preg_replace( '/[\-_]+/', ' ', (string) $capability ) );
+        $readable = preg_replace( '/\s+/', ' ', $readable );
+
+        if ( '' === $readable ) {
+            return $capability;
+        }
+
+        $readable = ucwords( $readable );
+
+        if ( strtolower( $readable ) === strtolower( $capability ) ) {
+            return $readable;
+        }
+
+        return sprintf( '%1$s (%2$s)', $readable, $capability );
+    }
+
+    /**
      * Determine a set of core capabilities to highlight.
      *
      * @param int $user_id Target user ID.
@@ -339,6 +466,12 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
             'list_users',
             'manage_woocommerce',
         );
+
+        $group_email_settings = $this->get_group_email_configuration();
+
+        if ( '' !== $group_email_settings['capability'] && ! in_array( $group_email_settings['capability'], $checks, true ) ) {
+            $checks[] = $group_email_settings['capability'];
+        }
 
         $results = array();
 
