@@ -501,7 +501,8 @@
                 state.loadingSession = false;
 
                 if (!data || !data.session) {
-                    setStatus(state, getString(state, 'errorLoadingSession', 'Unable to load the selected chat.'));
+                    var sessionError = data && data.message ? data.message : getString(state, 'errorLoadingSession', 'Unable to load the selected chat.');
+                    setStatus(state, sessionError);
                     return;
                 }
 
@@ -560,6 +561,7 @@
 
                 state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
                 state.totalSessions = typeof data.total === 'number' ? data.total : state.sessions.length;
+                var responseMessage = data && data.message ? data.message : '';
 
                 if (!state.sessions.length) {
                     if (state.listWrapper) {
@@ -570,7 +572,7 @@
                         state.conversationWrapper.hidden = true;
                     }
 
-                    setStatus(state, getString(state, 'emptyList', 'No chat transcripts are stored for this user yet.'));
+                    setStatus(state, responseMessage || getString(state, 'emptyList', 'No chat transcripts are stored for this user yet.'));
                     return;
                 }
 
@@ -583,7 +585,7 @@
                 }
 
                 renderSessionList(state);
-                setStatus(state, getString(state, 'selectPrompt', 'Select a chat session to review the conversation.'));
+                setStatus(state, responseMessage || getString(state, 'selectPrompt', 'Select a chat session to review the conversation.'));
             })
             .catch(function (error) {
                 state.loadingList = false;
