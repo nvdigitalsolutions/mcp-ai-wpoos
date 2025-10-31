@@ -34,14 +34,14 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Initialise the integration if ChatKit is active.
+     * Initialise the integration unless explicitly disabled.
      */
     public static function maybe_bootstrap() {
         if ( self::$bootstrapped ) {
             return;
         }
 
-        if ( ! self::is_chatkit_available() ) {
+        if ( ! self::should_bootstrap() ) {
             return;
         }
 
@@ -54,39 +54,31 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Determine whether ChatKit is available in the current environment.
+     * Determine whether the ChatKit add-on should bootstrap.
+     *
+     * Returning `false` from the filter disables the integration, allowing site
+     * owners or tests to opt-out even though the add-on now ships directly with
+     * the core plugin.
      *
      * @return bool
      */
-    protected static function is_chatkit_available() {
+    protected static function should_bootstrap() {
         /**
-         * Allow plugins/tests to force ChatKit availability.
+         * Allow plugins/tests to force ChatKit bootstrap behaviour.
          *
-         * @since 1.0.0
+         * @since 1.0.0 The filter now defaults to `true`, so returning `false`
+         *              disables the add-on instead of enabling it.
          *
-         * @param bool $available Whether ChatKit should be treated as active.
+         * @param bool|null $available Whether the ChatKit add-on should be
+         *                             bootstrapped. Default `null`.
          */
-        if ( apply_filters( 'wp_mcp_ai_chatkit_is_available', false ) ) {
+        $available = apply_filters( 'wp_mcp_ai_chatkit_is_available', null );
+
+        if ( null === $available ) {
             return true;
         }
 
-        if ( defined( 'CHATKIT_VERSION' ) ) {
-            return true;
-        }
-
-        if ( class_exists( '\\ChatKit\\Plugin', false ) ) {
-            return true;
-        }
-
-        if ( function_exists( 'chatkit' ) ) {
-            return true;
-        }
-
-        if ( did_action( 'chatkit/init' ) ) {
-            return true;
-        }
-
-        return false;
+        return (bool) $available;
     }
 
     /**
