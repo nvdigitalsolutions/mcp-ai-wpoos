@@ -655,6 +655,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     public function test_existing_file_segment_is_preserved_without_attachment_payload() {
         $assistant_id = $this->create_assistant_post();
 
+        $attachment_id = $this->create_text_attachment( 'existing-notes.txt', 'Existing notes' );
+        $this->override_attachment_file_id( $attachment_id, 'file-123' );
+
         $this->dispatch_chat_request(
             $assistant_id,
             array(
@@ -693,6 +696,9 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     public function test_existing_image_segment_is_preserved_without_attachment_payload() {
         $assistant_id = $this->create_assistant_post();
 
+        $attachment_id = $this->create_image_attachment( 'existing-upload.png' );
+        $this->override_attachment_file_id( $attachment_id, 'file-456' );
+
         $this->dispatch_chat_request(
             $assistant_id,
             array(
@@ -727,6 +733,56 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
                 return true;
             }
         );
+    }
+
+    /**
+     * Ensure existing file identifiers must map to accessible attachments.
+     */
+    public function test_existing_file_segment_rejects_unknown_file_id() {
+        $assistant_id = $this->create_assistant_post();
+
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+            wp_set_current_user( $user_id );
+        }
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'    => 'input_file',
+                            'file_id' => 'file-missing',
+                        ),
+                    ),
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 400, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertSame( 'wp_mcp_ai_unknown_file_reference', $data['code'] );
     }
 
     /**
@@ -1249,6 +1305,40 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
         $this->prime_attachment_openai_metadata( $attachment_id, $upload['file'], 'image/png' );
 
         return $attachment_id;
+    }
+
+    /**
+     * Override the cached OpenAI file identifier for an attachment.
+     *
+     * @param int    $attachment_id Attachment identifier.
+     * @param string $file_id       Desired OpenAI file identifier.
+     */
+    protected function override_attachment_file_id( $attachment_id, $file_id ) {
+        $metadata = get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true );
+
+        if ( ! is_array( $metadata ) ) {
+            $metadata = array();
+        }
+
+        $metadata['file_id'] = $file_id;
+
+        if ( empty( $metadata['mime_type'] ) ) {
+            $metadata['mime_type'] = get_post_mime_type( $attachment_id );
+        }
+
+        if ( empty( $metadata['filename'] ) ) {
+            $file_path = get_attached_file( $attachment_id );
+            if ( $file_path ) {
+                $metadata['filename'] = wp_basename( $file_path );
+                $metadata['bytes']    = (int) filesize( $file_path );
+            }
+        }
+
+        if ( empty( $metadata['status'] ) ) {
+            $metadata['status'] = 'processed';
+        }
+
+        update_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, $metadata );
     }
 
     /**

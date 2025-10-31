@@ -45,6 +45,13 @@ class WP_MCP_AI_Message_Attachments {
     protected $attachment_index = array();
 
     /**
+     * Map of OpenAI file identifiers to attachment post IDs.
+     *
+     * @var array
+     */
+    protected $file_id_index = array();
+
+    /**
      * Retrieve prepared attachment payloads.
      *
      * @return array
@@ -248,6 +255,12 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         if ( ! empty( $file_id ) ) {
+            $resolved = $this->resolve_existing_file_reference( $file_id, 'image' );
+
+            if ( is_wp_error( $resolved ) ) {
+                return $resolved;
+            }
+
             $prepared = array(
                 'type'    => 'input_image',
                 'file_id' => $file_id,
@@ -255,6 +268,14 @@ class WP_MCP_AI_Message_Attachments {
 
             if ( empty( $caption ) && isset( $image_file['caption'] ) ) {
                 $caption = $this->sanitize_caption( $image_file['caption'] );
+            }
+
+            if ( empty( $caption ) ) {
+                if ( ! empty( $resolved['caption'] ) ) {
+                    $caption = $resolved['caption'];
+                } elseif ( ! empty( $resolved['title'] ) ) {
+                    $caption = $resolved['title'];
+                }
             }
 
             if ( ! empty( $caption ) ) {
@@ -323,6 +344,12 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         if ( ! empty( $file_id ) ) {
+            $resolved = $this->resolve_existing_file_reference( $file_id, 'file' );
+
+            if ( is_wp_error( $resolved ) ) {
+                return $resolved;
+            }
+
             $segment_payload = array(
                 'type'    => 'input_file',
                 'file_id' => $file_id,
@@ -332,6 +359,10 @@ class WP_MCP_AI_Message_Attachments {
                 $segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment['display_name'] ) );
             } elseif ( isset( $segment_file['display_name'] ) ) {
                 $segment_payload['display_name'] = sanitize_text_field( wp_unslash( $segment_file['display_name'] ) );
+            } elseif ( ! empty( $resolved['title'] ) ) {
+                $segment_payload['display_name'] = $resolved['title'];
+            } elseif ( isset( $resolved['metadata']['filename'] ) && '' !== $resolved['metadata']['filename'] ) {
+                $segment_payload['display_name'] = $resolved['metadata']['filename'];
             }
 
             return $segment_payload;
@@ -502,6 +533,7 @@ class WP_MCP_AI_Message_Attachments {
 
         $this->attachments[ $resolved_file_id ]        = $payload;
         $this->attachment_index[ $attachment_id ] = $resolved_file_id;
+        $this->file_id_index[ $resolved_file_id ] = $attachment_id;
 
         return array(
             'file_id' => $resolved_file_id,
@@ -535,6 +567,165 @@ class WP_MCP_AI_Message_Attachments {
         }
 
         return apply_filters( 'wp_mcp_ai_can_use_attachment', false, $attachment_id );
+    }
+
+    /**
+     * Resolve and validate an existing OpenAI file reference against local attachments.
+     *
+     * @param string $file_id File identifier supplied by the client.
+     * @param string $usage   Usage context (image|file).
+     * @return array|WP_Error Array of attachment context when successful, WP_Error otherwise.
+     */
+    protected function resolve_existing_file_reference( $file_id, $usage ) {
+        $file_id = (string) $file_id;
+
+        if ( '' === $file_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_unknown_file_reference',
+                __( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        if ( isset( self::$deleted_file_ids[ $file_id ] ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_unknown_file_reference',
+                __( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $attachment_id = $this->find_attachment_id_for_file_id( $file_id );
+
+        if ( ! $attachment_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_unknown_file_reference',
+                __( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        if ( ! $this->current_user_can_access_attachment( $attachment_id ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_attachment_forbidden',
+                __( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+                array( 'status' => 403 )
+            );
+        }
+
+        $metadata = $this->get_cached_openai_file_metadata( $attachment_id );
+
+        if ( empty( $metadata['file_id'] ) || (string) $metadata['file_id'] !== $file_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_unknown_file_reference',
+                __( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $mime_type = '';
+
+        if ( isset( $metadata['mime_type'] ) && '' !== $metadata['mime_type'] ) {
+            $mime_type = $metadata['mime_type'];
+        }
+
+        if ( '' === $mime_type ) {
+            $mime_type = get_post_mime_type( $attachment_id );
+        }
+
+        if ( '' !== $mime_type && ! $this->is_supported_mime_type( $mime_type, $usage ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_attachment_unsupported_mime',
+                __( 'The attachment type is not supported for chat messages.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $title   = get_the_title( $attachment_id );
+        $caption = wp_strip_all_tags( get_post_field( 'post_excerpt', $attachment_id ) );
+
+        $this->file_id_index[ $file_id ] = $attachment_id;
+
+        return array(
+            'attachment_id' => $attachment_id,
+            'metadata'      => $metadata,
+            'title'         => $title,
+            'caption'       => $caption,
+        );
+    }
+
+    /**
+     * Locate the attachment ID associated with an OpenAI file identifier.
+     *
+     * @param string $file_id OpenAI file identifier.
+     * @return int Attachment post ID when found, zero otherwise.
+     */
+    protected function find_attachment_id_for_file_id( $file_id ) {
+        if ( isset( $this->file_id_index[ $file_id ] ) ) {
+            return (int) $this->file_id_index[ $file_id ];
+        }
+
+        $direct_match = array_search( $file_id, $this->attachment_index, true );
+        if ( false !== $direct_match ) {
+            $attachment_id = (int) $direct_match;
+            if ( $attachment_id ) {
+                $this->file_id_index[ $file_id ] = $attachment_id;
+            }
+
+            return $attachment_id;
+        }
+
+        $cache_key = 'openai_file_lookup_' . md5( $file_id );
+        $cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_message_attachments' );
+
+        if ( false !== $cached ) {
+            $cached_id = (int) $cached;
+            if ( $cached_id ) {
+                $this->file_id_index[ $file_id ] = $cached_id;
+            }
+
+            return $cached_id;
+        }
+
+        global $wpdb;
+
+        $serialized_pattern = sprintf( '"file_id";s:%d:"%s"', strlen( $file_id ), $file_id );
+        $serialized_like    = '%' . $wpdb->esc_like( $serialized_pattern ) . '%';
+        $results            = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND (meta_value = %s OR meta_value LIKE %s) ORDER BY post_id DESC LIMIT 25",
+                self::OPENAI_FILE_META_KEY,
+                $file_id,
+                $serialized_like
+            )
+        );
+
+        $attachment_id = 0;
+
+        if ( ! empty( $results ) ) {
+            foreach ( $results as $candidate_id ) {
+                $candidate_id = (int) $candidate_id;
+
+                if ( ! $candidate_id || 'attachment' !== get_post_type( $candidate_id ) ) {
+                    continue;
+                }
+
+                $metadata = $this->get_cached_openai_file_metadata( $candidate_id );
+
+                if ( ! empty( $metadata['file_id'] ) && (string) $metadata['file_id'] === $file_id ) {
+                    $attachment_id = $candidate_id;
+                    break;
+                }
+            }
+        }
+
+        wp_cache_set( $cache_key, $attachment_id, 'wp_mcp_ai_message_attachments', MINUTE_IN_SECONDS );
+
+        if ( $attachment_id ) {
+            $this->file_id_index[ $file_id ] = $attachment_id;
+        }
+
+        return $attachment_id;
     }
 
     /**
