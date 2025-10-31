@@ -108,6 +108,27 @@ class WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widg
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_activity_feed',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-activity-feed',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-activity-feed__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__description',
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__message',
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__context-json',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__badge',
+                        '{{WRAPPER}} .wp-mcp-ai-activity-feed__timestamp',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-activity-feed a',
+                ),
+            )
+        );
     }
 
     /**

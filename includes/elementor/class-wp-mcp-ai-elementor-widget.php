@@ -389,6 +389,32 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_chat_widget',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-chat-widget',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget h3',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget h4',
+                    ),
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget p',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget li',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget dd',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget span',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget__assistant-memory-file-size',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget__assistant-tools-description',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget__assistant-shortcuts-description',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget__assistant-shortcuts-payload',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-chat-widget a',
+                ),
+            )
+        );
     }
 
     /**

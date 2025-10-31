@@ -141,6 +141,25 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_chat_intro',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-chat-intro',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-chat-intro__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-intro__description',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-intro__talking-points',
+                    ),
+                    'meta'      => '{{WRAPPER}} .wp-mcp-ai-chat-intro__talking-point',
+                    'link'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-intro__button',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-intro a',
+                    ),
+                ),
+            )
+        );
     }
 
     /**

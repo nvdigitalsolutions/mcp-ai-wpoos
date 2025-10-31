@@ -147,6 +147,25 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_assistant_prompt_shortcuts',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts__description',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts__tool',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts__payload',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-assistant-prompt-shortcuts a',
+                ),
+            )
+        );
     }
 
     /**
