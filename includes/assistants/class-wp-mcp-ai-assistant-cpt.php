@@ -642,7 +642,7 @@ class WP_MCP_AI_Assistant_CPT {
             self::POST_TYPE,
             self::META_TOOL_PREBUILT_SHORTCUTS,
             array(
-                'type'              => 'array',
+                'type'              => 'object',
                 'single'            => true,
                 'show_in_rest'      => array(
                     'schema' => array(

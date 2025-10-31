@@ -111,6 +111,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-addon.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -120,6 +121,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 WP_MCP_AI_Message_Attachments::init();
 
 WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
+
+WP_MCP_AI_ChatKit_Addon::init();
 
 /**
  * Load the plugin textdomain for localisation support.
@@ -154,6 +157,8 @@ function wp_mcp_ai_bootstrap() {
     if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
         WP_MCP_AI_Elementor_Integration::maybe_init();
     }
+
+    WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
 }
 
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
