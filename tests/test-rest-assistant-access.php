@@ -394,7 +394,7 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
 
-        $this->assertSame( 200000, $captured_limit );
+        $this->assertSame( 150000, $captured_limit );
         $this->assertIsArray( $captured_context );
         $this->assertSame( 'openai', $captured_context['provider'] );
         $this->assertSame( 'gpt-5-nano', $captured_context['model'] );
