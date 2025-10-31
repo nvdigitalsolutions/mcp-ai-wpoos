@@ -58,7 +58,12 @@ interface WP_MCP_AI_Tool_Shortcuts_Interface {
     /**
      * Provide shortcut task metadata for this tool.
      *
-     * @return array[] Array of associative arrays containing task metadata.
+     * Returning `null` signals that the tool does not expose any predefined
+     * shortcuts and that the shortcode renderer should not add fallback
+     * buttons automatically.
+     *
+     * @return array[]|null Array of associative arrays containing task metadata
+     *                      or null to opt out of automatic shortcut creation.
      */
     public function get_shortcut_tasks();
 }
