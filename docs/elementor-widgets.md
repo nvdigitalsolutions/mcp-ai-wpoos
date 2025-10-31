@@ -9,8 +9,9 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 ## Chat surface widgets
 
 ### MCP AI Chat
-- Mirrors the `[mcp_ai_chat]` shortcode in Elementor, including assistant selection, guest access, and upload controls.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
-- Use the **Allow Guest Access** switcher to mint one-hour guest tokens for public visitors; the widget automatically forwards those tokens to the REST layer just like the shortcode.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L79-L138】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
+- Mirrors the `[mcp_ai_chat]` shortcode in Elementor, including assistant selection, guest access, and upload controls.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L60-L92】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L428-L474】
+- Toggle optional panels to surface the assistant's saved defaults, memory files, tool assignments, and prompt shortcuts directly above the chat interface with per-section empty states and formatting controls.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
+- Use the **Allow Guest Access** switcher to mint one-hour guest tokens for public visitors; the widget automatically forwards those tokens to the REST layer just like the shortcode.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L80-L92】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L441-L444】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
 
 ### MCP AI Chat Intro
 - Provides a headline, descriptive copy, and repeater-driven talking points to set expectations above the chat UI.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L126】
@@ -26,17 +27,7 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 
 ## Assistant configuration widgets
 
-### MCP AI Assistant Defaults
-- Surfaces the assistant's provider, model, and temperature configuration directly in Elementor so editors can cross-check the chat settings against what was saved in the CPT.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-defaults-widget.php†L17-L164】
-- Optional system prompt output mirrors the saved prompt text with rich formatting so onboarding pages can document tone and guardrails without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-defaults-widget.php†L120-L164】
-
-### MCP AI Assistant Base Knowledge
-- Lists every Media Library file attached as memory along with optional file sizes, making it easy to audit what reference material the assistant receives before each request.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php†L17-L209】
-- Displays the configured vector store identifier when present so teams can align external retrieval systems with on-site documentation.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php†L168-L209】
-
-### MCP AI Assistant Prompt Shortcuts
-- Renders the saved shortcut labels, descriptions, and prompt payloads so stakeholders can publish ready-made task ideas next to the chat surface or in internal runbooks.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php†L17-L205】
-- Optionally includes the associated tool name for each shortcut by querying the live tool registry, helping teams understand which integrations each prompt relies on.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php†L153-L205】
+The chat widget now surfaces saved defaults, memory, tools, and prompt shortcuts inline, eliminating the need for separate cards when you want everything contextualised around the chat surface.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
 
 ### MCP AI Assistant Tools
 - Reuses the existing assistant tools widget to catalogue the enabled tool set alongside any missing registrations, complete with copy-to-clipboard slug actions for quick referencing.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php†L17-L211】
