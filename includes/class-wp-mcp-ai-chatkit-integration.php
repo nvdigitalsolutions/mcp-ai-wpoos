@@ -175,6 +175,64 @@ class WP_MCP_AI_ChatKit_Integration {
                 'guest_access'     => true,
                 'tool_invocations' => true,
             ),
+            'surfaces'       => array(
+                'shortcode' => array(
+                    'type'        => 'shortcode',
+                    'label'       => __( 'Shortcode chat surface', 'wp-mcp-ai' ),
+                    'description' => __( 'Embed the WP MCP AI chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
+                    'tag'         => 'wp_mcp_ai_chat',
+                    'attributes'  => array(
+                        'assistant' => array(
+                            'type'        => 'integer',
+                            'required'    => true,
+                            'label'       => __( 'Assistant ID', 'wp-mcp-ai' ),
+                            'description' => __( 'Numeric assistant ID passed to the shortcode when no global default is configured.', 'wp-mcp-ai' ),
+                        ),
+                        'allow_guests' => array(
+                            'type'        => 'boolean',
+                            'required'    => false,
+                            'label'       => __( 'Allow guests', 'wp-mcp-ai' ),
+                            'description' => __( 'Enable guest access and issue temporary tokens for unauthenticated visitors.', 'wp-mcp-ai' ),
+                            'default'     => false,
+                        ),
+                        'save_transcript' => array(
+                            'type'        => 'boolean',
+                            'required'    => false,
+                            'label'       => __( 'Save transcript', 'wp-mcp-ai' ),
+                            'description' => __( 'Persist chat transcripts to the JetEngine Custom Content Type.', 'wp-mcp-ai' ),
+                            'default'     => true,
+                        ),
+                    ),
+                ),
+                'elementor_widget' => array(
+                    'type'        => 'elementor_widget',
+                    'label'       => __( 'Elementor chat widget', 'wp-mcp-ai' ),
+                    'description' => __( 'Drop the MCP AI Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
+                    'widget'      => 'wp_mcp_ai_chat',
+                    'attributes'  => array(
+                        'assistant' => array(
+                            'type'        => 'integer',
+                            'required'    => true,
+                            'label'       => __( 'Assistant control', 'wp-mcp-ai' ),
+                            'description' => __( 'Elementor control used to choose which assistant powers the chat surface.', 'wp-mcp-ai' ),
+                        ),
+                        'allow_guests' => array(
+                            'type'        => 'boolean',
+                            'required'    => false,
+                            'label'       => __( 'Allow guests control', 'wp-mcp-ai' ),
+                            'description' => __( 'Toggle that issues guest tokens when the assistant permits public access.', 'wp-mcp-ai' ),
+                            'default'     => false,
+                        ),
+                        'save_transcript' => array(
+                            'type'        => 'boolean',
+                            'required'    => false,
+                            'label'       => __( 'Save transcript control', 'wp-mcp-ai' ),
+                            'description' => __( 'Control that stores chat exchanges in the ai_chat_transcripts Custom Content Type.', 'wp-mcp-ai' ),
+                            'default'     => true,
+                        ),
+                    ),
+                ),
+            ),
             'fields'         => array(
                 'assistant_id' => array(
                     'type'        => 'integer',
