@@ -566,6 +566,7 @@ class WP_MCP_AI_Shortcode {
             }
 
             $tasks = array();
+            $skip_fallback = false;
 
             if ( $tool instanceof WP_MCP_AI_Tool_Shortcuts_Interface ) {
                 $tasks = $tool->get_shortcut_tasks();
@@ -573,10 +574,22 @@ class WP_MCP_AI_Shortcode {
                 $tasks = $tool->get_shortcut_tasks();
             }
 
+            if ( null === $tasks ) {
+                $skip_fallback = true;
+            }
+
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
 
+            if ( null === $tasks ) {
+                continue;
+            }
+
             if ( empty( $tasks ) || ! is_array( $tasks ) ) {
+                if ( $skip_fallback ) {
+                    continue;
+                }
+
                 $shortcuts[] = array(
                     'tool'    => $tool->get_slug(),
                     'label'   => $tool->get_slug(),
