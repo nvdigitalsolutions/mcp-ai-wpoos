@@ -120,7 +120,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-addon.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
 if ( is_admin() ) {
@@ -136,7 +136,7 @@ WP_MCP_AI_Message_Attachments::init();
 WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
 
-WP_MCP_AI_ChatKit_Addon::init();
+WP_MCP_AI_ChatKit_Integration::init();
 
 /**
  * Load the plugin textdomain for localisation support.
@@ -176,7 +176,7 @@ function wp_mcp_ai_bootstrap() {
         WP_MCP_AI_Elementor_Integration::maybe_init();
     }
 
-    WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+    WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 }
 
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );

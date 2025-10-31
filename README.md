@@ -15,7 +15,7 @@
 - [📦 Installation](#-installation)
 - [⚙️ Configuration Checklist (Action Items)](#-configuration-checklist-action-items)
 - [🧠 Language Model Providers (OpenAI & Gemini)](#-language-model-providers-openai--gemini)
-- [🧱 ChatKit Add-on](#-chatkit-add-on)
+- [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [🧊 Elementor Widgets](#-elementor-widgets)
   - [Chat surfaces and companion blocks](#chat-surfaces-and-companion-blocks)
@@ -81,7 +81,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - ✉️ Mailjet-powered outbound email automation with granular capability enforcement and sender defaults configurable in the MCP settings.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - 📅 Google Workspace automations for creating calendar events and searching connected Gmail inboxes directly from assistant workflows.【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L1-L200】
-- 🧱 Ready for extension with ChatKit Add-on
+- 🧱 Ready for extension with ChatKit integration
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
@@ -250,13 +250,13 @@ Complete these after installation to unlock every integration point:
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI or Gemini while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
-## 🧱 ChatKit Add-on
+## 🧱 ChatKit Integration
 
-Install the standalone [ChatKit](https://github.com/nvdigitalsolutions/chatkit) plugin alongside WP MCP AI to unlock a native add-on that routes ChatKit workflows into your WordPress assistants. The add-on now ships with the core plugin and self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
+Install the standalone [ChatKit](https://github.com/nvdigitalsolutions/chatkit) plugin alongside WP MCP AI to unlock a native integration that routes ChatKit workflows into your WordPress assistants. The integration now ships with the core plugin and self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
 
-From the ChatKit dashboard choose **Add-ons → WP MCP AI** and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L182-L210】【F:wp-mcp-ai.php†L25-L72】
+From the ChatKit dashboard choose **Add-ons → WP MCP AI** and supply at least one assistant ID so ChatKit knows which conversation to join. Optional fields let you override the system prompt or preload tool shortcut payloads for operators; capability checks inherit the `wp_mcp_ai_chat_capability` filter, so you can align ChatKit access with the same policies used for shortcodes or REST calls.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L182-L210】【F:wp-mcp-ai.php†L25-L72】
 
-Consult [`docs/chatkit-addon.md`](docs/chatkit-addon.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
+Consult [`docs/chatkit-integration.md`](docs/chatkit-integration.md) for a full configuration walkthrough, JSON examples for shortcut presets, and notes on extending the definition via filters.
 
 ## 🌐 Crawl4AI Integration
 

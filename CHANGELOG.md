@@ -9,6 +9,7 @@
 ### Changed
 - Expanded chat interaction logging to keep structured message content while trimming oversized payloads.
 - Front-end chat client now preserves assistant replies that contain non-text content like images or tool results.
+- Bundled the ChatKit integration directly inside the core plugin, replacing the standalone add-on workflow.
 
 ## [0.9.0] – 2025-10-21
 ### Added
