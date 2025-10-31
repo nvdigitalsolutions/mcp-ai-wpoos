@@ -112,6 +112,26 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_assistant_tools',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-assistant-tools',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-assistant-tools__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-tools__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-tools__description',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-tools__slug-label',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-tools__slug-code',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-tools__copy-feedback',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-assistant-tools a',
+                ),
+            )
+        );
     }
 
     /**

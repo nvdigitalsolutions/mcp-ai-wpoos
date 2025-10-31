@@ -99,6 +99,29 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_tool_matrix',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-tool-matrix',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__title',
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__group-title',
+                    ),
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__description',
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__cell--description',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__cell--slug',
+                        '{{WRAPPER}} .wp-mcp-ai-tool-matrix__cell--capability',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-tool-matrix a',
+                ),
+            )
+        );
     }
 
     /**

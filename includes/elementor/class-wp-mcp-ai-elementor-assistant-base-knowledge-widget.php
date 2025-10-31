@@ -123,6 +123,22 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_assistant_base_knowledge',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge__file-label',
+                    ),
+                    'meta'      => '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge__file-size',
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-assistant-base-knowledge__file-link',
+                ),
+            )
+        );
     }
 
     /**

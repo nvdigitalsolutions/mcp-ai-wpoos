@@ -224,6 +224,29 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_chat_usage_timer',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__title',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__usage-heading',
+                    ),
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__description',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__timer-label',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__usage-message',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__time',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer__usage-total',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-chat-usage-timer a',
+                ),
+            )
+        );
     }
 
     /**

@@ -157,6 +157,25 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_user_files',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-user-files',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-user-files__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-user-files__description',
+                        '{{WRAPPER}} .wp-mcp-ai-user-files__notice',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-user-files__name',
+                        '{{WRAPPER}} .wp-mcp-ai-user-files__meta',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-user-files__link',
+                ),
+            )
+        );
     }
 
     /**

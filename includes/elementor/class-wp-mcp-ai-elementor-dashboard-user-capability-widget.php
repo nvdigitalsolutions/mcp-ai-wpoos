@@ -97,6 +97,34 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_user_capabilities',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-user-capabilities',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__title',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__section-title',
+                    ),
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__description',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__notice',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__section-body',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__section-note',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__capability-status',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__membership-name',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__membership-url',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__summary-label',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__summary-value',
+                        '{{WRAPPER}} .wp-mcp-ai-user-capabilities__capability-name',
+                    ),
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-user-capabilities a',
+                ),
+            )
+        );
     }
 
     /**

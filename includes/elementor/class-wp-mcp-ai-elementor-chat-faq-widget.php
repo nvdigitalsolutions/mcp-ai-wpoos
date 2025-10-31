@@ -118,6 +118,21 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_chat_faq',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-chat-faq',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-faq__title',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-faq__question',
+                    ),
+                    'text'      => '{{WRAPPER}} .wp-mcp-ai-chat-faq__answer',
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-chat-faq a',
+                ),
+            )
+        );
     }
 
     /**

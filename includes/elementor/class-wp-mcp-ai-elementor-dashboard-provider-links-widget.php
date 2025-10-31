@@ -85,6 +85,22 @@ class WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Wid
         );
 
         $this->end_controls_section();
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_provider_links',
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-provider-links',
+                    'heading'   => '{{WRAPPER}} .wp-mcp-ai-provider-links__title',
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-provider-links__description',
+                        '{{WRAPPER}} .wp-mcp-ai-provider-links__notice',
+                    ),
+                    'meta'      => '{{WRAPPER}} .wp-mcp-ai-provider-links__card-description',
+                    'link'      => '{{WRAPPER}} .wp-mcp-ai-provider-links__card',
+                ),
+            )
+        );
     }
 
     /**
