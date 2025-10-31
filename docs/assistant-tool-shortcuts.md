@@ -24,6 +24,7 @@ Developers can adjust the shortcuts programmatically:
 
 - `wp_mcp_ai_assistant_custom_tool_shortcuts` filters the saved prompts before they reach the UI, enabling site-specific defaults or conditional logic.【F:includes/class-wp-mcp-ai-shortcode.php†L464-L515】
 - `wp_mcp_ai_tool_shortcut_tasks` and the slug-specific variant `wp_mcp_ai_tool_shortcut_tasks_{tool}` modify the shortcut tasks registered by each tool class.【F:includes/class-wp-mcp-ai-shortcode.php†L531-L545】
+- Tools can implement `WP_MCP_AI_Tool_Fallback_Shortcut_Interface`, add a `should_register_fallback_shortcut()` method, or filter `wp_mcp_ai_tool_should_register_fallback_shortcut` to opt out of the automatic per-tool fallback button while retaining the global “What can you do?” entry.【F:includes/tools/class-wp-mcp-ai-tool-interface.php†L68-L90】【F:includes/class-wp-mcp-ai-shortcode.php†L546-L618】
 - `wp_mcp_ai_default_tool_shortcut` controls the automatic “What can you do?” entry as well as the fallback when no other shortcuts exist.【F:includes/class-wp-mcp-ai-shortcode.php†L604-L688】
 
 Combine these hooks to tailor the shortcut experience per environment, tenant, or user capability without patching the plugin.

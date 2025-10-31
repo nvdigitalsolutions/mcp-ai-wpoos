@@ -585,8 +585,34 @@ class WP_MCP_AI_Shortcode {
                 continue;
             }
 
+            $should_register_fallback = ! $skip_fallback;
+
+            if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
+                $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+            } elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
+                $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+            }
+
+            /**
+             * Filter whether a fallback shortcut should be automatically appended for the tool.
+             *
+             * @since 1.0.1
+             *
+             * @param bool                     $should_register_fallback Whether the fallback shortcut should be added.
+             * @param WP_MCP_AI_Tool_Interface $tool                     Tool instance currently being processed.
+             * @param int                      $assistant_id             Assistant post ID.
+             * @param mixed                    $tasks                    Shortcut tasks supplied by the tool.
+             */
+            $should_register_fallback = apply_filters(
+                'wp_mcp_ai_tool_should_register_fallback_shortcut',
+                $should_register_fallback,
+                $tool,
+                $assistant_id,
+                $tasks
+            );
+
             if ( empty( $tasks ) || ! is_array( $tasks ) ) {
-                if ( $skip_fallback ) {
+                if ( ! $should_register_fallback ) {
                     continue;
                 }
 
