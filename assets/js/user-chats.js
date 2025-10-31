@@ -331,8 +331,7 @@
                     }
 
                     setActiveButton(instanceState, sessionKeyValue);
-                    var targetUserId = sessionData && sessionData.user_id !== undefined ? normaliseUserId(sessionData.user_id) : 0;
-                    loadSessionTranscript(instanceState, sessionKeyValue, targetUserId);
+                    loadSessionTranscript(instanceState, sessionKeyValue);
                 });
             })(state, session, button, buttonKey);
 
@@ -459,17 +458,7 @@
         }
     }
 
-    function normaliseUserId(value) {
-        var parsed = parseInt(value, 10);
-
-        if (isNaN(parsed) || parsed <= 0) {
-            return 0;
-        }
-
-        return parsed;
-    }
-
-    function loadSessionTranscript(state, sessionKey, userId) {
+    function loadSessionTranscript(state, sessionKey) {
         if (!sessionKey) {
             return;
         }
@@ -479,21 +468,10 @@
             return;
         }
 
-        var resolvedUserId = normaliseUserId(userId);
-
-        if (!resolvedUserId) {
-            resolvedUserId = normaliseUserId(state.config.userId);
-        }
-
-        var params = {
-            session_key: sessionKey
-        };
-
-        if (resolvedUserId) {
-            params.user_id = resolvedUserId;
-        }
-
-        var url = buildRestUrl(params);
+        var url = buildRestUrl({
+            session_key: sessionKey,
+            user_id: state.config.userId
+        });
 
         if (!url) {
             setStatus(state, getString(state, 'errorLoadingSession', 'Unable to load the selected chat.'));
@@ -528,12 +506,7 @@
                     return;
                 }
 
-                if (data.session && typeof data.session === 'object') {
-                    data.session.user_id = normaliseUserId(data.session.user_id);
-                }
-
                 state.activeSessionKey = data.session.session_key || sessionKey;
-                state.activeUserId = (data.session && data.session.user_id) || resolvedUserId;
                 setActiveButton(state, state.activeSessionKey);
                 renderConversation(state, data.session);
             })
@@ -586,17 +559,7 @@
             .then(function (data) {
                 state.loadingList = false;
 
-                if (Array.isArray(data.sessions)) {
-                    state.sessions = data.sessions.map(function (session) {
-                        if (session && typeof session === 'object' && session.user_id !== undefined) {
-                            session.user_id = normaliseUserId(session.user_id);
-                        }
-
-                        return session;
-                    });
-                } else {
-                    state.sessions = [];
-                }
+                state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
                 state.totalSessions = typeof data.total === 'number' ? data.total : state.sessions.length;
                 var responseMessage = data && data.message ? data.message : '';
 
@@ -636,7 +599,11 @@
         }
 
         var config = parseConfig(container) || {};
-        var userId = normaliseUserId(config.userId);
+        var userId = parseInt(config.userId, 10);
+
+        if (isNaN(userId)) {
+            userId = 0;
+        }
 
         var maxSessions = parseInt(config.maxSessions, 10);
         if (isNaN(maxSessions)) {
