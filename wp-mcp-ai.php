@@ -92,6 +92,7 @@ function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
 add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
@@ -114,6 +115,10 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-addon.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
+
+if ( is_admin() ) {
+    require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+}
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
     require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cli-command.php';
@@ -151,6 +156,10 @@ function wp_mcp_ai_bootstrap() {
     $GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = new WP_MCP_AI_Crawl4AI_Local_API();
     $GLOBALS['wp_mcp_ai_rest_controller']    = new WP_MCP_AI_REST( $registry, $router );
     $GLOBALS['wp_mcp_ai_shortcodes'] = new WP_MCP_AI_Shortcodes();
+
+    if ( is_admin() ) {
+        $GLOBALS['wp_mcp_ai_admin_cron_manager'] = new WP_MCP_AI_Admin_Cron_Manager();
+    }
 
     WP_MCP_AI_Crawler::init();
 
@@ -225,6 +234,7 @@ function wp_mcp_ai_uninstall() {
 
     $settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
     delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
+    delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
 
     /**
      * Fires after WP MCP AI completes its uninstall cleanup routines.

@@ -1,5 +1,6 @@
 <?php
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-cron-job.php';
 
 /**
@@ -13,6 +14,7 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
         parent::setUp();
 
         _set_cron_array( array() );
+        delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
     }
 
     /**
@@ -21,6 +23,7 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
     public function tearDown(): void {
         _set_cron_array( array() );
         wp_set_current_user( 0 );
+        delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
 
         parent::tearDown();
     }
@@ -115,6 +118,13 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
 
         $scheduled_time = wp_next_scheduled( $hook, array( $args ) );
         $this->assertSame( $future, $scheduled_time );
+
+        $jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+        $this->assertCount( 1, $jobs );
+        $job = array_shift( $jobs );
+        $this->assertSame( $hook, $job['hook'] );
+        $this->assertSame( array( $args ), $job['args'] );
+        $this->assertSame( 'single', $job['schedule'] );
     }
 
     /**
@@ -143,6 +153,9 @@ class WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
         $next_run = wp_next_scheduled( $hook, array() );
         $this->assertNotFalse( $next_run );
         $this->assertGreaterThanOrEqual( $before + MINUTE_IN_SECONDS, $next_run );
+
+        $jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+        $this->assertCount( 1, $jobs );
     }
 
     /**
