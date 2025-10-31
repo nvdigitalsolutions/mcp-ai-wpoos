@@ -1568,10 +1568,135 @@ class WP_MCP_AI_REST {
          */
         do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
-        return rest_ensure_response( array(
+        $payload = array(
             'assistant_id' => $assistant_id,
             'data'         => $response,
-        ) );
+        );
+
+        if ( $this->request_wants_event_stream( $request ) ) {
+            return $this->stream_chat_response( $payload );
+        }
+
+        return rest_ensure_response( $payload );
+    }
+
+    /**
+     * Determine whether the current request prefers an event stream response.
+     *
+     * @param WP_REST_Request $request REST request instance.
+     * @return bool
+     */
+    protected function request_wants_event_stream( WP_REST_Request $request ) {
+        $stream_param = $request->get_param( 'stream' );
+
+        if ( is_string( $stream_param ) && '' !== $stream_param ) {
+            if ( in_array( strtolower( $stream_param ), array( '1', 'true', 'yes', 'on' ), true ) ) {
+                return true;
+            }
+        } elseif ( is_bool( $stream_param ) && true === $stream_param ) {
+            return true;
+        }
+
+        $accept_header = $request->get_header( 'accept' );
+
+        if ( ! is_string( $accept_header ) || '' === $accept_header ) {
+            return false;
+        }
+
+        $parts = array_map( 'trim', explode( ',', strtolower( $accept_header ) ) );
+
+        foreach ( $parts as $part ) {
+            if ( '' === $part ) {
+                continue;
+            }
+
+            if ( false !== strpos( $part, 'text/event-stream' ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Stream the prepared chat response payload as an event stream.
+     *
+     * @param array $payload Chat response payload.
+     * @return WP_REST_Response
+     */
+    protected function stream_chat_response( array $payload ) {
+        $encoded_payload = wp_json_encode( $payload );
+
+        if ( false === $encoded_payload ) {
+            return rest_ensure_response( $payload );
+        }
+
+        $frames = $this->build_event_stream_chunk( 'message', $encoded_payload );
+        $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
+
+        $headers = array(
+            'Content-Type'           => 'text/event-stream; charset=utf-8',
+            'Cache-Control'          => 'no-cache, no-store, must-revalidate',
+            'Pragma'                 => 'no-cache',
+            'Connection'             => 'keep-alive',
+            'X-Accel-Buffering'      => 'no',
+            'X-Content-Type-Options' => 'nosniff',
+        );
+
+        add_filter(
+            'rest_pre_serve_request',
+            static function ( $served, $response, $request, $server ) use ( $headers, $frames ) {
+                if ( $served ) {
+                    return $served;
+                }
+
+                foreach ( $headers as $name => $value ) {
+                    if ( '' === $name || null === $value ) {
+                        continue;
+                    }
+
+                    $server->send_header( $name, $value );
+                }
+
+                echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+                if ( function_exists( 'flush' ) ) {
+                    flush();
+                }
+
+                return true;
+            },
+            10,
+            4
+        );
+
+        return new WP_REST_Response( null, 200 );
+    }
+
+    /**
+     * Build a Server-Sent Events chunk for the provided data.
+     *
+     * @param string $event  Event name.
+     * @param string $data   Event data payload.
+     * @return string
+     */
+    protected function build_event_stream_chunk( $event, $data ) {
+        $chunk = '';
+
+        $event = (string) $event;
+        if ( '' !== $event ) {
+            $chunk .= 'event: ' . $event . "\n";
+        }
+
+        $data_lines = explode( "\n", (string) $data );
+
+        foreach ( $data_lines as $line ) {
+            $chunk .= 'data: ' . $line . "\n";
+        }
+
+        $chunk .= "\n";
+
+        return $chunk;
     }
 
     /**
