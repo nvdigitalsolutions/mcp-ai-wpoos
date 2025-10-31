@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
         $result = array(
             'attachment_id'  => $storage['attachment_id'],
             'url'            => $storage['url'],
-            'download_url'   => $storage['url'],
+            'download_url'   => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
             'file_name'      => $storage['file_name'],
             'mime_type'      => $storage['mime_type'],
             'bytes'          => $storage['bytes'],
@@ -348,15 +348,44 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
         $bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
+        $attachment_url = wp_get_attachment_url( $attachment_id );
+        if ( ! $attachment_url && isset( $upload['url'] ) && '' !== $upload['url'] ) {
+            $attachment_url = $upload['url'];
+        }
+
+        $download_url = $this->prepare_attachment_download_url( $attachment_id, $attachment_url );
+
         return array(
             'attachment_id' => (int) $attachment_id,
             'file'          => $file_path,
             'file_name'     => wp_basename( $file_path ),
-            'url'           => isset( $upload['url'] ) ? $upload['url'] : '',
+            'url'           => $attachment_url ? $attachment_url : ( isset( $upload['url'] ) ? $upload['url'] : '' ),
+            'download_url'  => $download_url,
             'mime_type'     => $resolved_mime,
             'bytes'         => $bytes ? (int) $bytes : 0,
             'title'         => $title,
         );
+    }
+
+    /**
+     * Build a download URL for the stored attachment.
+     *
+     * @param int    $attachment_id  Attachment ID.
+     * @param string $fallback       Fallback URL if a specific download link cannot be generated.
+     * @return string
+     */
+    protected function prepare_attachment_download_url( $attachment_id, $fallback ) {
+        $attachment_id = absint( $attachment_id );
+
+        if ( $attachment_id ) {
+            $download_url = wp_get_attachment_url( $attachment_id );
+
+            if ( $download_url ) {
+                return $download_url;
+            }
+        }
+
+        return (string) $fallback;
     }
 
     /**

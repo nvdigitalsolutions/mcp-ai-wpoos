@@ -84,7 +84,11 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( 'data:image/png;base64,' . $result['content']['data'], $result['content']['data_url'] );
 
         $this->assertArrayHasKey( 'download_url', $result );
-        $this->assertSame( $result['url'], $result['download_url'] );
+        $this->assertNotEmpty( $result['download_url'] );
+
+        if ( ! empty( $result['attachment_id'] ) ) {
+            $this->assertSame( wp_get_attachment_url( $result['attachment_id'] ), $result['download_url'] );
+        }
 
         if ( ! empty( $result['attachment_id'] ) ) {
             wp_delete_attachment( $result['attachment_id'], true );
