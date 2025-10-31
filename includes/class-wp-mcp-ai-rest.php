@@ -445,6 +445,15 @@ class WP_MCP_AI_REST {
             $session = $this->get_transcript_session( $user_id, $session_key );
 
             if ( is_wp_error( $session ) ) {
+                if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
+                    return rest_ensure_response(
+                        array(
+                            'session' => null,
+                            'message' => $session->get_error_message(),
+                        )
+                    );
+                }
+
                 return $session;
             }
 
@@ -468,6 +477,18 @@ class WP_MCP_AI_REST {
         $sessions = $this->get_transcript_sessions( $user_id, $per_page, $page );
 
         if ( is_wp_error( $sessions ) ) {
+            if ( 'wp_mcp_ai_transcripts_unavailable' === $sessions->get_error_code() ) {
+                return rest_ensure_response(
+                    array(
+                        'sessions' => array(),
+                        'total'    => 0,
+                        'per_page' => $per_page,
+                        'page'     => $page,
+                        'message'  => $sessions->get_error_message(),
+                    )
+                );
+            }
+
             return $sessions;
         }
 
