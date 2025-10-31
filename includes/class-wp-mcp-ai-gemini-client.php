@@ -676,9 +676,10 @@ class WP_MCP_AI_Gemini_Client {
                         continue;
                     }
 
-                    $decoded_data = base64_decode( $data, true );
-                    if ( false !== $decoded_data ) {
-                        $data = $decoded_data;
+                    $decoded_data = $this->decode_inline_image_data( $data );
+
+                    if ( is_wp_error( $decoded_data ) ) {
+                        return $decoded_data;
                     }
 
                     if ( '' === $mime_type ) {
@@ -686,7 +687,7 @@ class WP_MCP_AI_Gemini_Client {
                     }
 
                     return array(
-                        'data'           => $data,
+                        'data'           => $decoded_data,
                         'mime_type'      => $mime_type,
                         'format'         => $this->map_mime_type_to_format( $mime_type ),
                         'revised_prompt' => '',
@@ -865,6 +866,70 @@ class WP_MCP_AI_Gemini_Client {
             'body'         => $body,
             'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
         );
+    }
+
+    /**
+     * Decode an inline base64 image payload returned by Gemini.
+     *
+     * @param string $data Raw base64 or base64url encoded string.
+     * @return string|WP_Error
+     */
+    protected function decode_inline_image_data( $data ) {
+        $data    = (string) $data;
+        $decoded = base64_decode( $data, true );
+
+        if ( false !== $decoded ) {
+            return $decoded;
+        }
+
+        $normalised = $this->normalise_base64_string( $data );
+
+        if ( '' !== $normalised ) {
+            $decoded = base64_decode( $normalised, true );
+
+            if ( false !== $decoded ) {
+                return $decoded;
+            }
+        }
+
+        $decoded = base64_decode( $data );
+
+        if ( false !== $decoded ) {
+            return $decoded;
+        }
+
+        WP_MCP_AI_Logger::log_error(
+            'Gemini inline image data could not be decoded.',
+            array(
+                'length' => strlen( $data ),
+            )
+        );
+
+        return new WP_Error(
+            'wp_mcp_ai_image_decode_error',
+            __( 'Gemini returned an invalid inline image payload.', 'wp-mcp-ai' ),
+            array( 'status' => 500 )
+        );
+    }
+
+    /**
+     * Normalise a base64 or base64url string for decoding.
+     *
+     * @param string $data Raw base64 input.
+     * @return string
+     */
+    protected function normalise_base64_string( $data ) {
+        $data = (string) $data;
+        $data = str_replace( array( "\r", "\n" ), '', $data );
+        $data = strtr( $data, '-_', '+/' );
+
+        $remainder = strlen( $data ) % 4;
+
+        if ( 0 !== $remainder ) {
+            $data .= str_repeat( '=', 4 - $remainder );
+        }
+
+        return $data;
     }
 
     /**
