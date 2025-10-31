@@ -13,19 +13,90 @@ class WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure the tool reports an error when Crawl4AI is not configured.
+     * Ensure the tool falls back to the local web search when Crawl4AI is not configured.
      */
-    public function test_execute_requires_crawl4ai_configuration() {
-        delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+    public function test_execute_uses_local_fallback_when_crawl4ai_not_configured() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
         $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
         wp_set_current_user( $user_id );
 
+        $responses = array(
+            'bjs.com'      => array(
+                'body'     => wp_json_encode(
+                    array(
+                        'RelatedTopics' => array(
+                            array(
+                                'Text'     => 'BJ\'s Club Value Pack',
+                                'FirstURL' => 'https://www.bjs.com/product/value-pack',
+                                'Result'   => '<a href="https://www.bjs.com/product/value-pack">BJ\'s deal for just $12.99 today.</a>',
+                            ),
+                        ),
+                    )
+                ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+                'response' => array( 'code' => 200 ),
+            ),
+            'samsclub.com' => array(
+                'body'     => wp_json_encode(
+                    array(
+                        'RelatedTopics' => array(
+                            array(
+                                'Text'     => 'Sam\'s Club Mega Bundle',
+                                'FirstURL' => 'https://www.samsclub.com/p/mega-bundle',
+                                'Result'   => '<a href="https://www.samsclub.com/p/mega-bundle">Member savings at $15.49.</a>',
+                            ),
+                        ),
+                    )
+                ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+                'response' => array( 'code' => 200 ),
+            ),
+            'costco.com'   => array(
+                'body'     => wp_json_encode(
+                    array(
+                        'RelatedTopics' => array(
+                            array(
+                                'Text'     => 'Costco Bulk Essentials',
+                                'FirstURL' => 'https://www.costco.com/product/bulk-essentials',
+                                'Result'   => '<a href="https://www.costco.com/product/bulk-essentials">Get it for $17.99.</a>',
+                            ),
+                        ),
+                    )
+                ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+                'response' => array( 'code' => 200 ),
+            ),
+        );
+
+        $filter = function ( $preempt, $args, $url ) use ( &$responses ) {
+            foreach ( $responses as $needle => $response ) {
+                if ( false !== strpos( $url, $needle ) ) {
+                    return $response;
+                }
+            }
+
+            return $preempt;
+        };
+
+        add_filter( 'pre_http_request', $filter, 10, 3 );
+
         $tool   = new WP_MCP_AI_Tool_Crawl4AI_Price_Lookup();
         $result = $tool->execute( array( 'product' => 'paper towels' ), array( 'user_id' => $user_id ) );
 
-        $this->assertWPError( $result );
-        $this->assertSame( 'wp_mcp_ai_crawl4ai_unavailable', $result->get_error_code() );
+        remove_filter( 'pre_http_request', $filter, 10 );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'paper towels', $result['product'] );
+        $this->assertSame( 'local', $result['metadata']['lookup_provider'] );
+        $this->assertCount( 3, $result['brands'] );
+        $this->assertSame( 'success', $result['brands'][0]['status'] );
+        $this->assertSame( 12.99, $result['brands'][0]['price'] );
+        $this->assertSame( 'success', $result['brands'][1]['status'] );
+        $this->assertSame( 15.49, $result['brands'][1]['price'] );
+        $this->assertSame( 'success', $result['brands'][2]['status'] );
+        $this->assertSame( 17.99, $result['brands'][2]['price'] );
     }
 
     /**
@@ -132,6 +203,7 @@ class WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
         $this->assertIsArray( $result );
         $this->assertSame( 'paper towels', $result['product'] );
         $this->assertSame( 3, $result['metadata']['max_results'] );
+        $this->assertSame( 'crawl4ai', $result['metadata']['lookup_provider'] );
         $this->assertCount( 3, $result['brands'] );
 
         $this->assertSame( 'success', $result['brands'][0]['status'] );
