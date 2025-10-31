@@ -532,10 +532,20 @@ Manage the MCP AI environment from the command line when WP-CLI is available.
 | Command | Description |
 | --- | --- |
 | `wp mcp-ai status` | Summarises WordPress core details, PHP version, and MCP AI supported plugin coverage. |
-| `wp mcp-ai remote <base> [--token=<token>]` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) and reports connectivity, assistant counts, and token scope metadata. |
+| `wp mcp-ai remote <base>` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) and reports connectivity, assistant counts, and token scope metadata. |
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
 | `wp mcp-ai plugins deactivate <slug>` | Deactivates a supported plugin; pass `--network` on multisite installations. |
+
+`wp mcp-ai remote` accepts additional flags so you can mirror the authentication mode used by your deployment while exercising TLS and timeout controls:
+
+- `--token=<token>` – Include an Auth0 access token or assistant-issued credential via the `Authorization` header.
+- `--guest-token=<token>` – Attach a guest token when testing public chat surfaces that rely on the `X-WP-MCP-AI-Guest` header.
+- `--nonce=<nonce>` – Supply a WordPress REST nonce for same-origin checks.
+- `--assistant-id=<id>` – Hint which assistant to load when the directory endpoint supports scoped tokens.
+- `--timeout=<seconds>` – Override the default 15-second timeout when probing slow networks.
+- `--verify-ssl=<boolean>` – Toggle certificate validation (defaults to `true`).
+- `--user-agent=<agent>` – Send a custom user agent instead of the built-in `WP-MCP-AI-Remote-Tester/<version>` signature.
 
 Filter `wp_mcp_ai_supported_plugins` to expose additional managed dependencies to the CLI helpers.
 
