@@ -390,9 +390,29 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
         $this->end_controls_section();
 
+        $this->start_controls_section(
+            'section_style_chat_theme_notice',
+            array(
+                'label' => __( 'Theme Settings', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_theme_notice',
+            array(
+                'type'            => \Elementor\Controls_Manager::RAW_HTML,
+                'raw'             => $this->get_chat_theme_notice(),
+                'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
+            )
+        );
+
+        $this->end_controls_section();
+
         $this->register_theme_style_controls(
             array(
                 'section_id' => 'section_style_chat_widget',
+                'label'      => __( 'Supporting Sections', 'wp-mcp-ai' ),
                 'selectors'  => array(
                     'container' => '{{WRAPPER}} .wp-mcp-ai-chat-widget',
                     'heading'   => array(
@@ -412,6 +432,49 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget__assistant-shortcuts-payload',
                     ),
                     'link'      => '{{WRAPPER}} .wp-mcp-ai-chat-widget a',
+                ),
+            )
+        );
+
+        $this->register_theme_style_controls(
+            array(
+                'section_id' => 'section_style_chat_interface',
+                'label'      => __( 'Chat Section', 'wp-mcp-ai' ),
+                'selectors'  => array(
+                    'container' => '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat',
+                    'heading'   => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__label',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-header',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h1',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h2',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h3',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h4',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h5',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble h6',
+                    ),
+                    'text'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__assistant-content',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__status',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-name',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-remove',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__json-label',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__json-content',
+                    ),
+                    'meta'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-meta',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble-attachments',
+                    ),
+                    'link'      => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble a',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments a',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-remove',
+                    ),
+                    'link_hover' => array(
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble a:hover',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__bubble a:focus',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-remove:hover',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-remove:focus',
+                    ),
                 ),
             )
         );
@@ -685,6 +748,45 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
         echo '</div>';
 
         echo '</div>';
+    }
+
+    /**
+     * Retrieve the notice shown before theme style controls.
+     *
+     * @return string
+     */
+    protected function get_chat_theme_notice() {
+        $url = $this->get_chat_theme_settings_url();
+
+        if ( '' !== $url ) {
+            return sprintf(
+                /* translators: 1: Opening anchor tag, 2: closing anchor tag. */
+                __( 'Global chat colors are managed under %1$sSettings → MCP AI → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
+                '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">',
+                '</a>'
+            );
+        }
+
+        return __( 'Global chat colors are managed under Settings → MCP AI → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * Build the admin URL for the chat theme settings section.
+     *
+     * @return string
+     */
+    protected function get_chat_theme_settings_url() {
+        if ( ! function_exists( 'admin_url' ) ) {
+            return '';
+        }
+
+        $slug = 'wp-mcp-ai-settings';
+
+        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && defined( 'WP_MCP_AI_Admin_Settings::PAGE_SLUG' ) ) {
+            $slug = WP_MCP_AI_Admin_Settings::PAGE_SLUG;
+        }
+
+        return admin_url( 'admin.php?page=' . $slug . '#wp_mcp_ai_chat_colors_section' );
     }
 
     /**
