@@ -108,8 +108,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
     public function get_shortcut_tasks() {
         return array(
             array(
-                'label'   => __( 'Create marketing-ready image', 'wp-mcp-ai' ),
-                'payload' => __( 'Use the `generate_openai_image` tool to craft a brand-new marketing image. Confirm the subject, brand details, preferred orientation, and any styling guidance I provide before you call the tool. Summarise the agreed prompt back to me first.', 'wp-mcp-ai' ),
+                'label'   => __( 'generate_openai_image', 'wp-mcp-ai' ),
+                'payload' => __( 'generate_openai_image', 'wp-mcp-ai' ),
             ),
             array(
                 'label'   => __( 'Revise existing concept', 'wp-mcp-ai' ),
