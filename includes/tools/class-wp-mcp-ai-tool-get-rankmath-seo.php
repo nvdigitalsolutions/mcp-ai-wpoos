@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 	 * @return bool
 	 */
 	public static function is_available() {
-		return defined( 'RANK_MATH_VERSION' ) && class_exists( '\\RankMath\\Helper' );
+               return defined( 'RANK_MATH_VERSION' ) && class_exists( '\RankMath\Helper' );
 	}
 
 	/**
