@@ -16,7 +16,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
     /**
      * GDACS endpoint for tropical cyclone and flood events.
      */
-    const EVENTS_ENDPOINT = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/TC,FL';
+    const EVENTS_ENDPOINT = 'https://www.gdacs.org/gdacsapi/api/events/geteventlist/MAP';
 
     /**
      * {@inheritdoc}
@@ -73,7 +73,9 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
             return new WP_Error( 'wp_mcp_ai_gdacs_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
         }
 
-        $query_args = array();
+        $query_args = array(
+            'eventtypes' => 'TC,FL',
+        );
 
         if ( ! empty( $arguments['from_date'] ) ) {
             $from_date = sanitize_text_field( $arguments['from_date'] );
