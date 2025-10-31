@@ -644,7 +644,25 @@
         var(--wp-mcp-ai-color-submit-hover-gradient-end, #6a4bff)
     );
     box-shadow: 0 16px 28px var(--wp-mcp-ai-color-submit-hover-shadow, rgba(50, 76, 248, 0.4));
+    color: var(
+        --wp-mcp-ai-color-submit-hover-text,
+        var(--wp-mcp-ai-color-submit-text, #fff)
+    );
     transform: translateY(-1px);
+}
+
+.wp-mcp-ai-chat__submit:active {
+    background: linear-gradient(
+        120deg,
+        var(--wp-mcp-ai-color-submit-active-gradient-start, #2f44f0),
+        var(--wp-mcp-ai-color-submit-active-gradient-end, #5b3eff)
+    );
+    box-shadow: 0 10px 24px var(--wp-mcp-ai-color-submit-active-shadow, rgba(47, 68, 240, 0.38));
+    color: var(
+        --wp-mcp-ai-color-submit-active-text,
+        var(--wp-mcp-ai-color-submit-text, #fff)
+    );
+    transform: translateY(0);
 }
 
 .wp-mcp-ai-chat__submit:disabled {
