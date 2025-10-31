@@ -482,6 +482,7 @@ class WP_MCP_AI_Shortcode {
         $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
         $shortcuts      = array();
         $selected_tools = array();
+        $prebuilt_overrides = array();
 
         if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
             foreach ( $config['tools'] as $tool_slug ) {
@@ -552,6 +553,14 @@ class WP_MCP_AI_Shortcode {
             }
         }
 
+        if ( ! empty( $config['tool_prebuilt_shortcuts'] ) && is_array( $config['tool_prebuilt_shortcuts'] ) ) {
+            $prebuilt_overrides = $config['tool_prebuilt_shortcuts'];
+
+            if ( method_exists( 'WP_MCP_AI_Assistant_CPT', 'sanitize_prebuilt_tool_shortcuts_meta' ) ) {
+                $prebuilt_overrides = WP_MCP_AI_Assistant_CPT::sanitize_prebuilt_tool_shortcuts_meta( $prebuilt_overrides );
+            }
+        }
+
         if ( ! empty( $config['disable_prebuilt_shortcuts'] ) ) {
             return $shortcuts;
         }
@@ -566,6 +575,44 @@ class WP_MCP_AI_Shortcode {
             $tool = $registry->get_tool( $tool_slug );
 
             if ( ! $tool ) {
+                continue;
+            }
+
+            if ( array_key_exists( $tool_slug, $prebuilt_overrides ) ) {
+                $override_settings  = $prebuilt_overrides[ $tool_slug ];
+                $override_shortcuts = array();
+
+                if ( isset( $override_settings['shortcuts'] ) && is_array( $override_settings['shortcuts'] ) ) {
+                    $override_shortcuts = $override_settings['shortcuts'];
+                }
+
+                if ( ! empty( $override_shortcuts ) ) {
+                    foreach ( $override_shortcuts as $override_shortcut ) {
+                        if ( ! is_array( $override_shortcut ) ) {
+                            continue;
+                        }
+
+                        $label = isset( $override_shortcut['label'] ) ? sanitize_text_field( $override_shortcut['label'] ) : '';
+                        $payload = isset( $override_shortcut['payload'] ) ? sanitize_textarea_field( $override_shortcut['payload'] ) : '';
+
+                        if ( '' === $label || '' === $payload ) {
+                            continue;
+                        }
+
+                        $entry = array(
+                            'tool'    => $tool_slug,
+                            'label'   => $label,
+                            'payload' => $payload,
+                        );
+
+                        if ( isset( $override_shortcut['description'] ) && is_string( $override_shortcut['description'] ) ) {
+                            $entry['description'] = sanitize_textarea_field( $override_shortcut['description'] );
+                        }
+
+                        $shortcuts[] = $entry;
+                    }
+                }
+
                 continue;
             }
 
