@@ -103,6 +103,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
@@ -121,6 +122,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 WP_MCP_AI_Message_Attachments::init();
 
 WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
+WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
 
 WP_MCP_AI_ChatKit_Addon::init();
 
