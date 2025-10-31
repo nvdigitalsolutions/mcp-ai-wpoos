@@ -90,6 +90,19 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             )
         );
 
+        $this->add_control(
+            'save_transcript',
+            array(
+                'label'        => __( 'Save transcripts to JetEngine', 'wp-mcp-ai' ),
+                'type'         => \Elementor\Controls_Manager::SWITCHER,
+                'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
+                'label_off'    => __( 'No', 'wp-mcp-ai' ),
+                'return_value' => 'true',
+                'default'      => 'true',
+                'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'wp-mcp-ai' ),
+            )
+        );
+
         $this->end_controls_section();
 
         $this->start_controls_section(
@@ -1042,6 +1055,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
         $allow_guests = ! empty( $settings['allow_guests'] ) && 'true' === $settings['allow_guests'];
         $attributes['allow_guests'] = $allow_guests ? 'true' : 'false';
+
+        $save_transcript = empty( $settings['save_transcript'] ) || 'true' === $settings['save_transcript'];
+        if ( ! $save_transcript ) {
+            $attributes['save_transcript'] = 'false';
+        }
 
         $shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
 

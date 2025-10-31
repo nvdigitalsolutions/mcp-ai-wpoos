@@ -3119,7 +3119,12 @@
         var payload = {
             assistant_id: state.config.assistantId,
             messages: state.conversation,
+            save_transcript: state.config.saveTranscript !== false,
         };
+
+        if (state.config.sessionKey) {
+            payload.session_key = state.config.sessionKey;
+        }
 
         function finalize() {
             state.busy = false;
