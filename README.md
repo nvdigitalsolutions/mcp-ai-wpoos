@@ -107,25 +107,95 @@ The tool registry boots with a curated catalogue of content, commerce, automatio
 
 ## 🛠 Built-in tools & automations
 
-The core tool registry loads several assistant-ready utilities that cover editorial, operational, and support workflows out of the box. Highlights include:
+The assistant registry ships with a comprehensive catalogue of editorial, marketing, commerce, and operational helpers. The tables below outline every bundled tool and the slug assistants call when orchestrating workflows.
 
-- **Submit Document Prompt** – Sends a user-supplied prompt alongside uploaded WordPress attachments or existing OpenAI file IDs, ensuring each request includes at least one file segment before streaming the conversation to OpenAI.【F:includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php†L20-L214】
-- **Generate OpenAI Image** – Calls the Images API with the site’s configured defaults, stores the binary response as a Media Library attachment, and supports optional size, quality, timeout, and filename overrides.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
-- **Generate OpenAI Speech** – Converts text into audio using the Text-to-Speech endpoint, honours the default model/voice/format, and persists the result to the Media Library for reuse in content workflows.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L983-L1110】
-- **Transcribe OpenAI Audio** – Accepts uploaded audio attachments, forwards them to OpenAI for transcription or translation, and returns structured metadata, language hints, segments, and duration details.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】
-- **Run OpenAI External Action** – Lets administrators trigger pre-built OpenAI workflows or assistants through the Responses API, including payload validation, timeout overrides, and structured error reporting when API keys are missing.【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L17-L211】
-- **Crawl4AI Job Runner** – Executes Crawl4AI harvesting jobs locally or against a remote endpoint, capturing HTML, Markdown, and per-URL errors so assistants can reason over long-form content collections.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】
-- **Web Search** – Queries the configured provider (DuckDuckGo Instant Answer or Brave Search) to return lightweight web research snippets while honouring per-user permissions and result caps.【F:includes/tools/class-wp-mcp-ai-tool-web-search.php†L12-L320】
-- **Site & content summaries** – Pull recent posts, JetEngine entries, WooCommerce orders, or a high-level site snapshot so assistants can respond with current editorial, catalog, or analytics context.【F:includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php†L12-L104】【F:includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php†L12-L118】【F:includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php†L12-L117】【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】
-- **User insight tools** – Inspect the active user or a specific account (respecting capabilities), expose JetEngine REST route metadata, or proxy route invocations through the authenticated MCP context.【F:includes/tools/class-wp-mcp-ai-tool-get-user-info.php†L12-L89】【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】
-- **JetFormBuilder form operations** – List available forms, page through recent submissions, and honour JetFormBuilder’s capability model while proxying REST traffic with automatic fallbacks between internal controllers and HTTP requests.【F:includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php†L15-L155】【F:includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php†L15-L154】【F:includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php†L33-L200】
-- **Create or update WordPress posts** – Draft or revise posts and custom post types with sanitised Gutenberg content, slug/title controls, and capability-aware access checks so assistants can publish within established workflows.【F:includes/tools/class-wp-mcp-ai-tool-save-post.php†L15-L258】
-- **Calendar & inbox automations** – Create first-party Google Calendar events, honour attendee reminders and default calendars, or search a delegated Gmail inbox with OAuth credentials when the assistant needs fresh communications context.【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L200-L400】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L200-L400】
-- **Operational helpers** – Schedule WP-Cron jobs, orchestrate group emails with capability and recipient limits, surface OpenAI dashboard shortcuts, verify WP-CLI availability, or pull structured MCP/WordPress log tails for rapid debugging.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L200-L400】
-- **Weather-aware planning** – Fetch hourly forecasts from Open-Meteo with location, timezone, and variable controls so assistants can tailor itineraries or operational updates to the latest conditions.【F:includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php†L15-L206】
-- **Telegram notifications** – Send richly formatted bot messages to chats or channels with capability filters, parse mode controls, and request logging for audit trails.【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L16-L226】
-- **QuickBooks Online Reporting** – Pull Profit and Loss, Balance Sheet, or any supported report with optional date windows and accounting method filters so finance teams can review structured ledgers without leaving the assistant. Capability checks ensure only privileged operators can access the data, and the payload is sanitised for model consumption.【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】
-- **Send Mailjet Email** – Deliver transactional or announcement emails via Mailjet using the configured sender defaults, optional CC/BCC routing, and pre-flight filters that let developers short-circuit or audit messages. Requests honour capability filters and return rich status metadata from Mailjet for assistant follow-ups.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】
+### Content & knowledge workflows
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Submit Document Prompt | `submit_document_prompt` | Uploads WordPress attachments or OpenAI file IDs alongside an instruction so multimodal prompts reach the Responses API with the required file context.【F:includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php†L20-L214】|
+| Search Content | `search_content` | Queries public post types with optional taxonomy and meta filters to surface structured post metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-search-content.php†L12-L280】|
+| Search Attachments | `search_attachments` | Scans the Media Library with keyword or MIME filters while honouring attachment capability checks and signed download URLs.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】|
+| Get Recent Posts | `get_recent_posts` | Returns the latest entries for a given post type with titles, permalinks, excerpts, and timestamps for quick editorial summaries.【F:includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php†L12-L104】|
+| Get Elementor Templates | `get_elementor_templates` | Lists Elementor library templates with status, type, and edit links when Elementor is available and the caller has access.【F:includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php†L12-L239】|
+| Get JetEngine Items | `get_jetengine_items` | Retrieves JetEngine-managed content with capability-aware access checks for each registered custom post type.【F:includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php†L12-L118】|
+| Get JetFormBuilder Forms | `get_jetformbuilder_forms` | Proxies JetFormBuilder REST controllers to return paginated form metadata with automatic REST/HTTP fallbacks.【F:includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php†L15-L155】|
+| Get JetFormBuilder Submissions | `get_jetformbuilder_submissions` | Lists recent JetFormBuilder entries with normalised field snapshots and capability enforcement.【F:includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php†L15-L154】|
+| Save Post | `save_post` | Drafts or updates posts and custom post types with sanitised Gutenberg content, slug/title overrides, and edit links.【F:includes/tools/class-wp-mcp-ai-tool-save-post.php†L15-L268】|
+| Create WPCode Snippet | `create_wpcode_snippet` | Provisions or updates WPCode-managed snippets, validating code types, insert locations, and activation status.【F:includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php†L15-L224】|
+| Get Rank Math SEO Overview | `get_rankmath_seo` | Surfaces Rank Math SEO scores, focus keywords, robots metadata, and schema details for a specific post when the plugin is active.【F:includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php†L15-L220】|
+| Get User Information | `get_user_info` | Inspects the acting user or a supplied account while respecting multisite membership and capability requirements.【F:includes/tools/class-wp-mcp-ai-tool-get-user-info.php†L12-L89】|
+
+### Media generation & transcription
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Generate OpenAI Image | `generate_openai_image` | Calls the OpenAI Images API with configurable defaults, saving the rendered asset to the Media Library with optional overrides.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】|
+| Generate Gemini Image | `generate_gemini_image` | Uses Gemini’s multimodal image endpoint to render creative, aspect-ratio-aware visuals that are persisted as WordPress attachments.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】|
+| Generate OpenAI Speech | `generate_openai_speech` | Converts text to audio via OpenAI’s text-to-speech models, honouring default voice/format selections and storing results in the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】|
+| Transcribe OpenAI Audio | `transcribe_openai_audio` | Sends uploaded audio to OpenAI’s transcription/translation endpoints and returns structured transcripts with language and duration metadata.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】|
+
+### Research & situational awareness
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Web Search | `web_search` | Performs lightweight lookups against DuckDuckGo or Brave, normalising related topics and enforcing per-user result caps.【F:includes/tools/class-wp-mcp-ai-tool-web-search.php†L12-L320】|
+| Run Crawl4AI Job | `run_crawl4ai_job` | Executes Crawl4AI harvests locally or remotely, collecting Markdown, HTML, and error payloads for long-form content ingestion workflows.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】|
+| ReliefWeb Reports | `reliefweb_reports` | Queries ReliefWeb’s humanitarian dataset by country or disaster type and returns structured report metadata for situational updates.【F:includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php†L15-L234】|
+| Get GDACS Events | `get_gdacs_events` | Fetches Global Disaster Alert and Coordination System events with optional date filters and capability checks for emergency planning.【F:includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php†L12-L200】|
+| Get NHC Active Storms | `get_nhc_active_storms` | Retrieves the National Hurricane Center’s active storm feed, sanitising advisory data for assistant consumption.【F:includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php†L15-L146】|
+| Get Open-Meteo Forecast | `get_open_meteo_forecast` | Pulls hourly weather data from Open-Meteo with coordinate, timezone, and variable controls for itinerary-aware responses.【F:includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php†L15-L309】|
+
+### Commerce & finance operations
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Create WooCommerce Product Draft | `create_woo_product` | Builds draft WooCommerce products with merchandising copy, pricing, images, and brand metadata when WooCommerce is active.【F:includes/tools/class-wp-mcp-ai-tool-create-woo-product.php†L15-L258】|
+| Get WooCommerce Products | `get_woo_products` | Surfaces catalogue listings with pricing, stock status, and optional SKU/status filters for merchandiser reviews.【F:includes/tools/class-wp-mcp-ai-tool-get-woo-products.php†L12-L140】|
+| Get Woo Recent Orders | `get_woo_recent_orders` | Summarises recent WooCommerce orders with totals, billing details, and ISO timestamps for fulfilment teams.【F:includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php†L12-L117】|
+| Wholesale Club Price Lookup | `crawl4ai_price_lookup` | Uses Crawl4AI’s web search endpoint to compare BJ’s, Sam’s Club, and Costco pricing for a given product query.【F:includes/tools/class-wp-mcp-ai-tool-crawl4ai-price-lookup.php†L17-L189】|
+| Lookup Import Duty | `get_import_duty` | Queries the ITA Tariff Rates API for HS codes or descriptions to surface import duty rates for supported countries.【F:includes/tools/class-wp-mcp-ai-tool-get-import-duty.php†L15-L152】|
+| QuickBooks Online Report | `quickbooks_report` | Requests Profit & Loss, Balance Sheet, or custom QuickBooks Online reports with optional date ranges and accounting methods.【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】|
+
+### Marketing & analytics insights
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Google Analytics Report | `google_analytics_report` | Runs GA4 Analytics Data API queries with metrics, dimensions, date ranges, and aggregation controls to monitor site performance.【F:includes/tools/class-wp-mcp-ai-tool-get-google-analytics-report.php†L15-L158】|
+| Google Business Insights | `get_google_business_insights` | Fetches Google Business Profile metrics for a location using OAuth tokens, time ranges, and timezone hints.【F:includes/tools/class-wp-mcp-ai-tool-get-google-business-insights.php†L15-L149】|
+| Meta Social Insights | `get_facebook_instagram_insights` | Pulls Facebook Page or Instagram business metrics via the Graph API with selectable periods and metric sets.【F:includes/tools/class-wp-mcp-ai-tool-get-facebook-instagram-insights.php†L15-L146】|
+| LinkedIn Insights | `get_linkedin_insights` | Queries LinkedIn organizational share statistics with optional timeframe and granularity filters.【F:includes/tools/class-wp-mcp-ai-tool-get-linkedin-insights.php†L15-L138】|
+| TikTok Insights | `get_tiktok_insights` | Calls the TikTok Open API to return account performance metrics across configurable windows and granularities.【F:includes/tools/class-wp-mcp-ai-tool-get-tiktok-insights.php†L15-L136】|
+
+### Publishing & outreach
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Publish Meta Social Post | `post_facebook_instagram` | Publishes Facebook Page or Instagram business posts through the Meta Graph API with message, caption, and media controls.【F:includes/tools/class-wp-mcp-ai-tool-post-facebook-instagram.php†L15-L170】|
+| Publish Google Business Update | `post_google_business_update` | Creates Google Business Profile local posts with summaries, language codes, and optional call-to-action links.【F:includes/tools/class-wp-mcp-ai-tool-post-google-business-update.php†L15-L168】|
+| Publish LinkedIn Update | `post_linkedin_update` | Sends LinkedIn UGC posts for members or organisations with optional share URLs via the LinkedIn Marketing API.【F:includes/tools/class-wp-mcp-ai-tool-post-linkedin-update.php†L15-L160】|
+| Publish TikTok Video | `post_tiktok_video` | Submits hosted video assets to TikTok’s Open API share endpoint with optional captions.【F:includes/tools/class-wp-mcp-ai-tool-post-tiktok-video.php†L15-L152】|
+| Send Group Email | `send_group_email` | Orchestrates structured or free-form email campaigns with capability-based audience limits and logging hooks.【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】|
+| Send Mailjet Email | `send_mailjet_email` | Delivers transactional and marketing emails through Mailjet with sender defaults, CC/BCC routing, and response metadata.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】|
+| Send Telegram Message | `send_telegram_message` | Posts formatted updates to Telegram chats or channels with capability filters and audit logging.【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L16-L232】|
+| Send WhatsApp Message | `send_whatsapp_message` | Sends WhatsApp Cloud API text messages with preview controls using phone-number specific access tokens.【F:includes/tools/class-wp-mcp-ai-tool-send-whatsapp-message.php†L15-L178】|
+| Schedule Notify.lk SMS | `schedule_notify_sms` | Queues Notify.lk SMS messages for future delivery using the official SDK and site cron orchestration.【F:includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php†L15-L180】|
+
+### Integrations & scheduling
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Create Google Calendar Event | `create_google_calendar_event` | Builds calendar events with attendees, reminders, and timeout overrides using OAuth tokens or service accounts.【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L17-L378】|
+| Search Gmail Messages | `search_gmail` | Performs delegated Gmail queries with optional label filters and pagination, returning normalised message metadata.【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L1-L200】|
+| List JetEngine REST Routes | `list_jetengine_rest_routes` | Enumerates JetEngine REST endpoints with method, callback, and capability metadata for developers.【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】|
+| Invoke JetEngine REST Route | `invoke_jetengine_route` | Proxies JetEngine CRUD operations using the authenticated user context with REST/HTTP fallbacks.【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】|
+| Run OpenAI External Action | `run_openai_external_action` | Triggers OpenAI Responses API workflows or assistants with payload sanitisation, timeout overrides, and structured errors.【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L17-L211】|
+
+### Operations & diagnostics
+| Tool | Slug | Summary |
+| --- | --- | --- |
+| Create Cron Job | `create_cron_job` | Schedules one-off or recurring WP-Cron events with duplicate detection and sanitised hooks/arguments.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L168】|
+| Check WP-CLI Status | `check_wp_cli` | Scans for the WordPress CLI binary, returning detected paths, version output, and environment warnings.【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】|
+| Purge Cloudflare Cache | `purge_cloudflare_cache` | Sends targeted or full-zone invalidations to Cloudflare with configurable timeouts and admin-only access controls.【F:includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php†L17-L292】|
+| Get Site Summary | `get_site_summary` | Provides high-level site metadata, content counts, and admin contact details for context-aware assistants.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】|
+| Get Site Health Status | `get_site_health` | Runs WordPress Site Health diagnostics and returns grouped pass/warn/fail tests with remediation guidance.【F:includes/tools/class-wp-mcp-ai-tool-get-site-health.php†L12-L255】|
+| Get System Logs | `get_system_logs` | Aggregates MCP AI logs, WordPress/PHP error logs, and plugin log files to aid in debugging workflows.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】|
+| Get Update Status | `get_update_status` | Reports pending core, plugin, and theme updates with version and download metadata for maintenance planning.【F:includes/tools/class-wp-mcp-ai-tool-get-update-status.php†L12-L182】|
+| Open OpenAI Logs | `open_openai_logs` | Returns dashboard shortcuts for reviewing OpenAI request logs in the provider console.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】|
+| Open OpenAI Usage | `open_openai_usage` | Provides direct links to OpenAI usage dashboards so admins can audit consumption quickly.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】|
 
 Each tool inherits the assistant context and authenticated user from the REST layer, making it easy to layer custom permissions or extend behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
 
