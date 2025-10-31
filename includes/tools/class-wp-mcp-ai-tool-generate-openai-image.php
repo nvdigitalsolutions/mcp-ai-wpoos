@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Prompts_Interface {
     const DEFAULT_MODEL            = 'gpt-image-1';
     const DEFAULT_SIZE             = '1024x1024';
     const DEFAULT_QUALITY          = 'standard';
@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
     /**
      * {@inheritdoc}
      */
-    public function get_shortcut_tasks() {
+    public function get_prompt_tasks() {
         return array(
             array(
                 'label'   => __( 'Create marketing-ready image', 'wp-mcp-ai' ),
@@ -120,6 +120,19 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
                 'payload' => __( 'Use the `generate_openai_image` tool to place the product in a lifestyle setting. Gather details about the environment, target audience, props, and camera angle, then assemble a detailed prompt that keeps the product as the hero of the scene.', 'wp-mcp-ai' ),
             ),
         );
+    }
+
+    /**
+     * Legacy wrapper for backward compatibility with the shortcut terminology.
+     *
+     * @deprecated 1.0.0 Use self::get_prompt_tasks() instead.
+     *
+     * @return array[]
+     */
+    public function get_shortcut_tasks() {
+        _deprecated_function( __METHOD__, '1.0.0', __CLASS__ . '::get_prompt_tasks' );
+
+        return $this->get_prompt_tasks();
     }
 
     /**

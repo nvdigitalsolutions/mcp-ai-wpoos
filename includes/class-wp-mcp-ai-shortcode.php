@@ -106,7 +106,7 @@ class WP_MCP_AI_Shortcode {
                     'toolFailed'         => __( 'The crawl failed: %s', 'wp-mcp-ai' ),
                     'speechToolSuccess'  => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
                     'imageToolSuccess'   => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
-                    'toolShortcutLabel'  => __( 'Insert task: %s', 'wp-mcp-ai' ),
+                    'toolPromptLabel'  => __( 'Insert prompt: %s', 'wp-mcp-ai' ),
                     'emptyMessage'       => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
                     'attachFile'         => __( 'Attach file', 'wp-mcp-ai' ),
                     'transcribe'         => __( 'Transcribe', 'wp-mcp-ai' ),
@@ -249,9 +249,9 @@ class WP_MCP_AI_Shortcode {
             'canUploadAttachments' => (bool) $can_upload_attachments,
         );
 
-        $tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
-        if ( ! empty( $tool_shortcuts ) ) {
-            $config['toolShortcuts'] = $tool_shortcuts;
+        $tool_prompts = self::get_assistant_tool_prompts( $assistant_id );
+        if ( ! empty( $tool_prompts ) ) {
+            $config['toolPrompts'] = $tool_prompts;
         }
 
         if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
@@ -316,7 +316,7 @@ class WP_MCP_AI_Shortcode {
             <div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
             <form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
                 <div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
-                <div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
+                <div class="wp-mcp-ai-chat__tool-prompts" role="group" aria-label="<?php echo esc_attr__( 'Assistant prompts', 'wp-mcp-ai' ); ?>" hidden></div>
                 <textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
                 <div class="wp-mcp-ai-chat__attachments" hidden>
                     <div class="wp-mcp-ai-chat__attachments-header"><?php esc_html_e( 'Attachments', 'wp-mcp-ai' ); ?></div>
@@ -463,12 +463,12 @@ class WP_MCP_AI_Shortcode {
     }
 
     /**
-     * Retrieve tool shortcut metadata for the supplied assistant.
+     * Retrieve tool prompt metadata for the supplied assistant.
      *
      * @param int $assistant_id Assistant post ID.
      * @return array[]
      */
-    public static function get_assistant_tool_shortcuts( $assistant_id ) {
+    public static function get_assistant_tool_prompts( $assistant_id ) {
         $assistant_id = absint( $assistant_id );
 
         if ( ! $assistant_id ) {
@@ -480,7 +480,7 @@ class WP_MCP_AI_Shortcode {
         }
 
         $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-        $shortcuts      = array();
+        $prompts      = array();
         $selected_tools = array();
 
         if ( ! empty( $config['tools'] ) && is_array( $config['tools'] ) ) {
@@ -497,40 +497,45 @@ class WP_MCP_AI_Shortcode {
             $selected_tools = array_values( array_unique( $selected_tools ) );
         }
 
-        if ( ! empty( $config['tool_shortcuts'] ) && is_array( $config['tool_shortcuts'] ) ) {
-            $custom_shortcuts = $config['tool_shortcuts'];
+        if ( ! empty( $config['tool_prompts'] ) && is_array( $config['tool_prompts'] ) ) {
+            $custom_prompts = $config['tool_prompts'];
 
-            if ( method_exists( 'WP_MCP_AI_Assistant_CPT', 'sanitize_tool_shortcuts_meta' ) ) {
-                $custom_shortcuts = WP_MCP_AI_Assistant_CPT::sanitize_tool_shortcuts_meta( $custom_shortcuts );
+            if ( method_exists( 'WP_MCP_AI_Assistant_CPT', 'sanitize_tool_prompts_meta' ) ) {
+                $custom_prompts = WP_MCP_AI_Assistant_CPT::sanitize_tool_prompts_meta( $custom_prompts );
             }
 
             /**
-             * Filter the list of custom prompt shortcuts configured for an assistant.
+             * Filter the list of custom prompts configured for an assistant.
              *
              * @since 1.1.0
              *
-             * @param array $custom_shortcuts Sanitized custom shortcuts.
+             * @param array $custom_prompts Sanitized custom prompts.
              * @param int   $assistant_id     Assistant post ID.
              * @param array $config           Assistant configuration array.
+             *
+             * @see wp_mcp_ai_assistant_custom_tool_shortcuts For the legacy filter name.
              */
-            $custom_shortcuts = apply_filters( 'wp_mcp_ai_assistant_custom_tool_shortcuts', $custom_shortcuts, $assistant_id, $config );
+            $custom_prompts = apply_filters( 'wp_mcp_ai_assistant_custom_tool_prompts', $custom_prompts, $assistant_id, $config );
 
-            if ( is_array( $custom_shortcuts ) ) {
-                foreach ( $custom_shortcuts as $custom_shortcut ) {
-                    if ( ! is_array( $custom_shortcut ) ) {
+            /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
+            $custom_prompts = apply_filters( 'wp_mcp_ai_assistant_custom_tool_shortcuts', $custom_prompts, $assistant_id, $config );
+
+            if ( is_array( $custom_prompts ) ) {
+                foreach ( $custom_prompts as $custom_prompt ) {
+                    if ( ! is_array( $custom_prompt ) ) {
                         continue;
                     }
 
-                    $label = isset( $custom_shortcut['label'] ) ? sanitize_text_field( $custom_shortcut['label'] ) : '';
-                    $payload = isset( $custom_shortcut['payload'] ) ? sanitize_textarea_field( $custom_shortcut['payload'] ) : '';
+                    $label = isset( $custom_prompt['label'] ) ? sanitize_text_field( $custom_prompt['label'] ) : '';
+                    $payload = isset( $custom_prompt['payload'] ) ? sanitize_textarea_field( $custom_prompt['payload'] ) : '';
 
                     if ( '' === $label || '' === $payload ) {
                         continue;
                     }
 
                     $tool_slug = '';
-                    if ( isset( $custom_shortcut['tool'] ) && is_string( $custom_shortcut['tool'] ) ) {
-                        $tool_slug = sanitize_key( $custom_shortcut['tool'] );
+                    if ( isset( $custom_prompt['tool'] ) && is_string( $custom_prompt['tool'] ) ) {
+                        $tool_slug = sanitize_key( $custom_prompt['tool'] );
                     }
 
                     if ( '' !== $tool_slug && ! in_array( $tool_slug, $selected_tools, true ) ) {
@@ -543,17 +548,17 @@ class WP_MCP_AI_Shortcode {
                         'payload' => $payload,
                     );
 
-                    if ( isset( $custom_shortcut['description'] ) && is_string( $custom_shortcut['description'] ) ) {
-                        $entry['description'] = sanitize_textarea_field( $custom_shortcut['description'] );
+                    if ( isset( $custom_prompt['description'] ) && is_string( $custom_prompt['description'] ) ) {
+                        $entry['description'] = sanitize_textarea_field( $custom_prompt['description'] );
                     }
 
-                    $shortcuts[] = $entry;
+                    $prompts[] = $entry;
                 }
             }
         }
 
         if ( empty( $selected_tools ) ) {
-            return $shortcuts;
+            return $prompts;
         }
 
         $registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -567,17 +572,24 @@ class WP_MCP_AI_Shortcode {
 
             $tasks = array();
 
-            if ( $tool instanceof WP_MCP_AI_Tool_Shortcuts_Interface ) {
-                $tasks = $tool->get_shortcut_tasks();
+            if ( $tool instanceof WP_MCP_AI_Tool_Prompts_Interface ) {
+                $tasks = $tool->get_prompt_tasks();
+            } elseif ( method_exists( $tool, 'get_prompt_tasks' ) ) {
+                $tasks = $tool->get_prompt_tasks();
             } elseif ( method_exists( $tool, 'get_shortcut_tasks' ) ) {
                 $tasks = $tool->get_shortcut_tasks();
             }
 
+            $tasks = apply_filters( 'wp_mcp_ai_tool_prompt_tasks', $tasks, $tool, $assistant_id );
+            $tasks = apply_filters( 'wp_mcp_ai_tool_prompt_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
+
+            /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
+            /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
 
             if ( empty( $tasks ) || ! is_array( $tasks ) ) {
-                $shortcuts[] = array(
+                $prompts[] = array(
                     'tool'    => $tool->get_slug(),
                     'label'   => $tool->get_slug(),
                     'payload' => $tool->get_slug(),
@@ -615,21 +627,33 @@ class WP_MCP_AI_Shortcode {
                     $entry['description'] = sanitize_textarea_field( $task['description'] );
                 }
 
-                $shortcuts[] = $entry;
+                $prompts[] = $entry;
             }
         }
 
-        $shortcuts = apply_filters( 'wp_mcp_ai_assistant_tool_shortcuts', $shortcuts, $assistant_id );
+        /**
+         * Filter the combined prompt list before it is returned.
+         *
+         * @since 1.1.0
+         *
+         * @param array $prompts      Prompt definitions.
+         * @param int   $assistant_id Assistant post ID.
+         *
+         * @see wp_mcp_ai_assistant_tool_shortcuts For the legacy filter name.
+         */
+        $prompts = apply_filters( 'wp_mcp_ai_assistant_tool_prompts', $prompts, $assistant_id );
+        /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
+        $prompts = apply_filters( 'wp_mcp_ai_assistant_tool_shortcuts', $prompts, $assistant_id );
 
-        $shortcuts = array_values(
+        $prompts = array_values(
             array_filter(
-                $shortcuts,
-                static function ( $shortcut ) {
-                    if ( empty( $shortcut ) || ! is_array( $shortcut ) ) {
+                $prompts,
+                static function ( $prompt ) {
+                    if ( empty( $prompt ) || ! is_array( $prompt ) ) {
                         return false;
                     }
 
-                    if ( empty( $shortcut['label'] ) || empty( $shortcut['payload'] ) ) {
+                    if ( empty( $prompt['label'] ) || empty( $prompt['payload'] ) ) {
                         return false;
                     }
 
@@ -638,94 +662,102 @@ class WP_MCP_AI_Shortcode {
             )
         );
 
-        $default_shortcut = array(
+        $default_prompt = array(
             'tool'    => 'default',
             'label'   => sanitize_text_field( __( 'What can you do?', 'wp-mcp-ai' ) ),
             'payload' => sanitize_textarea_field( 'what are some things you can do' ),
         );
 
         /**
-         * Filter the default shortcut that is appended for every assistant.
+         * Filter the default prompt that is appended for every assistant.
          *
          * @since 1.0.1
          *
-         * @param array $default_shortcut Default shortcut configuration.
+         * @param array $default_prompt Default prompt configuration.
          * @param int   $assistant_id     Assistant post ID.
+         *
+         * @see wp_mcp_ai_default_tool_shortcut For the legacy filter name.
          */
-        $default_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $default_shortcut, $assistant_id );
+        $default_prompt = apply_filters( 'wp_mcp_ai_default_tool_prompt', $default_prompt, $assistant_id );
+        /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
+        $default_prompt = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $default_prompt, $assistant_id );
 
-        if ( is_array( $default_shortcut ) && ! empty( $default_shortcut['label'] ) && ! empty( $default_shortcut['payload'] ) ) {
-            $default_shortcut['tool'] = isset( $default_shortcut['tool'] ) && is_string( $default_shortcut['tool'] )
-                ? sanitize_key( $default_shortcut['tool'] )
+        if ( is_array( $default_prompt ) && ! empty( $default_prompt['label'] ) && ! empty( $default_prompt['payload'] ) ) {
+            $default_prompt['tool'] = isset( $default_prompt['tool'] ) && is_string( $default_prompt['tool'] )
+                ? sanitize_key( $default_prompt['tool'] )
                 : 'default';
 
-            $default_shortcut['label']   = sanitize_text_field( $default_shortcut['label'] );
-            $default_shortcut['payload'] = sanitize_textarea_field( $default_shortcut['payload'] );
+            $default_prompt['label']   = sanitize_text_field( $default_prompt['label'] );
+            $default_prompt['payload'] = sanitize_textarea_field( $default_prompt['payload'] );
 
-            if ( isset( $default_shortcut['description'] ) ) {
-                if ( is_string( $default_shortcut['description'] ) ) {
-                    $default_shortcut['description'] = sanitize_textarea_field( $default_shortcut['description'] );
+            if ( isset( $default_prompt['description'] ) ) {
+                if ( is_string( $default_prompt['description'] ) ) {
+                    $default_prompt['description'] = sanitize_textarea_field( $default_prompt['description'] );
                 } else {
-                    unset( $default_shortcut['description'] );
+                    unset( $default_prompt['description'] );
                 }
             }
 
-            $has_default_shortcut = false;
+            $has_default_prompt = false;
 
-            foreach ( $shortcuts as $shortcut ) {
-                if ( ! is_array( $shortcut ) ) {
+            foreach ( $prompts as $prompt ) {
+                if ( ! is_array( $prompt ) ) {
                     continue;
                 }
 
-                if ( isset( $shortcut['payload'] ) && $shortcut['payload'] === $default_shortcut['payload'] ) {
-                    $has_default_shortcut = true;
+                if ( isset( $prompt['payload'] ) && $prompt['payload'] === $default_prompt['payload'] ) {
+                    $has_default_prompt = true;
                     break;
                 }
             }
 
-            if ( ! $has_default_shortcut ) {
-                $shortcuts[] = $default_shortcut;
+            if ( ! $has_default_prompt ) {
+                $prompts[] = $default_prompt;
             }
         }
 
-        if ( empty( $shortcuts ) ) {
-            $fallback_shortcut = array(
+        if ( empty( $prompts ) ) {
+            $fallback_prompt = array(
                 'tool'    => 'default',
                 'label'   => sanitize_text_field( __( 'What are some things you can do?', 'wp-mcp-ai' ) ),
                 'payload' => sanitize_textarea_field( 'what are some things you can do' ),
             );
 
             /**
-             * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+             * Filter the default prompt shown when an assistant has no tool prompts configured.
              *
              * @since 1.0.1
              *
-             * @param array $fallback_shortcut Default shortcut configuration.
+             * @param array $fallback_prompt Default prompt configuration.
              * @param int   $assistant_id      Assistant post ID.
+             *
+             * @see wp_mcp_ai_default_tool_shortcut For the legacy filter name.
              */
-            $fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
+            $fallback_prompt = apply_filters( 'wp_mcp_ai_default_tool_prompt', $fallback_prompt, $assistant_id );
+            /** This filter is documented in includes/class-wp-mcp-ai-shortcode.php */
+            $fallback_prompt = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_prompt, $assistant_id );
 
-            if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
-                $fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
-                    ? sanitize_key( $fallback_shortcut['tool'] )
+            if ( is_array( $fallback_prompt ) && ! empty( $fallback_prompt['label'] ) && ! empty( $fallback_prompt['payload'] ) ) {
+                $fallback_prompt['tool'] = isset( $fallback_prompt['tool'] ) && is_string( $fallback_prompt['tool'] )
+                    ? sanitize_key( $fallback_prompt['tool'] )
                     : 'default';
 
-                $fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
-                $fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
+                $fallback_prompt['label']   = sanitize_text_field( $fallback_prompt['label'] );
+                $fallback_prompt['payload'] = sanitize_textarea_field( $fallback_prompt['payload'] );
 
-                if ( isset( $fallback_shortcut['description'] ) ) {
-                    if ( is_string( $fallback_shortcut['description'] ) ) {
-                        $fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
+                if ( isset( $fallback_prompt['description'] ) ) {
+                    if ( is_string( $fallback_prompt['description'] ) ) {
+                        $fallback_prompt['description'] = sanitize_textarea_field( $fallback_prompt['description'] );
                     } else {
-                        unset( $fallback_shortcut['description'] );
+                        unset( $fallback_prompt['description'] );
                     }
                 }
 
-                $shortcuts[] = $fallback_shortcut;
+                $prompts[] = $fallback_prompt;
             }
         }
 
-        return $shortcuts;
+        return $prompts;
     }
 
     /**

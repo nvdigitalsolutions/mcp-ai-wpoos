@@ -25,7 +25,7 @@
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
-- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
+- [⚡ Assistant Tool Prompts](#-assistant-tool-prompts)
 - [🔑 Assistant API credentials](#-assistant-api-credentials)
 - [🐳 Local Development with Docker](#-local-development-with-docker)
   - [🔁 Codex environment startup script](#-codex-environment-startup-script)
@@ -68,7 +68,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
 - 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
-- ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
+- ⚡ Build reusable prompts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 - 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
 - ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
@@ -119,7 +119,7 @@ The core tool registry loads several assistant-ready utilities that cover editor
 - **User insight tools** – Inspect the active user or a specific account (respecting capabilities), expose JetEngine REST route metadata, or proxy route invocations through the authenticated MCP context.【F:includes/tools/class-wp-mcp-ai-tool-get-user-info.php†L12-L89】【F:includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php†L12-L151】【F:includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php†L12-L133】
 - **Create or update WordPress posts** – Draft or revise posts and custom post types with sanitised Gutenberg content, slug/title controls, and capability-aware access checks so assistants can publish within established workflows.【F:includes/tools/class-wp-mcp-ai-tool-save-post.php†L15-L258】
 - **Calendar & inbox automations** – Create first-party Google Calendar events, honour attendee reminders and default calendars, or search a delegated Gmail inbox with OAuth credentials when the assistant needs fresh communications context.【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L200-L400】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L200-L400】
-- **Operational helpers** – Schedule WP-Cron jobs, orchestrate group emails with capability and recipient limits, surface OpenAI dashboard shortcuts, verify WP-CLI availability, or pull structured MCP/WordPress log tails for rapid debugging.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L200-L400】
+- **Operational helpers** – Schedule WP-Cron jobs, orchestrate group emails with capability and recipient limits, surface OpenAI dashboard prompts, verify WP-CLI availability, or pull structured MCP/WordPress log tails for rapid debugging.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L142】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L200-L400】
 - **Weather-aware planning** – Fetch hourly forecasts from Open-Meteo with location, timezone, and variable controls so assistants can tailor itineraries or operational updates to the latest conditions.【F:includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php†L15-L206】
 - **Telegram notifications** – Send richly formatted bot messages to chats or channels with capability filters, parse mode controls, and request logging for audit trails.【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L16-L226】
 - **QuickBooks Online Reporting** – Pull Profit and Loss, Balance Sheet, or any supported report with optional date windows and accounting method filters so finance teams can review structured ledgers without leaving the assistant. Capability checks ensure only privileged operators can access the data, and the payload is sanitised for model consumption.【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】
@@ -199,7 +199,7 @@ Sites running Elementor automatically register a suite of MCP blocks so you can 
 - **MCP AI Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely. The Send Group Email row now mirrors the capability and recipient limit configured in the MCP settings so editorial policies stay front-of-mind.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
 - **MCP AI User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews. It also surfaces the configured Send Group Email capability and limit so administrators immediately know whether the current user can trigger bulk mail jobs.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
 - **MCP AI Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
-- **MCP AI Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
+- **MCP AI Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry prompts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
 - **MCP AI Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
 ## 🧮 Usage Tracking
@@ -238,17 +238,17 @@ Assistant posts ship with dedicated controls that map directly to runtime behavi
 - **Available Tools** – Choose which registered tools (core, WooCommerce, JetEngine, or custom) the model may invoke. Dependency-aware notices explain why certain tools are unavailable.
 - **Model Defaults** – Provide assistant-specific overrides for the OpenAI model, temperature (0–2), and system prompt applied to every conversation.
 - **Base Knowledge** – Attach Media Library items that are chunked, truncated, and streamed as memory context, and optionally store an external **Vector Store ID** to coordinate retrieval workflows.
-- **Prompt Shortcuts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
+- **Prompts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 
 If an API or shortcode request omits the `assistant` parameter, the plugin automatically uses the default assistant configured in the global settings.
 
-## ⚡ Assistant Tool Shortcuts
+## ⚡ Assistant Tool Prompts
 
-Every assistant exposes a **Prompt Shortcuts** meta box so editors can curate prewritten instructions, scope them to registered tools, and add operator-facing descriptions that appear as tooltips and screen reader hints in the chat UI.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】 The shortcode merges these custom prompts with each tool’s declared shortcut tasks and always appends a safe fallback so assistants remain usable even without bespoke entries.【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】
+Every assistant exposes a **Prompts** meta box so editors can curate prewritten instructions, scope them to registered tools, and add operator-facing descriptions that appear as tooltips and screen reader hints in the chat UI.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】 The shortcode merges these custom prompts with each tool’s declared prompt tasks and always appends a safe fallback so assistants remain usable even without bespoke entries.【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】
 
-Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_shortcuts` and `wp_mcp_ai_default_tool_shortcut`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
+Developers can extend or replace these prompts with filters such as `wp_mcp_ai_assistant_custom_tool_prompts` and `wp_mcp_ai_default_tool_prompt`, letting sites tailor default quick actions per assistant or environment.【F:includes/class-wp-mcp-ai-shortcode.php†L444-L692】
 
-➡️ [Read the full guide to assistant prompt shortcuts.](docs/assistant-tool-shortcuts.md)
+➡️ [Read the full guide to assistant prompts.](docs/assistant-tool-prompts.md)
 
 ## 🔑 Assistant API credentials
 
@@ -353,7 +353,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 ### Elementor widget
 - Elementor sites automatically gain an **MCP AI Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
 - Leaving the assistant control blank falls back to the default assistant configured in the plugin settings, and enabling **Allow Guests** injects the same temporary tokens used by the shortcode flow.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L45-L110】【F:includes/class-wp-mcp-ai-shortcode.php†L132-L224】
-- The Elementor chat widget can surface everything saved on the assistant post—model defaults, knowledge files, prompt shortcuts, and assigned tools—so you can build documentation and dashboards without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
+- The Elementor chat widget can surface everything saved on the assistant post—model defaults, knowledge files, prompts, and assigned tools—so you can build documentation and dashboards without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
 
 ---
 

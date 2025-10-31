@@ -294,39 +294,39 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
         $this->end_controls_section();
 
         $this->start_controls_section(
-            'section_assistant_shortcuts',
+            'section_assistant_prompts',
             array(
-                'label' => __( 'Prompt Shortcuts', 'wp-mcp-ai' ),
+                'label' => __( 'Prompts', 'wp-mcp-ai' ),
             )
         );
 
         $this->add_control(
-            'show_assistant_prompt_shortcuts',
+            'show_assistant_prompts',
             array(
-                'label'        => __( 'Show prompt shortcuts', 'wp-mcp-ai' ),
+                'label'        => __( 'Show prompts', 'wp-mcp-ai' ),
                 'type'         => \Elementor\Controls_Manager::SWITCHER,
                 'label_on'     => __( 'Show', 'wp-mcp-ai' ),
                 'label_off'    => __( 'Hide', 'wp-mcp-ai' ),
                 'return_value' => 'yes',
                 'default'      => 'no',
-                'description'  => __( 'Surface the saved shortcut labels, descriptions, and payloads next to the chat interface.', 'wp-mcp-ai' ),
+                'description'  => __( 'Surface the saved prompt labels, descriptions, and payloads next to the chat interface.', 'wp-mcp-ai' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_title',
+            'assistant_prompts_title',
             array(
-                'label'       => __( 'Prompt shortcuts heading', 'wp-mcp-ai' ),
+                'label'       => __( 'Prompts heading', 'wp-mcp-ai' ),
                 'type'        => \Elementor\Controls_Manager::TEXT,
-                'default'     => __( 'Assistant prompt shortcuts', 'wp-mcp-ai' ),
+                'default'     => __( 'Assistant prompts', 'wp-mcp-ai' ),
                 'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
                 'label_block' => true,
-                'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'   => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_show_descriptions',
+            'assistant_prompts_show_descriptions',
             array(
                 'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
                 'type'         => \Elementor\Controls_Manager::SWITCHER,
@@ -334,12 +334,12 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                 'label_off'    => __( 'No', 'wp-mcp-ai' ),
                 'return_value' => 'yes',
                 'default'      => 'yes',
-                'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'    => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_show_prompt',
+            'assistant_prompts_show_prompt_text',
             array(
                 'label'        => __( 'Show prompt payload', 'wp-mcp-ai' ),
                 'type'         => \Elementor\Controls_Manager::SWITCHER,
@@ -347,12 +347,12 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                 'label_off'    => __( 'No', 'wp-mcp-ai' ),
                 'return_value' => 'yes',
                 'default'      => 'no',
-                'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'    => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_show_tools',
+            'assistant_prompts_show_tools',
             array(
                 'label'        => __( 'Show tool context', 'wp-mcp-ai' ),
                 'type'         => \Elementor\Controls_Manager::SWITCHER,
@@ -360,31 +360,31 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                 'label_off'    => __( 'No', 'wp-mcp-ai' ),
                 'return_value' => 'yes',
                 'default'      => 'yes',
-                'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'    => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_empty_message',
+            'assistant_prompts_empty_message',
             array(
-                'label'       => __( 'Shortcuts empty message', 'wp-mcp-ai' ),
+                'label'       => __( 'Prompts empty message', 'wp-mcp-ai' ),
                 'type'        => \Elementor\Controls_Manager::TEXT,
-                'default'     => __( 'Select an assistant to view its prompt shortcuts.', 'wp-mcp-ai' ),
+                'default'     => __( 'Select an assistant to view its prompts.', 'wp-mcp-ai' ),
                 'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
                 'label_block' => true,
-                'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'   => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
         $this->add_control(
-            'assistant_prompt_shortcuts_none_message',
+            'assistant_prompts_none_message',
             array(
-                'label'       => __( 'No shortcuts message', 'wp-mcp-ai' ),
+                'label'       => __( 'No prompts message', 'wp-mcp-ai' ),
                 'type'        => \Elementor\Controls_Manager::TEXT,
-                'default'     => __( 'No prompt shortcuts have been saved for this assistant yet.', 'wp-mcp-ai' ),
-                'placeholder' => __( 'Add guidance for when no shortcuts exist…', 'wp-mcp-ai' ),
+                'default'     => __( 'No prompts have been saved for this assistant yet.', 'wp-mcp-ai' ),
+                'placeholder' => __( 'Add guidance for when no prompts exist…', 'wp-mcp-ai' ),
                 'label_block' => true,
-                'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
+                'condition'   => array( 'show_assistant_prompts' => 'yes' ),
             )
         );
 
@@ -465,8 +465,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             $this->render_assistant_tools_section( $assistant_id, $settings );
         }
 
-        if ( $can_show_assistant_details && isset( $settings['show_assistant_prompt_shortcuts'] ) && 'yes' === $settings['show_assistant_prompt_shortcuts'] ) {
-            $this->render_assistant_prompt_shortcuts_section( $assistant_id, $config, $settings );
+        if ( $can_show_assistant_details && isset( $settings['show_assistant_prompts'] ) && 'yes' === $settings['show_assistant_prompts'] ) {
+            $this->render_assistant_prompts_section( $assistant_id, $config, $settings );
         }
 
         echo '<div class="wp-mcp-ai-chat-widget__interface">';
@@ -783,44 +783,44 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
     }
 
     /**
-     * Render the assistant prompt shortcuts section when enabled.
+     * Render the assistant prompts section when enabled.
      *
      * @param int   $assistant_id Assistant post ID.
      * @param array $config       Assistant configuration.
      * @param array $settings     Widget settings.
      */
-    protected function render_assistant_prompt_shortcuts_section( $assistant_id, $config, $settings ) {
-        $title          = isset( $settings['assistant_prompt_shortcuts_title'] ) ? $settings['assistant_prompt_shortcuts_title'] : '';
-        $show_desc      = ! empty( $settings['assistant_prompt_shortcuts_show_descriptions'] ) && 'yes' === $settings['assistant_prompt_shortcuts_show_descriptions'];
-        $show_prompt    = ! empty( $settings['assistant_prompt_shortcuts_show_prompt'] ) && 'yes' === $settings['assistant_prompt_shortcuts_show_prompt'];
-        $show_tool      = ! empty( $settings['assistant_prompt_shortcuts_show_tools'] ) && 'yes' === $settings['assistant_prompt_shortcuts_show_tools'];
-        $empty_message  = isset( $settings['assistant_prompt_shortcuts_empty_message'] ) ? $settings['assistant_prompt_shortcuts_empty_message'] : '';
-        $none_message   = isset( $settings['assistant_prompt_shortcuts_none_message'] ) ? $settings['assistant_prompt_shortcuts_none_message'] : '';
-        $shortcuts      = ( null !== $config && isset( $config['tool_shortcuts'] ) && is_array( $config['tool_shortcuts'] ) ) ? $config['tool_shortcuts'] : array();
+    protected function render_assistant_prompts_section( $assistant_id, $config, $settings ) {
+        $title          = isset( $settings['assistant_prompts_title'] ) ? $settings['assistant_prompts_title'] : '';
+        $show_desc      = ! empty( $settings['assistant_prompts_show_descriptions'] ) && 'yes' === $settings['assistant_prompts_show_descriptions'];
+        $show_prompt    = ! empty( $settings['assistant_prompts_show_prompt_text'] ) && 'yes' === $settings['assistant_prompts_show_prompt_text'];
+        $show_tool      = ! empty( $settings['assistant_prompts_show_tools'] ) && 'yes' === $settings['assistant_prompts_show_tools'];
+        $empty_message  = isset( $settings['assistant_prompts_empty_message'] ) ? $settings['assistant_prompts_empty_message'] : '';
+        $none_message   = isset( $settings['assistant_prompts_none_message'] ) ? $settings['assistant_prompts_none_message'] : '';
+        $prompts      = ( null !== $config && isset( $config['tool_prompts'] ) && is_array( $config['tool_prompts'] ) ) ? $config['tool_prompts'] : array();
 
-        echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts">';
+        echo '<div class="wp-mcp-ai-chat-widget__assistant-prompts">';
 
         $title_output = $this->format_text_inline( $title );
         if ( '' !== $title_output ) {
-            echo '<h3 class="wp-mcp-ai-chat-widget__assistant-shortcuts-title">' . $title_output . '</h3>';
+            echo '<h3 class="wp-mcp-ai-chat-widget__assistant-prompts-title">' . $title_output . '</h3>';
         }
 
         if ( ! $assistant_id || null === $config ) {
             $notice = $this->format_text_inline( $empty_message );
 
             if ( '' !== $notice ) {
-                echo '<p class="wp-mcp-ai-chat-widget__assistant-shortcuts-notice">' . $notice . '</p>';
+                echo '<p class="wp-mcp-ai-chat-widget__assistant-prompts-notice">' . $notice . '</p>';
             }
 
             echo '</div>';
             return;
         }
 
-        if ( empty( $shortcuts ) ) {
+        if ( empty( $prompts ) ) {
             $notice = $this->format_text_inline( $none_message );
 
             if ( '' !== $notice ) {
-                echo '<p class="wp-mcp-ai-chat-widget__assistant-shortcuts-notice">' . $notice . '</p>';
+                echo '<p class="wp-mcp-ai-chat-widget__assistant-prompts-notice">' . $notice . '</p>';
             }
 
             echo '</div>';
@@ -829,31 +829,31 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
         $tool_names = $show_tool ? $this->get_tool_name_map() : array();
 
-        echo '<ul class="wp-mcp-ai-chat-widget__assistant-shortcuts-list">';
+        echo '<ul class="wp-mcp-ai-chat-widget__assistant-prompts-list">';
 
-        foreach ( $shortcuts as $shortcut ) {
-            if ( ! is_array( $shortcut ) ) {
+        foreach ( $prompts as $prompt ) {
+            if ( ! is_array( $prompt ) ) {
                 continue;
             }
 
-            $label       = isset( $shortcut['label'] ) ? $shortcut['label'] : '';
-            $payload     = isset( $shortcut['payload'] ) ? $shortcut['payload'] : '';
-            $description = isset( $shortcut['description'] ) ? $shortcut['description'] : '';
-            $tool        = isset( $shortcut['tool'] ) ? $shortcut['tool'] : '';
+            $label       = isset( $prompt['label'] ) ? $prompt['label'] : '';
+            $payload     = isset( $prompt['payload'] ) ? $prompt['payload'] : '';
+            $description = isset( $prompt['description'] ) ? $prompt['description'] : '';
+            $tool        = isset( $prompt['tool'] ) ? $prompt['tool'] : '';
 
             $label_output = $this->format_text_inline( $label );
 
-            echo '<li class="wp-mcp-ai-chat-widget__assistant-shortcuts-item">';
+            echo '<li class="wp-mcp-ai-chat-widget__assistant-prompts-item">';
 
             if ( '' !== $label_output ) {
-                echo '<span class="wp-mcp-ai-chat-widget__assistant-shortcuts-label">' . $label_output . '</span>';
+                echo '<span class="wp-mcp-ai-chat-widget__assistant-prompts-label">' . $label_output . '</span>';
             }
 
             if ( $show_tool ) {
                 $tool_label = $this->format_tool_label( $tool, $tool_names );
 
                 if ( '' !== $tool_label ) {
-                    echo '<span class="wp-mcp-ai-chat-widget__assistant-shortcuts-tool">' . esc_html__( 'Tool:', 'wp-mcp-ai' ) . ' ' . esc_html( $tool_label ) . '</span>';
+                    echo '<span class="wp-mcp-ai-chat-widget__assistant-prompts-tool">' . esc_html__( 'Tool:', 'wp-mcp-ai' ) . ' ' . esc_html( $tool_label ) . '</span>';
                 }
             }
 
@@ -861,12 +861,12 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                 $description_output = $this->format_text_block( $description );
 
                 if ( '' !== $description_output ) {
-                    echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts-description">' . $description_output . '</div>';
+                    echo '<div class="wp-mcp-ai-chat-widget__assistant-prompts-description">' . $description_output . '</div>';
                 }
             }
 
             if ( $show_prompt && '' !== $payload ) {
-                echo '<pre class="wp-mcp-ai-chat-widget__assistant-shortcuts-payload">' . esc_html( $payload ) . '</pre>';
+                echo '<pre class="wp-mcp-ai-chat-widget__assistant-prompts-payload">' . esc_html( $payload ) . '</pre>';
             }
 
             echo '</li>';
@@ -1071,7 +1071,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
     /**
      * Format a human readable tool label.
      *
-     * @param string $tool_slug  Tool slug stored on the shortcut.
+     * @param string $tool_slug  Tool slug stored on the prompt.
      * @param array  $tool_names Map of tool slugs to human-readable names.
      *
      * @return string

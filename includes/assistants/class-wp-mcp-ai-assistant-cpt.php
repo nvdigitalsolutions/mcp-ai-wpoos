@@ -21,7 +21,11 @@ class WP_MCP_AI_Assistant_CPT {
     const META_SYSTEM_PROMPT         = '_wp_mcp_ai_system_prompt';
     const META_MEMORY_FILES          = '_wp_mcp_ai_memory_files';
     const META_VECTOR_STORE_ID       = '_wp_mcp_ai_vector_store_id';
-    const META_TOOL_SHORTCUTS        = '_wp_mcp_ai_tool_shortcuts';
+    const META_TOOL_PROMPTS          = '_wp_mcp_ai_tool_shortcuts';
+    /**
+     * @deprecated 1.0.0 Use self::META_TOOL_PROMPTS instead.
+     */
+    const META_TOOL_SHORTCUTS        = self::META_TOOL_PROMPTS;
     const META_TOOL_ROLE_RULES       = '_wp_mcp_ai_tool_role_rules';
     const META_CREDENTIALS           = WP_MCP_AI_Credentials::META_KEY;
     const META_EXTERNAL_ACTION_ID    = '_wp_mcp_ai_external_action_id';
@@ -249,7 +253,7 @@ class WP_MCP_AI_Assistant_CPT {
 
         register_post_meta(
             self::POST_TYPE,
-            self::META_TOOL_SHORTCUTS,
+            self::META_TOOL_PROMPTS,
             array(
                 'type'              => 'array',
                 'single'            => true,
@@ -276,7 +280,7 @@ class WP_MCP_AI_Assistant_CPT {
                         ),
                     ),
                 ),
-                'sanitize_callback' => array( __CLASS__, 'sanitize_tool_shortcuts_meta' ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_tool_prompts_meta' ),
                 'auth_callback'     => $auth_callback,
             )
         );
@@ -566,9 +570,9 @@ class WP_MCP_AI_Assistant_CPT {
         );
 
         add_meta_box(
-            'wp-mcp-ai-tool-shortcuts',
-            __( 'Prompt Shortcuts', 'wp-mcp-ai' ),
-            array( $this, 'render_tool_shortcuts_meta_box' ),
+            'wp-mcp-ai-tool-prompts',
+            __( 'Prompts', 'wp-mcp-ai' ),
+            array( $this, 'render_tool_prompts_meta_box' ),
             self::POST_TYPE,
             'normal',
             'default'
@@ -1208,26 +1212,26 @@ class WP_MCP_AI_Assistant_CPT {
     }
 
     /**
-     * Render the tool shortcuts meta box content.
+     * Render the tool prompts meta box content.
      *
      * @param WP_Post $post Post object.
      */
-    public function render_tool_shortcuts_meta_box( $post ) {
+    public function render_tool_prompts_meta_box( $post ) {
         if ( ! current_user_can( 'edit_post', $post->ID ) ) {
             wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
         }
 
-        wp_nonce_field( 'wp_mcp_ai_tool_shortcuts_meta', 'wp_mcp_ai_tool_shortcuts_meta_nonce' );
+        wp_nonce_field( 'wp_mcp_ai_tool_prompts_meta', 'wp_mcp_ai_tool_prompts_meta_nonce' );
 
-        $shortcuts = get_post_meta( $post->ID, self::META_TOOL_SHORTCUTS, true );
-        if ( ! is_array( $shortcuts ) ) {
-            $shortcuts = array();
+        $prompts = get_post_meta( $post->ID, self::META_TOOL_PROMPTS, true );
+        if ( ! is_array( $prompts ) ) {
+            $prompts = array();
         }
 
-        $shortcuts = self::sanitize_tool_shortcuts_meta( $shortcuts );
+        $prompts = self::sanitize_tool_prompts_meta( $prompts );
 
-        if ( empty( $shortcuts ) ) {
-            $shortcuts = array(
+        if ( empty( $prompts ) ) {
+            $prompts = array(
                 array(
                     'label'       => '',
                     'payload'     => '',
@@ -1255,29 +1259,29 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         ?>
-        <p><?php esc_html_e( 'Create ready-to-use prompts that will show as shortcuts in the chat interface for this assistant.', 'wp-mcp-ai' ); ?></p>
+        <p><?php esc_html_e( 'Create ready-to-use prompts that will appear above the chat interface for this assistant.', 'wp-mcp-ai' ); ?></p>
         <div
-            id="wp-mcp-ai-tool-shortcuts-rows"
-            class="wp-mcp-ai-tool-shortcuts"
-            data-next-index="<?php echo esc_attr( count( $shortcuts ) ); ?>"
+            id="wp-mcp-ai-tool-prompts-rows"
+            class="wp-mcp-ai-tool-prompts"
+            data-next-index="<?php echo esc_attr( count( $prompts ) ); ?>"
         >
-            <?php foreach ( $shortcuts as $index => $shortcut ) :
-                $label       = isset( $shortcut['label'] ) ? $shortcut['label'] : '';
-                $payload     = isset( $shortcut['payload'] ) ? $shortcut['payload'] : '';
-                $tool        = isset( $shortcut['tool'] ) ? $shortcut['tool'] : '';
-                $description = isset( $shortcut['description'] ) ? $shortcut['description'] : '';
+            <?php foreach ( $prompts as $index => $prompt ) :
+                $label       = isset( $prompt['label'] ) ? $prompt['label'] : '';
+                $payload     = isset( $prompt['payload'] ) ? $prompt['payload'] : '';
+                $tool        = isset( $prompt['tool'] ) ? $prompt['tool'] : '';
+                $description = isset( $prompt['description'] ) ? $prompt['description'] : '';
                 ?>
-                <fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="<?php echo esc_attr( $index ); ?>">
+                <fieldset class="wp-mcp-ai-tool-prompts__row" data-index="<?php echo esc_attr( $index ); ?>">
                     <legend class="screen-reader-text">
-                        <?php printf( esc_html__( 'Shortcut %d', 'wp-mcp-ai' ), intval( $index ) + 1 ); ?>
+                        <?php printf( esc_html__( 'Prompt %d', 'wp-mcp-ai' ), intval( $index ) + 1 ); ?>
                     </legend>
                     <p>
                         <label>
-                            <strong><?php esc_html_e( 'Shortcut label', 'wp-mcp-ai' ); ?></strong>
+                            <strong><?php esc_html_e( 'Prompt label', 'wp-mcp-ai' ); ?></strong>
                             <input
                                 type="text"
                                 class="widefat"
-                                name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][label]"
+                                name="wp_mcp_ai_tool_prompts[<?php echo esc_attr( $index ); ?>][label]"
                                 value="<?php echo esc_attr( $label ); ?>"
                             />
                         </label>
@@ -1288,7 +1292,7 @@ class WP_MCP_AI_Assistant_CPT {
                             <textarea
                                 class="widefat"
                                 rows="4"
-                                name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][payload]"
+                                name="wp_mcp_ai_tool_prompts[<?php echo esc_attr( $index ); ?>][payload]"
                             ><?php echo esc_textarea( $payload ); ?></textarea>
                         </label>
                     </p>
@@ -1298,7 +1302,7 @@ class WP_MCP_AI_Assistant_CPT {
                             <textarea
                                 class="widefat"
                                 rows="3"
-                                name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][description]"
+                                name="wp_mcp_ai_tool_prompts[<?php echo esc_attr( $index ); ?>][description]"
                             ><?php echo esc_textarea( $description ); ?></textarea>
                         </label>
                     </p>
@@ -1307,7 +1311,7 @@ class WP_MCP_AI_Assistant_CPT {
                             <strong><?php esc_html_e( 'Associated tool', 'wp-mcp-ai' ); ?></strong>
                             <select
                                 class="widefat"
-                                name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][tool]"
+                                name="wp_mcp_ai_tool_prompts[<?php echo esc_attr( $index ); ?>][tool]"
                             >
                                 <?php foreach ( $tool_options as $slug => $name ) : ?>
                                     <option value="<?php echo esc_attr( $slug ); ?>" <?php selected( $tool, $slug ); ?>>
@@ -1318,8 +1322,8 @@ class WP_MCP_AI_Assistant_CPT {
                         </label>
                     </p>
                     <p>
-                        <button type="button" class="button-link-delete wp-mcp-ai-remove-tool-shortcut">
-                            <?php esc_html_e( 'Remove shortcut', 'wp-mcp-ai' ); ?>
+                        <button type="button" class="button-link-delete wp-mcp-ai-remove-tool-prompt">
+                            <?php esc_html_e( 'Remove prompt', 'wp-mcp-ai' ); ?>
                         </button>
                     </p>
                     <hr />
@@ -1327,36 +1331,36 @@ class WP_MCP_AI_Assistant_CPT {
             <?php endforeach; ?>
         </div>
         <p>
-            <button type="button" class="button" id="wp-mcp-ai-add-tool-shortcut">
-                <?php esc_html_e( 'Add shortcut', 'wp-mcp-ai' ); ?>
+            <button type="button" class="button" id="wp-mcp-ai-add-tool-prompt">
+                <?php esc_html_e( 'Add prompt', 'wp-mcp-ai' ); ?>
             </button>
         </p>
 
-        <template id="wp-mcp-ai-tool-shortcut-template">
-            <fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="__INDEX__">
-                <legend class="screen-reader-text"><?php esc_html_e( 'New shortcut', 'wp-mcp-ai' ); ?></legend>
+        <template id="wp-mcp-ai-tool-prompt-template">
+            <fieldset class="wp-mcp-ai-tool-prompts__row" data-index="__INDEX__">
+                <legend class="screen-reader-text"><?php esc_html_e( 'New prompt', 'wp-mcp-ai' ); ?></legend>
                 <p>
                     <label>
-                        <strong><?php esc_html_e( 'Shortcut label', 'wp-mcp-ai' ); ?></strong>
-                        <input type="text" class="widefat" name="wp_mcp_ai_tool_shortcuts[__INDEX__][label]" />
+                        <strong><?php esc_html_e( 'Prompt label', 'wp-mcp-ai' ); ?></strong>
+                        <input type="text" class="widefat" name="wp_mcp_ai_tool_prompts[__INDEX__][label]" />
                     </label>
                 </p>
                 <p>
                     <label>
                         <strong><?php esc_html_e( 'Prompt text', 'wp-mcp-ai' ); ?></strong>
-                        <textarea class="widefat" rows="4" name="wp_mcp_ai_tool_shortcuts[__INDEX__][payload]"></textarea>
+                        <textarea class="widefat" rows="4" name="wp_mcp_ai_tool_prompts[__INDEX__][payload]"></textarea>
                     </label>
                 </p>
                 <p>
                     <label>
                         <strong><?php esc_html_e( 'Optional description', 'wp-mcp-ai' ); ?></strong>
-                        <textarea class="widefat" rows="3" name="wp_mcp_ai_tool_shortcuts[__INDEX__][description]"></textarea>
+                        <textarea class="widefat" rows="3" name="wp_mcp_ai_tool_prompts[__INDEX__][description]"></textarea>
                     </label>
                 </p>
                 <p>
                     <label>
                         <strong><?php esc_html_e( 'Associated tool', 'wp-mcp-ai' ); ?></strong>
-                        <select class="widefat" name="wp_mcp_ai_tool_shortcuts[__INDEX__][tool]">
+                        <select class="widefat" name="wp_mcp_ai_tool_prompts[__INDEX__][tool]">
                             <?php foreach ( $tool_options as $slug => $name ) : ?>
                                 <option value="<?php echo esc_attr( $slug ); ?>"><?php echo esc_html( $name ); ?></option>
                             <?php endforeach; ?>
@@ -1364,7 +1368,7 @@ class WP_MCP_AI_Assistant_CPT {
                     </label>
                 </p>
                 <p>
-                    <button type="button" class="button-link-delete wp-mcp-ai-remove-tool-shortcut"><?php esc_html_e( 'Remove shortcut', 'wp-mcp-ai' ); ?></button>
+                    <button type="button" class="button-link-delete wp-mcp-ai-remove-tool-prompt"><?php esc_html_e( 'Remove prompt', 'wp-mcp-ai' ); ?></button>
                 </p>
                 <hr />
             </fieldset>
@@ -1372,9 +1376,9 @@ class WP_MCP_AI_Assistant_CPT {
 
         <script>
         ( function() {
-            var container = document.getElementById( 'wp-mcp-ai-tool-shortcuts-rows' );
-            var addButton = document.getElementById( 'wp-mcp-ai-add-tool-shortcut' );
-            var template = document.getElementById( 'wp-mcp-ai-tool-shortcut-template' );
+            var container = document.getElementById( 'wp-mcp-ai-tool-prompts-rows' );
+            var addButton = document.getElementById( 'wp-mcp-ai-add-tool-prompt' );
+            var template = document.getElementById( 'wp-mcp-ai-tool-prompt-template' );
 
             if ( ! container || ! addButton || ! template ) {
                 return;
@@ -1384,7 +1388,7 @@ class WP_MCP_AI_Assistant_CPT {
                 var next = parseInt( container.getAttribute( 'data-next-index' ), 10 );
 
                 if ( isNaN( next ) ) {
-                    next = container.querySelectorAll( '.wp-mcp-ai-tool-shortcuts__row' ).length;
+                    next = container.querySelectorAll( '.wp-mcp-ai-tool-prompts__row' ).length;
                 }
 
                 container.setAttribute( 'data-next-index', next + 1 );
@@ -1393,7 +1397,7 @@ class WP_MCP_AI_Assistant_CPT {
             }
 
             function removeRow( button ) {
-                var fieldset = button.closest( '.wp-mcp-ai-tool-shortcuts__row' );
+                var fieldset = button.closest( '.wp-mcp-ai-tool-prompts__row' );
 
                 if ( fieldset && container.contains( fieldset ) ) {
                     container.removeChild( fieldset );
@@ -1429,7 +1433,7 @@ class WP_MCP_AI_Assistant_CPT {
             container.addEventListener( 'click', function( event ) {
                 var target = event.target;
 
-                if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-remove-tool-shortcut' ) ) {
+                if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-remove-tool-prompt' ) ) {
                     event.preventDefault();
                     removeRow( target );
                 }
@@ -1913,7 +1917,7 @@ class WP_MCP_AI_Assistant_CPT {
         $tools_nonce_verified          = false;
         $defaults_nonce_verified       = false;
         $base_knowledge_nonce_verified = false;
-        $shortcuts_nonce_verified      = false;
+        $prompts_nonce_verified      = false;
 
         if ( isset( $_POST['wp_mcp_ai_tools_meta_nonce'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
             $tools_nonce_verified = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_tools_meta_nonce'] ) ), 'wp_mcp_ai_tools_meta' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -1927,11 +1931,13 @@ class WP_MCP_AI_Assistant_CPT {
             $base_knowledge_nonce_verified = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_base_knowledge_meta_nonce'] ) ), 'wp_mcp_ai_base_knowledge_meta' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
 
-        if ( isset( $_POST['wp_mcp_ai_tool_shortcuts_meta_nonce'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-            $shortcuts_nonce_verified = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_tool_shortcuts_meta_nonce'] ) ), 'wp_mcp_ai_tool_shortcuts_meta' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        if ( isset( $_POST['wp_mcp_ai_tool_prompts_meta_nonce'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $prompts_nonce_verified = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_tool_prompts_meta_nonce'] ) ), 'wp_mcp_ai_tool_prompts_meta' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+        } elseif ( isset( $_POST['wp_mcp_ai_tool_shortcuts_meta_nonce'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            $prompts_nonce_verified = wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_tool_shortcuts_meta_nonce'] ) ), 'wp_mcp_ai_tool_shortcuts_meta' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
         }
 
-        if ( ! $tools_nonce_verified && ! $defaults_nonce_verified && ! $base_knowledge_nonce_verified && ! $shortcuts_nonce_verified ) {
+        if ( ! $tools_nonce_verified && ! $defaults_nonce_verified && ! $base_knowledge_nonce_verified && ! $prompts_nonce_verified ) {
             return;
         }
 
@@ -1984,17 +1990,19 @@ class WP_MCP_AI_Assistant_CPT {
             }
         }
 
-        if ( $shortcuts_nonce_verified ) {
-            $tool_shortcuts = array();
+        if ( $prompts_nonce_verified ) {
+            $tool_prompts = array();
 
-            if ( isset( $_POST['wp_mcp_ai_tool_shortcuts'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-                $tool_shortcuts = self::sanitize_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_tool_shortcuts'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            if ( isset( $_POST['wp_mcp_ai_tool_prompts'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $tool_prompts = self::sanitize_tool_prompts_meta( wp_unslash( $_POST['wp_mcp_ai_tool_prompts'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            } elseif ( isset( $_POST['wp_mcp_ai_tool_shortcuts'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $tool_prompts = self::sanitize_tool_prompts_meta( wp_unslash( $_POST['wp_mcp_ai_tool_shortcuts'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
             }
 
-            if ( empty( $tool_shortcuts ) ) {
-                delete_post_meta( $post_id, self::META_TOOL_SHORTCUTS );
+            if ( empty( $tool_prompts ) ) {
+                delete_post_meta( $post_id, self::META_TOOL_PROMPTS );
             } else {
-                update_post_meta( $post_id, self::META_TOOL_SHORTCUTS, $tool_shortcuts );
+                update_post_meta( $post_id, self::META_TOOL_PROMPTS, $tool_prompts );
             }
         }
 
@@ -2060,7 +2068,7 @@ class WP_MCP_AI_Assistant_CPT {
             'system_prompt'               => get_post_meta( $assistant_id, self::META_SYSTEM_PROMPT, true ),
             'memory_files'                => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
             'vector_store_id'             => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
-            'tool_shortcuts'              => get_post_meta( $assistant_id, self::META_TOOL_SHORTCUTS, true ),
+            'tool_prompts'              => get_post_meta( $assistant_id, self::META_TOOL_PROMPTS, true ),
             'tool_role_rules'             => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
             'external_action_identifier'  => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
             'external_action_type'        => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
@@ -2102,10 +2110,10 @@ class WP_MCP_AI_Assistant_CPT {
             $config['vector_store_id'] = sanitize_text_field( $config['vector_store_id'] );
         }
 
-        if ( ! is_array( $config['tool_shortcuts'] ) ) {
-            $config['tool_shortcuts'] = array();
+        if ( ! is_array( $config['tool_prompts'] ) ) {
+            $config['tool_prompts'] = array();
         } else {
-            $config['tool_shortcuts'] = self::sanitize_tool_shortcuts_meta( $config['tool_shortcuts'] );
+            $config['tool_prompts'] = self::sanitize_tool_prompts_meta( $config['tool_prompts'] );
         }
 
         if ( ! is_array( $config['tool_role_rules'] ) ) {
@@ -2130,13 +2138,13 @@ class WP_MCP_AI_Assistant_CPT {
     }
 
     /**
-     * Sanitize tool shortcut metadata value.
+     * Sanitize tool prompt metadata value.
      *
-     * @param mixed $shortcuts Raw shortcuts value.
+     * @param mixed $prompts Raw prompts value.
      * @return array
      */
-    public static function sanitize_tool_shortcuts_meta( $shortcuts ) {
-        if ( ! is_array( $shortcuts ) ) {
+    public static function sanitize_tool_prompts_meta( $prompts ) {
+        if ( ! is_array( $prompts ) ) {
             return array();
         }
 
@@ -2152,17 +2160,17 @@ class WP_MCP_AI_Assistant_CPT {
 
         $sanitized = array();
 
-        foreach ( $shortcuts as $shortcut ) {
-            if ( ! is_array( $shortcut ) ) {
+        foreach ( $prompts as $prompt ) {
+            if ( ! is_array( $prompt ) ) {
                 continue;
             }
 
-            $label = isset( $shortcut['label'] ) && is_string( $shortcut['label'] )
-                ? sanitize_text_field( $shortcut['label'] )
+            $label = isset( $prompt['label'] ) && is_string( $prompt['label'] )
+                ? sanitize_text_field( $prompt['label'] )
                 : '';
 
-            $payload = isset( $shortcut['payload'] ) && is_string( $shortcut['payload'] )
-                ? sanitize_textarea_field( $shortcut['payload'] )
+            $payload = isset( $prompt['payload'] ) && is_string( $prompt['payload'] )
+                ? sanitize_textarea_field( $prompt['payload'] )
                 : '';
 
             if ( '' === $label && '' === $payload ) {
@@ -2174,15 +2182,15 @@ class WP_MCP_AI_Assistant_CPT {
                 'payload' => $payload,
             );
 
-            if ( isset( $shortcut['description'] ) && is_string( $shortcut['description'] ) ) {
-                $description = sanitize_textarea_field( $shortcut['description'] );
+            if ( isset( $prompt['description'] ) && is_string( $prompt['description'] ) ) {
+                $description = sanitize_textarea_field( $prompt['description'] );
                 if ( '' !== $description ) {
                     $entry['description'] = $description;
                 }
             }
 
-            if ( isset( $shortcut['tool'] ) && is_string( $shortcut['tool'] ) ) {
-                $tool = sanitize_key( $shortcut['tool'] );
+            if ( isset( $prompt['tool'] ) && is_string( $prompt['tool'] ) ) {
+                $tool = sanitize_key( $prompt['tool'] );
 
                 if ( '' !== $tool ) {
                     $is_known_tool = true;
@@ -2201,6 +2209,20 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return array_values( $sanitized );
+    }
+
+    /**
+     * Backwards compatible wrapper for the deprecated shortcut terminology.
+     *
+     * @deprecated 1.0.0 Use self::sanitize_tool_prompts_meta() instead.
+     *
+     * @param mixed $shortcuts Raw prompt definitions.
+     * @return array
+     */
+    public static function sanitize_tool_shortcuts_meta( $shortcuts ) {
+        _deprecated_function( __METHOD__, '1.0.0', __CLASS__ . '::sanitize_tool_prompts_meta' );
+
+        return self::sanitize_tool_prompts_meta( $shortcuts );
     }
 
     /**

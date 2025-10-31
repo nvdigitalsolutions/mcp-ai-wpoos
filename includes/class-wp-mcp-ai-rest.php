@@ -534,7 +534,7 @@ class WP_MCP_AI_REST {
                  * Allow mapping a pre-validated bearer token to a WordPress user.
                  *
                  * @param int|null        $user_id Previously mapped user identifier.
-                 * @param array|null      $payload Decoded token payload when available, or null for pre-validation shortcuts.
+                 * @param array|null      $payload Decoded token payload when available, or null for pre-validation prompts.
                  * @param WP_REST_Request $request Current REST request.
                  */
                 $mapped_user = apply_filters( 'wp_mcp_ai_map_bearer_to_user_id', null, null, $request );

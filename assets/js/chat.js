@@ -19,8 +19,8 @@
     var TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
     var TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
     var MAX_TRANSCRIBE_BYTES = 26214400;
-    var TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
-    var TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
+    var TOOL_PROMPT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-prompts';
+    var TOOL_PROMPT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-prompt';
 
     function registerObjectUrl(url) {
         if (!url) {
@@ -1139,7 +1139,7 @@
         return parts.join(':');
     }
 
-    function handleToolShortcutClick(state, button) {
+    function handleToolPromptClick(state, button) {
         if (!state || !button || !state.textarea) {
             return;
         }
@@ -1147,7 +1147,7 @@
         var payload = '';
 
         if (button.dataset) {
-            payload = button.dataset.shortcutPayload || button.dataset.shortcutTool || '';
+            payload = button.dataset.promptPayload || button.dataset.promptTool || '';
         }
 
         if (typeof payload !== 'string') {
@@ -1171,23 +1171,23 @@
         copyTextToClipboard(payload).catch(function () {});
     }
 
-    function renderToolShortcuts(state) {
-        if (!state || !state.toolShortcutsContainer) {
+    function renderToolPrompts(state) {
+        if (!state || !state.toolPromptsContainer) {
             return;
         }
 
-        var container = state.toolShortcutsContainer;
+        var container = state.toolPromptsContainer;
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
 
-        var shortcuts = [];
-        if (state.config && Array.isArray(state.config.toolShortcuts)) {
-            shortcuts = state.config.toolShortcuts;
+        var prompts = [];
+        if (state.config && Array.isArray(state.config.toolPrompts)) {
+            prompts = state.config.toolPrompts;
         }
 
-        shortcuts.forEach(function (shortcut) {
-            if (!shortcut) {
+        prompts.forEach(function (prompt) {
+            if (!prompt) {
                 return;
             }
 
@@ -1196,24 +1196,24 @@
             var tool = '';
             var description = '';
 
-            if (typeof shortcut === 'string') {
-                label = shortcut;
-                payload = shortcut;
-            } else if (typeof shortcut === 'object') {
-                if (typeof shortcut.label === 'string') {
-                    label = shortcut.label;
+            if (typeof prompt === 'string') {
+                label = prompt;
+                payload = prompt;
+            } else if (typeof prompt === 'object') {
+                if (typeof prompt.label === 'string') {
+                    label = prompt.label;
                 }
 
-                if (typeof shortcut.payload === 'string') {
-                    payload = shortcut.payload;
+                if (typeof prompt.payload === 'string') {
+                    payload = prompt.payload;
                 }
 
-                if (typeof shortcut.tool === 'string') {
-                    tool = shortcut.tool;
+                if (typeof prompt.tool === 'string') {
+                    tool = prompt.tool;
                 }
 
-                if (typeof shortcut.description === 'string') {
-                    description = shortcut.description;
+                if (typeof prompt.description === 'string') {
+                    description = prompt.description;
                 }
             }
 
@@ -1236,22 +1236,22 @@
 
             var button = document.createElement('button');
             button.type = 'button';
-            button.className = TOOL_SHORTCUT_BUTTON_CLASS;
+            button.className = TOOL_PROMPT_BUTTON_CLASS;
             button.textContent = label;
 
             if (tool) {
-                button.dataset.shortcutTool = tool;
+                button.dataset.promptTool = tool;
             }
 
             if (payload) {
-                button.dataset.shortcutPayload = payload;
+                button.dataset.promptPayload = payload;
             }
 
             if (description) {
-                button.dataset.shortcutDescription = description;
+                button.dataset.promptDescription = description;
             }
 
-            var ariaTemplate = getString('toolShortcutLabel', 'Insert task: %s');
+            var ariaTemplate = getString('toolPromptLabel', 'Insert prompt: %s');
             var ariaLabel = formatString(ariaTemplate, label);
 
             if (description) {
@@ -1263,7 +1263,7 @@
 
             button.addEventListener('click', function (event) {
                 event.preventDefault();
-                handleToolShortcutClick(state, button);
+                handleToolPromptClick(state, button);
             });
 
             container.appendChild(button);
@@ -2872,7 +2872,7 @@
             var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             var transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
             var transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
-            var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
+            var toolPromptsContainer = container.querySelector('.' + TOOL_PROMPT_CONTAINER_CLASS);
             var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
@@ -2909,8 +2909,8 @@
             instanceConfig.allowedImageMimes = normaliseList(instanceConfig.allowedImageMimes);
             instanceConfig.allowedFileMimes = normaliseList(instanceConfig.allowedFileMimes);
             instanceConfig.allowedExtensions = normaliseList(instanceConfig.allowedExtensions);
-            if (!Array.isArray(instanceConfig.toolShortcuts)) {
-                instanceConfig.toolShortcuts = [];
+            if (!Array.isArray(instanceConfig.toolPrompts)) {
+                instanceConfig.toolPrompts = [];
             }
 
             if (fileInput && instanceConfig.fileAccept) {
@@ -2934,7 +2934,7 @@
                 fileInput: fileInput,
                 transcribeButton: transcribeButton,
                 transcribeInput: transcribeInput,
-                toolShortcutsContainer: toolShortcutsContainer,
+                toolPromptsContainer: toolPromptsContainer,
                 transcriptToggle: transcriptToggle,
                 transcriptExpanded: false,
                 pendingAttachments: [],
@@ -2953,7 +2953,7 @@
             };
 
             initialiseExistingSpeechButtons(state);
-            renderToolShortcuts(state);
+            renderToolPrompts(state);
 
             setTranscriptExpanded(state, false);
 

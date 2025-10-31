@@ -52,13 +52,18 @@ interface WP_MCP_AI_Tool_Interface {
 }
 
 /**
- * Optional interface for tools that expose predefined shortcut tasks.
+ * Optional interface for tools that expose predefined prompt tasks.
  */
-interface WP_MCP_AI_Tool_Shortcuts_Interface {
+interface WP_MCP_AI_Tool_Prompts_Interface {
     /**
-     * Provide shortcut task metadata for this tool.
+     * Provide prompt task metadata for this tool.
      *
      * @return array[] Array of associative arrays containing task metadata.
      */
-    public function get_shortcut_tasks();
+    public function get_prompt_tasks();
 }
+
+/**
+ * Legacy interface for backwards compatibility with shortcut terminology.
+ */
+interface WP_MCP_AI_Tool_Shortcuts_Interface extends WP_MCP_AI_Tool_Prompts_Interface {}
