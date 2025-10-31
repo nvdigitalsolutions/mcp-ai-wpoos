@@ -289,6 +289,105 @@ class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure malicious custom headers are stripped before sending.
+     */
+    public function test_execute_strips_malicious_custom_headers() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment(
+            array(
+                'subject'    => 'Security Update',
+                'message'    => 'Hello team',
+                'recipients' => array( 'security@example.com' ),
+            )
+        );
+
+        $captured_mail = array();
+        add_filter(
+            'wp_mcp_ai_send_group_email_pre_send',
+            function ( $pre_send, $mail_args ) use ( &$captured_mail ) {
+                $captured_mail = $mail_args;
+                return true;
+            },
+            10,
+            2
+        );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+                'headers'       => array(
+                    'X-Normal: Value',
+                    "X-Evil: good\r\nBcc: attacker@example.com",
+                    'Invalid Header Without Colon',
+                    "Reply-To: \x07attack@example.com",
+                    'Content-Type: text/plain; charset=UTF-8',
+                ),
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        remove_all_filters( 'wp_mcp_ai_send_group_email_pre_send' );
+
+        $this->assertNotWPError( $result );
+        $this->assertTrue( $result['sent'] );
+        $this->assertContains( 'X-Normal: Value', $captured_mail['headers'] );
+        $this->assertContains( 'Content-Type: text/plain; charset=UTF-8', $captured_mail['headers'] );
+        $this->assertContains( 'Reply-To: attack@example.com', $captured_mail['headers'] );
+        $this->assertNotContains( 'Bcc: attacker@example.com', $captured_mail['headers'] );
+        foreach ( $captured_mail['headers'] as $header ) {
+            $this->assertStringNotContainsString( "\r", $header );
+            $this->assertStringNotContainsString( "\n", $header );
+        }
+    }
+
+    /**
+     * Ensure the attachment size limit prevents large payloads from being processed.
+     */
+    public function test_execute_rejects_oversized_attachment() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        list( $attachment_id ) = $this->create_payload_attachment(
+            array(
+                'subject'    => 'Weekly Update',
+                'message'    => str_repeat( 'A', 256 ),
+                'recipients' => array( 'team@example.com' ),
+            )
+        );
+
+        add_filter( 'wp_mcp_ai_email_definition_attachment_max_bytes', array( $this, 'force_small_attachment_limit' ) );
+
+        $tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array(
+                'user_id' => $admin_id,
+            )
+        );
+
+        remove_filter( 'wp_mcp_ai_email_definition_attachment_max_bytes', array( $this, 'force_small_attachment_limit' ) );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_attachment_too_large', $result->get_error_code() );
+    }
+
+    /**
+     * Reduce the attachment limit for tests.
+     *
+     * @return int
+     */
+    public function force_small_attachment_limit() {
+        return 64; // bytes.
+    }
+
+    /**
      * Create an attachment with JSON payload contents.
      *
      * @param array  $payload  JSON payload.
