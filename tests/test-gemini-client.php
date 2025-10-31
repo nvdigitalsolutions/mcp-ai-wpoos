@@ -130,6 +130,9 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
                         'content' => array(
                             'parts' => array(
                                 array(
+                                    'text' => 'Suggested prompt: A brighter banana on a teal background',
+                                ),
+                                array(
                                     'inlineData' => array(
                                         'data'     => $png_base64,
                                         'mimeType' => 'image/png',
@@ -180,6 +183,7 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
         $this->assertSame( '16:9', $response['aspect_ratio'] );
         $this->assertArrayHasKey( 'created', $response );
         $this->assertIsInt( $response['created'] );
+        $this->assertSame( 'Suggested prompt: A brighter banana on a teal background', $response['revised_prompt'] );
     }
 
     /**

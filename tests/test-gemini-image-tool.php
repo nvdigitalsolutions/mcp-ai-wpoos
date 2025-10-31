@@ -42,6 +42,9 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
                         'content' => array(
                             'parts' => array(
                                 array(
+                                    'text' => 'Try bright morning light and a shallow depth of field for extra charm.',
+                                ),
+                                array(
                                     'inlineData' => array(
                                         'data'     => $png_base64,
                                         'mimeType' => 'image/png',
@@ -85,6 +88,7 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 
         $this->assertArrayHasKey( 'download_url', $result );
         $this->assertNotEmpty( $result['download_url'] );
+        $this->assertSame( 'Try bright morning light and a shallow depth of field for extra charm.', $result['revised_prompt'] );
 
         if ( ! empty( $result['attachment_id'] ) ) {
             $this->assertSame( wp_get_attachment_url( $result['attachment_id'] ), $result['download_url'] );
