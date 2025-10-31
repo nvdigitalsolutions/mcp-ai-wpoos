@@ -1,0 +1,172 @@
+<?php
+
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-site-health.php';
+
+/**
+ * Tests for the Site Health tool.
+ */
+class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
+    /**
+     * Ensure the tool enforces the Site Health capability requirement.
+     */
+    public function test_execute_requires_site_health_capability() {
+        $subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+
+        $tool   = new WP_MCP_AI_Tool_Get_Site_Health();
+        $result = $tool->execute( array(), array( 'user_id' => $subscriber_id ) );
+
+        $this->assertWPError( $result );
+        $this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+    }
+
+    /**
+     * The tool should return structured results grouped by severity.
+     */
+    public function test_execute_returns_structured_site_health_data() {
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+        $tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+        add_filter( 'site_status_tests', array( $this, 'filter_site_status_tests' ) );
+
+        try {
+            $result = $tool->execute( array(), array( 'user_id' => $admin_id ) );
+        } finally {
+            remove_filter( 'site_status_tests', array( $this, 'filter_site_status_tests' ) );
+        }
+
+        $this->assertIsArray( $result );
+        $this->assertArrayHasKey( 'summary', $result );
+        $this->assertArrayHasKey( 'tests', $result );
+
+        $this->assertSame( 1, $result['summary']['critical'] );
+        $this->assertSame( 1, $result['summary']['warning'] );
+        $this->assertSame( 1, $result['summary']['pass'] );
+
+        $critical = $result['tests']['critical'][0];
+        $this->assertSame( 'custom_critical', $critical['test'] );
+        $this->assertSame( 'critical', $critical['status'] );
+        $this->assertSame( 'Automatic updates disabled', $critical['label'] );
+        $this->assertSame( 'Security', $critical['badge']['label'] );
+        $this->assertSame( 'red', $critical['badge']['color'] );
+        $this->assertSame( 'The site cannot apply security updates automatically.', $critical['description'] );
+        $this->assertSame( 'Enable automatic updates as soon as possible. Security Guide', $critical['recommendation']['summary'] );
+        $this->assertSame(
+            array(
+                array(
+                    'url'   => 'https://example.com/security',
+                    'label' => 'Security Guide',
+                ),
+            ),
+            $critical['recommendation']['links']
+        );
+        $this->assertCount( 1, $critical['fields'] );
+        $this->assertSame( 'Last check', $critical['fields'][0]['label'] );
+        $this->assertSame( 'Never', $critical['fields'][0]['value'] );
+
+        $warning = $result['tests']['warning'][0];
+        $this->assertSame( 'custom_warning', $warning['test'] );
+        $this->assertSame( 'recommended', $warning['status'] );
+        $this->assertSame( 'Persistent object cache', $warning['label'] );
+        $this->assertSame( 'Performance', $warning['badge']['label'] );
+        $this->assertSame(
+            array(
+                array(
+                    'url'   => 'https://example.com/cache-guide',
+                    'label' => 'Object Cache Guide',
+                ),
+            ),
+            $warning['recommendation']['links']
+        );
+
+        $pass = $result['tests']['pass'][0];
+        $this->assertSame( 'custom_good', $pass['test'] );
+        $this->assertSame( 'good', $pass['status'] );
+        $this->assertSame( 'HTTPS Status', $pass['label'] );
+        $this->assertSame( '', $pass['recommendation']['summary'] );
+        $this->assertSame( array(), $pass['recommendation']['links'] );
+    }
+
+    /**
+     * Provide predictable Site Health tests for the tool to execute.
+     *
+     * @return array
+     */
+    public function filter_site_status_tests() {
+        return array(
+            'direct' => array(
+                'custom_critical' => array(
+                    'label' => 'Critical security test',
+                    'test'  => array( $this, 'run_custom_critical_test' ),
+                ),
+                'custom_warning'  => array(
+                    'label' => 'Caching test',
+                    'test'  => array( $this, 'run_custom_warning_test' ),
+                ),
+                'custom_good'     => array(
+                    'label' => 'HTTPS test',
+                    'test'  => array( $this, 'run_custom_good_test' ),
+                ),
+            ),
+            'async' => array(),
+        );
+    }
+
+    /**
+     * Simulate a critical Site Health result.
+     *
+     * @return array
+     */
+    public function run_custom_critical_test() {
+        return array(
+            'label'       => 'Automatic updates disabled',
+            'status'      => 'critical',
+            'description' => '<p>The site cannot apply security updates automatically.</p>',
+            'actions'     => '<p>Enable automatic updates as soon as possible. <a href="https://example.com/security">Security Guide</a></p>',
+            'badge'       => array(
+                'label' => 'Security',
+                'color' => 'red',
+            ),
+            'fields'      => array(
+                array(
+                    'label' => 'Last check',
+                    'value' => '<em>Never</em>',
+                ),
+                array(
+                    'label' => '',
+                    'value' => 'Ignored',
+                ),
+            ),
+        );
+    }
+
+    /**
+     * Simulate a recommended Site Health result.
+     *
+     * @return array
+     */
+    public function run_custom_warning_test() {
+        return array(
+            'label'       => 'Persistent object cache',
+            'status'      => 'recommended',
+            'description' => '<p>Consider enabling a persistent object cache.</p>',
+            'actions'     => '<p>Follow the <a href="https://example.com/cache-guide">Object Cache Guide</a> to configure caching.</p>',
+            'badge'       => array(
+                'label' => 'Performance',
+                'color' => 'blue',
+            ),
+        );
+    }
+
+    /**
+     * Simulate a passing Site Health result.
+     *
+     * @return array
+     */
+    public function run_custom_good_test() {
+        return array(
+            'label'  => 'HTTPS Status',
+            'status' => 'good',
+        );
+    }
+}
