@@ -132,6 +132,181 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
                 \WP_CLI\Utils\format_items( $format, $items, array( 'context', 'label', 'value' ) );
             }
+
+            /**
+             * Test remote MCP REST API connectivity from this site.
+             *
+             * ## OPTIONS
+             *
+             * <base>
+             * : Base URL to the remote MCP REST namespace (for example, https://example.com/wp-json/mcp-ai/v1).
+             *
+             * [--token=<token>]
+             * : Optional bearer credential (Auth0 access token or assistant credential).
+             *
+             * [--guest-token=<token>]
+             * : Optional guest token sent via the X-WP-MCP-AI-Guest header.
+             *
+             * [--nonce=<nonce>]
+             * : Optional WordPress REST nonce for same-origin checks.
+             *
+             * [--assistant-id=<id>]
+             * : Include an assistant hint when probing the directory endpoint.
+             *
+             * [--timeout=<seconds>]
+             * : Request timeout in seconds. Default: 15.
+             *
+             * [--verify-ssl=<boolean>]
+             * : Whether to verify the remote SSL certificate. Default: true.
+             *
+             * [--user-agent=<agent>]
+             * : Override the default user agent string.
+             *
+             * [--format=<format>]
+             * : Render the check output in table, json, or yaml format.
+             * ---
+             * default: table
+             * options:
+             *   - table
+             *   - json
+             *   - yaml
+             *
+             * ## EXAMPLES
+             *
+             *     # Probe a remote MCP deployment with an Auth0 access token.
+             *     $ wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=ey...
+             *
+             * @since 1.0.0
+             *
+             * @param array $args       Positional arguments.
+             * @param array $assoc_args Associative arguments.
+             */
+            public function remote( $args, $assoc_args ) {
+                if ( empty( $args ) || ! isset( $args[0] ) ) {
+                    WP_CLI::error( __( 'Please provide the remote MCP REST base URL.', 'wp-mcp-ai' ) );
+                }
+
+                $base   = $args[0];
+                $format = \WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' );
+
+                $timeout_arg = \WP_CLI\Utils\get_flag_value( $assoc_args, 'timeout', WP_MCP_AI_Remote_Tester::DEFAULT_TIMEOUT );
+                $timeout     = absint( $timeout_arg );
+
+                if ( $timeout <= 0 ) {
+                    WP_CLI::error( __( 'Timeout must be a positive integer.', 'wp-mcp-ai' ) );
+                }
+
+                $verify_flag = \WP_CLI\Utils\get_flag_value( $assoc_args, 'verify-ssl', true );
+
+                if ( is_string( $verify_flag ) ) {
+                    $parsed_verify = filter_var( $verify_flag, FILTER_VALIDATE_BOOLEAN, array( 'flags' => FILTER_NULL_ON_FAILURE ) );
+
+                    if ( null === $parsed_verify ) {
+                        WP_CLI::error( __( 'Invalid value for --verify-ssl. Use true or false.', 'wp-mcp-ai' ) );
+                    }
+
+                    $verify_ssl = $parsed_verify;
+                } else {
+                    $verify_ssl = (bool) $verify_flag;
+                }
+
+                $token       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'token', '' );
+                $guest_token = \WP_CLI\Utils\get_flag_value( $assoc_args, 'guest-token', '' );
+                $nonce       = \WP_CLI\Utils\get_flag_value( $assoc_args, 'nonce', '' );
+                $assistant   = \WP_CLI\Utils\get_flag_value( $assoc_args, 'assistant-id', '' );
+                $user_agent  = \WP_CLI\Utils\get_flag_value( $assoc_args, 'user-agent', '' );
+
+                $options = array(
+                    'timeout'    => $timeout,
+                    'verify_ssl' => $verify_ssl,
+                );
+
+                if ( '' !== $token ) {
+                    $options['token'] = $token;
+                }
+
+                if ( '' !== $guest_token ) {
+                    $options['guest_token'] = $guest_token;
+                }
+
+                if ( '' !== $nonce ) {
+                    $options['nonce'] = $nonce;
+                }
+
+                if ( '' !== $assistant ) {
+                    $options['assistant_id'] = absint( $assistant );
+                }
+
+                if ( '' !== $user_agent ) {
+                    $options['user_agent'] = $user_agent;
+                }
+
+                $tester = new WP_MCP_AI_Remote_Tester();
+                $result = $tester->probe( $base, $options );
+
+                if ( is_wp_error( $result ) ) {
+                    WP_CLI::error( $result->get_error_message() );
+                }
+
+                $checks = array();
+                foreach ( $result['checks'] as $check ) {
+                    $checks[] = array(
+                        'step'    => isset( $check['step'] ) ? $check['step'] : '',
+                        'status'  => isset( $check['status'] ) ? $check['status'] : '',
+                        'http'    => isset( $check['http_code'] ) && null !== $check['http_code'] ? $check['http_code'] : '',
+                        'message' => isset( $check['message'] ) ? $check['message'] : '',
+                    );
+                }
+
+                if ( ! empty( $checks ) ) {
+                    \WP_CLI\Utils\format_items( $format, $checks, array( 'step', 'status', 'http', 'message' ) );
+                }
+
+                $assistant_count = null;
+                $token_scope     = null;
+                $rest_errors     = array();
+
+                foreach ( $result['checks'] as $check ) {
+                    if ( isset( $check['details']['assistant_count'] ) ) {
+                        $assistant_count = (int) $check['details']['assistant_count'];
+                    }
+
+                    if ( isset( $check['details']['token_scope']['type'] ) ) {
+                        $token_scope = $check['details']['token_scope']['type'];
+                    }
+
+                    if ( isset( $check['details']['rest_error_code'] ) && $check['details']['rest_error_code'] ) {
+                        $rest_errors[] = $check['details']['rest_error_code'];
+                    }
+                }
+
+                if ( $result['success'] ) {
+                    if ( $token_scope ) {
+                        WP_CLI::line( sprintf( __( 'Token scope: %s', 'wp-mcp-ai' ), $token_scope ) );
+                    }
+
+                    if ( null !== $assistant_count ) {
+                        WP_CLI::success(
+                            sprintf(
+                                _n( 'Remote MCP API reachable (%d assistant).', 'Remote MCP API reachable (%d assistants).', $assistant_count, 'wp-mcp-ai' ),
+                                $assistant_count
+                            )
+                        );
+                    } else {
+                        WP_CLI::success( __( 'Remote MCP API reachable.', 'wp-mcp-ai' ) );
+                    }
+
+                    return;
+                }
+
+                if ( ! empty( $rest_errors ) ) {
+                    foreach ( array_unique( $rest_errors ) as $error_code ) {
+                        WP_CLI::warning( sprintf( __( 'REST error code: %s', 'wp-mcp-ai' ), $error_code ) );
+                    }
+                }
+
+                WP_CLI::error( __( 'Remote MCP API check failed.', 'wp-mcp-ai' ) );
+            }
         }
     }
 
