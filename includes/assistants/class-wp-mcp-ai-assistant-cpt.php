@@ -22,6 +22,7 @@ class WP_MCP_AI_Assistant_CPT {
     const META_MEMORY_FILES          = '_wp_mcp_ai_memory_files';
     const META_VECTOR_STORE_ID       = '_wp_mcp_ai_vector_store_id';
     const META_TOOL_SHORTCUTS        = '_wp_mcp_ai_tool_shortcuts';
+    const META_TOOL_PREBUILT_SHORTCUTS = '_wp_mcp_ai_tool_prebuilt_shortcuts';
     const META_DISABLE_TOOL_SHORTCUTS = '_wp_mcp_ai_disable_tool_shortcuts';
     const META_TOOL_ROLE_RULES       = '_wp_mcp_ai_tool_role_rules';
     const META_CREDENTIALS           = WP_MCP_AI_Credentials::META_KEY;
@@ -61,6 +62,361 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
         add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
         add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_menu_icon_styles' ) );
+    }
+
+    /**
+     * Render controls that allow editing the pre-built shortcuts contributed by tools.
+     *
+     * @param WP_Post $post               Post object.
+     * @param array   $selected_tools     Selected tool slugs.
+     * @param array   $prebuilt_shortcuts Sanitized custom pre-built shortcut configuration.
+     */
+    protected function render_prebuilt_shortcuts_editor( $post, array $selected_tools, array $prebuilt_shortcuts ) {
+        if ( ! $post instanceof WP_Post ) {
+            return;
+        }
+
+        $selected_tools = array_values(
+            array_unique(
+                array_filter(
+                    array_map( 'sanitize_key', $selected_tools )
+                )
+            )
+        );
+
+        echo '<div class="wp-mcp-ai-prebuilt-shortcuts">';
+        echo '<h3>' . esc_html__( 'Pre-built prompt shortcuts', 'wp-mcp-ai' ) . '</h3>';
+        echo '<p class="description">' . esc_html__( 'Adjust the shortcuts that selected tools contribute to the assistant chat interface.', 'wp-mcp-ai' ) . '</p>';
+
+        if ( empty( $selected_tools ) ) {
+            echo '<p class="description">' . esc_html__( 'Select at least one tool above to configure its pre-built shortcuts.', 'wp-mcp-ai' ) . '</p>';
+        }
+
+        $default_shortcuts_map = $this->get_default_prebuilt_shortcuts_map( $selected_tools, $post->ID );
+
+        foreach ( $selected_tools as $tool_slug ) {
+            $tool = $this->registry->get_tool( $tool_slug );
+
+            if ( ! $tool ) {
+                continue;
+            }
+
+            $tool_name           = $tool->get_name();
+            $defaults            = isset( $default_shortcuts_map[ $tool_slug ] ) ? $default_shortcuts_map[ $tool_slug ] : array();
+            $settings            = isset( $prebuilt_shortcuts[ $tool_slug ] ) ? $prebuilt_shortcuts[ $tool_slug ] : array();
+            $mode                = ( isset( $settings['mode'] ) && 'custom' === $settings['mode'] ) ? 'custom' : 'inherit';
+            $custom_rows         = ( 'custom' === $mode && isset( $settings['shortcuts'] ) && is_array( $settings['shortcuts'] ) ) ? $settings['shortcuts'] : array();
+            $next_index          = ( 'custom' === $mode ) ? count( $custom_rows ) : 0;
+            $defaults_json       = wp_json_encode( $defaults );
+            $has_existing_custom = ( 'custom' === $mode );
+            $rows_aria_hidden    = ( 'custom' === $mode ) ? 'false' : 'true';
+
+            if ( false === $defaults_json ) {
+                $defaults_json = '[]';
+            }
+
+            echo '<fieldset class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '">';
+            /* translators: %s: Tool name. */
+            $legend_label = sprintf( __( '%s pre-built shortcuts', 'wp-mcp-ai' ), $tool_name );
+            echo '<legend>' . esc_html( $legend_label ) . '</legend>';
+            echo '<p class="wp-mcp-ai-prebuilt-shortcuts__mode">';
+            printf(
+                '<label><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="inherit" %2$s /> %3$s</label>',
+                esc_attr( $tool_slug ),
+                checked( 'inherit', $mode, false ),
+                esc_html__( 'Use defaults', 'wp-mcp-ai' )
+            );
+            printf(
+                '<label><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="custom" %2$s /> %3$s</label>',
+                esc_attr( $tool_slug ),
+                checked( 'custom', $mode, false ),
+                esc_html__( 'Customize', 'wp-mcp-ai' )
+            );
+            echo '</p>';
+
+            echo '<div class="wp-mcp-ai-prebuilt-shortcuts__defaults">';
+            if ( ! empty( $defaults ) ) {
+                echo '<p class="description">' . esc_html__( 'Default prompts provided by this tool:', 'wp-mcp-ai' ) . '</p>';
+                echo '<ul class="wp-mcp-ai-prebuilt-shortcuts__defaults-list">';
+
+                foreach ( $defaults as $default_shortcut ) {
+                    $default_label   = isset( $default_shortcut['label'] ) ? (string) $default_shortcut['label'] : '';
+                    $default_payload = isset( $default_shortcut['payload'] ) ? (string) $default_shortcut['payload'] : '';
+                    $summary         = '';
+
+                    if ( '' !== $default_payload ) {
+                        $summary = wp_html_excerpt( $default_payload, 100, '&hellip;' );
+                    }
+
+                    echo '<li>';
+                    if ( '' !== $default_label ) {
+                        echo '<strong>' . esc_html( $default_label ) . '</strong>';
+                    } else {
+                        echo '<strong>' . esc_html__( 'Shortcut', 'wp-mcp-ai' ) . '</strong>';
+                    }
+
+                    if ( '' !== $summary ) {
+                        echo '<span class="wp-mcp-ai-prebuilt-shortcuts__defaults-summary"> ' . esc_html( $summary ) . '</span>';
+                    }
+
+                    echo '</li>';
+                }
+
+                echo '</ul>';
+            } else {
+                echo '<p class="description">' . esc_html__( 'This tool does not provide any pre-built shortcuts.', 'wp-mcp-ai' ) . '</p>';
+            }
+            echo '</div>';
+
+            echo '<div class="wp-mcp-ai-prebuilt-shortcuts__rows" data-tool="' . esc_attr( $tool_slug ) . '" data-next-index="' . esc_attr( $next_index ) . '" aria-hidden="' . esc_attr( $rows_aria_hidden ) . '"';
+            if ( 'custom' !== $mode ) {
+                echo ' hidden';
+            }
+            echo '>';
+
+            if ( 'custom' === $mode ) {
+                foreach ( $custom_rows as $index => $shortcut ) {
+                    $index       = intval( $index );
+                    $label       = isset( $shortcut['label'] ) ? (string) $shortcut['label'] : '';
+                    $payload     = isset( $shortcut['payload'] ) ? (string) $shortcut['payload'] : '';
+                    $description = isset( $shortcut['description'] ) ? (string) $shortcut['description'] : '';
+                    /* translators: 1: Shortcut number. 2: Tool name. */
+                    $legend_text = sprintf( __( 'Shortcut %1$d for %2$s', 'wp-mcp-ai' ), $index + 1, $tool_name );
+
+                    echo '<fieldset class="wp-mcp-ai-prebuilt-shortcuts__row" data-index="' . esc_attr( $index ) . '">';
+                    echo '<legend class="screen-reader-text">' . esc_html( $legend_text ) . '</legend>';
+                    echo '<p>';
+                    printf(
+                        '<label><strong>%1$s</strong><input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][label]" value="%4$s"%5$s /></label>',
+                        esc_html__( 'Shortcut label', 'wp-mcp-ai' ),
+                        esc_attr( $tool_slug ),
+                        esc_attr( $index ),
+                        esc_attr( $label ),
+                        disabled( 'custom' !== $mode, true, false )
+                    );
+                    echo '</p>';
+                    echo '<p>';
+                    printf(
+                        '<label><strong>%1$s</strong><textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][payload]"%4$s>%5$s</textarea></label>',
+                        esc_html__( 'Prompt text', 'wp-mcp-ai' ),
+                        esc_attr( $tool_slug ),
+                        esc_attr( $index ),
+                        disabled( 'custom' !== $mode, true, false ),
+                        esc_textarea( $payload )
+                    );
+                    echo '</p>';
+                    echo '<p>';
+                    printf(
+                        '<label><strong>%1$s</strong><textarea class="widefat" rows="3" name="wp_mcp_ai_prebuilt_shortcuts[%2$s][shortcuts][%3$s][description]"%4$s>%5$s</textarea></label>',
+                        esc_html__( 'Optional description', 'wp-mcp-ai' ),
+                        esc_attr( $tool_slug ),
+                        esc_attr( $index ),
+                        disabled( 'custom' !== $mode, true, false ),
+                        esc_textarea( $description )
+                    );
+                    echo '</p>';
+                    echo '<p>';
+                    printf(
+                        '<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"%1$s>%2$s</button>',
+                        disabled( 'custom' !== $mode, true, false ),
+                        esc_html__( 'Remove shortcut', 'wp-mcp-ai' )
+                    );
+                    echo '</p>';
+                    echo '<hr />';
+                    echo '</fieldset>';
+                }
+            }
+
+            echo '</div>';
+            echo '<p>';
+            printf(
+                '<button type="button" class="button wp-mcp-ai-prebuilt-shortcuts__add" data-tool="%1$s"%2$s>%3$s</button>',
+                esc_attr( $tool_slug ),
+                disabled( 'custom' !== $mode, true, false ),
+                esc_html__( 'Add shortcut', 'wp-mcp-ai' )
+            );
+            echo '</p>';
+            echo '</fieldset>';
+        }
+
+        echo '</div>';
+
+        static $prebuilt_shortcut_template_printed = false;
+
+        if ( ! $prebuilt_shortcut_template_printed ) {
+            $prebuilt_shortcut_template_printed = true;
+            ?>
+            <template id="wp-mcp-ai-prebuilt-shortcut-template">
+                <fieldset class="wp-mcp-ai-prebuilt-shortcuts__row" data-index="__INDEX__">
+                    <legend class="screen-reader-text"><?php esc_html_e( 'New pre-built shortcut', 'wp-mcp-ai' ); ?></legend>
+                    <p>
+                        <label>
+                            <strong><?php esc_html_e( 'Shortcut label', 'wp-mcp-ai' ); ?></strong>
+                            <input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][label]" />
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <strong><?php esc_html_e( 'Prompt text', 'wp-mcp-ai' ); ?></strong>
+                            <textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][payload]"></textarea>
+                        </label>
+                    </p>
+                    <p>
+                        <label>
+                            <strong><?php esc_html_e( 'Optional description', 'wp-mcp-ai' ); ?></strong>
+                            <textarea class="widefat" rows="3" name="wp_mcp_ai_prebuilt_shortcuts[__TOOL__][shortcuts][__INDEX__][description]"></textarea>
+                        </label>
+                    </p>
+                    <p>
+                        <button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"><?php esc_html_e( 'Remove shortcut', 'wp-mcp-ai' ); ?></button>
+                    </p>
+                    <hr />
+                </fieldset>
+            </template>
+            <?php
+        }
+    }
+
+    /**
+     * Retrieve the default pre-built shortcuts for the supplied tools.
+     *
+     * @param array $tool_slugs   Tool slugs to inspect.
+     * @param int   $assistant_id Assistant post ID.
+     * @return array
+     */
+    protected function get_default_prebuilt_shortcuts_map( array $tool_slugs, $assistant_id ) {
+        if ( empty( $tool_slugs ) ) {
+            return array();
+        }
+
+        $assistant_id = absint( $assistant_id );
+        $shortcuts    = array();
+
+        foreach ( $tool_slugs as $tool_slug ) {
+            $tool_slug = sanitize_key( $tool_slug );
+
+            if ( '' === $tool_slug ) {
+                continue;
+            }
+
+            $tool = $this->registry->get_tool( $tool_slug );
+
+            if ( ! $tool ) {
+                continue;
+            }
+
+            $tasks         = array();
+            $skip_fallback = false;
+
+            if ( $tool instanceof WP_MCP_AI_Tool_Shortcuts_Interface ) {
+                $tasks = $tool->get_shortcut_tasks();
+            } elseif ( method_exists( $tool, 'get_shortcut_tasks' ) ) {
+                $tasks = $tool->get_shortcut_tasks();
+            }
+
+            if ( null === $tasks ) {
+                $skip_fallback = true;
+            }
+
+            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
+            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
+
+            if ( null === $tasks ) {
+                $shortcuts[ $tool_slug ] = array();
+                continue;
+            }
+
+            $entries = array();
+
+            if ( empty( $tasks ) || ! is_array( $tasks ) ) {
+                $should_register_fallback = ! $skip_fallback;
+
+                if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
+                    $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+                } elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
+                    $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+                }
+
+                $should_register_fallback = apply_filters(
+                    'wp_mcp_ai_tool_should_register_fallback_shortcut',
+                    $should_register_fallback,
+                    $tool,
+                    $assistant_id,
+                    $tasks
+                );
+
+                if ( $should_register_fallback ) {
+                    $entries[] = array(
+                        'label'   => sanitize_text_field( $tool->get_slug() ),
+                        'payload' => sanitize_textarea_field( $tool->get_slug() ),
+                    );
+                }
+
+                $shortcuts[ $tool_slug ] = $entries;
+                continue;
+            }
+
+            foreach ( $tasks as $task ) {
+                if ( ! is_array( $task ) ) {
+                    continue;
+                }
+
+                $label   = isset( $task['label'] ) && is_string( $task['label'] ) ? sanitize_text_field( $task['label'] ) : '';
+                $payload = isset( $task['payload'] ) && is_string( $task['payload'] ) ? sanitize_textarea_field( $task['payload'] ) : '';
+
+                if ( '' === $label && '' === $payload ) {
+                    continue;
+                }
+
+                if ( '' === $label ) {
+                    $label = $tool->get_slug();
+                }
+
+                if ( '' === $payload ) {
+                    $payload = $tool->get_slug();
+                }
+
+                $entry = array(
+                    'label'   => $label,
+                    'payload' => $payload,
+                );
+
+                if ( isset( $task['description'] ) && is_string( $task['description'] ) ) {
+                    $entry['description'] = sanitize_textarea_field( $task['description'] );
+                }
+
+                $entries[] = $entry;
+            }
+
+            if ( empty( $entries ) ) {
+                $should_register_fallback = ! $skip_fallback;
+
+                if ( $tool instanceof WP_MCP_AI_Tool_Fallback_Shortcut_Interface ) {
+                    $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+                } elseif ( method_exists( $tool, 'should_register_fallback_shortcut' ) ) {
+                    $should_register_fallback = (bool) $tool->should_register_fallback_shortcut( $assistant_id );
+                }
+
+                $should_register_fallback = apply_filters(
+                    'wp_mcp_ai_tool_should_register_fallback_shortcut',
+                    $should_register_fallback,
+                    $tool,
+                    $assistant_id,
+                    $tasks
+                );
+
+                if ( $should_register_fallback ) {
+                    $entries[] = array(
+                        'label'   => sanitize_text_field( $tool->get_slug() ),
+                        'payload' => sanitize_textarea_field( $tool->get_slug() ),
+                    );
+                }
+            }
+
+            $shortcuts[ $tool_slug ] = $entries;
+        }
+
+        return $shortcuts;
     }
 
     /**
@@ -278,6 +634,50 @@ class WP_MCP_AI_Assistant_CPT {
                     ),
                 ),
                 'sanitize_callback' => array( __CLASS__, 'sanitize_tool_shortcuts_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_TOOL_PREBUILT_SHORTCUTS,
+            array(
+                'type'              => 'array',
+                'single'            => true,
+                'show_in_rest'      => array(
+                    'schema' => array(
+                        'type'                 => 'object',
+                        'additionalProperties' => array(
+                            'type'       => 'object',
+                            'properties' => array(
+                                'mode'      => array(
+                                    'type' => 'string',
+                                    'enum' => array( 'custom' ),
+                                ),
+                                'shortcuts' => array(
+                                    'type'  => 'array',
+                                    'items' => array(
+                                        'type'                 => 'object',
+                                        'properties'           => array(
+                                            'label'       => array(
+                                                'type' => 'string',
+                                            ),
+                                            'payload'     => array(
+                                                'type' => 'string',
+                                            ),
+                                            'description' => array(
+                                                'type' => 'string',
+                                            ),
+                                        ),
+                                        'additionalProperties' => false,
+                                    ),
+                                ),
+                            ),
+                            'additionalProperties' => false,
+                        ),
+                    ),
+                ),
+                'sanitize_callback' => array( __CLASS__, 'sanitize_prebuilt_tool_shortcuts_meta' ),
                 'auth_callback'     => $auth_callback,
             )
         );
@@ -865,6 +1265,13 @@ class WP_MCP_AI_Assistant_CPT {
         $disable_tool_shortcuts = get_post_meta( $post->ID, self::META_DISABLE_TOOL_SHORTCUTS, true );
         $disable_tool_shortcuts = self::sanitize_disable_tool_shortcuts_meta( $disable_tool_shortcuts );
 
+        $prebuilt_shortcuts = get_post_meta( $post->ID, self::META_TOOL_PREBUILT_SHORTCUTS, true );
+        if ( ! is_array( $prebuilt_shortcuts ) ) {
+            $prebuilt_shortcuts = array();
+        }
+
+        $prebuilt_shortcuts = self::sanitize_prebuilt_tool_shortcuts_meta( $prebuilt_shortcuts );
+
         $tool_role_rules = get_post_meta( $post->ID, self::META_TOOL_ROLE_RULES, true );
         if ( ! is_array( $tool_role_rules ) ) {
             $tool_role_rules = array();
@@ -1035,6 +1442,19 @@ class WP_MCP_AI_Assistant_CPT {
             .wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}
             .wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}
             .wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
+            .wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
+            .wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}
+            .wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#f6f7f7;display:flex;flex-direction:column;gap:1rem}
+            .wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}
+            .wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}
+            .wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}
+            .wp-mcp-ai-prebuilt-shortcuts__defaults p{margin:0;color:#50575e;font-size:13px}
+            .wp-mcp-ai-prebuilt-shortcuts__defaults-list{margin:0.5rem 0 0;padding-left:1.25rem}
+            .wp-mcp-ai-prebuilt-shortcuts__defaults-list li{margin-bottom:0.5rem;font-size:13px}
+            .wp-mcp-ai-prebuilt-shortcuts__defaults-summary{display:block;color:#50575e;font-size:12px;margin-top:0.25rem}
+            .wp-mcp-ai-prebuilt-shortcuts__rows{display:flex;flex-direction:column;gap:1rem}
+            .wp-mcp-ai-prebuilt-shortcuts__row{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#fff}
+            .wp-mcp-ai-prebuilt-shortcuts__row hr{margin:1rem -1rem 0}
             @media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}
             </style>
             <?php
@@ -1075,6 +1495,7 @@ class WP_MCP_AI_Assistant_CPT {
 
                 document.addEventListener( 'DOMContentLoaded', function() {
                     var toolItems = document.querySelectorAll( '.wp-mcp-ai-tools__item' );
+                    var prebuiltTemplate = document.getElementById( 'wp-mcp-ai-prebuilt-shortcut-template' );
 
                     toolItems.forEach( function( item ) {
                         var checkbox = item.querySelector( '.wp-mcp-ai-tools__checkbox' );
@@ -1088,6 +1509,206 @@ class WP_MCP_AI_Assistant_CPT {
                         checkbox.addEventListener( 'change', function() {
                             syncToolControls( item );
                         } );
+                    } );
+
+                    if ( ! prebuiltTemplate ) {
+                        return;
+                    }
+
+                    var prebuiltFieldsets = document.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__tool' );
+
+                    prebuiltFieldsets.forEach( function( fieldset ) {
+                        var rowsContainer = fieldset.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__rows' );
+                        var addButton = fieldset.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__add' );
+                        var modeInputs = fieldset.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__mode input[type="radio"]' );
+                        var defaults = [];
+                        var datasetDefaults = fieldset.getAttribute( 'data-defaults' );
+                        var hasExistingCustom = fieldset.getAttribute( 'data-has-existing-custom' ) === 'true';
+
+                        if ( datasetDefaults ) {
+                            try {
+                                defaults = JSON.parse( datasetDefaults ) || [];
+                            } catch ( error ) {
+                                defaults = [];
+                            }
+                        }
+
+                        function getNextIndex() {
+                            if ( ! rowsContainer ) {
+                                return 0;
+                            }
+
+                            var next = parseInt( rowsContainer.getAttribute( 'data-next-index' ), 10 );
+
+                            if ( isNaN( next ) ) {
+                                next = rowsContainer.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__row' ).length;
+                            }
+
+                            rowsContainer.setAttribute( 'data-next-index', next + 1 );
+
+                            return next;
+                        }
+
+                        function addRow( index, values ) {
+                            if ( ! rowsContainer ) {
+                                return null;
+                            }
+
+                            var fragment = document.importNode( prebuiltTemplate.content, true );
+                            var html = '';
+
+                            if ( fragment.firstElementChild ) {
+                                html = fragment.firstElementChild.outerHTML;
+                            } else if ( fragment.children.length ) {
+                                html = fragment.children[0].outerHTML;
+                            }
+
+                            if ( ! html ) {
+                                return null;
+                            }
+
+                            var tool = fieldset.getAttribute( 'data-tool' ) || '';
+                            html = html.replace( /__INDEX__/g, index );
+                            html = html.replace( /__TOOL__/g, tool );
+
+                            var wrapper = document.createElement( 'div' );
+                            wrapper.innerHTML = html;
+                            var row = wrapper.firstElementChild;
+
+                            if ( ! row ) {
+                                return null;
+                            }
+
+                            rowsContainer.appendChild( row );
+
+                            if ( values && typeof values === 'object' ) {
+                                var labelField = row.querySelector( 'input[name*="[label]"]' );
+                                var payloadField = row.querySelector( 'textarea[name*="[payload]"]' );
+                                var descriptionField = row.querySelector( 'textarea[name*="[description]"]' );
+
+                                if ( labelField && typeof values.label === 'string' ) {
+                                    labelField.value = values.label;
+                                }
+
+                                if ( payloadField && typeof values.payload === 'string' ) {
+                                    payloadField.value = values.payload;
+                                }
+
+                                if ( descriptionField && typeof values.description === 'string' ) {
+                                    descriptionField.value = values.description;
+                                }
+                            }
+
+                            return row;
+                        }
+
+                        function setFieldsDisabled( disabledState ) {
+                            if ( rowsContainer ) {
+                                var fields = rowsContainer.querySelectorAll( 'input, textarea' );
+                                fields.forEach( function( field ) {
+                                    if ( disabledState ) {
+                                        field.setAttribute( 'disabled', 'disabled' );
+                                    } else {
+                                        field.removeAttribute( 'disabled' );
+                                    }
+                                } );
+
+                                var removeButtons = rowsContainer.querySelectorAll( '.wp-mcp-ai-prebuilt-shortcuts__remove' );
+                                removeButtons.forEach( function( button ) {
+                                    if ( disabledState ) {
+                                        button.setAttribute( 'disabled', 'disabled' );
+                                    } else {
+                                        button.removeAttribute( 'disabled' );
+                                    }
+                                } );
+                            }
+
+                            if ( addButton ) {
+                                if ( disabledState ) {
+                                    addButton.setAttribute( 'disabled', 'disabled' );
+                                } else {
+                                    addButton.removeAttribute( 'disabled' );
+                                }
+                            }
+                        }
+
+                        function ensureDefaultRows() {
+                            if ( ! rowsContainer || rowsContainer.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__row' ) ) {
+                                return;
+                            }
+
+                            if ( ! defaults.length ) {
+                                return;
+                            }
+
+                            defaults.forEach( function( shortcut ) {
+                                var index = getNextIndex();
+                                addRow( index, shortcut );
+                            } );
+                        }
+
+                        function toggleMode( mode ) {
+                            var isCustom = mode === 'custom';
+
+                            if ( rowsContainer ) {
+                                if ( isCustom ) {
+                                    rowsContainer.removeAttribute( 'hidden' );
+                                    rowsContainer.setAttribute( 'aria-hidden', 'false' );
+                                } else {
+                                    rowsContainer.setAttribute( 'hidden', 'hidden' );
+                                    rowsContainer.setAttribute( 'aria-hidden', 'true' );
+                                }
+                            }
+
+                            if ( isCustom && ! hasExistingCustom ) {
+                                ensureDefaultRows();
+                                hasExistingCustom = true;
+                                fieldset.setAttribute( 'data-has-existing-custom', 'true' );
+                            }
+
+                            setFieldsDisabled( ! isCustom );
+                        }
+
+                        if ( addButton ) {
+                            addButton.addEventListener( 'click', function() {
+                                var index = getNextIndex();
+                                addRow( index );
+                            } );
+                        }
+
+                        if ( rowsContainer ) {
+                            rowsContainer.addEventListener( 'click', function( event ) {
+                                var target = event.target;
+
+                                if ( target && target.classList && target.classList.contains( 'wp-mcp-ai-prebuilt-shortcuts__remove' ) ) {
+                                    event.preventDefault();
+
+                                    var row = target.closest( '.wp-mcp-ai-prebuilt-shortcuts__row' );
+
+                                    if ( row && rowsContainer.contains( row ) ) {
+                                        rowsContainer.removeChild( row );
+                                    }
+                                }
+                            } );
+                        }
+
+                        modeInputs.forEach( function( input ) {
+                            input.addEventListener( 'change', function() {
+                                if ( input.checked ) {
+                                    toggleMode( input.value );
+                                }
+                            } );
+                        } );
+
+                        var initialMode = 'inherit';
+
+                        modeInputs.forEach( function( input ) {
+                            if ( input.checked ) {
+                                initialMode = input.value;
+                            }
+                        } );
+
+                        toggleMode( initialMode );
                     } );
                 } );
             } )();
@@ -1236,6 +1857,8 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         echo '</div>';
+
+        $this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
     }
 
     /**
@@ -2023,6 +2646,18 @@ class WP_MCP_AI_Assistant_CPT {
             } else {
                 delete_post_meta( $post_id, self::META_DISABLE_TOOL_SHORTCUTS );
             }
+
+            $prebuilt_tool_shortcuts = array();
+
+            if ( isset( $_POST['wp_mcp_ai_prebuilt_shortcuts'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                $prebuilt_tool_shortcuts = self::sanitize_prebuilt_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_prebuilt_shortcuts'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+            }
+
+            if ( empty( $prebuilt_tool_shortcuts ) ) {
+                delete_post_meta( $post_id, self::META_TOOL_PREBUILT_SHORTCUTS );
+            } else {
+                update_post_meta( $post_id, self::META_TOOL_PREBUILT_SHORTCUTS, $prebuilt_tool_shortcuts );
+            }
         }
 
         if ( $shortcuts_nonce_verified ) {
@@ -2102,6 +2737,7 @@ class WP_MCP_AI_Assistant_CPT {
             'memory_files'                => get_post_meta( $assistant_id, self::META_MEMORY_FILES, true ),
             'vector_store_id'             => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
             'tool_shortcuts'              => get_post_meta( $assistant_id, self::META_TOOL_SHORTCUTS, true ),
+            'tool_prebuilt_shortcuts'     => get_post_meta( $assistant_id, self::META_TOOL_PREBUILT_SHORTCUTS, true ),
             'tool_role_rules'             => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
             'disable_prebuilt_shortcuts'  => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
             'external_action_identifier'  => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
@@ -2148,6 +2784,12 @@ class WP_MCP_AI_Assistant_CPT {
             $config['tool_shortcuts'] = array();
         } else {
             $config['tool_shortcuts'] = self::sanitize_tool_shortcuts_meta( $config['tool_shortcuts'] );
+        }
+
+        if ( ! is_array( $config['tool_prebuilt_shortcuts'] ) ) {
+            $config['tool_prebuilt_shortcuts'] = array();
+        } else {
+            $config['tool_prebuilt_shortcuts'] = self::sanitize_prebuilt_tool_shortcuts_meta( $config['tool_prebuilt_shortcuts'] );
         }
 
         if ( ! is_array( $config['tool_role_rules'] ) ) {
@@ -2245,6 +2887,93 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return array_values( $sanitized );
+    }
+
+    /**
+     * Sanitize customized pre-built tool shortcut metadata.
+     *
+     * @param mixed $value Raw pre-built shortcut configuration.
+     * @return array
+     */
+    public static function sanitize_prebuilt_tool_shortcuts_meta( $value ) {
+        if ( ! is_array( $value ) ) {
+            return array();
+        }
+
+        $sanitized = array();
+
+        foreach ( $value as $key => $settings ) {
+            $tool = '';
+
+            if ( is_string( $key ) ) {
+                $tool = sanitize_key( $key );
+            }
+
+            if ( '' === $tool && is_array( $settings ) && isset( $settings['tool'] ) && is_string( $settings['tool'] ) ) {
+                $tool = sanitize_key( $settings['tool'] );
+            }
+
+            if ( '' === $tool || ! is_array( $settings ) ) {
+                continue;
+            }
+
+            if ( isset( $settings['mode'] ) && is_string( $settings['mode'] ) ) {
+                $mode = strtolower( sanitize_text_field( $settings['mode'] ) );
+
+                if ( 'inherit' === $mode || 'default' === $mode ) {
+                    continue;
+                }
+            }
+
+            $entry = array(
+                'mode'      => 'custom',
+                'shortcuts' => array(),
+            );
+
+            if ( isset( $settings['shortcuts'] ) && is_array( $settings['shortcuts'] ) ) {
+                foreach ( $settings['shortcuts'] as $shortcut ) {
+                    if ( ! is_array( $shortcut ) ) {
+                        continue;
+                    }
+
+                    $label = isset( $shortcut['label'] ) && is_string( $shortcut['label'] )
+                        ? sanitize_text_field( $shortcut['label'] )
+                        : '';
+                    $payload = isset( $shortcut['payload'] ) && is_string( $shortcut['payload'] )
+                        ? sanitize_textarea_field( $shortcut['payload'] )
+                        : '';
+
+                    if ( '' === $label && '' === $payload ) {
+                        continue;
+                    }
+
+                    $item = array(
+                        'label'   => $label,
+                        'payload' => $payload,
+                    );
+
+                    if ( isset( $shortcut['description'] ) && is_string( $shortcut['description'] ) ) {
+                        $description = sanitize_textarea_field( $shortcut['description'] );
+
+                        if ( '' !== $description ) {
+                            $item['description'] = $description;
+                        }
+                    }
+
+                    $entry['shortcuts'][] = $item;
+                }
+            }
+
+            if ( ! empty( $entry['shortcuts'] ) ) {
+                $entry['shortcuts'] = array_values( $entry['shortcuts'] );
+            } else {
+                $entry['shortcuts'] = array();
+            }
+
+            $sanitized[ $tool ] = $entry;
+        }
+
+        return $sanitized;
     }
 
     /**
