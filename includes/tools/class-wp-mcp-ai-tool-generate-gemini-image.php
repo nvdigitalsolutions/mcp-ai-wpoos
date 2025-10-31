@@ -95,7 +95,20 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
      * {@inheritdoc}
      */
     public function get_shortcut_tasks() {
-        return null;
+        return array(
+            array(
+                'label'   => __( 'generate_gemini_image', 'wp-mcp-ai' ),
+                'payload' => __( 'generate_gemini_image', 'wp-mcp-ai' ),
+            ),
+            array(
+                'label'   => __( 'Revise existing concept', 'wp-mcp-ai' ),
+                'payload' => __( 'Use the `generate_gemini_image` tool to update an existing concept. Ask what should change, capture the current prompt for context, then propose an adjusted prompt reflecting the requested edits before running the tool.', 'wp-mcp-ai' ),
+            ),
+            array(
+                'label'   => __( 'Add product to lifestyle scene', 'wp-mcp-ai' ),
+                'payload' => __( 'Use the `generate_gemini_image` tool to place the product in a lifestyle setting. Gather details about the environment, target audience, props, and camera angle, then assemble a detailed prompt that keeps the product as the hero of the scene.', 'wp-mcp-ai' ),
+            ),
+        );
     }
 
     /**
