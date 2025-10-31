@@ -137,6 +137,12 @@ class WP_MCP_AI_Admin_Settings {
                 ),
                 'description'      => __( 'Lets assistants launch Crawl4AI harvesting jobs for large-scale content gathering.', 'wp-mcp-ai' ),
                 'usage'            => __( 'Configure this before dispatching Crawl4AI jobs from an assistant workflow.', 'wp-mcp-ai' ),
+                'ready_message'    => __( 'Remote Crawl4AI endpoint configured.', 'wp-mcp-ai' ),
+                'empty_status'     => array(
+                    'status'  => 'info',
+                    'label'   => __( 'Running locally', 'wp-mcp-ai' ),
+                    'message' => __( 'No remote endpoint configured. Crawl4AI jobs will run locally until a base URL is provided.', 'wp-mcp-ai' ),
+                ),
             ),
             'cloudflare'  => array(
                 'label'            => __( 'Cloudflare', 'wp-mcp-ai' ),
@@ -1029,9 +1035,24 @@ class WP_MCP_AI_Admin_Settings {
                 $status['status_label']  = __( 'Incomplete', 'wp-mcp-ai' );
                 $status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'Add the missing credential: %s.', 'wp-mcp-ai' ) );
             } else {
-                $status['status']        = 'missing';
-                $status['status_label']  = __( 'Action required', 'wp-mcp-ai' );
-                $status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'wp-mcp-ai' ) );
+                if ( isset( $definition['empty_status'] ) && is_array( $definition['empty_status'] ) ) {
+                    $empty_status = wp_parse_args(
+                        $definition['empty_status'],
+                        array(
+                            'status'  => 'info',
+                            'label'   => __( 'Info', 'wp-mcp-ai' ),
+                            'message' => '',
+                        )
+                    );
+
+                    $status['status']        = $empty_status['status'];
+                    $status['status_label']  = $empty_status['label'];
+                    $status['status_message'] = $empty_status['message'];
+                } else {
+                    $status['status']        = 'missing';
+                    $status['status_label']  = __( 'Action required', 'wp-mcp-ai' );
+                    $status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'wp-mcp-ai' ) );
+                }
             }
 
             $statuses[] = $status;
