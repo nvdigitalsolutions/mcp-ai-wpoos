@@ -249,7 +249,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
         if ( isset( $arguments['timeout'] ) && '' !== $arguments['timeout'] ) {
             $timeout = absint( $arguments['timeout'] );
             if ( $timeout >= 5 ) {
-                $options['timeout'] = $timeout;
+                $options['timeout'] = min( 300, $timeout );
             }
         }
 
