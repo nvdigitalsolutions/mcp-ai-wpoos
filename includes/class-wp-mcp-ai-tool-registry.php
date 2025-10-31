@@ -223,10 +223,14 @@ class WP_MCP_AI_Tool_Registry {
             'send_group_email'           => 'communication',
             'send_mailjet_email'         => 'communication',
             'send_telegram_message'      => 'communication',
-            'post_facebook_instagram'    => 'communication',
-            'post_tiktok_video'          => 'communication',
-            'post_google_business_update' => 'communication',
-            'post_linkedin_update'       => 'communication',
+            'post_facebook_instagram'        => 'communication',
+            'post_tiktok_video'              => 'communication',
+            'post_google_business_update'    => 'communication',
+            'post_linkedin_update'           => 'communication',
+            'get_facebook_instagram_insights' => 'external-data',
+            'get_tiktok_insights'            => 'external-data',
+            'get_google_business_insights'   => 'external-data',
+            'get_linkedin_insights'          => 'external-data',
         );
 
         /**
@@ -317,6 +321,10 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Post_Tiktok_Video'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-tiktok-video.php',
             'WP_MCP_AI_Tool_Post_Google_Business_Update' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-google-business-update.php',
             'WP_MCP_AI_Tool_Post_Linkedin_Update'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-linkedin-update.php',
+            'WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-facebook-instagram-insights.php',
+            'WP_MCP_AI_Tool_Get_Tiktok_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-tiktok-insights.php',
+            'WP_MCP_AI_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-google-business-insights.php',
+            'WP_MCP_AI_Tool_Get_Linkedin_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-linkedin-insights.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
