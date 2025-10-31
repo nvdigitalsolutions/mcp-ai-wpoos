@@ -219,16 +219,16 @@ class WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface {
      * @return string
      */
     protected function sanitize_access_token( $token ) {
-        if ( ! is_string( $token ) ) {
+        if ( ! is_string( $token ) && ! is_numeric( $token ) ) {
             return '';
         }
 
-        $token = trim( $token );
+        $token = trim( (string) $token );
         if ( '' === $token ) {
             return '';
         }
 
-        return preg_replace( '/[^A-Za-z0-9._\-|]/', '', $token );
+        return $token;
     }
 
     /**
