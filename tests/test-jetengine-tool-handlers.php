@@ -4,12 +4,22 @@
  */
 
 if ( ! class_exists( 'Jet_Engine' ) ) {
-    class Jet_Engine {}
+    class Jet_Engine {
+        public $api;
+    }
 }
+
+$wp_mcp_ai_mock_jet_engine = null;
 
 if ( ! function_exists( 'jet_engine' ) ) {
     function jet_engine() {
-        return new Jet_Engine();
+        global $wp_mcp_ai_mock_jet_engine;
+
+        if ( null === $wp_mcp_ai_mock_jet_engine ) {
+            $wp_mcp_ai_mock_jet_engine = new Jet_Engine();
+        }
+
+        return $wp_mcp_ai_mock_jet_engine;
     }
 }
 
@@ -29,8 +39,23 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
      */
     protected $user_id;
 
+    /**
+     * Reference to the reusable JetEngine stub instance.
+     *
+     * @var Jet_Engine
+     */
+    protected $jet_engine;
+
     protected function setUp(): void {
         parent::setUp();
+
+        global $wp_mcp_ai_mock_jet_engine;
+        $wp_mcp_ai_mock_jet_engine = new Jet_Engine();
+        $this->jet_engine          = $wp_mcp_ai_mock_jet_engine;
+
+        $reflection = new ReflectionProperty( WP_MCP_AI_JetEngine_Tool_Handlers::class, 'operations' );
+        $reflection->setAccessible( true );
+        $reflection->setValue( null, null );
 
         $this->user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
         wp_set_current_user( $this->user_id );
@@ -40,7 +65,46 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 
     protected function tearDown(): void {
         self::$routes_registered = false;
+        global $wp_mcp_ai_mock_jet_engine;
+        $wp_mcp_ai_mock_jet_engine = null;
         parent::tearDown();
+    }
+
+    public function test_dynamic_operations_are_discovered_from_jetengine_api() {
+        $endpoint = new class() {
+            public function get_name() {
+                return 'add-content-type';
+            }
+
+            public function get_method() {
+                return 'POST';
+            }
+
+            public function get_query_params() {
+                return '';
+            }
+        };
+
+        $this->jet_engine->api = new class( $endpoint ) {
+            protected $endpoint;
+
+            public function __construct( $endpoint ) {
+                $this->endpoint = $endpoint;
+            }
+
+            public function get_endpoints() {
+                return array( $this->endpoint );
+            }
+        };
+
+        $operations = WP_MCP_AI_JetEngine_Tool_Handlers::get_supported_operations();
+
+        $this->assertContains( 'add-content-type', $operations );
+
+        $config = WP_MCP_AI_JetEngine_Tool_Handlers::get_operation_config( 'add-content-type' );
+        $this->assertSame( 'POST', $config['method'] );
+        $this->assertSame( 'body', $config['args_location'] );
+        $this->assertSame( 'add-content-type/', $config['route'] );
     }
 
     /**

@@ -69,6 +69,13 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface 
                     'description'          => __( 'Additional parameters forwarded to JetEngine.', 'wp-mcp-ai' ),
                     'additionalProperties' => true,
                 ),
+                'path_params' => array(
+                    'type'        => 'array',
+                    'items'       => array(
+                        'type' => 'string',
+                    ),
+                    'description' => __( 'Ordered path parameters that should replace dynamic segments in the selected route.', 'wp-mcp-ai' ),
+                ),
                 'transport' => array(
                     'type'        => 'string',
                     'enum'        => array( 'auto', 'rest', 'http' ),
@@ -110,11 +117,24 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface 
         $transport = isset( $arguments['transport'] ) ? sanitize_key( $arguments['transport'] ) : 'auto';
         $id        = isset( $arguments['id'] ) ? sanitize_text_field( (string) $arguments['id'] ) : '';
 
+        $path_params = array();
+        if ( isset( $arguments['path_params'] ) && is_array( $arguments['path_params'] ) ) {
+            foreach ( $arguments['path_params'] as $param ) {
+                if ( is_scalar( $param ) || ( is_object( $param ) && method_exists( $param, '__toString' ) ) ) {
+                    $path_params[] = trim( sanitize_text_field( (string) $param ) );
+                }
+            }
+        }
+
         $payload = array(
             'id'        => $id,
             'params'    => $params,
             'transport' => $transport,
         );
+
+        if ( ! empty( $path_params ) ) {
+            $payload['path_params'] = $path_params;
+        }
 
         $result = WP_MCP_AI_JetEngine_Tool_Handlers::dispatch( $operation, $payload, $context );
 

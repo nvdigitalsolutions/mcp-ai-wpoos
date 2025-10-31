@@ -50,50 +50,206 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      *
      * @var array
      */
-    protected static $operations = array(
-        'search_posts' => array(
-            'route'             => 'search-posts/',
-            'method'            => 'GET',
-            'args_location'     => 'query',
-            'requires_instance' => false,
-            'requires_id'       => false,
-        ),
-        'get_items'    => array(
-            'route'             => 'get-items/',
-            'method'            => 'GET',
-            'args_location'     => 'query',
-            'requires_instance' => true,
-            'requires_id'       => false,
-        ),
-        'get_item'     => array(
-            'route'             => 'get-item/%s/',
-            'method'            => 'GET',
-            'args_location'     => 'query',
-            'requires_instance' => true,
-            'requires_id'       => true,
-        ),
-        'add_item'     => array(
-            'route'             => 'add-item/',
-            'method'            => 'POST',
-            'args_location'     => 'body',
-            'requires_instance' => true,
-            'requires_id'       => false,
-        ),
-        'edit_item'    => array(
-            'route'             => 'edit-item/%s/',
-            'method'            => 'POST',
-            'args_location'     => 'body',
-            'requires_instance' => true,
-            'requires_id'       => true,
-        ),
-        'delete_item'  => array(
-            'route'             => 'delete-item/%s/',
-            'method'            => 'DELETE',
-            'args_location'     => 'query',
-            'requires_instance' => true,
-            'requires_id'       => true,
-        ),
-    );
+    protected static $operations = null;
+
+    /**
+     * Retrieve the merged JetEngine operation configuration map.
+     *
+     * @return array<string, array>
+     */
+    protected static function get_operations() {
+        if ( null !== self::$operations ) {
+            return self::$operations;
+        }
+
+        $operations = self::get_default_operations();
+        $dynamic    = self::discover_dynamic_operations();
+
+        foreach ( $dynamic as $slug => $config ) {
+            if ( ! isset( $operations[ $slug ] ) ) {
+                $operations[ $slug ] = $config;
+            }
+        }
+
+        self::$operations = apply_filters( 'wp_mcp_ai_jetengine_operations', $operations );
+
+        return self::$operations;
+    }
+
+    /**
+     * Provide the hard-coded fallback operations supported by the integration.
+     *
+     * @return array<string, array>
+     */
+    protected static function get_default_operations() {
+        return array(
+            'search_posts' => array(
+                'route'             => 'search-posts/',
+                'method'            => 'GET',
+                'args_location'     => 'query',
+                'requires_instance' => false,
+                'requires_id'       => false,
+            ),
+            'get_items'    => array(
+                'route'             => 'get-items/',
+                'method'            => 'GET',
+                'args_location'     => 'query',
+                'requires_instance' => true,
+                'requires_id'       => false,
+            ),
+            'get_item'     => array(
+                'route'             => 'get-item/%s/',
+                'method'            => 'GET',
+                'args_location'     => 'query',
+                'requires_instance' => true,
+                'requires_id'       => true,
+            ),
+            'add_item'     => array(
+                'route'             => 'add-item/',
+                'method'            => 'POST',
+                'args_location'     => 'body',
+                'requires_instance' => true,
+                'requires_id'       => false,
+            ),
+            'edit_item'    => array(
+                'route'             => 'edit-item/%s/',
+                'method'            => 'POST',
+                'args_location'     => 'body',
+                'requires_instance' => true,
+                'requires_id'       => true,
+            ),
+            'delete_item'  => array(
+                'route'             => 'delete-item/%s/',
+                'method'            => 'DELETE',
+                'args_location'     => 'query',
+                'requires_instance' => true,
+                'requires_id'       => true,
+            ),
+        );
+    }
+
+    /**
+     * Inspect the active JetEngine installation for additional REST endpoints.
+     *
+     * @return array<string, array>
+     */
+    protected static function discover_dynamic_operations() {
+        if ( ! self::is_available() ) {
+            return array();
+        }
+
+        if ( ! function_exists( 'jet_engine' ) ) {
+            return array();
+        }
+
+        $engine = jet_engine();
+
+        if ( ! is_object( $engine ) ) {
+            return array();
+        }
+
+        $api = null;
+
+        if ( isset( $engine->api ) && is_object( $engine->api ) ) {
+            $api = $engine->api;
+        } elseif ( method_exists( $engine, 'api' ) ) {
+            $api = $engine->api();
+        }
+
+        if ( ! is_object( $api ) || ! method_exists( $api, 'get_endpoints' ) ) {
+            return array();
+        }
+
+        $endpoints = $api->get_endpoints();
+
+        if ( ! is_array( $endpoints ) ) {
+            return array();
+        }
+
+        $operations = array();
+
+        foreach ( $endpoints as $endpoint ) {
+            if ( ! is_object( $endpoint ) || ! method_exists( $endpoint, 'get_name' ) ) {
+                continue;
+            }
+
+            $slug = sanitize_key( $endpoint->get_name() );
+
+            if ( empty( $slug ) ) {
+                continue;
+            }
+
+            $method = method_exists( $endpoint, 'get_method' ) ? strtoupper( $endpoint->get_method() ) : 'GET';
+
+            $route = self::normalise_dynamic_route( $endpoint );
+
+            if ( '' === $route ) {
+                continue;
+            }
+
+            $config = array(
+                'route'             => $route,
+                'method'            => $method,
+                'args_location'     => self::infer_args_location( $method ),
+                'requires_instance' => false,
+                'requires_id'       => false,
+            );
+
+            $operations[ $slug ] = apply_filters( 'wp_mcp_ai_jetengine_dynamic_operation_config', $config, $endpoint );
+        }
+
+        return $operations;
+    }
+
+    /**
+     * Normalise the JetEngine endpoint route definition for use by the dispatcher.
+     *
+     * @param object $endpoint Endpoint instance registered with JetEngine.
+     * @return string
+     */
+    protected static function normalise_dynamic_route( $endpoint ) {
+        $name = method_exists( $endpoint, 'get_name' ) ? (string) $endpoint->get_name() : '';
+        $name = trim( $name, '/' );
+
+        $query_params = '';
+        if ( method_exists( $endpoint, 'get_query_params' ) ) {
+            $query_params = (string) $endpoint->get_query_params();
+        }
+
+        $query_params = trim( $query_params );
+
+        if ( '' !== $query_params ) {
+            $pattern = trim( $query_params, '/' );
+            $pattern = preg_replace( '#\(\?P<[^>]+>[^\)]+\)#', '%s', $pattern );
+            $pattern = trim( $pattern, '/' );
+
+            if ( '' !== $pattern ) {
+                $name .= '/' . $pattern;
+            }
+        }
+
+        if ( '' === $name ) {
+            return '';
+        }
+
+        return trailingslashit( $name );
+    }
+
+    /**
+     * Infer the parameter location for the supplied HTTP method.
+     *
+     * @param string $method HTTP method.
+     * @return string
+     */
+    protected static function infer_args_location( $method ) {
+        $method = strtoupper( (string) $method );
+
+        if ( in_array( $method, array( 'GET', 'DELETE' ), true ) ) {
+            return 'query';
+        }
+
+        return 'body';
+    }
 
     /**
      * Determine if JetEngine appears to be available.
@@ -112,7 +268,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      */
     public static function get_supported_operations() {
         self::bootstrap();
-        return array_keys( self::$operations );
+        return array_keys( self::get_operations() );
     }
 
     /**
@@ -125,7 +281,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
         self::bootstrap();
         $operation = sanitize_key( $operation );
 
-        return isset( self::$operations[ $operation ] ) ? self::$operations[ $operation ] : null;
+        $operations = self::get_operations();
+
+        return isset( $operations[ $operation ] ) ? $operations[ $operation ] : null;
     }
 
     /**
@@ -177,6 +335,10 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 
         $params = isset( $payload['params'] ) && is_array( $payload['params'] ) ? self::sanitize_params( $payload['params'] ) : array();
         $item_id = isset( $payload['id'] ) ? sanitize_text_field( (string) $payload['id'] ) : '';
+        $path_params = array();
+        if ( isset( $payload['path_params'] ) && is_array( $payload['path_params'] ) ) {
+            $path_params = self::sanitize_path_params( $payload['path_params'] );
+        }
 
         if ( ! empty( $config['requires_instance'] ) ) {
             $instance = isset( $params['instance'] ) ? $params['instance'] : '';
@@ -204,7 +366,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
             $transport = 'auto';
         }
 
-        $route = self::build_route( $config['route'], $item_id );
+        $route = self::build_route( $config['route'], $item_id, $path_params, ! empty( $config['requires_id'] ) );
 
         $result = null;
         if ( 'http' !== $transport ) {
@@ -510,6 +672,24 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
     }
 
     /**
+     * Sanitize path parameters injected into dynamic JetEngine routes.
+     *
+     * @param array $params Raw path parameter values.
+     * @return array
+     */
+    protected static function sanitize_path_params( array $params ) {
+        $sanitized = array();
+
+        foreach ( $params as $value ) {
+            if ( is_scalar( $value ) || ( is_object( $value ) && method_exists( $value, '__toString' ) ) ) {
+                $sanitized[] = trim( sanitize_text_field( (string) $value ) );
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
      * Prepare the REST path for a JetEngine route.
      *
      * @param string $route Route relative to the namespace.
@@ -550,12 +730,29 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      * @param string $item_id       Item identifier.
      * @return string
      */
-    protected static function build_route( $route_pattern, $item_id ) {
-        if ( false !== strpos( $route_pattern, '%s' ) ) {
-            return sprintf( $route_pattern, rawurlencode( $item_id ) );
+    protected static function build_route( $route_pattern, $item_id, array $path_params, $requires_id ) {
+        if ( false === strpos( $route_pattern, '%s' ) ) {
+            return $route_pattern;
         }
 
-        return $route_pattern;
+        $replacements = array();
+
+        if ( $requires_id ) {
+            $replacements[] = rawurlencode( (string) $item_id );
+        }
+
+        if ( ! empty( $path_params ) ) {
+            foreach ( $path_params as $param ) {
+                $replacements[] = rawurlencode( (string) $param );
+            }
+        }
+
+        $required = substr_count( $route_pattern, '%s' );
+        if ( count( $replacements ) < $required ) {
+            $replacements = array_merge( $replacements, array_fill( 0, $required - count( $replacements ), '' ) );
+        }
+
+        return vsprintf( $route_pattern, $replacements );
     }
 
     /**
