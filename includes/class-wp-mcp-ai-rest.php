@@ -294,6 +294,40 @@ class WP_MCP_AI_REST {
 
         register_rest_route(
             self::REST_NAMESPACE,
+            '/chat-transcripts',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+                    'callback'            => array( $this, 'handle_chat_transcripts' ),
+                    'args'                => array(
+                        'user_id' => array(
+                            'type'     => 'integer',
+                            'required' => false,
+                        ),
+                        'session_key' => array(
+                            'type'     => 'string',
+                            'required' => false,
+                        ),
+                        'per_page' => array(
+                            'type'     => 'integer',
+                            'required' => false,
+                            'minimum'  => 1,
+                            'maximum'  => 100,
+                        ),
+                        'page' => array(
+                            'type'     => 'integer',
+                            'required' => false,
+                            'minimum'  => 1,
+                        ),
+                    ),
+                ),
+            ),
+            true
+        );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
             '/tools',
             array(
                 array(
@@ -349,6 +383,101 @@ class WP_MCP_AI_REST {
                 ),
             ),
             true
+        );
+    }
+
+    public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
+        $user_id      = absint( $request->get_param( 'user_id' ) );
+        $current_user = get_current_user_id();
+
+        if ( ! $user_id && $current_user ) {
+            $user_id = $current_user;
+            $request->set_param( 'user_id', $user_id );
+        }
+
+        if ( $user_id && $current_user && $user_id === $current_user ) {
+            if ( ! is_user_logged_in() ) {
+                return new WP_Error(
+                    'wp_mcp_ai_forbidden',
+                    __( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
+                    array( 'status' => 403 )
+                );
+            }
+
+            return true;
+        }
+
+        if ( current_user_can( 'manage_options' ) ) {
+            return true;
+        }
+
+        return new WP_Error(
+            'wp_mcp_ai_forbidden',
+            __( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
+            array( 'status' => 403 )
+        );
+    }
+
+    /**
+     * Handle chat transcript lookup requests.
+     *
+     * @param WP_REST_Request $request Request instance.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_chat_transcripts( WP_REST_Request $request ) {
+        $user_id = absint( $request->get_param( 'user_id' ) );
+
+        if ( ! $user_id ) {
+            $user_id = get_current_user_id();
+        }
+
+        if ( ! $user_id ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcripts_missing_user',
+                __( 'A valid user is required to query chat transcripts.', 'wp-mcp-ai' ),
+                array( 'status' => 400 )
+            );
+        }
+
+        $session_key = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+
+        if ( '' !== $session_key ) {
+            $session = $this->get_transcript_session( $user_id, $session_key );
+
+            if ( is_wp_error( $session ) ) {
+                return $session;
+            }
+
+            return rest_ensure_response( array( 'session' => $session ) );
+        }
+
+        $per_page = (int) $request->get_param( 'per_page' );
+
+        if ( $per_page <= 0 ) {
+            $per_page = 20;
+        }
+
+        $per_page = min( 100, max( 1, $per_page ) );
+
+        $page = (int) $request->get_param( 'page' );
+
+        if ( $page <= 0 ) {
+            $page = 1;
+        }
+
+        $sessions = $this->get_transcript_sessions( $user_id, $per_page, $page );
+
+        if ( is_wp_error( $sessions ) ) {
+            return $sessions;
+        }
+
+        return rest_ensure_response(
+            array(
+                'sessions' => isset( $sessions['items'] ) ? $sessions['items'] : array(),
+                'total'    => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
+                'per_page' => $per_page,
+                'page'     => $page,
+            )
         );
     }
 
@@ -3631,6 +3760,679 @@ class WP_MCP_AI_REST {
         }
 
         return '';
+    }
+
+    /**
+     * Retrieve chat transcript session summaries for a user.
+     *
+     * @param int $user_id  User identifier.
+     * @param int $per_page Number of sessions to return.
+     * @param int $page     Results page.
+     * @return array|WP_Error
+     */
+    protected function get_transcript_sessions( $user_id, $per_page, $page ) {
+        global $wpdb;
+
+        if ( ! $this->transcript_table_exists() ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcripts_unavailable',
+                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $table    = $this->get_transcript_table_name();
+        $user_id  = absint( $user_id );
+        $per_page = max( 1, (int) $per_page );
+        $page     = max( 1, (int) $page );
+        $offset   = ( $page - 1 ) * $per_page;
+
+        $query = $wpdb->prepare(
+            "SELECT session_key,
+                    MIN(request_started_at) AS started_at,
+                    MAX(response_completed_at) AS completed_at,
+                    MIN(cct_created) AS first_created,
+                    MAX(cct_created) AS last_created,
+                    MAX(assistant_id) AS assistant_id,
+                    MAX(assistant_model) AS assistant_model,
+                    COUNT(*) AS turn_count
+             FROM {$table}
+             WHERE user_id = %d
+             GROUP BY session_key
+             ORDER BY COALESCE(MAX(CASE WHEN response_completed_at <> '' THEN response_completed_at END), MAX(cct_created), MAX(request_started_at)) DESC, session_key ASC
+             LIMIT %d OFFSET %d",
+            $user_id,
+            $per_page,
+            $offset
+        );
+
+        $rows = $wpdb->get_results( $query, ARRAY_A );
+
+        if ( ! is_array( $rows ) ) {
+            $rows = array();
+        }
+
+        $total_query = $wpdb->prepare(
+            "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE user_id = %d",
+            $user_id
+        );
+
+        $total = (int) $wpdb->get_var( $total_query );
+
+        $sessions = array();
+
+        foreach ( $rows as $row ) {
+            $sessions[] = $this->format_transcript_session_summary( $row, $user_id );
+        }
+
+        return array(
+            'items' => $sessions,
+            'total' => $total,
+        );
+    }
+
+    /**
+     * Retrieve the full transcript for a specific session.
+     *
+     * @param int    $user_id     User identifier.
+     * @param string $session_key Session key string.
+     * @return array|WP_Error
+     */
+    protected function get_transcript_session( $user_id, $session_key ) {
+        global $wpdb;
+
+        $session_key = $this->normalise_transcript_session_key( $session_key );
+
+        if ( '' === $session_key ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcript_missing',
+                __( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        if ( ! $this->transcript_table_exists() ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcripts_unavailable',
+                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $table   = $this->get_transcript_table_name();
+        $user_id = absint( $user_id );
+
+        $query = $wpdb->prepare(
+            "SELECT request_payload,
+                    response_payload,
+                    metadata,
+                    request_started_at,
+                    response_completed_at,
+                    cct_created,
+                    assistant_id,
+                    assistant_model,
+                    latency_ms
+             FROM {$table}
+             WHERE session_key = %s AND user_id = %d
+             ORDER BY cct_created ASC, id ASC",
+            $session_key,
+            $user_id
+        );
+
+        $rows = $wpdb->get_results( $query, ARRAY_A );
+
+        if ( empty( $rows ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_transcript_missing',
+                __( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
+                array( 'status' => 404 )
+            );
+        }
+
+        $assistant_id    = 0;
+        $assistant_model = '';
+        $messages         = array();
+        $turn_count       = 0;
+        $started_at       = '';
+        $updated_at       = '';
+
+        foreach ( $rows as $row ) {
+            if ( ! $assistant_id && ! empty( $row['assistant_id'] ) ) {
+                $assistant_id = (int) $row['assistant_id'];
+            }
+
+            if ( '' === $assistant_model && ! empty( $row['assistant_model'] ) ) {
+                $assistant_model = sanitize_text_field( $row['assistant_model'] );
+            }
+
+            if ( '' === $started_at ) {
+                $started_at = $this->format_transcript_timestamp( $row['request_started_at'], $row['cct_created'] );
+            }
+
+            $updated_at = $this->format_transcript_timestamp( $row['response_completed_at'], $row['cct_created'] );
+
+            $request_messages  = $this->extract_request_messages( $row );
+            $response_messages = $this->extract_response_messages( $row );
+
+            $this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+            $this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+
+            if ( ! empty( $response_messages ) ) {
+                $turn_count += count( $response_messages );
+            }
+        }
+
+        if ( $turn_count <= 0 ) {
+            $turn_count = count( $messages );
+        }
+
+        $assistant_title = '';
+
+        if ( $assistant_id ) {
+            $assistant_title = get_the_title( $assistant_id );
+
+            if ( ! is_string( $assistant_title ) ) {
+                $assistant_title = '';
+            } else {
+                $assistant_title = wp_strip_all_tags( $assistant_title );
+            }
+        }
+
+        return array(
+            'session_key'     => $session_key,
+            'assistant_id'    => $assistant_id,
+            'assistant_title' => $assistant_title,
+            'assistant_model' => $assistant_model,
+            'started_at'      => $started_at,
+            'updated_at'      => $updated_at,
+            'turn_count'      => $turn_count,
+            'messages'        => $messages,
+        );
+    }
+
+    /**
+     * Determine the name of the transcript database table.
+     *
+     * @return string
+     */
+    protected function get_transcript_table_name() {
+        global $wpdb;
+
+        if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+            return '';
+        }
+
+        $slug = WP_MCP_AI_JetEngine_CCT::get_slug();
+
+        if ( '' === $slug ) {
+            return '';
+        }
+
+        return $wpdb->prefix . 'jet_cct_' . $slug;
+    }
+
+    /**
+     * Confirm whether the transcript table exists in the database.
+     *
+     * @return bool
+     */
+    protected function transcript_table_exists() {
+        global $wpdb;
+
+        $table = $this->get_transcript_table_name();
+
+        if ( '' === $table ) {
+            return false;
+        }
+
+        $result = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+
+        return $result === $table;
+    }
+
+    /**
+     * Normalise a raw session key into a safe identifier.
+     *
+     * @param mixed $value Raw session key value.
+     * @return string
+     */
+    protected function normalise_transcript_session_key( $value ) {
+        if ( ! is_scalar( $value ) ) {
+            return '';
+        }
+
+        $value = preg_replace( '/[^a-zA-Z0-9_-]/', '', (string) $value );
+
+        if ( ! is_string( $value ) || '' === $value ) {
+            return '';
+        }
+
+        $max = 96;
+
+        if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+            $max = (int) WP_MCP_AI_Chat_Transcript_Recorder::MAX_SESSION_KEY_LENGTH;
+        }
+
+        return substr( $value, 0, $max );
+    }
+
+    /**
+     * Format a timestamp string for API responses.
+     *
+     * @param string $primary  Primary timestamp string.
+     * @param string $fallback Fallback timestamp string.
+     * @return string
+     */
+    protected function format_transcript_timestamp( $primary, $fallback = '' ) {
+        $value = is_string( $primary ) && '' !== $primary ? $primary : '';
+
+        if ( '' === $value && is_string( $fallback ) && '' !== $fallback ) {
+            $value = $fallback;
+        }
+
+        if ( '' === $value ) {
+            return '';
+        }
+
+        $timestamp = strtotime( $value );
+
+        if ( false === $timestamp ) {
+            return '';
+        }
+
+        return gmdate( 'c', $timestamp );
+    }
+
+    /**
+     * Prepare a single session summary entry for REST responses.
+     *
+     * @param array $row     Database row.
+     * @param int   $user_id User identifier.
+     * @return array
+     */
+    protected function format_transcript_session_summary( array $row, $user_id ) {
+        $session_key = isset( $row['session_key'] ) ? $this->normalise_transcript_session_key( $row['session_key'] ) : '';
+        $assistant_id = isset( $row['assistant_id'] ) ? (int) $row['assistant_id'] : 0;
+        $assistant_model = isset( $row['assistant_model'] ) ? sanitize_text_field( $row['assistant_model'] ) : '';
+        $assistant_title = '';
+
+        if ( $assistant_id ) {
+            $assistant_title = get_the_title( $assistant_id );
+
+            if ( ! is_string( $assistant_title ) ) {
+                $assistant_title = '';
+            } else {
+                $assistant_title = wp_strip_all_tags( $assistant_title );
+            }
+        }
+
+        $preview = '';
+
+        if ( '' !== $session_key ) {
+            $preview = $this->get_session_preview_text( $session_key, $user_id );
+        }
+
+        return array(
+            'session_key'     => $session_key,
+            'assistant_id'    => $assistant_id,
+            'assistant_title' => $assistant_title,
+            'assistant_model' => $assistant_model,
+            'started_at'      => $this->format_transcript_timestamp( isset( $row['started_at'] ) ? $row['started_at'] : '', isset( $row['first_created'] ) ? $row['first_created'] : '' ),
+            'completed_at'    => $this->format_transcript_timestamp( isset( $row['completed_at'] ) ? $row['completed_at'] : '', isset( $row['last_created'] ) ? $row['last_created'] : '' ),
+            'updated_at'      => $this->format_transcript_timestamp( isset( $row['last_created'] ) ? $row['last_created'] : '', isset( $row['completed_at'] ) ? $row['completed_at'] : '' ),
+            'turn_count'      => isset( $row['turn_count'] ) ? (int) $row['turn_count'] : 0,
+            'preview'         => $preview,
+        );
+    }
+
+    /**
+     * Extract a preview snippet from the earliest turn in the session.
+     *
+     * @param string $session_key Session key string.
+     * @param int    $user_id     User identifier.
+     * @return string
+     */
+    protected function get_session_preview_text( $session_key, $user_id ) {
+        global $wpdb;
+
+        if ( '' === $session_key ) {
+            return '';
+        }
+
+        $table = $this->get_transcript_table_name();
+
+        $query = $wpdb->prepare(
+            "SELECT request_payload
+             FROM {$table}
+             WHERE session_key = %s AND user_id = %d
+             ORDER BY cct_created ASC
+             LIMIT 1",
+            $session_key,
+            absint( $user_id )
+        );
+
+        $row = $wpdb->get_row( $query, ARRAY_A );
+
+        if ( empty( $row['request_payload'] ) ) {
+            return '';
+        }
+
+        $payload = json_decode( $row['request_payload'], true );
+
+        if ( ! is_array( $payload ) || empty( $payload['messages'] ) || ! is_array( $payload['messages'] ) ) {
+            return '';
+        }
+
+        foreach ( $payload['messages'] as $message ) {
+            if ( isset( $message['role'] ) && 'user' === $message['role'] ) {
+                $text = $this->prepare_message_text( $message );
+
+                if ( '' !== $text ) {
+                    return $text;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Normalise arbitrary text extracted from transcript payloads.
+     *
+     * @param string $text Raw text.
+     * @return string
+     */
+    protected function clean_transcript_text( $text ) {
+        if ( ! is_string( $text ) ) {
+            return '';
+        }
+
+        $text = str_replace( array( '<br>', '<br/>', '<br />' ), "\n", $text );
+        $text = wp_specialchars_decode( $text, ENT_QUOTES );
+        $text = wp_strip_all_tags( $text );
+        $text = preg_replace( '/\r\n|\r/', "\n", $text );
+        $text = preg_replace( '/\n{3,}/', "\n\n", $text );
+
+        if ( ! is_string( $text ) ) {
+            return '';
+        }
+
+        return trim( $text );
+    }
+
+    /**
+     * Convert structured message content into readable text.
+     *
+     * @param mixed $content Raw content value.
+     * @return string
+     */
+    protected function normalise_message_content( $content ) {
+        if ( is_string( $content ) ) {
+            return $this->clean_transcript_text( $content );
+        }
+
+        if ( is_array( $content ) ) {
+            $parts = array();
+
+            foreach ( $content as $part ) {
+                if ( ! is_array( $part ) ) {
+                    continue;
+                }
+
+                if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+                    $parts[] = $part['text'];
+                } elseif ( isset( $part['content'] ) && is_string( $part['content'] ) ) {
+                    $parts[] = $part['content'];
+                } elseif ( isset( $part['value'] ) && is_string( $part['value'] ) ) {
+                    $parts[] = $part['value'];
+                }
+            }
+
+            if ( ! empty( $parts ) ) {
+                return $this->clean_transcript_text( implode( "\n\n", $parts ) );
+            }
+        }
+
+        if ( is_scalar( $content ) ) {
+            return $this->clean_transcript_text( (string) $content );
+        }
+
+        return '';
+    }
+
+    /**
+     * Build a readable string for a message payload.
+     *
+     * @param array $message Message payload array.
+     * @return string
+     */
+    protected function prepare_message_text( $message ) {
+        if ( ! is_array( $message ) ) {
+            return '';
+        }
+
+        if ( isset( $message['content'] ) ) {
+            $text = $this->normalise_message_content( $message['content'] );
+
+            if ( '' !== $text ) {
+                return $text;
+            }
+        }
+
+        if ( isset( $message['text'] ) ) {
+            $text = $this->normalise_message_content( $message['text'] );
+
+            if ( '' !== $text ) {
+                return $text;
+            }
+        }
+
+        if ( isset( $message['value'] ) ) {
+            $text = $this->normalise_message_content( $message['value'] );
+
+            if ( '' !== $text ) {
+                return $text;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Extract request messages from a transcript row.
+     *
+     * @param array $row Database row.
+     * @return array
+     */
+    protected function extract_request_messages( array $row ) {
+        if ( empty( $row['request_payload'] ) ) {
+            return array();
+        }
+
+        $payload = json_decode( $row['request_payload'], true );
+
+        if ( ! is_array( $payload ) || empty( $payload['messages'] ) || ! is_array( $payload['messages'] ) ) {
+            return array();
+        }
+
+        $messages = array();
+
+        foreach ( $payload['messages'] as $message ) {
+            if ( ! is_array( $message ) ) {
+                continue;
+            }
+
+            $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+            if ( '' === $role ) {
+                continue;
+            }
+
+            $content = $this->prepare_message_text( $message );
+
+            if ( '' === $content && 'tool' !== $role && 'system' !== $role ) {
+                continue;
+            }
+
+            $messages[] = array(
+                'role'    => $role,
+                'content' => $content,
+            );
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Extract assistant response messages from a transcript row.
+     *
+     * @param array $row Database row.
+     * @return array
+     */
+    protected function extract_response_messages( array $row ) {
+        if ( empty( $row['response_payload'] ) ) {
+            return array();
+        }
+
+        $payload = json_decode( $row['response_payload'], true );
+
+        if ( ! is_array( $payload ) ) {
+            return array();
+        }
+
+        $messages = array();
+
+        if ( isset( $payload['choices'] ) && is_array( $payload['choices'] ) ) {
+            foreach ( $payload['choices'] as $choice ) {
+                if ( empty( $choice['message'] ) || ! is_array( $choice['message'] ) ) {
+                    continue;
+                }
+
+                $role    = isset( $choice['message']['role'] ) ? sanitize_key( $choice['message']['role'] ) : 'assistant';
+                $content = $this->prepare_message_text( $choice['message'] );
+
+                if ( '' !== $content || 'tool' === $role ) {
+                    $messages[] = array(
+                        'role'    => $role,
+                        'content' => $content,
+                    );
+                }
+
+                if ( ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] ) ) {
+                    foreach ( $choice['message']['tool_calls'] as $tool_call ) {
+                        $tool_message = $this->format_tool_call_message( $tool_call );
+
+                        if ( '' !== $tool_message ) {
+                            $messages[] = array(
+                                'role'    => 'tool',
+                                'content' => $tool_message,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Generate a readable message describing a tool call.
+     *
+     * @param array $tool_call Tool call payload.
+     * @return string
+     */
+    protected function format_tool_call_message( $tool_call ) {
+        if ( empty( $tool_call ) || ! is_array( $tool_call ) ) {
+            return '';
+        }
+
+        $name = '';
+
+        if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+            if ( isset( $tool_call['function']['name'] ) ) {
+                $name = sanitize_text_field( $tool_call['function']['name'] );
+            }
+        } elseif ( isset( $tool_call['name'] ) ) {
+            $name = sanitize_text_field( $tool_call['name'] );
+        }
+
+        $arguments = '';
+
+        if ( isset( $tool_call['function']['arguments'] ) && is_string( $tool_call['function']['arguments'] ) ) {
+            $arguments = $this->clean_transcript_text( $tool_call['function']['arguments'] );
+        } elseif ( isset( $tool_call['arguments'] ) && is_string( $tool_call['arguments'] ) ) {
+            $arguments = $this->clean_transcript_text( $tool_call['arguments'] );
+        }
+
+        $parts = array();
+
+        if ( '' !== $name ) {
+            $parts[] = sprintf( __( 'Tool call: %s', 'wp-mcp-ai' ), $name );
+        }
+
+        if ( '' !== $arguments ) {
+            $parts[] = $arguments;
+        }
+
+        if ( empty( $parts ) ) {
+            return '';
+        }
+
+        return $this->clean_transcript_text( implode( "\n", $parts ) );
+    }
+
+    /**
+     * Append new messages to the conversation, avoiding duplicates.
+     *
+     * @param array  $conversation      Current conversation array (passed by reference).
+     * @param array  $new_messages      New messages to append.
+     * @param string $primary_timestamp Primary timestamp.
+     * @param string $fallback_timestamp Fallback timestamp.
+     */
+    protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp ) {
+        if ( empty( $new_messages ) ) {
+            return;
+        }
+
+        $timestamp      = $this->format_transcript_timestamp( $primary_timestamp, $fallback_timestamp );
+        $existing_count = count( $conversation );
+        $new_count      = count( $new_messages );
+        $position       = 0;
+
+        while ( $position < $existing_count && $position < $new_count ) {
+            if ( ! $this->messages_match( $conversation[ $position ], $new_messages[ $position ] ) ) {
+                break;
+            }
+
+            $position++;
+        }
+
+        for ( $index = $position; $index < $new_count; $index++ ) {
+            $message = $new_messages[ $index ];
+            $message['timestamp'] = $timestamp;
+            $conversation[]       = $message;
+        }
+    }
+
+    /**
+     * Compare two message structures.
+     *
+     * @param array $existing Existing message.
+     * @param array $candidate Candidate message.
+     * @return bool
+     */
+    protected function messages_match( $existing, $candidate ) {
+        if ( ! is_array( $existing ) || ! is_array( $candidate ) ) {
+            return false;
+        }
+
+        $existing_role   = isset( $existing['role'] ) ? (string) $existing['role'] : '';
+        $candidate_role  = isset( $candidate['role'] ) ? (string) $candidate['role'] : '';
+        $existing_text   = isset( $existing['content'] ) ? (string) $existing['content'] : '';
+        $candidate_text  = isset( $candidate['content'] ) ? (string) $candidate['content'] : '';
+
+        return $existing_role === $candidate_role && $existing_text === $candidate_text;
     }
 
     /**
