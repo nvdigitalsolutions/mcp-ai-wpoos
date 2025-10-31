@@ -76,6 +76,33 @@ class Test_Shortcodes extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the save_transcript attribute toggles transcript persistence in the front-end config.
+     */
+    public function test_chat_shortcode_save_transcript_attribute_disables_storage() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Transcript Toggle Assistant',
+            )
+        );
+
+        wp_scripts()->reset();
+
+        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" save_transcript="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
+
+        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
+        $registered = wp_scripts()->registered[ $handle ];
+        $this->assertArrayHasKey( 'before', $registered->extra );
+        $inline = implode( "\n", $registered->extra['before'] );
+
+        $this->assertStringContainsString( '"saveTranscript":false', $inline );
+        $this->assertMatchesRegularExpression( '/"sessionKey":"[a-z0-9\-]+"/i', $inline );
+    }
+
+    /**
      * Ensure the transcription controls remain visible for users that can upload files.
      */
     public function test_chat_shortcode_transcription_controls_visible_for_upload_capability() {

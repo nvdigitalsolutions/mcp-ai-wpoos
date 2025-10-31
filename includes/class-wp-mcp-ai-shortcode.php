@@ -182,6 +182,7 @@ class WP_MCP_AI_Shortcode {
             array(
                 'assistant' => '',
                 'allow_guests' => 'false',
+                'save_transcript' => 'true',
             ),
             $atts,
             $tag
@@ -189,6 +190,7 @@ class WP_MCP_AI_Shortcode {
 
         $assistant_id = self::resolve_assistant_id( $atts['assistant'] );
         $allow_guests = wp_validate_boolean( $atts['allow_guests'] );
+        $save_transcript = wp_validate_boolean( $atts['save_transcript'] );
 
         if ( ! $assistant_id ) {
             $settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -228,6 +230,13 @@ class WP_MCP_AI_Shortcode {
 
         $instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
         $textarea_id = $instance_id . '-input';
+        $session_key = wp_generate_uuid4();
+
+        if ( ! $session_key ) {
+            $session_key = wp_unique_id( 'wp-mcp-ai-session-' );
+        }
+
+        $session_key = sanitize_key( $session_key );
 
         $can_upload_attachments = current_user_can( 'upload_files' );
 
@@ -247,6 +256,8 @@ class WP_MCP_AI_Shortcode {
             'requiredCapability' => $capability ? $capability : '',
             'allowGuests'        => (bool) $allow_guests,
             'canUploadAttachments' => (bool) $can_upload_attachments,
+            'saveTranscript'    => (bool) $save_transcript,
+            'sessionKey'        => $session_key,
         );
 
         $tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );

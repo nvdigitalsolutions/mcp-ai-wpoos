@@ -1310,6 +1310,11 @@ class WP_MCP_AI_REST {
         $messages    = $enforced['messages'];
         $attachments = $enforced['attachments'];
 
+        $transcript_context = array(
+            'save_transcript' => $this->should_save_transcript( $request ),
+            'session_key'     => $this->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
+        );
+
         if ( ! empty( $attachments ) ) {
             $assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
         }
@@ -1354,7 +1359,9 @@ class WP_MCP_AI_REST {
 
         $options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
-        $response = $this->client->create_chat_completion( $messages, $options );
+        $transcript_context['request_started_at'] = microtime( true );
+        $response                                = $this->client->create_chat_completion( $messages, $options );
+        $transcript_context['response_completed_at'] = microtime( true );
 
         if ( ! is_wp_error( $response ) ) {
             $response = $this->maybe_convert_failed_chat_response( $response );
@@ -1378,6 +1385,18 @@ class WP_MCP_AI_REST {
         }
 
         WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+
+        if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+            WP_MCP_AI_Chat_Transcript_Recorder::record(
+                $assistant_id,
+                $messages,
+                $options,
+                $response,
+                $request,
+                $user_id,
+                $transcript_context
+            );
+        }
 
         WP_MCP_AI_Usage_Tracker::record_chat_usage(
             $user_id,
@@ -2976,6 +2995,62 @@ class WP_MCP_AI_REST {
         }
 
         return $options;
+    }
+
+    /**
+     * Determine whether transcripts should be saved for the current request.
+     *
+     * @param WP_REST_Request $request REST request instance.
+     * @return bool
+     */
+    protected function should_save_transcript( WP_REST_Request $request ) {
+        $value = $request->get_param( 'save_transcript' );
+
+        if ( null === $value ) {
+            return true;
+        }
+
+        if ( is_bool( $value ) ) {
+            return $value;
+        }
+
+        if ( is_string( $value ) ) {
+            return wp_validate_boolean( $value );
+        }
+
+        if ( is_numeric( $value ) ) {
+            return (bool) (int) $value;
+        }
+
+        return ! empty( $value );
+    }
+
+    /**
+     * Sanitise the session key parameter supplied with chat requests.
+     *
+     * @param mixed $value Raw session key value.
+     * @return string
+     */
+    protected function sanitize_session_key_param( $value ) {
+        if ( ! is_scalar( $value ) ) {
+            return '';
+        }
+
+        $value = trim( (string) $value );
+
+        if ( '' === $value ) {
+            return '';
+        }
+
+        $value = preg_replace( '/[^a-zA-Z0-9_-]/', '', $value );
+
+        if ( ! is_string( $value ) || '' === $value ) {
+            return '';
+        }
+
+        $max_length = class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ? WP_MCP_AI_Chat_Transcript_Recorder::MAX_SESSION_KEY_LENGTH : 96;
+
+        return substr( $value, 0, $max_length );
     }
 
     /**
