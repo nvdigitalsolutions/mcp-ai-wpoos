@@ -24,6 +24,23 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 - Blends a configurable focus timer with token usage totals gathered from the per-user usage tracker, falling back gracefully when tracking is unavailable or visitors are logged out.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
 - Generates inline JavaScript that counts down in real time and swaps in a completion message once the timer finishes.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L252-L318】
 
+## Assistant configuration widgets
+
+### MCP AI Assistant Defaults
+- Surfaces the assistant's provider, model, and temperature configuration directly in Elementor so editors can cross-check the chat settings against what was saved in the CPT.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-defaults-widget.php†L17-L164】
+- Optional system prompt output mirrors the saved prompt text with rich formatting so onboarding pages can document tone and guardrails without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-defaults-widget.php†L120-L164】
+
+### MCP AI Assistant Base Knowledge
+- Lists every Media Library file attached as memory along with optional file sizes, making it easy to audit what reference material the assistant receives before each request.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php†L17-L209】
+- Displays the configured vector store identifier when present so teams can align external retrieval systems with on-site documentation.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php†L168-L209】
+
+### MCP AI Assistant Prompt Shortcuts
+- Renders the saved shortcut labels, descriptions, and prompt payloads so stakeholders can publish ready-made task ideas next to the chat surface or in internal runbooks.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php†L17-L205】
+- Optionally includes the associated tool name for each shortcut by querying the live tool registry, helping teams understand which integrations each prompt relies on.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php†L153-L205】
+
+### MCP AI Assistant Tools
+- Reuses the existing assistant tools widget to catalogue the enabled tool set alongside any missing registrations, complete with copy-to-clipboard slug actions for quick referencing.【F:includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php†L17-L211】
+
 ## Operations dashboard widgets
 
 ### MCP AI Tool Matrix
