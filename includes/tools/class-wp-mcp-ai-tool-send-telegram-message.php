@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface {
 
         $disable_preview = ! empty( $arguments['disable_web_page_preview'] );
 
-        $endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', $token );
+        $endpoint = sprintf( 'https://api.telegram.org/bot%s/sendMessage', rawurlencode( $token ) );
 
         $payload = array(
             'chat_id' => $chat_id,
@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface {
             return '';
         }
 
-        return preg_replace( '/[^A-Za-z0-9:_-]/', '', $token );
+        return $token;
     }
 
     /**

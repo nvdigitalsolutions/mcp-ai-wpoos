@@ -228,7 +228,7 @@ class WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface {
             return '';
         }
 
-        return preg_replace( '/[^A-Za-z0-9._\-|]/', '', $token );
+        return $token;
     }
 
     /**
