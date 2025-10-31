@@ -9,6 +9,12 @@
 
 - [🧩 Overview](#-overview)
 - [🚀 Features](#-features)
+  - [Assistant & conversation tools](#assistant--conversation-tools)
+  - [Language routing & knowledge management](#language-routing--knowledge-management)
+  - [Media generation & transcription](#media-generation--transcription)
+  - [Commerce & finance workflows](#commerce--finance-workflows)
+  - [Communications & outreach](#communications--outreach)
+  - [Integrations, security & controls](#integrations-security--controls)
 - [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
@@ -57,31 +63,43 @@ It allows you to create and manage AI Assistants that can interact with users, a
 ---
 
 ## 🚀 Features
+
+### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`ai_assistant`)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
-- 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
-- 🔧 Tool Registry for registering PHP functions callable by the AI
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
-- 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
 - 🔍 Search Media Library knowledge attachments with permission-aware download URLs
+- ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
+- 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
+
+### Language routing & knowledge management
+- 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
+- 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
+- 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
+
+### Media generation & transcription
 - 🔊 Generate speech audio via OpenAI's Text-to-Speech API and save the result to the Media Library
 - 🎨 Generate on-brand imagery with OpenAI's Images API, honouring the configured response format (including GPT-Image-1's `url` responses) and storing the files as WordPress attachments
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
-- 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
-- 🧷 Granular control over allowed attachment MIME types for chat uploads
-- ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
-- 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
+
+### Commerce & finance workflows
 - 🛍 WooCommerce-aware tools (fetch orders or products, requires WooCommerce)
-- ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
-- 🧾 JetFormBuilder orchestration for listing forms, reviewing submissions, and proxying REST calls on behalf of assistants (requires JetFormBuilder)
-- 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
 - 📊 Finance-ready QuickBooks Online reporting tool for surfacing Profit and Loss, Balance Sheet, and other statements inside assistant conversations【F:includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php†L15-L214】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
-- 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
-- 🔐 Secure REST API endpoints
-- 🔑 Configurable API credentials and defaults for OpenAI and Gemini
+
+### Communications & outreach
 - ✉️ Mailjet-powered outbound email automation with granular capability enforcement and sender defaults configurable in the MCP settings.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - 📅 Google Workspace automations for creating calendar events and searching connected Gmail inboxes directly from assistant workflows.【F:includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php†L1-L200】【F:includes/tools/class-wp-mcp-ai-tool-search-gmail.php†L1-L200】
+- 🧾 JetFormBuilder orchestration for listing forms, reviewing submissions, and proxying REST calls on behalf of assistants (requires JetFormBuilder)
+- 📚 JetEngine REST route reference tool for surfacing endpoint metadata inside AI workflows
 - 🧱 Ready for extension with ChatKit integration
+
+### Integrations, security & controls
+- 🔧 Tool Registry for registering PHP functions callable by the AI
+- ⚙️ JetEngine integration for dynamic content queries (requires JetEngine)
+- 🧷 Granular control over allowed attachment MIME types for chat uploads
+- 🔐 Secure REST API endpoints
+- 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
