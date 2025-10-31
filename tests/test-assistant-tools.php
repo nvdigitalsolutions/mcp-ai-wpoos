@@ -30,6 +30,24 @@ class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the update status tool is registered and mapped to the operations group.
+     */
+    public function test_get_update_status_tool_is_registered() {
+        $registry = WP_MCP_AI_Tool_Registry::get_instance();
+        $registry->init();
+
+        $tool = $registry->get_tool( 'get_update_status' );
+
+        $this->assertNotNull( $tool, 'The get_update_status tool should be registered by default.' );
+        $this->assertInstanceOf( WP_MCP_AI_Tool_Interface::class, $tool );
+
+        $group_map = $registry->get_tool_group_map();
+
+        $this->assertArrayHasKey( 'get_update_status', $group_map );
+        $this->assertSame( 'operations', $group_map['get_update_status'] );
+    }
+
+    /**
      * Ensure invalid input types do not trigger notices and return an empty array.
      */
     public function test_sanitize_tools_meta_handles_non_array_values() {
