@@ -154,6 +154,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
                 return $pre;
             }
 
+            $this->last_payload = null;
+
             $header = '';
             if ( $request instanceof WP_REST_Request ) {
                 $header = (string) $request->get_header( 'Authorization' );
@@ -182,11 +184,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
 
             $settings = $this->get_settings();
             if ( empty( $settings['introspection_endpoint'] ) ) {
-                return new WP_Error(
-                    'wp_mcp_ai_oauth_missing_endpoint',
-                    __( 'OAuth introspection endpoint is not configured.', 'wp-mcp-ai' ),
-                    array( 'status' => 500 )
-                );
+                return null;
             }
 
             $introspection = $this->perform_introspection_request( $token, $settings );
