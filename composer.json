@@ -33,5 +33,14 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "repositories": {
+        "notifylk": {
+            "type": "vcs",
+            "url": "https://github.com/notifylk/notify-php"
+        }
+    },
+    "require": {
+        "notifylk/notify-php": "dev-master"
     }
 }

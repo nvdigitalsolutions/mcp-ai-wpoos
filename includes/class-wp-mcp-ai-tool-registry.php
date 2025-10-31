@@ -223,6 +223,7 @@ class WP_MCP_AI_Tool_Registry {
             'send_group_email'           => 'communication',
             'send_mailjet_email'         => 'communication',
             'send_telegram_message'      => 'communication',
+            'schedule_notify_sms'        => 'communication',
         );
 
         /**
@@ -304,6 +305,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Purge_Cloudflare_Cache' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php',
             'WP_MCP_AI_Tool_Send_Mailjet_Email'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php',
             'WP_MCP_AI_Tool_Send_Telegram_Message' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php',
+            'WP_MCP_AI_Tool_Schedule_Notify_SMS'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php',
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
             'WP_MCP_AI_Tool_ReliefWeb_Reports'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
             'WP_MCP_AI_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-google-analytics-report.php',
