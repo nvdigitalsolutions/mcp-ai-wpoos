@@ -427,6 +427,8 @@ class WP_MCP_AI_Logger {
                 'chat_interaction',
                 'openai_request',
                 'openai_response',
+                'gemini_image_request',
+                'gemini_image_response',
                 'gemini_request',
                 'gemini_response',
                 'openai_external_action_request',
