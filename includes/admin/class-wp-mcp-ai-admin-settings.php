@@ -60,6 +60,8 @@ class WP_MCP_AI_Admin_Settings {
             'mailjet_from_name'    => '',
             'quickbooks_company_id' => '',
             'quickbooks_api_key'    => '',
+            'google_analytics_property_id'    => '',
+            'google_analytics_credentials_json' => '',
             'gmail_client_id'       => '',
             'gmail_client_secret'   => '',
             'gmail_refresh_token'   => '',
@@ -175,6 +177,16 @@ class WP_MCP_AI_Admin_Settings {
                 ),
                 'description'      => __( 'Feeds financial reporting tools that summarise QuickBooks Online data.', 'wp-mcp-ai' ),
                 'usage'            => __( 'Enter credentials when activating the QuickBooks report tool for assistants.', 'wp-mcp-ai' ),
+            ),
+            'google_analytics' => array(
+                'label'            => __( 'Google Analytics', 'wp-mcp-ai' ),
+                'required_options' => array( 'google_analytics_property_id', 'google_analytics_credentials_json' ),
+                'fields'           => array(
+                    'google_analytics_property_id'    => __( 'Property ID', 'wp-mcp-ai' ),
+                    'google_analytics_credentials_json' => __( 'Service account JSON', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Supplies authenticated access to the Google Analytics Data API for GA4 properties.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Paste a service account credential and default property before enabling Analytics reporting tools.', 'wp-mcp-ai' ),
             ),
             'gmail'       => array(
                 'label'            => __( 'Gmail', 'wp-mcp-ai' ),
@@ -1270,6 +1282,29 @@ class WP_MCP_AI_Admin_Settings {
             self::PAGE_SLUG
         );
 
+        add_settings_section(
+            'wp_mcp_ai_google_analytics_section',
+            __( 'Google Analytics', 'wp-mcp-ai' ),
+            array( $this, 'render_google_analytics_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'google_analytics_property_id',
+            __( 'Default Property ID', 'wp-mcp-ai' ),
+            array( $this, 'render_google_analytics_property_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_google_analytics_section'
+        );
+
+        add_settings_field(
+            'google_analytics_credentials_json',
+            __( 'Service Account JSON', 'wp-mcp-ai' ),
+            array( $this, 'render_google_analytics_credentials_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_google_analytics_section'
+        );
+
         add_settings_field(
             'quickbooks_company_id',
             __( 'Company ID', 'wp-mcp-ai' ),
@@ -1634,6 +1669,31 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['mailjet_from_name'] ) ) {
             $clean['mailjet_from_name'] = sanitize_text_field( $settings['mailjet_from_name'] );
+        }
+
+        if ( isset( $settings['google_analytics_property_id'] ) ) {
+            $clean['google_analytics_property_id'] = trim( sanitize_text_field( $settings['google_analytics_property_id'] ) );
+        }
+
+        if ( isset( $settings['google_analytics_credentials_json'] ) ) {
+            $raw_credentials = trim( (string) wp_unslash( $settings['google_analytics_credentials_json'] ) );
+
+            if ( '' === $raw_credentials ) {
+                $clean['google_analytics_credentials_json'] = '';
+            } else {
+                $decoded = json_decode( $raw_credentials, true );
+
+                if ( is_array( $decoded ) ) {
+                    $clean['google_analytics_credentials_json'] = wp_json_encode( $decoded );
+                } else {
+                    add_settings_error(
+                        self::OPTION_NAME,
+                        'google_analytics_credentials_json',
+                        __( 'The Google Analytics service account JSON could not be parsed. Please paste a valid credential.', 'wp-mcp-ai' ),
+                        'error'
+                    );
+                }
+            }
         }
 
         if ( isset( $settings['quickbooks_company_id'] ) ) {
@@ -2037,6 +2097,37 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
         <p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Google Analytics section description.
+     */
+    public function render_google_analytics_section_description() {
+        ?>
+        <p><?php esc_html_e( 'Connect a Google Analytics 4 property so assistants can request reporting snapshots via the Data API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Google Analytics property ID field.
+     */
+    public function render_google_analytics_property_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_analytics_property_id]" value="<?php echo esc_attr( $settings['google_analytics_property_id'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Provide the numeric GA4 property ID that should be used when a tool call does not specify one.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Google Analytics service account JSON field.
+     */
+    public function render_google_analytics_credentials_field() {
+        $settings = self::get_settings();
+        ?>
+        <textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_analytics_credentials_json]" rows="6" class="large-text code" autocomplete="off"><?php echo esc_textarea( $settings['google_analytics_credentials_json'] ); ?></textarea>
+        <p class="description"><?php esc_html_e( 'Paste the JSON credentials for a Google Cloud service account with access to the Analytics Data API.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
