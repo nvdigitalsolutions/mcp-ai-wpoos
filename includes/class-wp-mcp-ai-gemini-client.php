@@ -197,6 +197,11 @@ class WP_MCP_AI_Gemini_Client {
             'generationConfig' => array(
                 'responseMimeType' => $mime_type,
             ),
+            'tools' => array(
+                array(
+                    'imageGeneration' => (object) array(),
+                ),
+            ),
         );
 
         if ( ! empty( $aspect_ratio ) && '1:1' !== $aspect_ratio ) {
