@@ -1243,16 +1243,20 @@ class WP_MCP_AI_REST {
         }
 
         $assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-        $tool_slug        = sanitize_key( $request->get_param( 'tool' ) );
+        $raw_tool         = $request->get_param( 'tool' );
         $arguments        = $request->get_param( 'arguments' );
         $allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 
-        if ( self::DOCUMENT_PROMPT_TOOL_SLUG === $tool_slug && ! in_array( $tool_slug, $allowed_tools, true ) ) {
+        $tool_candidates = $this->generate_tool_slug_candidates( $raw_tool );
+
+        if ( $this->candidates_include_slug( $tool_candidates, self::DOCUMENT_PROMPT_TOOL_SLUG ) && ! in_array( self::DOCUMENT_PROMPT_TOOL_SLUG, $allowed_tools, true ) ) {
             if ( $this->tool_arguments_include_document_payload( $arguments ) ) {
                 $assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
                 $allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
             }
         }
+
+        $tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
         if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
             return new WP_Error( 'wp_mcp_ai_tool_forbidden', __( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
@@ -1333,6 +1337,148 @@ class WP_MCP_AI_REST {
             'tool'         => $tool_slug,
             'result'       => $result,
         ) );
+    }
+
+    /**
+     * Build a list of potential tool slugs based on the supplied identifier.
+     *
+     * @param mixed $tool_name Raw tool identifier from the REST request.
+     * @return array
+     */
+    protected function generate_tool_slug_candidates( $tool_name ) {
+        if ( ! is_string( $tool_name ) ) {
+            $tool_name = '';
+        }
+
+        $tool_name = trim( $tool_name );
+
+        if ( '' === $tool_name ) {
+            return array();
+        }
+
+        $candidates = array();
+
+        $primary = sanitize_key( $tool_name );
+        if ( '' !== $primary ) {
+            $candidates[] = $primary;
+        }
+
+        $variants = array(
+            str_replace( array( '-', ' ' ), '_', $tool_name ),
+        );
+
+        $camel_split = preg_replace( '/(?<=\p{Ll})(\p{Lu})/u', '_$1', $tool_name );
+
+        if ( is_string( $camel_split ) && '' !== $camel_split ) {
+            $lower_camel = strtolower( $camel_split );
+            $variants[]  = $lower_camel;
+            $variants[]  = str_replace( array( '-', ' ' ), '_', $lower_camel );
+        }
+
+        foreach ( $variants as $variant ) {
+            if ( ! is_string( $variant ) ) {
+                continue;
+            }
+
+            $variant = trim( $variant );
+
+            if ( '' === $variant ) {
+                continue;
+            }
+
+            $sanitized = sanitize_key( $variant );
+            if ( '' !== $sanitized ) {
+                $candidates[] = $sanitized;
+            }
+        }
+
+        $candidates = array_values( array_unique( $candidates ) );
+
+        return $candidates;
+    }
+
+    /**
+     * Determine whether the supplied candidates refer to a specific tool slug.
+     *
+     * @param array  $candidates Candidate tool slugs.
+     * @param string $slug       Target slug to match.
+     * @return bool
+     */
+    protected function candidates_include_slug( array $candidates, $slug ) {
+        $slug = sanitize_key( $slug );
+
+        if ( '' === $slug ) {
+            return false;
+        }
+
+        if ( in_array( $slug, $candidates, true ) ) {
+            return true;
+        }
+
+        $normalised_slug = preg_replace( '/[_-]/', '', $slug );
+
+        if ( '' === $normalised_slug ) {
+            return false;
+        }
+
+        foreach ( $candidates as $candidate ) {
+            if ( $normalised_slug === preg_replace( '/[_-]/', '', $candidate ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve the requested tool slug by comparing candidates against the assistant's allow-list.
+     *
+     * @param array $candidates     Candidate tool slugs derived from the REST payload.
+     * @param array $allowed_tools  Assistant tool allow-list.
+     * @return string
+     */
+    protected function resolve_tool_slug_from_candidates( array $candidates, array $allowed_tools ) {
+        if ( empty( $candidates ) ) {
+            return '';
+        }
+
+        $allowed_lookup = array();
+        foreach ( $allowed_tools as $slug ) {
+            $sanitized = sanitize_key( $slug );
+
+            if ( '' === $sanitized ) {
+                continue;
+            }
+
+            $allowed_lookup[ $sanitized ] = $sanitized;
+        }
+
+        foreach ( $candidates as $candidate ) {
+            if ( isset( $allowed_lookup[ $candidate ] ) ) {
+                return $allowed_lookup[ $candidate ];
+            }
+        }
+
+        if ( ! empty( $allowed_lookup ) ) {
+            $normalised_candidates = array();
+            foreach ( $candidates as $candidate ) {
+                $normalised_candidates[] = preg_replace( '/[_-]/', '', $candidate );
+            }
+
+            $normalised_candidates = array_values( array_filter( array_unique( $normalised_candidates ) ) );
+
+            if ( ! empty( $normalised_candidates ) ) {
+                foreach ( $allowed_lookup as $slug ) {
+                    $normalised_slug = preg_replace( '/[_-]/', '', $slug );
+
+                    if ( in_array( $normalised_slug, $normalised_candidates, true ) ) {
+                        return $slug;
+                    }
+                }
+            }
+        }
+
+        return $candidates[0];
     }
 
     /**
