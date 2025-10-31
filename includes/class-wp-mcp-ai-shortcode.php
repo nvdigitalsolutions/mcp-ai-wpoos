@@ -576,6 +576,10 @@ class WP_MCP_AI_Shortcode {
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
             $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
 
+            if ( false === $tasks ) {
+                continue;
+            }
+
             if ( empty( $tasks ) || ! is_array( $tasks ) ) {
                 $shortcuts[] = array(
                     'tool'    => $tool->get_slug(),

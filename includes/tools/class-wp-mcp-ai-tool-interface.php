@@ -58,7 +58,11 @@ interface WP_MCP_AI_Tool_Shortcuts_Interface {
     /**
      * Provide shortcut task metadata for this tool.
      *
-     * @return array[] Array of associative arrays containing task metadata.
+     * Returning an empty array will fall back to a generic shortcut that uses the
+     * tool slug as both the label and payload. Return boolean false to opt-out of
+     * shortcut generation entirely.
+     *
+     * @return array[]|false Array of associative arrays containing task metadata or false when shortcuts are disabled.
      */
     public function get_shortcut_tasks();
 }
