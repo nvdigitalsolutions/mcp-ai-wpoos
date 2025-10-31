@@ -1,16 +1,16 @@
 <?php
 /**
- * ChatKit add-on integration tests.
+ * ChatKit integration tests.
  *
  * @package WP_MCP_AI\Tests
  */
 
-class Test_ChatKit_Addon extends WP_UnitTestCase {
+class Test_ChatKit_Integration extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
 
-        WP_MCP_AI_ChatKit_Addon::reset_state_for_testing();
+        WP_MCP_AI_ChatKit_Integration::reset_state_for_testing();
     }
 
     public function tearDown(): void {
@@ -18,7 +18,7 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
         remove_filter( 'wp_mcp_ai_chatkit_is_available', '__return_false' );
         remove_filter( 'wp_mcp_ai_chat_capability', array( $this, 'filter_chat_capability' ) );
 
-        WP_MCP_AI_ChatKit_Addon::reset_state_for_testing();
+        WP_MCP_AI_ChatKit_Integration::reset_state_for_testing();
 
         parent::tearDown();
     }
@@ -27,13 +27,13 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
      * Ensure the add-on registers automatically when no filters run.
      */
     public function test_addon_registered_by_default() {
-        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+        WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 
         $addons = apply_filters( 'chatkit_register_addons', array() );
 
-        $this->assertArrayHasKey( WP_MCP_AI_ChatKit_Addon::ADDON_ID, $addons );
+        $this->assertArrayHasKey( WP_MCP_AI_ChatKit_Integration::ADDON_ID, $addons );
 
-        $addon = $addons[ WP_MCP_AI_ChatKit_Addon::ADDON_ID ];
+        $addon = $addons[ WP_MCP_AI_ChatKit_Integration::ADDON_ID ];
 
         $this->assertSame( 'wp-mcp-ai', $addon['id'] );
         $this->assertArrayHasKey( 'rest_namespace', $addon );
@@ -51,11 +51,11 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
     public function test_addon_can_be_disabled_via_filter() {
         add_filter( 'wp_mcp_ai_chatkit_is_available', '__return_false' );
 
-        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+        WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 
         $addons = apply_filters( 'chatkit_register_addons', array() );
 
-        $this->assertArrayNotHasKey( WP_MCP_AI_ChatKit_Addon::ADDON_ID, $addons );
+        $this->assertArrayNotHasKey( WP_MCP_AI_ChatKit_Integration::ADDON_ID, $addons );
     }
 
     /**
@@ -64,10 +64,10 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
     public function test_addon_capability_honours_filter() {
         add_filter( 'wp_mcp_ai_chat_capability', array( $this, 'filter_chat_capability' ), 10, 3 );
 
-        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+        WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 
         $addons = apply_filters( 'chatkit_register_addons', array() );
-        $addon  = $addons[ WP_MCP_AI_ChatKit_Addon::ADDON_ID ];
+        $addon  = $addons[ WP_MCP_AI_ChatKit_Integration::ADDON_ID ];
 
         $this->assertSame( 'read', $addon['capability'] );
     }
@@ -76,7 +76,7 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
      * Ensure the action-style registration path calls the manager.
      */
     public function test_register_via_action_invokes_manager() {
-        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+        WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 
         $manager = new class() {
             public $received = null;
@@ -90,6 +90,14 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
 
         $this->assertIsArray( $manager->received );
         $this->assertSame( 'wp-mcp-ai', $manager->received['id'] );
+    }
+
+    /**
+     * Ensure the legacy class alias remains available for backwards compatibility.
+     */
+    public function test_legacy_class_alias_remains_available() {
+        $this->assertTrue( class_exists( 'WP_MCP_AI_ChatKit_Addon' ) );
+        $this->assertTrue( is_a( 'WP_MCP_AI_ChatKit_Addon', WP_MCP_AI_ChatKit_Integration::class, true ) );
     }
 
     /**

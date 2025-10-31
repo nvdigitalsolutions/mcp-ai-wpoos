@@ -1,6 +1,6 @@
 <?php
 /**
- * ChatKit add-on registration for WP MCP AI.
+ * ChatKit integration bootstrap for WP MCP AI.
  *
  * @package WP_MCP_AI
  */
@@ -10,12 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Register the WP MCP AI add-on with ChatKit when available.
+ * Register the WP MCP AI integration with ChatKit when available.
  */
-class WP_MCP_AI_ChatKit_Addon {
+class WP_MCP_AI_ChatKit_Integration {
 
     /**
-     * Unique identifier used when registering the add-on with ChatKit.
+     * Unique identifier used when registering the integration with ChatKit.
      */
     const ADDON_ID = 'wp-mcp-ai';
 
@@ -27,7 +27,7 @@ class WP_MCP_AI_ChatKit_Addon {
     protected static $bootstrapped = false;
 
     /**
-     * Hook into WordPress to register the add-on when ChatKit is available.
+     * Hook into WordPress to register the integration when ChatKit is available.
      */
     public static function init() {
         add_action( 'plugins_loaded', array( __CLASS__, 'maybe_bootstrap' ), 30 );
@@ -54,10 +54,10 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Determine whether the ChatKit add-on should bootstrap.
+     * Determine whether the ChatKit integration should bootstrap.
      *
      * Returning `false` from the filter disables the integration, allowing site
-     * owners or tests to opt-out even though the add-on now ships directly with
+     * owners or tests to opt-out even though the integration now ships directly with
      * the core plugin.
      *
      * @return bool
@@ -67,9 +67,9 @@ class WP_MCP_AI_ChatKit_Addon {
          * Allow plugins/tests to force ChatKit bootstrap behaviour.
          *
          * @since 1.0.0 The filter now defaults to `true`, so returning `false`
-         *              disables the add-on instead of enabling it.
+         *              disables the integration instead of enabling it.
          *
-         * @param bool|null $available Whether the ChatKit add-on should be
+         * @param bool|null $available Whether the ChatKit integration should be
          *                             bootstrapped. Default `null`.
          */
         $available = apply_filters( 'wp_mcp_ai_chatkit_is_available', null );
@@ -82,9 +82,9 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Register the add-on through a filter-based API.
+     * Register the integration through a filter-based API.
      *
-     * @param array $addons Previously registered add-ons.
+     * @param array $addons Previously registered integrations.
      * @return array
      */
     public static function register_via_filter( $addons ) {
@@ -98,7 +98,7 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Register the add-on via an action-style API.
+     * Register the integration via an action-style API.
      *
      * @param mixed $manager Optional add-on manager instance provided by ChatKit.
      */
@@ -111,21 +111,21 @@ class WP_MCP_AI_ChatKit_Addon {
         }
 
         /**
-         * Fires when the WP MCP AI ChatKit add-on registers via an action.
+         * Fires when the WP MCP AI ChatKit integration registers via an action.
          *
          * This mirrors the behaviour of ChatKit's manager objects so that tests or
          * other integrations can react consistently when a manager is not present.
          *
          * @since 1.0.0
          *
-         * @param array $definition Registered add-on definition.
+         * @param array $definition Registered integration definition.
          * @param mixed $manager    Manager instance passed to the action, if any.
          */
         do_action( 'wp_mcp_ai_chatkit_addon_registered', $definition, $manager );
     }
 
     /**
-     * Register a single add-on using callback style semantics.
+     * Register a single integration using callback style semantics.
      *
      * @param callable|null $callback Optional callback provided by ChatKit.
      */
@@ -141,7 +141,7 @@ class WP_MCP_AI_ChatKit_Addon {
     }
 
     /**
-     * Retrieve the add-on definition passed to ChatKit.
+     * Retrieve the integration definition passed to ChatKit.
      *
      * @return array
      */
@@ -218,11 +218,11 @@ class WP_MCP_AI_ChatKit_Addon {
         }
 
         /**
-         * Filter the ChatKit add-on definition before it is exported.
+         * Filter the ChatKit integration definition before it is exported.
          *
          * @since 1.0.0
          *
-         * @param array $definition ChatKit add-on definition.
+         * @param array $definition ChatKit integration definition.
          */
         return apply_filters( 'wp_mcp_ai_chatkit_addon_definition', $definition );
     }
@@ -241,5 +241,9 @@ class WP_MCP_AI_ChatKit_Addon {
         remove_action( 'chatkit/register_addons', array( __CLASS__, 'register_via_action' ) );
         remove_action( 'chatkit/register_addon', array( __CLASS__, 'register_single_addon' ) );
     }
+}
+
+if ( ! class_exists( 'WP_MCP_AI_ChatKit_Addon' ) ) {
+    class_alias( 'WP_MCP_AI_ChatKit_Integration', 'WP_MCP_AI_ChatKit_Addon' );
 }
 
