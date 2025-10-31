@@ -196,9 +196,14 @@ class WP_MCP_AI_Gemini_Client {
             ),
             'generationConfig' => array(
                 'responseMimeType' => $mime_type,
-                'aspectRatio'      => $aspect_ratio,
             ),
         );
+
+        if ( ! empty( $aspect_ratio ) && '1:1' !== $aspect_ratio ) {
+            $payload['imageGenerationConfig'] = array(
+                'aspectRatio' => $aspect_ratio,
+            );
+        }
 
         if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
             $payload['generationConfig']['temperature'] = (float) $options['temperature'];
