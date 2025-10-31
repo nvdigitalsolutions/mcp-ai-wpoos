@@ -192,6 +192,7 @@ class WP_MCP_AI_Tool_Registry {
             'open_openai_usage'          => 'operations',
             'open_openai_logs'           => 'operations',
             'create_cron_job'            => 'operations',
+            'create_wpcode_snippet'      => 'operations',
             'purge_cloudflare_cache'     => 'operations',
             'check_wp_cli'               => 'operations',
             'run_openai_external_action' => 'automation',
@@ -291,6 +292,7 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Get_QuickBooks_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php',
             'WP_MCP_AI_Tool_ReliefWeb_Reports'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
             'WP_MCP_AI_Tool_Check_WP_CLI'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
+            'WP_MCP_AI_Tool_Create_WPCode_Snippet' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
