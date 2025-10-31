@@ -470,8 +470,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__status',
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-name',
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-remove',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__json-icon',
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__json-label',
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__json-content',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__message.wp-mcp-ai-chat__message--assistant',
+                        '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__message.wp-mcp-ai-chat__message--user',
                     ),
                     'meta'      => array(
                         '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat__attachments-meta',
