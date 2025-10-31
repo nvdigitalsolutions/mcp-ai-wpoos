@@ -451,19 +451,21 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
         echo '<div class="wp-mcp-ai-chat-widget">';
 
-        if ( isset( $settings['show_assistant_defaults'] ) && 'yes' === $settings['show_assistant_defaults'] ) {
+        $can_show_assistant_details = $this->can_display_assistant_details( $assistant_id, $allow_guests );
+
+        if ( $can_show_assistant_details && isset( $settings['show_assistant_defaults'] ) && 'yes' === $settings['show_assistant_defaults'] ) {
             $this->render_assistant_defaults_section( $assistant_id, $config, $settings );
         }
 
-        if ( isset( $settings['show_assistant_base_knowledge'] ) && 'yes' === $settings['show_assistant_base_knowledge'] ) {
+        if ( $can_show_assistant_details && isset( $settings['show_assistant_base_knowledge'] ) && 'yes' === $settings['show_assistant_base_knowledge'] ) {
             $this->render_assistant_base_knowledge_section( $assistant_id, $config, $settings );
         }
 
-        if ( isset( $settings['show_assistant_tools'] ) && 'yes' === $settings['show_assistant_tools'] ) {
+        if ( $can_show_assistant_details && isset( $settings['show_assistant_tools'] ) && 'yes' === $settings['show_assistant_tools'] ) {
             $this->render_assistant_tools_section( $assistant_id, $settings );
         }
 
-        if ( isset( $settings['show_assistant_prompt_shortcuts'] ) && 'yes' === $settings['show_assistant_prompt_shortcuts'] ) {
+        if ( $can_show_assistant_details && isset( $settings['show_assistant_prompt_shortcuts'] ) && 'yes' === $settings['show_assistant_prompt_shortcuts'] ) {
             $this->render_assistant_prompt_shortcuts_section( $assistant_id, $config, $settings );
         }
 
@@ -516,6 +518,36 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
         }
 
         return WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+    }
+
+    /**
+     * Determine whether the visitor can view assistant metadata panels.
+     *
+     * @param int  $assistant_id Assistant post ID.
+     * @param bool $allow_guests Whether guest access has been enabled for the widget instance.
+     *
+     * @return bool
+     */
+    protected function can_display_assistant_details( $assistant_id, $allow_guests ) {
+        if ( $allow_guests ) {
+            return true;
+        }
+
+        if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
+            return true;
+        }
+
+        $capability = wp_mcp_ai_get_required_chat_capability( absint( $assistant_id ), 'shortcode' );
+
+        if ( ! $capability || 'public' === $capability ) {
+            return true;
+        }
+
+        if ( function_exists( 'current_user_can' ) && current_user_can( $capability ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
