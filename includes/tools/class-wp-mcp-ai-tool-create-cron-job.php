@@ -9,6 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+    require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
+}
+
 /**
  * Allows privileged users to create WP-Cron jobs.
  */
@@ -176,6 +180,8 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
         if ( false === $scheduled ) {
             return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule the cron event. Please try again.', 'wp-mcp-ai' ) );
         }
+
+        WP_MCP_AI_Cron_Manager::record_job( $hook, $args, $schedule, $timestamp, $user_id );
 
         return array(
             'hook'          => $hook,
