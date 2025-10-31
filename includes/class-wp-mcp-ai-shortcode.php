@@ -475,10 +475,6 @@ class WP_MCP_AI_Shortcode {
             return array();
         }
 
-        if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-            return array();
-        }
-
         $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
         $shortcuts      = array();
         $selected_tools = array();
@@ -552,73 +548,6 @@ class WP_MCP_AI_Shortcode {
             }
         }
 
-        if ( empty( $selected_tools ) ) {
-            return $shortcuts;
-        }
-
-        $registry = WP_MCP_AI_Tool_Registry::get_instance();
-
-        foreach ( $selected_tools as $tool_slug ) {
-            $tool = $registry->get_tool( $tool_slug );
-
-            if ( ! $tool ) {
-                continue;
-            }
-
-            $tasks = array();
-
-            if ( $tool instanceof WP_MCP_AI_Tool_Shortcuts_Interface ) {
-                $tasks = $tool->get_shortcut_tasks();
-            } elseif ( method_exists( $tool, 'get_shortcut_tasks' ) ) {
-                $tasks = $tool->get_shortcut_tasks();
-            }
-
-            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks', $tasks, $tool, $assistant_id );
-            $tasks = apply_filters( 'wp_mcp_ai_tool_shortcut_tasks_' . $tool_slug, $tasks, $tool, $assistant_id );
-
-            if ( empty( $tasks ) || ! is_array( $tasks ) ) {
-                $shortcuts[] = array(
-                    'tool'    => $tool->get_slug(),
-                    'label'   => $tool->get_slug(),
-                    'payload' => $tool->get_slug(),
-                );
-                continue;
-            }
-
-            foreach ( $tasks as $task ) {
-                if ( ! is_array( $task ) ) {
-                    continue;
-                }
-
-                $label = isset( $task['label'] ) && is_string( $task['label'] ) ? sanitize_text_field( $task['label'] ) : '';
-                $payload = isset( $task['payload'] ) && is_string( $task['payload'] ) ? sanitize_textarea_field( $task['payload'] ) : '';
-
-                if ( '' === $label && '' === $payload ) {
-                    continue;
-                }
-
-                if ( '' === $label ) {
-                    $label = $tool->get_slug();
-                }
-
-                if ( '' === $payload ) {
-                    $payload = $tool->get_slug();
-                }
-
-                $entry = array(
-                    'tool'    => $tool->get_slug(),
-                    'label'   => $label,
-                    'payload' => $payload,
-                );
-
-                if ( isset( $task['description'] ) && is_string( $task['description'] ) ) {
-                    $entry['description'] = sanitize_textarea_field( $task['description'] );
-                }
-
-                $shortcuts[] = $entry;
-            }
-        }
-
         $shortcuts = apply_filters( 'wp_mcp_ai_assistant_tool_shortcuts', $shortcuts, $assistant_id );
 
         $shortcuts = array_values(
@@ -637,93 +566,6 @@ class WP_MCP_AI_Shortcode {
                 }
             )
         );
-
-        $default_shortcut = array(
-            'tool'    => 'default',
-            'label'   => sanitize_text_field( __( 'What can you do?', 'wp-mcp-ai' ) ),
-            'payload' => sanitize_textarea_field( 'what are some things you can do' ),
-        );
-
-        /**
-         * Filter the default shortcut that is appended for every assistant.
-         *
-         * @since 1.0.1
-         *
-         * @param array $default_shortcut Default shortcut configuration.
-         * @param int   $assistant_id     Assistant post ID.
-         */
-        $default_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $default_shortcut, $assistant_id );
-
-        if ( is_array( $default_shortcut ) && ! empty( $default_shortcut['label'] ) && ! empty( $default_shortcut['payload'] ) ) {
-            $default_shortcut['tool'] = isset( $default_shortcut['tool'] ) && is_string( $default_shortcut['tool'] )
-                ? sanitize_key( $default_shortcut['tool'] )
-                : 'default';
-
-            $default_shortcut['label']   = sanitize_text_field( $default_shortcut['label'] );
-            $default_shortcut['payload'] = sanitize_textarea_field( $default_shortcut['payload'] );
-
-            if ( isset( $default_shortcut['description'] ) ) {
-                if ( is_string( $default_shortcut['description'] ) ) {
-                    $default_shortcut['description'] = sanitize_textarea_field( $default_shortcut['description'] );
-                } else {
-                    unset( $default_shortcut['description'] );
-                }
-            }
-
-            $has_default_shortcut = false;
-
-            foreach ( $shortcuts as $shortcut ) {
-                if ( ! is_array( $shortcut ) ) {
-                    continue;
-                }
-
-                if ( isset( $shortcut['payload'] ) && $shortcut['payload'] === $default_shortcut['payload'] ) {
-                    $has_default_shortcut = true;
-                    break;
-                }
-            }
-
-            if ( ! $has_default_shortcut ) {
-                $shortcuts[] = $default_shortcut;
-            }
-        }
-
-        if ( empty( $shortcuts ) ) {
-            $fallback_shortcut = array(
-                'tool'    => 'default',
-                'label'   => sanitize_text_field( __( 'What are some things you can do?', 'wp-mcp-ai' ) ),
-                'payload' => sanitize_textarea_field( 'what are some things you can do' ),
-            );
-
-            /**
-             * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
-             *
-             * @since 1.0.1
-             *
-             * @param array $fallback_shortcut Default shortcut configuration.
-             * @param int   $assistant_id      Assistant post ID.
-             */
-            $fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
-
-            if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
-                $fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
-                    ? sanitize_key( $fallback_shortcut['tool'] )
-                    : 'default';
-
-                $fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
-                $fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
-
-                if ( isset( $fallback_shortcut['description'] ) ) {
-                    if ( is_string( $fallback_shortcut['description'] ) ) {
-                        $fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
-                    } else {
-                        unset( $fallback_shortcut['description'] );
-                    }
-                }
-
-                $shortcuts[] = $fallback_shortcut;
-            }
-        }
 
         return $shortcuts;
     }
