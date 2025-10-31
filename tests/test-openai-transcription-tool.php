@@ -99,7 +99,30 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( 'json', $result['response_format'] );
         $this->assertSame( 'en', $result['language'] );
         $this->assertSame( 1.5, $result['duration'] );
+        $this->assertArrayHasKey( 'download_url', $result );
+        $this->assertArrayHasKey( 'url', $result );
+        $this->assertSame( $result['download_url'], $result['url'] );
+        $this->assertArrayHasKey( 'transcript_attachment_id', $result );
+        $this->assertArrayHasKey( 'transcript_file_name', $result );
+        $this->assertArrayHasKey( 'transcript_mime_type', $result );
+        $this->assertArrayHasKey( 'transcript_bytes', $result );
+        $this->assertArrayHasKey( 'title', $result );
+        $this->assertSame( 'Transcription of tool-audio.mp3', $result['title'] );
+        $this->assertSame( 'text/plain', $result['transcript_mime_type'] );
+        $this->assertNotEmpty( $result['download_url'] );
 
+        $transcript_id = $result['transcript_attachment_id'];
+        $this->assertNotSame( $attachment_id, $transcript_id );
+        $this->assertNotEmpty( $transcript_id );
+
+        $transcript_path = get_attached_file( $transcript_id );
+        $this->assertTrue( file_exists( $transcript_path ) );
+
+        $transcript_body = file_get_contents( $transcript_path );
+        $this->assertStringContainsString( 'Hello translated world', $transcript_body );
+        $this->assertStringContainsString( 'Source file: tool-audio.mp3', $transcript_body );
+
+        wp_delete_attachment( $transcript_id, true );
         wp_delete_attachment( $attachment_id, true );
     }
 
@@ -151,6 +174,10 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
         $this->assertIsArray( $result );
         $this->assertFalse( $result['translated'] );
         $this->assertSame( 'verbose_json', $result['response_format'] );
+
+        if ( isset( $result['transcript_attachment_id'] ) ) {
+            wp_delete_attachment( $result['transcript_attachment_id'], true );
+        }
 
         wp_delete_attachment( $attachment_id, true );
     }
@@ -205,6 +232,10 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
         $this->assertSame( $attachment_id, $result['attachment_id'] );
         $this->assertSame( 'audio/mpeg', $result['mime_type'] );
         $this->assertSame( 'Detected mime works', $result['text'] );
+
+        if ( isset( $result['transcript_attachment_id'] ) ) {
+            wp_delete_attachment( $result['transcript_attachment_id'], true );
+        }
 
         wp_delete_attachment( $attachment_id, true );
     }

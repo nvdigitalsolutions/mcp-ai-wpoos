@@ -2541,6 +2541,8 @@
 
         if (typeof result.title === 'string' && result.title.trim()) {
             label = result.title.trim();
+        } else if (typeof result.transcript_title === 'string' && result.transcript_title.trim()) {
+            label = result.transcript_title.trim();
         } else if (typeof result.file_name === 'string' && result.file_name.trim()) {
             label = result.file_name.trim();
         } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
@@ -2549,8 +2551,18 @@
 
         var metaParts = [];
         var metaRecord = {
-            bytes: typeof result.bytes === 'number' ? result.bytes : null,
-            mime_type: result.mime_type || result.mimeType || '',
+            bytes:
+                typeof result.transcript_bytes === 'number'
+                    ? result.transcript_bytes
+                    : typeof result.bytes === 'number'
+                    ? result.bytes
+                    : null,
+            mime_type:
+                result.transcript_mime_type ||
+                result.transcriptMimeType ||
+                result.mimeType ||
+                result.mime_type ||
+                '',
         };
 
         var baseMeta = buildAttachmentMeta(metaRecord);
@@ -2581,7 +2593,12 @@
         attachments.push({
             url: url,
             label: label || getString('downloadAttachment', 'Download attachment'),
-            downloadName: result.file_name || result.fileName || '',
+            downloadName:
+                result.transcript_file_name ||
+                result.transcriptFileName ||
+                result.file_name ||
+                result.fileName ||
+                '',
             meta: attachmentMeta,
         });
 

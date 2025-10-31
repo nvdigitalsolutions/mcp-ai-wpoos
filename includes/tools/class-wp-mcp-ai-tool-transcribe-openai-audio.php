@@ -173,6 +173,12 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
             return $result;
         }
 
+        $storage = $this->store_transcript_attachment( $result, $audio, $user_id );
+
+        if ( is_wp_error( $storage ) ) {
+            return $storage;
+        }
+
         $payload = array(
             'attachment_id' => $attachment_id,
             'file_name'     => $audio['file_name'],
@@ -183,6 +189,19 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
             'translated'    => ! empty( $result['translated'] ),
             'response_format' => $result['format'],
         );
+
+        $payload['transcript_attachment_id'] = $storage['attachment_id'];
+        $payload['transcript_file_name']     = $storage['file_name'];
+        $payload['transcript_mime_type']     = $storage['mime_type'];
+        $payload['transcript_bytes']         = $storage['bytes'];
+        $payload['transcript_url']           = $storage['url'];
+        $payload['transcript_title']         = $storage['title'];
+        $payload['download_url']             = $storage['url'];
+        $payload['url']                      = $storage['url'];
+        $payload['fileName']                 = $storage['file_name'];
+        $payload['mimeType']                 = $storage['mime_type'];
+        $payload['bytes']                    = $storage['bytes'];
+        $payload['title']                    = $storage['title'];
 
         if ( isset( $result['language'] ) ) {
             $payload['language'] = $result['language'];
@@ -197,6 +216,279 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
         }
 
         return apply_filters( 'wp_mcp_ai_transcribe_openai_audio_result', $payload, $arguments, $context );
+    }
+
+    /**
+     * Save the transcription text as a Media Library attachment.
+     *
+     * @param array $result Transcription payload from OpenAI.
+     * @param array $audio  Source audio metadata.
+     * @param int   $user_id Current user identifier.
+     * @return array|WP_Error
+     */
+    protected function store_transcript_attachment( array $result, array $audio, $user_id ) {
+        $document = $this->build_transcript_document( $result, $audio );
+
+        if ( '' === $document ) {
+            return new WP_Error( 'wp_mcp_ai_transcript_empty', __( 'The transcription result did not include any text to store.', 'wp-mcp-ai' ) );
+        }
+
+        $file_stem = $this->normalise_file_stem( $audio['file_name'] );
+        $file_name = sprintf( '%s-transcript-%s.txt', $file_stem, gmdate( 'Ymd-His' ) );
+
+        if ( ! function_exists( 'wp_upload_bits' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        $upload = wp_upload_bits( $file_name, null, $document );
+
+        if ( ! empty( $upload['error'] ) ) {
+            return new WP_Error( 'wp_mcp_ai_transcript_upload_failed', __( 'Failed to save the transcription file.', 'wp-mcp-ai' ), array( 'error' => $upload['error'] ) );
+        }
+
+        $file_path = isset( $upload['file'] ) ? $upload['file'] : '';
+
+        if ( '' === $file_path || ! file_exists( $file_path ) ) {
+            return new WP_Error( 'wp_mcp_ai_transcript_upload_failed', __( 'Failed to write the transcription file to disk.', 'wp-mcp-ai' ) );
+        }
+
+        $title = $this->generate_transcript_title( $audio['file_name'], $result );
+
+        $attachment = array(
+            'post_mime_type' => 'text/plain',
+            'post_title'     => $title,
+            'post_content'   => '',
+            'post_status'    => 'inherit',
+        );
+
+        if ( $user_id ) {
+            $attachment['post_author'] = $user_id;
+        }
+
+        $attachment_id = wp_insert_attachment( $attachment, $file_path );
+
+        if ( is_wp_error( $attachment_id ) ) {
+            $this->delete_file_safely( $file_path );
+
+            return new WP_Error( 'wp_mcp_ai_transcript_attachment_error', __( 'Failed to register the transcription file as an attachment.', 'wp-mcp-ai' ), array( 'error' => $attachment_id ) );
+        }
+
+        if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+
+        $metadata = wp_generate_attachment_metadata( $attachment_id, $file_path );
+
+        if ( ! is_array( $metadata ) ) {
+            $metadata = array();
+        }
+
+        if ( ! isset( $metadata['filesize'] ) && file_exists( $file_path ) ) {
+            $metadata['filesize'] = filesize( $file_path );
+        }
+
+        if ( ! empty( $metadata ) ) {
+            wp_update_attachment_metadata( $attachment_id, $metadata );
+        }
+
+        $bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
+
+        return array(
+            'attachment_id' => (int) $attachment_id,
+            'file'          => $file_path,
+            'file_name'     => wp_basename( $file_path ),
+            'url'           => isset( $upload['url'] ) ? $upload['url'] : '',
+            'mime_type'     => 'text/plain',
+            'bytes'         => $bytes ? (int) $bytes : 0,
+            'title'         => $title,
+        );
+    }
+
+    /**
+     * Build the transcript document contents.
+     *
+     * @param array $result Transcription payload.
+     * @param array $audio  Source audio metadata.
+     * @return string
+     */
+    protected function build_transcript_document( array $result, array $audio ) {
+        $sections   = array();
+        $meta_parts = array();
+
+        if ( ! empty( $audio['file_name'] ) ) {
+            /* translators: %s: Original audio filename. */
+            $meta_parts[] = sprintf( __( 'Source file: %s', 'wp-mcp-ai' ), $audio['file_name'] );
+        }
+
+        if ( ! empty( $result['language'] ) ) {
+            /* translators: %s: Detected language code. */
+            $meta_parts[] = sprintf( __( 'Language: %s', 'wp-mcp-ai' ), $result['language'] );
+        }
+
+        if ( isset( $result['duration'] ) ) {
+            $duration = $this->format_duration_label( $result['duration'] );
+
+            if ( '' !== $duration ) {
+                /* translators: %s: Audio duration. */
+                $meta_parts[] = sprintf( __( 'Duration: %s', 'wp-mcp-ai' ), $duration );
+            }
+        }
+
+        if ( ! empty( $result['translated'] ) ) {
+            $meta_parts[] = __( 'Translated to English', 'wp-mcp-ai' );
+        }
+
+        if ( ! empty( $meta_parts ) ) {
+            $sections[] = implode( ' • ', array_unique( array_filter( array_map( 'trim', $meta_parts ) ) ) );
+        }
+
+        if ( ! empty( $result['text'] ) ) {
+            $sections[] = trim( (string) $result['text'] );
+        }
+
+        if ( ! empty( $result['segments'] ) && is_array( $result['segments'] ) ) {
+            $segment_lines = array();
+
+            foreach ( $result['segments'] as $segment ) {
+                if ( empty( $segment['text'] ) ) {
+                    continue;
+                }
+
+                $line = $this->format_segment_line( $segment );
+
+                if ( '' !== $line ) {
+                    $segment_lines[] = $line;
+                }
+            }
+
+            if ( ! empty( $segment_lines ) ) {
+                $sections[] = implode( "\n", $segment_lines );
+            }
+        }
+
+        $sections = array_filter( array_map( 'trim', $sections ) );
+
+        return implode( "\n\n", $sections );
+    }
+
+    /**
+     * Format a single transcription segment line.
+     *
+     * @param array $segment Segment data from OpenAI.
+     * @return string
+     */
+    protected function format_segment_line( array $segment ) {
+        $text = trim( (string) $segment['text'] );
+
+        if ( '' === $text ) {
+            return '';
+        }
+
+        $start = isset( $segment['start'] ) ? $this->format_duration_label( $segment['start'] ) : '';
+        $end   = isset( $segment['end'] ) ? $this->format_duration_label( $segment['end'] ) : '';
+        $label = '';
+
+        if ( '' !== $start && '' !== $end ) {
+            $label = sprintf( '%s–%s', $start, $end );
+        } elseif ( '' !== $start ) {
+            $label = $start;
+        }
+
+        if ( '' !== $label ) {
+            return sprintf( '[%s] %s', $label, $text );
+        }
+
+        return $text;
+    }
+
+    /**
+     * Format a duration into a timestamp label.
+     *
+     * @param float|int|string $value Duration in seconds.
+     * @return string
+     */
+    protected function format_duration_label( $value ) {
+        if ( '' === $value || null === $value ) {
+            return '';
+        }
+
+        $seconds = (float) $value;
+
+        if ( $seconds < 0 ) {
+            return '';
+        }
+
+        $total_seconds = (int) round( $seconds );
+        $hours         = (int) floor( $total_seconds / 3600 );
+        $minutes       = (int) floor( ( $total_seconds % 3600 ) / 60 );
+        $remaining     = (int) ( $total_seconds % 60 );
+
+        if ( $hours > 0 ) {
+            return sprintf( '%d:%02d:%02d', $hours, $minutes, $remaining );
+        }
+
+        return sprintf( '%d:%02d', $minutes, $remaining );
+    }
+
+    /**
+     * Generate a human readable transcript title.
+     *
+     * @param string $file_name Source audio filename.
+     * @param array  $result    Transcription payload.
+     * @return string
+     */
+    protected function generate_transcript_title( $file_name, array $result ) {
+        $file_name = sanitize_text_field( (string) $file_name );
+
+        if ( '' === $file_name ) {
+            return __( 'Audio Transcription', 'wp-mcp-ai' );
+        }
+
+        /* translators: %s: Source audio filename. */
+        return sprintf( __( 'Transcription of %s', 'wp-mcp-ai' ), $file_name );
+    }
+
+    /**
+     * Normalise a filename into a filesystem-safe stem.
+     *
+     * @param string $file_name Raw filename.
+     * @return string
+     */
+    protected function normalise_file_stem( $file_name ) {
+        $file_name = sanitize_file_name( (string) $file_name );
+
+        if ( '' === $file_name ) {
+            return 'openai-transcript';
+        }
+
+        $info = pathinfo( $file_name );
+        $stem = isset( $info['filename'] ) ? $info['filename'] : $file_name;
+        $stem = sanitize_title( $stem );
+
+        if ( '' === $stem ) {
+            $stem = 'openai-transcript';
+        }
+
+        return $stem;
+    }
+
+    /**
+     * Delete a generated file safely when an error occurs.
+     *
+     * @param string $file_path Absolute file path.
+     */
+    protected function delete_file_safely( $file_path ) {
+        $file_path = (string) $file_path;
+
+        if ( '' === $file_path || ! file_exists( $file_path ) ) {
+            return;
+        }
+
+        if ( ! function_exists( 'wp_delete_file' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        wp_delete_file( $file_path );
     }
 
     /**
