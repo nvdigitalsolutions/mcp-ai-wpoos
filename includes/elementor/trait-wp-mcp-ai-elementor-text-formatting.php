@@ -163,6 +163,14 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
                         ),
                     )
                 );
+
+                $this->add_group_control(
+                    \Elementor\Group_Control_Typography::get_type(),
+                    array(
+                        'name'     => $args['section_id'] . '_heading_typography',
+                        'selector' => $heading_selector,
+                    )
+                );
             }
         }
 
@@ -178,6 +186,14 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
                         'selectors' => array(
                             $text_selector => 'color: {{VALUE}};',
                         ),
+                    )
+                );
+
+                $this->add_group_control(
+                    \Elementor\Group_Control_Typography::get_type(),
+                    array(
+                        'name'     => $args['section_id'] . '_text_typography',
+                        'selector' => $text_selector,
                     )
                 );
             }
@@ -197,6 +213,14 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
                         ),
                     )
                 );
+
+                $this->add_group_control(
+                    \Elementor\Group_Control_Typography::get_type(),
+                    array(
+                        'name'     => $args['section_id'] . '_meta_typography',
+                        'selector' => $meta_selector,
+                    )
+                );
             }
         }
 
@@ -212,6 +236,14 @@ trait WP_MCP_AI_Elementor_Text_Formatting {
                         'selectors' => array(
                             $link_selector => 'color: {{VALUE}};',
                         ),
+                    )
+                );
+
+                $this->add_group_control(
+                    \Elementor\Group_Control_Typography::get_type(),
+                    array(
+                        'name'     => $args['section_id'] . '_link_typography',
+                        'selector' => $link_selector,
                     )
                 );
             }
