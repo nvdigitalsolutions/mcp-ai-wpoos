@@ -1007,7 +1007,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
         $show_tool      = ! empty( $settings['assistant_prompt_shortcuts_show_tools'] ) && 'yes' === $settings['assistant_prompt_shortcuts_show_tools'];
         $empty_message  = isset( $settings['assistant_prompt_shortcuts_empty_message'] ) ? $settings['assistant_prompt_shortcuts_empty_message'] : '';
         $none_message   = isset( $settings['assistant_prompt_shortcuts_none_message'] ) ? $settings['assistant_prompt_shortcuts_none_message'] : '';
-        $shortcuts      = ( null !== $config && isset( $config['tool_shortcuts'] ) && is_array( $config['tool_shortcuts'] ) ) ? $config['tool_shortcuts'] : array();
+        $shortcuts      = $this->get_assistant_shortcuts( $assistant_id, $config );
 
         echo '<div class="wp-mcp-ai-chat-widget__assistant-shortcuts">';
 
@@ -1085,6 +1085,31 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
         echo '</ul>';
         echo '</div>';
+    }
+
+    /**
+     * Retrieve the shortcuts that should be rendered for the supplied assistant.
+     *
+     * @param int        $assistant_id Assistant post ID.
+     * @param array|null $config       Assistant configuration array.
+     * @return array
+     */
+    protected function get_assistant_shortcuts( $assistant_id, $config ) {
+        $assistant_id = absint( $assistant_id );
+
+        if ( $assistant_id && class_exists( 'WP_MCP_AI_Shortcode' ) && method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+            $shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
+
+            if ( is_array( $shortcuts ) && ! empty( $shortcuts ) ) {
+                return $shortcuts;
+            }
+        }
+
+        if ( null !== $config && isset( $config['tool_shortcuts'] ) && is_array( $config['tool_shortcuts'] ) ) {
+            return $config['tool_shortcuts'];
+        }
+
+        return array();
     }
 
     /**
