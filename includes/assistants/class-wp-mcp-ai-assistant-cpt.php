@@ -22,6 +22,7 @@ class WP_MCP_AI_Assistant_CPT {
     const META_MEMORY_FILES          = '_wp_mcp_ai_memory_files';
     const META_VECTOR_STORE_ID       = '_wp_mcp_ai_vector_store_id';
     const META_TOOL_SHORTCUTS        = '_wp_mcp_ai_tool_shortcuts';
+    const META_DISABLE_TOOL_SHORTCUTS = '_wp_mcp_ai_disable_tool_shortcuts';
     const META_TOOL_ROLE_RULES       = '_wp_mcp_ai_tool_role_rules';
     const META_CREDENTIALS           = WP_MCP_AI_Credentials::META_KEY;
     const META_EXTERNAL_ACTION_ID    = '_wp_mcp_ai_external_action_id';
@@ -330,6 +331,18 @@ class WP_MCP_AI_Assistant_CPT {
                     ),
                 ),
                 'sanitize_callback' => array( __CLASS__, 'sanitize_tool_role_rules_meta' ),
+                'auth_callback'     => $auth_callback,
+            )
+        );
+
+        register_post_meta(
+            self::POST_TYPE,
+            self::META_DISABLE_TOOL_SHORTCUTS,
+            array(
+                'type'              => 'boolean',
+                'single'            => true,
+                'show_in_rest'      => true,
+                'sanitize_callback' => array( __CLASS__, 'sanitize_disable_tool_shortcuts_meta' ),
                 'auth_callback'     => $auth_callback,
             )
         );
@@ -849,6 +862,9 @@ class WP_MCP_AI_Assistant_CPT {
 
         $tools = $this->registry->get_tools();
 
+        $disable_tool_shortcuts = get_post_meta( $post->ID, self::META_DISABLE_TOOL_SHORTCUTS, true );
+        $disable_tool_shortcuts = self::sanitize_disable_tool_shortcuts_meta( $disable_tool_shortcuts );
+
         $tool_role_rules = get_post_meta( $post->ID, self::META_TOOL_ROLE_RULES, true );
         if ( ! is_array( $tool_role_rules ) ) {
             $tool_role_rules = array();
@@ -876,6 +892,18 @@ class WP_MCP_AI_Assistant_CPT {
 
         echo '<p>' . esc_html__( 'Select the tools this assistant is permitted to invoke.', 'wp-mcp-ai' ) . '</p>';
         echo '<p class="description">' . esc_html__( 'Expand a group to review related capabilities. You can optionally limit who can call each tool by assigning WordPress roles.', 'wp-mcp-ai' ) . '</p>';
+
+        echo '<fieldset class="wp-mcp-ai-tools__shortcuts-toggle">';
+        echo '<legend class="screen-reader-text">' . esc_html__( 'Tool shortcut options', 'wp-mcp-ai' ) . '</legend>';
+        echo '<label for="wp-mcp-ai-disable-tool-shortcuts" class="wp-mcp-ai-tools__shortcuts-toggle-label">';
+        printf(
+            '<input type="checkbox" id="wp-mcp-ai-disable-tool-shortcuts" name="wp_mcp_ai_disable_prebuilt_shortcuts" value="1" %s />',
+            checked( $disable_tool_shortcuts, true, false )
+        );
+        echo '<span>' . esc_html__( 'Disable pre-built prompt shortcuts from selected tools', 'wp-mcp-ai' ) . '</span>';
+        echo '</label>';
+        echo '<p class="description">' . esc_html__( 'When enabled, only the custom shortcuts you define below will appear in the chat interface.', 'wp-mcp-ai' ) . '</p>';
+        echo '</fieldset>';
 
         $group_map = array();
         if ( method_exists( $this->registry, 'get_tool_group_map' ) ) {
@@ -1004,6 +1032,9 @@ class WP_MCP_AI_Assistant_CPT {
             .wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}
             .wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}
             .wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}
+            .wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}
+            .wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}
+            .wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
             @media (max-width:782px){.wp-mcp-ai-tools__list{grid-template-columns:1fr}}
             </style>
             <?php
@@ -1982,6 +2013,16 @@ class WP_MCP_AI_Assistant_CPT {
             } else {
                 update_post_meta( $post_id, self::META_TOOL_ROLE_RULES, $tool_role_rules );
             }
+
+            $disable_tool_shortcuts = isset( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                ? self::sanitize_disable_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
+                : false;
+
+            if ( $disable_tool_shortcuts ) {
+                update_post_meta( $post_id, self::META_DISABLE_TOOL_SHORTCUTS, true );
+            } else {
+                delete_post_meta( $post_id, self::META_DISABLE_TOOL_SHORTCUTS );
+            }
         }
 
         if ( $shortcuts_nonce_verified ) {
@@ -2062,6 +2103,7 @@ class WP_MCP_AI_Assistant_CPT {
             'vector_store_id'             => get_post_meta( $assistant_id, self::META_VECTOR_STORE_ID, true ),
             'tool_shortcuts'              => get_post_meta( $assistant_id, self::META_TOOL_SHORTCUTS, true ),
             'tool_role_rules'             => get_post_meta( $assistant_id, self::META_TOOL_ROLE_RULES, true ),
+            'disable_prebuilt_shortcuts'  => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
             'external_action_identifier'  => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
             'external_action_type'        => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
         );
@@ -2113,6 +2155,8 @@ class WP_MCP_AI_Assistant_CPT {
         } else {
             $config['tool_role_rules'] = self::sanitize_tool_role_rules_meta( $config['tool_role_rules'] );
         }
+
+        $config['disable_prebuilt_shortcuts'] = self::sanitize_disable_tool_shortcuts_meta( $config['disable_prebuilt_shortcuts'] );
 
         if ( ! is_string( $config['external_action_identifier'] ) ) {
             $config['external_action_identifier'] = '';
@@ -2343,6 +2387,28 @@ class WP_MCP_AI_Assistant_CPT {
         }
 
         return array_values( $sanitized );
+    }
+
+    /**
+     * Sanitize disable tool shortcut metadata value.
+     *
+     * @param mixed $value Raw value.
+     * @return bool
+     */
+    public static function sanitize_disable_tool_shortcuts_meta( $value ) {
+        if ( function_exists( 'rest_sanitize_boolean' ) ) {
+            return rest_sanitize_boolean( $value );
+        }
+
+        if ( is_string( $value ) ) {
+            $value = strtolower( $value );
+
+            if ( in_array( $value, array( 'false', '0', '' ), true ) ) {
+                return false;
+            }
+        }
+
+        return (bool) $value;
     }
 
     /**
