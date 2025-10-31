@@ -199,7 +199,7 @@ class WP_MCP_AI_Gemini_Client {
             ),
             'tools' => array(
                 array(
-                    'imageCreation' => (object) array(),
+                    'imageGeneration' => (object) array(),
                 ),
             ),
         );

@@ -174,7 +174,7 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'tools', $payload );
         $this->assertIsArray( $payload['tools'] );
         $this->assertNotEmpty( $payload['tools'] );
-        $this->assertArrayHasKey( 'imageCreation', $payload['tools'][0] );
+        $this->assertArrayHasKey( 'imageGeneration', $payload['tools'][0] );
         $this->assertArrayHasKey( 'imageGenerationConfig', $payload );
         $this->assertSame( '16:9', $payload['imageGenerationConfig']['aspectRatio'] );
         $this->assertSame( 'gemini-2.5-flash-image', $this->extract_model_from_url( $captured_request['url'] ) );
