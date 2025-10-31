@@ -2964,11 +2964,11 @@ class WP_MCP_AI_Assistant_CPT {
                 }
             }
 
-            if ( ! empty( $entry['shortcuts'] ) ) {
-                $entry['shortcuts'] = array_values( $entry['shortcuts'] );
-            } else {
-                $entry['shortcuts'] = array();
+            if ( empty( $entry['shortcuts'] ) ) {
+                continue;
             }
+
+            $entry['shortcuts'] = array_values( $entry['shortcuts'] );
 
             $sanitized[ $tool ] = $entry;
         }
