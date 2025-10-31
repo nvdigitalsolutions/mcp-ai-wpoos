@@ -444,6 +444,14 @@ class WP_MCP_AI_REST {
         if ( '' !== $session_key ) {
             $session = $this->get_transcript_session( $user_id, $session_key );
 
+            if ( is_wp_error( $session ) && 'wp_mcp_ai_transcript_missing' === $session->get_error_code() && current_user_can( 'manage_options' ) ) {
+                $session = $this->get_transcript_session( 0, $session_key );
+
+                if ( ! is_wp_error( $session ) && ! empty( $session['user_id'] ) ) {
+                    $request->set_param( 'user_id', absint( $session['user_id'] ) );
+                }
+            }
+
             if ( is_wp_error( $session ) ) {
                 if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
                     return rest_ensure_response(
@@ -455,6 +463,17 @@ class WP_MCP_AI_REST {
                 }
 
                 return $session;
+            }
+
+            $session_user_id = isset( $session['user_id'] ) ? absint( $session['user_id'] ) : 0;
+            $current_user    = get_current_user_id();
+
+            if ( $session_user_id && $current_user && $session_user_id !== $current_user && ! current_user_can( 'manage_options' ) ) {
+                return new WP_Error(
+                    'wp_mcp_ai_forbidden',
+                    __( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
+                    array( 'status' => 403 )
+                );
             }
 
             return rest_ensure_response( array( 'session' => $session ) );
@@ -3816,6 +3835,7 @@ class WP_MCP_AI_REST {
                     MAX(cct_created) AS last_created,
                     MAX(assistant_id) AS assistant_id,
                     MAX(assistant_model) AS assistant_model,
+                    MAX(user_id) AS user_id,
                     COUNT(*) AS turn_count
              FROM {$table}
              WHERE user_id = %d
@@ -3883,22 +3903,42 @@ class WP_MCP_AI_REST {
         $table   = $this->get_transcript_table_name();
         $user_id = absint( $user_id );
 
-        $query = $wpdb->prepare(
-            "SELECT request_payload,
-                    response_payload,
-                    metadata,
-                    request_started_at,
-                    response_completed_at,
-                    cct_created,
-                    assistant_id,
-                    assistant_model,
-                    latency_ms
-             FROM {$table}
-             WHERE session_key = %s AND user_id = %d
-             ORDER BY cct_created ASC, id ASC",
-            $session_key,
-            $user_id
-        );
+        if ( $user_id > 0 ) {
+            $query = $wpdb->prepare(
+                "SELECT request_payload,
+                        response_payload,
+                        metadata,
+                        request_started_at,
+                        response_completed_at,
+                        cct_created,
+                        assistant_id,
+                        assistant_model,
+                        latency_ms,
+                        user_id
+                 FROM {$table}
+                 WHERE session_key = %s AND user_id = %d
+                 ORDER BY cct_created ASC, id ASC",
+                $session_key,
+                $user_id
+            );
+        } else {
+            $query = $wpdb->prepare(
+                "SELECT request_payload,
+                        response_payload,
+                        metadata,
+                        request_started_at,
+                        response_completed_at,
+                        cct_created,
+                        assistant_id,
+                        assistant_model,
+                        latency_ms,
+                        user_id
+                 FROM {$table}
+                 WHERE session_key = %s
+                 ORDER BY cct_created ASC, id ASC",
+                $session_key
+            );
+        }
 
         $rows = $wpdb->get_results( $query, ARRAY_A );
 
@@ -3916,6 +3956,7 @@ class WP_MCP_AI_REST {
         $turn_count       = 0;
         $started_at       = '';
         $updated_at       = '';
+        $session_user_id  = 0;
 
         foreach ( $rows as $row ) {
             if ( ! $assistant_id && ! empty( $row['assistant_id'] ) ) {
@@ -3924,6 +3965,10 @@ class WP_MCP_AI_REST {
 
             if ( '' === $assistant_model && ! empty( $row['assistant_model'] ) ) {
                 $assistant_model = sanitize_text_field( $row['assistant_model'] );
+            }
+
+            if ( ! $session_user_id && ! empty( $row['user_id'] ) ) {
+                $session_user_id = (int) $row['user_id'];
             }
 
             if ( '' === $started_at ) {
@@ -3968,6 +4013,7 @@ class WP_MCP_AI_REST {
             'updated_at'      => $updated_at,
             'turn_count'      => $turn_count,
             'messages'        => $messages,
+            'user_id'         => $session_user_id,
         );
     }
 
@@ -4103,6 +4149,7 @@ class WP_MCP_AI_REST {
             'updated_at'      => $this->format_transcript_timestamp( isset( $row['last_created'] ) ? $row['last_created'] : '', isset( $row['completed_at'] ) ? $row['completed_at'] : '' ),
             'turn_count'      => isset( $row['turn_count'] ) ? (int) $row['turn_count'] : 0,
             'preview'         => $preview,
+            'user_id'         => isset( $row['user_id'] ) ? (int) $row['user_id'] : (int) $user_id,
         );
     }
 
