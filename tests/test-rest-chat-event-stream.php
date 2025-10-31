@@ -58,6 +58,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -83,7 +84,9 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( 'event: close', $output );
         $this->assertStringContainsString( '[DONE]', $output );
 
-        unset( $hook->callbacks[10][ $closure_key ] );
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
 
         wp_set_current_user( 0 );
     }
@@ -143,6 +146,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -166,7 +170,9 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( 'event: message', $output );
         $this->assertStringContainsString( 'event: close', $output );
 
-        unset( $hook->callbacks[10][ $closure_key ] );
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
 
         wp_set_current_user( 0 );
     }

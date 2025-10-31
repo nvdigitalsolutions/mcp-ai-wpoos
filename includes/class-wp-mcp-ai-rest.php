@@ -1635,7 +1635,7 @@ class WP_MCP_AI_REST {
         $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
 
         $headers = array(
-            'Content-Type'           => 'text/event-stream; charset=utf-8',
+            'Content-Type'           => 'text/event-stream',
             'Cache-Control'          => 'no-cache, no-store, must-revalidate',
             'Pragma'                 => 'no-cache',
             'Connection'             => 'keep-alive',
@@ -1643,34 +1643,37 @@ class WP_MCP_AI_REST {
             'X-Content-Type-Options' => 'nosniff',
         );
 
-        add_filter(
-            'rest_pre_serve_request',
-            static function ( $served, $response, $request, $server ) use ( $headers, $frames ) {
-                if ( $served ) {
-                    return $served;
+        $callback = null;
+        $callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {
+            if ( $served ) {
+                return $served;
+            }
+
+            foreach ( $headers as $name => $value ) {
+                if ( '' === $name || null === $value ) {
+                    continue;
                 }
 
-                foreach ( $headers as $name => $value ) {
-                    if ( '' === $name || null === $value ) {
-                        continue;
-                    }
+                $server->send_header( $name, $value );
+            }
 
-                    $server->send_header( $name, $value );
-                }
+            echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-                echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            if ( function_exists( 'flush' ) ) {
+                flush();
+            }
 
-                if ( function_exists( 'flush' ) ) {
-                    flush();
-                }
+            remove_filter( 'rest_pre_serve_request', $callback, 10 );
 
-                return true;
-            },
-            10,
-            4
-        );
+            return true;
+        };
 
-        return new WP_REST_Response( null, 200 );
+        add_filter( 'rest_pre_serve_request', $callback, 10, 4 );
+
+        $response = new WP_REST_Response( null, 200 );
+        $response->set_headers( $headers );
+
+        return $response;
     }
 
     /**
