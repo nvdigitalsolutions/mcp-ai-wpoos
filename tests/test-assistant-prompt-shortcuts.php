@@ -147,6 +147,64 @@ class Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
 
         $this->assertCount( 1, $fallback_entries, 'Global fallback shortcut should remain appended.' );
     }
+
+    /**
+     * Ensure pre-built shortcuts stored with explicit tool metadata are applied after sanitization.
+     */
+    public function test_prebuilt_shortcuts_with_tool_metadata_are_used() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Configured Pre-built Shortcuts Assistant',
+            )
+        );
+
+        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( $this->stub_tool->get_slug() ) );
+
+        update_post_meta(
+            $assistant_id,
+            WP_MCP_AI_Assistant_CPT::META_TOOL_PREBUILT_SHORTCUTS,
+            array(
+                array(
+                    'tool'      => $this->stub_tool->get_slug(),
+                    'mode'      => 'custom',
+                    'shortcuts' => array(
+                        array(
+                            'label'       => 'Compile engagement metrics',
+                            'payload'     => 'gather the latest engagement analytics',
+                            'description' => 'Review the newest audience and traffic metrics.',
+                        ),
+                    ),
+                ),
+            )
+        );
+
+        $shortcuts = WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
+
+        $tool_shortcuts = array_filter(
+            $shortcuts,
+            function ( $shortcut ) {
+                return is_array( $shortcut ) && isset( $shortcut['tool'] ) && $this->stub_tool->get_slug() === $shortcut['tool'];
+            }
+        );
+
+        $this->assertCount( 1, $tool_shortcuts, 'Configured pre-built shortcut should be surfaced exactly once.' );
+
+        $tool_shortcut = array_values( $tool_shortcuts )[0];
+        $this->assertSame( 'Compile engagement metrics', $tool_shortcut['label'] );
+        $this->assertSame( 'gather the latest engagement analytics', $tool_shortcut['payload'] );
+        $this->assertSame( 'Review the newest audience and traffic metrics.', $tool_shortcut['description'] );
+
+        $fallback_entries = array_filter(
+            $shortcuts,
+            static function ( $shortcut ) {
+                return is_array( $shortcut ) && isset( $shortcut['tool'] ) && 'default' === $shortcut['tool'];
+            }
+        );
+
+        $this->assertCount( 1, $fallback_entries, 'Global fallback shortcut should remain appended.' );
+    }
 }
 
 class WP_MCP_AI_Test_Prompt_Shortcut_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
