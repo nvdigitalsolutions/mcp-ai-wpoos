@@ -176,7 +176,6 @@ function wp_mcp_ai_bootstrap() {
         WP_MCP_AI_Elementor_Integration::maybe_init();
     }
 
-    WP_MCP_AI_ChatKit_Integration::maybe_bootstrap();
 }
 
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
