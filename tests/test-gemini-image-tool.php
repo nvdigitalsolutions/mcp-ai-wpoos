@@ -90,4 +90,75 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
             wp_delete_attachment( $result['attachment_id'], true );
         }
     }
+
+    /**
+     * The tool should handle base64url encoded inline data from Gemini.
+     */
+    public function test_execute_decodes_base64url_inline_payload() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['gemini_api_key'] = 'gsk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        $tool               = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+        $captured_request    = null;
+        $png_base64          = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+        $png_binary          = base64_decode( $png_base64 );
+        $png_base64url       = rtrim( strtr( base64_encode( $png_binary ), '+/', '-_' ), '=' );
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64url ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            $payload = array(
+                'candidates' => array(
+                    array(
+                        'content' => array(
+                            'parts' => array(
+                                array(
+                                    'inlineData' => array(
+                                        'data'     => $png_base64url,
+                                        'mimeType' => 'image/png',
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            );
+
+            return array(
+                'body'     => wp_json_encode( $payload ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'prompt'    => 'A friendly otter in a teacup',
+                'mime_type' => 'image/png',
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertIsArray( $result );
+        $this->assertArrayHasKey( 'content', $result );
+        $this->assertSame( 'base64', $result['content']['encoding'] );
+        $this->assertSame( base64_encode( $png_binary ), $result['content']['data'] );
+        $this->assertSame( 'image/png', $result['content']['mime_type'] );
+
+        if ( ! empty( $result['attachment_id'] ) ) {
+            wp_delete_attachment( $result['attachment_id'], true );
+        }
+    }
 }
