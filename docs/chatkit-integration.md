@@ -41,6 +41,12 @@ Paste JSON similar to the snippet below into ChatKit’s shortcut field to prelo
 
 The payload string is passed directly to the MCP AI tool registry, so it should contain whatever JSON the target tool expects.
 
+## Front-end chat surfaces
+The integration definition also advertises the two front-end chat surfaces bundled with WP MCP AI so ChatKit operators can reuse the existing UI without hunting for documentation.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L170-L219】
+
+- **Shortcode** – Use `[wp_mcp_ai_chat assistant="123" allow_guests="false" save_transcript="true"]` to embed the chat UI anywhere shortcodes run. The attributes mirror the shortcode implementation and expose assistant selection, guest access toggles, and transcript storage flags.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L178-L198】【F:includes/class-wp-mcp-ai-shortcode.php†L180-L331】
+- **Elementor widget** – Drop the **MCP AI Chat** widget (`wp_mcp_ai_chat`) into Elementor layouts. The integration documents the assistant picker, guest toggle, and transcript storage controls so ChatKit surfaces the same configuration affordances that exist in Elementor today.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L199-L219】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L33-L112】
+
 ## REST endpoints exposed to ChatKit
 ChatKit calls WP MCP AI through the `mcp-ai/v1` namespace using the following routes declared in the integration definition：【F:includes/class-wp-mcp-ai-chatkit-integration.php†L166-L180】
 

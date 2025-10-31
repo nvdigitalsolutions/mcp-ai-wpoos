@@ -43,6 +43,22 @@ class Test_ChatKit_Integration extends WP_UnitTestCase {
         $this->assertSame( '/chat', $addon['rest_routes']['chat']['path'] );
         $this->assertArrayHasKey( 'supports', $addon );
         $this->assertTrue( $addon['supports']['attachments'] );
+        $this->assertArrayHasKey( 'surfaces', $addon );
+
+        $this->assertArrayHasKey( 'shortcode', $addon['surfaces'] );
+        $shortcode_surface = $addon['surfaces']['shortcode'];
+        $this->assertSame( 'shortcode', $shortcode_surface['type'] );
+        $this->assertSame( 'wp_mcp_ai_chat', $shortcode_surface['tag'] );
+        $this->assertArrayHasKey( 'attributes', $shortcode_surface );
+        $this->assertArrayHasKey( 'assistant', $shortcode_surface['attributes'] );
+        $this->assertTrue( $shortcode_surface['attributes']['assistant']['required'] );
+
+        $this->assertArrayHasKey( 'elementor_widget', $addon['surfaces'] );
+        $elementor_surface = $addon['surfaces']['elementor_widget'];
+        $this->assertSame( 'elementor_widget', $elementor_surface['type'] );
+        $this->assertSame( 'wp_mcp_ai_chat', $elementor_surface['widget'] );
+        $this->assertArrayHasKey( 'attributes', $elementor_surface );
+        $this->assertArrayHasKey( 'allow_guests', $elementor_surface['attributes'] );
     }
 
     /**
