@@ -3797,7 +3797,7 @@ class WP_MCP_AI_REST {
         if ( ! $this->transcript_table_exists() ) {
             return new WP_Error(
                 'wp_mcp_ai_transcripts_unavailable',
-                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active.', 'wp-mcp-ai' ),
+                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'wp-mcp-ai' ),
                 array( 'status' => 404 )
             );
         }
@@ -3875,7 +3875,7 @@ class WP_MCP_AI_REST {
         if ( ! $this->transcript_table_exists() ) {
             return new WP_Error(
                 'wp_mcp_ai_transcripts_unavailable',
-                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active.', 'wp-mcp-ai' ),
+                __( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'wp-mcp-ai' ),
                 array( 'status' => 404 )
             );
         }
