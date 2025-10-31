@@ -154,10 +154,7 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
             $args = $arguments['args'];
         }
 
-        // Normalise associative arrays to pass as a single argument.
-        if ( ! empty( $args ) && array_keys( $args ) !== range( 0, count( $args ) - 1 ) ) {
-            $args = array( $args );
-        }
+        $args = WP_MCP_AI_Cron_Manager::normalise_args( $args );
 
         $existing_timestamp = wp_next_scheduled( $hook, $args );
         if ( false !== $existing_timestamp ) {

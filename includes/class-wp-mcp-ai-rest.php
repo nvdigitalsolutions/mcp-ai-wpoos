@@ -2475,7 +2475,7 @@ class WP_MCP_AI_REST {
 
         if ( 'openai' === $context['provider'] ) {
             $provider_limits = array(
-                'gpt-5-nano' => 200000,
+                'gpt-5-nano' => 150000,
             );
         }
 

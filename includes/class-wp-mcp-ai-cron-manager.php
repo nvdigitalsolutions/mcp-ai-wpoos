@@ -23,6 +23,42 @@ class WP_MCP_AI_Cron_Manager {
     }
 
     /**
+     * Normalise cron arguments before interacting with WP-Cron.
+     *
+     * WordPress expects positional arguments to use zero-based numeric keys.
+     * Associative arrays should be wrapped so they are treated as a single
+     * argument when scheduling and clearing events.
+     *
+     * @param mixed $args Raw argument list supplied by a caller.
+     * @return array Sanitised argument list suitable for WP-Cron functions.
+     */
+    public static function normalise_args( $args ) {
+        if ( ! is_array( $args ) ) {
+            return array();
+        }
+
+        if ( empty( $args ) ) {
+            return array();
+        }
+
+        $keys              = array_keys( $args );
+        $is_numeric_indexed = true;
+
+        foreach ( $keys as $index => $key ) {
+            if ( (string) $key !== (string) $index ) {
+                $is_numeric_indexed = false;
+                break;
+            }
+        }
+
+        if ( $is_numeric_indexed ) {
+            return array_values( $args );
+        }
+
+        return array( $args );
+    }
+
+    /**
      * Record a cron event scheduled through the plugin.
      *
      * @param string $hook      Cron hook name.
@@ -34,8 +70,8 @@ class WP_MCP_AI_Cron_Manager {
      * @return string Identifier of the stored job.
      */
     public static function record_job( $hook, $args, $schedule, $timestamp, $user_id ) {
-        $hook     = (string) $hook;
-        $args     = is_array( $args ) ? $args : array();
+        $hook = (string) $hook;
+        $args = self::normalise_args( $args );
         $schedule = $schedule ? (string) $schedule : 'single';
         $timestamp = (int) $timestamp;
         $user_id   = (int) $user_id;
@@ -103,7 +139,8 @@ class WP_MCP_AI_Cron_Manager {
 
         $job   = $jobs[ $job_id ];
         $hook  = isset( $job['hook'] ) ? (string) $job['hook'] : '';
-        $args  = isset( $job['args'] ) && is_array( $job['args'] ) ? $job['args'] : array();
+        $args  = isset( $job['args'] ) ? $job['args'] : array();
+        $args  = self::normalise_args( $args );
         $event = false;
 
         if ( '' !== $hook ) {
@@ -133,7 +170,8 @@ class WP_MCP_AI_Cron_Manager {
 
         foreach ( $jobs as $job_id => $job ) {
             $hook = isset( $job['hook'] ) ? (string) $job['hook'] : '';
-            $args = isset( $job['args'] ) && is_array( $job['args'] ) ? $job['args'] : array();
+            $args = isset( $job['args'] ) ? $job['args'] : array();
+            $args = self::normalise_args( $args );
 
             if ( '' === $hook ) {
                 unset( $jobs[ $job_id ] );
@@ -162,13 +200,9 @@ class WP_MCP_AI_Cron_Manager {
      * @return string
      */
     protected static function generate_job_id( $hook, $args ) {
-        if ( ! is_array( $args ) ) {
-            $args = array();
-        }
-
         $data = array(
             'hook' => (string) $hook,
-            'args' => $args,
+            'args' => self::normalise_args( $args ),
         );
 
         return md5( wp_json_encode( $data ) );
@@ -197,10 +231,12 @@ class WP_MCP_AI_Cron_Manager {
 
             $job_id = isset( $job['job_id'] ) ? (string) $job['job_id'] : self::generate_job_id( $job['hook'], isset( $job['args'] ) ? $job['args'] : array() );
 
+            $normalised_args = self::normalise_args( isset( $job['args'] ) ? $job['args'] : array() );
+
             $jobs[ $job_id ] = array(
                 'job_id'          => $job_id,
                 'hook'            => (string) $job['hook'],
-                'args'            => isset( $job['args'] ) && is_array( $job['args'] ) ? $job['args'] : array(),
+                'args'            => $normalised_args,
                 'schedule'        => isset( $job['schedule'] ) ? (string) $job['schedule'] : 'single',
                 'first_timestamp' => isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0,
                 'created_at'      => isset( $job['created_at'] ) ? (int) $job['created_at'] : 0,
