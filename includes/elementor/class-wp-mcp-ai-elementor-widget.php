@@ -479,6 +479,334 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
             )
         );
 
+        $bubble_selector = '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat';
+
+        $this->start_controls_section(
+            'section_style_chat_user_bubble',
+            array(
+                'label' => __( 'User Bubble', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_user_bubble_gradient_start',
+            array(
+                'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#2747f0',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-user-bubble-gradient-start: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_user_bubble_gradient_end',
+            array(
+                'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#4855f5',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-user-bubble-gradient-end: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_user_bubble_text_color',
+            array(
+                'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#ffffff',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-user-bubble-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_user_bubble_shadow_color',
+            array(
+                'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(39, 71, 240, 0.35)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-user-bubble-shadow: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->end_controls_section();
+
+        $this->start_controls_section(
+            'section_style_chat_assistant_bubble',
+            array(
+                'label' => __( 'Assistant Bubble', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_assistant_bubble_background',
+            array(
+                'label'     => __( 'Background', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#f8faff',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-assistant-bubble-background: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_assistant_bubble_border',
+            array(
+                'label'     => __( 'Border', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(59, 130, 246, 0.25)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-assistant-bubble-border: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_assistant_bubble_shadow',
+            array(
+                'label'     => __( 'Shadow', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(59, 130, 246, 0.08)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-assistant-bubble-shadow: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_assistant_bubble_strong_text',
+            array(
+                'label'     => __( 'Strong Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#1d4ed8',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-assistant-strong-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_assistant_bubble_em_text',
+            array(
+                'label'     => __( 'Emphasised Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#4338ca',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-assistant-em-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->end_controls_section();
+
+        $this->start_controls_section(
+            'section_style_chat_tool_bubble',
+            array(
+                'label' => __( 'Tool Bubble', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_bubble_background',
+            array(
+                'label'     => __( 'Background', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#0f172a',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-bubble-background: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_bubble_text',
+            array(
+                'label'     => __( 'Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#e2e8f0',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-bubble-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_bubble_border',
+            array(
+                'label'     => __( 'Border', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(96, 165, 250, 0.35)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-bubble-border: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_bubble_inner_shadow',
+            array(
+                'label'     => __( 'Inner Shadow', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(30, 64, 175, 0.4)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-bubble-inner-shadow: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_bubble_link_text',
+            array(
+                'label'     => __( 'Link Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#93c5fd',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-bubble-link-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_code_background',
+            array(
+                'label'     => __( 'Code Background', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(148, 163, 184, 0.18)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-code-background: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_tool_code_text',
+            array(
+                'label'     => __( 'Code Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#f8fafc',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-tool-code-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->end_controls_section();
+
+        $this->start_controls_section(
+            'section_style_chat_system_bubble',
+            array(
+                'label' => __( 'System Bubble', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_system_bubble_background',
+            array(
+                'label'     => __( 'Background', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#fef9c3',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-system-bubble-background: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_system_bubble_text',
+            array(
+                'label'     => __( 'Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#854d0e',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-system-bubble-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_system_bubble_border',
+            array(
+                'label'     => __( 'Border', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#facc15',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-system-bubble-border: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->end_controls_section();
+
+        $this->start_controls_section(
+            'section_style_chat_alert_notice',
+            array(
+                'label' => __( 'Alert Notice', 'wp-mcp-ai' ),
+                'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+            )
+        );
+
+        $this->add_control(
+            'chat_alert_notice_background',
+            array(
+                'label'     => __( 'Background', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#fef2f2',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-notice-background: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_alert_notice_text',
+            array(
+                'label'     => __( 'Text', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => '#8a1f1f',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-notice-text: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_alert_notice_border',
+            array(
+                'label'     => __( 'Border', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(214, 54, 56, 0.35)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-notice-border: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->add_control(
+            'chat_alert_notice_shadow',
+            array(
+                'label'     => __( 'Shadow', 'wp-mcp-ai' ),
+                'type'      => \Elementor\Controls_Manager::COLOR,
+                'default'   => 'rgba(214, 54, 56, 0.12)',
+                'selectors' => array(
+                    $bubble_selector => '--wp-mcp-ai-color-notice-shadow: {{VALUE}};',
+                ),
+            )
+        );
+
+        $this->end_controls_section();
+
         $this->start_controls_section(
             'section_style_chat_submit_button',
             array(
