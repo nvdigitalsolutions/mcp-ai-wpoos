@@ -107,6 +107,55 @@ class WP_MCP_AI_Admin_Settings {
                 'format'      => 'rgba',
                 'description' => __( 'Drop shadow applied to the chat container.', 'wp-mcp-ai' ),
             ),
+            'shortcut-border' => array(
+                'label'       => __( 'Shortcut border', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => 'rgba(148, 163, 184, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Border for the transcript toggle and saved reply shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-background' => array(
+                'label'       => __( 'Shortcut background', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => 'rgba(148, 163, 184, 0.16)',
+                'format'      => 'rgba',
+                'description' => __( 'Background fill for the transcript toggle and shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-text' => array(
+                'label'       => __( 'Shortcut text', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => '#111827',
+                'format'      => 'hex',
+                'description' => __( 'Text and icon color for transcript controls and shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-hover-background' => array(
+                'label'       => __( 'Shortcut hover background', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => 'rgba(59, 130, 246, 0.12)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color when hovering the transcript toggle or shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-hover-border' => array(
+                'label'       => __( 'Shortcut hover border', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => 'rgba(59, 130, 246, 0.35)',
+                'format'      => 'rgba',
+                'description' => __( 'Border color when hovering transcript controls or shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-hover-text' => array(
+                'label'       => __( 'Shortcut hover text', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => '#0f172a',
+                'format'      => 'hex',
+                'description' => __( 'Text color when hovering the transcript toggle or shortcuts.', 'wp-mcp-ai' ),
+            ),
+            'shortcut-focus-ring' => array(
+                'label'       => __( 'Shortcut focus ring', 'wp-mcp-ai' ),
+                'group'       => 'shortcuts',
+                'default'     => 'rgba(59, 130, 246, 0.45)',
+                'format'      => 'rgba',
+                'description' => __( 'Focus outline color for transcript controls and shortcuts.', 'wp-mcp-ai' ),
+            ),
             'bubble-neutral-background' => array(
                 'label'       => __( 'Default bubble background', 'wp-mcp-ai' ),
                 'group'       => 'default-message',
@@ -239,6 +288,41 @@ class WP_MCP_AI_Admin_Settings {
                 'default'     => 'rgba(220, 38, 38, 0.88)',
                 'format'      => 'rgba',
                 'description' => __( 'Background color when a speech error is shown.', 'wp-mcp-ai' ),
+            ),
+            'copy-button-background' => array(
+                'label'       => __( 'Copy button background', 'wp-mcp-ai' ),
+                'group'       => 'clipboard',
+                'default'     => 'rgba(15, 23, 42, 0.82)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color for the copy transcript button.', 'wp-mcp-ai' ),
+            ),
+            'copy-button-text' => array(
+                'label'       => __( 'Copy button icon', 'wp-mcp-ai' ),
+                'group'       => 'clipboard',
+                'default'     => '#fff',
+                'format'      => 'hex',
+                'description' => __( 'Icon color for the copy transcript button.', 'wp-mcp-ai' ),
+            ),
+            'copy-button-hover-background' => array(
+                'label'       => __( 'Copy button hover background', 'wp-mcp-ai' ),
+                'group'       => 'clipboard',
+                'default'     => 'rgba(15, 23, 42, 0.94)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color when hovering the copy transcript button.', 'wp-mcp-ai' ),
+            ),
+            'copy-button-focus-ring' => array(
+                'label'       => __( 'Copy button focus ring', 'wp-mcp-ai' ),
+                'group'       => 'clipboard',
+                'default'     => 'rgba(59, 130, 246, 0.45)',
+                'format'      => 'rgba',
+                'description' => __( 'Focus outline color for the copy transcript button.', 'wp-mcp-ai' ),
+            ),
+            'copy-button-error-background' => array(
+                'label'       => __( 'Copy button error', 'wp-mcp-ai' ),
+                'group'       => 'clipboard',
+                'default'     => 'rgba(220, 38, 38, 0.88)',
+                'format'      => 'rgba',
+                'description' => __( 'Background color when the copy transcript button fails.', 'wp-mcp-ai' ),
             ),
             'user-bubble-gradient-start' => array(
                 'label'       => __( 'User bubble gradient start', 'wp-mcp-ai' ),
@@ -506,6 +590,27 @@ class WP_MCP_AI_Admin_Settings {
                 'format'      => 'rgba',
                 'description' => __( 'Shadow applied to the Send button on hover.', 'wp-mcp-ai' ),
             ),
+            'submit-active-gradient-start' => array(
+                'label'       => __( 'Submit active gradient start', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#2f44f0',
+                'format'      => 'hex',
+                'description' => __( 'Starting gradient color while the Send button is pressed.', 'wp-mcp-ai' ),
+            ),
+            'submit-active-gradient-end' => array(
+                'label'       => __( 'Submit active gradient end', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => '#5b3eff',
+                'format'      => 'hex',
+                'description' => __( 'Ending gradient color while the Send button is pressed.', 'wp-mcp-ai' ),
+            ),
+            'submit-active-shadow' => array(
+                'label'       => __( 'Submit active shadow', 'wp-mcp-ai' ),
+                'group'       => 'actions',
+                'default'     => 'rgba(47, 68, 240, 0.38)',
+                'format'      => 'rgba',
+                'description' => __( 'Shadow applied to the Send button while it is pressed.', 'wp-mcp-ai' ),
+            ),
             'submit-disabled-background' => array(
                 'label'       => __( 'Submit disabled background', 'wp-mcp-ai' ),
                 'group'       => 'actions',
@@ -630,8 +735,10 @@ class WP_MCP_AI_Admin_Settings {
     public static function get_chat_color_groups() {
         return array(
             'container'         => __( 'Chat container', 'wp-mcp-ai' ),
+            'shortcuts'         => __( 'Transcript toggle & shortcuts', 'wp-mcp-ai' ),
             'default-message'   => __( 'Default message bubble', 'wp-mcp-ai' ),
             'speech'            => __( 'Speech controls', 'wp-mcp-ai' ),
+            'clipboard'         => __( 'Copy transcript button', 'wp-mcp-ai' ),
             'user-message'      => __( 'User messages', 'wp-mcp-ai' ),
             'assistant-message' => __( 'Assistant messages', 'wp-mcp-ai' ),
             'tool-message'      => __( 'Tool messages', 'wp-mcp-ai' ),
@@ -1493,6 +1600,7 @@ class WP_MCP_AI_Admin_Settings {
      */
     public function render_chat_colors_section_description() {
         echo '<p>' . esc_html__( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'wp-mcp-ai' ) . '</p>';
+        echo '<p>' . esc_html__( 'New controls cover the transcript toggle, saved reply shortcuts, and the copy transcript button so every surface can follow your brand.', 'wp-mcp-ai' ) . '</p>';
     }
 
     /**
@@ -2272,6 +2380,7 @@ class WP_MCP_AI_Admin_Settings {
      */
     protected function get_openai_default_model_choices() {
         $choices = array(
+            'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
             'gpt-4o'                   => __( 'GPT-4o', 'wp-mcp-ai' ),
             'gpt-4o-mini'              => __( 'GPT-4o mini', 'wp-mcp-ai' ),
             'gpt-4.1'                  => __( 'GPT-4.1', 'wp-mcp-ai' ),

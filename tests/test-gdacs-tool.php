@@ -64,6 +64,8 @@ class Test_GDACS_Tool extends WP_UnitTestCase {
         remove_filter( 'pre_http_request', $http_interceptor, 10 );
 
         $this->assertIsArray( $result );
+        $this->assertArrayHasKey( 'model', $result );
+        $this->assertSame( 'gpt-5', $result['model'] );
         $this->assertNull( $result['from_date'] );
         $this->assertNull( $result['to_date'] );
 
@@ -123,6 +125,8 @@ class Test_GDACS_Tool extends WP_UnitTestCase {
         $this->assertSame( $from, $query_args['fromdate'] );
         $this->assertSame( $to, $query_args['todate'] );
 
+        $this->assertArrayHasKey( 'model', $result );
+        $this->assertSame( 'gpt-5', $result['model'] );
         $this->assertSame( $from, $result['from_date'] );
         $this->assertSame( $to, $result['to_date'] );
     }
