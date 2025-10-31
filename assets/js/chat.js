@@ -2042,6 +2042,69 @@
             processAnnotationCandidate(collection);
         }
 
+        function attachToolResultAttachments(segment) {
+            if (!segment || typeof segment !== 'object') {
+                return;
+            }
+
+            var toolCallId = '';
+
+            if (typeof segment.tool_call_id === 'string' && segment.tool_call_id) {
+                toolCallId = segment.tool_call_id;
+            } else if (typeof segment.call_id === 'string' && segment.call_id) {
+                toolCallId = segment.call_id;
+            } else if (typeof segment.id === 'string' && segment.id.indexOf('call_') === 0) {
+                toolCallId = segment.id;
+            }
+
+            if (!toolCallId) {
+                return;
+            }
+
+            var fallbackLabel = '';
+            if (typeof segment.label === 'string' && segment.label.trim()) {
+                fallbackLabel = segment.label.trim();
+            } else if (typeof segment.title === 'string' && segment.title.trim()) {
+                fallbackLabel = segment.title.trim();
+            } else if (typeof segment.name === 'string' && segment.name.trim()) {
+                fallbackLabel = segment.name.trim();
+            } else if (typeof segment.tool_name === 'string' && segment.tool_name.trim()) {
+                fallbackLabel = segment.tool_name.trim();
+            }
+
+            var lookupResult = findToolResultInConversation(state, toolCallId);
+            if (!lookupResult || !lookupResult.result) {
+                return;
+            }
+
+            var toolName = fallbackLabel || lookupResult.toolName || '';
+            var normalised = normaliseToolResultForDisplay(toolName, lookupResult.result);
+
+            if (!normalised || !normalised.attachments || !normalised.attachments.length) {
+                return;
+            }
+
+            normalised.attachments.forEach(function (attachment, index) {
+                if (!attachment || typeof attachment !== 'object' || !attachment.url) {
+                    return;
+                }
+
+                var entry = {
+                    url: attachment.url,
+                    label: attachment.label || defaultAttachmentLabel,
+                    downloadName: attachment.downloadName || '',
+                    meta: attachment.meta || '',
+                };
+
+                registerAttachmentEntry(
+                    'tool-call-' + toolCallId + '-' + index,
+                    entry,
+                    '',
+                    fallbackLabel || toolName
+                );
+            });
+        }
+
         function processSegment(segment) {
             if (segment === null || typeof segment === 'undefined') {
                 return;
@@ -2062,8 +2125,14 @@
 
             var type = typeof segment.type === 'string' ? segment.type : '';
 
-            if (type === 'tool_result' && segment.content) {
-                processSegment(segment.content);
+            if (type === 'tool_result') {
+                attachToolResultAttachments(segment);
+
+                if (segment.content) {
+                    processSegment(segment.content);
+                }
+
+                return;
             }
 
             if (segment.attachments && Array.isArray(segment.attachments)) {
@@ -2531,7 +2600,15 @@
             return null;
         }
 
-        var url = typeof result.url === 'string' ? result.url : '';
+        var url = '';
+        if (typeof result.url === 'string' && result.url.trim()) {
+            url = result.url.trim();
+        } else if (typeof result.download_url === 'string' && result.download_url.trim()) {
+            url = result.download_url.trim();
+        } else if (typeof result.downloadUrl === 'string' && result.downloadUrl.trim()) {
+            url = result.downloadUrl.trim();
+        }
+
         if (!url) {
             return null;
         }
@@ -2605,6 +2682,155 @@
             text: text,
             attachments: attachments,
         };
+    }
+
+    function parseToolMessagePayload(content, seen) {
+        if (content === null || typeof content === 'undefined') {
+            return null;
+        }
+
+        if (typeof content === 'string') {
+            var trimmed = content.trim();
+
+            if (!trimmed) {
+                return null;
+            }
+
+            try {
+                return JSON.parse(trimmed);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        var visited = seen || null;
+        var shouldTrack = typeof content === 'object';
+
+        if (shouldTrack && content !== null) {
+            if (!visited && typeof WeakSet === 'function') {
+                visited = new WeakSet();
+            }
+
+            if (visited) {
+                if (visited.has(content)) {
+                    return null;
+                }
+
+                visited.add(content);
+            }
+        }
+
+        if (Array.isArray(content)) {
+            for (var index = 0; index < content.length; index++) {
+                var parsedItem = parseToolMessagePayload(content[index], visited);
+                if (parsedItem) {
+                    return parsedItem;
+                }
+            }
+
+            return null;
+        }
+
+        if (typeof content !== 'object') {
+            return null;
+        }
+
+        if (
+            Object.prototype.hasOwnProperty.call(content, 'url') ||
+            Object.prototype.hasOwnProperty.call(content, 'download_url') ||
+            Object.prototype.hasOwnProperty.call(content, 'downloadUrl')
+        ) {
+            return content;
+        }
+
+        if (typeof content.text === 'string') {
+            return parseToolMessagePayload(content.text, visited);
+        }
+
+        if (content.text && typeof content.text.value === 'string') {
+            return parseToolMessagePayload(content.text.value, visited);
+        }
+
+        if (typeof content.content !== 'undefined') {
+            return parseToolMessagePayload(content.content, visited);
+        }
+
+        if (typeof content.value === 'string') {
+            return parseToolMessagePayload(content.value, visited);
+        }
+
+        if (typeof content.result !== 'undefined') {
+            return parseToolMessagePayload(content.result, visited);
+        }
+
+        var keys = Object.keys(content);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (!Object.prototype.hasOwnProperty.call(content, key)) {
+                continue;
+            }
+
+            var candidate = content[key];
+            if (candidate && typeof candidate === 'object') {
+                var parsed = parseToolMessagePayload(candidate, visited);
+                if (parsed) {
+                    return parsed;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function findToolResultInConversation(state, toolCallId) {
+        if (!state || !Array.isArray(state.conversation) || !toolCallId) {
+            return null;
+        }
+
+        for (var index = state.conversation.length - 1; index >= 0; index--) {
+            var entry = state.conversation[index];
+            if (!entry || entry.role !== 'tool') {
+                continue;
+            }
+
+            var entryCallId = '';
+
+            if (typeof entry.tool_call_id === 'string' && entry.tool_call_id) {
+                entryCallId = entry.tool_call_id;
+            } else if (entry.metadata && typeof entry.metadata.tool_call_id === 'string') {
+                entryCallId = entry.metadata.tool_call_id;
+            }
+
+            if (entryCallId !== toolCallId) {
+                continue;
+            }
+
+            var payload = parseToolMessagePayload(entry.content);
+
+            if (!payload && typeof entry.content === 'object' && entry.content !== null) {
+                payload = parseToolMessagePayload({ content: entry.content });
+            }
+
+            if (!payload && typeof entry.text === 'string') {
+                payload = parseToolMessagePayload(entry.text);
+            }
+
+            if (!payload) {
+                continue;
+            }
+
+            var toolName = '';
+            if (typeof entry.name === 'string' && entry.name.trim()) {
+                toolName = entry.name.trim();
+            }
+
+            return {
+                result: payload,
+                toolName: toolName,
+            };
+        }
+
+        return null;
     }
 
     function parseNumberValue(value) {
@@ -3486,6 +3712,10 @@
                     role: 'tool',
                     content: toolContent,
                 };
+
+                if (toolName) {
+                    toolMessage.name = toolName;
+                }
 
                 if (call && call.id) {
                     toolMessage.tool_call_id = call.id;

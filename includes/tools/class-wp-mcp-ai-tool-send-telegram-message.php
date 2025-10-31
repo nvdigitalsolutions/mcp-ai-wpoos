@@ -219,11 +219,11 @@ class WP_MCP_AI_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface {
      * @return string
      */
     protected function sanitize_token( $token ) {
-        if ( ! is_string( $token ) ) {
+        if ( ! is_string( $token ) && ! is_numeric( $token ) ) {
             return '';
         }
 
-        $token = trim( $token );
+        $token = trim( (string) $token );
 
         if ( '' === $token ) {
             return '';
