@@ -268,6 +268,29 @@ Complete these after installation to unlock every integration point:
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI or Gemini while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
+### OpenAI model coverage
+
+The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio, and Image APIs so site owners can choose the right model for each workflow. Token windows describe the maximum request size (messages, attachments, and tool payloads) the OpenAI API will accept for that model, while output limits reflect the largest single response the service will stream back. Leave a safety margin below each ceiling so assistants can add system instructions, tool calls, and knowledge snippets without hitting provider limits.
+
+| Capability | Model | Max context tokens | Max output tokens | Notes |
+| --- | --- | --- | --- | --- |
+| Responses (general) | `gpt-4o` | 128,000 | 16,384 | Flagship multimodal model that balances quality and latency for production chat, tool, and multimodal calls. |
+| Responses (cost optimised) | `gpt-4o-mini` | 128,000 | 16,384 | Budget-friendly 4o variant recommended for day-to-day assistants and background automations. |
+| Responses (advanced) | `gpt-4.1` | 128,000 | 16,384 | Highest quality text model with stronger reasoning depth; ideal for complex editorial or engineering tasks. |
+| Responses (lightweight) | `gpt-4.1-mini` | 128,000 | 16,384 | Lower-latency 4.1 tier that keeps the larger context window while reducing cost for iterative workflows. |
+| Reasoning | `o1-preview` | 128,000 | 32,768 | Deliberate reasoning model suited to multi-step planning and analysis; expect slower responses while it “thinks”. |
+| Reasoning (fast) | `o1-mini` | 128,000 | 32,768 | Lighter o1 variant that trades some reasoning depth for responsiveness in operational assistants. |
+
+#### Media and multimodal defaults
+
+| Capability | Model | Size or duration limits | Notes |
+| --- | --- | --- | --- |
+| Image generation | `gpt-image-1` | Up to 2048×2048 output (square) or proportional 1024/512 variants | Produces photorealistic or illustrative renders; respect OpenAI’s safety filters when prompting. |
+| Text-to-speech | `gpt-4o-mini-tts` | Up to ~4,096 input tokens per request | Generates natural-sounding speech in multiple voices; longer scripts should be chunked into multiple calls. |
+| Speech-to-text | `gpt-4o-mini-transcribe` | Optimised for recordings ≤ 90 minutes | Handles multilingual transcription and translation; large files are automatically chunked client-side before upload. |
+
+OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → MCP AI** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
+
 ## 🧱 ChatKit Integration
 
 Install the standalone [ChatKit](https://github.com/nvdigitalsolutions/chatkit) plugin alongside WP MCP AI to unlock a native integration that routes ChatKit workflows into your WordPress assistants. The integration now ships with the core plugin and self-registers through ChatKit’s filter and action APIs as soon as both plugins load, exposing the `mcp-ai/v1` REST namespace while advertising chat, tool invocation, attachment download, and guest token support without any manual bootstrapping. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the automatic registration for bespoke environments.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L204】【F:includes/class-wp-mcp-ai-rest.php†L16-L2104】
