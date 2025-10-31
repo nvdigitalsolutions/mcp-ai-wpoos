@@ -601,14 +601,14 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 
         if ( ! empty( $arguments['headers'] ) && is_array( $arguments['headers'] ) ) {
             foreach ( $arguments['headers'] as $header ) {
-                $header = wp_kses_nohtml( (string) $header );
+                $header = wp_strip_all_tags( (string) $header, true );
                 $header = trim( $header );
 
                 if ( '' === $header ) {
                     continue;
                 }
 
-                if ( preg_match( '/[\r\n]/', $header ) ) {
+                if ( preg_match( '/[\r\n\x00]/', $header ) ) {
                     continue;
                 }
 
@@ -619,6 +619,21 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
                 list( $header_name, $header_value ) = array_map( 'trim', explode( ':', $header, 2 ) );
 
                 if ( '' === $header_name || '' === $header_value ) {
+                    continue;
+                }
+
+                if ( ! preg_match( '/^[A-Za-z0-9-]+$/', $header_name ) ) {
+                    continue;
+                }
+
+                if ( preg_match( '/[\r\n\x00]/', $header_value ) ) {
+                    continue;
+                }
+
+                $header_value = preg_replace( '/[\x00-\x1F\x7F]/', '', $header_value );
+                $header_value = trim( $header_value );
+
+                if ( '' === $header_value ) {
                     continue;
                 }
 

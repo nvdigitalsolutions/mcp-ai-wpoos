@@ -1,4 +1,8 @@
 <?php
+
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+
 /**
  * Tests for the OpenAI external action tool.
  */
@@ -61,5 +65,31 @@ class WP_MCP_AI_OpenAI_External_Action_Tool_Test extends WP_UnitTestCase {
         $this->assertNotNull( $captured_request );
         $this->assertArrayHasKey( 'timeout', $captured_request );
         $this->assertSame( 45, $captured_request['timeout'] );
+    }
+
+    /**
+     * Ensure input variable sanitisation preserves casing and removes disallowed keys.
+     */
+    public function test_sanitize_input_variables_preserves_key_casing() {
+        $tool   = new WP_MCP_AI_Tool_Run_OpenAI_External_Action();
+        $method = new ReflectionMethod( $tool, 'sanitize_input_variables' );
+        $method->setAccessible( true );
+
+        $variables = array(
+            'customerId'   => ' 12345 ',
+            'Order-Ref'    => "Order\n123",
+            'invalid key!' => 'value',
+            7              => 'keep-int',
+        );
+
+        $sanitised = $method->invoke( $tool, $variables );
+
+        $this->assertArrayHasKey( 'customerId', $sanitised );
+        $this->assertArrayHasKey( 'Order-Ref', $sanitised );
+        $this->assertArrayNotHasKey( 'invalid key!', $sanitised );
+        $this->assertArrayHasKey( 7, $sanitised );
+        $this->assertSame( '12345', $sanitised['customerId'] );
+        $this->assertSame( 'Order 123', $sanitised['Order-Ref'] );
+        $this->assertSame( 'keep-int', $sanitised[7] );
     }
 }
