@@ -232,4 +232,29 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
         $this->assertSame( 'Error 25', $recent[0]['message'] );
         $this->assertSame( 'Error 6', $recent[19]['message'] );
     }
+
+    /**
+     * Ensure Gemini image request/response events are tracked as recent activity entries.
+     */
+    public function test_gemini_image_events_tracked_in_recent_activity() {
+        update_option(
+            WP_MCP_AI_Admin_Settings::OPTION_NAME,
+            array(
+                'enable_logging' => true,
+            )
+        );
+
+        delete_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION );
+
+        WP_MCP_AI_Logger::log_event( 'gemini_image_request', 'Gemini image request dispatched.' );
+        WP_MCP_AI_Logger::log_event( 'gemini_image_response', 'Gemini image response received.' );
+
+        $entries = WP_MCP_AI_Logger::get_recent_activity_entries( 5 );
+
+        $this->assertCount( 2, $entries );
+        $this->assertSame( 'gemini_image_response', $entries[0]['type'] );
+        $this->assertSame( 'Gemini image response received.', $entries[0]['message'] );
+        $this->assertSame( 'gemini_image_request', $entries[1]['type'] );
+        $this->assertSame( 'Gemini image request dispatched.', $entries[1]['message'] );
+    }
 }
