@@ -44,6 +44,7 @@ class WP_MCP_AI_Admin_Settings {
             'default_provider'     => 'openai',
             'web_search_provider'  => 'duckduckgo',
             'brave_search_api_key' => '',
+            'ita_tariff_api_key'   => '',
             'request_timeout'      => 30,
             'memory_max_file_bytes' => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
             'auth0_domain'         => '',
@@ -129,6 +130,16 @@ class WP_MCP_AI_Admin_Settings {
                     'web_search_provider' => array( 'brave' ),
                 ),
                 'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'wp-mcp-ai' ),
+            ),
+            'ita_tariff_rates' => array(
+                'label'            => __( 'ITA Tariff Rates', 'wp-mcp-ai' ),
+                'required_options' => array( 'ita_tariff_api_key' ),
+                'fields'           => array(
+                    'ita_tariff_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Enables automated tariff lookups through Trade.gov for supported destinations.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Request an API key from Trade.gov and store it before using the import duty lookup tool.', 'wp-mcp-ai' ),
+                'docs_url'         => 'https://developer.trade.gov/ita-tariff-rates-api',
             ),
             'crawl4ai'    => array(
                 'label'            => __( 'Crawl4AI', 'wp-mcp-ai' ),
@@ -1345,6 +1356,14 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'ita_tariff_api_key',
+            __( 'ITA Tariff Rates API Key', 'wp-mcp-ai' ),
+            array( $this, 'render_ita_tariff_api_key_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_tools_section'
+        );
+
+        add_settings_field(
             'openai_image_model',
             __( 'OpenAI Image Model', 'wp-mcp-ai' ),
             array( $this, 'render_openai_image_model_field' ),
@@ -1604,6 +1623,10 @@ class WP_MCP_AI_Admin_Settings {
 
         if ( isset( $settings['brave_search_api_key'] ) ) {
             $clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+        }
+
+        if ( isset( $settings['ita_tariff_api_key'] ) ) {
+            $clean['ita_tariff_api_key'] = trim( sanitize_text_field( $settings['ita_tariff_api_key'] ) );
         }
 
         if ( isset( $settings['request_timeout'] ) ) {
@@ -2252,6 +2275,17 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
         <p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the ITA Tariff Rates API key field.
+     */
+    public function render_ita_tariff_api_key_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ita_tariff_api_key]" value="<?php echo esc_attr( $settings['ita_tariff_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Store the Trade.gov API key used to query import duty rates.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
