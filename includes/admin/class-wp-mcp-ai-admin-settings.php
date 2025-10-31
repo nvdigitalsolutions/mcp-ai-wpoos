@@ -80,6 +80,112 @@ class WP_MCP_AI_Admin_Settings {
     }
 
     /**
+     * Retrieve metadata describing external service connectors.
+     *
+     * @return array[]
+     */
+    private static function get_connector_definitions() {
+        return array(
+            'auth0'       => array(
+                'label'            => __( 'Auth0', 'wp-mcp-ai' ),
+                'required_options' => array( 'auth0_domain', 'auth0_audience' ),
+                'fields'           => array(
+                    'auth0_domain'   => __( 'Domain', 'wp-mcp-ai' ),
+                    'auth0_audience' => __( 'API Audience', 'wp-mcp-ai' ),
+                    'auth0_required_scope' => __( 'Required Scope', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Secures the MCP REST namespace for remote clients that authenticate with bearer tokens.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Fill this in when provisioning external connectors or integrations that need REST access.', 'wp-mcp-ai' ),
+            ),
+            'openai'      => array(
+                'label'            => __( 'OpenAI', 'wp-mcp-ai' ),
+                'required_options' => array( 'openai_api_key' ),
+                'fields'           => array(
+                    'openai_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Powers chat completions, document tools, speech synthesis, and image generation workflows.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Enter this connector before routing assistants through OpenAI or enabling OpenAI-powered tools.', 'wp-mcp-ai' ),
+            ),
+            'gemini'      => array(
+                'label'            => __( 'Gemini', 'wp-mcp-ai' ),
+                'required_options' => array( 'gemini_api_key' ),
+                'fields'           => array(
+                    'gemini_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'wp-mcp-ai' ),
+            ),
+            'brave'       => array(
+                'label'            => __( 'Brave Search', 'wp-mcp-ai' ),
+                'required_options' => array( 'brave_search_api_key' ),
+                'fields'           => array(
+                    'brave_search_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Enables enhanced web search results when assistants run the search tool.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Provide the key after switching the web search provider to Brave.', 'wp-mcp-ai' ),
+                'active_when'      => array(
+                    'web_search_provider' => array( 'brave' ),
+                ),
+                'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'wp-mcp-ai' ),
+            ),
+            'crawl4ai'    => array(
+                'label'            => __( 'Crawl4AI', 'wp-mcp-ai' ),
+                'required_options' => array( 'crawl4ai_base_url' ),
+                'fields'           => array(
+                    'crawl4ai_base_url' => __( 'Base URL', 'wp-mcp-ai' ),
+                    'crawl4ai_api_key'  => __( 'API Key', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Lets assistants launch Crawl4AI harvesting jobs for large-scale content gathering.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Configure this before dispatching Crawl4AI jobs from an assistant workflow.', 'wp-mcp-ai' ),
+            ),
+            'cloudflare'  => array(
+                'label'            => __( 'Cloudflare', 'wp-mcp-ai' ),
+                'required_options' => array( 'cloudflare_zone_id', 'cloudflare_api_token' ),
+                'fields'           => array(
+                    'cloudflare_zone_id'   => __( 'Zone ID', 'wp-mcp-ai' ),
+                    'cloudflare_api_token' => __( 'API Token', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Used by operations automations that purge cache or interact with Cloudflare APIs.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Add these credentials ahead of enabling Cloudflare-related tools.', 'wp-mcp-ai' ),
+            ),
+            'mailjet'     => array(
+                'label'            => __( 'Mailjet', 'wp-mcp-ai' ),
+                'required_options' => array( 'mailjet_api_key', 'mailjet_api_secret' ),
+                'fields'           => array(
+                    'mailjet_api_key'    => __( 'API Key', 'wp-mcp-ai' ),
+                    'mailjet_api_secret' => __( 'API Secret', 'wp-mcp-ai' ),
+                    'mailjet_from_email' => __( 'From Email', 'wp-mcp-ai' ),
+                    'mailjet_from_name'  => __( 'From Name', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Allows assistants to send transactional or group email through Mailjet.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Populate these fields before assigning assistants to send Mailjet emails.', 'wp-mcp-ai' ),
+            ),
+            'quickbooks'  => array(
+                'label'            => __( 'QuickBooks Online', 'wp-mcp-ai' ),
+                'required_options' => array( 'quickbooks_company_id', 'quickbooks_api_key' ),
+                'fields'           => array(
+                    'quickbooks_company_id' => __( 'Company ID', 'wp-mcp-ai' ),
+                    'quickbooks_api_key'    => __( 'API Key / Token', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Feeds financial reporting tools that summarise QuickBooks Online data.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Enter credentials when activating the QuickBooks report tool for assistants.', 'wp-mcp-ai' ),
+            ),
+            'gmail'       => array(
+                'label'            => __( 'Gmail', 'wp-mcp-ai' ),
+                'required_options' => array( 'gmail_client_id', 'gmail_client_secret', 'gmail_refresh_token', 'gmail_user_email' ),
+                'fields'           => array(
+                    'gmail_client_id'     => __( 'Client ID', 'wp-mcp-ai' ),
+                    'gmail_client_secret' => __( 'Client Secret', 'wp-mcp-ai' ),
+                    'gmail_refresh_token' => __( 'Refresh Token', 'wp-mcp-ai' ),
+                    'gmail_user_email'    => __( 'Authorised Email', 'wp-mcp-ai' ),
+                ),
+                'description'      => __( 'Unlocks Gmail search tools so assistants can review messages within scope.', 'wp-mcp-ai' ),
+                'usage'            => __( 'Complete this connector when assistants need to search connected Gmail inboxes.', 'wp-mcp-ai' ),
+            ),
+        );
+    }
+
+    /**
      * Returns metadata about configurable chat colors.
      *
      * @return array
@@ -812,6 +918,126 @@ class WP_MCP_AI_Admin_Settings {
         }
 
         return $settings;
+    }
+
+    /**
+     * Determine whether a connector should be considered active for the current settings.
+     *
+     * @param array $definition Connector definition.
+     * @param array $settings   Current plugin settings.
+     * @return bool
+     */
+    private function is_connector_active( $definition, $settings ) {
+        if ( empty( $definition['active_when'] ) || ! is_array( $definition['active_when'] ) ) {
+            return true;
+        }
+
+        foreach ( $definition['active_when'] as $option_key => $allowed_values ) {
+            $allowed_values = (array) $allowed_values;
+            $value          = isset( $settings[ $option_key ] ) ? $settings[ $option_key ] : '';
+
+            if ( ! in_array( $value, $allowed_values, true ) ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Format a list of missing credential labels inside a translated message template.
+     *
+     * @param array  $missing_keys Missing option keys.
+     * @param array  $fields       Map of option keys to display labels.
+     * @param string $template     Message template containing a single %s placeholder.
+     * @return string
+     */
+    private function format_connector_missing_message( $missing_keys, $fields, $template ) {
+        if ( empty( $missing_keys ) ) {
+            return '';
+        }
+
+        $labels = array();
+
+        foreach ( $missing_keys as $key ) {
+            if ( isset( $fields[ $key ] ) ) {
+                $labels[] = $fields[ $key ];
+            } else {
+                $labels[] = $key;
+            }
+        }
+
+        $list = wp_sprintf_l( '%l', $labels );
+
+        return sprintf( $template, $list );
+    }
+
+    /**
+     * Build connector status information for the checklist panel.
+     *
+     * @param array $settings Current plugin settings.
+     * @return array
+     */
+    private function get_connector_statuses( $settings ) {
+        $definitions = self::get_connector_definitions();
+        $statuses    = array();
+
+        foreach ( $definitions as $key => $definition ) {
+            $is_active = $this->is_connector_active( $definition, $settings );
+
+            $status = array(
+                'key'         => $key,
+                'label'       => isset( $definition['label'] ) ? $definition['label'] : $key,
+                'description' => isset( $definition['description'] ) ? $definition['description'] : '',
+                'usage'       => isset( $definition['usage'] ) ? $definition['usage'] : '',
+                'docs_url'    => isset( $definition['docs_url'] ) ? $definition['docs_url'] : '',
+            );
+
+            if ( ! $is_active ) {
+                $status['status']        = 'inactive';
+                $status['status_label']  = isset( $definition['inactive_label'] ) ? $definition['inactive_label'] : __( 'Inactive', 'wp-mcp-ai' );
+                $status['status_message'] = isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : __( 'This connector is not currently in use.', 'wp-mcp-ai' );
+                $statuses[]              = $status;
+                continue;
+            }
+
+            $required_options = isset( $definition['required_options'] ) ? (array) $definition['required_options'] : array();
+            $fields           = isset( $definition['fields'] ) ? $definition['fields'] : array();
+            $missing          = array();
+            $filled           = array();
+
+            foreach ( $required_options as $option_key ) {
+                $value = isset( $settings[ $option_key ] ) ? $settings[ $option_key ] : '';
+
+                if ( '' !== trim( (string) $value ) ) {
+                    $filled[] = $option_key;
+                } else {
+                    $missing[] = $option_key;
+                }
+            }
+
+            if ( empty( $required_options ) ) {
+                $status['status']        = 'info';
+                $status['status_label']  = isset( $definition['info_label'] ) ? $definition['info_label'] : __( 'Info', 'wp-mcp-ai' );
+                $status['status_message'] = isset( $definition['info_message'] ) ? $definition['info_message'] : '';
+            } elseif ( empty( $missing ) ) {
+                $status['status']        = 'ready';
+                $status['status_label']  = __( 'Ready', 'wp-mcp-ai' );
+                $status['status_message'] = isset( $definition['ready_message'] ) ? $definition['ready_message'] : __( 'All required credentials are stored.', 'wp-mcp-ai' );
+            } elseif ( count( $filled ) > 0 ) {
+                $status['status']        = 'partial';
+                $status['status_label']  = __( 'Incomplete', 'wp-mcp-ai' );
+                $status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'Add the missing credential: %s.', 'wp-mcp-ai' ) );
+            } else {
+                $status['status']        = 'missing';
+                $status['status_label']  = __( 'Action required', 'wp-mcp-ai' );
+                $status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'wp-mcp-ai' ) );
+            }
+
+            $statuses[] = $status;
+        }
+
+        return $statuses;
     }
 
     /**
@@ -1567,7 +1793,28 @@ class WP_MCP_AI_Admin_Settings {
         $inline_styles = '.wp-mcp-ai-chat-colors__group{margin-bottom:1.5rem;padding:1rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;}'
             . '.wp-mcp-ai-chat-colors__group legend{font-weight:600;margin-bottom:0.5rem;}'
             . '.wp-mcp-ai-chat-colors__field{margin-bottom:1rem;}'
-            . '.wp-mcp-ai-chat-colors__field label{display:block;font-weight:600;margin-bottom:0.25rem;}';
+            . '.wp-mcp-ai-chat-colors__field label{display:block;font-weight:600;margin-bottom:0.25rem;}'
+            . '.wp-mcp-ai-connector-checklist{margin:1.5rem 0 2rem;padding:1.25rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;box-shadow:0 1px 2px rgba(15,23,42,0.05);}'
+            . '.wp-mcp-ai-connector-checklist__title{margin-top:0;margin-bottom:0.5rem;font-size:1.25rem;}'
+            . '.wp-mcp-ai-connector-checklist__intro{margin-top:0;margin-bottom:1rem;color:#475569;}'
+            . '.wp-mcp-ai-connector-checklist__list{margin:0;padding:0;list-style:none;}'
+            . '.wp-mcp-ai-connector-checklist__item{margin:0;padding:1rem;border:1px solid #e2e8f0;border-radius:6px;background:#f8fafc;}'
+            . '.wp-mcp-ai-connector-checklist__item+.wp-mcp-ai-connector-checklist__item{margin-top:0.75rem;}'
+            . '.wp-mcp-ai-connector-checklist__item-header{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:0.5rem;}'
+            . '.wp-mcp-ai-connector-checklist__name{font-weight:600;font-size:1rem;}'
+            . '.wp-mcp-ai-connector-checklist__status{font-weight:600;}'
+            . '.wp-mcp-ai-connector-checklist__status-message{margin:0 0 0.5rem;color:#0f172a;}'
+            . '.wp-mcp-ai-connector-checklist__description,.wp-mcp-ai-connector-checklist__usage{margin:0 0 0.5rem;color:#475569;}'
+            . '.wp-mcp-ai-connector-checklist__docs{margin:0;}'
+            . '.wp-mcp-ai-connector-checklist__docs a{text-decoration:none;}'
+            . '.wp-mcp-ai-connector-checklist__item--ready{background:#f0fdf4;border-color:#bbf7d0;}'
+            . '.wp-mcp-ai-connector-checklist__item--ready .wp-mcp-ai-connector-checklist__status{color:#047857;}'
+            . '.wp-mcp-ai-connector-checklist__item--partial{background:#fff7ed;border-color:#fdba74;}'
+            . '.wp-mcp-ai-connector-checklist__item--partial .wp-mcp-ai-connector-checklist__status{color:#c2410c;}'
+            . '.wp-mcp-ai-connector-checklist__item--missing{background:#fef2f2;border-color:#fca5a5;}'
+            . '.wp-mcp-ai-connector-checklist__item--missing .wp-mcp-ai-connector-checklist__status{color:#b91c1c;}'
+            . '.wp-mcp-ai-connector-checklist__item--inactive{background:#f8fafc;border-color:#cbd5f5;}'
+            . '.wp-mcp-ai-connector-checklist__item--inactive .wp-mcp-ai-connector-checklist__status{color:#1e3a8a;}';
 
         wp_add_inline_style( 'wp-color-picker', $inline_styles );
     }
@@ -1580,10 +1827,41 @@ class WP_MCP_AI_Admin_Settings {
             return;
         }
 
-        $settings = self::get_settings();
+        $settings           = self::get_settings();
+        $connector_statuses = $this->get_connector_statuses( $settings );
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'WP MCP AI Settings', 'wp-mcp-ai' ); ?></h1>
+            <?php if ( ! empty( $connector_statuses ) ) : ?>
+                <div class="wp-mcp-ai-connector-checklist" aria-live="polite">
+                    <h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
+                    <p class="wp-mcp-ai-connector-checklist__intro"><?php esc_html_e( 'Track which integrations still need credentials so you know exactly when to enter a new connector.', 'wp-mcp-ai' ); ?></p>
+                    <ul class="wp-mcp-ai-connector-checklist__list">
+                        <?php foreach ( $connector_statuses as $connector ) : ?>
+                            <li class="wp-mcp-ai-connector-checklist__item wp-mcp-ai-connector-checklist__item--<?php echo esc_attr( $connector['status'] ); ?>">
+                                <div class="wp-mcp-ai-connector-checklist__item-header">
+                                    <span class="wp-mcp-ai-connector-checklist__name"><?php echo esc_html( $connector['label'] ); ?></span>
+                                    <span class="wp-mcp-ai-connector-checklist__status"><?php echo esc_html( $connector['status_label'] ); ?></span>
+                                </div>
+                                <?php if ( ! empty( $connector['status_message'] ) ) : ?>
+                                    <p class="wp-mcp-ai-connector-checklist__status-message"><?php echo esc_html( $connector['status_message'] ); ?></p>
+                                <?php endif; ?>
+                                <?php if ( ! empty( $connector['description'] ) ) : ?>
+                                    <p class="wp-mcp-ai-connector-checklist__description"><?php echo esc_html( $connector['description'] ); ?></p>
+                                <?php endif; ?>
+                                <?php if ( ! empty( $connector['usage'] ) ) : ?>
+                                    <p class="wp-mcp-ai-connector-checklist__usage"><?php echo esc_html( $connector['usage'] ); ?></p>
+                                <?php endif; ?>
+                                <?php if ( ! empty( $connector['docs_url'] ) ) : ?>
+                                    <p class="wp-mcp-ai-connector-checklist__docs">
+                                        <a href="<?php echo esc_url( $connector['docs_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Read setup guide', 'wp-mcp-ai' ); ?></a>
+                                    </p>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
                 <?php
                 settings_fields( self::SETTINGS_GROUP );
