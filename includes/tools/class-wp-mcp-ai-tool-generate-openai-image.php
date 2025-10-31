@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface {
     const DEFAULT_MODEL            = 'gpt-image-1';
     const DEFAULT_SIZE             = '1024x1024';
     const DEFAULT_QUALITY          = 'standard';
@@ -99,26 +99,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
             ),
             'required'             => array( 'prompt' ),
             'additionalProperties' => false,
-        );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function get_shortcut_tasks() {
-        return array(
-            array(
-                'label'   => __( 'Create marketing-ready image', 'wp-mcp-ai' ),
-                'payload' => __( 'Use the `generate_openai_image` tool to craft a brand-new marketing image. Confirm the subject, brand details, preferred orientation, and any styling guidance I provide before you call the tool. Summarise the agreed prompt back to me first.', 'wp-mcp-ai' ),
-            ),
-            array(
-                'label'   => __( 'Revise existing concept', 'wp-mcp-ai' ),
-                'payload' => __( 'Use the `generate_openai_image` tool to update an existing concept. Ask what should change, capture the current prompt for context, then propose an adjusted prompt reflecting the requested edits before running the tool.', 'wp-mcp-ai' ),
-            ),
-            array(
-                'label'   => __( 'Add product to lifestyle scene', 'wp-mcp-ai' ),
-                'payload' => __( 'Use the `generate_openai_image` tool to place the product in a lifestyle setting. Gather details about the environment, target audience, props, and camera angle, then assemble a detailed prompt that keeps the product as the hero of the scene.', 'wp-mcp-ai' ),
-            ),
         );
     }
 
