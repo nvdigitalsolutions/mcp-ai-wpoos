@@ -223,6 +223,10 @@ class WP_MCP_AI_Tool_Registry {
             'send_group_email'           => 'communication',
             'send_mailjet_email'         => 'communication',
             'send_telegram_message'      => 'communication',
+            'post_facebook_instagram'    => 'communication',
+            'post_tiktok_video'          => 'communication',
+            'post_google_business_update' => 'communication',
+            'post_linkedin_update'       => 'communication',
         );
 
         /**
@@ -309,6 +313,10 @@ class WP_MCP_AI_Tool_Registry {
             'WP_MCP_AI_Tool_Get_Google_Analytics_Report' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-google-analytics-report.php',
             'WP_MCP_AI_Tool_Check_WP_CLI'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
             'WP_MCP_AI_Tool_Create_WPCode_Snippet' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php',
+            'WP_MCP_AI_Tool_Post_Facebook_Instagram' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-facebook-instagram.php',
+            'WP_MCP_AI_Tool_Post_Tiktok_Video'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-tiktok-video.php',
+            'WP_MCP_AI_Tool_Post_Google_Business_Update' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-google-business-update.php',
+            'WP_MCP_AI_Tool_Post_Linkedin_Update'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-post-linkedin-update.php',
         );
 
         foreach ( $default_tools as $class => $file ) {
