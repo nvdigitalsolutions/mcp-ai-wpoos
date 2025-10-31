@@ -1,7 +1,7 @@
 # ChatKit Add-on
 
 ## Overview
-WP MCP AI exposes a ChatKit add-on so ChatKit operators can trigger the same assistant conversations, tool runs, and attachment downloads that are available through the shortcode or REST API. The add-on boots automatically after both plugins load, registers itself through every ChatKit add-on hook variant, and keeps the bootstrap idempotent so repeated checks do not duplicate registrations.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L30-L149】
+WP MCP AI exposes a ChatKit add-on so ChatKit operators can trigger the same assistant conversations, tool runs, and attachment downloads that are available through the shortcode or REST API. The add-on now ships directly with the core plugin, bootstraps automatically, registers itself through every ChatKit add-on hook variant, and keeps the bootstrap idempotent so repeated checks do not duplicate registrations.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L30-L204】
 
 When ChatKit is present the add-on definition advertises the `mcp-ai/v1` REST namespace, chat/tool/attachment routes, attachment and guest token support, and the add-on icon/version metadata that ChatKit surfaces in its dashboard.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L156-L185】
 
@@ -12,7 +12,7 @@ When ChatKit is present the add-on definition advertises the `mcp-ai/v1` REST na
 
 ## Enabling the integration
 1. Activate WP MCP AI and ChatKit.
-2. Visit **ChatKit → Add-ons** and confirm that **WP MCP AI** appears in the catalog. The add-on self-registers once ChatKit fires `plugins_loaded`, or you can force registration by returning `true` from the `wp_mcp_ai_chatkit_is_available` filter when running bespoke bootstrap flows or automated tests.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L32-L90】
+2. Visit **ChatKit → Add-ons** and confirm that **WP MCP AI** appears in the catalog. The add-on self-registers once ChatKit fires `plugins_loaded`. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the registration for bespoke bootstrap flows or automated tests.【F:includes/class-wp-mcp-ai-chatkit-addon.php†L32-L109】
 3. Enable the add-on inside ChatKit if the UI requires confirmation.
 
 ## Configuring the connection

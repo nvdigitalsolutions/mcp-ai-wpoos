@@ -15,6 +15,7 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
 
     public function tearDown(): void {
         remove_filter( 'wp_mcp_ai_chatkit_is_available', '__return_true' );
+        remove_filter( 'wp_mcp_ai_chatkit_is_available', '__return_false' );
         remove_filter( 'wp_mcp_ai_chat_capability', array( $this, 'filter_chat_capability' ) );
 
         WP_MCP_AI_ChatKit_Addon::reset_state_for_testing();
@@ -23,22 +24,9 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
     }
 
     /**
-     * Ensure the add-on is not registered when ChatKit is unavailable.
+     * Ensure the add-on registers automatically when no filters run.
      */
-    public function test_addon_not_registered_when_chatkit_unavailable() {
-        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
-
-        $addons = apply_filters( 'chatkit_register_addons', array() );
-
-        $this->assertArrayNotHasKey( WP_MCP_AI_ChatKit_Addon::ADDON_ID, $addons );
-    }
-
-    /**
-     * Ensure the add-on is registered when ChatKit is forced available.
-     */
-    public function test_addon_registered_when_chatkit_available() {
-        add_filter( 'wp_mcp_ai_chatkit_is_available', '__return_true' );
-
+    public function test_addon_registered_by_default() {
         WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
 
         $addons = apply_filters( 'chatkit_register_addons', array() );
@@ -58,10 +46,22 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the add-on can be disabled via the availability filter.
+     */
+    public function test_addon_can_be_disabled_via_filter() {
+        add_filter( 'wp_mcp_ai_chatkit_is_available', '__return_false' );
+
+        WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
+
+        $addons = apply_filters( 'chatkit_register_addons', array() );
+
+        $this->assertArrayNotHasKey( WP_MCP_AI_ChatKit_Addon::ADDON_ID, $addons );
+    }
+
+    /**
      * Ensure the ChatKit capability inherits the chat capability filter.
      */
     public function test_addon_capability_honours_filter() {
-        add_filter( 'wp_mcp_ai_chatkit_is_available', '__return_true' );
         add_filter( 'wp_mcp_ai_chat_capability', array( $this, 'filter_chat_capability' ), 10, 3 );
 
         WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
@@ -76,8 +76,6 @@ class Test_ChatKit_Addon extends WP_UnitTestCase {
      * Ensure the action-style registration path calls the manager.
      */
     public function test_register_via_action_invokes_manager() {
-        add_filter( 'wp_mcp_ai_chatkit_is_available', '__return_true' );
-
         WP_MCP_AI_ChatKit_Addon::maybe_bootstrap();
 
         $manager = new class() {
