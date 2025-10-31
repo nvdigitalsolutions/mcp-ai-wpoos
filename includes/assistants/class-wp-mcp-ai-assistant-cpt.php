@@ -59,25 +59,30 @@ class WP_MCP_AI_Assistant_CPT {
         add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
         add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
         add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
-        add_action( 'admin_head', array( __CLASS__, 'print_admin_menu_icon_styles' ) );
+        add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_menu_icon_styles' ) );
     }
 
     /**
-     * Print admin menu icon styles so the CPT icon matches JetEngine's sizing.
+     * Ensure admin menu icon styles load so the CPT icon matches JetEngine's sizing.
      */
-    public static function print_admin_menu_icon_styles() {
-        static $printed = false;
+    public static function enqueue_admin_menu_icon_styles() {
+        static $enqueued = false;
 
-        if ( $printed ) {
+        if ( $enqueued ) {
             return;
         }
 
-        $printed = true;
+        $enqueued = true;
 
-        printf(
-            '<style id="wp-mcp-ai-admin-menu-icon-styles">#adminmenu .menu-icon-%1$s a.menu-top{display:flex;align-items:center;gap:8px;padding:0 12px 0 6px;}#adminmenu .menu-icon-%1$s .wp-menu-image{display:flex;align-items:center;justify-content:center;width:20px;height:20px;margin:0;}#adminmenu .menu-icon-%1$s .wp-menu-name{display:flex;align-items:center;}#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}</style>',
-            esc_attr( self::POST_TYPE )
+        $post_type_class = sanitize_html_class( self::POST_TYPE );
+        $styles          = sprintf(
+            '#adminmenu .menu-icon-%1$s a.menu-top{display:flex;align-items:center;gap:8px;padding:0 12px 0 6px;}#adminmenu .menu-icon-%1$s .wp-menu-image{display:flex;align-items:center;justify-content:center;width:20px;height:20px;margin:0;}#adminmenu .menu-icon-%1$s .wp-menu-name{display:flex;align-items:center;}#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}',
+            $post_type_class
         );
+
+        wp_register_style( 'wp-mcp-ai-admin-menu-icon', false, array(), null );
+        wp_enqueue_style( 'wp-mcp-ai-admin-menu-icon' );
+        wp_add_inline_style( 'wp-mcp-ai-admin-menu-icon', $styles );
     }
 
     /**
