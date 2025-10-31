@@ -1549,7 +1549,11 @@ class WP_MCP_AI_REST {
                 $context['provider_error_code'] = $error_data['provider_error_code'];
             }
 
-            WP_MCP_AI_Logger::log_error( 'Chat request failed.', $context );
+            $context = array_merge( $context, $this->extract_chat_error_log_context( $response ) );
+
+            $log_message = $this->build_chat_error_log_message( $response );
+
+            WP_MCP_AI_Logger::log_error( $log_message, $context );
             return $response;
         }
 
@@ -1696,6 +1700,264 @@ class WP_MCP_AI_REST {
         }
 
         return __( 'The assistant response failed to generate.', 'wp-mcp-ai' );
+    }
+
+    /**
+     * Build a descriptive log message for chat failures.
+     *
+     * @param WP_Error $error Chat failure error object.
+     * @return string
+     */
+    protected function build_chat_error_log_message( $error ) {
+        if ( ! $error instanceof WP_Error ) {
+            return 'Chat request failed.';
+        }
+
+        $data = $error->get_error_data();
+        if ( ! is_array( $data ) ) {
+            return 'Chat request failed.';
+        }
+
+        $status = isset( $data['status'] ) ? (int) $data['status'] : 0;
+
+        if ( 429 !== $status ) {
+            return 'Chat request failed.';
+        }
+
+        $details     = $this->parse_openai_rate_limit_details( $data );
+        $description = 'OpenAI rate limits';
+
+        if ( ! empty( $details['type'] ) ) {
+            $label = str_replace( '_', ' ', $details['type'] );
+            $label = trim( preg_replace( '/\s+/', ' ', $label ) );
+
+            if ( false !== strpos( $label, 'token' ) ) {
+                $description = 'token limits';
+            } elseif ( false !== strpos( $label, 'request' ) ) {
+                $description = 'request limits';
+            } elseif ( '' !== $label ) {
+                $description = $label . ' limits';
+            }
+        }
+
+        if ( '' === $description ) {
+            $description = 'OpenAI rate limits';
+        }
+
+        if ( ! empty( $details['unit'] ) ) {
+            $description .= ' (' . $details['unit'] . ')';
+        }
+
+        return sprintf(
+            'Chat request failed due to %s being exceeded; OpenAI rate-limit response %d.',
+            $description,
+            $status
+        );
+    }
+
+    /**
+     * Extract additional context for chat failure log entries.
+     *
+     * @param WP_Error $error Chat failure error object.
+     * @return array
+     */
+    protected function extract_chat_error_log_context( $error ) {
+        if ( ! $error instanceof WP_Error ) {
+            return array();
+        }
+
+        $data = $error->get_error_data();
+        if ( ! is_array( $data ) ) {
+            return array();
+        }
+
+        $context = array();
+
+        if ( isset( $data['status'] ) && '' !== $data['status'] ) {
+            $context['http_status'] = (int) $data['status'];
+        }
+
+        if ( isset( $data['response_status'] ) && '' !== $data['response_status'] ) {
+            $context['response_status'] = sanitize_key( $data['response_status'] );
+        }
+
+        if ( isset( $data['response_id'] ) && '' !== $data['response_id'] ) {
+            $context['response_id'] = sanitize_text_field( $data['response_id'] );
+        }
+
+        $status = isset( $context['http_status'] ) ? (int) $context['http_status'] : ( isset( $data['status'] ) ? (int) $data['status'] : 0 );
+
+        if ( 429 === $status ) {
+            $details = $this->parse_openai_rate_limit_details( $data );
+
+            if ( ! empty( $details['unit'] ) ) {
+                $context['rate_limit_unit'] = $details['unit'];
+            }
+
+            if ( ! empty( $details['type'] ) ) {
+                $context['rate_limit_type'] = $details['type'];
+            }
+
+            if ( ! empty( $details['scope'] ) ) {
+                $context['rate_limit_scope'] = $details['scope'];
+            }
+
+            if ( null !== $details['limit'] ) {
+                $context['rate_limit_limit'] = $details['limit'];
+            }
+
+            if ( null !== $details['remaining'] ) {
+                $context['rate_limit_remaining'] = $details['remaining'];
+            }
+
+            if ( null !== $details['reset_seconds'] ) {
+                $context['rate_limit_reset_seconds'] = $details['reset_seconds'];
+            }
+        }
+
+        return $context;
+    }
+
+    /**
+     * Parse rate limit details from an OpenAI error payload.
+     *
+     * @param array $error_data Error data array attached to the WP_Error instance.
+     * @return array
+     */
+    protected function parse_openai_rate_limit_details( array $error_data ) {
+        $details = array(
+            'unit'          => '',
+            'type'          => '',
+            'scope'         => '',
+            'limit'         => null,
+            'remaining'     => null,
+            'reset_seconds' => null,
+        );
+
+        $error_payload = array();
+
+        if ( isset( $error_data['body'] ) && is_array( $error_data['body'] ) && isset( $error_data['body']['error'] ) && is_array( $error_data['body']['error'] ) ) {
+            $error_payload = $error_data['body']['error'];
+        } elseif ( isset( $error_data['error'] ) && is_array( $error_data['error'] ) ) {
+            $error_payload = $error_data['error'];
+        }
+
+        $detail_sections = array();
+
+        if ( ! empty( $error_payload ) ) {
+            $detail_sections[] = $error_payload;
+
+            if ( isset( $error_payload['detail'] ) && is_array( $error_payload['detail'] ) ) {
+                $detail_sections[] = $error_payload['detail'];
+            }
+        }
+
+        foreach ( $detail_sections as $section ) {
+            if ( ! is_array( $section ) ) {
+                continue;
+            }
+
+            if ( '' === $details['unit'] ) {
+                if ( isset( $section['rate_limit_unit'] ) && is_string( $section['rate_limit_unit'] ) ) {
+                    $candidate = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', $section['rate_limit_unit'] ) );
+                    if ( '' !== $candidate ) {
+                        $details['unit'] = $candidate;
+                    }
+                } elseif ( isset( $section['unit'] ) && is_string( $section['unit'] ) ) {
+                    $candidate = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', $section['unit'] ) );
+                    if ( '' !== $candidate ) {
+                        $details['unit'] = $candidate;
+                    }
+                }
+            }
+
+            if ( '' === $details['type'] ) {
+                $candidates = array();
+
+                if ( isset( $section['limit_type'] ) ) {
+                    $candidates[] = $section['limit_type'];
+                }
+
+                if ( isset( $section['type'] ) ) {
+                    $candidates[] = $section['type'];
+                }
+
+                foreach ( $candidates as $candidate ) {
+                    if ( ! is_string( $candidate ) || '' === $candidate ) {
+                        continue;
+                    }
+
+                    $normalised = strtolower( preg_replace( '/[^a-z0-9_]/', '', $candidate ) );
+
+                    if ( '' !== $normalised ) {
+                        $details['type'] = $normalised;
+                        break;
+                    }
+                }
+            }
+
+            if ( '' === $details['scope'] && isset( $section['scope'] ) && is_string( $section['scope'] ) ) {
+                $scope = sanitize_key( $section['scope'] );
+                if ( '' !== $scope ) {
+                    $details['scope'] = $scope;
+                }
+            }
+
+            if ( null === $details['limit'] && isset( $section['limit'] ) ) {
+                $limit = $this->normalise_rate_limit_number( $section['limit'] );
+                if ( null !== $limit ) {
+                    $details['limit'] = $limit;
+                }
+            }
+
+            if ( null === $details['remaining'] && isset( $section['remaining'] ) ) {
+                $remaining = $this->normalise_rate_limit_number( $section['remaining'] );
+                if ( null !== $remaining ) {
+                    $details['remaining'] = $remaining;
+                }
+            }
+
+            if ( null === $details['reset_seconds'] && isset( $section['reset_seconds'] ) ) {
+                $reset = $this->normalise_rate_limit_number( $section['reset_seconds'] );
+                if ( null !== $reset ) {
+                    $details['reset_seconds'] = $reset;
+                }
+            }
+
+            if ( null === $details['reset_seconds'] && isset( $section['retry_after'] ) ) {
+                $reset = $this->normalise_rate_limit_number( $section['retry_after'] );
+                if ( null !== $reset ) {
+                    $details['reset_seconds'] = $reset;
+                }
+            }
+        }
+
+        return $details;
+    }
+
+    /**
+     * Normalise numeric rate limit values.
+     *
+     * @param mixed $value Rate limit field value.
+     * @return int|float|null
+     */
+    protected function normalise_rate_limit_number( $value ) {
+        if ( is_int( $value ) || is_float( $value ) ) {
+            return $value;
+        }
+
+        if ( is_numeric( $value ) ) {
+            return 0 + $value;
+        }
+
+        if ( is_string( $value ) ) {
+            $trimmed = trim( $value );
+            if ( is_numeric( $trimmed ) ) {
+                return 0 + $trimmed;
+            }
+        }
+
+        return null;
     }
 
     /**
