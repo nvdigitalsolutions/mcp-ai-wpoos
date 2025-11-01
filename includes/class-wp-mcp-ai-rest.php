@@ -1613,9 +1613,14 @@ class WP_MCP_AI_REST {
                 }
             }
 
-            if ( true === $explicit_stream ) {
-                return true;
-            }
+        }
+
+        if ( true === $explicit_stream ) {
+            return true;
+        }
+
+        if ( false === $explicit_stream ) {
+            return false;
         }
 
         $accept_header = $request->get_header( 'accept' );
