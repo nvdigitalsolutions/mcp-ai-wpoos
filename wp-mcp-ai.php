@@ -123,6 +123,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.ph
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
+require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
 
 if ( is_admin() ) {
     require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';

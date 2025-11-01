@@ -35,6 +35,9 @@ class WP_MCP_AI_Admin_Settings {
         add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
         add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
         add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
+        if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
+            add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
+        }
     }
 
     /**
@@ -2450,8 +2453,26 @@ class WP_MCP_AI_Admin_Settings {
 
         $authorize_url = add_query_arg( $params, self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
 
-        wp_redirect( $authorize_url );
+        wp_safe_redirect( $authorize_url );
         exit;
+    }
+
+    /**
+     * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
+     *
+     * @param string[] $allowed_hosts Existing list of allowed hosts.
+     * @param string   $redirect      Requested redirect destination.
+     *
+     * @return string[]
+     */
+    public function allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
+        $google_host = wp_parse_url( self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT, PHP_URL_HOST );
+
+        if ( $google_host ) {
+            $allowed_hosts[] = $google_host;
+        }
+
+        return array_values( array_unique( $allowed_hosts ) );
     }
 
     /**
