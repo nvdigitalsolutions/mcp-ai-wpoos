@@ -10,14 +10,28 @@ WP MCP AI ships with multiple credential flows. Auth0 remains the default for re
 
 ## Configure Simple JWT Login
 
-Simple JWT Login must know how to sign and validate tokens before WP MCP AI will accept them.
+Simple JWT Login must know how to sign and validate tokens before WP MCP AI will accept them. Walk through the configuration wizard under **Simple JWT Login → General → JWT Settings** and confirm each of the following panels:
 
-* **Secrets and key pairs.** Provide the private key or secret used to sign tokens under **Simple JWT Login → General → JWT Settings**. WP MCP AI reads the configured verification algorithm and public key to validate inbound tokens. Missing keys trigger `wp_mcp_ai_simple_jwt_missing_keys`. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L120-L211】
-* **Allowed IPs / hosts.** Restrict the integration to trusted clients with the plugin’s **Allowed IPs** list. Requests from other networks fail with `wp_mcp_ai_simple_jwt_disallowed_ip`. Use CIDR blocks or comma-separated addresses to cover remote assistant infrastructure. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L147-L169】
-* **User resolution.** Choose how tokens should map back to WordPress accounts (`email`, `username`, or `user ID`). The integration reuses the plugin’s login settings to locate the user identified in the JWT payload. Tokens pointing to missing users return `wp_mcp_ai_simple_jwt_user_not_found`. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L212-L308】
-* **Assistant-related claims.** You can embed an `assistant_id` (or `assistantId`/`assistant.id`) claim to help clients remember which assistant a token is intended for, but WP MCP AI's Simple JWT Login integration currently validates tokens only—it does not override the assistant selected in the REST payload. If you need to enforce assistant scoping, apply additional middleware or harden the calling client so it always posts the expected identifier. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L1-L206】
+1. **Route Namespace.** Set the namespace to match the REST route you plan to call (for example, `simple-jwt-login/v1`). This keeps token minting and verification aligned with the REST endpoints the plugin registers. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L58-L139】
+2. **JWT Signature block.**
+   - **Decryption key source:** Choose **Plugin Settings** so the plugin reads the secret from the fields on this screen.
+   - **JWT Decrypt Algorithm:** Pick the algorithm that matches the tokens you will issue (`HS256`, `RS256`, and so on).
+   - **JWT Decryption Key:** Paste the shared secret (for HMAC algorithms) or public verification key (for asymmetric algorithms). Keep the strength indicator in the green by using sufficiently long secrets.
+   - **JWT Decryption Key is base64 encoded:** Enable this toggle only when you have base64-wrapped the key material; leave it unchecked for raw text secrets.
+   The WP MCP AI integration consumes these exact settings when validating bearer tokens, so an incorrect algorithm or key results in `wp_mcp_ai_simple_jwt_missing_keys` failures. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L120-L211】
+3. **Lock down the request origin.** Populate **Allowed IPs** with the networks that should be able to exchange JWTs. Any request that resolves to a disallowed address short-circuits with `wp_mcp_ai_simple_jwt_disallowed_ip`, keeping the REST layer from processing rogue traffic. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L147-L169】
+4. **Select a user resolution strategy.** Decide whether Simple JWT Login should look up accounts by email, username, or WordPress user ID. WP MCP AI mirrors that preference when resolving the caller and fails with `wp_mcp_ai_simple_jwt_user_not_found` if the decoded payload cannot be matched to a user. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L212-L308】
+5. **Add contextual claims.** Optional claims—such as `assistant_id`, `assistantId`, or `assistant.id`—help downstream clients remember which assistant issued the token. The integration validates the token and exposes the decoded payload through the REST filters, but it does not force the REST request to reuse that assistant ID. Harden clients accordingly. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L190】【F:includes/class-wp-mcp-ai-rest.php†L1003-L1287】
 
 Refer to the [Simple JWT Login documentation](https://docs.simplejwtlogin.com/) for complete setup instructions, including configuring the REST endpoints, JWT payload templates, and hardening recommendations.
+
+### Verify the JWT handshake
+
+After saving the JWT settings, confirm that WP MCP AI is wiring the authentication layer correctly:
+
+1. **Trigger a bearer validation.** Call any MCP REST endpoint with the new token and observe that the `wp_mcp_ai_pre_validate_bearer_token` filter now runs via `WP_MCP_AI_Simple_JWT_Login_Integration::pre_validate_bearer_token`. A valid JWT returns `true` and caches the decoded payload for later steps. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L165】
+2. **Confirm user mapping.** When the REST controller translates the bearer token into a WordPress user, the integration’s `map_bearer_to_user_id` hook reuses the cached payload to populate the request context. Requests that cannot be mapped surface the same `wp_mcp_ai_simple_jwt_user_not_found` error you would see during direct validation. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L167-L214】
+3. **Inspect REST payload hooks.** Successful validation exposes the decoded JWT payload to REST handlers so tools and chat requests can read contextual claims. Use the `wp_mcp_ai_rest_bearer_payload` filter or instrument your own logging to verify that the expected fields (`assistant_id`, scopes, expiry) are present. 【F:includes/class-wp-mcp-ai-rest.php†L912-L1287】
 
 ## Mint tokens via REST or CLI
 
