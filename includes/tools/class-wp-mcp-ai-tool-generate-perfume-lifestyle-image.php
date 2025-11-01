@@ -142,6 +142,9 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
         }
 
         $product_url       = isset( $arguments['product_url'] ) ? $this->sanitize_safe_url( $arguments['product_url'], 'product_url' ) : '';
+        if ( is_wp_error( $product_url ) ) {
+            return $product_url;
+        }
         $scene_description = isset( $arguments['scene_description'] ) ? $this->sanitize_scene_description( $arguments['scene_description'] ) : '';
 
         $analysis_model = isset( $arguments['analysis_model'] ) ? sanitize_text_field( $arguments['analysis_model'] ) : self::DEFAULT_ANALYSIS_MODEL;
