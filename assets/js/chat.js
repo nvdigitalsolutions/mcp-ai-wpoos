@@ -1676,7 +1676,15 @@
             return;
         }
 
-        setHistoryVisibility(state, !state.historyVisible);
+        var isExpanded = !!state.historyVisible;
+
+        if (state.historyToggle && state.historyToggle.getAttribute) {
+            isExpanded = state.historyToggle.getAttribute('aria-expanded') === 'true';
+        } else if (state.historyContainer) {
+            isExpanded = !state.historyContainer.hidden;
+        }
+
+        setHistoryVisibility(state, !isExpanded);
     }
 
     function setHistoryVisibility(state, visible) {
