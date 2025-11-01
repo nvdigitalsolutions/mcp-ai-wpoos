@@ -17,6 +17,7 @@ class WP_MCP_AI_Admin_Settings {
     const OPTION_NAME = 'wp_mcp_ai_settings';
     const SETTINGS_GROUP = 'wp_mcp_ai_settings_group';
     const PAGE_SLUG = 'wp-mcp-ai-settings';
+    const SIMPLE_JWT_LOGIN_PLUGIN = 'simple-jwt-login/simple-jwt-login.php';
     const GMAIL_OAUTH_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
     const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
     const GMAIL_OAUTH_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
@@ -33,6 +34,7 @@ class WP_MCP_AI_Admin_Settings {
         add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this, 'handle_gmail_oauth_callback' ) );
         add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
         add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
+        add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
         if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
             add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
         }
@@ -60,6 +62,7 @@ class WP_MCP_AI_Admin_Settings {
             'auth0_domain'         => '',
             'auth0_audience'       => '',
             'auth0_required_scope' => '',
+            'enable_simple_jwt_login' => false,
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
             'crawl4ai_api_key'     => '',
@@ -1219,6 +1222,14 @@ class WP_MCP_AI_Admin_Settings {
             'wp_mcp_ai_authentication_section'
         );
 
+        add_settings_field(
+            'enable_simple_jwt_login',
+            __( 'Enable Simple JWT Login tokens', 'wp-mcp-ai' ),
+            array( $this, 'render_simple_jwt_login_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
         add_settings_section(
             'wp_mcp_ai_assistant_section',
             __( 'Assistant Defaults', 'wp-mcp-ai' ),
@@ -1668,6 +1679,8 @@ class WP_MCP_AI_Admin_Settings {
             $clean['auth0_required_scope'] = trim( sanitize_text_field( $settings['auth0_required_scope'] ) );
         }
 
+        $clean['enable_simple_jwt_login'] = $this->is_simple_jwt_login_available() && ! empty( $settings['enable_simple_jwt_login'] );
+
         $clean['delete_on_uninstall'] = ! empty( $settings['delete_on_uninstall'] );
 
         if ( isset( $settings['crawl4ai_base_url'] ) ) {
@@ -2085,6 +2098,115 @@ class WP_MCP_AI_Admin_Settings {
         <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_required_scope]" value="<?php echo esc_attr( $settings['auth0_required_scope'] ); ?>" class="regular-text" placeholder="mcp:invoke" />
         <p class="description"><?php esc_html_e( 'Optional space-delimited scope that must be present on remote bearer tokens.', 'wp-mcp-ai' ); ?></p>
         <?php
+    }
+
+    /**
+     * Render the Simple JWT Login integration toggle.
+     */
+    public function render_simple_jwt_login_field() {
+        $settings  = self::get_settings();
+        $enabled   = ! empty( $settings['enable_simple_jwt_login'] );
+        $available = $this->is_simple_jwt_login_available();
+        $field_id  = 'wp-mcp-ai-enable-simple-jwt-login';
+
+        printf(
+            '<label for="%1$s"><input id="%1$s" type="checkbox" name="%2$s[enable_simple_jwt_login]" value="1" %3$s %4$s /> %5$s</label>',
+            esc_attr( $field_id ),
+            esc_attr( self::OPTION_NAME ),
+            checked( $enabled, true, false ),
+            disabled( ! $available, true, false ),
+            esc_html__( 'Allow bearer tokens validated by Simple JWT Login to access the MCP REST API.', 'wp-mcp-ai' )
+        );
+
+        echo '<p class="description">' . esc_html__( 'Enable this after configuring the Simple JWT Login plugin to issue tokens for remote assistants.', 'wp-mcp-ai' ) . '</p>';
+
+        if ( ! $available ) {
+            $install_url = 'https://wordpress.org/plugins/simple-jwt-login/#installation';
+            $link        = sprintf(
+                '<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+                esc_url( $install_url ),
+                esc_html__( 'Simple JWT Login installation guide', 'wp-mcp-ai' )
+            );
+
+            printf(
+                '<p class="description">%s</p>',
+                wp_kses(
+                    sprintf(
+                        /* translators: %s: Link to the Simple JWT Login documentation. */
+                        __( 'Install and activate the %s to enable this integration.', 'wp-mcp-ai' ),
+                        $link
+                    ),
+                    array(
+                        'a' => array(
+                            'href'   => array(),
+                            'target' => array(),
+                            'rel'    => array(),
+                        ),
+                    )
+                )
+            );
+        }
+    }
+
+    /**
+     * Display a notice when Simple JWT Login is unavailable.
+     */
+    public function maybe_render_simple_jwt_login_notice() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        if ( $this->is_simple_jwt_login_available() ) {
+            return;
+        }
+
+        $current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( self::PAGE_SLUG !== $current_page ) {
+            return;
+        }
+
+        $install_url = 'https://wordpress.org/plugins/simple-jwt-login/#installation';
+        $message     = sprintf(
+            /* translators: %s: Hyperlink pointing to the Simple JWT Login installation instructions. */
+            __( 'The Simple JWT Login plugin is not active. Install and activate it to enable its bearer tokens for the MCP API. Review the %s.', 'wp-mcp-ai' ),
+            sprintf(
+                '<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+                esc_url( $install_url ),
+                esc_html__( 'installation instructions', 'wp-mcp-ai' )
+            )
+        );
+
+        echo '<div class="notice notice-warning"><p>' . wp_kses(
+            $message,
+            array(
+                'a' => array(
+                    'href'   => array(),
+                    'target' => array(),
+                    'rel'    => array(),
+                ),
+            )
+        ) . '</p></div>';
+    }
+
+    /**
+     * Determine whether the Simple JWT Login dependency is active.
+     *
+     * @return bool
+     */
+    protected function is_simple_jwt_login_available() {
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+
+        if ( function_exists( 'is_plugin_active' ) && is_plugin_active( self::SIMPLE_JWT_LOGIN_PLUGIN ) ) {
+            return true;
+        }
+
+        if ( function_exists( 'is_plugin_active_for_network' ) && is_plugin_active_for_network( self::SIMPLE_JWT_LOGIN_PLUGIN ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
