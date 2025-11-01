@@ -97,6 +97,16 @@ Successful requests return the assistant ID and the raw response payload from th
 - When streaming is active the server replies with `Content-Type: text/event-stream`, disables caching, and flushes frames as they are generated so clients can process partial completions in real time.【F:includes/class-wp-mcp-ai-rest.php†L1668-L1695】
 - Authentication is unchanged—continue sending either an Auth0 bearer token or an assistant-issued credential via `Authorization: Bearer …`, or a WordPress REST nonce when calling from the same origin.【F:docs/mcp-server-authentication.md†L11-L34】
 
+### Connect LM Studio to WP MCP AI
+
+LM Studio can act as an MCP client by pointing its `mcp.json` configuration at the plugin’s REST endpoints. Follow this checklist to make the connection reliable:
+
+1. **Verify the REST base URL.** Open `https://your-site.example/wp-json/mcp-ai/v1/assistants` in a browser or via `curl` to confirm the endpoint responds and that your assistant is visible to the credential you plan to use. The route is registered under the `mcp-ai/v1` namespace and requires authentication for anything beyond public assistants. 【F:includes/class-wp-mcp-ai-rest.php†L234-L355】
+2. **Generate a bearer credential.** Use one of the supported flows—Auth0 access tokens, assistant-issued credentials, WordPress REST nonces, guest tokens, or Simple JWT Login tokens—to authorise the client. JWT-based setups should follow the steps in [docs/authentication.md](authentication.md) to mint and verify tokens before wiring them into LM Studio. 【F:docs/authentication.md†L1-L123】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
+3. **Create a `chat` request entry.** In LM Studio’s `mcp.json`, configure a POST request that targets `https://your-site.example/wp-json/mcp-ai/v1/chat`, sets `Content-Type: application/json`, and includes the `Authorization: Bearer …` header. The chat route only supports POST and runs the same permission callback as the assistants index, so failing to include the header or using the wrong method returns a 401/404. 【F:includes/class-wp-mcp-ai-rest.php†L264-L337】
+4. **Enable streaming when desired.** Add `"Accept": "text/event-stream"` or a `"stream": true` flag in the request body to opt into Server-Sent Events. The REST controller inspects both signals before invoking its streaming response helper. 【F:includes/class-wp-mcp-ai-rest.php†L1633-L1719】
+5. **Test the credential.** Use LM Studio’s MCP test panel (or run a standalone `curl` command) to issue a simple prompt. Successful responses return the assistant ID alongside the provider payload; errors bubble up with actionable WP error codes that mirror the REST controller’s logs. 【F:includes/class-wp-mcp-ai-rest.php†L1573-L1638】
+
 Example `mcp.json` block for an LM Studio client:
 
 ```json
