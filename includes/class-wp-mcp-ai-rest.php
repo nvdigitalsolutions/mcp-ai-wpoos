@@ -257,6 +257,11 @@ class WP_MCP_AI_REST {
                         ),
                     ),
                 ),
+                array(
+                    'methods'             => WP_REST_Server::CREATABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_assistants_index' ),
+                ),
             ),
             true
         );

@@ -124,6 +124,39 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the directory endpoint accepts POST requests for connectivity checks.
+     */
+    public function test_directory_accepts_post_requests() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'POST Directory Assistant',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/assistants' );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+
+        $data = $response->get_data();
+
+        $this->assertArrayHasKey( 'assistants', $data );
+        $this->assertCount( 1, $data['assistants'] );
+        $this->assertSame( $assistant_id, $data['assistants'][0]['id'] );
+    }
+
+    /**
      * Ensure public capability overrides still respect publication status.
      */
     public function test_directory_respects_public_capability_and_omits_unpublished() {
