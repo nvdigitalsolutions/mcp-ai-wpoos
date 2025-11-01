@@ -15,7 +15,7 @@ Simple JWT Login must know how to sign and validate tokens before WP MCP AI will
 * **Secrets and key pairs.** Provide the private key or secret used to sign tokens under **Simple JWT Login → General → JWT Settings**. WP MCP AI reads the configured verification algorithm and public key to validate inbound tokens. Missing keys trigger `wp_mcp_ai_simple_jwt_missing_keys`. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L120-L211】
 * **Allowed IPs / hosts.** Restrict the integration to trusted clients with the plugin’s **Allowed IPs** list. Requests from other networks fail with `wp_mcp_ai_simple_jwt_disallowed_ip`. Use CIDR blocks or comma-separated addresses to cover remote assistant infrastructure. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L147-L169】
 * **User resolution.** Choose how tokens should map back to WordPress accounts (`email`, `username`, or `user ID`). The integration reuses the plugin’s login settings to locate the user identified in the JWT payload. Tokens pointing to missing users return `wp_mcp_ai_simple_jwt_user_not_found`. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L212-L308】
-* **Assistant scoping claims.** Add an `assistant_id` (or `assistantId`/`assistant.id`) claim so WP MCP AI can scope requests to a specific assistant without allowing the client to override that context. Additional scope/permission claims can also be embedded and will propagate to downstream tooling. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L309-L381】
+* **Assistant-related claims.** You can embed an `assistant_id` (or `assistantId`/`assistant.id`) claim to help clients remember which assistant a token is intended for, but WP MCP AI's Simple JWT Login integration currently validates tokens only—it does not override the assistant selected in the REST payload. If you need to enforce assistant scoping, apply additional middleware or harden the calling client so it always posts the expected identifier. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L1-L206】
 
 Refer to the [Simple JWT Login documentation](https://docs.simplejwtlogin.com/) for complete setup instructions, including configuring the REST endpoints, JWT payload templates, and hardening recommendations.
 
@@ -49,7 +49,7 @@ curl \
   https://example.com/wp-json/mcp-ai/v1/conversations
 ```
 
-Assistant-scoped tokens ignore attempts to override `assistant_id` in the body: the integration rewrites the request context to match the claim extracted from the JWT payload. 【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L309-L360】
+> **Caution:** Simple JWT Login tokens do not currently prevent a caller from picking a different `assistant_id` in the request body. The plugin validates the bearer token and resolves the WordPress user, but it does not rewrite the assistant context on your behalf. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L1-L206】
 
 ## Troubleshooting
 
