@@ -142,6 +142,8 @@ Example `mcp.json` block for an LM Studio client:
 }
 ```
 
+> **Note:** LM Studio 0.3.x sometimes drops the `"method": "POST"` line after editing the configuration in its UI. If that happens the client silently falls back to GET and WordPress returns a `404` because the chat endpoint only accepts POST. Re-add the method property before saving to avoid the regression and to stay compatible with other MCP servers.
+
 Replace `cred_xxxxx.SECRET` with either the Auth0 access token issued for your tenant or the assistant credential generated from the editor UI before saving the configuration.【F:docs/mcp-server-authentication.md†L11-L34】
 
 ## POST `/tools`
