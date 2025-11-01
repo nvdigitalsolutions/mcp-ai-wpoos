@@ -1,35 +1,48 @@
 <?php
 namespace SimpleJWTLogin\Modules {
-    class WordPressData {
-        public function getUserMeta( $user_id, $key ) {
-            return array();
+    if ( ! class_exists( __NAMESPACE__ . '\\WordPressData' ) ) {
+        class WordPressData {
+            public function getUserMeta( $user_id, $key ) {
+                return array();
+            }
         }
     }
 
-    class AuthenticationSettings {
-        public function isAuthenticationEnabled() {
-            return true;
+    if ( ! class_exists( __NAMESPACE__ . '\\AuthenticationSettings' ) ) {
+        class AuthenticationSettings {
+            public function isAuthenticationEnabled() {
+                return true;
+            }
         }
     }
 
-    class GeneralSettings {
-        public function getRequestKeyHeader() {
-            return SimpleJWTLoginSettings::$request_key_header;
+    if ( ! class_exists( __NAMESPACE__ . '\\GeneralSettings' ) ) {
+        class GeneralSettings {
+            public function getRequestKeyHeader() {
+                return SimpleJWTLoginSettings::$request_key_header;
+            }
+
+            public function getJWTDecryptAlgorithm() {
+                return SimpleJWTLoginSettings::$jwt_decrypt_algorithm;
+            }
         }
     }
 
-    class SimpleJWTLoginSettings {
-        public static $request_key_header = 'Authorization';
+    if ( ! class_exists( __NAMESPACE__ . '\\SimpleJWTLoginSettings' ) ) {
+        class SimpleJWTLoginSettings {
+            public static $request_key_header    = 'Authorization';
+            public static $jwt_decrypt_algorithm = 'HS256';
 
-        public function __construct( WordPressData $wordpress_data ) {
-        }
+            public function __construct( WordPressData $wordpress_data ) {
+            }
 
-        public function getGeneralSettings() {
-            return new GeneralSettings();
-        }
+            public function getGeneralSettings() {
+                return new GeneralSettings();
+            }
 
-        public function getAuthenticationSettings() {
-            return new AuthenticationSettings();
+            public function getAuthenticationSettings() {
+                return new AuthenticationSettings();
+            }
         }
     }
 }
@@ -42,50 +55,52 @@ namespace SimpleJWTLogin\Helpers {
 }
 
 namespace SimpleJWTLogin\Services {
-    class ValidateTokenService {
-        public static $next_response = null;
-        public static $next_exception = null;
+    if ( ! class_exists( __NAMESPACE__ . '\\ValidateTokenService' ) ) {
+        class ValidateTokenService {
+            public static $next_response  = null;
+            public static $next_exception = null;
 
-        public function withSettings( $settings ) {
-            return $this;
-        }
-
-        public function withServerHelper( $helper ) {
-            return $this;
-        }
-
-        public function withRequestMethod( $method ) {
-            return $this;
-        }
-
-        public function withRequest( $request ) {
-            return $this;
-        }
-
-        public function withCookies( $cookies ) {
-            return $this;
-        }
-
-        public function withSession( $session ) {
-            return $this;
-        }
-
-        public function makeAction() {
-            if ( self::$next_exception instanceof \Exception ) {
-                $exception = self::$next_exception;
-                self::reset();
-                throw $exception;
+            public function withSettings( $settings ) {
+                return $this;
             }
 
-            $response = self::$next_response;
-            self::reset();
+            public function withServerHelper( $helper ) {
+                return $this;
+            }
 
-            return $response;
-        }
+            public function withRequestMethod( $method ) {
+                return $this;
+            }
 
-        public static function reset() {
-            self::$next_response = null;
-            self::$next_exception = null;
+            public function withRequest( $request ) {
+                return $this;
+            }
+
+            public function withCookies( $cookies ) {
+                return $this;
+            }
+
+            public function withSession( $session ) {
+                return $this;
+            }
+
+            public function makeAction() {
+                if ( self::$next_exception instanceof \Exception ) {
+                    $exception = self::$next_exception;
+                    self::reset();
+                    throw $exception;
+                }
+
+                $response = self::$next_response;
+                self::reset();
+
+                return $response;
+            }
+
+            public static function reset() {
+                self::$next_response  = null;
+                self::$next_exception = null;
+            }
         }
     }
 }
