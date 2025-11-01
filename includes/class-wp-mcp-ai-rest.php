@@ -1801,12 +1801,14 @@ class WP_MCP_AI_REST {
         $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
 
         $headers = array(
-            'Content-Type'           => 'text/event-stream; charset=UTF-8',
-            'Cache-Control'          => 'no-cache, no-store, must-revalidate, no-transform',
-            'Pragma'                 => 'no-cache',
-            'Connection'             => 'keep-alive',
-            'X-Accel-Buffering'      => 'no',
-            'X-Content-Type-Options' => 'nosniff',
+            'Content-Type'                => 'text/event-stream; charset=UTF-8',
+            'Cache-Control'               => 'no-cache, no-store, must-revalidate, no-transform',
+            'Pragma'                      => 'no-cache',
+            'Connection'                  => 'keep-alive',
+            'Vary'                        => 'Accept, Authorization',
+            'Access-Control-Allow-Origin' => '*',
+            'X-Accel-Buffering'           => 'no',
+            'X-Content-Type-Options'      => 'nosniff',
         );
 
         if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( $_SERVER['SERVER_PROTOCOL'], 'HTTP/2' ) ) {
