@@ -360,6 +360,11 @@ class WP_MCP_AI_REST {
                         ),
                     ),
                 ),
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_chat_request' ),
+                ),
             ),
             true
         );
@@ -452,6 +457,19 @@ class WP_MCP_AI_REST {
                             'enum'     => array( 'attachment', 'inline' ),
                         ),
                     ),
+                ),
+            ),
+            true
+        );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/sse',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_sse_handshake' ),
                 ),
             ),
             true
@@ -708,6 +726,7 @@ class WP_MCP_AI_REST {
                 'chat'          => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
                 'tools'         => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
                 'file_download' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
+                'sse'           => esc_url_raw( rest_url( self::REST_NAMESPACE . '/sse' ) ),
             ),
         );
 
@@ -749,6 +768,18 @@ class WP_MCP_AI_REST {
         }
 
         return new WP_REST_Response( $response_data, 200 );
+    }
+
+    /**
+     * Provide an explicit SSE endpoint for MCP clients that expect `/sse` handshakes.
+     *
+     * @param WP_REST_Request $request REST request instance.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_sse_handshake( WP_REST_Request $request ) {
+        $request->set_param( 'stream', true );
+
+        return $this->handle_assistants_index( $request );
     }
 
     /**
@@ -851,9 +882,12 @@ class WP_MCP_AI_REST {
             $rest_links = $response_data['rest'];
         }
 
-        if ( isset( $rest_links['file_download'] ) && '' !== $rest_links['file_download'] ) {
+        $has_sse_route          = isset( $rest_links['sse'] ) && '' !== $rest_links['sse'];
+        $has_file_download_route = isset( $rest_links['file_download'] ) && '' !== $rest_links['file_download'];
+
+        if ( $has_sse_route || $has_file_download_route ) {
             $capabilities['resources'] = array(
-                'subscribe'   => false,
+                'subscribe'   => $has_sse_route,
                 'listChanged' => false,
             );
         }
@@ -1600,6 +1634,64 @@ class WP_MCP_AI_REST {
     }
 
     /**
+     * Populate request parameters when JSON arrives in the body of a GET request.
+     *
+     * LM Studio 0.3.x removes the `method` attribute from `mcp.json` entries during
+     * config edits, causing its MCP transport to fall back to GET. WordPress ignores
+     * body payloads on GET requests, so we hydrate the REST request manually to
+     * preserve backwards compatibility.
+     *
+     * @param WP_REST_Request $request REST request.
+     * @return void
+     */
+    protected function hydrate_request_body_params( WP_REST_Request $request ) {
+        if ( 'GET' !== $request->get_method() ) {
+            return;
+        }
+
+        if ( $request->get_param( 'messages' ) ) {
+            return;
+        }
+
+        $raw_body = $request->get_body();
+
+        if ( '' === $raw_body ) {
+            return;
+        }
+
+        $decoded = json_decode( $raw_body, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+            return;
+        }
+
+        $copyable_keys = array(
+            'assistant_id',
+            'messages',
+            'attachments',
+            'options',
+            'session_key',
+            'probe',
+        );
+
+        foreach ( $copyable_keys as $key ) {
+            if ( array_key_exists( $key, $decoded ) ) {
+                $request->set_param( $key, $decoded[ $key ] );
+            }
+        }
+
+        if ( isset( $decoded['options'] ) && is_array( $decoded['options'] ) ) {
+            $options = $request->get_param( 'options' );
+
+            if ( ! is_array( $options ) ) {
+                $options = array();
+            }
+
+            $request->set_param( 'options', array_merge( $options, $decoded['options'] ) );
+        }
+    }
+
+    /**
      * Handle chat completion requests, normalising attachments and auto-enabling
      * the document prompt tool whenever uploads are detected.
      *
@@ -1607,6 +1699,8 @@ class WP_MCP_AI_REST {
      * @return WP_REST_Response|WP_Error
      */
     public function handle_chat_request( WP_REST_Request $request ) {
+        $this->hydrate_request_body_params( $request );
+
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
         $scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
         if ( is_wp_error( $scoped_id ) ) {
@@ -1866,10 +1960,10 @@ class WP_MCP_AI_REST {
         }
 
         $frames = $this->build_event_stream_chunk( $event_name, $encoded_payload );
-        $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
+        $frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
         $headers = array(
-            'Content-Type'                => 'text/event-stream; charset=UTF-8',
+            'Content-Type'                => 'text/event-stream',
             'Cache-Control'               => 'no-cache, no-store, must-revalidate, no-transform',
             'Pragma'                      => 'no-cache',
             'Connection'                  => 'keep-alive',
@@ -1898,6 +1992,16 @@ class WP_MCP_AI_REST {
             }
 
             echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+            if ( function_exists( 'ob_get_level' ) && function_exists( 'ob_end_flush' ) ) {
+                while ( ob_get_level() > 0 ) {
+                    if ( false === ob_end_flush() ) {
+                        break;
+                    }
+                }
+            } elseif ( function_exists( 'ob_flush' ) ) {
+                ob_flush();
+            }
 
             if ( function_exists( 'flush' ) ) {
                 flush();
