@@ -1293,21 +1293,6 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_section(
-            'wp_mcp_ai_chat_colors_section',
-            __( 'Chat Appearance', 'wp-mcp-ai' ),
-            array( $this, 'render_chat_colors_section_description' ),
-            self::PAGE_SLUG
-        );
-
-        add_settings_field(
-            'chat_colors',
-            __( 'Interface Colors', 'wp-mcp-ai' ),
-            array( $this, 'render_chat_colors_field' ),
-            self::PAGE_SLUG,
-            'wp_mcp_ai_chat_colors_section'
-        );
-
-        add_settings_section(
             'wp_mcp_ai_quickbooks_section',
             __( 'QuickBooks Online', 'wp-mcp-ai' ),
             array( $this, 'render_quickbooks_section_description' ),
@@ -1547,6 +1532,21 @@ class WP_MCP_AI_Admin_Settings {
             array( $this, 'render_gmail_user_email_field' ),
             self::PAGE_SLUG,
             'wp_mcp_ai_gmail_section'
+        );
+
+        add_settings_section(
+            'wp_mcp_ai_chat_colors_section',
+            __( 'Chat Appearance', 'wp-mcp-ai' ),
+            array( $this, 'render_chat_colors_section_description' ),
+            self::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'chat_colors',
+            __( 'Interface Colors', 'wp-mcp-ai' ),
+            array( $this, 'render_chat_colors_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_chat_colors_section'
         );
 
         add_settings_section(
