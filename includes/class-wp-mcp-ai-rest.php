@@ -815,9 +815,12 @@ class WP_MCP_AI_REST {
             $rest_links = $response_data['rest'];
         }
 
-        if ( isset( $rest_links['file_download'] ) && '' !== $rest_links['file_download'] ) {
+        $has_sse_route          = isset( $rest_links['sse'] ) && '' !== $rest_links['sse'];
+        $has_file_download_route = isset( $rest_links['file_download'] ) && '' !== $rest_links['file_download'];
+
+        if ( $has_sse_route || $has_file_download_route ) {
             $capabilities['resources'] = array(
-                'subscribe'   => false,
+                'subscribe'   => $has_sse_route,
                 'listChanged' => false,
             );
         }
