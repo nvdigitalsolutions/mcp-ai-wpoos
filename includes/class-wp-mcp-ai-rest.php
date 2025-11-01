@@ -2939,12 +2939,7 @@ class WP_MCP_AI_REST {
                     continue;
                 }
 
-                if ( empty( $pending_calls ) ) {
-                    $filtered[] = $message;
-                    continue;
-                }
-
-                if ( ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                if ( ! empty( $pending_calls ) && ! isset( $pending_calls[ $tool_call_id ] ) ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',

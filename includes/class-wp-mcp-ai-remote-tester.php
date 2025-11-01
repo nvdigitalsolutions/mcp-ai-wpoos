@@ -183,16 +183,34 @@ class WP_MCP_AI_Remote_Tester {
             );
         }
 
-        $validated = wp_http_validate_url( $base_url );
+        $parsed = wp_parse_url( $base_url );
 
-        if ( ! $validated ) {
+        if ( false === $parsed || empty( $parsed['host'] ) ) {
             return new WP_Error(
                 'wp_mcp_ai_remote_invalid_base_url',
                 __( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'wp-mcp-ai' )
             );
         }
 
-        return untrailingslashit( $validated );
+        $scheme = isset( $parsed['scheme'] ) ? strtolower( $parsed['scheme'] ) : '';
+
+        if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_remote_invalid_base_url',
+                __( 'The base URL must include the http or https scheme.', 'wp-mcp-ai' )
+            );
+        }
+
+        $sanitised = esc_url_raw( $base_url );
+
+        if ( '' === $sanitised ) {
+            return new WP_Error(
+                'wp_mcp_ai_remote_invalid_base_url',
+                __( 'The provided base URL is not a valid HTTP or HTTPS URL.', 'wp-mcp-ai' )
+            );
+        }
+
+        return untrailingslashit( $sanitised );
     }
 
     /**
