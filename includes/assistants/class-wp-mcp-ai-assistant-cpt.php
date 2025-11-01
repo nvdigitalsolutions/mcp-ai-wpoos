@@ -1070,7 +1070,7 @@ class WP_MCP_AI_Assistant_CPT {
                         $credential['id'],
                         'wp_mcp_ai_revoke_credential',
                         'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
-                        'wp_mcp_ai_revoke_nonce',
+                        $this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential['id'] ),
                         __( 'Revoke', 'wp-mcp-ai' ),
                         __( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
                     );
@@ -1081,7 +1081,7 @@ class WP_MCP_AI_Assistant_CPT {
                     $credential['id'],
                     'wp_mcp_ai_delete_credential',
                     'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
-                    'wp_mcp_ai_delete_nonce',
+                    $this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential['id'] ),
                     __( 'Delete', 'wp-mcp-ai' ),
                     __( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
                     'button button-secondary delete'
