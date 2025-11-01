@@ -194,19 +194,28 @@ class WP_MCP_AI_Gemini_Client {
                     ),
                 ),
             ),
-            'generationConfig' => array(
-                'responseMimeType' => $mime_type,
-            ),
         );
 
-        if ( ! empty( $aspect_ratio ) && '1:1' !== $aspect_ratio ) {
-            $payload['imageGenerationConfig'] = array(
-                'aspectRatio' => $aspect_ratio,
-            );
+        $generation_config = array(
+            'responseModalities' => array( 'IMAGE' ),
+        );
+
+        $image_config = array();
+
+        if ( '' !== $aspect_ratio ) {
+            $image_config['aspectRatio'] = $aspect_ratio;
+        }
+
+        if ( ! empty( $image_config ) ) {
+            $generation_config['imageConfig'] = $image_config;
         }
 
         if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
-            $payload['generationConfig']['temperature'] = (float) $options['temperature'];
+            $generation_config['temperature'] = (float) $options['temperature'];
+        }
+
+        if ( ! empty( $generation_config ) ) {
+            $payload['generationConfig'] = $generation_config;
         }
 
         /**
@@ -840,7 +849,7 @@ class WP_MCP_AI_Gemini_Client {
             return $left . ':' . $right;
         }
 
-        $allowed = array( '1:1', '3:4', '4:3', '9:16', '16:9' );
+        $allowed = array( '1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9' );
 
         if ( in_array( $aspect_ratio, $allowed, true ) ) {
             return $aspect_ratio;
