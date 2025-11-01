@@ -2926,15 +2926,26 @@ class WP_MCP_AI_REST {
             if ( 'tool' === $role ) {
                 $tool_call_id = isset( $message['tool_call_id'] ) ? (string) $message['tool_call_id'] : '';
 
-                if ( '' === $tool_call_id || empty( $pending_calls ) || ! isset( $pending_calls[ $tool_call_id ] ) ) {
-                    $reason = '' === $tool_call_id ? 'missing_tool_call_id' : 'tool_call_not_found';
-
+                if ( '' === $tool_call_id ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',
                         array(
                             'tool_call_id' => $tool_call_id,
-                            'reason'       => $reason,
+                            'reason'       => 'missing_tool_call_id',
+                        )
+                    );
+
+                    continue;
+                }
+
+                if ( ! empty( $pending_calls ) && ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => 'tool_call_not_found',
                         )
                     );
 
