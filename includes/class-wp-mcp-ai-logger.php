@@ -36,6 +36,20 @@ class WP_MCP_AI_Logger {
     const MAX_LOG_LINE_LENGTH = 900;
 
     /**
+     * Cache of the detected PHP error log path.
+     *
+     * @var string|null
+     */
+    protected static $log_file_path = null;
+
+    /**
+     * Reset the cached log file path. Primarily used in automated tests.
+     */
+    public static function reset_log_file_cache() {
+        self::$log_file_path = null;
+    }
+
+    /**
      * Record a generic log event when logging is enabled.
      *
      * @param string $type    Event type (chat_request, tool_result, error, etc.).
@@ -120,6 +134,150 @@ class WP_MCP_AI_Logger {
         $line = self::truncate_string( $line, self::MAX_LOG_LINE_LENGTH );
 
         error_log( $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+    }
+
+    /**
+     * Retrieve the absolute path to the PHP error log if available.
+     *
+     * @return string Empty string when the log path cannot be determined or is
+     *                configured to forward to syslog.
+     */
+    public static function get_log_file_path() {
+        if ( null !== self::$log_file_path ) {
+            return self::$log_file_path;
+        }
+
+        $path = ini_get( 'error_log' );
+
+        if ( ! is_string( $path ) ) {
+            self::$log_file_path = '';
+            return self::$log_file_path;
+        }
+
+        $path = trim( $path );
+
+        if ( '' === $path ) {
+            self::$log_file_path = '';
+            return self::$log_file_path;
+        }
+
+        if ( 'syslog' === strtolower( $path ) ) {
+            self::$log_file_path = '';
+            return self::$log_file_path;
+        }
+
+        if ( function_exists( 'wp_normalize_path' ) ) {
+            $path = wp_normalize_path( $path );
+        }
+
+        self::$log_file_path = $path;
+
+        return self::$log_file_path;
+    }
+
+    /**
+     * Determine whether the PHP error log exists on disk.
+     *
+     * @return bool
+     */
+    public static function does_log_file_exist() {
+        $path = self::get_log_file_path();
+
+        if ( '' === $path ) {
+            return false;
+        }
+
+        return @is_file( $path );
+    }
+
+    /**
+     * Retrieve the current size of the PHP error log in bytes.
+     *
+     * @return int|null Returns `null` when the size cannot be determined.
+     */
+    public static function get_log_file_size() {
+        $path = self::get_log_file_path();
+
+        if ( '' === $path ) {
+            return null;
+        }
+
+        if ( ! @is_file( $path ) ) {
+            return null;
+        }
+
+        $size = @filesize( $path );
+
+        if ( false === $size ) {
+            return null;
+        }
+
+        return (int) $size;
+    }
+
+    /**
+     * Determine whether the current environment allows pruning the PHP error log.
+     *
+     * @return bool
+     */
+    public static function can_prune_error_log() {
+        $path = self::get_log_file_path();
+
+        if ( '' === $path ) {
+            return false;
+        }
+
+        if ( ! @is_file( $path ) ) {
+            return false;
+        }
+
+        return @is_writable( $path );
+    }
+
+    /**
+     * Truncate the PHP error log when it exists and is writable.
+     *
+     * @return true|WP_Error
+     */
+    public static function prune_error_log() {
+        $path = self::get_log_file_path();
+
+        if ( '' === $path ) {
+            return new WP_Error(
+                'wp_mcp_ai_log_missing',
+                __( 'The PHP error log path could not be determined.', 'wp-mcp-ai' )
+            );
+        }
+
+        if ( ! @is_file( $path ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_log_unavailable',
+                __( 'The PHP error log has not been created yet.', 'wp-mcp-ai' )
+            );
+        }
+
+        if ( ! @is_writable( $path ) ) {
+            return new WP_Error(
+                'wp_mcp_ai_log_unwritable',
+                __( 'The PHP error log is not writable. Update the file permissions and try again.', 'wp-mcp-ai' )
+            );
+        }
+
+        $handle = @fopen( $path, 'w' );
+
+        if ( false === $handle ) {
+            return new WP_Error(
+                'wp_mcp_ai_log_failed',
+                __( 'The PHP error log could not be truncated.', 'wp-mcp-ai' )
+            );
+        }
+
+        fclose( $handle );
+
+        delete_option( self::RECENT_ERRORS_OPTION );
+        delete_option( self::RECENT_ACTIVITY_OPTION );
+
+        return true;
     }
 
     /**

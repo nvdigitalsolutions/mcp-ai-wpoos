@@ -2796,8 +2796,10 @@ class WP_MCP_AI_REST {
             );
         }
 
+        $filtered_messages = $this->filter_tool_messages_without_matching_calls( array_values( $sanitized ) );
+
         return array(
-            'messages'    => array_values( $sanitized ),
+            'messages'    => $filtered_messages,
             'attachments' => $attachments_helper->get_attachments(),
         );
     }
@@ -2815,6 +2817,82 @@ class WP_MCP_AI_REST {
             'provider'     => isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '',
             'model'        => isset( $options['model'] ) ? sanitize_text_field( $options['model'] ) : '',
         );
+    }
+
+    /**
+     * Ensure tool messages are paired with the immediately preceding tool call.
+     *
+     * Messages with the `tool` role must reference the ID of a tool call emitted by
+     * the previous assistant message. When that metadata is missing or does not
+     * match the pending tool calls the OpenAI API rejects the request. This helper
+     * discards any orphaned tool messages before the payload is dispatched.
+     *
+     * @param array $messages Sanitized chat messages.
+     * @return array
+     */
+    protected function filter_tool_messages_without_matching_calls( array $messages ) {
+        if ( empty( $messages ) ) {
+            return $messages;
+        }
+
+        $filtered      = array();
+        $pending_calls = array();
+
+        foreach ( $messages as $message ) {
+            if ( ! is_array( $message ) ) {
+                continue;
+            }
+
+            $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+            if ( 'assistant' === $role ) {
+                $pending_calls = array();
+
+                if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+                    foreach ( $message['tool_calls'] as $tool_call ) {
+                        if ( ! is_array( $tool_call ) ) {
+                            continue;
+                        }
+
+                        $call_id = isset( $tool_call['id'] ) ? (string) $tool_call['id'] : '';
+
+                        if ( '' !== $call_id ) {
+                            $pending_calls[ $call_id ] = true;
+                        }
+                    }
+                }
+
+                $filtered[] = $message;
+                continue;
+            }
+
+            if ( 'tool' === $role ) {
+                $tool_call_id = isset( $message['tool_call_id'] ) ? (string) $message['tool_call_id'] : '';
+
+                if ( '' === $tool_call_id || empty( $pending_calls ) || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                    $reason = '' === $tool_call_id ? 'missing_tool_call_id' : 'tool_call_not_found';
+
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => $reason,
+                        )
+                    );
+
+                    continue;
+                }
+
+                $filtered[] = $message;
+                continue;
+            }
+
+            $pending_calls = array();
+            $filtered[]    = $message;
+        }
+
+        return $filtered;
     }
 
     /**

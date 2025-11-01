@@ -133,6 +133,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 WP_MCP_AI_Message_Attachments::init();
 
+WP_MCP_AI_HTTP::bootstrap();
+
 WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
 
