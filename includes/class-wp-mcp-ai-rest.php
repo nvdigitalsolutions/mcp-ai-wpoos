@@ -1617,22 +1617,6 @@ class WP_MCP_AI_REST {
             $options['attachments'] = $attachments;
         }
 
-        $probe_mode = ! empty( $options['probe'] );
-        if ( $probe_mode ) {
-            unset( $options['probe'] );
-
-            $response_data = array(
-                'assistant_id' => $assistant_id,
-                'probe'        => array(
-                    'status'     => 'ok',
-                    'checked_at' => gmdate( 'c' ),
-                ),
-                'message'      => __( 'Chat probe acknowledged.', 'wp-mcp-ai' ),
-            );
-
-            return rest_ensure_response( $response_data );
-        }
-
         $user_id = get_current_user_id();
 
         /**
@@ -2976,8 +2960,7 @@ class WP_MCP_AI_REST {
         }
 
         $filtered      = array();
-        $pending_calls   = array();
-        $saw_assistant   = false;
+        $pending_calls = array();
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -2988,7 +2971,6 @@ class WP_MCP_AI_REST {
 
             if ( 'assistant' === $role ) {
                 $pending_calls = array();
-                $saw_assistant = true;
 
                 if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
                     foreach ( $message['tool_calls'] as $tool_call ) {
@@ -3024,29 +3006,13 @@ class WP_MCP_AI_REST {
                     continue;
                 }
 
-                if ( empty( $pending_calls ) ) {
-                    if ( ! $saw_assistant ) {
-                        $filtered[] = $message;
-                    } else {
-                        WP_MCP_AI_Logger::log_event(
-                            'dropped_tool_message',
-                            'Dropping tool message without matching tool call.',
-                            array(
-                                'tool_call_id' => $tool_call_id,
-                                'reason'       => 'no_pending_tool_calls',
-                            )
-                        );
-                    }
-                    continue;
-                }
-
-                if ( ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                if ( empty( $pending_calls ) || ! isset( $pending_calls[ $tool_call_id ] ) ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',
                         array(
                             'tool_call_id' => $tool_call_id,
-                            'reason'       => 'tool_call_not_found',
+                            'reason'       => empty( $pending_calls ) ? 'no_pending_tool_calls' : 'tool_call_not_found',
                         )
                     );
 
