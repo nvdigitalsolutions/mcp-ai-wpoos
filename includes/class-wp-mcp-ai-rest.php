@@ -1641,6 +1641,10 @@ class WP_MCP_AI_REST {
             }
         }
 
+        if ( false === $explicit_stream ) {
+            return false;
+        }
+
         return false;
     }
 
