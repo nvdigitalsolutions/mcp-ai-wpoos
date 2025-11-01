@@ -3157,6 +3157,8 @@
             return null;
         }
 
+        var nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
+
         var url = '';
         if (typeof result.url === 'string' && result.url.trim()) {
             url = result.url.trim();
@@ -3164,6 +3166,14 @@
             url = result.download_url.trim();
         } else if (typeof result.downloadUrl === 'string' && result.downloadUrl.trim()) {
             url = result.downloadUrl.trim();
+        } else if (nestedImage) {
+            if (typeof nestedImage.url === 'string' && nestedImage.url.trim()) {
+                url = nestedImage.url.trim();
+            } else if (typeof nestedImage.download_url === 'string' && nestedImage.download_url.trim()) {
+                url = nestedImage.download_url.trim();
+            } else if (typeof nestedImage.downloadUrl === 'string' && nestedImage.downloadUrl.trim()) {
+                url = nestedImage.downloadUrl.trim();
+            }
         }
 
         if (!url) {
@@ -3179,6 +3189,14 @@
             label = result.file_name.trim();
         } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
             label = result.fileName.trim();
+        } else if (nestedImage) {
+            if (typeof nestedImage.title === 'string' && nestedImage.title.trim()) {
+                label = nestedImage.title.trim();
+            } else if (typeof nestedImage.file_name === 'string' && nestedImage.file_name.trim()) {
+                label = nestedImage.file_name.trim();
+            } else if (typeof nestedImage.fileName === 'string' && nestedImage.fileName.trim()) {
+                label = nestedImage.fileName.trim();
+            }
         }
 
         var metaParts = [];
@@ -3187,18 +3205,40 @@
             mime_type: result.mime_type || result.mimeType || '',
         };
 
+        if (metaRecord.bytes === null && nestedImage && typeof nestedImage.bytes === 'number') {
+            metaRecord.bytes = nestedImage.bytes;
+        }
+
+        if (!metaRecord.mime_type && nestedImage) {
+            metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
+        }
+
         var baseMeta = buildAttachmentMeta(metaRecord);
         if (baseMeta) {
             metaParts.push(baseMeta);
         }
 
-        if (toolName === 'generate_openai_image') {
-            if (typeof result.size === 'string' && result.size.trim()) {
-                metaParts.push(result.size.trim());
+        var sizeValue = '';
+        if (typeof result.size === 'string' && result.size.trim()) {
+            sizeValue = result.size.trim();
+        } else if (nestedImage && typeof nestedImage.size === 'string' && nestedImage.size.trim()) {
+            sizeValue = nestedImage.size.trim();
+        }
+
+        var qualityValue = '';
+        if (typeof result.quality === 'string' && result.quality.trim()) {
+            qualityValue = result.quality.trim();
+        } else if (nestedImage && typeof nestedImage.quality === 'string' && nestedImage.quality.trim()) {
+            qualityValue = nestedImage.quality.trim();
+        }
+
+        if (toolName === 'generate_openai_image' || toolName === 'generate_perfume_lifestyle_image') {
+            if (sizeValue) {
+                metaParts.push(sizeValue);
             }
 
-            if (typeof result.quality === 'string' && result.quality.trim()) {
-                metaParts.push(result.quality.trim());
+            if (qualityValue) {
+                metaParts.push(qualityValue);
             }
         } else if (toolName === SPEECH_TOOL_NAME) {
             if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
@@ -3212,10 +3252,27 @@
 
         var attachmentMeta = metaParts.join(' • ');
 
+        var downloadName = '';
+        if (typeof result.file_name === 'string' && result.file_name.trim()) {
+            downloadName = result.file_name.trim();
+        } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
+            downloadName = result.fileName.trim();
+        } else if (nestedImage) {
+            if (typeof nestedImage.file_name === 'string' && nestedImage.file_name.trim()) {
+                downloadName = nestedImage.file_name.trim();
+            } else if (typeof nestedImage.fileName === 'string' && nestedImage.fileName.trim()) {
+                downloadName = nestedImage.fileName.trim();
+            }
+        }
+
+        if (!label && downloadName) {
+            label = downloadName;
+        }
+
         attachments.push({
             url: url,
             label: label || getString('downloadAttachment', 'Download attachment'),
-            downloadName: result.file_name || result.fileName || '',
+            downloadName: downloadName,
             meta: attachmentMeta,
         });
 
@@ -3231,6 +3288,8 @@
             text = result.message.trim();
         } else if (toolName === 'generate_openai_image') {
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
+        } else if (toolName === 'generate_perfume_lifestyle_image') {
+            text = getString('perfumeLifestyleImageToolSuccess', 'Lifestyle image saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
         }

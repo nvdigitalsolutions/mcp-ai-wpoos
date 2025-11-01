@@ -224,10 +224,51 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
             )
         );
 
-        return array(
+        $result_text = $this->build_result_text( $analysis_summary, $image_result );
+
+        $result = array(
             'analysis' => $analysis_summary,
             'image'    => $image_result,
         );
+
+        if ( '' !== $result_text ) {
+            $result['text'] = $result_text;
+        }
+
+        if ( isset( $image_result['attachment_id'] ) ) {
+            $result['attachment_id'] = (int) $image_result['attachment_id'];
+        }
+
+        if ( ! empty( $image_result['url'] ) ) {
+            $result['url']          = $image_result['url'];
+            $result['download_url'] = $image_result['url'];
+        }
+
+        if ( ! empty( $image_result['file_name'] ) ) {
+            $result['file_name'] = $image_result['file_name'];
+        }
+
+        if ( isset( $image_result['bytes'] ) ) {
+            $result['bytes'] = (int) $image_result['bytes'];
+        }
+
+        if ( ! empty( $image_result['mime_type'] ) ) {
+            $result['mime_type'] = $image_result['mime_type'];
+        }
+
+        if ( ! empty( $image_result['size'] ) ) {
+            $result['size'] = $image_result['size'];
+        }
+
+        if ( ! empty( $image_result['quality'] ) ) {
+            $result['quality'] = $image_result['quality'];
+        }
+
+        if ( isset( $image_result['created'] ) ) {
+            $result['created'] = (int) $image_result['created'];
+        }
+
+        return $result;
     }
 
     /**
@@ -803,6 +844,134 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
         $parts[] = __( 'Show the person using or presenting the perfume bottle naturally while keeping the product as the hero of the composition.', 'wp-mcp-ai' );
 
         return trim( implode( ' ', array_filter( $parts ) ) );
+    }
+
+    /**
+     * Build a human readable summary for the tool response.
+     *
+     * @param array $analysis_summary Structured analysis summary.
+     * @param array $image_result     Stored image information.
+     * @return string
+     */
+    protected function build_result_text( array $analysis_summary, array $image_result ) {
+        $lines = array(
+            __( 'Lifestyle image saved to the Media Library.', 'wp-mcp-ai' ),
+        );
+
+        $product_summary = isset( $analysis_summary['product'] ) && is_array( $analysis_summary['product'] ) ? $analysis_summary['product'] : array();
+        $person_summary  = isset( $analysis_summary['person'] ) && is_array( $analysis_summary['person'] ) ? $analysis_summary['person'] : array();
+
+        $product_status = array();
+        if ( array_key_exists( 'is_product', $product_summary ) ) {
+            $product_status[] = ! empty( $product_summary['is_product'] )
+                ? __( 'product detected', 'wp-mcp-ai' )
+                : __( 'product check failed', 'wp-mcp-ai' );
+        }
+        if ( array_key_exists( 'is_perfume', $product_summary ) ) {
+            $product_status[] = ! empty( $product_summary['is_perfume'] )
+                ? __( 'perfume confirmed', 'wp-mcp-ai' )
+                : __( 'not recognised as a perfume', 'wp-mcp-ai' );
+        }
+
+        if ( ! empty( $product_status ) ) {
+            $lines[] = sprintf(
+                __( 'Product validation: %s.', 'wp-mcp-ai' ),
+                implode( ', ', $product_status )
+            );
+        }
+
+        if ( ! empty( $product_summary['notes'] ) ) {
+            $lines[] = sprintf( __( 'Product notes: %s', 'wp-mcp-ai' ), $product_summary['notes'] );
+        }
+
+        if ( ! empty( $product_summary['visual_features'] ) ) {
+            $lines[] = sprintf( __( 'Product features: %s', 'wp-mcp-ai' ), $product_summary['visual_features'] );
+        }
+
+        $person_status = array();
+        if ( array_key_exists( 'is_person', $person_summary ) ) {
+            $person_status[] = ! empty( $person_summary['is_person'] )
+                ? __( 'person detected', 'wp-mcp-ai' )
+                : __( 'person check failed', 'wp-mcp-ai' );
+        }
+        if ( array_key_exists( 'is_decent', $person_summary ) ) {
+            $person_status[] = ! empty( $person_summary['is_decent'] )
+                ? __( 'content is decent', 'wp-mcp-ai' )
+                : __( 'content flagged for decency', 'wp-mcp-ai' );
+        }
+
+        if ( ! empty( $person_status ) ) {
+            $lines[] = sprintf(
+                __( 'Person validation: %s.', 'wp-mcp-ai' ),
+                implode( ', ', $person_status )
+            );
+        }
+
+        if ( ! empty( $person_summary['notes'] ) ) {
+            $lines[] = sprintf( __( 'Person notes: %s', 'wp-mcp-ai' ), $person_summary['notes'] );
+        }
+
+        if ( ! empty( $person_summary['visual_features'] ) ) {
+            $lines[] = sprintf( __( 'Person features: %s', 'wp-mcp-ai' ), $person_summary['visual_features'] );
+        }
+
+        if ( ! empty( $analysis_summary['safety_notes'] ) ) {
+            $lines[] = sprintf( __( 'Safety notes: %s', 'wp-mcp-ai' ), $analysis_summary['safety_notes'] );
+        }
+
+        if ( ! empty( $analysis_summary['scene_description'] ) ) {
+            $lines[] = sprintf( __( 'Scene direction: %s', 'wp-mcp-ai' ), $analysis_summary['scene_description'] );
+        }
+
+        if ( ! empty( $analysis_summary['product_url'] ) ) {
+            $product_url = esc_url_raw( $analysis_summary['product_url'] );
+            if ( '' !== $product_url ) {
+                $lines[] = sprintf( __( 'Product URL: %s', 'wp-mcp-ai' ), $product_url );
+            }
+        }
+
+        if ( ! empty( $analysis_summary['lifestyle_prompt'] ) ) {
+            $lines[] = sprintf( __( 'Lifestyle prompt: %s', 'wp-mcp-ai' ), $analysis_summary['lifestyle_prompt'] );
+        }
+
+        if ( ! empty( $analysis_summary['analysis_model'] ) ) {
+            $lines[] = sprintf( __( 'Analysis model: %s', 'wp-mcp-ai' ), $analysis_summary['analysis_model'] );
+        }
+
+        $image_settings = array();
+        if ( ! empty( $image_result['model'] ) ) {
+            $image_settings[] = sprintf( __( 'Model %s', 'wp-mcp-ai' ), $image_result['model'] );
+        }
+        if ( ! empty( $image_result['size'] ) ) {
+            $image_settings[] = sprintf( __( 'Size %s', 'wp-mcp-ai' ), $image_result['size'] );
+        }
+        if ( ! empty( $image_result['quality'] ) ) {
+            $image_settings[] = sprintf( __( 'Quality %s', 'wp-mcp-ai' ), $image_result['quality'] );
+        }
+
+        if ( ! empty( $image_settings ) ) {
+            $lines[] = sprintf( __( 'Image settings: %s.', 'wp-mcp-ai' ), implode( ' • ', $image_settings ) );
+        }
+
+        if ( ! empty( $image_result['file_name'] ) ) {
+            $lines[] = sprintf( __( 'File name: %s', 'wp-mcp-ai' ), $image_result['file_name'] );
+        }
+
+        if ( ! empty( $image_result['attachment_id'] ) ) {
+            $lines[] = sprintf( __( 'Attachment ID: %d', 'wp-mcp-ai' ), (int) $image_result['attachment_id'] );
+        }
+
+        if ( ! empty( $image_result['url'] ) ) {
+            $url = esc_url_raw( $image_result['url'] );
+            if ( '' !== $url ) {
+                $lines[] = sprintf( __( 'Media URL: %s', 'wp-mcp-ai' ), $url );
+            }
+        }
+
+        $lines = array_map( 'trim', $lines );
+        $lines = array_filter( $lines );
+
+        return implode( "\n", $lines );
     }
 
     /**
