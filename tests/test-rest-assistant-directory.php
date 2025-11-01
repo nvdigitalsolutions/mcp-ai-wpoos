@@ -120,7 +120,7 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -167,6 +167,35 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $this->assertIsArray( $decoded );
         $this->assertArrayHasKey( 'assistants', $decoded );
         $this->assertSame( array( $assistant_id ), wp_list_pluck( $decoded['assistants'], 'id' ) );
+    }
+
+    /**
+     * Ensure mixed Accept headers continue to stream the directory payload.
+     */
+    public function test_directory_streams_with_mixed_accept_header_values() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Streamed Directory Assistant',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+        $request->set_header( 'Accept', 'text/html;q=0.1, text/event-stream, application/json' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
     }
 
     /**

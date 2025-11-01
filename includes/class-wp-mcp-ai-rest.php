@@ -1747,18 +1747,10 @@ class WP_MCP_AI_REST {
 
         $accept_header = $request->get_header( 'accept' );
 
-        if ( ! is_string( $accept_header ) || '' === $accept_header ) {
-            return false;
-        }
+        if ( is_string( $accept_header ) && '' !== $accept_header ) {
+            $normalized_accept = strtolower( $accept_header );
 
-        $parts = array_map( 'trim', explode( ',', strtolower( $accept_header ) ) );
-
-        foreach ( $parts as $part ) {
-            if ( '' === $part ) {
-                continue;
-            }
-
-            if ( false !== strpos( $part, 'text/event-stream' ) ) {
+            if ( preg_match( '#(^|,|\s)text/event-stream(?:(?=\s*[;,])|$)#i', $normalized_accept ) ) {
                 return true;
             }
         }
@@ -1793,13 +1785,17 @@ class WP_MCP_AI_REST {
         $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
 
         $headers = array(
-            'Content-Type'           => 'text/event-stream',
-            'Cache-Control'          => 'no-cache, no-store, must-revalidate',
+            'Content-Type'           => 'text/event-stream; charset=UTF-8',
+            'Cache-Control'          => 'no-cache, no-store, must-revalidate, no-transform',
             'Pragma'                 => 'no-cache',
             'Connection'             => 'keep-alive',
             'X-Accel-Buffering'      => 'no',
             'X-Content-Type-Options' => 'nosniff',
         );
+
+        if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( $_SERVER['SERVER_PROTOCOL'], 'HTTP/2' ) ) {
+            unset( $headers['Connection'] );
+        }
 
         $callback = null;
         $callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {

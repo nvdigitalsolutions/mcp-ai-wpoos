@@ -72,7 +72,8 @@ The directory omits sensitive payloads—such as system prompts or tool shortcut
 
 ### Streaming directory responses
 
-- Add an `Accept: text/event-stream` header (or a `stream=true` flag) when calling the directory to receive the payload as a Server-Sent Events frame. The controller emits a single `directory` event containing the JSON response before closing the stream so MCP clients that expect SSE handshakes can connect successfully.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1821】
+- Add an `Accept: text/event-stream` header (or a `stream=true` flag) when calling the directory to receive the payload as a Server-Sent Events frame. The controller emits a single `directory` event containing the JSON response before closing the stream so MCP clients that expect SSE handshakes can connect successfully.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1827】
+- Mixed `Accept` headers are supported—the transport scans the entire header for `text/event-stream`, even when other MIME types or quality hints are present—so desktop MCP clients that append `application/json` still negotiate streaming. Responses advertise `Content-Type: text/event-stream; charset=UTF-8` and `Cache-Control: ... no-transform` to satisfy intermediaries such as Cloudflare that require explicit stream-safe directives.【F:includes/class-wp-mcp-ai-rest.php†L1704-L1772】
 
 ## POST `/chat`
 
@@ -106,7 +107,7 @@ Successful requests return the assistant ID and the raw response payload from th
 
 - The chat route only registers the `CREATABLE` method, so streaming clients **must issue a POST request**—attempting a GET will return a `404` even when the path exists.【F:includes/class-wp-mcp-ai-rest.php†L238-L322】
 - Supply either a `stream` flag in the body (for example, `{ "stream": true }`) or set the `Accept` header to `text/event-stream` to flip the controller into SSE mode.【F:includes/class-wp-mcp-ai-rest.php†L1588-L1667】
-- When streaming is active the server replies with `Content-Type: text/event-stream`, disables caching, and flushes frames as they are generated so clients can process partial completions in real time.【F:includes/class-wp-mcp-ai-rest.php†L1668-L1695】
+- When streaming is active the server replies with `Content-Type: text/event-stream; charset=UTF-8`, disables caching with `no-transform`, and flushes frames as they are generated so clients can process partial completions in real time.【F:includes/class-wp-mcp-ai-rest.php†L1668-L1772】
 - Authentication is unchanged—continue sending either an Auth0 bearer token or an assistant-issued credential via `Authorization: Bearer …`, or a WordPress REST nonce when calling from the same origin.【F:docs/mcp-server-authentication.md†L11-L34】
 
 ### Connect LM Studio to WP MCP AI
