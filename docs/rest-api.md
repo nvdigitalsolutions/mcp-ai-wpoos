@@ -70,6 +70,10 @@ Developers can adjust the underlying `WP_Query` arguments or transform the respo
 
 The directory omits sensitive payloads—such as system prompts or tool shortcut bodies—while still surfacing enough context for remote clients to decide which assistant to target. `capabilities` advertises MCP-compatible features (tools and downloadable resources) so clients like LM Studio and Claude Desktop can enable the right UI affordances, while `implementation` identifies the server name/version for debugging. The `token_scope` block is present whenever authentication happened via a bearer credential so integrators can detect assistant-specific restrictions programmatically.【F:includes/class-wp-mcp-ai-rest.php†L635-L666】【F:includes/class-wp-mcp-ai-rest.php†L771-L801】
 
+### Streaming directory responses
+
+- Add an `Accept: text/event-stream` header (or a `stream=true` flag) when calling the directory to receive the payload as a Server-Sent Events frame. The controller emits a single `directory` event containing the JSON response before closing the stream so MCP clients that expect SSE handshakes can connect successfully.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1821】
+
 ## POST `/chat`
 
 Send a chat payload to the configured language model while inheriting assistant defaults.

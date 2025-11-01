@@ -677,6 +677,10 @@ class WP_MCP_AI_REST {
          */
         $response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
 
+        if ( $this->request_wants_event_stream( $request ) ) {
+            return $this->stream_event_stream_payload( $response_data, 'directory' );
+        }
+
         return new WP_REST_Response( $response_data, 200 );
     }
 
@@ -1692,7 +1696,7 @@ class WP_MCP_AI_REST {
         );
 
         if ( $this->request_wants_event_stream( $request ) ) {
-            return $this->stream_chat_response( $payload );
+            return $this->stream_event_stream_payload( $payload, 'message' );
         }
 
         return rest_ensure_response( $payload );
@@ -1767,19 +1771,25 @@ class WP_MCP_AI_REST {
     }
 
     /**
-     * Stream the prepared chat response payload as an event stream.
+     * Stream the provided payload as an event stream response.
      *
-     * @param array $payload Chat response payload.
+     * @param array  $payload Response payload to emit.
+     * @param string $event   Event name used for the SSE frame.
      * @return WP_REST_Response
      */
-    protected function stream_chat_response( array $payload ) {
+    protected function stream_event_stream_payload( array $payload, $event = 'message' ) {
         $encoded_payload = wp_json_encode( $payload );
 
         if ( false === $encoded_payload ) {
             return rest_ensure_response( $payload );
         }
 
-        $frames = $this->build_event_stream_chunk( 'message', $encoded_payload );
+        $event_name = (string) $event;
+        if ( '' === $event_name ) {
+            $event_name = 'message';
+        }
+
+        $frames = $this->build_event_stream_chunk( $event_name, $encoded_payload );
         $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
 
         $headers = array(

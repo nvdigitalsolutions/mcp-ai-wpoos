@@ -90,6 +90,86 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure the directory can stream results when clients request Server-Sent Events.
+     */
+    public function test_directory_streams_response_when_accept_header_requests_event_stream() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Streamed Directory Assistant',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+        $request->set_header( 'Accept', 'text/event-stream' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        $this->assertInstanceOf( WP_Hook::class, $hook );
+
+        $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+        $added_keys   = array_diff( $current_keys, $existing_keys );
+
+        $this->assertNotEmpty( $added_keys );
+
+        $closure_key = array_pop( $added_keys );
+        $closure     = $hook->callbacks[10][ $closure_key ]['function'];
+
+        ob_start();
+        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
+        $output = ob_get_clean();
+
+        $this->assertTrue( $served );
+        $this->assertStringContainsString( 'event: directory', $output );
+        $this->assertStringContainsString( 'data: {', $output );
+        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( '[DONE]', $output );
+
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
+
+        $payload_lines = array();
+        foreach ( explode( "\n", $output ) as $line ) {
+            if ( 0 === strpos( $line, 'data: ' ) ) {
+                $payload_lines[] = substr( $line, 6 );
+            }
+
+            if ( '' === trim( $line ) && ! empty( $payload_lines ) ) {
+                break;
+            }
+        }
+
+        $payload_json = implode( "\n", $payload_lines );
+        $decoded      = json_decode( $payload_json, true );
+
+        $this->assertIsArray( $decoded );
+        $this->assertArrayHasKey( 'assistants', $decoded );
+        $this->assertSame( array( $assistant_id ), wp_list_pluck( $decoded['assistants'], 'id' ) );
+    }
+
+    /**
      * Ensure assistant-issued credentials scope the directory to a single assistant.
      */
     public function test_directory_scopes_results_for_local_token() {
