@@ -72,6 +72,12 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $this->assertSame( $first_assistant, $data['default_assistant'] );
         $this->assertArrayHasKey( 'rest', $data );
         $this->assertArrayHasKey( 'chat', $data['rest'] );
+        $this->assertArrayHasKey( 'capabilities', $data );
+        $this->assertArrayHasKey( 'implementation', $data );
+        $this->assertArrayHasKey( 'name', $data['implementation'] );
+        $this->assertArrayHasKey( 'version', $data['implementation'] );
+        $this->assertArrayHasKey( 'tools', $data['capabilities'] );
+        $this->assertArrayHasKey( 'resources', $data['capabilities'] );
 
         $assistants_by_id = array();
         foreach ( $data['assistants'] as $assistant ) {
@@ -118,9 +124,14 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertCount( 1, $data['assistants'] );
         $this->assertSame( $assistant_id, $data['assistants'][0]['id'] );
+        $this->assertSame( $assistant_id, $data['default_assistant'] );
         $this->assertArrayHasKey( 'token_scope', $data );
         $this->assertSame( 'local_token', $data['token_scope']['type'] );
         $this->assertSame( $assistant_id, $data['token_scope']['assistant_id'] );
+        $this->assertArrayHasKey( 'rest', $data );
+        $this->assertArrayHasKey( 'chat', $data['rest'] );
+        $this->assertArrayHasKey( 'capabilities', $data );
+        $this->assertArrayHasKey( 'implementation', $data );
     }
 
     /**
@@ -154,6 +165,9 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey( 'assistants', $data );
         $this->assertCount( 1, $data['assistants'] );
         $this->assertSame( $assistant_id, $data['assistants'][0]['id'] );
+        $this->assertSame( $assistant_id, $data['default_assistant'] );
+        $this->assertArrayHasKey( 'capabilities', $data );
+        $this->assertArrayHasKey( 'implementation', $data );
     }
 
     /**
