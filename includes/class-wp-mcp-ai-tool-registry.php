@@ -103,6 +103,26 @@ class WP_MCP_AI_Tool_Registry {
             return;
         }
 
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if ( ! $screen ) {
+            return;
+        }
+
+        $allowed_screens = array(
+            'plugins',
+            'plugins-network',
+            'plugin-install',
+            'plugin-install-network',
+        );
+
+        if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
+            return;
+        }
+
         foreach ( $this->unavailable_tool_messages as $message ) {
             if ( empty( $message ) ) {
                 continue;

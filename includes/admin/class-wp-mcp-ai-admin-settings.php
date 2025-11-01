@@ -2160,8 +2160,23 @@ class WP_MCP_AI_Admin_Settings {
             return;
         }
 
-        $current_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        if ( self::PAGE_SLUG !== $current_page ) {
+        if ( ! function_exists( 'get_current_screen' ) ) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if ( ! $screen ) {
+            return;
+        }
+
+        $allowed_screens = array(
+            'plugins',
+            'plugins-network',
+            'plugin-install',
+            'plugin-install-network',
+        );
+
+        if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
             return;
         }
 
