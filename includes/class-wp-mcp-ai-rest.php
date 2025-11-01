@@ -394,6 +394,19 @@ class WP_MCP_AI_REST {
             ),
             true
         );
+
+        register_rest_route(
+            self::REST_NAMESPACE,
+            '/sse',
+            array(
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_sse_handshake' ),
+                ),
+            ),
+            true
+        );
     }
 
     public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
@@ -646,6 +659,7 @@ class WP_MCP_AI_REST {
                 'chat'          => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
                 'tools'         => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
                 'file_download' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
+                'sse'           => esc_url_raw( rest_url( self::REST_NAMESPACE . '/sse' ) ),
             ),
         );
 
@@ -687,6 +701,18 @@ class WP_MCP_AI_REST {
         }
 
         return new WP_REST_Response( $response_data, 200 );
+    }
+
+    /**
+     * Provide an explicit SSE endpoint for MCP clients that expect `/sse` handshakes.
+     *
+     * @param WP_REST_Request $request REST request instance.
+     * @return WP_REST_Response|WP_Error
+     */
+    public function handle_sse_handshake( WP_REST_Request $request ) {
+        $request->set_param( 'stream', true );
+
+        return $this->handle_assistants_index( $request );
     }
 
     /**
