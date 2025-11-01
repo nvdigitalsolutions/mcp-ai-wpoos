@@ -1901,6 +1901,8 @@ class WP_MCP_AI_REST {
             'Connection'                  => 'keep-alive',
             'Vary'                        => 'Accept, Authorization',
             'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
+            'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
             'X-Accel-Buffering'           => 'no',
             'X-Content-Type-Options'      => 'nosniff',
         );
