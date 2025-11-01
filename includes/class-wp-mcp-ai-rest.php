@@ -293,6 +293,11 @@ class WP_MCP_AI_REST {
                         ),
                     ),
                 ),
+                array(
+                    'methods'             => WP_REST_Server::READABLE,
+                    'permission_callback' => array( $this, 'permissions_check' ),
+                    'callback'            => array( $this, 'handle_chat_request' ),
+                ),
             ),
             true
         );
@@ -1532,6 +1537,64 @@ class WP_MCP_AI_REST {
     }
 
     /**
+     * Populate request parameters when JSON arrives in the body of a GET request.
+     *
+     * LM Studio 0.3.x removes the `method` attribute from `mcp.json` entries during
+     * config edits, causing its MCP transport to fall back to GET. WordPress ignores
+     * body payloads on GET requests, so we hydrate the REST request manually to
+     * preserve backwards compatibility.
+     *
+     * @param WP_REST_Request $request REST request.
+     * @return void
+     */
+    protected function hydrate_request_body_params( WP_REST_Request $request ) {
+        if ( 'GET' !== $request->get_method() ) {
+            return;
+        }
+
+        if ( $request->get_param( 'messages' ) ) {
+            return;
+        }
+
+        $raw_body = $request->get_body();
+
+        if ( '' === $raw_body ) {
+            return;
+        }
+
+        $decoded = json_decode( $raw_body, true );
+
+        if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+            return;
+        }
+
+        $copyable_keys = array(
+            'assistant_id',
+            'messages',
+            'attachments',
+            'options',
+            'session_key',
+            'probe',
+        );
+
+        foreach ( $copyable_keys as $key ) {
+            if ( array_key_exists( $key, $decoded ) ) {
+                $request->set_param( $key, $decoded[ $key ] );
+            }
+        }
+
+        if ( isset( $decoded['options'] ) && is_array( $decoded['options'] ) ) {
+            $options = $request->get_param( 'options' );
+
+            if ( ! is_array( $options ) ) {
+                $options = array();
+            }
+
+            $request->set_param( 'options', array_merge( $options, $decoded['options'] ) );
+        }
+    }
+
+    /**
      * Handle chat completion requests, normalising attachments and auto-enabling
      * the document prompt tool whenever uploads are detected.
      *
@@ -1539,6 +1602,8 @@ class WP_MCP_AI_REST {
      * @return WP_REST_Response|WP_Error
      */
     public function handle_chat_request( WP_REST_Request $request ) {
+        $this->hydrate_request_body_params( $request );
+
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
         $scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
         if ( is_wp_error( $scoped_id ) ) {

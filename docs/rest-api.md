@@ -142,6 +142,8 @@ Example `mcp.json` block for an LM Studio client:
 }
 ```
 
+> **Note:** LM Studio 0.3.x sometimes drops the `"method": "POST"` line after editing the configuration in its UI. When that happens the client falls back to GET, but the plugin now rehydrates the JSON body automatically so chat still works. Keeping the method property in place avoids relying on this fallback and ensures other MCP servers accept the configuration.
+
 Replace `cred_xxxxx.SECRET` with either the Auth0 access token issued for your tenant or the assistant credential generated from the editor UI before saving the configuration.【F:docs/mcp-server-authentication.md†L11-L34】
 
 ## POST `/tools`
