@@ -1665,6 +1665,15 @@
                 toggleHistorySession(state, item, session);
             });
 
+            if (
+                state.activeHistorySessionKey &&
+                session &&
+                session.session_key &&
+                state.activeHistorySessionKey === session.session_key
+            ) {
+                item.classList.add('wp-mcp-ai-chat__history-item--active');
+            }
+
             fragment.appendChild(item);
         });
 
@@ -1926,6 +1935,124 @@
         container.appendChild(list);
     }
 
+    function normaliseHistoryRole(role) {
+        if (!role) {
+            return '';
+        }
+
+        var normalised = String(role).toLowerCase();
+
+        if (normalised === 'function' || normalised === 'tool_result' || normalised === 'observation') {
+            return 'tool';
+        }
+
+        if (normalised === 'assistant' || normalised === 'user' || normalised === 'system' || normalised === 'tool') {
+            return normalised;
+        }
+
+        return '';
+    }
+
+    function setActiveHistorySession(state, sessionKey, activeItem) {
+        if (!state || !state.historyList) {
+            return;
+        }
+
+        state.activeHistorySessionKey = sessionKey || '';
+
+        var items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
+        Array.prototype.forEach.call(items, function (node) {
+            if (node === activeItem) {
+                node.classList.add('wp-mcp-ai-chat__history-item--active');
+            } else {
+                node.classList.remove('wp-mcp-ai-chat__history-item--active');
+            }
+        });
+    }
+
+    function loadHistorySessionIntoChat(state, session, activeItem) {
+        if (!state || !state.messagesEl) {
+            return;
+        }
+
+        if (!session || typeof session !== 'object') {
+            setActiveHistorySession(state, '', activeItem);
+            setStatus(state.container, getString('historySessionError', 'Unable to load this conversation. Please try again.'));
+            return;
+        }
+
+        var sessionKey = session.session_key ? String(session.session_key) : '';
+        setActiveHistorySession(state, sessionKey, activeItem);
+
+        if (sessionKey) {
+            state.config.sessionKey = sessionKey;
+        }
+
+        var assistantId = parseInt(session.assistant_id, 10);
+        if (!isNaN(assistantId) && assistantId > 0) {
+            state.config.assistantId = assistantId;
+        }
+
+        state.messagesEl.textContent = '';
+        state.conversation = [];
+        state.pendingAttachments = [];
+        state.validationNotice = '';
+
+        renderPendingAttachments(state);
+        updateAttachButtonState(state);
+
+        if (state.textarea) {
+            state.textarea.value = '';
+        }
+
+        var messages = Array.isArray(session.messages) ? session.messages : [];
+
+        if (!messages.length) {
+            appendMessage(state.messagesEl, 'system', {
+                text: getString('historyNoMessages', 'No messages were saved for this conversation.'),
+            });
+            setTranscriptExpanded(state, true);
+            setStatus(state.container, '');
+            return;
+        }
+
+        messages.forEach(function (message) {
+            if (!message || typeof message !== 'object') {
+                return;
+            }
+
+            var role = normaliseHistoryRole(message.role);
+            if (!role) {
+                return;
+            }
+
+            var content = '';
+            if (typeof message.content === 'string') {
+                content = message.content;
+            } else if (message.content && typeof message.content.text === 'string') {
+                content = message.content.text;
+            }
+
+            var trimmedContent = typeof content === 'string' ? content : '';
+            var hasContent = trimmedContent.trim() !== '';
+
+            if (!hasContent && role !== 'tool') {
+                return;
+            }
+
+            var payload = { text: trimmedContent };
+            var allowMarkdown = role === 'assistant';
+
+            appendMessage(state.messagesEl, role, payload, allowMarkdown);
+            if (hasContent || role === 'tool') {
+                state.conversation.push({ role: role, content: trimmedContent });
+            }
+        });
+
+        setTranscriptExpanded(state, true);
+        setStatus(state.container, '');
+    }
+
     function toggleHistorySession(state, item, session) {
         if (!state || !item) {
             return;
@@ -1951,14 +2078,16 @@
         details.hidden = false;
         item.classList.add('wp-mcp-ai-chat__history-item--expanded');
 
-        if (details.dataset.loaded === 'true') {
-            return;
-        }
-
         var sessionKey = session && session.session_key ? session.session_key : '';
 
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
-            renderHistorySessionDetails(state, details, state.historySessionDetails[sessionKey]);
+            var cachedSession = state.historySessionDetails[sessionKey];
+            renderHistorySessionDetails(state, details, cachedSession);
+            loadHistorySessionIntoChat(state, cachedSession, item);
+            return;
+        }
+
+        if (details.dataset.loaded === 'true') {
             return;
         }
 
@@ -1971,6 +2100,7 @@
                 }
 
                 renderHistorySessionDetails(state, details, data);
+                loadHistorySessionIntoChat(state, data, item);
             })
             .catch(function (error) {
                 var message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
@@ -3742,6 +3872,7 @@
                 historyLoadPromise: null,
                 historySessions: [],
                 historySessionDetails: Object.create(null),
+                activeHistorySessionKey: '',
                 pendingAttachments: [],
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
