@@ -21,6 +21,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
         }
 
         wp_scripts()->reset();
+        wp_scripts()->remove( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
         wp_styles()->reset();
 
         $this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
@@ -73,6 +74,72 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
         wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
         $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
+    }
+
+    /**
+     * Ensure the localized script exposes the REST nonce for same-origin requests.
+     */
+    public function test_chat_shortcode_localizes_rest_nonce() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Nonce Assistant',
+            )
+        );
+
+        wp_scripts()->reset();
+
+        $markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+        $registered = wp_scripts()->registered[ $handle ];
+
+        $localised_data = $registered->extra['data'] ?? array();
+        if ( is_string( $localised_data ) ) {
+            $localised_data = array( $localised_data );
+        }
+        $localised = implode( "\n", $localised_data );
+        $this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised );
+
+        $instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+        $this->assertStringNotContainsString( '"guestToken"', $instance_config, 'Guest tokens should not be present when allow_guests is disabled.' );
+    }
+
+    /**
+     * Ensure allowing guests injects the guest token into the instance config.
+     */
+    public function test_chat_shortcode_includes_guest_token_when_enabled() {
+        $assistant_id = self::factory()->post->create(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_status' => 'publish',
+                'post_title'  => 'Guest Token Assistant',
+            )
+        );
+
+        wp_scripts()->reset();
+
+        $markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="true"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+        $registered = wp_scripts()->registered[ $handle ];
+
+        $instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+        $this->assertMatchesRegularExpression( '/"guestToken":"[A-Za-z0-9]+"/', $instance_config );
+
+        $localised_data = $registered->extra['data'] ?? array();
+        if ( is_string( $localised_data ) ) {
+            $localised_data = array( $localised_data );
+        }
+        $localised = implode( "\n", $localised_data );
+        $this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised, 'Nonce should remain present for uploads and downloads.' );
     }
 
     /**
