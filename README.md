@@ -37,6 +37,7 @@
 - [🐳 Local Development with Docker](#-local-development-with-docker)
   - [🔁 Codex environment startup script](#-codex-environment-startup-script)
 - [🧑‍💻 Development Tooling](#-development-tooling)
+- [🧪 Testing & QA](#-testing--qa)
 - [💬 Frontend Shortcode](#-frontend-shortcode)
   - [How it works](#how-it-works)
   - [Requirements](#requirements)
@@ -464,6 +465,22 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ---
 
+## 🧪 Testing & QA
+
+### Automated test suite
+- `composer run test` executes the PHPUnit suite bundled with `wp-phpunit/wp-phpunit` and Yoast’s polyfills, covering REST, tooling, and helper contracts.【F:composer.json†L16-L23】
+- Run `composer run test:install` once per environment to provision the WordPress test scaffolding before the first test pass.【F:composer.json†L16-L23】
+
+### Coding standards & static analysis
+- Enforce the WordPress Coding Standards with `composer run lint`; auto-fix what you can with `composer run format`.【F:composer.json†L16-L23】
+- Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
+
+### Manual smoke tests
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the MCP AI settings and reference the retrieval commands in [🪵 Logging](#-logging).
+
+---
+
 ## 💬 Frontend Shortcode
 Embed a published assistant anywhere on the site with the shortcode. Replace `123` with the post ID of the assistant you created under **AI Assistants**.
 
@@ -576,8 +593,13 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
   - Chat requests and responses processed by the REST API.
   - Tool executions (including permission denials).
   - Errors returned from the OpenAI API and internal validation.
-- Log entries are written via PHP's `error_log()` and can be filtered with `wp_mcp_ai_log_entry` to route them elsewhere.【F:includes/class-wp-mcp-ai-logger.php†L16-L118】
-- Recent errors and activity snapshots are also persisted in the `wp_mcp_ai_recent_errors` (50 entries) and `wp_mcp_ai_recent_activity` (100 entries) options for dashboards and widgets, keeping autoload disabled to avoid bloating frontend requests.【F:includes/class-wp-mcp-ai-logger.php†L388-L470】
+- Log entries are written via PHP's `error_log()` and can be filtered with `wp_mcp_ai_log_entry` to route them elsewhere.【F:includes/class-wp-mcp-ai-logger.php†L16-L137】
+- Recent errors and activity snapshots are also persisted in the `wp_mcp_ai_recent_errors` (50 entries) and `wp_mcp_ai_recent_activity` (100 entries) options for dashboards and widgets, keeping autoload disabled to avoid bloating frontend requests.【F:includes/class-wp-mcp-ai-logger.php†L611-L662】
+- Retrieve those rolling buffers quickly with WP-CLI when debugging production incidents:
+  ```bash
+  wp option get wp_mcp_ai_recent_errors --format=json
+  wp option get wp_mcp_ai_recent_activity --format=json
+  ```
 
 ---
 
