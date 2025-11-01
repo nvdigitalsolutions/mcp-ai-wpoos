@@ -113,6 +113,58 @@ class WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Chat probes should short-circuit without calling the language model client.
+     */
+    public function test_chat_probe_short_circuits_language_model() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Probe Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $admin_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->never() )
+            ->method( 'create_chat_completion' );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Ping',
+                ),
+            )
+        );
+        $request->set_param( 'options', array( 'probe' => true ) );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+
+        $data = $response->get_data();
+        $this->assertIsArray( $data );
+        $this->assertSame( $assistant_id, $data['assistant_id'] );
+        $this->assertArrayHasKey( 'probe', $data );
+        $this->assertSame( 'ok', $data['probe']['status'] );
+    }
+
+    /**
      * Ensure requests without explicit credentials return actionable guidance.
      */
     public function test_request_without_credentials_returns_actionable_error() {
