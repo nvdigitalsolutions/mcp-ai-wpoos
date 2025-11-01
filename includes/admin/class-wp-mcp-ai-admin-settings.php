@@ -2327,7 +2327,7 @@ class WP_MCP_AI_Admin_Settings {
 
         $authorize_url = add_query_arg( $params, self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
 
-        wp_safe_redirect( $authorize_url );
+        wp_redirect( $authorize_url );
         exit;
     }
 
