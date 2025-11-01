@@ -90,6 +90,36 @@ Whenever attachments are included, the controller temporarily adds the Submit Do
 
 Successful requests return the assistant ID and the raw response payload from the language model router. Failed provider calls convert into `WP_Error` objects with actionable remediation guidance and provider error codes when available.【F:includes/class-wp-mcp-ai-rest.php†L1033-L1095】【F:includes/class-wp-mcp-ai-rest.php†L1097-L1159】
 
+### Streaming responses (Server-Sent Events)
+
+- The chat route only registers the `CREATABLE` method, so streaming clients **must issue a POST request**—attempting a GET will return a `404` even when the path exists.【F:includes/class-wp-mcp-ai-rest.php†L238-L322】
+- Supply either a `stream` flag in the body (for example, `{ "stream": true }`) or set the `Accept` header to `text/event-stream` to flip the controller into SSE mode.【F:includes/class-wp-mcp-ai-rest.php†L1588-L1667】
+- When streaming is active the server replies with `Content-Type: text/event-stream`, disables caching, and flushes frames as they are generated so clients can process partial completions in real time.【F:includes/class-wp-mcp-ai-rest.php†L1668-L1695】
+- Authentication is unchanged—continue sending either an Auth0 bearer token or an assistant-issued credential via `Authorization: Bearer …`, or a WordPress REST nonce when calling from the same origin.【F:docs/mcp-server-authentication.md†L11-L34】
+
+Example `mcp.json` block for an LM Studio client:
+
+```json
+{
+  "mcpServers": {
+    "NV Digital": {
+      "url": "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/chat",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET",
+        "Content-Type": "application/json",
+        "Accept": "text/event-stream"
+      },
+      "body": {
+        "stream": true
+      }
+    }
+  }
+}
+```
+
+Replace `cred_xxxxx.SECRET` with either the Auth0 access token issued for your tenant or the assistant credential generated from the editor UI before saving the configuration.【F:docs/mcp-server-authentication.md†L11-L34】
+
 ## POST `/tools`
 
 Execute a registered tool without generating a full chat turn.
