@@ -834,13 +834,6 @@
     gap: 1rem;
 }
 
-.wp-mcp-ai-chat__history-header {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
-}
-
 .wp-mcp-ai-chat__history-status {
     font-size: 0.9rem;
     color: var(--wp-mcp-ai-color-shortcut-text, #111827);
