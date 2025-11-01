@@ -264,6 +264,233 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure associative stream flags trigger event stream responses.
+     */
+    public function test_chat_request_streams_response_when_stream_flag_is_array() {
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Stream Assistant Array',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-stream-flag-array',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'stream', array( 'type' => 'sse' ) );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Stream please with array',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        $this->assertInstanceOf( WP_Hook::class, $hook );
+
+        $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+        $added_keys   = array_diff( $current_keys, $existing_keys );
+
+        $this->assertNotEmpty( $added_keys );
+
+        $closure_key = array_pop( $added_keys );
+        $closure     = $hook->callbacks[10][ $closure_key ]['function'];
+
+        ob_start();
+        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
+        $output = ob_get_clean();
+
+        $this->assertTrue( $served );
+        $this->assertStringContainsString( 'event: message', $output );
+        $this->assertStringContainsString( 'event: close', $output );
+
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
+     * Ensure array stream flags can explicitly disable streaming.
+     */
+    public function test_chat_request_returns_json_when_stream_flag_disabled() {
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Stream Assistant Disabled',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-stream-flag-disabled',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'stream', array( 'enabled' => false ) );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Do not stream',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        if ( $hook instanceof WP_Hook ) {
+            $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+            $added_keys   = array_diff( $current_keys, $existing_keys );
+            $this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream disabled.' );
+        }
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
+     * Ensure explicit stream disables override Accept header negotiation.
+     */
+    public function test_chat_request_returns_json_when_stream_flag_disabled_even_with_accept_header() {
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Stream Assistant Disabled by Accept',
+                'post_status' => 'publish',
+            )
+        );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-stream-flag-disabled-accept',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param( 'stream', array( 'enabled' => false ) );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Do not stream despite accept header',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+        $request->set_header( 'Accept', 'text/event-stream' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        if ( $hook instanceof WP_Hook ) {
+            $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+            $added_keys   = array_diff( $current_keys, $existing_keys );
+            $this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream explicitly disabled.' );
+        }
+
+        wp_set_current_user( 0 );
+    }
+
+    /**
      * Bootstraps the REST controller with a mock language model client.
      *
      * @param WP_MCP_AI_Language_Model_Router $client Mock client instance.
