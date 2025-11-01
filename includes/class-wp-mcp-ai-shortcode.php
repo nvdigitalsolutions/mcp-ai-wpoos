@@ -85,11 +85,13 @@ class WP_MCP_AI_Shortcode {
             self::SCRIPT_HANDLE,
             'wpMcpAiChat',
             array(
-                'restUrl' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ),
-                'uploadEndpoint' => esc_url_raw( rest_url( 'wp/v2/media' ) ),
-                'filesEndpoint'  => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
-                'nonce'   => wp_create_nonce( 'wp_rest' ),
-                'strings' => array(
+                'restUrl'            => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ),
+                'uploadEndpoint'     => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+                'filesEndpoint'      => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
+                'transcriptsEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ),
+                'historyPerPage'     => 20,
+                'nonce'              => wp_create_nonce( 'wp_rest' ),
+                'strings'            => array(
                     'placeholder'        => __( 'Ask something…', 'wp-mcp-ai' ),
                     'send'               => __( 'Send', 'wp-mcp-ai' ),
                     'sending'            => __( 'Sending message…', 'wp-mcp-ai' ),
@@ -131,6 +133,24 @@ class WP_MCP_AI_Shortcode {
                     'expandTranscript'  => __( 'Expand conversation', 'wp-mcp-ai' ),
                     'collapseTranscript' => __( 'Collapse conversation', 'wp-mcp-ai' ),
                     'jsonResponse'      => __( 'JSON response', 'wp-mcp-ai' ),
+                    'historyToggleShow'   => __( 'Show previous conversations', 'wp-mcp-ai' ),
+                    'historyToggleHide'   => __( 'Hide previous conversations', 'wp-mcp-ai' ),
+                    'historyHeading'      => __( 'Previous conversations', 'wp-mcp-ai' ),
+                    'historyLoading'      => __( 'Loading conversations…', 'wp-mcp-ai' ),
+                    'historyEmpty'        => __( 'No previous conversations yet.', 'wp-mcp-ai' ),
+                    'historyError'        => __( 'Unable to load conversation history.', 'wp-mcp-ai' ),
+                    'historyMessageCount' => __( '%d messages', 'wp-mcp-ai' ),
+                    'historySingleMessage' => __( '1 message', 'wp-mcp-ai' ),
+                    'historyPreviewFallback' => __( 'Conversation %s', 'wp-mcp-ai' ),
+                    'historySessionLoading'  => __( 'Loading conversation…', 'wp-mcp-ai' ),
+                    'historySessionError'    => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
+                    'historyNoMessages'      => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),
+                    'roleLabels'          => array(
+                        'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
+                        'user'      => __( 'You', 'wp-mcp-ai' ),
+                        'system'    => __( 'System', 'wp-mcp-ai' ),
+                        'tool'      => __( 'Tool', 'wp-mcp-ai' ),
+                    ),
                 ),
             )
         );
@@ -251,6 +271,7 @@ class WP_MCP_AI_Shortcode {
             'messagesEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat' ) ),
             'toolsEndpoint'    => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ),
             'filesEndpoint'    => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ),
+            'transcriptsEndpoint' => esc_url_raw( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ),
             'crawl4aiTaskEndpoint' => esc_url_raw( trailingslashit( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ),
             'crawl4aiDefaultPollMs' => 5000,
             'requiredCapability' => $capability ? $capability : '',
@@ -258,6 +279,7 @@ class WP_MCP_AI_Shortcode {
             'canUploadAttachments' => (bool) $can_upload_attachments,
             'saveTranscript'    => (bool) $save_transcript,
             'sessionKey'        => $session_key,
+            'historyPerPage'    => 20,
         );
 
         $tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
@@ -351,6 +373,26 @@ class WP_MCP_AI_Shortcode {
                     </button>
                 </div>
             </form>
+            <div class="wp-mcp-ai-chat__history-launch">
+                <button
+                    type="button"
+                    class="wp-mcp-ai-chat__history-toggle"
+                    aria-expanded="false"
+                    aria-controls="<?php echo esc_attr( $instance_id ); ?>-history"
+                    aria-label="<?php echo esc_attr__( 'Show previous conversations', 'wp-mcp-ai' ); ?>"
+                >
+                    <svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />
+                        <path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />
+                    </svg>
+                    <span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'wp-mcp-ai' ); ?></span>
+                </button>
+            </div>
+            <section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'wp-mcp-ai' ); ?>">
+                <h3 class="wp-mcp-ai-chat__history-header"><?php esc_html_e( 'Previous conversations', 'wp-mcp-ai' ); ?></h3>
+                <div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>
+                <ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
+            </section>
         </div>
         <?php
         return ob_get_clean();
