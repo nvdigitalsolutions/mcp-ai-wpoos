@@ -160,50 +160,6 @@ class WP_MCP_AI_REST {
     }
 
     /**
-     * Hydrate JSON body parameters for methods that don't automatically parse them.
-     *
-     * LM Studio occasionally strips the `method` flag from its MCP configuration,
-     * causing requests to fall back to GET. WordPress ignores request bodies for
-     * GET verbs, so parameters such as `assistant_id` would normally be dropped
-     * before the permission callback runs. This helper decodes JSON payloads and
-     * populates the request params array so downstream logic continues to honour
-     * assistant scoping and capability checks.
-     *
-     * @param WP_REST_Request $request REST request instance.
-     */
-    protected function hydrate_request_body_params( WP_REST_Request $request ) {
-        if ( ! $request instanceof WP_REST_Request ) {
-            return;
-        }
-
-        if ( 'GET' !== $request->get_method() ) {
-            return;
-        }
-
-        $body = $request->get_body();
-        if ( '' === $body ) {
-            return;
-        }
-
-        $decoded = json_decode( $body, true );
-        if ( ! is_array( $decoded ) ) {
-            return;
-        }
-
-        if ( method_exists( $request, 'set_json_params' ) ) {
-            $request->set_json_params( $decoded );
-        }
-
-        $request->set_body_params( $decoded );
-
-        foreach ( $decoded as $key => $value ) {
-            if ( null === $request->get_param( $key ) ) {
-                $request->set_param( $key, $value );
-            }
-        }
-    }
-
-    /**
      * Persist information about token-based authentication.
      *
      * @param string $type    Authentication method identifier.
@@ -314,29 +270,6 @@ class WP_MCP_AI_REST {
             self::REST_NAMESPACE,
             '/chat',
             array(
-                array(
-                    'methods'             => WP_REST_Server::READABLE,
-                    'permission_callback' => array( $this, 'permissions_check' ),
-                    'callback'            => array( $this, 'handle_chat_request' ),
-                    'args'                => array(
-                        'assistant_id' => array(
-                            'type'     => 'integer',
-                            'required' => false,
-                        ),
-                        'messages' => array(
-                            'type'     => 'array',
-                            'required' => true,
-                        ),
-                        'attachments' => array(
-                            'type'     => 'array',
-                            'required' => false,
-                        ),
-                        'options' => array(
-                            'type'     => 'object',
-                            'required' => false,
-                        ),
-                    ),
-                ),
                 array(
                     'methods'             => WP_REST_Server::CREATABLE,
                     'permission_callback' => array( $this, 'permissions_check' ),
@@ -951,7 +884,6 @@ class WP_MCP_AI_REST {
      * @return true|WP_Error
      */
     public function permissions_check( WP_REST_Request $request ) {
-        $this->hydrate_request_body_params( $request );
         $this->reset_auth_context();
 
         $assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
