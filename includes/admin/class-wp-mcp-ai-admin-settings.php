@@ -26,6 +26,7 @@ class WP_MCP_AI_Admin_Settings {
         add_action( 'admin_init', array( $this, 'register_settings' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
+        add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
     }
 
     /**
@@ -1936,6 +1937,7 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'WP MCP AI Settings', 'wp-mcp-ai' ); ?></h1>
+            <?php settings_errors(); ?>
             <?php if ( ! empty( $connector_statuses ) ) : ?>
                 <div class="wp-mcp-ai-connector-checklist" aria-live="polite">
                     <h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
@@ -2766,8 +2768,96 @@ class WP_MCP_AI_Admin_Settings {
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+            <?php
+            $log_file_path    = WP_MCP_AI_Logger::get_log_file_path();
+            $log_file_exists  = WP_MCP_AI_Logger::does_log_file_exist();
+            $log_file_size    = WP_MCP_AI_Logger::get_log_file_size();
+            $log_size_display = '';
+
+            if ( null !== $log_file_size ) {
+                $log_size_display = function_exists( 'size_format' )
+                    ? size_format( $log_file_size, 2 )
+                    : $log_file_size . ' bytes';
+            }
+            ?>
+            <div class="wp-mcp-ai-log-meta">
+                <?php if ( '' !== $log_file_path ) : ?>
+                    <p class="description">
+                        <?php
+                        if ( $log_file_exists ) {
+                            if ( '' === $log_size_display ) {
+                                $log_size_display = __( 'Unknown size', 'wp-mcp-ai' );
+                            }
+
+                            printf(
+                                /* translators: 1: Path to the PHP error log. 2: Human readable size. */
+                                esc_html__( 'PHP error log: %1$s (%2$s).', 'wp-mcp-ai' ),
+                                '<code>' . esc_html( $log_file_path ) . '</code>',
+                                esc_html( $log_size_display )
+                            );
+                        } else {
+                            printf(
+                                /* translators: %s: Path to the PHP error log. */
+                                esc_html__( 'PHP error log: %s (not created yet).', 'wp-mcp-ai' ),
+                                '<code>' . esc_html( $log_file_path ) . '</code>'
+                            );
+                        }
+                        ?>
+                    </p>
+                <?php else : ?>
+                    <p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
+                <?php endif; ?>
+                <?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
+                    <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-log-meta__actions">
+                        <?php wp_nonce_field( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' ); ?>
+                        <input type="hidden" name="action" value="wp_mcp_ai_prune_log" />
+                        <?php submit_button( __( 'Prune log file', 'wp-mcp-ai' ), 'secondary', 'wp_mcp_ai_prune_log', false ); ?>
+                    </form>
+                <?php elseif ( '' !== $log_file_path && $log_file_exists ) : ?>
+                    <p class="description"><?php esc_html_e( 'The PHP error log is not writable. Update the file permissions to prune it from the dashboard.', 'wp-mcp-ai' ); ?></p>
+                <?php endif; ?>
+            </div>
         <?php endif; ?>
         <?php
+    }
+
+    /**
+     * Handle pruning the PHP error log when triggered from the settings page.
+     */
+    public function handle_prune_log_request() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+        }
+
+        check_admin_referer( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' );
+
+        $result  = WP_MCP_AI_Logger::prune_error_log();
+        $message = '';
+        $type    = 'updated';
+
+        if ( is_wp_error( $result ) ) {
+            $message = $result->get_error_message();
+            $type    = 'error';
+        } else {
+            $message = __( 'The PHP error log was pruned successfully.', 'wp-mcp-ai' );
+        }
+
+        add_settings_error( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_notice', $message, $type );
+
+        $errors = get_settings_errors( 'wp_mcp_ai_prune_log' );
+
+        if ( ! empty( $errors ) ) {
+            set_transient( 'settings_errors', $errors, 30 );
+        }
+
+        $redirect = wp_get_referer();
+
+        if ( ! $redirect ) {
+            $redirect = admin_url( 'options-general.php?page=' . self::PAGE_SLUG );
+        }
+
+        wp_safe_redirect( $redirect );
+        exit;
     }
 
     /**
