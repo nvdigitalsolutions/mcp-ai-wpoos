@@ -1895,7 +1895,7 @@ class WP_MCP_AI_REST {
         $frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
         $headers = array(
-            'Content-Type'                => 'text/event-stream',
+            'Content-Type'                => 'text/event-stream; charset=UTF-8',
             'Cache-Control'               => 'no-cache, no-store, must-revalidate, no-transform',
             'Pragma'                      => 'no-cache',
             'Connection'                  => 'keep-alive',
@@ -1913,6 +1913,12 @@ class WP_MCP_AI_REST {
         $callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {
             if ( $served ) {
                 return $served;
+            }
+
+            if ( method_exists( $server, 'remove_header' ) ) {
+                $server->remove_header( 'Content-Type' );
+            } else {
+                header_remove( 'Content-Type' );
             }
 
             foreach ( $headers as $name => $value ) {

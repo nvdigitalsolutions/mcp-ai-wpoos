@@ -60,7 +60,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -145,7 +145,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -209,7 +209,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -298,7 +298,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -470,7 +470,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertFalse( str_starts_with( $response->get_headers()['Content-Type'] ?? '', 'text/event-stream' ) );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -541,7 +541,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertFalse( str_starts_with( $response->get_headers()['Content-Type'] ?? '', 'text/event-stream' ) );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -617,7 +617,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -700,7 +700,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertStringStartsWith( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
