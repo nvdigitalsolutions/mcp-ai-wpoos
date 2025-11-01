@@ -121,6 +121,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 
 if ( is_admin() ) {
@@ -139,6 +140,7 @@ WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
 
 WP_MCP_AI_ChatKit_Integration::init();
+WP_MCP_AI_Simple_JWT_Login_Integration::init();
 
 /**
  * Load the plugin textdomain for localisation support.
