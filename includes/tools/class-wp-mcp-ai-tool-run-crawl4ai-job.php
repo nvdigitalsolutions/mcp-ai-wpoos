@@ -89,6 +89,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
             return '';
         }
 
+        $sanitised = self::normalise_loopback_url( $sanitised );
+
         return untrailingslashit( $sanitised );
     }
 
@@ -437,6 +439,64 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
         }
 
         return array_values( array_unique( $ips ) );
+    }
+
+    /**
+     * Normalise HTTPS loopback URLs so they use HTTP instead.
+     *
+     * Local development environments frequently expose Crawl4AI on
+     * 127.0.0.1 with a self-signed certificate, which results in TLS
+     * errors when WordPress performs HTTPS requests. Switching to HTTP
+     * avoids these certificate mismatches without affecting production
+     * deployments that rely on publicly routable hosts.
+     *
+     * @since 1.0.0
+     *
+     * @param string $url Raw Crawl4AI base URL.
+     * @return string
+     */
+    protected static function normalise_loopback_url( $url ) {
+        $parts = wp_parse_url( $url );
+
+        if ( empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+            return $url;
+        }
+
+        if ( 'https' !== strtolower( $parts['scheme'] ) ) {
+            return $url;
+        }
+
+        if ( ! self::is_loopback_host( $parts['host'] ) ) {
+            return $url;
+        }
+
+        return preg_replace( '#^https://#i', 'http://', $url, 1 );
+    }
+
+    /**
+     * Determine whether a hostname refers to the local machine.
+     *
+     * @since 1.0.0
+     *
+     * @param string $host Hostname component from the base URL.
+     * @return bool
+     */
+    protected static function is_loopback_host( $host ) {
+        $host = trim( strtolower( $host ) );
+
+        if ( '' === $host ) {
+            return false;
+        }
+
+        if ( in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+            return true;
+        }
+
+        if ( 0 === strpos( $host, '127.' ) ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
