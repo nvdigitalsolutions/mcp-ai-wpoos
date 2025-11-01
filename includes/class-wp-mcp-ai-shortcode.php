@@ -135,7 +135,6 @@ class WP_MCP_AI_Shortcode {
                     'jsonResponse'      => __( 'JSON response', 'wp-mcp-ai' ),
                     'historyToggleShow'   => __( 'Show previous conversations', 'wp-mcp-ai' ),
                     'historyToggleHide'   => __( 'Hide previous conversations', 'wp-mcp-ai' ),
-                    'historyHeading'      => __( 'Previous conversations', 'wp-mcp-ai' ),
                     'historyLoading'      => __( 'Loading conversations…', 'wp-mcp-ai' ),
                     'historyEmpty'        => __( 'No previous conversations yet.', 'wp-mcp-ai' ),
                     'historyError'        => __( 'Unable to load conversation history.', 'wp-mcp-ai' ),
@@ -389,7 +388,6 @@ class WP_MCP_AI_Shortcode {
                 </button>
             </div>
             <section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'wp-mcp-ai' ); ?>">
-                <h3 class="wp-mcp-ai-chat__history-header"><?php esc_html_e( 'Previous conversations', 'wp-mcp-ai' ); ?></h3>
                 <div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>
                 <ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
             </section>
