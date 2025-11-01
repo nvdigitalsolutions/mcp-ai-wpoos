@@ -94,6 +94,8 @@ class WP_MCP_AI_Assistant_CPT {
 
         $default_shortcuts_map = $this->get_default_prebuilt_shortcuts_map( $selected_tools, $post->ID );
 
+        $tool_index = 0;
+
         foreach ( $selected_tools as $tool_slug ) {
             $tool = $this->registry->get_tool( $tool_slug );
 
@@ -110,15 +112,21 @@ class WP_MCP_AI_Assistant_CPT {
             $defaults_json       = wp_json_encode( $defaults );
             $has_existing_custom = ( 'custom' === $mode );
             $rows_aria_hidden    = ( 'custom' === $mode ) ? 'false' : 'true';
+            $mode_label_inherit  = __( 'Using defaults', 'wp-mcp-ai' );
+            $mode_label_custom   = __( 'Custom prompts', 'wp-mcp-ai' );
+            $mode_label          = ( 'custom' === $mode ) ? $mode_label_custom : $mode_label_inherit;
+            $open_attr           = ( 0 === $tool_index || 'custom' === $mode ) ? ' open' : '';
 
             if ( false === $defaults_json ) {
                 $defaults_json = '[]';
             }
 
-            echo '<fieldset class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '">';
-            /* translators: %s: Tool name. */
-            $legend_label = sprintf( __( '%s pre-built shortcuts', 'wp-mcp-ai' ), $tool_name );
-            echo '<legend>' . esc_html( $legend_label ) . '</legend>';
+            echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . $open_attr . '>';
+            echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
+            echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
+            echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
+            echo '</summary>';
+            echo '<div class="wp-mcp-ai-prebuilt-shortcuts__content">';
             echo '<p class="wp-mcp-ai-prebuilt-shortcuts__mode">';
             printf(
                 '<label><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="inherit" %2$s /> %3$s</label>',
@@ -236,7 +244,10 @@ class WP_MCP_AI_Assistant_CPT {
                 esc_html__( 'Add shortcut', 'wp-mcp-ai' )
             );
             echo '</p>';
-            echo '</fieldset>';
+            echo '</div>';
+            echo '</details>';
+
+            $tool_index++;
         }
 
         echo '</div>';
@@ -1444,7 +1455,14 @@ class WP_MCP_AI_Assistant_CPT {
             .wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
             .wp-mcp-ai-prebuilt-shortcuts{margin-top:1.5rem;padding:1.5rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:1rem}
             .wp-mcp-ai-prebuilt-shortcuts h3{margin:0;font-size:16px}
-            .wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;padding:1rem;background:#f6f7f7;display:flex;flex-direction:column;gap:1rem}
+            .wp-mcp-ai-prebuilt-shortcuts__tool{border:1px solid #dcdcde;border-radius:4px;background:#f6f7f7}
+            .wp-mcp-ai-prebuilt-shortcuts__summary{list-style:none;cursor:pointer;padding:0.75rem 1rem;display:flex;align-items:center;gap:0.75rem;font-weight:600;outline:none}
+            .wp-mcp-ai-prebuilt-shortcuts__summary::-webkit-details-marker{display:none}
+            .wp-mcp-ai-prebuilt-shortcuts__summary-title{flex:1 1 auto}
+            .wp-mcp-ai-prebuilt-shortcuts__summary-mode{font-size:0.875rem;color:#50575e;background:#fff;border:1px solid #dcdcde;border-radius:999px;padding:0 0.5rem;line-height:1.6}
+            .wp-mcp-ai-prebuilt-shortcuts__tool[open]{background:#fff}
+            .wp-mcp-ai-prebuilt-shortcuts__tool[open] .wp-mcp-ai-prebuilt-shortcuts__summary{border-bottom:1px solid #dcdcde}
+            .wp-mcp-ai-prebuilt-shortcuts__content{padding:1rem;display:flex;flex-direction:column;gap:1rem;border-top:1px solid #dcdcde}
             .wp-mcp-ai-prebuilt-shortcuts__mode{display:flex;flex-wrap:wrap;gap:1rem;margin:0}
             .wp-mcp-ai-prebuilt-shortcuts__mode label{display:flex;align-items:center;gap:0.5rem;font-weight:600}
             .wp-mcp-ai-prebuilt-shortcuts__defaults{margin:0}
@@ -1524,6 +1542,9 @@ class WP_MCP_AI_Assistant_CPT {
                         var defaults = [];
                         var datasetDefaults = fieldset.getAttribute( 'data-defaults' );
                         var hasExistingCustom = fieldset.getAttribute( 'data-has-existing-custom' ) === 'true';
+                        var summaryModeElement = fieldset.querySelector( '.wp-mcp-ai-prebuilt-shortcuts__summary-mode' );
+                        var modeLabelInherit = fieldset.getAttribute( 'data-mode-label-inherit' ) || '';
+                        var modeLabelCustom = fieldset.getAttribute( 'data-mode-label-custom' ) || '';
 
                         if ( datasetDefaults ) {
                             try {
@@ -1660,10 +1681,20 @@ class WP_MCP_AI_Assistant_CPT {
                                 }
                             }
 
+                            if ( summaryModeElement ) {
+                                summaryModeElement.textContent = isCustom
+                                    ? ( modeLabelCustom || summaryModeElement.textContent )
+                                    : ( modeLabelInherit || summaryModeElement.textContent );
+                            }
+
                             if ( isCustom && ! hasExistingCustom ) {
                                 ensureDefaultRows();
                                 hasExistingCustom = true;
                                 fieldset.setAttribute( 'data-has-existing-custom', 'true' );
+                            }
+
+                            if ( isCustom ) {
+                                fieldset.setAttribute( 'open', 'open' );
                             }
 
                             setFieldsDisabled( ! isCustom );
