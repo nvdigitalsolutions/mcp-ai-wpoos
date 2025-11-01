@@ -491,6 +491,180 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure assistant credential bearer tokens can stream chat responses.
+     */
+    public function test_chat_request_streams_response_with_assistant_credential_token() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Credential Stream Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $issuer_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $issuer_id );
+
+        $issued = WP_MCP_AI_Credentials::issue_credential( $assistant_id, $issuer_id );
+        $this->assertIsArray( $issued );
+        $this->assertArrayHasKey( 'token', $issued );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-stream-credential',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        wp_set_current_user( 0 );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Stream with credential',
+                ),
+            )
+        );
+        $request->set_header( 'Authorization', 'Bearer ' . $issued['token'] );
+        $request->set_header( 'Accept', 'text/event-stream' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        $this->assertInstanceOf( WP_Hook::class, $hook );
+
+        $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+        $added_keys   = array_diff( $current_keys, $existing_keys );
+
+        $this->assertNotEmpty( $added_keys );
+
+        $closure_key = array_pop( $added_keys );
+        $closure     = $hook->callbacks[10][ $closure_key ]['function'];
+
+        ob_start();
+        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
+        $output = ob_get_clean();
+
+        $this->assertTrue( $served );
+        $this->assertStringContainsString( 'event: message', $output );
+        $this->assertStringContainsString( 'event: close', $output );
+
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
+    }
+
+    /**
+     * Ensure guest tokens can stream chat responses.
+     */
+    public function test_chat_request_streams_response_with_guest_token() {
+        $assistant_id = wp_insert_post(
+            array(
+                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+                'post_title'  => 'Guest Stream Assistant',
+                'post_status' => 'publish',
+            )
+        );
+
+        $token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+        $this->assertNotEmpty( $token );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-stream-guest',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $existing_keys = array();
+        if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
+            $existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+        }
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'    => 'user',
+                    'content' => 'Stream with guest token',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-MCP-AI-Guest', $token );
+        $request->set_header( 'Accept', 'text/event-stream' );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
+
+        $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
+            ? $GLOBALS['wp_filter']['rest_pre_serve_request']
+            : null;
+
+        $this->assertInstanceOf( WP_Hook::class, $hook );
+
+        $current_keys = array_keys( $hook->callbacks[10] ?? array() );
+        $added_keys   = array_diff( $current_keys, $existing_keys );
+
+        $this->assertNotEmpty( $added_keys );
+
+        $closure_key = array_pop( $added_keys );
+        $closure     = $hook->callbacks[10][ $closure_key ]['function'];
+
+        ob_start();
+        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
+        $output = ob_get_clean();
+
+        $this->assertTrue( $served );
+        $this->assertStringContainsString( 'event: message', $output );
+        $this->assertStringContainsString( 'event: close', $output );
+
+        if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
+            unset( $hook->callbacks[10][ $closure_key ] );
+        }
+    }
+
+    /**
      * Bootstraps the REST controller with a mock language model client.
      *
      * @param WP_MCP_AI_Language_Model_Router $client Mock client instance.
