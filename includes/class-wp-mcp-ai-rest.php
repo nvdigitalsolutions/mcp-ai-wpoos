@@ -1892,7 +1892,7 @@ class WP_MCP_AI_REST {
         $frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
         $headers = array(
-            'Content-Type'                => 'text/event-stream; charset=UTF-8',
+            'Content-Type'                => 'text/event-stream',
             'Cache-Control'               => 'no-cache, no-store, must-revalidate, no-transform',
             'Pragma'                      => 'no-cache',
             'Connection'                  => 'keep-alive',
