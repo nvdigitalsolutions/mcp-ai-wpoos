@@ -47,7 +47,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
         $filter = function () {
-            return 'http://localhost:11235/';
+            return 'https://127.0.0.1:11235/';
         };
 
         add_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
@@ -64,7 +64,7 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
         $filter = function () {
-            return 'http://localhost:11235/';
+            return 'https://127.0.0.1:11235/';
         };
 
         add_filter( 'wp_mcp_ai_crawl4ai_base_url', $filter );
@@ -115,7 +115,64 @@ class WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
         $this->assertIsArray( $result );
         $this->assertSame( 'completed', $result['status'] );
         $this->assertNotEmpty( $requests );
-        $this->assertStringStartsWith( 'http://localhost:11235/crawl', $requests[0]['url'] );
+        $this->assertStringStartsWith( 'http://127.0.0.1:11235/crawl', $requests[0]['url'] );
+    }
+
+    /**
+     * Ensure HTTPS loopback hosts are normalised to HTTP when executing requests.
+     */
+    public function test_execute_normalises_loopback_https_base_url() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+        $settings['crawl4ai_base_url'] = 'https://127.0.0.1:11235/';
+        $settings['crawl4ai_api_key']  = 'test-token';
+        $settings['request_timeout']   = 5;
+
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $tool      = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+        $requests  = array();
+        $responses = array(
+            'body'     => wp_json_encode(
+                array(
+                    'task_id' => 'loopback-123',
+                    'status'  => 'completed',
+                    'results' => array(
+                        array(
+                            'url'      => 'https://example.com',
+                            'markdown' => '# Example',
+                        ),
+                    ),
+                )
+            ),
+            'response' => array( 'code' => 200 ),
+            'headers'  => array(),
+        );
+
+        $callback = function ( $pre, $args, $url ) use ( &$requests, $responses ) {
+            $requests[] = $url;
+
+            return $responses;
+        };
+
+        add_filter( 'pre_http_request', $callback, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'urls' => array( 'https://example.com' ),
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $callback, 10 );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( 'completed', $result['status'] );
+        $this->assertNotEmpty( $requests );
+        $this->assertStringStartsWith( 'http://127.0.0.1:11235/crawl', $requests[0] );
     }
 
     /**
