@@ -1388,6 +1388,24 @@
         return fallback;
     }
 
+    function getRoleLabel(role) {
+        var labels = globalConfig.strings && globalConfig.strings.roleLabels ? globalConfig.strings.roleLabels : null;
+        var normalised = typeof role === 'string' ? role.toLowerCase() : '';
+
+        if (labels && Object.prototype.hasOwnProperty.call(labels, normalised)) {
+            var label = labels[normalised];
+            if (typeof label === 'string' && label) {
+                return label;
+            }
+        }
+
+        if (!normalised) {
+            return '';
+        }
+
+        return normalised.charAt(0).toUpperCase() + normalised.slice(1);
+    }
+
     function setTranscriptExpanded(state, expanded) {
         if (!state) {
             return;
@@ -1419,6 +1437,545 @@
         if (state.transcriptExpanded && state.messagesEl) {
             state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
         }
+    }
+
+    function updateHistoryToggle(state) {
+        if (!state || !state.historyToggle) {
+            return;
+        }
+
+        var expanded = !!state.historyVisible;
+        var label = expanded
+            ? getString('historyToggleHide', 'Hide previous conversations')
+            : getString('historyToggleShow', 'Show previous conversations');
+
+        state.historyToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        state.historyToggle.setAttribute('aria-label', label);
+
+        var screenReaderText = state.historyToggle.querySelector('.screen-reader-text');
+        if (screenReaderText) {
+            screenReaderText.textContent = label;
+        }
+
+        if (expanded) {
+            state.historyToggle.classList.add('wp-mcp-ai-chat__history-toggle--active');
+        } else {
+            state.historyToggle.classList.remove('wp-mcp-ai-chat__history-toggle--active');
+        }
+    }
+
+    function setHistoryStatus(state, message, isError) {
+        if (!state || !state.historyStatus) {
+            return;
+        }
+
+        if (!message) {
+            state.historyStatus.textContent = '';
+            state.historyStatus.hidden = true;
+            state.historyStatus.classList.remove('wp-mcp-ai-chat__history-status--error');
+            return;
+        }
+
+        state.historyStatus.hidden = false;
+        state.historyStatus.textContent = message;
+
+        if (isError) {
+            state.historyStatus.classList.add('wp-mcp-ai-chat__history-status--error');
+        } else {
+            state.historyStatus.classList.remove('wp-mcp-ai-chat__history-status--error');
+        }
+    }
+
+    function getHistoryEndpoint(state) {
+        if (state && state.config && state.config.transcriptsEndpoint) {
+            return state.config.transcriptsEndpoint;
+        }
+
+        if (globalConfig.transcriptsEndpoint) {
+            return globalConfig.transcriptsEndpoint;
+        }
+
+        return '';
+    }
+
+    function buildHistoryHeaders(state) {
+        var headers = { 'Accept': 'application/json' };
+        var nonce = '';
+
+        if (state && state.config) {
+            if (state.config.restNonce) {
+                nonce = state.config.restNonce;
+            } else if (globalConfig.nonce) {
+                nonce = globalConfig.nonce;
+            }
+
+            if (state.config.guestToken) {
+                headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
+            }
+        } else if (globalConfig.nonce) {
+            nonce = globalConfig.nonce;
+        }
+
+        if (nonce) {
+            headers['X-WP-Nonce'] = nonce;
+        }
+
+        return headers;
+    }
+
+    function formatHistoryDate(value) {
+        if (!value) {
+            return '';
+        }
+
+        var date = new Date(value);
+
+        if (isNaN(date.getTime())) {
+            return '';
+        }
+
+        if (typeof window !== 'undefined' && window.Intl && window.Intl.DateTimeFormat) {
+            try {
+                return new window.Intl.DateTimeFormat(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                }).format(date);
+            } catch (error) {}
+        }
+
+        if (date.toLocaleString) {
+            return date.toLocaleString();
+        }
+
+        return date.toISOString();
+    }
+
+    function formatHistoryMessageCount(count) {
+        var total = parseInt(count, 10) || 0;
+
+        if (total === 1) {
+            return getString('historySingleMessage', '1 message');
+        }
+
+        var template = getString('historyMessageCount', '%d messages');
+
+        if (template.indexOf('%d') !== -1) {
+            return template.replace('%d', total);
+        }
+
+        return template + ' ' + total;
+    }
+
+    function formatHistorySessionTitle(state, session, index) {
+        if (session && session.preview) {
+            return session.preview;
+        }
+
+        if (session && session.assistant_title) {
+            return session.assistant_title;
+        }
+
+        var template = getString('historyPreviewFallback', 'Conversation %s');
+        var placeholder = template.indexOf('%s') !== -1 ? template : template + ' %s';
+        var number = typeof index === 'number' ? index + 1 : 1;
+
+        return placeholder.replace('%s', number);
+    }
+
+    function buildHistoryMeta(state, session) {
+        var parts = [];
+
+        if (session) {
+            var timestamp = session.updated_at || session.completed_at || session.started_at;
+            var formattedDate = formatHistoryDate(timestamp);
+
+            if (formattedDate) {
+                parts.push(formattedDate);
+            }
+
+            if (session.turn_count) {
+                parts.push(formatHistoryMessageCount(session.turn_count));
+            }
+        }
+
+        return parts.join(' · ');
+    }
+
+    function renderHistorySessions(state) {
+        if (!state || !state.historyList) {
+            return;
+        }
+
+        state.historyList.innerHTML = '';
+
+        if (!Array.isArray(state.historySessions) || !state.historySessions.length) {
+            return;
+        }
+
+        var fragment = document.createDocumentFragment();
+
+        state.historySessions.forEach(function (session, index) {
+            var item = document.createElement('li');
+            item.className = 'wp-mcp-ai-chat__history-item';
+
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'wp-mcp-ai-chat__history-session';
+            button.setAttribute('aria-expanded', 'false');
+            button.dataset.sessionKey = session && session.session_key ? session.session_key : '';
+
+            var content = document.createElement('div');
+            content.className = 'wp-mcp-ai-chat__history-session-content';
+
+            var title = document.createElement('span');
+            title.className = 'wp-mcp-ai-chat__history-session-title';
+            title.textContent = formatHistorySessionTitle(state, session, index);
+            content.appendChild(title);
+
+            var metaText = buildHistoryMeta(state, session);
+            if (metaText) {
+                var meta = document.createElement('span');
+                meta.className = 'wp-mcp-ai-chat__history-session-meta';
+                meta.textContent = metaText;
+                content.appendChild(meta);
+            }
+
+            button.appendChild(content);
+
+            var icon = document.createElement('span');
+            icon.className = 'wp-mcp-ai-chat__history-session-icon';
+            icon.innerHTML =
+                '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+                '<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />' +
+                '</svg>';
+            button.appendChild(icon);
+
+            var details = document.createElement('div');
+            details.className = 'wp-mcp-ai-chat__history-messages';
+            details.hidden = true;
+
+            item.appendChild(button);
+            item.appendChild(details);
+
+            button.addEventListener('click', function (event) {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                }
+
+                toggleHistorySession(state, item, session);
+            });
+
+            fragment.appendChild(item);
+        });
+
+        state.historyList.appendChild(fragment);
+    }
+
+    function toggleHistoryVisibility(state) {
+        if (!state) {
+            return;
+        }
+
+        setHistoryVisibility(state, !state.historyVisible);
+    }
+
+    function setHistoryVisibility(state, visible) {
+        if (!state) {
+            return;
+        }
+
+        state.historyVisible = !!visible;
+
+        if (state.historyContainer) {
+            state.historyContainer.hidden = !state.historyVisible;
+        }
+
+        updateHistoryToggle(state);
+
+        if (state.historyVisible) {
+            ensureHistorySessions(state);
+        }
+    }
+
+    function ensureHistorySessions(state) {
+        if (!state) {
+            return Promise.resolve();
+        }
+
+        if (state.historyLoaded || state.historyLoading) {
+            return state.historyLoadPromise || Promise.resolve();
+        }
+
+        state.historyLoadPromise = loadHistorySessions(state);
+        return state.historyLoadPromise;
+    }
+
+    function loadHistorySessions(state) {
+        var endpoint = getHistoryEndpoint(state);
+
+        if (!endpoint) {
+            state.historyLoaded = true;
+            setHistoryStatus(state, getString('historyError', 'Unable to load conversation history.'), true);
+            state.historyLoadPromise = null;
+            return Promise.resolve();
+        }
+
+        state.historyLoading = true;
+        setHistoryStatus(state, getString('historyLoading', 'Loading conversations…'), false);
+
+        var perPage = state.config && state.config.historyPerPage ? state.config.historyPerPage : globalConfig.historyPerPage;
+        if (!perPage || perPage < 1) {
+            perPage = 20;
+        }
+
+        return fetchHistorySessions(state, endpoint, perPage)
+            .then(function (data) {
+                var sessions = Array.isArray(data && data.sessions) ? data.sessions : [];
+                var assistantId = state.config && state.config.assistantId ? parseInt(state.config.assistantId, 10) : 0;
+
+                if (assistantId) {
+                    sessions = sessions.filter(function (session) {
+                        return parseInt(session.assistant_id, 10) === assistantId;
+                    });
+                }
+
+                state.historySessions = sessions;
+                state.historyLoaded = true;
+
+                renderHistorySessions(state);
+
+                if (!sessions.length) {
+                    var message = data && data.message ? data.message : getString('historyEmpty', 'No previous conversations yet.');
+                    setHistoryStatus(state, message, false);
+                } else {
+                    setHistoryStatus(state, '', false);
+                }
+            })
+            .catch(function (error) {
+                state.historySessions = [];
+                renderHistorySessions(state);
+
+                var message = error && error.message ? error.message : getString('historyError', 'Unable to load conversation history.');
+                setHistoryStatus(state, message, true);
+                state.historyLoaded = false;
+            })
+            .finally(function () {
+                state.historyLoading = false;
+                state.historyLoadPromise = null;
+            });
+    }
+
+    function fetchHistorySessions(state, endpoint, perPage) {
+        var url = endpoint;
+
+        if (perPage && perPage > 0) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
+        }
+
+        return fetch(url, {
+            method: 'GET',
+            headers: buildHistoryHeaders(state),
+        }).then(function (response) {
+            return response
+                .json()
+                .catch(function () {
+                    return null;
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        var message = data && data.message ? data.message : getString('historyError', 'Unable to load conversation history.');
+                        var error = new Error(message);
+                        error.status = response.status;
+                        throw error;
+                    }
+
+                    return data;
+                });
+        });
+    }
+
+    function fetchHistorySessionDetails(state, sessionKey) {
+        if (!sessionKey) {
+            return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
+        }
+
+        var endpoint = getHistoryEndpoint(state);
+
+        if (!endpoint) {
+            return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
+        }
+
+        var url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+
+        return fetch(url, {
+            method: 'GET',
+            headers: buildHistoryHeaders(state),
+        }).then(function (response) {
+            return response
+                .json()
+                .catch(function () {
+                    return null;
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        var message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
+                        var error = new Error(message);
+                        error.status = response.status;
+                        throw error;
+                    }
+
+                    if (data && data.session) {
+                        return data.session;
+                    }
+
+                    if (data && data.message) {
+                        throw new Error(data.message);
+                    }
+
+                    throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
+                });
+        });
+    }
+
+    function renderHistorySessionLoading(state, container) {
+        if (!container) {
+            return;
+        }
+
+        container.dataset.loaded = 'loading';
+        container.hidden = false;
+        container.textContent = '';
+
+        var notice = document.createElement('p');
+        notice.className = 'wp-mcp-ai-chat__history-notice';
+        notice.textContent = getString('historySessionLoading', 'Loading conversation…');
+        container.appendChild(notice);
+    }
+
+    function renderHistorySessionError(state, container, message) {
+        if (!container) {
+            return;
+        }
+
+        container.dataset.loaded = 'error';
+        container.textContent = '';
+
+        var notice = document.createElement('p');
+        notice.className = 'wp-mcp-ai-chat__history-notice wp-mcp-ai-chat__history-notice--error';
+        notice.textContent = message || getString('historySessionError', 'Unable to load this conversation. Please try again.');
+        container.appendChild(notice);
+    }
+
+    function renderHistorySessionDetails(state, container, session) {
+        if (!container) {
+            return;
+        }
+
+        container.dataset.loaded = 'true';
+        container.textContent = '';
+
+        if (!session || !Array.isArray(session.messages) || !session.messages.length) {
+            var empty = document.createElement('p');
+            empty.className = 'wp-mcp-ai-chat__history-notice';
+            empty.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
+            container.appendChild(empty);
+            return;
+        }
+
+        var list = document.createElement('ul');
+        list.className = 'wp-mcp-ai-chat__history-message-list';
+
+        session.messages.forEach(function (message) {
+            if (!message || typeof message !== 'object') {
+                return;
+            }
+
+            var role = typeof message.role === 'string' ? message.role.toLowerCase() : 'assistant';
+            var text = typeof message.content === 'string' ? message.content : '';
+
+            var item = document.createElement('li');
+            item.className = 'wp-mcp-ai-chat__history-message wp-mcp-ai-chat__history-message--' + role;
+
+            var roleLabel = document.createElement('span');
+            roleLabel.className = 'wp-mcp-ai-chat__history-message-role';
+            roleLabel.textContent = getRoleLabel(role);
+            item.appendChild(roleLabel);
+
+            var body = document.createElement('div');
+            body.className = 'wp-mcp-ai-chat__history-message-text';
+
+            if (text) {
+                var normalised = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
+                body.innerHTML = escapeHtml(normalised).replace(/\n/g, '<br />');
+            } else {
+                body.textContent = '';
+            }
+
+            item.appendChild(body);
+            list.appendChild(item);
+        });
+
+        if (!list.children.length) {
+            var fallback = document.createElement('p');
+            fallback.className = 'wp-mcp-ai-chat__history-notice';
+            fallback.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
+            container.appendChild(fallback);
+            return;
+        }
+
+        container.appendChild(list);
+    }
+
+    function toggleHistorySession(state, item, session) {
+        if (!state || !item) {
+            return;
+        }
+
+        var button = item.querySelector('.wp-mcp-ai-chat__history-session');
+        var details = item.querySelector('.wp-mcp-ai-chat__history-messages');
+
+        if (!button || !details) {
+            return;
+        }
+
+        var expanded = button.getAttribute('aria-expanded') === 'true';
+
+        if (expanded) {
+            button.setAttribute('aria-expanded', 'false');
+            details.hidden = true;
+            item.classList.remove('wp-mcp-ai-chat__history-item--expanded');
+            return;
+        }
+
+        button.setAttribute('aria-expanded', 'true');
+        details.hidden = false;
+        item.classList.add('wp-mcp-ai-chat__history-item--expanded');
+
+        if (details.dataset.loaded === 'true') {
+            return;
+        }
+
+        var sessionKey = session && session.session_key ? session.session_key : '';
+
+        if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
+            renderHistorySessionDetails(state, details, state.historySessionDetails[sessionKey]);
+            return;
+        }
+
+        renderHistorySessionLoading(state, details);
+
+        fetchHistorySessionDetails(state, sessionKey)
+            .then(function (data) {
+                if (sessionKey) {
+                    state.historySessionDetails[sessionKey] = data;
+                }
+
+                renderHistorySessionDetails(state, details, data);
+            })
+            .catch(function (error) {
+                var message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
+                renderHistorySessionError(state, details, message);
+            });
     }
 
     function buildJsonHeaders(state) {
@@ -3100,6 +3657,10 @@
             var transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
             var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
+            var historyToggle = container.querySelector('.wp-mcp-ai-chat__history-toggle');
+            var historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
+            var historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
+            var historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -3116,6 +3677,14 @@
 
             if (!instanceConfig.restNonce) {
                 instanceConfig.restNonce = globalConfig.nonce || '';
+            }
+
+            if (!instanceConfig.transcriptsEndpoint) {
+                instanceConfig.transcriptsEndpoint = globalConfig.transcriptsEndpoint || '';
+            }
+
+            if (!instanceConfig.historyPerPage) {
+                instanceConfig.historyPerPage = globalConfig.historyPerPage || 20;
             }
 
             if (!instanceConfig.crawl4aiTaskEndpoint) {
@@ -3162,7 +3731,17 @@
                 transcribeInput: transcribeInput,
                 toolShortcutsContainer: toolShortcutsContainer,
                 transcriptToggle: transcriptToggle,
+                historyToggle: historyToggle,
+                historyContainer: historyContainer,
+                historyStatus: historyStatusEl,
+                historyList: historyList,
                 transcriptExpanded: false,
+                historyVisible: false,
+                historyLoaded: false,
+                historyLoading: false,
+                historyLoadPromise: null,
+                historySessions: [],
+                historySessionDetails: Object.create(null),
                 pendingAttachments: [],
                 attachmentLibrary: {},
                 attachmentBlobUrls: {},
@@ -3182,6 +3761,17 @@
             renderToolShortcuts(state);
 
             setTranscriptExpanded(state, false);
+            setHistoryVisibility(state, false);
+
+            if (historyToggle) {
+                historyToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    toggleHistoryVisibility(state);
+                });
+            }
 
             if (transcriptToggle) {
                 transcriptToggle.addEventListener('click', function (event) {

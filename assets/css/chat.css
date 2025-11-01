@@ -19,6 +19,51 @@
     padding-right: 4px;
 }
 
+.wp-mcp-ai-chat__history-launch {
+    margin-top: 1.25rem;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.wp-mcp-ai-chat__history-toggle {
+    appearance: none;
+    border-radius: 999px;
+    border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
+    background: var(--wp-mcp-ai-color-shortcut-background, rgba(148, 163, 184, 0.16));
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    padding: 0;
+}
+
+.wp-mcp-ai-chat__history-toggle:hover {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
+    color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__history-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
+}
+
+.wp-mcp-ai-chat__history-toggle--active {
+    background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
+    border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
+    color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__history-toggle-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
 .wp-mcp-ai-chat__transcript-controls {
     position: absolute;
     top: 16px;
@@ -778,4 +823,160 @@
     padding: 1rem 1.25rem;
     border-radius: 10px;
     box-shadow: 0 8px 16px var(--wp-mcp-ai-color-notice-shadow, rgba(214, 54, 56, 0.12));
+}
+
+.wp-mcp-ai-chat__history {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--wp-mcp-ai-color-container-border, #d5d5d5);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.wp-mcp-ai-chat__history-header {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+}
+
+.wp-mcp-ai-chat__history-status {
+    font-size: 0.9rem;
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+}
+
+.wp-mcp-ai-chat__history-status--error {
+    color: var(--wp-mcp-ai-color-error, #b91c1c);
+}
+
+.wp-mcp-ai-chat__history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wp-mcp-ai-chat__history-item {
+    border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
+    border-radius: 10px;
+    background: var(--wp-mcp-ai-color-shortcut-background, rgba(148, 163, 184, 0.08));
+    overflow: hidden;
+}
+
+.wp-mcp-ai-chat__history-session {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    text-align: left;
+}
+
+.wp-mcp-ai-chat__history-session:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
+}
+
+.wp-mcp-ai-chat__history-session-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1 1 auto;
+}
+
+.wp-mcp-ai-chat__history-session-title {
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-shortcut-text, #0f172a);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.wp-mcp-ai-chat__history-session-meta {
+    font-size: 0.85rem;
+    color: var(--wp-mcp-ai-color-shortcut-text, rgba(15, 23, 42, 0.75));
+}
+
+.wp-mcp-ai-chat__history-session-icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+}
+
+.wp-mcp-ai-chat__history-session-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
+.wp-mcp-ai-chat__history-item--expanded .wp-mcp-ai-chat__history-session-icon {
+    transform: rotate(180deg);
+}
+
+.wp-mcp-ai-chat__history-messages {
+    border-top: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.25));
+    background: var(--wp-mcp-ai-color-container-background, #fff);
+}
+
+.wp-mcp-ai-chat__history-notice {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+}
+
+.wp-mcp-ai-chat__history-notice--error {
+    color: var(--wp-mcp-ai-color-error, #b91c1c);
+}
+
+.wp-mcp-ai-chat__history-message-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wp-mcp-ai-chat__history-message {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.wp-mcp-ai-chat__history-message-role {
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-shortcut-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__history-message-text {
+    color: var(--wp-mcp-ai-color-shortcut-text, #111827);
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.wp-mcp-ai-chat__history-message--tool .wp-mcp-ai-chat__history-message-role {
+    color: var(--wp-mcp-ai-color-shortcut-text, rgba(15, 23, 42, 0.8));
+}
+
+.wp-mcp-ai-chat__history-message--system .wp-mcp-ai-chat__history-message-role {
+    color: var(--wp-mcp-ai-color-shortcut-text, rgba(15, 23, 42, 0.65));
+}
+
+@media (max-width: 600px) {
+    .wp-mcp-ai-chat__history-message {
+        grid-template-columns: 1fr;
+    }
 }
