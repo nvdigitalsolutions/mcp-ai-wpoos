@@ -624,16 +624,34 @@ class WP_MCP_AI_REST {
 
         $assistants = array_values( $assistants );
 
+        $directory_default = $scoped_assistant ? $scoped_assistant : $default_assistant;
+        if ( ! $directory_default && ! empty( $assistants ) ) {
+            $first_assistant = reset( $assistants );
+            if ( is_array( $first_assistant ) && isset( $first_assistant['id'] ) ) {
+                $directory_default = absint( $first_assistant['id'] );
+            }
+        }
+
         $response_data = array(
             'assistants'        => $assistants,
-            'default_assistant' => $default_assistant,
+            'default_assistant' => $directory_default,
             'rest'              => array(
-                'namespace'        => self::REST_NAMESPACE,
-                'base'             => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
-                'chat'             => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
-                'tools'            => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
-                'file_download'    => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
+                'namespace'     => self::REST_NAMESPACE,
+                'base'          => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
+                'chat'          => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
+                'tools'         => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
+                'file_download' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
             ),
+        );
+
+        $capabilities = $this->build_assistant_directory_capabilities( $response_data );
+        if ( ! empty( $capabilities ) ) {
+            $response_data['capabilities'] = $capabilities;
+        }
+
+        $response_data['implementation'] = array(
+            'name'    => 'WP MCP AI',
+            'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
         );
 
         if ( ! empty( $auth_context['token_authenticated'] ) ) {
@@ -658,6 +676,10 @@ class WP_MCP_AI_REST {
          * @param array           $auth_context  Authentication context for the caller.
          */
         $response_data = apply_filters( 'wp_mcp_ai_rest_assistant_index', $response_data, $request, $auth_context );
+
+        if ( $this->request_wants_event_stream( $request ) ) {
+            return $this->stream_event_stream_payload( $response_data, 'directory' );
+        }
 
         return new WP_REST_Response( $response_data, 200 );
     }
@@ -742,6 +764,44 @@ class WP_MCP_AI_REST {
          * @param WP_REST_Request $request        Current REST request.
          */
         return apply_filters( 'wp_mcp_ai_rest_assistant_summary', $summary, $assistant_post, $config, $settings, $request );
+    }
+
+    /**
+     * Build the capability metadata exposed alongside the assistant directory.
+     *
+     * @param array $response_data Current response payload.
+     * @return array
+     */
+    protected function build_assistant_directory_capabilities( array $response_data ) {
+        $capabilities = array();
+
+        $capabilities['tools'] = array(
+            'listChanged' => false,
+        );
+
+        $rest_links = array();
+        if ( isset( $response_data['rest'] ) && is_array( $response_data['rest'] ) ) {
+            $rest_links = $response_data['rest'];
+        }
+
+        if ( isset( $rest_links['file_download'] ) && '' !== $rest_links['file_download'] ) {
+            $capabilities['resources'] = array(
+                'subscribe'   => false,
+                'listChanged' => false,
+            );
+        }
+
+        /**
+         * Filter the capability metadata returned with the assistant directory response.
+         *
+         * @since 1.0.0
+         *
+         * @param array $capabilities  Capability metadata.
+         * @param array $response_data Current response payload.
+         */
+        $capabilities = apply_filters( 'wp_mcp_ai_rest_assistant_capabilities', $capabilities, $response_data );
+
+        return is_array( $capabilities ) ? $capabilities : array();
     }
 
     /**
@@ -1636,7 +1696,7 @@ class WP_MCP_AI_REST {
         );
 
         if ( $this->request_wants_event_stream( $request ) ) {
-            return $this->stream_chat_response( $payload );
+            return $this->stream_event_stream_payload( $payload, 'message' );
         }
 
         return rest_ensure_response( $payload );
@@ -1711,19 +1771,25 @@ class WP_MCP_AI_REST {
     }
 
     /**
-     * Stream the prepared chat response payload as an event stream.
+     * Stream the provided payload as an event stream response.
      *
-     * @param array $payload Chat response payload.
+     * @param array  $payload Response payload to emit.
+     * @param string $event   Event name used for the SSE frame.
      * @return WP_REST_Response
      */
-    protected function stream_chat_response( array $payload ) {
+    protected function stream_event_stream_payload( array $payload, $event = 'message' ) {
         $encoded_payload = wp_json_encode( $payload );
 
         if ( false === $encoded_payload ) {
             return rest_ensure_response( $payload );
         }
 
-        $frames = $this->build_event_stream_chunk( 'message', $encoded_payload );
+        $event_name = (string) $event;
+        if ( '' === $event_name ) {
+            $event_name = 'message';
+        }
+
+        $frames = $this->build_event_stream_chunk( $event_name, $encoded_payload );
         $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
 
         $headers = array(
