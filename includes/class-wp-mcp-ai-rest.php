@@ -1889,7 +1889,7 @@ class WP_MCP_AI_REST {
         }
 
         $frames = $this->build_event_stream_chunk( $event_name, $encoded_payload );
-        $frames .= $this->build_event_stream_chunk( 'close', '[DONE]' );
+        $frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
         $headers = array(
             'Content-Type'                => 'text/event-stream; charset=UTF-8',
@@ -1921,6 +1921,16 @@ class WP_MCP_AI_REST {
             }
 
             echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+            if ( function_exists( 'ob_get_level' ) && function_exists( 'ob_end_flush' ) ) {
+                while ( ob_get_level() > 0 ) {
+                    if ( false === ob_end_flush() ) {
+                        break;
+                    }
+                }
+            } elseif ( function_exists( 'ob_flush' ) ) {
+                ob_flush();
+            }
 
             if ( function_exists( 'flush' ) ) {
                 flush();
