@@ -43,6 +43,7 @@ class WP_MCP_AI_Remote_Tester {
         $headers    = $this->build_headers( $args );
 
         $assistants_url = trailingslashit( $normalized ) . 'assistants';
+        $chat_url       = trailingslashit( $normalized ) . 'chat';
 
         $query_args = array();
         if ( isset( $args['assistant_id'] ) && '' !== $args['assistant_id'] ) {
@@ -137,18 +138,195 @@ class WP_MCP_AI_Remote_Tester {
             'message'   => $message,
             'details'   => $details,
         );
-
-        $result = array(
-            'success'  => $success,
-            'base_url' => $normalized,
-            'checks'   => $checks,
-            'response' => array(
+        $responses = array(
+            'directory' => array(
                 'code'    => $code,
                 'message' => $http_message,
                 'body'    => $decoded,
                 'raw'     => $body,
             ),
         );
+
+        $assistant_id = isset( $args['assistant_id'] ) ? absint( $args['assistant_id'] ) : 0;
+
+        if ( ! $assistant_id && is_array( $decoded ) && isset( $decoded['assistants'] ) && is_array( $decoded['assistants'] ) ) {
+            foreach ( $decoded['assistants'] as $assistant_summary ) {
+                if ( is_array( $assistant_summary ) && isset( $assistant_summary['id'] ) ) {
+                    $assistant_id = absint( $assistant_summary['id'] );
+
+                    if ( $assistant_id ) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ( ! $assistant_id ) {
+            $success = false;
+
+            $message = __( 'Unable to determine an assistant ID for the chat probe.', 'wp-mcp-ai' );
+
+            $checks[] = array(
+                'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+                'url'       => $chat_url,
+                'status'    => 'error',
+                'http_code' => null,
+                'message'   => $message,
+                'details'   => array(),
+            );
+
+            return array(
+                'success'   => false,
+                'base_url'  => $normalized,
+                'checks'    => $checks,
+                'responses' => $responses,
+                'response'  => $responses['directory'],
+                'error'     => array(
+                    'code'    => 'wp_mcp_ai_remote_missing_assistant',
+                    'message' => $message,
+                ),
+            );
+        }
+
+        $chat_headers              = $headers;
+        $chat_headers['Content-Type'] = 'application/json';
+
+        $chat_payload = array(
+            'assistant_id' => $assistant_id,
+            'messages'     => array(
+                array(
+                    'role'    => 'user',
+                    'content' => __( 'Connectivity probe from WP MCP AI Remote Tester.', 'wp-mcp-ai' ),
+                ),
+            ),
+            'options'      => array(
+                'probe' => true,
+            ),
+        );
+
+        $chat_args = array(
+            'timeout'     => $timeout,
+            'headers'     => $chat_headers,
+            'sslverify'   => $verify_ssl,
+            'redirection' => isset( $args['redirection'] ) ? (int) $args['redirection'] : 5,
+            'user-agent'  => $user_agent,
+            'body'        => wp_json_encode( $chat_payload ),
+        );
+
+        $chat_response = wp_remote_post( $chat_url, $chat_args );
+
+        $error = null;
+
+        if ( is_wp_error( $chat_response ) ) {
+            $success = false;
+
+            $checks[] = array(
+                'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+                'url'       => $chat_url,
+                'status'    => 'error',
+                'http_code' => null,
+                'message'   => sprintf( __( 'Request failed: %s', 'wp-mcp-ai' ), $chat_response->get_error_message() ),
+                'details'   => array(
+                    'error_code' => $chat_response->get_error_code(),
+                ),
+            );
+
+            return array(
+                'success'   => false,
+                'base_url'  => $normalized,
+                'checks'    => $checks,
+                'responses' => $responses,
+                'response'  => $responses['directory'],
+                'error'     => array(
+                    'code'    => $chat_response->get_error_code(),
+                    'message' => $chat_response->get_error_message(),
+                ),
+            );
+        }
+
+        $chat_code         = (int) wp_remote_retrieve_response_code( $chat_response );
+        $chat_http_message = wp_remote_retrieve_response_message( $chat_response );
+        $chat_body         = wp_remote_retrieve_body( $chat_response );
+        $chat_decoded      = $this->decode_json_body( $chat_body );
+
+        $chat_details = array(
+            'assistant_id' => $assistant_id,
+        );
+
+        if ( is_array( $chat_decoded ) ) {
+            if ( isset( $chat_decoded['probe']['status'] ) ) {
+                $chat_details['probe_status'] = (string) $chat_decoded['probe']['status'];
+            }
+
+            if ( isset( $chat_decoded['probe']['checked_at'] ) ) {
+                $chat_details['probe_checked_at'] = (string) $chat_decoded['probe']['checked_at'];
+            }
+
+            if ( isset( $chat_decoded['code'] ) ) {
+                $chat_details['rest_error_code'] = $chat_decoded['code'];
+            }
+
+            if ( isset( $chat_decoded['message'] ) ) {
+                $chat_details['rest_error_message'] = $chat_decoded['message'];
+            }
+
+            if ( isset( $chat_decoded['data']['status'] ) ) {
+                $chat_details['rest_error_status'] = (int) $chat_decoded['data']['status'];
+            }
+        }
+
+        if ( $chat_code >= 200 && $chat_code < 300 ) {
+            $chat_status = 'success';
+
+            $message_parts = array( __( 'Chat endpoint reachable.', 'wp-mcp-ai' ) );
+
+            if ( isset( $chat_details['probe_status'] ) ) {
+                $message_parts[] = sprintf( __( 'Status: %s.', 'wp-mcp-ai' ), $chat_details['probe_status'] );
+            }
+
+            if ( isset( $chat_details['probe_checked_at'] ) ) {
+                $message_parts[] = sprintf( __( 'Checked at %s.', 'wp-mcp-ai' ), $chat_details['probe_checked_at'] );
+            }
+
+            $chat_message = implode( ' ', $message_parts );
+        } else {
+            $chat_status = 'error';
+            $success     = false;
+            $chat_message = $this->build_error_message( $chat_code, $chat_http_message, $chat_decoded, $chat_body );
+
+            $error = array(
+                'code'    => isset( $chat_details['rest_error_code'] ) ? $chat_details['rest_error_code'] : 'wp_mcp_ai_remote_chat_failed',
+                'message' => $chat_message,
+            );
+        }
+
+        $checks[] = array(
+            'step'      => __( 'POST /chat', 'wp-mcp-ai' ),
+            'url'       => $chat_url,
+            'status'    => $chat_status,
+            'http_code' => $chat_code,
+            'message'   => $chat_message,
+            'details'   => $chat_details,
+        );
+
+        $responses['chat'] = array(
+            'code'    => $chat_code,
+            'message' => $chat_http_message,
+            'body'    => $chat_decoded,
+            'raw'     => $chat_body,
+        );
+
+        $result = array(
+            'success'   => $success,
+            'base_url'  => $normalized,
+            'checks'    => $checks,
+            'responses' => $responses,
+            'response'  => $responses['directory'],
+        );
+
+        if ( null !== $error ) {
+            $result['error'] = $error;
+        }
 
         return $result;
     }
