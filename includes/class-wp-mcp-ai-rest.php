@@ -3006,19 +3006,20 @@ class WP_MCP_AI_REST {
                     continue;
                 }
 
-                if ( ! empty( $pending_calls ) && ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                if ( empty( $pending_calls ) || ! isset( $pending_calls[ $tool_call_id ] ) ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',
                         array(
                             'tool_call_id' => $tool_call_id,
-                            'reason'       => 'tool_call_not_found',
+                            'reason'       => empty( $pending_calls ) ? 'no_pending_tool_calls' : 'tool_call_not_found',
                         )
                     );
 
                     continue;
                 }
 
+                unset( $pending_calls[ $tool_call_id ] );
                 $filtered[] = $message;
                 continue;
             }
