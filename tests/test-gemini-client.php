@@ -170,9 +170,12 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
         $payload = json_decode( $captured_request['args']['body'], true );
         $this->assertIsArray( $payload );
         $this->assertArrayHasKey( 'generationConfig', $payload );
-        $this->assertSame( 'image/png', $payload['generationConfig']['responseMimeType'] );
-        $this->assertArrayHasKey( 'imageGenerationConfig', $payload );
-        $this->assertSame( '16:9', $payload['imageGenerationConfig']['aspectRatio'] );
+        $this->assertArrayNotHasKey( 'imageGenerationConfig', $payload );
+        $this->assertArrayHasKey( 'responseModalities', $payload['generationConfig'] );
+        $this->assertContains( 'IMAGE', $payload['generationConfig']['responseModalities'] );
+        $this->assertArrayHasKey( 'imageConfig', $payload['generationConfig'] );
+        $this->assertSame( '16:9', $payload['generationConfig']['imageConfig']['aspectRatio'] );
+        $this->assertArrayNotHasKey( 'temperature', $payload['generationConfig'] );
         $this->assertSame( 'gemini-2.5-flash-image', $this->extract_model_from_url( $captured_request['url'] ) );
 
         $this->assertIsArray( $response );
