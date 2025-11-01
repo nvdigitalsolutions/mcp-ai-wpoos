@@ -225,6 +225,12 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
                     ->withSession( isset( $_SESSION ) ? (array) $_SESSION : array() )
                     ->makeAction();
             } catch ( \Exception $exception ) {
+                $fallback = $this->fallback_validate_token( $token, $settings, $wordpress_data, $exception );
+
+                if ( true === $fallback || $fallback instanceof WP_Error ) {
+                    return $fallback;
+                }
+
                 return new WP_Error(
                     'wp_mcp_ai_simple_jwt_login_invalid_token',
                     __( 'The Simple JWT Login token could not be validated.', 'wp-mcp-ai' ),
@@ -288,6 +294,225 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
             }
 
             return $server_key;
+        }
+
+        /**
+         * Attempt to validate the token by manually decoding the payload.
+         *
+         * Provides a fallback path when Simple JWT Login's ValidateTokenService
+         * cannot determine the user identifier even though the JWT is otherwise
+         * valid. Mirrors the legacy integration logic so that blank
+         * `jwt_login_by_parameter` settings continue to honour the configured
+         * login strategy.
+         *
+         * @param string                              $token      Raw bearer token.
+         * @param \SimpleJWTLogin\Modules\SimpleJWTLoginSettings $settings   Simple JWT Login settings instance.
+         * @param \SimpleJWTLogin\Modules\WordPressData          $wordpress_data WordPress data helper.
+         * @param \Exception                           $exception Original validation exception.
+         * @return true|WP_Error|null
+         */
+        protected function fallback_validate_token( $token, $settings, $wordpress_data, $exception ) {
+            try {
+                $auth_settings = $settings->getAuthenticationSettings();
+
+                if ( method_exists( $auth_settings, 'isAuthenticationEnabled' ) && ! $auth_settings->isAuthenticationEnabled() ) {
+                    return new WP_Error(
+                        'wp_mcp_ai_simple_jwt_login_disabled',
+                        __( 'Simple JWT Login authentication is disabled. Enable authentication in the plugin settings to mint tokens.', 'wp-mcp-ai' ),
+                        array( 'status' => 403 )
+                    );
+                }
+
+                $allowed_ips = '';
+                if ( method_exists( $auth_settings, 'getAllowedIps' ) ) {
+                    $allowed_ips = trim( (string) $auth_settings->getAllowedIps() );
+                }
+
+                if ( $allowed_ips ) {
+                    $server_helper = new \SimpleJWTLogin\Helpers\ServerHelper( isset( $_SERVER ) && is_array( $_SERVER ) ? $_SERVER : array() );
+
+                    if ( ! $server_helper->isClientIpInList( $allowed_ips ) ) {
+                        return new WP_Error(
+                            'wp_mcp_ai_simple_jwt_disallowed_ip',
+                            __( 'This IP address is not permitted to authenticate with Simple JWT Login.', 'wp-mcp-ai' ),
+                            array( 'status' => 403 )
+                        );
+                    }
+                }
+
+                $general_settings = $settings->getGeneralSettings();
+                $algorithm        = $general_settings->getJWTDecryptAlgorithm();
+                $key_factory      = \SimpleJWTLogin\Helpers\Jwt\JwtKeyFactory::getFactory( $settings );
+                $public_key       = $key_factory->getPublicKey();
+
+                if ( empty( $public_key ) || empty( $algorithm ) ) {
+                    return new WP_Error(
+                        'wp_mcp_ai_simple_jwt_missing_keys',
+                        __( 'Simple JWT Login is not configured with a public key for token verification.', 'wp-mcp-ai' ),
+                        array( 'status' => 500 )
+                    );
+                }
+
+                \SimpleJWTLogin\Libraries\JWT\JWT::$leeway = \SimpleJWTLogin\Services\BaseService::JWT_LEEVAY;
+                $decoded  = \SimpleJWTLogin\Libraries\JWT\JWT::decode( $token, $public_key, array( $algorithm ) );
+                $payload  = json_decode( wp_json_encode( $decoded ), true );
+
+                if ( ! is_array( $payload ) ) {
+                    return new WP_Error(
+                        'wp_mcp_ai_simple_jwt_invalid_payload',
+                        __( 'Simple JWT Login returned an unexpected payload while validating the token.', 'wp-mcp-ai' ),
+                        array( 'status' => 401 )
+                    );
+                }
+
+                $user = $this->resolve_user_from_payload( $payload, $settings, $wordpress_data );
+                if ( $user instanceof WP_Error ) {
+                    return $user;
+                }
+
+                if ( $user instanceof WP_User ) {
+                    $revoked_tokens = (array) $wordpress_data->getUserMeta( $user->ID, \SimpleJWTLogin\Modules\SimpleJWTLoginSettings::REVOKE_TOKEN_KEY );
+                    foreach ( $revoked_tokens as $revoked ) {
+                        if ( hash_equals( (string) $revoked, (string) $token ) ) {
+                            return new WP_Error(
+                                'wp_mcp_ai_simple_jwt_revoked',
+                                __( 'The bearer token has been revoked by Simple JWT Login.', 'wp-mcp-ai' ),
+                                array( 'status' => 401 )
+                            );
+                        }
+                    }
+
+                    $this->last_validated_user_id = absint( $user->ID );
+                } else {
+                    return new WP_Error(
+                        'wp_mcp_ai_simple_jwt_user_not_found',
+                        __( 'The user referenced by the Simple JWT Login token could not be found.', 'wp-mcp-ai' ),
+                        array( 'status' => 401 )
+                    );
+                }
+
+                $this->last_payload = $payload;
+
+                return true;
+            } catch ( \Throwable $fallback_exception ) {
+                return new WP_Error(
+                    'wp_mcp_ai_simple_jwt_login_invalid_token',
+                    __( 'The Simple JWT Login token could not be validated.', 'wp-mcp-ai' ),
+                    array(
+                        'status'  => 401,
+                        'details' => array(
+                            'message' => wp_strip_all_tags( $fallback_exception->getMessage() ?: $exception->getMessage() ),
+                            'code'    => $fallback_exception->getCode() ?: $exception->getCode(),
+                        ),
+                    )
+                );
+            }
+        }
+
+        /**
+         * Resolve the WordPress user referenced by the JWT payload.
+         *
+         * Mirrors the legacy integration logic, allowing Simple JWT Login's
+         * "Login by" configuration to dictate which claim is used when the
+         * plugin does not specify a custom payload key.
+         *
+         * @param array                                         $payload         Decoded JWT payload.
+         * @param \SimpleJWTLogin\Modules\SimpleJWTLoginSettings $settings        Simple JWT Login settings instance.
+         * @param \SimpleJWTLogin\Modules\WordPressData          $wordpress_data WordPress data helper.
+         * @return WP_User|WP_Error
+         */
+        protected function resolve_user_from_payload( array $payload, $settings, $wordpress_data ) {
+            $login_settings = $settings->getLoginSettings();
+            $parameter      = trim( (string) $login_settings->getJwtLoginByParameter() );
+
+            if ( '' === $parameter ) {
+                switch ( (int) $login_settings->getJWTLoginBy() ) {
+                    case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_EMAIL:
+                        $parameter = 'email';
+                        break;
+                    case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_USER_LOGIN:
+                        $parameter = 'username';
+                        break;
+                    case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_WORDPRESS_USER_ID:
+                    default:
+                        $parameter = 'id';
+                        break;
+                }
+            }
+
+            $identifier = $this->extract_payload_value( $payload, $parameter );
+            if ( $identifier instanceof WP_Error ) {
+                return $identifier;
+            }
+
+            if ( null === $identifier ) {
+                return new WP_Error(
+                    'wp_mcp_ai_simple_jwt_missing_claim',
+                    sprintf(
+                        /* translators: %s claim name */
+                        __( 'The Simple JWT Login token is missing the "%s" claim.', 'wp-mcp-ai' ),
+                        $parameter
+                    ),
+                    array( 'status' => 401 )
+                );
+            }
+
+            switch ( (int) $login_settings->getJWTLoginBy() ) {
+                case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_EMAIL:
+                    $user = $wordpress_data->getUserDetailsByEmail( (string) $identifier );
+                    break;
+                case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_USER_LOGIN:
+                    $user = $wordpress_data->getUserByUserLogin( (string) $identifier );
+                    break;
+                case \SimpleJWTLogin\Modules\Settings\LoginSettings::JWT_LOGIN_BY_WORDPRESS_USER_ID:
+                default:
+                    $user = $wordpress_data->getUserDetailsById( (int) $identifier );
+                    break;
+            }
+
+            if ( ! $wordpress_data->isInstanceOfuser( $user ) ) {
+                return new WP_Error(
+                    'wp_mcp_ai_simple_jwt_user_not_found',
+                    __( 'The user referenced by the Simple JWT Login token could not be found.', 'wp-mcp-ai' ),
+                    array( 'status' => 401 )
+                );
+            }
+
+            return $user;
+        }
+
+        /**
+         * Retrieve a claim from the payload using dotted notation.
+         *
+         * @param array  $payload   Decoded JWT payload.
+         * @param string $parameter Claim key (supports dotted notation).
+         * @return mixed|WP_Error|null
+         */
+        protected function extract_payload_value( array $payload, $parameter ) {
+            if ( '' === $parameter ) {
+                return null;
+            }
+
+            $value    = $payload;
+            $segments = explode( '.', $parameter );
+
+            foreach ( $segments as $segment ) {
+                if ( ! is_array( $value ) || ! array_key_exists( $segment, $value ) ) {
+                    return new WP_Error(
+                        'wp_mcp_ai_simple_jwt_missing_claim',
+                        sprintf(
+                            /* translators: %s claim name */
+                            __( 'The Simple JWT Login token is missing the "%s" claim.', 'wp-mcp-ai' ),
+                            $parameter
+                        ),
+                        array( 'status' => 401 )
+                    );
+                }
+
+                $value = $value[ $segment ];
+            }
+
+            return $value;
         }
     }
 }
