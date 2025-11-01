@@ -5,6 +5,30 @@
 class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
 
     /**
+     * Original error log path to restore after tests run.
+     *
+     * @var string|false
+     */
+    protected $original_error_log;
+
+    public function setUp(): void {
+        parent::setUp();
+
+        $this->original_error_log = ini_get( 'error_log' );
+        WP_MCP_AI_Logger::reset_log_file_cache();
+    }
+
+    public function tearDown(): void {
+        if ( false !== $this->original_error_log && null !== $this->original_error_log ) {
+            ini_set( 'error_log', (string) $this->original_error_log );
+        }
+
+        WP_MCP_AI_Logger::reset_log_file_cache();
+
+        parent::tearDown();
+    }
+
+    /**
      * Ensure chat interaction logging removes oversized payloads from the context.
      */
     public function test_log_chat_interaction_redacts_large_payloads() {
@@ -256,5 +280,66 @@ class WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
         $this->assertSame( 'Gemini image response received.', $entries[0]['message'] );
         $this->assertSame( 'gemini_image_request', $entries[1]['type'] );
         $this->assertSame( 'Gemini image request dispatched.', $entries[1]['message'] );
+    }
+
+    /**
+     * Ensure the logger can determine the PHP error log size when a file exists.
+     */
+    public function test_get_log_file_size_reports_bytes() {
+        $temp_file = wp_tempnam( 'wp-mcp-ai-log-' );
+
+        try {
+            file_put_contents( $temp_file, str_repeat( 'A', 2048 ) );
+
+            ini_set( 'error_log', $temp_file );
+            WP_MCP_AI_Logger::reset_log_file_cache();
+
+            $this->assertSame( 2048, WP_MCP_AI_Logger::get_log_file_size() );
+        } finally {
+            if ( file_exists( $temp_file ) ) {
+                unlink( $temp_file );
+            }
+        }
+    }
+
+    /**
+     * Ensure pruning the error log truncates the file and clears cached entries.
+     */
+    public function test_prune_error_log_truncates_file() {
+        $temp_file = wp_tempnam( 'wp-mcp-ai-log-' );
+
+        try {
+            file_put_contents( $temp_file, str_repeat( 'B', 512 ) );
+
+            ini_set( 'error_log', $temp_file );
+            WP_MCP_AI_Logger::reset_log_file_cache();
+
+            update_option( WP_MCP_AI_Logger::RECENT_ERRORS_OPTION, array( array( 'type' => 'error' ) ) );
+            update_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION, array( array( 'type' => 'tool_execution' ) ) );
+
+            $result = WP_MCP_AI_Logger::prune_error_log();
+
+            $this->assertTrue( $result );
+            $this->assertSame( 0, filesize( $temp_file ) );
+            $this->assertSame( array(), WP_MCP_AI_Logger::get_recent_error_messages() );
+            $this->assertSame( array(), WP_MCP_AI_Logger::get_recent_activity_entries( 5 ) );
+        } finally {
+            if ( file_exists( $temp_file ) ) {
+                unlink( $temp_file );
+            }
+        }
+    }
+
+    /**
+     * Ensure pruning fails gracefully when the error log path is unavailable.
+     */
+    public function test_prune_error_log_returns_error_when_path_missing() {
+        ini_set( 'error_log', 'syslog' );
+        WP_MCP_AI_Logger::reset_log_file_cache();
+
+        $result = WP_MCP_AI_Logger::prune_error_log();
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'wp_mcp_ai_log_missing', $result->get_error_code() );
     }
 }
