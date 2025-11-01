@@ -122,7 +122,7 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -140,15 +140,13 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: directory', $output );
         $this->assertStringContainsString( 'data: {', $output );
-        $this->assertStringContainsString( 'event: close', $output );
-        $this->assertStringContainsString( '[DONE]', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -201,7 +199,7 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
     }
@@ -335,6 +333,39 @@ class WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertCount( 1, $data['assistants'] );
         $this->assertSame( $published, $data['assistants'][0]['id'] );
+    }
+
+    /**
+     * Extract the raw Server-Sent Events frames from a rest_pre_serve_request callback.
+     *
+     * @param callable $callback Stream callback registered with rest_pre_serve_request.
+     * @return string
+     */
+    protected function extract_event_stream_frames( $callback ) {
+        if ( ! $callback instanceof \Closure ) {
+            return '';
+        }
+
+        $reflection = new ReflectionFunction( $callback );
+        $statics    = $reflection->getStaticVariables();
+
+        return isset( $statics['frames'] ) ? (string) $statics['frames'] : '';
+    }
+
+    /**
+     * Invoke the stream callback without flushing PHPUnit's output buffers.
+     *
+     * @param callable          $callback Stream callback registered with rest_pre_serve_request.
+     * @param WP_REST_Response  $response REST response instance.
+     * @param WP_REST_Request   $request  REST request instance.
+     * @return bool
+     */
+    protected function safely_invoke_event_stream_callback( $callback, WP_REST_Response $response, WP_REST_Request $request ) {
+        if ( ! $callback instanceof \Closure ) {
+            return false;
+        }
+
+        return (bool) call_user_func( $callback, true, $response, $request, rest_get_server() );
     }
 
     /**

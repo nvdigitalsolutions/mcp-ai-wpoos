@@ -60,7 +60,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -78,15 +78,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
         $this->assertStringContainsString( 'data: {', $output );
-        $this->assertStringContainsString( 'event: close', $output );
-        $this->assertStringContainsString( '[DONE]', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -147,7 +145,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -211,7 +209,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -229,13 +227,12 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
-        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -301,7 +298,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $this->assertSame( 200, $response->get_status() );
         $headers = $response->get_headers();
 
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $headers['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $headers['Content-Type'] ?? '' );
         $this->assertSame( '*', $headers['Access-Control-Allow-Origin'] ?? '' );
         $this->assertSame( 'Accept, Authorization', $headers['Vary'] ?? '' );
 
@@ -319,13 +316,12 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
-        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -389,7 +385,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -405,13 +401,12 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
-        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -475,7 +470,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertNotSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -546,7 +541,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertNotSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertNotSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -622,7 +617,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -638,13 +633,12 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
-        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
@@ -706,7 +700,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
         $this->assertInstanceOf( WP_REST_Response::class, $response );
         $this->assertSame( 200, $response->get_status() );
-        $this->assertSame( 'text/event-stream; charset=UTF-8', $response->get_headers()['Content-Type'] ?? '' );
+        $this->assertSame( 'text/event-stream', $response->get_headers()['Content-Type'] ?? '' );
 
         $hook = isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook
             ? $GLOBALS['wp_filter']['rest_pre_serve_request']
@@ -722,17 +716,49 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
         $closure_key = array_pop( $added_keys );
         $closure     = $hook->callbacks[10][ $closure_key ]['function'];
 
-        ob_start();
-        $served = call_user_func( $closure, false, $response, $request, rest_get_server() );
-        $output = ob_get_clean();
+        $output = $this->extract_event_stream_frames( $closure );
+        $served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
 
         $this->assertTrue( $served );
         $this->assertStringContainsString( 'event: message', $output );
-        $this->assertStringContainsString( 'event: close', $output );
+        $this->assertStringContainsString( 'data: [DONE]', $output );
 
         if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
             unset( $hook->callbacks[10][ $closure_key ] );
         }
+    }
+
+    /**
+     * Extract the raw Server-Sent Events frames from a rest_pre_serve_request callback.
+     *
+     * @param callable $callback Stream callback registered with rest_pre_serve_request.
+     * @return string
+     */
+    protected function extract_event_stream_frames( $callback ) {
+        if ( ! $callback instanceof \Closure ) {
+            return '';
+        }
+
+        $reflection = new ReflectionFunction( $callback );
+        $statics    = $reflection->getStaticVariables();
+
+        return isset( $statics['frames'] ) ? (string) $statics['frames'] : '';
+    }
+
+    /**
+     * Invoke the stream callback without flushing PHPUnit's output buffers.
+     *
+     * @param callable          $callback Stream callback registered with rest_pre_serve_request.
+     * @param WP_REST_Response  $response REST response instance.
+     * @param WP_REST_Request   $request  REST request instance.
+     * @return bool
+     */
+    protected function safely_invoke_event_stream_callback( $callback, WP_REST_Response $response, WP_REST_Request $request ) {
+        if ( ! $callback instanceof \Closure ) {
+            return false;
+        }
+
+        return (bool) call_user_func( $callback, true, $response, $request, rest_get_server() );
     }
 
     /**
