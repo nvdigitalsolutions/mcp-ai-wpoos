@@ -688,7 +688,7 @@ Manage the MCP AI environment from the command line when WP-CLI is available.
 | Command | Description |
 | --- | --- |
 | `wp mcp-ai status` | Summarises WordPress core details, PHP version, and MCP AI supported plugin coverage. |
-| `wp mcp-ai remote <base>` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) by loading the assistant directory and issuing a lightweight `POST /chat` probe, reporting connectivity, assistant counts, and token scope metadata. |
+| `wp mcp-ai remote <base>` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) and reports connectivity, assistant counts, and token scope metadata. |
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |
 | `wp mcp-ai plugins deactivate <slug>` | Deactivates a supported plugin; pass `--network` on multisite installations. |
