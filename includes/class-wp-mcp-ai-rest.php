@@ -983,6 +983,63 @@ class WP_MCP_AI_REST {
                 $this->mark_token_authenticated( 'bearer', $context );
 
                 return true;
+            } elseif ( is_array( $pre ) ) {
+                $pre_payload = $pre;
+                $pre_context = array();
+
+                if ( isset( $pre['payload'] ) && is_array( $pre['payload'] ) ) {
+                    $pre_payload = $pre['payload'];
+                }
+
+                if ( isset( $pre['context'] ) && is_array( $pre['context'] ) ) {
+                    $pre_context = $pre['context'];
+                }
+
+                /**
+                 * Filter the decoded bearer token payload after it has been validated.
+                 *
+                 * Returning a WP_Error will reject the request with that error.
+                 *
+                 * @param array            $payload Decoded JWT payload.
+                 * @param WP_REST_Request  $request Current REST request.
+                 */
+                $filtered_payload = apply_filters( 'wp_mcp_ai_bearer_token_payload', $pre_payload, $request );
+                if ( $filtered_payload instanceof WP_Error ) {
+                    return $filtered_payload;
+                }
+
+                $initial_user = null;
+                if ( isset( $pre_context['user_id'] ) && is_numeric( $pre_context['user_id'] ) && (int) $pre_context['user_id'] > 0 ) {
+                    $initial_user = absint( $pre_context['user_id'] );
+                }
+
+                /**
+                 * Allow mapping a validated bearer token payload to a WordPress user for logging/auditing.
+                 *
+                 * Returning a WP_Error will surface the error to the client.
+                 *
+                 * @param int|null        $user_id Previously mapped user identifier.
+                 * @param array           $payload Decoded JWT payload.
+                 * @param WP_REST_Request $request Current REST request instance.
+                 */
+                $mapped_user = apply_filters( 'wp_mcp_ai_map_bearer_to_user_id', $initial_user, $filtered_payload, $request );
+                if ( $mapped_user instanceof WP_Error ) {
+                    return $mapped_user;
+                }
+
+                $context            = $pre_context;
+                $context['payload'] = $filtered_payload;
+
+                if ( is_numeric( $mapped_user ) && (int) $mapped_user > 0 ) {
+                    $context['user_id'] = absint( $mapped_user );
+                    $this->set_authenticated_user_id( $context['user_id'] );
+                } elseif ( $initial_user ) {
+                    $this->set_authenticated_user_id( $initial_user );
+                }
+
+                $this->mark_token_authenticated( 'bearer', $context );
+
+                return true;
             }
 
             return ( $pre instanceof WP_Error ) ? $pre : new WP_Error(
