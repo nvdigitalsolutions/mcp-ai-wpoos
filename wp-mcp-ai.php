@@ -140,7 +140,7 @@ WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
 
 WP_MCP_AI_ChatKit_Integration::init();
-WP_MCP_AI_Integration_Simple_JWT::init();
+WP_MCP_AI_Integration_Simple_JWT::load();
 
 /**
  * Load the plugin textdomain for localisation support.

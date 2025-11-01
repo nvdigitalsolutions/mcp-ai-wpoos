@@ -18,6 +18,13 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
         const PLUGIN_BASENAME = 'simple-jwt-login/simple-jwt-login.php';
 
         /**
+         * Register hooks to bootstrap the integration once plugins are loaded.
+         */
+        public static function load() {
+            add_action( 'plugins_loaded', array( __CLASS__, 'init' ) );
+        }
+
+        /**
          * Bootstrap the integration when the Simple JWT Login plugin is active.
          */
         public static function init() {
