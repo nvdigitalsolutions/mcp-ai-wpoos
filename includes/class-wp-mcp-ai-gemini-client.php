@@ -392,7 +392,7 @@ class WP_MCP_AI_Gemini_Client {
             $text_segments = $this->normalize_segments_to_text( $content );
 
             if ( empty( $text_segments ) ) {
-                continue;
+                $text_segments = array();
             }
 
             $gemini_role = 'user';
@@ -401,8 +401,33 @@ class WP_MCP_AI_Gemini_Client {
             }
 
             $parts = array();
+
+            if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+                foreach ( $message['tool_calls'] as $tool_call ) {
+                    $function_call = $this->convert_tool_call_to_function_call( $tool_call );
+
+                    if ( $function_call ) {
+                        $parts[] = array( 'functionCall' => $function_call );
+                    }
+                }
+            }
+
+            if ( 'tool' === $role ) {
+                $gemini_role = 'user';
+                $function_response = $this->convert_tool_message_to_function_response( $message );
+
+                if ( $function_response ) {
+                    $parts[]      = array( 'functionResponse' => $function_response );
+                    $text_segments = array();
+                }
+            }
+
             foreach ( $text_segments as $segment_text ) {
                 $parts[] = array( 'text' => $segment_text );
+            }
+
+            if ( empty( $parts ) ) {
+                continue;
             }
 
             $contents[] = array(
@@ -567,6 +592,167 @@ class WP_MCP_AI_Gemini_Client {
         }
 
         return '';
+    }
+
+    /**
+     * Convert an OpenAI-style tool call into a Gemini functionCall part.
+     *
+     * @param array $tool_call Tool call payload.
+     * @return array|null
+     */
+    protected function convert_tool_call_to_function_call( array $tool_call ) {
+        if ( empty( $tool_call ) || ! is_array( $tool_call ) ) {
+            return null;
+        }
+
+        $type = isset( $tool_call['type'] ) ? sanitize_key( $tool_call['type'] ) : 'function';
+
+        if ( 'function' !== $type ) {
+            return null;
+        }
+
+        $function = array();
+        if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+            $function = $tool_call['function'];
+        }
+
+        $name = isset( $function['name'] ) ? sanitize_text_field( $function['name'] ) : '';
+
+        if ( '' === $name ) {
+            return null;
+        }
+
+        $args = array();
+
+        if ( isset( $function['arguments'] ) ) {
+            $args = $this->normalise_tool_arguments( $function['arguments'] );
+        } elseif ( isset( $tool_call['arguments'] ) ) {
+            $args = $this->normalise_tool_arguments( $tool_call['arguments'] );
+        }
+
+        return array(
+            'name' => $name,
+            'args' => $args,
+        );
+    }
+
+    /**
+     * Normalise tool arguments into an array suitable for Gemini.
+     *
+     * @param mixed $arguments Raw arguments payload.
+     * @return array
+     */
+    protected function normalise_tool_arguments( $arguments ) {
+        if ( is_array( $arguments ) ) {
+            return $arguments;
+        }
+
+        if ( is_object( $arguments ) ) {
+            return (array) $arguments;
+        }
+
+        if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
+            $decoded = json_decode( (string) $arguments, true );
+
+            if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+                return $decoded;
+            }
+
+            $text = sanitize_textarea_field( (string) $arguments );
+
+            if ( '' !== $text ) {
+                return array( 'raw' => $text );
+            }
+        }
+
+        return array();
+    }
+
+    /**
+     * Convert a tool result message into a Gemini functionResponse part.
+     *
+     * @param array $message Tool message payload.
+     * @return array|null
+     */
+    protected function convert_tool_message_to_function_response( array $message ) {
+        $name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : '';
+
+        if ( '' === $name ) {
+            return null;
+        }
+
+        $response = array();
+
+        if ( isset( $message['content'] ) ) {
+            $response = $this->normalise_tool_response_content( $message['content'] );
+        }
+
+        if ( empty( $response ) && isset( $message['output'] ) ) {
+            $response = $this->normalise_tool_response_content( $message['output'] );
+        }
+
+        if ( ! is_array( $response ) ) {
+            $response = array();
+        }
+
+        if ( isset( $message['tool_call_id'] ) ) {
+            $response['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+        }
+
+        return array(
+            'name'     => $name,
+            'response' => $response,
+        );
+    }
+
+    /**
+     * Normalise tool response content into an array representation.
+     *
+     * @param mixed $content Tool content payload.
+     * @return array
+     */
+    protected function normalise_tool_response_content( $content ) {
+        if ( is_array( $content ) ) {
+            if ( wp_is_numeric_array( $content ) ) {
+                $text = implode( "\n\n", $this->normalize_segments_to_text( $content ) );
+
+                return $this->decode_tool_text_to_response( $text );
+            }
+
+            return $content;
+        }
+
+        if ( is_object( $content ) ) {
+            return (array) $content;
+        }
+
+        if ( is_string( $content ) || is_numeric( $content ) ) {
+            return $this->decode_tool_text_to_response( (string) $content );
+        }
+
+        return array();
+    }
+
+    /**
+     * Attempt to decode tool text content into a structured response array.
+     *
+     * @param string $text Tool output as text.
+     * @return array
+     */
+    protected function decode_tool_text_to_response( $text ) {
+        $text = trim( (string) $text );
+
+        if ( '' === $text ) {
+            return array();
+        }
+
+        $decoded = json_decode( $text, true );
+
+        if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+            return $decoded;
+        }
+
+        return array( 'output' => sanitize_textarea_field( $text ) );
     }
 
     /**

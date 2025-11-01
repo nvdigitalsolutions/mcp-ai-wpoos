@@ -191,6 +191,112 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure chat payloads include tool call and response history when provided.
+     */
+    public function test_create_chat_completion_preserves_tool_history() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['gemini_api_key']       = 'gsk-test';
+        $defaults['default_gemini_model'] = 'gemini-test-model';
+
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Gemini_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array( 'args' => $args, 'url' => $url );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'candidates' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => 'What is the weather in Paris?',
+            ),
+            array(
+                'role'       => 'assistant',
+                'content'    => '',
+                'tool_calls' => array(
+                    array(
+                        'id'       => 'call_abc',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'get_weather',
+                            'arguments' => '{"location":"Paris"}',
+                        ),
+                    ),
+                ),
+            ),
+            array(
+                'role'         => 'tool',
+                'tool_call_id' => 'call_abc',
+                'name'         => 'get_weather',
+                'content'      => '{"result":"sunny"}',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => 'What should I wear today?',
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'contents', $payload );
+        $this->assertCount( 4, $payload['contents'] );
+
+        $this->assertSame( 'user', $payload['contents'][0]['role'] );
+        $this->assertSame( 'What is the weather in Paris?', $payload['contents'][0]['parts'][0]['text'] );
+
+        $this->assertSame( 'model', $payload['contents'][1]['role'] );
+        $this->assertArrayHasKey( 'functionCall', $payload['contents'][1]['parts'][0] );
+        $this->assertSame( 'get_weather', $payload['contents'][1]['parts'][0]['functionCall']['name'] );
+        $this->assertSame(
+            array( 'location' => 'Paris' ),
+            $payload['contents'][1]['parts'][0]['functionCall']['args']
+        );
+
+        $this->assertSame( 'user', $payload['contents'][2]['role'] );
+        $this->assertArrayHasKey( 'functionResponse', $payload['contents'][2]['parts'][0] );
+        $this->assertSame(
+            'get_weather',
+            $payload['contents'][2]['parts'][0]['functionResponse']['name']
+        );
+        $this->assertSame(
+            array(
+                'result'        => 'sunny',
+                'tool_call_id'  => 'call_abc',
+            ),
+            $payload['contents'][2]['parts'][0]['functionResponse']['response']
+        );
+
+        $this->assertSame( 'user', $payload['contents'][3]['role'] );
+        $this->assertSame( 'What should I wear today?', $payload['contents'][3]['parts'][0]['text'] );
+    }
+
+    /**
      * Extract the model slug from the generated Gemini endpoint URL.
      *
      * @param string $url Request URL.
