@@ -1101,8 +1101,10 @@ class WP_MCP_AI_REST {
             );
         }
 
-        $expected_issuer = 'https://' . $domain . '/';
-        if ( empty( $payload['iss'] ) || $expected_issuer !== $payload['iss'] ) {
+        $expected_issuer = 'https://' . $domain;
+        $actual_issuer   = isset( $payload['iss'] ) ? $payload['iss'] : '';
+
+        if ( empty( $actual_issuer ) || $expected_issuer !== untrailingslashit( $actual_issuer ) ) {
             return $this->invalid_bearer_error();
         }
 
@@ -1194,7 +1196,21 @@ class WP_MCP_AI_REST {
             return $cached;
         }
 
-        $response = wp_remote_get( 'https://' . $domain . '/.well-known/jwks.json', array( 'timeout' => 10 ) );
+        $default_jwks_url = 'https://' . $domain . '/.well-known/jwks.json';
+
+        /**
+         * Filter the JWKS endpoint used when validating Auth0 bearer tokens.
+         *
+         * @param string $jwks_url Default JWKS endpoint derived from the configured domain.
+         * @param string $domain   Normalised Auth0 domain.
+         */
+        $jwks_url = apply_filters( 'wp_mcp_ai_auth0_jwks_url', $default_jwks_url, $domain );
+
+        if ( empty( $jwks_url ) || ! is_string( $jwks_url ) ) {
+            $jwks_url = $default_jwks_url;
+        }
+
+        $response = wp_remote_get( $jwks_url, array( 'timeout' => 10 ) );
 
         if ( is_wp_error( $response ) ) {
             return new WP_Error(
@@ -2869,8 +2885,26 @@ class WP_MCP_AI_REST {
             if ( 'tool' === $role ) {
                 $tool_call_id = isset( $message['tool_call_id'] ) ? (string) $message['tool_call_id'] : '';
 
-                if ( '' === $tool_call_id || empty( $pending_calls ) || ! isset( $pending_calls[ $tool_call_id ] ) ) {
-                    $reason = '' === $tool_call_id ? 'missing_tool_call_id' : 'tool_call_not_found';
+                if ( '' === $tool_call_id ) {
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => 'missing_tool_call_id',
+                        )
+                    );
+
+                    continue;
+                }
+
+                if ( empty( $pending_calls ) ) {
+                    $filtered[] = $message;
+                    continue;
+                }
+
+                if ( ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                    $reason = 'tool_call_not_found';
 
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
