@@ -6,322 +6,322 @@
  */
 
 class Test_Shortcodes extends WP_UnitTestCase {
-    /**
-     * Administrator user ID used for capability checks.
-     *
-     * @var int
-     */
-    protected $admin_id;
+	/**
+	 * Administrator user ID used for capability checks.
+	 *
+	 * @var int
+	 */
+	protected $admin_id;
 
-    public function setUp(): void {
-        parent::setUp();
+	public function setUp(): void {
+		parent::setUp();
 
-        if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
-            wp_mcp_ai_bootstrap();
-        }
+		if ( function_exists( 'wp_mcp_ai_bootstrap' ) ) {
+			wp_mcp_ai_bootstrap();
+		}
 
-        wp_scripts()->reset();
-        wp_scripts()->remove( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
-        wp_styles()->reset();
+		wp_scripts()->reset();
+		wp_scripts()->remove( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		wp_styles()->reset();
 
-        $this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
-        wp_set_current_user( $this->admin_id );
+		$this->admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $this->admin_id );
 
-        do_action( 'init' );
-    }
+		do_action( 'init' );
+	}
 
-    public function tearDown(): void {
-        wp_set_current_user( 0 );
-        parent::tearDown();
-    }
+	public function tearDown(): void {
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
 
-    /**
-     * Retrieve the DOMXPath helper for inspecting generated markup.
-     *
-     * @param string $html Rendered HTML snippet.
-     * @return DOMXPath
-     */
-    protected function get_dom_xpath( $html ) {
-        $dom = new DOMDocument();
-        libxml_use_internal_errors( true );
-        $dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
-        libxml_clear_errors();
+	/**
+	 * Retrieve the DOMXPath helper for inspecting generated markup.
+	 *
+	 * @param string $html Rendered HTML snippet.
+	 * @return DOMXPath
+	 */
+	protected function get_dom_xpath( $html ) {
+		$dom = new DOMDocument();
+		libxml_use_internal_errors( true );
+		$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $html );
+		libxml_clear_errors();
 
-        return new DOMXPath( $dom );
-    }
+		return new DOMXPath( $dom );
+	}
 
-    /**
-     * Ensure that rendering the chat shortcode enqueues the assets once.
-     */
-    public function test_chat_shortcode_enqueues_scripts_once() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Test Assistant',
-            )
-        );
+	/**
+	 * Ensure that rendering the chat shortcode enqueues the assets once.
+	 */
+	public function test_chat_shortcode_enqueues_scripts_once() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant',
+			)
+		);
 
-        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
-        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
 
-        $this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ) );
+		$this->assertTrue( wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ) );
 
-        $script_counts = array_count_values( wp_scripts()->queue );
-        $handle        = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
-        $this->assertArrayHasKey( $handle, $script_counts );
-        $this->assertSame( 1, $script_counts[ $handle ], sprintf( '%s should be enqueued exactly once.', $handle ) );
+		$script_counts = array_count_values( wp_scripts()->queue );
+		$handle        = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, $script_counts );
+		$this->assertSame( 1, $script_counts[ $handle ], sprintf( '%s should be enqueued exactly once.', $handle ) );
 
-        wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
-        $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
-    }
+		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+		$this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
+	}
 
-    /**
-     * Ensure the localized script exposes the REST nonce for same-origin requests.
-     */
-    public function test_chat_shortcode_localizes_rest_nonce() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Nonce Assistant',
-            )
-        );
+	/**
+	 * Ensure the localized script exposes the REST nonce for same-origin requests.
+	 */
+	public function test_chat_shortcode_localizes_rest_nonce() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Nonce Assistant',
+			)
+		);
 
-        wp_scripts()->reset();
+		wp_scripts()->reset();
 
-        $markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
-        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
 
-        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
-        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
 
-        $registered = wp_scripts()->registered[ $handle ];
+		$registered = wp_scripts()->registered[ $handle ];
 
-        $localised_data = $registered->extra['data'] ?? array();
-        if ( is_string( $localised_data ) ) {
-            $localised_data = array( $localised_data );
-        }
-        $localised = implode( "\n", $localised_data );
-        $this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised );
+		$localised_data = $registered->extra['data'] ?? array();
+		if ( is_string( $localised_data ) ) {
+			$localised_data = array( $localised_data );
+		}
+		$localised = implode( "\n", $localised_data );
+		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised );
 
-        $instance_config = implode( "\n", $registered->extra['before'] ?? array() );
-        $this->assertStringNotContainsString( '"guestToken"', $instance_config, 'Guest tokens should not be present when allow_guests is disabled.' );
-    }
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+		$this->assertStringNotContainsString( '"guestToken"', $instance_config, 'Guest tokens should not be present when allow_guests is disabled.' );
+	}
 
-    /**
-     * Ensure allowing guests injects the guest token into the instance config.
-     */
-    public function test_chat_shortcode_includes_guest_token_when_enabled() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Guest Token Assistant',
-            )
-        );
+	/**
+	 * Ensure allowing guests injects the guest token into the instance config.
+	 */
+	public function test_chat_shortcode_includes_guest_token_when_enabled() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Guest Token Assistant',
+			)
+		);
 
-        wp_scripts()->reset();
+		wp_scripts()->reset();
 
-        $markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="true"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
-        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+		$markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="true"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
 
-        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
-        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
 
-        $registered = wp_scripts()->registered[ $handle ];
+		$registered = wp_scripts()->registered[ $handle ];
 
-        $instance_config = implode( "\n", $registered->extra['before'] ?? array() );
-        $this->assertMatchesRegularExpression( '/"guestToken":"[A-Za-z0-9]+"/', $instance_config );
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+		$this->assertMatchesRegularExpression( '/"guestToken":"[A-Za-z0-9]+"/', $instance_config );
 
-        $localised_data = $registered->extra['data'] ?? array();
-        if ( is_string( $localised_data ) ) {
-            $localised_data = array( $localised_data );
-        }
-        $localised = implode( "\n", $localised_data );
-        $this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised, 'Nonce should remain present for uploads and downloads.' );
-    }
+		$localised_data = $registered->extra['data'] ?? array();
+		if ( is_string( $localised_data ) ) {
+			$localised_data = array( $localised_data );
+		}
+		$localised = implode( "\n", $localised_data );
+		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised, 'Nonce should remain present for uploads and downloads.' );
+	}
 
-    /**
-     * Ensure the save_transcript attribute toggles transcript persistence in the front-end config.
-     */
-    public function test_chat_shortcode_save_transcript_attribute_disables_storage() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Transcript Toggle Assistant',
-            )
-        );
+	/**
+	 * Ensure the save_transcript attribute toggles transcript persistence in the front-end config.
+	 */
+	public function test_chat_shortcode_save_transcript_attribute_disables_storage() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Transcript Toggle Assistant',
+			)
+		);
 
-        wp_scripts()->reset();
+		wp_scripts()->reset();
 
-        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" save_transcript="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
-        $this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d" save_transcript="false"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $chat_markup );
 
-        $handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
-        $this->assertArrayHasKey( $handle, wp_scripts()->registered );
-        $registered = wp_scripts()->registered[ $handle ];
-        $this->assertArrayHasKey( 'before', $registered->extra );
-        $inline = implode( "\n", $registered->extra['before'] );
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+		$registered = wp_scripts()->registered[ $handle ];
+		$this->assertArrayHasKey( 'before', $registered->extra );
+		$inline = implode( "\n", $registered->extra['before'] );
 
-        $this->assertStringContainsString( '"saveTranscript":false', $inline );
-        $this->assertMatchesRegularExpression( '/"sessionKey":"[a-z0-9\-]+"/i', $inline );
-    }
+		$this->assertStringContainsString( '"saveTranscript":false', $inline );
+		$this->assertMatchesRegularExpression( '/"sessionKey":"[a-z0-9\-]+"/i', $inline );
+	}
 
-    /**
-     * Ensure the transcription controls remain visible for users that can upload files.
-     */
-    public function test_chat_shortcode_transcription_controls_visible_for_upload_capability() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Transcription Enabled Assistant',
-            )
-        );
+	/**
+	 * Ensure the transcription controls remain visible for users that can upload files.
+	 */
+	public function test_chat_shortcode_transcription_controls_visible_for_upload_capability() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Transcription Enabled Assistant',
+			)
+		);
 
-        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
 
-        $xpath        = $this->get_dom_xpath( $chat_markup );
-        $button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
-        $this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
+		$xpath        = $this->get_dom_xpath( $chat_markup );
+		$button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
+		$this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
 
-        $button = $button_nodes->item( 0 );
-        $this->assertFalse( $button->hasAttribute( 'hidden' ), 'Transcription button should be visible when uploads are allowed.' );
-        $this->assertFalse( $button->hasAttribute( 'disabled' ), 'Transcription button should be enabled when uploads are allowed.' );
+		$button = $button_nodes->item( 0 );
+		$this->assertFalse( $button->hasAttribute( 'hidden' ), 'Transcription button should be visible when uploads are allowed.' );
+		$this->assertFalse( $button->hasAttribute( 'disabled' ), 'Transcription button should be enabled when uploads are allowed.' );
 
-        $input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
-        $this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
-        $this->assertFalse( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be enabled for upload-capable users.' );
-    }
+		$input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
+		$this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
+		$this->assertFalse( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be enabled for upload-capable users.' );
+	}
 
-    /**
-     * Ensure the transcription controls are hidden and disabled when uploads are disallowed.
-     */
-    public function test_chat_shortcode_transcription_controls_hidden_without_upload_capability() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Transcription Restricted Assistant',
-            )
-        );
+	/**
+	 * Ensure the transcription controls are hidden and disabled when uploads are disallowed.
+	 */
+	public function test_chat_shortcode_transcription_controls_hidden_without_upload_capability() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Transcription Restricted Assistant',
+			)
+		);
 
-        $subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
-        wp_set_current_user( $subscriber_id );
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
 
-        wp_scripts()->reset();
+		wp_scripts()->reset();
 
-        $chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
 
-        $xpath        = $this->get_dom_xpath( $chat_markup );
-        $button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
-        $this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
+		$xpath        = $this->get_dom_xpath( $chat_markup );
+		$button_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcribe")]' );
+		$this->assertSame( 1, $button_nodes->length, 'Expected a single transcription button to be rendered.' );
 
-        $button = $button_nodes->item( 0 );
-        $this->assertTrue( $button->hasAttribute( 'hidden' ), 'Transcription button should be hidden when uploads are disallowed.' );
-        $this->assertTrue( $button->hasAttribute( 'disabled' ), 'Transcription button should be disabled when uploads are disallowed.' );
+		$button = $button_nodes->item( 0 );
+		$this->assertTrue( $button->hasAttribute( 'hidden' ), 'Transcription button should be hidden when uploads are disallowed.' );
+		$this->assertTrue( $button->hasAttribute( 'disabled' ), 'Transcription button should be disabled when uploads are disallowed.' );
 
-        $input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
-        $this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
-        $this->assertTrue( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be disabled when uploads are disallowed.' );
+		$input_nodes = $xpath->query( '//input[contains(@class, "wp-mcp-ai-chat__transcribe-input")]' );
+		$this->assertSame( 1, $input_nodes->length, 'Expected a transcription file input to be rendered.' );
+		$this->assertTrue( $input_nodes->item( 0 )->hasAttribute( 'disabled' ), 'Transcription file input should be disabled when uploads are disallowed.' );
 
-        wp_set_current_user( $this->admin_id );
-    }
+		wp_set_current_user( $this->admin_id );
+	}
 
-    /**
-     * Ensure the chat stylesheet can be enqueued when requested.
-     */
-    public function test_chat_stylesheet_can_be_enqueued() {
-        wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+	/**
+	 * Ensure the chat stylesheet can be enqueued when requested.
+	 */
+	public function test_chat_stylesheet_can_be_enqueued() {
+		wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
 
-        $this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
-    }
+		$this->assertTrue( wp_style_is( WP_MCP_AI_Shortcode::STYLE_HANDLE, 'enqueued' ) );
+	}
 
-    /**
-     * Ensure guest access tokens cannot surface non-public attachments via the search tool.
-     */
-    public function test_guest_token_attachment_search_only_returns_public_files() {
-        $assistant_id = self::factory()->post->create(
-            array(
-                'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-                'post_status' => 'publish',
-                'post_title'  => 'Guest Knowledge Assistant',
-            )
-        );
+	/**
+	 * Ensure guest access tokens cannot surface non-public attachments via the search tool.
+	 */
+	public function test_guest_token_attachment_search_only_returns_public_files() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Guest Knowledge Assistant',
+			)
+		);
 
-        update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_attachments' ) );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'search_attachments' ) );
 
-        $public_parent = self::factory()->post->create(
-            array(
-                'post_author' => $this->admin_id,
-                'post_status' => 'publish',
-            )
-        );
+		$public_parent = self::factory()->post->create(
+			array(
+				'post_author' => $this->admin_id,
+				'post_status' => 'publish',
+			)
+		);
 
-        $private_parent = self::factory()->post->create(
-            array(
-                'post_author' => $this->admin_id,
-                'post_status' => 'private',
-            )
-        );
+		$private_parent = self::factory()->post->create(
+			array(
+				'post_author' => $this->admin_id,
+				'post_status' => 'private',
+			)
+		);
 
-        $public_upload = wp_upload_bits( 'guest-public-' . uniqid() . '.txt', null, 'Public guest file' );
-        $this->assertIsArray( $public_upload );
-        $this->assertArrayHasKey( 'file', $public_upload );
-        $this->assertFalse( $public_upload['error'] );
+		$public_upload = wp_upload_bits( 'guest-public-' . uniqid() . '.txt', null, 'Public guest file' );
+		$this->assertIsArray( $public_upload );
+		$this->assertArrayHasKey( 'file', $public_upload );
+		$this->assertFalse( $public_upload['error'] );
 
-        $public_id = self::factory()->attachment->create_upload_object( $public_upload['file'], $public_parent );
-        wp_update_post(
-            array(
-                'ID'            => $public_id,
-                'post_title'    => 'Guest Visible File',
-                'post_author'   => $this->admin_id,
-                'post_mime_type'=> 'text/plain',
-            )
-        );
+		$public_id = self::factory()->attachment->create_upload_object( $public_upload['file'], $public_parent );
+		wp_update_post(
+			array(
+				'ID'             => $public_id,
+				'post_title'     => 'Guest Visible File',
+				'post_author'    => $this->admin_id,
+				'post_mime_type' => 'text/plain',
+			)
+		);
 
-        $private_upload = wp_upload_bits( 'guest-private-' . uniqid() . '.txt', null, 'Hidden guest file' );
-        $this->assertIsArray( $private_upload );
-        $this->assertArrayHasKey( 'file', $private_upload );
-        $this->assertFalse( $private_upload['error'] );
+		$private_upload = wp_upload_bits( 'guest-private-' . uniqid() . '.txt', null, 'Hidden guest file' );
+		$this->assertIsArray( $private_upload );
+		$this->assertArrayHasKey( 'file', $private_upload );
+		$this->assertFalse( $private_upload['error'] );
 
-        $private_id = self::factory()->attachment->create_upload_object( $private_upload['file'], $private_parent );
-        wp_update_post(
-            array(
-                'ID'            => $private_id,
-                'post_title'    => 'Guest Hidden File',
-                'post_author'   => $this->admin_id,
-                'post_parent'   => $private_parent,
-                'post_mime_type'=> 'text/plain',
-            )
-        );
+		$private_id = self::factory()->attachment->create_upload_object( $private_upload['file'], $private_parent );
+		wp_update_post(
+			array(
+				'ID'             => $private_id,
+				'post_title'     => 'Guest Hidden File',
+				'post_author'    => $this->admin_id,
+				'post_parent'    => $private_parent,
+				'post_mime_type' => 'text/plain',
+			)
+		);
 
-        $guest_token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
-        $this->assertNotEmpty( $guest_token );
-        $this->assertSame( $assistant_id, WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id ) );
+		$guest_token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+		$this->assertNotEmpty( $guest_token );
+		$this->assertSame( $assistant_id, WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id ) );
 
-        wp_set_current_user( 0 );
+		wp_set_current_user( 0 );
 
-        rest_get_server();
-        do_action( 'rest_api_init' );
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
-        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
-        $request->set_param( 'assistant_id', $assistant_id );
-        $request->set_param( 'tool', 'search_attachments' );
-        $request->set_param( 'guest_token', $guest_token );
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/tools' );
+		$request->set_param( 'assistant_id', $assistant_id );
+		$request->set_param( 'tool', 'search_attachments' );
+		$request->set_param( 'guest_token', $guest_token );
 
-        $response = rest_get_server()->dispatch( $request );
+		$response = rest_get_server()->dispatch( $request );
 
-        $this->assertInstanceOf( WP_REST_Response::class, $response );
-        $this->assertSame( 401, $response->get_status(), 'Guest tokens should not gain direct tool access.' );
+		$this->assertInstanceOf( WP_REST_Response::class, $response );
+		$this->assertSame( 401, $response->get_status(), 'Guest tokens should not gain direct tool access.' );
 
-        $data = $response->get_data();
-        $this->assertIsArray( $data );
-        $this->assertArrayHasKey( 'code', $data );
-        $this->assertSame( 'wp_mcp_ai_anonymous_user', $data['code'] );
+		$data = $response->get_data();
+		$this->assertIsArray( $data );
+		$this->assertArrayHasKey( 'code', $data );
+		$this->assertSame( 'wp_mcp_ai_anonymous_user', $data['code'] );
 
-        wp_set_current_user( $this->admin_id );
-    }
+		wp_set_current_user( $this->admin_id );
+	}
 }

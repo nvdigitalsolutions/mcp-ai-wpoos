@@ -6,1411 +6,1425 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 /**
  * Provides a wrapper around Gemini's generateContent endpoint.
  */
 class WP_MCP_AI_Gemini_Client {
-    const API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
-
-    /**
-     * Retrieve the configured API key.
-     *
-     * @return string
-     */
-    public function get_api_key() {
-        $settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-        return isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
-    }
-
-    /**
-     * Perform a chat completion request against Gemini.
-     *
-     * @param array $messages Message payload to send to Gemini.
-     * @param array $options  Additional options (model, temperature, tools, timeout).
-     * @return array|WP_Error
-     */
-    public function create_chat_completion( array $messages, array $options = array() ) {
-        $api_key = $this->get_api_key();
-
-        if ( empty( $api_key ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_missing_gemini_api_key',
-                __( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
-                array(
-                    'status'  => 400,
-                    'actions' => array(
-                        'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
-                    ),
-                )
-            );
-        }
-
-        $model = $this->resolve_model( $options );
-
-        if ( empty( $model ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_missing_gemini_model',
-                __( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
-                array(
-                    'status'  => 400,
-                    'actions' => array(
-                        'configure_gemini_model' => __( 'Choose a Gemini model in the WP MCP AI settings.', 'wp-mcp-ai' ),
-                    ),
-                )
-            );
-        }
-
-        $payload = $this->build_payload( $messages, $options );
-
-        if ( is_wp_error( $payload ) ) {
-            return $payload;
-        }
-
-        $endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
-        $url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
-
-        $request_args = array(
-            'headers' => array(
-                'Content-Type' => 'application/json',
-            ),
-            'body'    => wp_json_encode( $payload ),
-            'timeout' => $this->resolve_timeout( $options ),
-        );
-
-        WP_MCP_AI_Logger::log_event( 'gemini_request', 'Sending request to Gemini.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
-
-        $response = wp_remote_post( $url, $request_args );
-
-        if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Logger::log_error( 'Gemini request failed.', array( 'error' => $response->get_error_message() ) );
-
-            return WP_MCP_AI_HTTP::prepare_transport_error(
-                $response,
-                'wp_mcp_ai_http_error',
-                __( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
-                __( 'Gemini', 'wp-mcp-ai' )
-            );
-        }
-
-        $code     = wp_remote_retrieve_response_code( $response );
-        $body     = wp_remote_retrieve_body( $response );
-        $decoded  = json_decode( $body, true );
-        $json_err = json_last_error();
-
-        if ( JSON_ERROR_NONE !== $json_err ) {
-            WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini response.', array( 'body' => $body ) );
-
-            return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
-        }
-
-        if ( $code < 200 || $code >= 300 ) {
-            $error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
-
-            WP_MCP_AI_Logger::log_error(
-                'Gemini returned an error response.',
-                array(
-                    'code' => $code,
-                    'body' => $decoded,
-                )
-            );
-
-            return new WP_Error( 'wp_mcp_ai_api_error', $error_message, array( 'status' => $code, 'body' => $decoded ) );
-        }
-
-        $normalized = $this->normalize_response( $decoded );
-
-        if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
-            $normalized['model'] = $model;
-        }
-
-        WP_MCP_AI_Logger::log_event( 'gemini_response', 'Gemini request completed.', array( 'response' => $normalized ) );
-
-        return $normalized;
-    }
-
-    /**
-     * Generate an image using Gemini's multimodal endpoint.
-     *
-     * @param string $prompt  Natural language prompt describing the desired image.
-     * @param array  $options Optional overrides (model, mime_type, aspect_ratio, timeout).
-     * @return array|WP_Error
-     */
-    public function generate_image( $prompt, array $options = array() ) {
-        $api_key = $this->get_api_key();
-
-        if ( empty( $api_key ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_missing_gemini_api_key',
-                __( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
-                array(
-                    'status'  => 400,
-                    'actions' => array(
-                        'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
-                    ),
-                )
-            );
-        }
-
-        $prompt = sanitize_textarea_field( $prompt );
-
-        if ( '' === $prompt ) {
-            return new WP_Error(
-                'wp_mcp_ai_missing_gemini_prompt',
-                __( 'A text prompt must be supplied to generate an image.', 'wp-mcp-ai' ),
-                array( 'status' => 400 )
-            );
-        }
-
-        $settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-        $default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-2.5-flash-image';
-        $default_mime_type    = isset( $settings['gemini_image_mime_type'] ) && '' !== $settings['gemini_image_mime_type'] ? $this->normalise_image_mime_type( $settings['gemini_image_mime_type'] ) : 'image/png';
-        $default_aspect_ratio = isset( $settings['gemini_image_aspect_ratio'] ) && '' !== $settings['gemini_image_aspect_ratio'] ? $this->normalise_aspect_ratio( $settings['gemini_image_aspect_ratio'] ) : '1:1';
-
-        $model        = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
-        $mime_type    = isset( $options['mime_type'] ) && '' !== $options['mime_type'] ? $this->normalise_image_mime_type( $options['mime_type'] ) : $default_mime_type;
-        $aspect_ratio = isset( $options['aspect_ratio'] ) && '' !== $options['aspect_ratio'] ? $this->normalise_aspect_ratio( $options['aspect_ratio'] ) : $default_aspect_ratio;
-
-        if ( '' === $mime_type ) {
-            $mime_type = 'image/png';
-        }
-
-        if ( '' === $aspect_ratio ) {
-            $aspect_ratio = '1:1';
-        }
-
-        $payload = array(
-            'contents' => array(
-                array(
-                    'role'  => 'user',
-                    'parts' => array(
-                        array(
-                            'text' => $prompt,
-                        ),
-                    ),
-                ),
-            ),
-        );
-
-        $generation_config = array(
-            'responseModalities' => array( 'IMAGE' ),
-        );
-
-        $image_config = array();
-
-        if ( '' !== $aspect_ratio ) {
-            $image_config['aspectRatio'] = $aspect_ratio;
-        }
-
-        if ( ! empty( $image_config ) ) {
-            $generation_config['imageConfig'] = $image_config;
-        }
-
-        if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
-            $generation_config['temperature'] = (float) $options['temperature'];
-        }
-
-        if ( ! empty( $generation_config ) ) {
-            $payload['generationConfig'] = $generation_config;
-        }
-
-        /**
-         * Allow third parties to filter the Gemini image payload prior to dispatch.
-         *
-         * @param array  $payload Prepared request payload.
-         * @param array  $options Original method options.
-         * @param string $prompt  Prompt text supplied by the caller.
-         */
-        $payload = apply_filters( 'wp_mcp_ai_gemini_image_payload', $payload, $options, $prompt );
-
-        $encoded_payload = wp_json_encode( $payload );
-
-        if ( false === $encoded_payload ) {
-            return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'wp-mcp-ai' ) );
-        }
-
-        $endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
-        $url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
-
-        $request_args = array(
-            'headers' => array(
-                'Content-Type' => 'application/json',
-            ),
-            'timeout' => $this->resolve_timeout( $options ),
-            'body'    => $encoded_payload,
-        );
-
-        WP_MCP_AI_Logger::log_event(
-            'gemini_image_request',
-            'Sending image generation request to Gemini.',
-            array(
-                'model'        => $model,
-                'mime_type'    => $mime_type,
-                'aspect_ratio' => $aspect_ratio,
-            )
-        );
-
-        $response = wp_remote_post( $url, $request_args );
-
-        if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Logger::log_error( 'Gemini image request failed.', array( 'error' => $response->get_error_message() ) );
-
-            return WP_MCP_AI_HTTP::prepare_transport_error(
-                $response,
-                'wp_mcp_ai_http_error',
-                __( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
-                __( 'Gemini', 'wp-mcp-ai' )
-            );
-        }
-
-        $code     = wp_remote_retrieve_response_code( $response );
-        $body     = wp_remote_retrieve_body( $response );
-        $decoded  = json_decode( $body, true );
-        $json_err = json_last_error();
-
-        if ( JSON_ERROR_NONE !== $json_err ) {
-            WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini image response.', array( 'body' => $body ) );
-
-            return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
-        }
-
-        if ( $code < 200 || $code >= 300 ) {
-            $error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
-
-            WP_MCP_AI_Logger::log_error(
-                'Gemini returned an error response for image generation.',
-                array(
-                    'code' => $code,
-                    'body' => $decoded,
-                )
-            );
-
-            return new WP_Error( 'wp_mcp_ai_api_error', $error_message, array( 'status' => $code, 'body' => $decoded ) );
-        }
-
-        $image_payload = $this->extract_image_payload_from_response( $decoded, $options );
-
-        if ( is_wp_error( $image_payload ) ) {
-            return $image_payload;
-        }
-
-        $result = array(
-            'image'          => $image_payload['data'],
-            'mime_type'      => $image_payload['mime_type'],
-            'format'         => $image_payload['format'],
-            'model'          => $model,
-            'prompt'         => $prompt,
-            'aspect_ratio'   => $aspect_ratio,
-            'created'        => time(),
-            'revised_prompt' => $image_payload['revised_prompt'],
-        );
-
-        /**
-         * Allow third parties to filter the Gemini image result payload.
-         *
-         * @param array $result        Normalised image response payload.
-         * @param array $decoded       Raw decoded API response.
-         * @param array $options       Original method options.
-         */
-        $result = apply_filters( 'wp_mcp_ai_gemini_image_result', $result, $decoded, $options );
-
-        WP_MCP_AI_Logger::log_event(
-            'gemini_image_response',
-            'Gemini image generation completed.',
-            array(
-                'model'        => $model,
-                'mime_type'    => $result['mime_type'],
-                'aspect_ratio' => $aspect_ratio,
-                'format'       => $result['format'],
-            )
-        );
-
-        return $result;
-    }
-
-    /**
-     * Resolve the model identifier for the request.
-     *
-     * @param array $options Request options.
-     * @return string
-     */
-    protected function resolve_model( array $options ) {
-        if ( ! empty( $options['model'] ) ) {
-            return sanitize_text_field( $options['model'] );
-        }
-
-        $settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-        if ( ! empty( $settings['default_gemini_model'] ) ) {
-            return $settings['default_gemini_model'];
-        }
-
-        return 'gemini-1.5-flash';
-    }
-
-    /**
-     * Build the request payload sent to Gemini.
-     *
-     * @param array $messages Chat messages.
-     * @param array $options  Request options.
-     * @return array|WP_Error
-     */
-    protected function build_payload( array $messages, array $options ) {
-        if ( empty( $messages ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_missing_messages',
-                __( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
-                array(
-                    'status'  => 400,
-                    'actions' => array(
-                        'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
-                    ),
-                )
-            );
-        }
-
-        $contents               = array();
-        $system_fragments       = array();
-        $pending_tool_calls     = array();
-        $latest_assistant_index = null;
-
-        foreach ( $messages as $message ) {
-            if ( ! is_array( $message ) ) {
-                continue;
-            }
-
-            $role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
-            $content = isset( $message['content'] ) ? $message['content'] : array();
-
-            if ( 'system' === $role ) {
-                $system_fragments = array_merge( $system_fragments, $this->normalize_segments_to_text( $content ) );
-                continue;
-            }
-
-            $text_segments = $this->normalize_segments_to_text( $content );
-
-            if ( empty( $text_segments ) ) {
-                $text_segments = array();
-            }
-
-            $gemini_role = 'user';
-            if ( 'assistant' === $role ) {
-                $pending_tool_calls     = array();
-                $latest_assistant_index = null;
-                $gemini_role = 'model';
-            }
-
-            if ( 'user' === $role ) {
-                $pending_tool_calls     = array();
-                $latest_assistant_index = null;
-            }
-
-            $parts                 = array();
-            $message_tool_call_ids = array();
-
-            if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
-                foreach ( $message['tool_calls'] as $tool_call ) {
-                    $function_call = $this->convert_tool_call_to_function_call( $tool_call );
-
-                    if ( $function_call ) {
-                        $parts[] = array( 'functionCall' => $function_call );
-
-                        if ( isset( $tool_call['id'] ) ) {
-                            $tool_call_id = sanitize_text_field( $tool_call['id'] );
-                            if ( '' !== $tool_call_id ) {
-                                $message_tool_call_ids[] = $tool_call_id;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ( 'tool' === $role ) {
-                $gemini_role = 'user';
-                $tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( $message['tool_call_id'] ) : '';
-
-                if ( '' === $tool_call_id || ! isset( $pending_tool_calls[ $tool_call_id ] ) ) {
-                    continue;
-                }
-
-                $last_index    = count( $contents ) - 1;
-                $origin_index  = $pending_tool_calls[ $tool_call_id ];
-
-                if ( $last_index < 0 || null === $latest_assistant_index ) {
-                    unset( $pending_tool_calls[ $tool_call_id ] );
-                    continue;
-                }
-
-                if ( $origin_index !== $latest_assistant_index || $origin_index > $last_index ) {
-                    unset( $pending_tool_calls[ $tool_call_id ] );
-                    continue;
-                }
-
-                $function_response = $this->convert_tool_message_to_function_response( $message );
-
-                if ( $function_response ) {
-                    $parts[]        = array( 'functionResponse' => $function_response );
-                    $text_segments   = array();
-                    unset( $pending_tool_calls[ $tool_call_id ] );
-                } else {
-                    unset( $pending_tool_calls[ $tool_call_id ] );
-                    continue;
-                }
-            }
-
-            foreach ( $text_segments as $segment_text ) {
-                $parts[] = array( 'text' => $segment_text );
-            }
-
-            if ( empty( $parts ) ) {
-                continue;
-            }
-
-            if ( ! empty( $message_tool_call_ids ) ) {
-                $next_index = count( $contents );
-
-                foreach ( $message_tool_call_ids as $tool_call_id ) {
-                    $pending_tool_calls[ $tool_call_id ] = $next_index;
-                }
-
-                $latest_assistant_index = $next_index;
-            } elseif ( 'assistant' === $role ) {
-                $latest_assistant_index = null;
-            }
-
-            $contents[] = array(
-                'role'  => $gemini_role,
-                'parts' => $parts,
-            );
-
-            if ( 'assistant' === $role && null === $latest_assistant_index ) {
-                $latest_assistant_index = count( $contents ) - 1;
-            }
-        }
-
-        if ( ! empty( $options['system_prompt'] ) ) {
-            $system_fragments[] = wp_kses_post( $options['system_prompt'] );
-        }
-
-        if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
-            $system_fragments = array_merge( $system_fragments, $this->build_memory_fragments( $options['memory_documents'] ) );
-        }
-
-        $payload = array(
-            'contents' => array_values( $contents ),
-        );
-
-        if ( ! empty( $system_fragments ) ) {
-            $system_parts = array();
-            foreach ( $system_fragments as $fragment ) {
-                $fragment = trim( $fragment );
-                if ( '' === $fragment ) {
-                    continue;
-                }
-                $system_parts[] = array( 'text' => $fragment );
-            }
-
-            if ( ! empty( $system_parts ) ) {
-                $payload['system_instruction'] = array( 'parts' => $system_parts );
-            }
-        }
-
-        if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
-            $payload['generationConfig'] = array(
-                'temperature' => (float) $options['temperature'],
-            );
-        }
-
-        if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-            $translated_tools = $this->translate_tools( $options['tools'] );
-            if ( ! empty( $translated_tools ) ) {
-                $payload['tools'] = $translated_tools;
-            }
-        }
-
-        return $payload;
-    }
-
-    /**
-     * Normalise segments to text fragments.
-     *
-     * @param mixed $segments Message segments.
-     * @return array
-     */
-    protected function normalize_segments_to_text( $segments ) {
-        if ( is_string( $segments ) || is_numeric( $segments ) ) {
-            $text = trim( wp_kses_post( (string) $segments ) );
-
-            return '' === $text ? array() : array( $text );
-        }
-
-        if ( ! is_array( $segments ) ) {
-            return array();
-        }
-
-        $fragments = array();
-
-        foreach ( $segments as $segment ) {
-            if ( is_string( $segment ) || is_numeric( $segment ) ) {
-                $text = trim( wp_kses_post( (string) $segment ) );
-                if ( '' !== $text ) {
-                    $fragments[] = $text;
-                }
-                continue;
-            }
-
-            if ( ! is_array( $segment ) ) {
-                continue;
-            }
-
-            $type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
-
-            switch ( $type ) {
-                case 'input_text':
-                case 'text':
-                    $text = '';
-                    if ( isset( $segment['text'] ) ) {
-                        $text = (string) $segment['text'];
-                    } elseif ( isset( $segment['content'] ) ) {
-                        $text = (string) $segment['content'];
-                    }
-                    $text = trim( wp_kses_post( $text ) );
-                    if ( '' !== $text ) {
-                        $fragments[] = $text;
-                    }
-                    break;
-
-                case 'input_image':
-                    $label = __( '[Image attachment]', 'wp-mcp-ai' );
-                    if ( isset( $segment['caption'] ) && '' !== $segment['caption'] ) {
-                        $label = '[Image: ' . sanitize_text_field( $segment['caption'] ) . ']';
-                    } elseif ( isset( $segment['image_url']['url'] ) && '' !== $segment['image_url']['url'] ) {
-                        $label = '[Image: ' . esc_url_raw( $segment['image_url']['url'] ) . ']';
-                    }
-                    $fragments[] = $label;
-                    break;
-
-                case 'input_file':
-                    $label = __( '[File attachment]', 'wp-mcp-ai' );
-                    if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
-                        $label = '[File: ' . sanitize_text_field( $segment['display_name'] ) . ']';
-                    }
-                    $fragments[] = $label;
-                    break;
-
-                case 'tool_result':
-                    $result_text = $this->render_tool_result_text( $segment );
-                    if ( '' !== $result_text ) {
-                        $fragments[] = $result_text;
-                    }
-                    break;
-
-                default:
-                    if ( isset( $segment['text'] ) && '' !== $segment['text'] ) {
-                        $fragments[] = trim( wp_kses_post( (string) $segment['text'] ) );
-                    }
-                    break;
-            }
-        }
-
-        return $fragments;
-    }
-
-    /**
-     * Convert tool result segment into plain text.
-     *
-     * @param array $segment Tool result segment.
-     * @return string
-     */
-    protected function render_tool_result_text( array $segment ) {
-        if ( isset( $segment['output'] ) ) {
-            if ( is_string( $segment['output'] ) ) {
-                return $segment['output'];
-            } elseif ( is_array( $segment['output'] ) ) {
-                $parts = $this->normalize_segments_to_text( $segment['output'] );
-                if ( ! empty( $parts ) ) {
-                    return implode( "\n\n", $parts );
-                }
-            } elseif ( is_object( $segment['output'] ) ) {
-                return wp_json_encode( $segment['output'] );
-            }
-        }
-
-        if ( isset( $segment['content'] ) ) {
-            $parts = $this->normalize_segments_to_text( $segment['content'] );
-            if ( ! empty( $parts ) ) {
-                return implode( "\n\n", $parts );
-            }
-        }
-
-        return '';
-    }
-
-    /**
-     * Convert an OpenAI-style tool call into a Gemini functionCall part.
-     *
-     * @param array $tool_call Tool call payload.
-     * @return array|null
-     */
-    protected function convert_tool_call_to_function_call( array $tool_call ) {
-        if ( empty( $tool_call ) || ! is_array( $tool_call ) ) {
-            return null;
-        }
-
-        $type = isset( $tool_call['type'] ) ? sanitize_key( $tool_call['type'] ) : 'function';
-
-        if ( 'function' !== $type ) {
-            return null;
-        }
-
-        $function = array();
-        if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
-            $function = $tool_call['function'];
-        }
-
-        $name = isset( $function['name'] ) ? sanitize_text_field( $function['name'] ) : '';
-
-        if ( '' === $name ) {
-            return null;
-        }
-
-        $args = array();
-
-        if ( isset( $function['arguments'] ) ) {
-            $args = $this->normalise_tool_arguments( $function['arguments'] );
-        } elseif ( isset( $tool_call['arguments'] ) ) {
-            $args = $this->normalise_tool_arguments( $tool_call['arguments'] );
-        }
-
-        return array(
-            'name' => $name,
-            'args' => $args,
-        );
-    }
-
-    /**
-     * Normalise tool arguments into an array suitable for Gemini.
-     *
-     * @param mixed $arguments Raw arguments payload.
-     * @return array
-     */
-    protected function normalise_tool_arguments( $arguments ) {
-        if ( is_array( $arguments ) ) {
-            return $arguments;
-        }
-
-        if ( is_object( $arguments ) ) {
-            return (array) $arguments;
-        }
-
-        if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
-            $decoded = json_decode( (string) $arguments, true );
-
-            if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-                return $decoded;
-            }
-
-            $text = sanitize_textarea_field( (string) $arguments );
-
-            if ( '' !== $text ) {
-                return array( 'raw' => $text );
-            }
-        }
-
-        return array();
-    }
-
-    /**
-     * Convert a tool result message into a Gemini functionResponse part.
-     *
-     * @param array $message Tool message payload.
-     * @return array|null
-     */
-    protected function convert_tool_message_to_function_response( array $message ) {
-        $name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : '';
-
-        if ( '' === $name ) {
-            return null;
-        }
-
-        $response = array();
-
-        if ( isset( $message['content'] ) ) {
-            $response = $this->normalise_tool_response_content( $message['content'] );
-        }
-
-        if ( empty( $response ) && isset( $message['output'] ) ) {
-            $response = $this->normalise_tool_response_content( $message['output'] );
-        }
-
-        if ( ! is_array( $response ) ) {
-            $response = array();
-        }
-
-        if ( isset( $message['tool_call_id'] ) ) {
-            $response['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
-        }
-
-        return array(
-            'name'     => $name,
-            'response' => $response,
-        );
-    }
-
-    /**
-     * Normalise tool response content into an array representation.
-     *
-     * @param mixed $content Tool content payload.
-     * @return array
-     */
-    protected function normalise_tool_response_content( $content ) {
-        if ( is_array( $content ) ) {
-            if ( wp_is_numeric_array( $content ) ) {
-                $text = implode( "\n\n", $this->normalize_segments_to_text( $content ) );
-
-                return $this->decode_tool_text_to_response( $text );
-            }
-
-            return $content;
-        }
-
-        if ( is_object( $content ) ) {
-            return (array) $content;
-        }
-
-        if ( is_string( $content ) || is_numeric( $content ) ) {
-            return $this->decode_tool_text_to_response( (string) $content );
-        }
-
-        return array();
-    }
-
-    /**
-     * Attempt to decode tool text content into a structured response array.
-     *
-     * @param string $text Tool output as text.
-     * @return array
-     */
-    protected function decode_tool_text_to_response( $text ) {
-        $text = trim( (string) $text );
-
-        if ( '' === $text ) {
-            return array();
-        }
-
-        $decoded = json_decode( $text, true );
-
-        if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-            return $decoded;
-        }
-
-        return array( 'output' => sanitize_textarea_field( $text ) );
-    }
-
-    /**
-     * Translate OpenAI-style tool definitions into Gemini declarations.
-     *
-     * @param array $tools Tool definitions.
-     * @return array
-     */
-    protected function translate_tools( array $tools ) {
-        $declarations = array();
-
-        foreach ( $tools as $tool ) {
-            if ( ! is_array( $tool ) ) {
-                continue;
-            }
-
-            $type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
-            if ( 'function' !== $type ) {
-                continue;
-            }
-
-            if ( empty( $tool['function'] ) || ! is_array( $tool['function'] ) ) {
-                continue;
-            }
-
-            $function = $tool['function'];
-            $name     = isset( $function['name'] ) ? sanitize_text_field( $function['name'] ) : '';
-
-            if ( '' === $name ) {
-                continue;
-            }
-
-            $declaration = array( 'name' => $name );
-
-            if ( ! empty( $function['description'] ) ) {
-                $declaration['description'] = sanitize_text_field( $function['description'] );
-            }
-
-            if ( isset( $function['parameters'] ) && is_array( $function['parameters'] ) ) {
-                $declaration['parameters'] = $function['parameters'];
-            }
-
-            $declarations[] = $declaration;
-        }
-
-        if ( empty( $declarations ) ) {
-            return array();
-        }
-
-        return array(
-            array(
-                'functionDeclarations' => $declarations,
-            ),
-        );
-    }
-
-    /**
-     * Build memory document fragments used in the system instruction.
-     *
-     * @param array $documents Memory documents.
-     * @return array
-     */
-    protected function build_memory_fragments( array $documents ) {
-        $fragments = array();
-
-        foreach ( $documents as $document ) {
-            if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
-                continue;
-            }
-
-            $title = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'wp-mcp-ai' );
-
-            $chunks = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
-
-            $parts      = count( $chunks );
-            $part_index = 0;
-
-            foreach ( $chunks as $chunk ) {
-                $part_index++;
-
-                $label = $title;
-                if ( $parts > 1 ) {
-                    /* translators: %1$s: document title, %2$d: chunk number. */
-                    $label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
-                }
-
-                /* translators: %1$s: document title, %2$s: extracted text snippet. */
-                $fragments[] = sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk );
-            }
-        }
-
-        return $fragments;
-    }
-
-    /**
-     * Extract the first inline or downloadable image from the Gemini response payload.
-     *
-     * @param array $response Decoded API response.
-     * @param array $options  Original request options.
-     * @return array|WP_Error
-     */
-    protected function extract_image_payload_from_response( array $response, array $options ) {
-        if ( empty( $response['candidates'] ) || ! is_array( $response['candidates'] ) ) {
-            WP_MCP_AI_Logger::log_error( 'Gemini image response missing candidates.', array( 'response' => $response ) );
-
-            return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
-        }
-
-        foreach ( $response['candidates'] as $candidate ) {
-            $revised_prompt = $this->extract_revised_prompt_from_candidate( $candidate, $response );
-
-            if ( empty( $candidate['content']['parts'] ) || ! is_array( $candidate['content']['parts'] ) ) {
-                continue;
-            }
-
-            foreach ( $candidate['content']['parts'] as $part ) {
-                if ( isset( $part['inlineData'] ) && is_array( $part['inlineData'] ) ) {
-                    $inline    = $part['inlineData'];
-                    $data      = isset( $inline['data'] ) ? $inline['data'] : '';
-                    $mime_type = isset( $inline['mimeType'] ) ? $this->normalise_image_mime_type( $inline['mimeType'] ) : '';
-
-                    if ( '' === $data ) {
-                        continue;
-                    }
-
-                    $decoded_data = $this->decode_inline_image_data( $data );
-
-                    if ( is_wp_error( $decoded_data ) ) {
-                        return $decoded_data;
-                    }
-
-                    if ( '' === $mime_type ) {
-                        $mime_type = 'image/png';
-                    }
-
-                    return array(
-                        'data'           => $decoded_data,
-                        'mime_type'      => $mime_type,
-                        'format'         => $this->map_mime_type_to_format( $mime_type ),
-                        'revised_prompt' => $revised_prompt,
-                    );
-                }
-
-                if ( isset( $part['fileData'] ) && is_array( $part['fileData'] ) ) {
-                    $file_data = $part['fileData'];
-                    $file_uri  = isset( $file_data['fileUri'] ) ? esc_url_raw( $file_data['fileUri'] ) : '';
-
-                    if ( '' === $file_uri ) {
-                        continue;
-                    }
-
-                    $download = $this->download_image_from_url( $file_uri, $options );
-
-                    if ( is_wp_error( $download ) ) {
-                        return $download;
-                    }
-
-                    $mime_type = isset( $file_data['mimeType'] ) ? $this->normalise_image_mime_type( $file_data['mimeType'] ) : '';
-
-                    if ( '' === $mime_type && ! empty( $download['content_type'] ) ) {
-                        $mime_type = $this->normalise_image_mime_type( $download['content_type'] );
-                    }
-
-                    if ( '' === $mime_type ) {
-                        $mime_type = 'image/png';
-                    }
-
-                    return array(
-                        'data'           => $download['body'],
-                        'mime_type'      => $mime_type,
-                        'format'         => $this->map_mime_type_to_format( $mime_type ),
-                        'revised_prompt' => $revised_prompt,
-                    );
-                }
-            }
-        }
-
-        WP_MCP_AI_Logger::log_error( 'Gemini image response missing supported payload keys.', array( 'response' => $response ) );
-
-        return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
-    }
-
-    /**
-     * Extract any revised prompt text that Gemini returned alongside an image payload.
-     *
-     * @param array $candidate Individual candidate payload from Gemini.
-     * @param array $response  Full decoded Gemini response payload.
-     * @return string
-     */
-    protected function extract_revised_prompt_from_candidate( array $candidate, array $response ) {
-        $fragments = array();
-
-        if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
-            foreach ( $candidate['content']['parts'] as $part ) {
-                if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
-                    $text = sanitize_textarea_field( $part['text'] );
-
-                    if ( '' !== $text ) {
-                        $fragments[] = $text;
-                    }
-                }
-            }
-        }
-
-        if ( empty( $fragments ) && isset( $response['promptFeedback'] ) && is_array( $response['promptFeedback'] ) ) {
-            if ( isset( $response['promptFeedback']['blockReasonMessage'] ) ) {
-                $text = sanitize_textarea_field( $response['promptFeedback']['blockReasonMessage'] );
-
-                if ( '' !== $text ) {
-                    $fragments[] = $text;
-                }
-            }
-
-            if ( isset( $response['promptFeedback']['safetyFeedback'] ) && is_array( $response['promptFeedback']['safetyFeedback'] ) ) {
-                foreach ( $response['promptFeedback']['safetyFeedback'] as $feedback ) {
-                    if ( isset( $feedback['description'] ) ) {
-                        $text = sanitize_textarea_field( $feedback['description'] );
-
-                        if ( '' !== $text ) {
-                            $fragments[] = $text;
-                        }
-                    }
-                }
-            }
-        }
-
-        $fragments = array_values( array_unique( array_filter( $fragments, 'strlen' ) ) );
-
-        if ( empty( $fragments ) ) {
-            return '';
-        }
-
-        return implode( "\n\n", $fragments );
-    }
-
-    /**
-     * Normalise supported image MIME types returned by Gemini.
-     *
-     * @param string $mime_type Raw MIME type value.
-     * @return string
-     */
-    protected function normalise_image_mime_type( $mime_type ) {
-        $mime_type = sanitize_mime_type( (string) $mime_type );
-
-        $allowed = array( 'image/png', 'image/jpeg', 'image/jpg', 'image/webp' );
-
-        if ( in_array( $mime_type, $allowed, true ) ) {
-            if ( 'image/jpg' === $mime_type ) {
-                return 'image/jpeg';
-            }
-
-            return $mime_type;
-        }
-
-        return '';
-    }
-
-    /**
-     * Normalise an aspect ratio string.
-     *
-     * @param string $aspect_ratio Raw aspect ratio input.
-     * @return string
-     */
-    protected function normalise_aspect_ratio( $aspect_ratio ) {
-        $aspect_ratio = strtoupper( (string) $aspect_ratio );
-        $aspect_ratio = str_replace( ' ', '', $aspect_ratio );
-
-        if ( preg_match( '/^(\d+):(\d+)$/', $aspect_ratio, $matches ) ) {
-            $left  = ltrim( $matches[1], '0' );
-            $right = ltrim( $matches[2], '0' );
-
-            if ( '' === $left ) {
-                $left = '0';
-            }
-
-            if ( '' === $right ) {
-                $right = '0';
-            }
-
-            return $left . ':' . $right;
-        }
-
-        $allowed = array( '1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9' );
-
-        if ( in_array( $aspect_ratio, $allowed, true ) ) {
-            return $aspect_ratio;
-        }
-
-        return '';
-    }
-
-    /**
-     * Map a MIME type to a common file extension identifier.
-     *
-     * @param string $mime_type MIME type string.
-     * @return string
-     */
-    protected function map_mime_type_to_format( $mime_type ) {
-        switch ( $mime_type ) {
-            case 'image/jpeg':
-                return 'jpeg';
-            case 'image/webp':
-                return 'webp';
-            case 'image/png':
-            default:
-                return 'png';
-        }
-    }
-
-    /**
-     * Download an image from a remote Gemini file URI.
-     *
-     * @param string $url     Remote file URL.
-     * @param array  $options Request options including timeout.
-     * @return array|WP_Error Array containing body and content_type.
-     */
-    protected function download_image_from_url( $url, array $options ) {
-        $timeout = $this->resolve_timeout( $options );
-
-        $request_args = array(
-            'timeout' => $timeout,
-        );
-
-        $response = wp_remote_get( $url, $request_args );
-
-        if ( is_wp_error( $response ) ) {
-            WP_MCP_AI_Logger::log_error(
-                'Failed to download image from Gemini file URI.',
-                array(
-                    'url'   => $url,
-                    'error' => $response->get_error_message(),
-                )
-            );
-
-            return WP_MCP_AI_HTTP::prepare_transport_error(
-                $response,
-                'wp_mcp_ai_http_error',
-                __( 'The Gemini image download request failed to complete.', 'wp-mcp-ai' ),
-                __( 'Gemini', 'wp-mcp-ai' )
-            );
-        }
-
-        $code = wp_remote_retrieve_response_code( $response );
-
-        if ( $code < 200 || $code >= 300 ) {
-            WP_MCP_AI_Logger::log_error(
-                'Gemini returned a non-200 status while downloading image.',
-                array(
-                    'url'  => $url,
-                    'code' => $code,
-                )
-            );
-
-            return new WP_Error( 'wp_mcp_ai_http_error', __( 'Gemini returned an unexpected status while downloading the image.', 'wp-mcp-ai' ), array( 'status' => $code ) );
-        }
-
-        $body = wp_remote_retrieve_body( $response );
-
-        if ( '' === $body ) {
-            WP_MCP_AI_Logger::log_error( 'Gemini image download returned an empty body.', array( 'url' => $url ) );
-
-            return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
-        }
-
-        return array(
-            'body'         => $body,
-            'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
-        );
-    }
-
-    /**
-     * Decode an inline base64 image payload returned by Gemini.
-     *
-     * @param string $data Raw base64 or base64url encoded string.
-     * @return string|WP_Error
-     */
-    protected function decode_inline_image_data( $data ) {
-        $data    = (string) $data;
-        $decoded = base64_decode( $data, true );
-
-        if ( false !== $decoded ) {
-            return $decoded;
-        }
-
-        $normalised = $this->normalise_base64_string( $data );
-
-        if ( '' !== $normalised ) {
-            $decoded = base64_decode( $normalised, true );
-
-            if ( false !== $decoded ) {
-                return $decoded;
-            }
-        }
-
-        $decoded = base64_decode( $data );
-
-        if ( false !== $decoded ) {
-            return $decoded;
-        }
-
-        WP_MCP_AI_Logger::log_error(
-            'Gemini inline image data could not be decoded.',
-            array(
-                'length' => strlen( $data ),
-            )
-        );
-
-        return new WP_Error(
-            'wp_mcp_ai_image_decode_error',
-            __( 'Gemini returned an invalid inline image payload.', 'wp-mcp-ai' ),
-            array( 'status' => 500 )
-        );
-    }
-
-    /**
-     * Normalise a base64 or base64url string for decoding.
-     *
-     * @param string $data Raw base64 input.
-     * @return string
-     */
-    protected function normalise_base64_string( $data ) {
-        $data = (string) $data;
-        $data = str_replace( array( "\r", "\n" ), '', $data );
-        $data = strtr( $data, '-_', '+/' );
-
-        $remainder = strlen( $data ) % 4;
-
-        if ( 0 !== $remainder ) {
-            $data .= str_repeat( '=', 4 - $remainder );
-        }
-
-        return $data;
-    }
-
-    /**
-     * Resolve the timeout for the request.
-     *
-     * @param array $options Request options.
-     * @return int
-     */
-    protected function resolve_timeout( array $options ) {
-        $settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-        $timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
-
-        if ( isset( $options['timeout'] ) && $options['timeout'] ) {
-            $timeout = max( 5, absint( $options['timeout'] ) );
-        }
-
-        return max( 5, $timeout );
-    }
-
-    /**
-     * Convert a Gemini response to an OpenAI-style structure for downstream compatibility.
-     *
-     * @param array $response Decoded Gemini response.
-     * @return array
-     */
-    protected function normalize_response( array $response ) {
-        $choices = array();
-
-        if ( isset( $response['candidates'] ) && is_array( $response['candidates'] ) ) {
-            foreach ( $response['candidates'] as $index => $candidate ) {
-                $message    = array( 'role' => 'assistant' );
-                $segments   = array();
-                $tool_calls = array();
-
-                if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
-                    foreach ( $candidate['content']['parts'] as $part ) {
-                        if ( isset( $part['text'] ) ) {
-                            $segments[] = array(
-                                'type' => 'text',
-                                'text' => (string) $part['text'],
-                            );
-                            continue;
-                        }
-
-                        if ( isset( $part['functionCall'] ) && is_array( $part['functionCall'] ) ) {
-                            $tool_call = $this->convert_function_call_to_tool_call( $part['functionCall'], $index );
-                            if ( $tool_call ) {
-                                $tool_calls[] = $tool_call;
-                            }
-                        }
-
-                        if ( isset( $part['functionResponse'] ) && is_array( $part['functionResponse'] ) ) {
-                            $segments[] = array(
-                                'type' => 'text',
-                                'text' => $this->render_function_response_text( $part['functionResponse'] ),
-                            );
-                        }
-                    }
-                }
-
-                if ( ! empty( $segments ) ) {
-                    $message['content'] = $segments;
-                }
-
-                if ( ! empty( $tool_calls ) ) {
-                    $message['tool_calls'] = $tool_calls;
-                }
-
-                $choice = array(
-                    'index'   => $index,
-                    'message' => $message,
-                );
-
-                if ( isset( $candidate['finishReason'] ) ) {
-                    $choice['finish_reason'] = $candidate['finishReason'];
-                }
-
-                $choices[] = $choice;
-            }
-        }
-
-        $normalized = array(
-            'choices'  => $choices,
-            'provider' => 'gemini',
-        );
-
-        if ( isset( $response['usageMetadata'] ) && is_array( $response['usageMetadata'] ) ) {
-            $usage = array();
-
-            if ( isset( $response['usageMetadata']['promptTokenCount'] ) ) {
-                $usage['prompt_tokens'] = (int) $response['usageMetadata']['promptTokenCount'];
-            }
-
-            if ( isset( $response['usageMetadata']['candidatesTokenCount'] ) ) {
-                $usage['completion_tokens'] = (int) $response['usageMetadata']['candidatesTokenCount'];
-            }
-
-            if ( ! empty( $usage ) ) {
-                $normalized['usage'] = $usage;
-            }
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * Convert a Gemini function call into an OpenAI-style tool call payload.
-     *
-     * @param array $function_call Gemini function call payload.
-     * @param int   $index         Candidate index.
-     * @return array|null
-     */
-    protected function convert_function_call_to_tool_call( array $function_call, $index ) {
-        $name = isset( $function_call['name'] ) ? sanitize_text_field( $function_call['name'] ) : '';
-
-        if ( '' === $name ) {
-            return null;
-        }
-
-        $args = '{}';
-        if ( isset( $function_call['args'] ) && is_array( $function_call['args'] ) ) {
-            $args = wp_json_encode( $function_call['args'] );
-        }
-
-        return array(
-            'id'       => sprintf( 'gemini-function-%d-%s', $index, uniqid() ),
-            'type'     => 'function',
-            'function' => array(
-                'name'      => $name,
-                'arguments' => $args,
-            ),
-        );
-    }
-
-    /**
-     * Render a Gemini function response into text.
-     *
-     * @param array $function_response Gemini function response payload.
-     * @return string
-     */
-    protected function render_function_response_text( array $function_response ) {
-        if ( isset( $function_response['name'] ) && isset( $function_response['response'] ) ) {
-            $rendered = sprintf( '%s: %s', sanitize_text_field( $function_response['name'] ), wp_json_encode( $function_response['response'] ) );
-
-            return $rendered;
-        }
-
-        if ( isset( $function_response['text'] ) ) {
-            return (string) $function_response['text'];
-        }
-
-        return '';
-    }
-
-    /**
-     * Remove large payloads from the logged request.
-     *
-     * @param array $payload Request payload.
-     * @return array
-     */
-    protected function obfuscate_request_for_log( array $payload ) {
-        if ( isset( $payload['contents'] ) ) {
-            $payload['contents'] = '[redacted]';
-        }
-
-        if ( isset( $payload['system_instruction'] ) ) {
-            $payload['system_instruction'] = '[redacted]';
-        }
-
-        return $payload;
-    }
+	const API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+
+	/**
+	 * Retrieve the configured API key.
+	 *
+	 * @return string
+	 */
+	public function get_api_key() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		return isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
+	}
+
+	/**
+	 * Perform a chat completion request against Gemini.
+	 *
+	 * @param array $messages Message payload to send to Gemini.
+	 * @param array $options  Additional options (model, temperature, tools, timeout).
+	 * @return array|WP_Error
+	 */
+	public function create_chat_completion( array $messages, array $options = array() ) {
+		$api_key = $this->get_api_key();
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_api_key',
+				__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$model = $this->resolve_model( $options );
+
+		if ( empty( $model ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_model',
+				__( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_model' => __( 'Choose a Gemini model in the WP MCP AI settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$payload = $this->build_payload( $messages, $options );
+
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+		$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+
+		$request_args = array(
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'    => wp_json_encode( $payload ),
+			'timeout' => $this->resolve_timeout( $options ),
+		);
+
+		WP_MCP_AI_Logger::log_event( 'gemini_request', 'Sending request to Gemini.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+				__( 'Gemini', 'wp-mcp-ai' )
+			);
+		}
+
+		$code     = wp_remote_retrieve_response_code( $response );
+		$body     = wp_remote_retrieve_body( $response );
+		$decoded  = json_decode( $body, true );
+		$json_err = json_last_error();
+
+		if ( JSON_ERROR_NONE !== $json_err ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned an error response.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		$normalized = $this->normalize_response( $decoded );
+
+		if ( ! isset( $normalized['model'] ) && ! empty( $model ) ) {
+			$normalized['model'] = $model;
+		}
+
+		WP_MCP_AI_Logger::log_event( 'gemini_response', 'Gemini request completed.', array( 'response' => $normalized ) );
+
+		return $normalized;
+	}
+
+	/**
+	 * Generate an image using Gemini's multimodal endpoint.
+	 *
+	 * @param string $prompt  Natural language prompt describing the desired image.
+	 * @param array  $options Optional overrides (model, mime_type, aspect_ratio, timeout).
+	 * @return array|WP_Error
+	 */
+	public function generate_image( $prompt, array $options = array() ) {
+		$api_key = $this->get_api_key();
+
+		if ( empty( $api_key ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_api_key',
+				__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$prompt = sanitize_textarea_field( $prompt );
+
+		if ( '' === $prompt ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_gemini_prompt',
+				__( 'A text prompt must be supplied to generate an image.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-2.5-flash-image';
+		$default_mime_type    = isset( $settings['gemini_image_mime_type'] ) && '' !== $settings['gemini_image_mime_type'] ? $this->normalise_image_mime_type( $settings['gemini_image_mime_type'] ) : 'image/png';
+		$default_aspect_ratio = isset( $settings['gemini_image_aspect_ratio'] ) && '' !== $settings['gemini_image_aspect_ratio'] ? $this->normalise_aspect_ratio( $settings['gemini_image_aspect_ratio'] ) : '1:1';
+
+		$model        = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+		$mime_type    = isset( $options['mime_type'] ) && '' !== $options['mime_type'] ? $this->normalise_image_mime_type( $options['mime_type'] ) : $default_mime_type;
+		$aspect_ratio = isset( $options['aspect_ratio'] ) && '' !== $options['aspect_ratio'] ? $this->normalise_aspect_ratio( $options['aspect_ratio'] ) : $default_aspect_ratio;
+
+		if ( '' === $mime_type ) {
+			$mime_type = 'image/png';
+		}
+
+		if ( '' === $aspect_ratio ) {
+			$aspect_ratio = '1:1';
+		}
+
+		$payload = array(
+			'contents' => array(
+				array(
+					'role'  => 'user',
+					'parts' => array(
+						array(
+							'text' => $prompt,
+						),
+					),
+				),
+			),
+		);
+
+		$generation_config = array(
+			'responseModalities' => array( 'IMAGE' ),
+		);
+
+		$image_config = array();
+
+		if ( '' !== $aspect_ratio ) {
+			$image_config['aspectRatio'] = $aspect_ratio;
+		}
+
+		if ( ! empty( $image_config ) ) {
+			$generation_config['imageConfig'] = $image_config;
+		}
+
+		if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+			$generation_config['temperature'] = (float) $options['temperature'];
+		}
+
+		if ( ! empty( $generation_config ) ) {
+			$payload['generationConfig'] = $generation_config;
+		}
+
+		/**
+		 * Allow third parties to filter the Gemini image payload prior to dispatch.
+		 *
+		 * @param array  $payload Prepared request payload.
+		 * @param array  $options Original method options.
+		 * @param string $prompt  Prompt text supplied by the caller.
+		 */
+		$payload = apply_filters( 'wp_mcp_ai_gemini_image_payload', $payload, $options, $prompt );
+
+		$encoded_payload = wp_json_encode( $payload );
+
+		if ( false === $encoded_payload ) {
+			return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'wp-mcp-ai' ) );
+		}
+
+		$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+		$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+
+		$request_args = array(
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+			'timeout' => $this->resolve_timeout( $options ),
+			'body'    => $encoded_payload,
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_image_request',
+			'Sending image generation request to Gemini.',
+			array(
+				'model'        => $model,
+				'mime_type'    => $mime_type,
+				'aspect_ratio' => $aspect_ratio,
+			)
+		);
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini image request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+				__( 'Gemini', 'wp-mcp-ai' )
+			);
+		}
+
+		$code     = wp_remote_retrieve_response_code( $response );
+		$body     = wp_remote_retrieve_body( $response );
+		$decoded  = json_decode( $body, true );
+		$json_err = json_last_error();
+
+		if ( JSON_ERROR_NONE !== $json_err ) {
+			WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini image response.', array( 'body' => $body ) );
+
+			return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned an error response for image generation.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		$image_payload = $this->extract_image_payload_from_response( $decoded, $options );
+
+		if ( is_wp_error( $image_payload ) ) {
+			return $image_payload;
+		}
+
+		$result = array(
+			'image'          => $image_payload['data'],
+			'mime_type'      => $image_payload['mime_type'],
+			'format'         => $image_payload['format'],
+			'model'          => $model,
+			'prompt'         => $prompt,
+			'aspect_ratio'   => $aspect_ratio,
+			'created'        => time(),
+			'revised_prompt' => $image_payload['revised_prompt'],
+		);
+
+		/**
+		 * Allow third parties to filter the Gemini image result payload.
+		 *
+		 * @param array $result        Normalised image response payload.
+		 * @param array $decoded       Raw decoded API response.
+		 * @param array $options       Original method options.
+		 */
+		$result = apply_filters( 'wp_mcp_ai_gemini_image_result', $result, $decoded, $options );
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_image_response',
+			'Gemini image generation completed.',
+			array(
+				'model'        => $model,
+				'mime_type'    => $result['mime_type'],
+				'aspect_ratio' => $aspect_ratio,
+				'format'       => $result['format'],
+			)
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Resolve the model identifier for the request.
+	 *
+	 * @param array $options Request options.
+	 * @return string
+	 */
+	protected function resolve_model( array $options ) {
+		if ( ! empty( $options['model'] ) ) {
+			return sanitize_text_field( $options['model'] );
+		}
+
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		if ( ! empty( $settings['default_gemini_model'] ) ) {
+			return $settings['default_gemini_model'];
+		}
+
+		return 'gemini-1.5-flash';
+	}
+
+	/**
+	 * Build the request payload sent to Gemini.
+	 *
+	 * @param array $messages Chat messages.
+	 * @param array $options  Request options.
+	 * @return array|WP_Error
+	 */
+	protected function build_payload( array $messages, array $options ) {
+		if ( empty( $messages ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_messages',
+				__( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$contents               = array();
+		$system_fragments       = array();
+		$pending_tool_calls     = array();
+		$latest_assistant_index = null;
+
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) ) {
+				continue;
+			}
+
+			$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
+			$content = isset( $message['content'] ) ? $message['content'] : array();
+
+			if ( 'system' === $role ) {
+				$system_fragments = array_merge( $system_fragments, $this->normalize_segments_to_text( $content ) );
+				continue;
+			}
+
+			$text_segments = $this->normalize_segments_to_text( $content );
+
+			if ( empty( $text_segments ) ) {
+				$text_segments = array();
+			}
+
+			$gemini_role = 'user';
+			if ( 'assistant' === $role ) {
+				$pending_tool_calls     = array();
+				$latest_assistant_index = null;
+				$gemini_role            = 'model';
+			}
+
+			if ( 'user' === $role ) {
+				$pending_tool_calls     = array();
+				$latest_assistant_index = null;
+			}
+
+			$parts                 = array();
+			$message_tool_call_ids = array();
+
+			if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+				foreach ( $message['tool_calls'] as $tool_call ) {
+					$function_call = $this->convert_tool_call_to_function_call( $tool_call );
+
+					if ( $function_call ) {
+						$parts[] = array( 'functionCall' => $function_call );
+
+						if ( isset( $tool_call['id'] ) ) {
+							$tool_call_id = sanitize_text_field( $tool_call['id'] );
+							if ( '' !== $tool_call_id ) {
+								$message_tool_call_ids[] = $tool_call_id;
+							}
+						}
+					}
+				}
+			}
+
+			if ( 'tool' === $role ) {
+				$gemini_role  = 'user';
+				$tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( $message['tool_call_id'] ) : '';
+
+				if ( '' === $tool_call_id || ! isset( $pending_tool_calls[ $tool_call_id ] ) ) {
+					continue;
+				}
+
+				$last_index   = count( $contents ) - 1;
+				$origin_index = $pending_tool_calls[ $tool_call_id ];
+
+				if ( $last_index < 0 || null === $latest_assistant_index ) {
+					unset( $pending_tool_calls[ $tool_call_id ] );
+					continue;
+				}
+
+				if ( $origin_index !== $latest_assistant_index || $origin_index > $last_index ) {
+					unset( $pending_tool_calls[ $tool_call_id ] );
+					continue;
+				}
+
+				$function_response = $this->convert_tool_message_to_function_response( $message );
+
+				if ( $function_response ) {
+					$parts[]       = array( 'functionResponse' => $function_response );
+					$text_segments = array();
+					unset( $pending_tool_calls[ $tool_call_id ] );
+				} else {
+					unset( $pending_tool_calls[ $tool_call_id ] );
+					continue;
+				}
+			}
+
+			foreach ( $text_segments as $segment_text ) {
+				$parts[] = array( 'text' => $segment_text );
+			}
+
+			if ( empty( $parts ) ) {
+				continue;
+			}
+
+			if ( ! empty( $message_tool_call_ids ) ) {
+				$next_index = count( $contents );
+
+				foreach ( $message_tool_call_ids as $tool_call_id ) {
+					$pending_tool_calls[ $tool_call_id ] = $next_index;
+				}
+
+				$latest_assistant_index = $next_index;
+			} elseif ( 'assistant' === $role ) {
+				$latest_assistant_index = null;
+			}
+
+			$contents[] = array(
+				'role'  => $gemini_role,
+				'parts' => $parts,
+			);
+
+			if ( 'assistant' === $role && null === $latest_assistant_index ) {
+				$latest_assistant_index = count( $contents ) - 1;
+			}
+		}
+
+		if ( ! empty( $options['system_prompt'] ) ) {
+			$system_fragments[] = wp_kses_post( $options['system_prompt'] );
+		}
+
+		if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+			$system_fragments = array_merge( $system_fragments, $this->build_memory_fragments( $options['memory_documents'] ) );
+		}
+
+		$payload = array(
+			'contents' => array_values( $contents ),
+		);
+
+		if ( ! empty( $system_fragments ) ) {
+			$system_parts = array();
+			foreach ( $system_fragments as $fragment ) {
+				$fragment = trim( $fragment );
+				if ( '' === $fragment ) {
+					continue;
+				}
+				$system_parts[] = array( 'text' => $fragment );
+			}
+
+			if ( ! empty( $system_parts ) ) {
+				$payload['system_instruction'] = array( 'parts' => $system_parts );
+			}
+		}
+
+		if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+			$payload['generationConfig'] = array(
+				'temperature' => (float) $options['temperature'],
+			);
+		}
+
+		if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+			$translated_tools = $this->translate_tools( $options['tools'] );
+			if ( ! empty( $translated_tools ) ) {
+				$payload['tools'] = $translated_tools;
+			}
+		}
+
+		return $payload;
+	}
+
+	/**
+	 * Normalise segments to text fragments.
+	 *
+	 * @param mixed $segments Message segments.
+	 * @return array
+	 */
+	protected function normalize_segments_to_text( $segments ) {
+		if ( is_string( $segments ) || is_numeric( $segments ) ) {
+			$text = trim( wp_kses_post( (string) $segments ) );
+
+			return '' === $text ? array() : array( $text );
+		}
+
+		if ( ! is_array( $segments ) ) {
+			return array();
+		}
+
+		$fragments = array();
+
+		foreach ( $segments as $segment ) {
+			if ( is_string( $segment ) || is_numeric( $segment ) ) {
+				$text = trim( wp_kses_post( (string) $segment ) );
+				if ( '' !== $text ) {
+					$fragments[] = $text;
+				}
+				continue;
+			}
+
+			if ( ! is_array( $segment ) ) {
+				continue;
+			}
+
+			$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
+
+			switch ( $type ) {
+				case 'input_text':
+				case 'text':
+					$text = '';
+					if ( isset( $segment['text'] ) ) {
+						$text = (string) $segment['text'];
+					} elseif ( isset( $segment['content'] ) ) {
+						$text = (string) $segment['content'];
+					}
+					$text = trim( wp_kses_post( $text ) );
+					if ( '' !== $text ) {
+						$fragments[] = $text;
+					}
+					break;
+
+				case 'input_image':
+					$label = __( '[Image attachment]', 'wp-mcp-ai' );
+					if ( isset( $segment['caption'] ) && '' !== $segment['caption'] ) {
+						$label = '[Image: ' . sanitize_text_field( $segment['caption'] ) . ']';
+					} elseif ( isset( $segment['image_url']['url'] ) && '' !== $segment['image_url']['url'] ) {
+						$label = '[Image: ' . esc_url_raw( $segment['image_url']['url'] ) . ']';
+					}
+					$fragments[] = $label;
+					break;
+
+				case 'input_file':
+					$label = __( '[File attachment]', 'wp-mcp-ai' );
+					if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
+						$label = '[File: ' . sanitize_text_field( $segment['display_name'] ) . ']';
+					}
+					$fragments[] = $label;
+					break;
+
+				case 'tool_result':
+					$result_text = $this->render_tool_result_text( $segment );
+					if ( '' !== $result_text ) {
+						$fragments[] = $result_text;
+					}
+					break;
+
+				default:
+					if ( isset( $segment['text'] ) && '' !== $segment['text'] ) {
+						$fragments[] = trim( wp_kses_post( (string) $segment['text'] ) );
+					}
+					break;
+			}
+		}
+
+		return $fragments;
+	}
+
+	/**
+	 * Convert tool result segment into plain text.
+	 *
+	 * @param array $segment Tool result segment.
+	 * @return string
+	 */
+	protected function render_tool_result_text( array $segment ) {
+		if ( isset( $segment['output'] ) ) {
+			if ( is_string( $segment['output'] ) ) {
+				return $segment['output'];
+			} elseif ( is_array( $segment['output'] ) ) {
+				$parts = $this->normalize_segments_to_text( $segment['output'] );
+				if ( ! empty( $parts ) ) {
+					return implode( "\n\n", $parts );
+				}
+			} elseif ( is_object( $segment['output'] ) ) {
+				return wp_json_encode( $segment['output'] );
+			}
+		}
+
+		if ( isset( $segment['content'] ) ) {
+			$parts = $this->normalize_segments_to_text( $segment['content'] );
+			if ( ! empty( $parts ) ) {
+				return implode( "\n\n", $parts );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Convert an OpenAI-style tool call into a Gemini functionCall part.
+	 *
+	 * @param array $tool_call Tool call payload.
+	 * @return array|null
+	 */
+	protected function convert_tool_call_to_function_call( array $tool_call ) {
+		if ( empty( $tool_call ) || ! is_array( $tool_call ) ) {
+			return null;
+		}
+
+		$type = isset( $tool_call['type'] ) ? sanitize_key( $tool_call['type'] ) : 'function';
+
+		if ( 'function' !== $type ) {
+			return null;
+		}
+
+		$function = array();
+		if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
+			$function = $tool_call['function'];
+		}
+
+		$name = isset( $function['name'] ) ? sanitize_text_field( $function['name'] ) : '';
+
+		if ( '' === $name ) {
+			return null;
+		}
+
+		$args = array();
+
+		if ( isset( $function['arguments'] ) ) {
+			$args = $this->normalise_tool_arguments( $function['arguments'] );
+		} elseif ( isset( $tool_call['arguments'] ) ) {
+			$args = $this->normalise_tool_arguments( $tool_call['arguments'] );
+		}
+
+		return array(
+			'name' => $name,
+			'args' => $args,
+		);
+	}
+
+	/**
+	 * Normalise tool arguments into an array suitable for Gemini.
+	 *
+	 * @param mixed $arguments Raw arguments payload.
+	 * @return array
+	 */
+	protected function normalise_tool_arguments( $arguments ) {
+		if ( is_array( $arguments ) ) {
+			return $arguments;
+		}
+
+		if ( is_object( $arguments ) ) {
+			return (array) $arguments;
+		}
+
+		if ( is_string( $arguments ) || is_numeric( $arguments ) ) {
+			$decoded = json_decode( (string) $arguments, true );
+
+			if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+				return $decoded;
+			}
+
+			$text = sanitize_textarea_field( (string) $arguments );
+
+			if ( '' !== $text ) {
+				return array( 'raw' => $text );
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Convert a tool result message into a Gemini functionResponse part.
+	 *
+	 * @param array $message Tool message payload.
+	 * @return array|null
+	 */
+	protected function convert_tool_message_to_function_response( array $message ) {
+		$name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : '';
+
+		if ( '' === $name ) {
+			return null;
+		}
+
+		$response = array();
+
+		if ( isset( $message['content'] ) ) {
+			$response = $this->normalise_tool_response_content( $message['content'] );
+		}
+
+		if ( empty( $response ) && isset( $message['output'] ) ) {
+			$response = $this->normalise_tool_response_content( $message['output'] );
+		}
+
+		if ( ! is_array( $response ) ) {
+			$response = array();
+		}
+
+		if ( isset( $message['tool_call_id'] ) ) {
+			$response['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+		}
+
+		return array(
+			'name'     => $name,
+			'response' => $response,
+		);
+	}
+
+	/**
+	 * Normalise tool response content into an array representation.
+	 *
+	 * @param mixed $content Tool content payload.
+	 * @return array
+	 */
+	protected function normalise_tool_response_content( $content ) {
+		if ( is_array( $content ) ) {
+			if ( wp_is_numeric_array( $content ) ) {
+				$text = implode( "\n\n", $this->normalize_segments_to_text( $content ) );
+
+				return $this->decode_tool_text_to_response( $text );
+			}
+
+			return $content;
+		}
+
+		if ( is_object( $content ) ) {
+			return (array) $content;
+		}
+
+		if ( is_string( $content ) || is_numeric( $content ) ) {
+			return $this->decode_tool_text_to_response( (string) $content );
+		}
+
+		return array();
+	}
+
+	/**
+	 * Attempt to decode tool text content into a structured response array.
+	 *
+	 * @param string $text Tool output as text.
+	 * @return array
+	 */
+	protected function decode_tool_text_to_response( $text ) {
+		$text = trim( (string) $text );
+
+		if ( '' === $text ) {
+			return array();
+		}
+
+		$decoded = json_decode( $text, true );
+
+		if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+			return $decoded;
+		}
+
+		return array( 'output' => sanitize_textarea_field( $text ) );
+	}
+
+	/**
+	 * Translate OpenAI-style tool definitions into Gemini declarations.
+	 *
+	 * @param array $tools Tool definitions.
+	 * @return array
+	 */
+	protected function translate_tools( array $tools ) {
+		$declarations = array();
+
+		foreach ( $tools as $tool ) {
+			if ( ! is_array( $tool ) ) {
+				continue;
+			}
+
+			$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+			if ( 'function' !== $type ) {
+				continue;
+			}
+
+			if ( empty( $tool['function'] ) || ! is_array( $tool['function'] ) ) {
+				continue;
+			}
+
+			$function = $tool['function'];
+			$name     = isset( $function['name'] ) ? sanitize_text_field( $function['name'] ) : '';
+
+			if ( '' === $name ) {
+				continue;
+			}
+
+			$declaration = array( 'name' => $name );
+
+			if ( ! empty( $function['description'] ) ) {
+				$declaration['description'] = sanitize_text_field( $function['description'] );
+			}
+
+			if ( isset( $function['parameters'] ) && is_array( $function['parameters'] ) ) {
+				$declaration['parameters'] = $function['parameters'];
+			}
+
+			$declarations[] = $declaration;
+		}
+
+		if ( empty( $declarations ) ) {
+			return array();
+		}
+
+		return array(
+			array(
+				'functionDeclarations' => $declarations,
+			),
+		);
+	}
+
+	/**
+	 * Build memory document fragments used in the system instruction.
+	 *
+	 * @param array $documents Memory documents.
+	 * @return array
+	 */
+	protected function build_memory_fragments( array $documents ) {
+		$fragments = array();
+
+		foreach ( $documents as $document ) {
+			if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+				continue;
+			}
+
+			$title = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'wp-mcp-ai' );
+
+			$chunks = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+
+			$parts      = count( $chunks );
+			$part_index = 0;
+
+			foreach ( $chunks as $chunk ) {
+				++$part_index;
+
+				$label = $title;
+				if ( $parts > 1 ) {
+					/* translators: %1$s: document title, %2$d: chunk number. */
+					$label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
+				}
+
+				/* translators: %1$s: document title, %2$s: extracted text snippet. */
+				$fragments[] = sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk );
+			}
+		}
+
+		return $fragments;
+	}
+
+	/**
+	 * Extract the first inline or downloadable image from the Gemini response payload.
+	 *
+	 * @param array $response Decoded API response.
+	 * @param array $options  Original request options.
+	 * @return array|WP_Error
+	 */
+	protected function extract_image_payload_from_response( array $response, array $options ) {
+		if ( empty( $response['candidates'] ) || ! is_array( $response['candidates'] ) ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini image response missing candidates.', array( 'response' => $response ) );
+
+			return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
+		}
+
+		foreach ( $response['candidates'] as $candidate ) {
+			$revised_prompt = $this->extract_revised_prompt_from_candidate( $candidate, $response );
+
+			if ( empty( $candidate['content']['parts'] ) || ! is_array( $candidate['content']['parts'] ) ) {
+				continue;
+			}
+
+			foreach ( $candidate['content']['parts'] as $part ) {
+				if ( isset( $part['inlineData'] ) && is_array( $part['inlineData'] ) ) {
+					$inline    = $part['inlineData'];
+					$data      = isset( $inline['data'] ) ? $inline['data'] : '';
+					$mime_type = isset( $inline['mimeType'] ) ? $this->normalise_image_mime_type( $inline['mimeType'] ) : '';
+
+					if ( '' === $data ) {
+						continue;
+					}
+
+					$decoded_data = $this->decode_inline_image_data( $data );
+
+					if ( is_wp_error( $decoded_data ) ) {
+						return $decoded_data;
+					}
+
+					if ( '' === $mime_type ) {
+						$mime_type = 'image/png';
+					}
+
+					return array(
+						'data'           => $decoded_data,
+						'mime_type'      => $mime_type,
+						'format'         => $this->map_mime_type_to_format( $mime_type ),
+						'revised_prompt' => $revised_prompt,
+					);
+				}
+
+				if ( isset( $part['fileData'] ) && is_array( $part['fileData'] ) ) {
+					$file_data = $part['fileData'];
+					$file_uri  = isset( $file_data['fileUri'] ) ? esc_url_raw( $file_data['fileUri'] ) : '';
+
+					if ( '' === $file_uri ) {
+						continue;
+					}
+
+					$download = $this->download_image_from_url( $file_uri, $options );
+
+					if ( is_wp_error( $download ) ) {
+						return $download;
+					}
+
+					$mime_type = isset( $file_data['mimeType'] ) ? $this->normalise_image_mime_type( $file_data['mimeType'] ) : '';
+
+					if ( '' === $mime_type && ! empty( $download['content_type'] ) ) {
+						$mime_type = $this->normalise_image_mime_type( $download['content_type'] );
+					}
+
+					if ( '' === $mime_type ) {
+						$mime_type = 'image/png';
+					}
+
+					return array(
+						'data'           => $download['body'],
+						'mime_type'      => $mime_type,
+						'format'         => $this->map_mime_type_to_format( $mime_type ),
+						'revised_prompt' => $revised_prompt,
+					);
+				}
+			}
+		}
+
+		WP_MCP_AI_Logger::log_error( 'Gemini image response missing supported payload keys.', array( 'response' => $response ) );
+
+		return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
+	}
+
+	/**
+	 * Extract any revised prompt text that Gemini returned alongside an image payload.
+	 *
+	 * @param array $candidate Individual candidate payload from Gemini.
+	 * @param array $response  Full decoded Gemini response payload.
+	 * @return string
+	 */
+	protected function extract_revised_prompt_from_candidate( array $candidate, array $response ) {
+		$fragments = array();
+
+		if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
+			foreach ( $candidate['content']['parts'] as $part ) {
+				if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
+					$text = sanitize_textarea_field( $part['text'] );
+
+					if ( '' !== $text ) {
+						$fragments[] = $text;
+					}
+				}
+			}
+		}
+
+		if ( empty( $fragments ) && isset( $response['promptFeedback'] ) && is_array( $response['promptFeedback'] ) ) {
+			if ( isset( $response['promptFeedback']['blockReasonMessage'] ) ) {
+				$text = sanitize_textarea_field( $response['promptFeedback']['blockReasonMessage'] );
+
+				if ( '' !== $text ) {
+					$fragments[] = $text;
+				}
+			}
+
+			if ( isset( $response['promptFeedback']['safetyFeedback'] ) && is_array( $response['promptFeedback']['safetyFeedback'] ) ) {
+				foreach ( $response['promptFeedback']['safetyFeedback'] as $feedback ) {
+					if ( isset( $feedback['description'] ) ) {
+						$text = sanitize_textarea_field( $feedback['description'] );
+
+						if ( '' !== $text ) {
+							$fragments[] = $text;
+						}
+					}
+				}
+			}
+		}
+
+		$fragments = array_values( array_unique( array_filter( $fragments, 'strlen' ) ) );
+
+		if ( empty( $fragments ) ) {
+			return '';
+		}
+
+		return implode( "\n\n", $fragments );
+	}
+
+	/**
+	 * Normalise supported image MIME types returned by Gemini.
+	 *
+	 * @param string $mime_type Raw MIME type value.
+	 * @return string
+	 */
+	protected function normalise_image_mime_type( $mime_type ) {
+		$mime_type = sanitize_mime_type( (string) $mime_type );
+
+		$allowed = array( 'image/png', 'image/jpeg', 'image/jpg', 'image/webp' );
+
+		if ( in_array( $mime_type, $allowed, true ) ) {
+			if ( 'image/jpg' === $mime_type ) {
+				return 'image/jpeg';
+			}
+
+			return $mime_type;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Normalise an aspect ratio string.
+	 *
+	 * @param string $aspect_ratio Raw aspect ratio input.
+	 * @return string
+	 */
+	protected function normalise_aspect_ratio( $aspect_ratio ) {
+		$aspect_ratio = strtoupper( (string) $aspect_ratio );
+		$aspect_ratio = str_replace( ' ', '', $aspect_ratio );
+
+		if ( preg_match( '/^(\d+):(\d+)$/', $aspect_ratio, $matches ) ) {
+			$left  = ltrim( $matches[1], '0' );
+			$right = ltrim( $matches[2], '0' );
+
+			if ( '' === $left ) {
+				$left = '0';
+			}
+
+			if ( '' === $right ) {
+				$right = '0';
+			}
+
+			return $left . ':' . $right;
+		}
+
+		$allowed = array( '1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9' );
+
+		if ( in_array( $aspect_ratio, $allowed, true ) ) {
+			return $aspect_ratio;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Map a MIME type to a common file extension identifier.
+	 *
+	 * @param string $mime_type MIME type string.
+	 * @return string
+	 */
+	protected function map_mime_type_to_format( $mime_type ) {
+		switch ( $mime_type ) {
+			case 'image/jpeg':
+				return 'jpeg';
+			case 'image/webp':
+				return 'webp';
+			case 'image/png':
+			default:
+				return 'png';
+		}
+	}
+
+	/**
+	 * Download an image from a remote Gemini file URI.
+	 *
+	 * @param string $url     Remote file URL.
+	 * @param array  $options Request options including timeout.
+	 * @return array|WP_Error Array containing body and content_type.
+	 */
+	protected function download_image_from_url( $url, array $options ) {
+		$timeout = $this->resolve_timeout( $options );
+
+		$request_args = array(
+			'timeout' => $timeout,
+		);
+
+		$response = wp_remote_get( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to download image from Gemini file URI.',
+				array(
+					'url'   => $url,
+					'error' => $response->get_error_message(),
+				)
+			);
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The Gemini image download request failed to complete.', 'wp-mcp-ai' ),
+				__( 'Gemini', 'wp-mcp-ai' )
+			);
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+
+		if ( $code < 200 || $code >= 300 ) {
+			WP_MCP_AI_Logger::log_error(
+				'Gemini returned a non-200 status while downloading image.',
+				array(
+					'url'  => $url,
+					'code' => $code,
+				)
+			);
+
+			return new WP_Error( 'wp_mcp_ai_http_error', __( 'Gemini returned an unexpected status while downloading the image.', 'wp-mcp-ai' ), array( 'status' => $code ) );
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( '' === $body ) {
+			WP_MCP_AI_Logger::log_error( 'Gemini image download returned an empty body.', array( 'url' => $url ) );
+
+			return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
+		}
+
+		return array(
+			'body'         => $body,
+			'content_type' => wp_remote_retrieve_header( $response, 'content-type' ),
+		);
+	}
+
+	/**
+	 * Decode an inline base64 image payload returned by Gemini.
+	 *
+	 * @param string $data Raw base64 or base64url encoded string.
+	 * @return string|WP_Error
+	 */
+	protected function decode_inline_image_data( $data ) {
+		$data    = (string) $data;
+		$decoded = base64_decode( $data, true );
+
+		if ( false !== $decoded ) {
+			return $decoded;
+		}
+
+		$normalised = $this->normalise_base64_string( $data );
+
+		if ( '' !== $normalised ) {
+			$decoded = base64_decode( $normalised, true );
+
+			if ( false !== $decoded ) {
+				return $decoded;
+			}
+		}
+
+		$decoded = base64_decode( $data );
+
+		if ( false !== $decoded ) {
+			return $decoded;
+		}
+
+		WP_MCP_AI_Logger::log_error(
+			'Gemini inline image data could not be decoded.',
+			array(
+				'length' => strlen( $data ),
+			)
+		);
+
+		return new WP_Error(
+			'wp_mcp_ai_image_decode_error',
+			__( 'Gemini returned an invalid inline image payload.', 'wp-mcp-ai' ),
+			array( 'status' => 500 )
+		);
+	}
+
+	/**
+	 * Normalise a base64 or base64url string for decoding.
+	 *
+	 * @param string $data Raw base64 input.
+	 * @return string
+	 */
+	protected function normalise_base64_string( $data ) {
+		$data = (string) $data;
+		$data = str_replace( array( "\r", "\n" ), '', $data );
+		$data = strtr( $data, '-_', '+/' );
+
+		$remainder = strlen( $data ) % 4;
+
+		if ( 0 !== $remainder ) {
+			$data .= str_repeat( '=', 4 - $remainder );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Resolve the timeout for the request.
+	 *
+	 * @param array $options Request options.
+	 * @return int
+	 */
+	protected function resolve_timeout( array $options ) {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+
+		if ( isset( $options['timeout'] ) && $options['timeout'] ) {
+			$timeout = max( 5, absint( $options['timeout'] ) );
+		}
+
+		return max( 5, $timeout );
+	}
+
+	/**
+	 * Convert a Gemini response to an OpenAI-style structure for downstream compatibility.
+	 *
+	 * @param array $response Decoded Gemini response.
+	 * @return array
+	 */
+	protected function normalize_response( array $response ) {
+		$choices = array();
+
+		if ( isset( $response['candidates'] ) && is_array( $response['candidates'] ) ) {
+			foreach ( $response['candidates'] as $index => $candidate ) {
+				$message    = array( 'role' => 'assistant' );
+				$segments   = array();
+				$tool_calls = array();
+
+				if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
+					foreach ( $candidate['content']['parts'] as $part ) {
+						if ( isset( $part['text'] ) ) {
+							$segments[] = array(
+								'type' => 'text',
+								'text' => (string) $part['text'],
+							);
+							continue;
+						}
+
+						if ( isset( $part['functionCall'] ) && is_array( $part['functionCall'] ) ) {
+							$tool_call = $this->convert_function_call_to_tool_call( $part['functionCall'], $index );
+							if ( $tool_call ) {
+								$tool_calls[] = $tool_call;
+							}
+						}
+
+						if ( isset( $part['functionResponse'] ) && is_array( $part['functionResponse'] ) ) {
+							$segments[] = array(
+								'type' => 'text',
+								'text' => $this->render_function_response_text( $part['functionResponse'] ),
+							);
+						}
+					}
+				}
+
+				if ( ! empty( $segments ) ) {
+					$message['content'] = $segments;
+				}
+
+				if ( ! empty( $tool_calls ) ) {
+					$message['tool_calls'] = $tool_calls;
+				}
+
+				$choice = array(
+					'index'   => $index,
+					'message' => $message,
+				);
+
+				if ( isset( $candidate['finishReason'] ) ) {
+					$choice['finish_reason'] = $candidate['finishReason'];
+				}
+
+				$choices[] = $choice;
+			}
+		}
+
+		$normalized = array(
+			'choices'  => $choices,
+			'provider' => 'gemini',
+		);
+
+		if ( isset( $response['usageMetadata'] ) && is_array( $response['usageMetadata'] ) ) {
+			$usage = array();
+
+			if ( isset( $response['usageMetadata']['promptTokenCount'] ) ) {
+				$usage['prompt_tokens'] = (int) $response['usageMetadata']['promptTokenCount'];
+			}
+
+			if ( isset( $response['usageMetadata']['candidatesTokenCount'] ) ) {
+				$usage['completion_tokens'] = (int) $response['usageMetadata']['candidatesTokenCount'];
+			}
+
+			if ( ! empty( $usage ) ) {
+				$normalized['usage'] = $usage;
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Convert a Gemini function call into an OpenAI-style tool call payload.
+	 *
+	 * @param array $function_call Gemini function call payload.
+	 * @param int   $index         Candidate index.
+	 * @return array|null
+	 */
+	protected function convert_function_call_to_tool_call( array $function_call, $index ) {
+		$name = isset( $function_call['name'] ) ? sanitize_text_field( $function_call['name'] ) : '';
+
+		if ( '' === $name ) {
+			return null;
+		}
+
+		$args = '{}';
+		if ( isset( $function_call['args'] ) && is_array( $function_call['args'] ) ) {
+			$args = wp_json_encode( $function_call['args'] );
+		}
+
+		return array(
+			'id'       => sprintf( 'gemini-function-%d-%s', $index, uniqid() ),
+			'type'     => 'function',
+			'function' => array(
+				'name'      => $name,
+				'arguments' => $args,
+			),
+		);
+	}
+
+	/**
+	 * Render a Gemini function response into text.
+	 *
+	 * @param array $function_response Gemini function response payload.
+	 * @return string
+	 */
+	protected function render_function_response_text( array $function_response ) {
+		if ( isset( $function_response['name'] ) && isset( $function_response['response'] ) ) {
+			$rendered = sprintf( '%s: %s', sanitize_text_field( $function_response['name'] ), wp_json_encode( $function_response['response'] ) );
+
+			return $rendered;
+		}
+
+		if ( isset( $function_response['text'] ) ) {
+			return (string) $function_response['text'];
+		}
+
+		return '';
+	}
+
+	/**
+	 * Remove large payloads from the logged request.
+	 *
+	 * @param array $payload Request payload.
+	 * @return array
+	 */
+	protected function obfuscate_request_for_log( array $payload ) {
+		if ( isset( $payload['contents'] ) ) {
+			$payload['contents'] = '[redacted]';
+		}
+
+		if ( isset( $payload['system_instruction'] ) ) {
+			$payload['system_instruction'] = '[redacted]';
+		}
+
+		return $payload;
+	}
 }

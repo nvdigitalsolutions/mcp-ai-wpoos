@@ -6,360 +6,360 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-    require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 }
 
 /**
  * Performs lightweight web searches and returns the top results.
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface {
-    /**
-     * {@inheritdoc}
-     */
-    public function get_slug() {
-        return 'web_search';
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_slug() {
+		return 'web_search';
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_name() {
-        return __( 'Web Search', 'wp-mcp-ai' );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_name() {
+		return __( 'Web Search', 'wp-mcp-ai' );
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_description() {
-        return __( 'Searches the public web via the configured provider and returns the top results.', 'wp-mcp-ai' );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_description() {
+		return __( 'Searches the public web via the configured provider and returns the top results.', 'wp-mcp-ai' );
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function get_parameters_schema() {
-        return array(
-            'type'                 => 'object',
-            'properties'           => array(
-                'query'       => array(
-                    'type'        => 'string',
-                    'description' => __( 'The search query to look up.', 'wp-mcp-ai' ),
-                ),
-                'max_results' => array(
-                    'type'        => 'integer',
-                    'description' => __( 'Maximum number of results to return (1-10).', 'wp-mcp-ai' ),
-                    'minimum'     => 1,
-                    'maximum'     => 10,
-                    'default'     => 5,
-                ),
-            ),
-            'required'             => array( 'query' ),
-            'additionalProperties' => false,
-        );
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_parameters_schema() {
+		return array(
+			'type'                 => 'object',
+			'properties'           => array(
+				'query'       => array(
+					'type'        => 'string',
+					'description' => __( 'The search query to look up.', 'wp-mcp-ai' ),
+				),
+				'max_results' => array(
+					'type'        => 'integer',
+					'description' => __( 'Maximum number of results to return (1-10).', 'wp-mcp-ai' ),
+					'minimum'     => 1,
+					'maximum'     => 10,
+					'default'     => 5,
+				),
+			),
+			'required'             => array( 'query' ),
+			'additionalProperties' => false,
+		);
+	}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function execute( array $arguments = array(), array $context = array() ) {
-        $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+	/**
+	 * {@inheritdoc}
+	 */
+	public function execute( array $arguments = array(), array $context = array() ) {
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-        if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-            return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to perform web searches.', 'wp-mcp-ai' ) );
-        }
+		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to perform web searches.', 'wp-mcp-ai' ) );
+		}
 
-        if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-            return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
-        }
+		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+		}
 
-        $query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+		$query = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
 
-        if ( '' === $query ) {
-            return new WP_Error( 'wp_mcp_ai_missing_query', __( 'A search query is required.', 'wp-mcp-ai' ) );
-        }
+		if ( '' === $query ) {
+			return new WP_Error( 'wp_mcp_ai_missing_query', __( 'A search query is required.', 'wp-mcp-ai' ) );
+		}
 
-        $max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
-        $max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
+		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
+		$max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
 
-        $settings = array();
+		$settings = array();
 
-        if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-            $settings = WP_MCP_AI_Admin_Settings::get_settings();
-        }
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		}
 
-        $provider = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
+		$provider = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 
-        if ( 'brave' === $provider ) {
-            return $this->perform_brave_search( $query, $max_results, $settings );
-        }
+		if ( 'brave' === $provider ) {
+			return $this->perform_brave_search( $query, $max_results, $settings );
+		}
 
-        return $this->perform_duckduckgo_search( $query, $max_results );
-    }
+		return $this->perform_duckduckgo_search( $query, $max_results );
+	}
 
-    /**
-     * Perform a DuckDuckGo Instant Answer search.
-     *
-     * @param string $query       The sanitized search query.
-     * @param int    $max_results Maximum number of results to return.
-     *
-     * @return array|WP_Error Search response payload or WP_Error on failure.
-     */
-    protected function perform_duckduckgo_search( $query, $max_results ) {
-        $request_url = add_query_arg(
-            array(
-                'q'             => $query,
-                'format'        => 'json',
-                'no_html'       => 1,
-                'skip_disambig' => 1,
-            ),
-            'https://api.duckduckgo.com/'
-        );
+	/**
+	 * Perform a DuckDuckGo Instant Answer search.
+	 *
+	 * @param string $query       The sanitized search query.
+	 * @param int    $max_results Maximum number of results to return.
+	 *
+	 * @return array|WP_Error Search response payload or WP_Error on failure.
+	 */
+	protected function perform_duckduckgo_search( $query, $max_results ) {
+		$request_url = add_query_arg(
+			array(
+				'q'             => $query,
+				'format'        => 'json',
+				'no_html'       => 1,
+				'skip_disambig' => 1,
+			),
+			'https://api.duckduckgo.com/'
+		);
 
-        $response = wp_remote_get(
-            $request_url,
-            array(
-                'timeout' => 10,
-                'headers' => array(
-                    'Accept' => 'application/json',
-                ),
-            )
-        );
+		$response = wp_remote_get(
+			$request_url,
+			array(
+				'timeout' => 10,
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
 
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_search_failed',
-                __( 'The web search request failed.', 'wp-mcp-ai' ),
-                $response->get_error_message()
-            );
-        }
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'wp-mcp-ai' ),
+				$response->get_error_message()
+			);
+		}
 
-        $status_code = (int) wp_remote_retrieve_response_code( $response );
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-        if ( 202 === $status_code ) {
-            $retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+		if ( 202 === $status_code ) {
+			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
 
-            $error_data = array(
-                'status' => 202,
-            );
+			$error_data = array(
+				'status' => 202,
+			);
 
-            if ( ! empty( $retry_after ) ) {
-                $error_data['retry_after'] = $retry_after;
-            }
+			if ( ! empty( $retry_after ) ) {
+				$error_data['retry_after'] = $retry_after;
+			}
 
-            return new WP_Error(
-                'wp_mcp_ai_search_pending',
-                __( 'The web search results are not ready yet. Try again in a few seconds.', 'wp-mcp-ai' ),
-                $error_data
-            );
-        }
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__( 'The web search results are not ready yet. Try again in a few seconds.', 'wp-mcp-ai' ),
+				$error_data
+			);
+		}
 
-        if ( 200 !== $status_code ) {
-            return new WP_Error(
-                'wp_mcp_ai_search_http_error',
-                sprintf(
-                    /* translators: %d: HTTP status code */
-                    __( 'The web search service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
-                    $status_code
-                )
-            );
-        }
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_http_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'The web search service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					$status_code
+				)
+			);
+		}
 
-        $body = wp_remote_retrieve_body( $response );
-        $data = json_decode( $body, true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
 
-        if ( null === $data || ! is_array( $data ) ) {
-            return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'wp-mcp-ai' ) );
-        }
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'wp-mcp-ai' ) );
+		}
 
-        $results = array();
+		$results = array();
 
-        if ( ! empty( $data['AbstractText'] ) && ! empty( $data['AbstractURL'] ) ) {
-            $results[] = array(
-                'title'       => isset( $data['Heading'] ) ? sanitize_text_field( $data['Heading'] ) : sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ),
-                'url'         => esc_url_raw( $data['AbstractURL'] ),
-                'snippet'     => sanitize_text_field( $data['AbstractText'] ),
-                'source'      => 'duckduckgo',
-                'type'        => 'abstract',
-            );
-        }
+		if ( ! empty( $data['AbstractText'] ) && ! empty( $data['AbstractURL'] ) ) {
+			$results[] = array(
+				'title'   => isset( $data['Heading'] ) ? sanitize_text_field( $data['Heading'] ) : sanitize_text_field( wp_trim_words( $data['AbstractText'], 12 ) ),
+				'url'     => esc_url_raw( $data['AbstractURL'] ),
+				'snippet' => sanitize_text_field( $data['AbstractText'] ),
+				'source'  => 'duckduckgo',
+				'type'    => 'abstract',
+			);
+		}
 
-        if ( ! empty( $data['RelatedTopics'] ) && is_array( $data['RelatedTopics'] ) ) {
-            foreach ( $data['RelatedTopics'] as $topic ) {
-                if ( $this->maybe_add_topic_result( $topic, $results, $max_results ) ) {
-                    break;
-                }
-            }
-        }
+		if ( ! empty( $data['RelatedTopics'] ) && is_array( $data['RelatedTopics'] ) ) {
+			foreach ( $data['RelatedTopics'] as $topic ) {
+				if ( $this->maybe_add_topic_result( $topic, $results, $max_results ) ) {
+					break;
+				}
+			}
+		}
 
-        $results = array_slice( $results, 0, $max_results );
+		$results = array_slice( $results, 0, $max_results );
 
-        if ( empty( $results ) ) {
-            return array(
-                'query'   => $query,
-                'results' => array(),
-                'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
-            );
-        }
+		if ( empty( $results ) ) {
+			return array(
+				'query'   => $query,
+				'results' => array(),
+				'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+			);
+		}
 
-        return array(
-            'query'   => $query,
-            'results' => $results,
-        );
-    }
+		return array(
+			'query'   => $query,
+			'results' => $results,
+		);
+	}
 
-    /**
-     * Perform a Brave Search API lookup.
-     *
-     * @param string $query       The sanitized search query.
-     * @param int    $max_results Maximum number of results to return.
-     * @param array  $settings    Cached plugin settings.
-     *
-     * @return array|WP_Error Search response payload or WP_Error on failure.
-     */
-    protected function perform_brave_search( $query, $max_results, $settings ) {
-        $api_key = isset( $settings['brave_search_api_key'] ) ? trim( (string) $settings['brave_search_api_key'] ) : '';
+	/**
+	 * Perform a Brave Search API lookup.
+	 *
+	 * @param string $query       The sanitized search query.
+	 * @param int    $max_results Maximum number of results to return.
+	 * @param array  $settings    Cached plugin settings.
+	 *
+	 * @return array|WP_Error Search response payload or WP_Error on failure.
+	 */
+	protected function perform_brave_search( $query, $max_results, $settings ) {
+		$api_key = isset( $settings['brave_search_api_key'] ) ? trim( (string) $settings['brave_search_api_key'] ) : '';
 
-        if ( '' === $api_key ) {
-            return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Brave Search API key is required to perform searches.', 'wp-mcp-ai' ) );
-        }
+		if ( '' === $api_key ) {
+			return new WP_Error( 'wp_mcp_ai_search_missing_api_key', __( 'A Brave Search API key is required to perform searches.', 'wp-mcp-ai' ) );
+		}
 
-        $request_url = add_query_arg(
-            array(
-                'q'          => $query,
-                'count'      => max( 1, $max_results ),
-                'safesearch' => 'moderate',
-            ),
-            'https://api.search.brave.com/res/v1/web/search'
-        );
+		$request_url = add_query_arg(
+			array(
+				'q'          => $query,
+				'count'      => max( 1, $max_results ),
+				'safesearch' => 'moderate',
+			),
+			'https://api.search.brave.com/res/v1/web/search'
+		);
 
-        $response = wp_remote_get(
-            $request_url,
-            array(
-                'timeout' => 10,
-                'headers' => array(
-                    'Accept'               => 'application/json',
-                    'X-Subscription-Token' => $api_key,
-                ),
-            )
-        );
+		$response = wp_remote_get(
+			$request_url,
+			array(
+				'timeout' => 10,
+				'headers' => array(
+					'Accept'               => 'application/json',
+					'X-Subscription-Token' => $api_key,
+				),
+			)
+		);
 
-        if ( is_wp_error( $response ) ) {
-            return new WP_Error(
-                'wp_mcp_ai_search_failed',
-                __( 'The web search request failed.', 'wp-mcp-ai' ),
-                $response->get_error_message()
-            );
-        }
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'wp-mcp-ai' ),
+				$response->get_error_message()
+			);
+		}
 
-        $status_code = (int) wp_remote_retrieve_response_code( $response );
+		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-        if ( 200 !== $status_code ) {
-            return new WP_Error(
-                'wp_mcp_ai_search_http_error',
-                sprintf(
-                    /* translators: %d: HTTP status code */
-                    __( 'The web search service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
-                    $status_code
-                )
-            );
-        }
+		if ( 200 !== $status_code ) {
+			return new WP_Error(
+				'wp_mcp_ai_search_http_error',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'The web search service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					$status_code
+				)
+			);
+		}
 
-        $body = wp_remote_retrieve_body( $response );
-        $data = json_decode( $body, true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
 
-        if ( null === $data || ! is_array( $data ) ) {
-            return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'wp-mcp-ai' ) );
-        }
+		if ( null === $data || ! is_array( $data ) ) {
+			return new WP_Error( 'wp_mcp_ai_search_bad_json', __( 'The web search response could not be decoded.', 'wp-mcp-ai' ) );
+		}
 
-        $results = array();
+		$results = array();
 
-        if ( isset( $data['web']['results'] ) && is_array( $data['web']['results'] ) ) {
-            foreach ( $data['web']['results'] as $item ) {
-                if ( empty( $item['url'] ) ) {
-                    continue;
-                }
+		if ( isset( $data['web']['results'] ) && is_array( $data['web']['results'] ) ) {
+			foreach ( $data['web']['results'] as $item ) {
+				if ( empty( $item['url'] ) ) {
+					continue;
+				}
 
-                $title   = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
-                $snippet = '';
+				$title   = isset( $item['title'] ) ? sanitize_text_field( $item['title'] ) : '';
+				$snippet = '';
 
-                if ( ! empty( $item['description'] ) ) {
-                    $snippet = sanitize_text_field( $item['description'] );
-                } elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
-                    $snippet = sanitize_text_field( implode( ' ', $item['extra_snippets'] ) );
-                }
+				if ( ! empty( $item['description'] ) ) {
+					$snippet = sanitize_text_field( $item['description'] );
+				} elseif ( ! empty( $item['extra_snippets'] ) && is_array( $item['extra_snippets'] ) ) {
+					$snippet = sanitize_text_field( implode( ' ', $item['extra_snippets'] ) );
+				}
 
-                $results[] = array(
-                    'title'   => $title ? $title : esc_url_raw( $item['url'] ),
-                    'url'     => esc_url_raw( $item['url'] ),
-                    'snippet' => $snippet,
-                    'source'  => 'brave',
-                    'type'    => 'result',
-                );
+				$results[] = array(
+					'title'   => $title ? $title : esc_url_raw( $item['url'] ),
+					'url'     => esc_url_raw( $item['url'] ),
+					'snippet' => $snippet,
+					'source'  => 'brave',
+					'type'    => 'result',
+				);
 
-                if ( count( $results ) >= $max_results ) {
-                    break;
-                }
-            }
-        }
+				if ( count( $results ) >= $max_results ) {
+					break;
+				}
+			}
+		}
 
-        if ( empty( $results ) ) {
-            return array(
-                'query'   => $query,
-                'results' => array(),
-                'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
-            );
-        }
+		if ( empty( $results ) ) {
+			return array(
+				'query'   => $query,
+				'results' => array(),
+				'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+			);
+		}
 
-        return array(
-            'query'   => $query,
-            'results' => $results,
-        );
-    }
+		return array(
+			'query'   => $query,
+			'results' => $results,
+		);
+	}
 
-    /**
-     * Maybe add a topic result to the results array.
-     *
-     * @param array $topic       Topic data from DuckDuckGo.
-     * @param array $results     Current list of results (passed by reference).
-     * @param int   $max_results Maximum number of results allowed.
-     *
-     * @return bool Whether the caller should stop processing further topics.
-     */
-    protected function maybe_add_topic_result( $topic, array &$results, $max_results ) {
-        if ( empty( $topic ) || ! is_array( $topic ) ) {
-            return false;
-        }
+	/**
+	 * Maybe add a topic result to the results array.
+	 *
+	 * @param array $topic       Topic data from DuckDuckGo.
+	 * @param array $results     Current list of results (passed by reference).
+	 * @param int   $max_results Maximum number of results allowed.
+	 *
+	 * @return bool Whether the caller should stop processing further topics.
+	 */
+	protected function maybe_add_topic_result( $topic, array &$results, $max_results ) {
+		if ( empty( $topic ) || ! is_array( $topic ) ) {
+			return false;
+		}
 
-        if ( count( $results ) >= $max_results ) {
-            return true;
-        }
+		if ( count( $results ) >= $max_results ) {
+			return true;
+		}
 
-        if ( isset( $topic['Topics'] ) && is_array( $topic['Topics'] ) ) {
-            foreach ( $topic['Topics'] as $nested_topic ) {
-                if ( $this->maybe_add_topic_result( $nested_topic, $results, $max_results ) ) {
-                    return true;
-                }
-            }
+		if ( isset( $topic['Topics'] ) && is_array( $topic['Topics'] ) ) {
+			foreach ( $topic['Topics'] as $nested_topic ) {
+				if ( $this->maybe_add_topic_result( $nested_topic, $results, $max_results ) ) {
+					return true;
+				}
+			}
 
-            return false;
-        }
+			return false;
+		}
 
-        if ( empty( $topic['FirstURL'] ) || empty( $topic['Text'] ) ) {
-            return false;
-        }
+		if ( empty( $topic['FirstURL'] ) || empty( $topic['Text'] ) ) {
+			return false;
+		}
 
-        $results[] = array(
-            'title'   => isset( $topic['Text'] ) ? sanitize_text_field( $topic['Text'] ) : '',
-            'url'     => esc_url_raw( $topic['FirstURL'] ),
-            'snippet' => isset( $topic['Result'] ) ? wp_strip_all_tags( $topic['Result'] ) : '',
-            'source'  => 'duckduckgo',
-            'type'    => 'result',
-        );
+		$results[] = array(
+			'title'   => isset( $topic['Text'] ) ? sanitize_text_field( $topic['Text'] ) : '',
+			'url'     => esc_url_raw( $topic['FirstURL'] ),
+			'snippet' => isset( $topic['Result'] ) ? wp_strip_all_tags( $topic['Result'] ) : '',
+			'source'  => 'duckduckgo',
+			'type'    => 'result',
+		);
 
-        return count( $results ) >= $max_results;
-    }
+		return count( $results ) >= $max_results;
+	}
 }

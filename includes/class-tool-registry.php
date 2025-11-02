@@ -4,7 +4,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-registry.php';
