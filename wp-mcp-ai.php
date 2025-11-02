@@ -255,6 +255,17 @@ final class WP_MCP_AI {
 			$this->admin_cron_manager = new WP_MCP_AI_Admin_Cron_Manager();
 		}
 
+		// Maintain backward compatibility with code that accesses $GLOBALS directly.
+		$GLOBALS['wp_mcp_ai_admin_settings']     = $this->admin_settings;
+		$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
+		$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
+		$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
+		$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
+
+		if ( is_admin() ) {
+			$GLOBALS['wp_mcp_ai_admin_cron_manager'] = $this->admin_cron_manager;
+		}
+
 		WP_MCP_AI_Crawler::init();
 
 		WP_MCP_AI_Usage_Tracker::init();
