@@ -312,6 +312,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
             'audio/aac',
             'audio/flac',
             'audio/m4a',
+            'audio/mp4',
             'audio/mp3',
             'audio/mpeg',
             'audio/ogg',

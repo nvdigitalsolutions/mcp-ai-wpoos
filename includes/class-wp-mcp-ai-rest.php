@@ -655,11 +655,11 @@ class WP_MCP_AI_REST {
             'default_assistant' => $directory_default,
             'rest'              => array(
                 'namespace'     => self::REST_NAMESPACE,
-                'base'          => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
-                'chat'          => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
-                'tools'         => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
-                'file_download' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
-                'sse'           => esc_url_raw( rest_url( self::REST_NAMESPACE . '/sse' ) ),
+                'base'          => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE ) ) ),
+                'chat'          => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/chat' ) ) ),
+                'tools'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/tools' ) ) ),
+                'file_download' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/files' ) ) ),
+                'sse'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/sse' ) ) ),
             ),
         );
 
@@ -3089,9 +3089,9 @@ class WP_MCP_AI_REST {
             return $messages;
         }
 
-        $filtered      = array();
-        $pending_calls   = array();
-        $saw_assistant   = false;
+        $filtered            = array();
+        $pending_calls       = array();
+        $saw_prompt_message  = false;
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -3100,9 +3100,17 @@ class WP_MCP_AI_REST {
 
             $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
 
+            if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+                $saw_prompt_message = true;
+                $pending_calls      = array();
+                $filtered[]         = $message;
+                continue;
+            }
+
             if ( 'assistant' === $role ) {
                 $pending_calls = array();
-                $saw_assistant = true;
+
+                $has_tool_calls = false;
 
                 if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
                     foreach ( $message['tool_calls'] as $tool_call ) {
@@ -3114,8 +3122,23 @@ class WP_MCP_AI_REST {
 
                         if ( '' !== $call_id ) {
                             $pending_calls[ $call_id ] = true;
+                            $has_tool_calls             = true;
                         }
                     }
+                }
+
+                if ( $has_tool_calls && ! $saw_prompt_message ) {
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_assistant_tool_calls',
+                        'Dropping assistant message with tool calls without a preceding prompt.',
+                        array(
+                            'reason'            => 'missing_prompt_message',
+                            'tool_call_count'   => isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ? count( $message['tool_calls'] ) : 0,
+                        )
+                    );
+
+                    $pending_calls = array();
+                    continue;
                 }
 
                 $filtered[] = $message;
@@ -3139,18 +3162,14 @@ class WP_MCP_AI_REST {
                 }
 
                 if ( empty( $pending_calls ) ) {
-                    if ( ! $saw_assistant ) {
-                        $filtered[] = $message;
-                    } else {
-                        WP_MCP_AI_Logger::log_event(
-                            'dropped_tool_message',
-                            'Dropping tool message without matching tool call.',
-                            array(
-                                'tool_call_id' => $tool_call_id,
-                                'reason'       => 'no_pending_tool_calls',
-                            )
-                        );
-                    }
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => 'no_pending_tool_calls',
+                        )
+                    );
                     continue;
                 }
 

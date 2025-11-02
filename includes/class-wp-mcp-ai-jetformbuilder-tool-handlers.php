@@ -368,6 +368,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
         return self::normalise_success( $data, $status, $header_array, 'http' );
     }
 
+
+    /**
+     * Build a REST URL suitable for remote proxy requests.
+     *
+     * @param string $route Route relative to the JetFormBuilder namespace.
+     * @return string
+     */
+    protected static function prepare_remote_rest_url( $route ) {
+        $route = ltrim( $route, '/' );
+        $url   = rest_url( ltrim( self::REST_NAMESPACE . '/' . $route, '/' ) );
+
+        return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
+    }
+
     /**
      * Generate and persist a short-lived token to authenticate remote JetFormBuilder requests.
      *

@@ -210,6 +210,53 @@ class WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Attachments using the `audio/mp4` MIME type should be treated as valid audio sources.
+     */
+    public function test_execute_supports_audio_mp4_mime_type() {
+        $settings = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $settings['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+        $user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+        wp_set_current_user( $user_id );
+
+        $attachment_id = $this->create_audio_attachment( $user_id, 'audio/mp4' );
+
+        $tool             = new WP_MCP_AI_Tool_Transcribe_OpenAI_Audio();
+        $captured_request = null;
+
+        $http_stub = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array(
+                'args' => $args,
+                'url'  => $url,
+            );
+
+            return array(
+                'body'     => wp_json_encode( array( 'text' => 'Audio MP4 supported' ) ),
+                'response' => array( 'code' => 200 ),
+                'headers'  => array( 'content-type' => 'application/json' ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+        $result = $tool->execute(
+            array(
+                'attachment_id' => $attachment_id,
+            ),
+            array( 'user_id' => $user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_stub, 10 );
+
+        $this->assertNotNull( $captured_request );
+        $this->assertIsArray( $result );
+        $this->assertSame( 'audio/mp4', $result['mime_type'] );
+
+        wp_delete_attachment( $attachment_id, true );
+    }
+
+    /**
      * Unsupported file types should return an error with an appropriate HTTP status code.
      */
     public function test_execute_rejects_unsupported_mime_with_status() {
