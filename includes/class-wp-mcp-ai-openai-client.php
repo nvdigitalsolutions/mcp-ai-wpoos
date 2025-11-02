@@ -1562,7 +1562,9 @@ class WP_MCP_AI_OpenAI_Client {
 
 		$should_use_responses_api = $this->should_use_responses_api( $messages, $options );
 
-		if ( ! empty( $attachments ) && ! $should_use_responses_api ) {
+		// Don't force Responses API if there are tool calls, even if there are attachments.
+		// The Responses API doesn't support the tool_calls mechanism used by Chat Completions.
+		if ( ! empty( $attachments ) && ! $should_use_responses_api && ! $this->has_tool_calls_in_messages( $messages ) ) {
 			$should_use_responses_api = true;
 		}
 
@@ -2186,6 +2188,33 @@ class WP_MCP_AI_OpenAI_Client {
 	}
 
 	/**
+	 * Check if messages contain tool calls or tool role messages.
+	 *
+	 * @param array $messages Sanitized chat messages.
+	 * @return bool True if tool calls or tool messages are present.
+	 */
+	protected function has_tool_calls_in_messages( array $messages ) {
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) ) {
+				continue;
+			}
+
+			$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+			// Check for tool role messages or assistant messages with tool_calls.
+			if ( 'tool' === $role ) {
+				return true;
+			}
+
+			if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Determine whether the OpenAI Responses API should be used for the request.
 	 *
 	 * @param array $messages Sanitized chat messages.
@@ -2193,6 +2222,12 @@ class WP_MCP_AI_OpenAI_Client {
 	 * @return bool
 	 */
 	protected function should_use_responses_api( array $messages, array $options ) {
+		// Don't use Responses API when there are tool calls or tool messages in the conversation.
+		// The Responses API doesn't support the tool_calls/tool_call_id mechanism used by Chat Completions.
+		if ( $this->has_tool_calls_in_messages( $messages ) ) {
+			return false;
+		}
+
 		if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
 			return true;
 		}
