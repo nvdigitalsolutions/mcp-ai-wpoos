@@ -3092,6 +3092,7 @@ class WP_MCP_AI_REST {
         $filtered            = array();
         $pending_calls       = array();
         $saw_prompt_message  = false;
+        $previous_role       = '';
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -3104,6 +3105,7 @@ class WP_MCP_AI_REST {
                 $saw_prompt_message = true;
                 $pending_calls      = array();
                 $filtered[]         = $message;
+                $previous_role      = $role;
                 continue;
             }
 
@@ -3138,10 +3140,12 @@ class WP_MCP_AI_REST {
                     );
 
                     $pending_calls = array();
+                    $previous_role = $role;
                     continue;
                 }
 
-                $filtered[] = $message;
+                $filtered[]    = $message;
+                $previous_role = $role;
                 continue;
             }
 
@@ -3158,18 +3162,26 @@ class WP_MCP_AI_REST {
                         )
                     );
 
+                    $previous_role = $role;
                     continue;
                 }
 
                 if ( empty( $pending_calls ) ) {
-                    WP_MCP_AI_Logger::log_event(
-                        'dropped_tool_message',
-                        'Dropping tool message without matching tool call.',
-                        array(
-                            'tool_call_id' => $tool_call_id,
-                            'reason'       => 'no_pending_tool_calls',
-                        )
-                    );
+                    if ( 'assistant' === $previous_role ) {
+                        WP_MCP_AI_Logger::log_event(
+                            'dropped_tool_message',
+                            'Dropping tool message without matching tool call.',
+                            array(
+                                'tool_call_id' => $tool_call_id,
+                                'reason'       => 'no_pending_tool_calls',
+                            )
+                        );
+                        $previous_role = $role;
+                        continue;
+                    }
+
+                    $filtered[]    = $message;
+                    $previous_role = $role;
                     continue;
                 }
 
@@ -3183,16 +3195,19 @@ class WP_MCP_AI_REST {
                         )
                     );
 
+                    $previous_role = $role;
                     continue;
                 }
 
                 unset( $pending_calls[ $tool_call_id ] );
-                $filtered[] = $message;
+                $filtered[]    = $message;
+                $previous_role = $role;
                 continue;
             }
 
             $pending_calls = array();
             $filtered[]    = $message;
+            $previous_role = $role;
         }
 
         return $filtered;
