@@ -300,7 +300,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
      */
     protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
         $method = strtoupper( $method );
-        $url    = rest_url( ltrim( self::REST_NAMESPACE . '/' . ltrim( $route, '/' ), '/' ) );
+        $url    = self::prepare_remote_rest_url( $route );
         $args   = array(
             'method'  => $method,
             'timeout' => 20,
@@ -366,6 +366,20 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
         }
 
         return self::normalise_success( $data, $status, $header_array, 'http' );
+    }
+
+
+    /**
+     * Build a REST URL suitable for remote proxy requests.
+     *
+     * @param string $route Route relative to the JetFormBuilder namespace.
+     * @return string
+     */
+    protected static function prepare_remote_rest_url( $route ) {
+        $route = ltrim( $route, '/' );
+        $url   = rest_url( ltrim( self::REST_NAMESPACE . '/' . $route, '/' ) );
+
+        return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
     }
 
     /**
