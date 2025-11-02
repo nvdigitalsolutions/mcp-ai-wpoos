@@ -1552,6 +1552,8 @@ class WP_MCP_AI_OpenAI_Client {
             $options['attachments'] = $attachments;
         }
 
+        $messages = $this->filter_tool_messages_for_payload( $messages );
+
         $should_use_responses_api = $this->should_use_responses_api( $messages, $options );
 
         if ( ! empty( $attachments ) && ! $should_use_responses_api ) {
@@ -1775,6 +1777,106 @@ class WP_MCP_AI_OpenAI_Client {
         }
 
         return $normalised;
+    }
+
+    /**
+     * Drop tool role messages that are not associated with the most recent assistant tool call.
+     *
+     * OpenAI requires tool responses to immediately follow the assistant message that emitted the
+     * corresponding tool call. When intervening messages appear between those entries the request
+     * is rejected with an "Invalid parameter" error. This normaliser filters out any tool messages
+     * that no longer have a matching pending call so the payload remains valid.
+     *
+     * @param array $messages Chat history supplied by the caller.
+     * @return array
+     */
+    protected function filter_tool_messages_for_payload( array $messages ) {
+        if ( empty( $messages ) ) {
+            return $messages;
+        }
+
+        $filtered                  = array();
+        $pending_calls             = array();
+        $awaiting_tool_responses   = false;
+
+        foreach ( $messages as $message ) {
+            if ( ! is_array( $message ) ) {
+                continue;
+            }
+
+            $role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+            if ( '' === $role ) {
+                continue;
+            }
+
+            if ( in_array( $role, array( 'system', 'user' ), true ) ) {
+                $pending_calls           = array();
+                $awaiting_tool_responses = false;
+                $filtered[]              = $message;
+                continue;
+            }
+
+            if ( 'assistant' === $role ) {
+                $pending_calls           = array();
+                $awaiting_tool_responses = false;
+
+                if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+                    foreach ( $message['tool_calls'] as $tool_call ) {
+                        if ( ! is_array( $tool_call ) ) {
+                            continue;
+                        }
+
+                        $call_id = isset( $tool_call['id'] ) ? sanitize_text_field( (string) $tool_call['id'] ) : '';
+
+                        if ( '' === $call_id ) {
+                            continue;
+                        }
+
+                        $pending_calls[ $call_id ] = true;
+                    }
+                }
+
+                if ( ! empty( $pending_calls ) ) {
+                    $awaiting_tool_responses = true;
+                }
+
+                $filtered[] = $message;
+                continue;
+            }
+
+            if ( 'tool' === $role ) {
+                $tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( (string) $message['tool_call_id'] ) : '';
+
+                if ( '' === $tool_call_id || ! $awaiting_tool_responses || ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call before OpenAI request.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => '' === $tool_call_id ? 'missing_tool_call_id' : ( $awaiting_tool_responses ? 'tool_call_not_found' : 'no_pending_tool_calls' ),
+                        )
+                    );
+
+                    continue;
+                }
+
+                unset( $pending_calls[ $tool_call_id ] );
+
+                if ( empty( $pending_calls ) ) {
+                    $awaiting_tool_responses = false;
+                }
+
+                $filtered[] = $message;
+                continue;
+            }
+
+            $pending_calls           = array();
+            $awaiting_tool_responses = false;
+            $filtered[]              = $message;
+        }
+
+        return array_values( $filtered );
     }
 
     /**
