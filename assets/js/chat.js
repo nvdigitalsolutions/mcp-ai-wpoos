@@ -4501,9 +4501,22 @@
             })
             .then(function (result) {
                 if (window.console && console.log) {
+                    var logSafeResult = result;
+                    
+                    if (result && typeof result === 'object') {
+                        logSafeResult = {
+                            attachment_id: result.attachment_id,
+                            url: result.url,
+                            file_name: result.file_name,
+                            mime_type: result.mime_type,
+                            bytes: result.bytes,
+                            hasContent: !!result.content,
+                        };
+                    }
+                    
                     console.log('[WP MCP AI] Tool response received:', {
                         tool: toolName,
-                        result: result,
+                        result: logSafeResult,
                         timestamp: new Date().toISOString(),
                     });
                 }
@@ -4528,9 +4541,22 @@
                             displayPayload = normalised;
 
                             if (window.console && console.log) {
+                                var logSafeNormalised = {
+                                    text: normalised.text,
+                                    attachmentCount: normalised.attachments ? normalised.attachments.length : 0,
+                                };
+                                
+                                if (normalised.attachments && normalised.attachments.length > 0) {
+                                    logSafeNormalised.firstAttachment = {
+                                        label: normalised.attachments[0].label,
+                                        meta: normalised.attachments[0].meta,
+                                        hasUrl: !!normalised.attachments[0].url,
+                                    };
+                                }
+                                
                                 console.log('[WP MCP AI] Tool payload normalized for display:', {
                                     tool: toolName,
-                                    normalizedPayload: normalised,
+                                    normalizedPayload: logSafeNormalised,
                                 });
                             }
                         } else {
