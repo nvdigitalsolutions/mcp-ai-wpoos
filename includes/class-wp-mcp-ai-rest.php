@@ -3108,6 +3108,7 @@ class WP_MCP_AI_REST {
                 $blocked_tool_messages  = false;
                 $pending_calls      = array();
                 $filtered[]         = $message;
+                $previous_role      = $role;
                 continue;
             }
 
@@ -3166,6 +3167,7 @@ class WP_MCP_AI_REST {
                         )
                     );
 
+                    $previous_role = $role;
                     continue;
                 }
 
@@ -3205,6 +3207,7 @@ class WP_MCP_AI_REST {
                         )
                     );
 
+                    $previous_role = $role;
                     continue;
                 }
 
@@ -3217,6 +3220,7 @@ class WP_MCP_AI_REST {
 
             $pending_calls = array();
             $filtered[]    = $message;
+            $previous_role = $role;
         }
 
         return $filtered;
