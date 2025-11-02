@@ -1029,6 +1029,79 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure assistant responses that reference OpenAI files are downloaded to the Media Library.
+     */
+    public function test_response_files_are_downloaded_to_media() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        WP_MCP_AI_Response_Attachments::init();
+
+        $binary_payload = base64_decode( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO2b4lUAAAAASUVORK5CYII=' );
+
+        $download_filter = function ( $preempt, $args, $url ) use ( $binary_payload ) {
+            if ( WP_MCP_AI_OpenAI_Client::FILES_ENDPOINT . '/file-response-123/content' !== $url ) {
+                return null;
+            }
+
+            return array(
+                'headers'  => array( 'content-type' => 'image/png' ),
+                'body'     => $binary_payload,
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $download_filter, 10, 3 );
+
+        $request  = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $response = array(
+            'choices' => array(
+                array(
+                    'message' => array(
+                        'role'    => 'assistant',
+                        'content' => array(
+                            array(
+                                'type'       => 'output_image',
+                                'file_id'    => 'file-response-123',
+                                'image_file' => array(
+                                    'file_id'  => 'file-response-123',
+                                    'filename' => 'response.png',
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        );
+
+        try {
+            do_action( 'wp_mcp_ai_after_chat_response', 123, $response, $request );
+        } finally {
+            remove_filter( 'pre_http_request', $download_filter, 10 );
+        }
+
+        $attachments_helper = new WP_MCP_AI_Message_Attachments();
+        $attachment_id      = $attachments_helper->get_attachment_id_for_openai_file( 'file-response-123' );
+
+        $this->assertNotEmpty( $attachment_id );
+        $this->assertSame( 'attachment', get_post_type( $attachment_id ) );
+
+        $metadata = get_post_meta( $attachment_id, WP_MCP_AI_Message_Attachments::OPENAI_FILE_META_KEY, true );
+        $this->assertIsArray( $metadata );
+        $this->assertSame( 'file-response-123', $metadata['file_id'] );
+
+        $file_path = get_attached_file( $attachment_id );
+        $this->assertFileExists( $file_path );
+        $this->assertSame( $binary_payload, file_get_contents( $file_path ) );
+
+        wp_delete_attachment( $attachment_id, true );
+    }
+
+    /**
      * Ensure downloads fail when the OpenAI file is not associated with a local attachment.
      */
     public function test_file_download_route_requires_local_attachment() {
