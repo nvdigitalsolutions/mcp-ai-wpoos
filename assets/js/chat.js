@@ -3356,6 +3356,15 @@
             metaParts.push(baseMeta);
         }
 
+        var attachmentId = typeof result.attachment_id === 'number' ? result.attachment_id : null;
+        if (!attachmentId && nestedImage && typeof nestedImage.attachment_id === 'number') {
+            attachmentId = nestedImage.attachment_id;
+        }
+
+        if (attachmentId) {
+            metaParts.push('ID: ' + attachmentId);
+        }
+
         var sizeValue = '';
         if (typeof result.size === 'string' && result.size.trim()) {
             sizeValue = result.size.trim();
@@ -3370,6 +3379,20 @@
             qualityValue = nestedImage.quality.trim();
         }
 
+        var aspectRatioValue = '';
+        if (typeof result.aspect_ratio === 'string' && result.aspect_ratio.trim()) {
+            aspectRatioValue = result.aspect_ratio.trim();
+        } else if (nestedImage && typeof nestedImage.aspect_ratio === 'string' && nestedImage.aspect_ratio.trim()) {
+            aspectRatioValue = nestedImage.aspect_ratio.trim();
+        }
+
+        var formatValue = '';
+        if (typeof result.format === 'string' && result.format.trim()) {
+            formatValue = result.format.trim();
+        } else if (nestedImage && typeof nestedImage.format === 'string' && nestedImage.format.trim()) {
+            formatValue = nestedImage.format.trim();
+        }
+
         if (toolName === 'generate_openai_image' || toolName === 'generate_perfume_lifestyle_image') {
             if (sizeValue) {
                 metaParts.push(sizeValue);
@@ -3378,13 +3401,21 @@
             if (qualityValue) {
                 metaParts.push(qualityValue);
             }
+        } else if (toolName === 'generate_gemini_image') {
+            if (aspectRatioValue) {
+                metaParts.push(aspectRatioValue);
+            }
+
+            if (formatValue) {
+                metaParts.push(formatValue.toUpperCase());
+            }
         } else if (toolName === SPEECH_TOOL_NAME) {
             if (typeof result.duration_formatted === 'string' && result.duration_formatted.trim()) {
                 metaParts.push(result.duration_formatted.trim());
             }
 
-            if (typeof result.format === 'string' && result.format.trim()) {
-                metaParts.push(result.format.trim().toUpperCase());
+            if (formatValue) {
+                metaParts.push(formatValue.toUpperCase());
             }
         }
 
@@ -3426,6 +3457,8 @@
             text = result.message.trim();
         } else if (toolName === 'generate_openai_image') {
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
+        } else if (toolName === 'generate_gemini_image') {
+            text = getString('geminiImageToolSuccess', 'Gemini image saved to the Media Library.');
         } else if (toolName === 'generate_perfume_lifestyle_image') {
             text = getString('perfumeLifestyleImageToolSuccess', 'Lifestyle image saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
@@ -4467,6 +4500,27 @@
                 return waitForCrawl4aiTask(state, toolName, result);
             })
             .then(function (result) {
+                if (window.console && console.log) {
+                    var logSafeResult = result;
+                    
+                    if (result && typeof result === 'object') {
+                        logSafeResult = {
+                            attachment_id: result.attachment_id,
+                            url: result.url,
+                            file_name: result.file_name,
+                            mime_type: result.mime_type,
+                            bytes: result.bytes,
+                            hasContent: !!result.content,
+                        };
+                    }
+                    
+                    console.log('[WP MCP AI] Tool response received:', {
+                        tool: toolName,
+                        result: logSafeResult,
+                        timestamp: new Date().toISOString(),
+                    });
+                }
+
                 var toolContent = '';
                 var displayPayload = '';
 
@@ -4485,6 +4539,26 @@
 
                         if (normalised) {
                             displayPayload = normalised;
+
+                            if (window.console && console.log) {
+                                var logSafeNormalised = {
+                                    text: normalised.text,
+                                    attachmentCount: normalised.attachments ? normalised.attachments.length : 0,
+                                };
+                                
+                                if (normalised.attachments && normalised.attachments.length > 0) {
+                                    logSafeNormalised.firstAttachment = {
+                                        label: normalised.attachments[0].label,
+                                        meta: normalised.attachments[0].meta,
+                                        hasUrl: !!normalised.attachments[0].url,
+                                    };
+                                }
+                                
+                                console.log('[WP MCP AI] Tool payload normalized for display:', {
+                                    tool: toolName,
+                                    normalizedPayload: logSafeNormalised,
+                                });
+                            }
                         } else {
                             displayPayload = toolContent;
                         }
