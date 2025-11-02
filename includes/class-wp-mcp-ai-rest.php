@@ -655,11 +655,11 @@ class WP_MCP_AI_REST {
             'default_assistant' => $directory_default,
             'rest'              => array(
                 'namespace'     => self::REST_NAMESPACE,
-                'base'          => esc_url_raw( rest_url( self::REST_NAMESPACE ) ),
-                'chat'          => esc_url_raw( rest_url( self::REST_NAMESPACE . '/chat' ) ),
-                'tools'         => esc_url_raw( rest_url( self::REST_NAMESPACE . '/tools' ) ),
-                'file_download' => esc_url_raw( rest_url( self::REST_NAMESPACE . '/files' ) ),
-                'sse'           => esc_url_raw( rest_url( self::REST_NAMESPACE . '/sse' ) ),
+                'base'          => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE ) ) ),
+                'chat'          => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/chat' ) ) ),
+                'tools'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/tools' ) ) ),
+                'file_download' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/files' ) ) ),
+                'sse'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/sse' ) ) ),
             ),
         );
 

@@ -482,7 +482,9 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
      */
     protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
         $method = strtoupper( $method );
-        $url    = rest_url( ltrim( self::REST_NAMESPACE . '/' . ltrim( $route, '/' ), '/' ) );
+        $url    = WP_MCP_AI_Request_Context::normalise_rest_url(
+            rest_url( ltrim( self::REST_NAMESPACE . '/' . ltrim( $route, '/' ), '/' ) )
+        );
         $args   = array(
             'method'  => $method,
             'timeout' => 20,
