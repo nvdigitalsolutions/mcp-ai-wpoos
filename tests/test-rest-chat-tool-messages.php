@@ -178,6 +178,88 @@ class WP_MCP_AI_REST_Tool_Message_Sanitization_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Assistant tool calls should be discarded when no prompt message precedes them.
+     */
+    public function test_chat_request_drops_tool_calls_without_prior_prompt() {
+        $assistant_id = $this->create_assistant_post();
+
+        $user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+        wp_set_current_user( $user_id );
+
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->onlyMethods( array( 'create_chat_completion' ) )
+            ->getMock();
+
+        $mock_client
+            ->expects( $this->once() )
+            ->method( 'create_chat_completion' )
+            ->with(
+                $this->callback(
+                    function ( $messages ) {
+                        $this->assertIsArray( $messages );
+                        $this->assertCount( 1, $messages );
+                        $this->assertSame( 'user', $messages[0]['role'] );
+
+                        foreach ( $messages as $message ) {
+                            $this->assertArrayHasKey( 'role', $message );
+                            $this->assertNotSame( 'assistant', $message['role'] );
+                            $this->assertNotSame( 'tool', $message['role'] );
+                        }
+
+                        return true;
+                    }
+                ),
+                $this->isType( 'array' )
+            )
+            ->willReturn(
+                array(
+                    'id'      => 'chatcmpl-test-3',
+                    'choices' => array(),
+                )
+            );
+
+        $this->bootstrap_rest_controller( $mock_client );
+
+        $request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+        $request->set_param( 'assistant_id', $assistant_id );
+        $request->set_param(
+            'messages',
+            array(
+                array(
+                    'role'       => 'assistant',
+                    'content'    => 'Starting with a tool call.',
+                    'tool_calls' => array(
+                        array(
+                            'id'       => 'call_456',
+                            'type'     => 'function',
+                            'function' => array(
+                                'name'      => 'lookup_weather',
+                                'arguments' => json_encode( array( 'city' => 'Paris' ) ),
+                            ),
+                        ),
+                    ),
+                ),
+                array(
+                    'role'         => 'tool',
+                    'content'      => 'Here is the weather.',
+                    'tool_call_id' => 'call_456',
+                ),
+                array(
+                    'role'    => 'user',
+                    'content' => 'Thanks, can you summarize it?',
+                ),
+            )
+        );
+        $request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+
+        $response = rest_get_server()->dispatch( $request );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 200, $response->get_status() );
+    }
+
+    /**
      * Prepare the REST controller instance for testing.
      *
      * @param WP_MCP_AI_Language_Model_Router $mock_client Mocked language model router.
