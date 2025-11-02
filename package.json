@@ -1,0 +1,23 @@
+{
+	"name": "wp-mcp-ai",
+	"version": "1.0.0",
+	"description": "WordPress plugin integrating MCP tools with AI workflows",
+	"private": true,
+	"scripts": {
+		"lint:js": "eslint assets/js/**/*.js",
+		"lint:js:fix": "eslint assets/js/**/*.js --fix"
+	},
+	"devDependencies": {
+		"@wordpress/eslint-plugin": "^14.0.0",
+		"eslint": "^8.0.0"
+	},
+	"keywords": [
+		"wordpress",
+		"ai",
+		"openai",
+		"jetengine",
+		"mcp"
+	],
+	"author": "NV Digital Solutions",
+	"license": "GPL-2.0-or-later"
+}

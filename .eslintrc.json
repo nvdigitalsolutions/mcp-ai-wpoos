@@ -1,0 +1,39 @@
+{
+	"extends": [
+		"wordpress"
+	],
+	"env": {
+		"browser": true,
+		"es2020": true,
+		"jquery": true
+	},
+	"parserOptions": {
+		"ecmaVersion": 2020,
+		"sourceType": "script"
+	},
+	"globals": {
+		"wp": "readonly",
+		"wpMcpAiChat": "readonly",
+		"wpMcpAiChatInstances": "readonly",
+		"wpMcpAiUserChats": "readonly"
+	},
+	"rules": {
+		"no-console": "warn",
+		"camelcase": [
+			"error",
+			{
+				"properties": "never",
+				"ignoreDestructuring": true,
+				"ignoreImports": true
+			}
+		],
+		"no-var": "error",
+		"prefer-const": "error",
+		"no-unused-vars": [
+			"error",
+			{
+				"argsIgnorePattern": "^_"
+			}
+		]
+	}
+}

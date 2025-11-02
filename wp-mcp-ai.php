@@ -8,6 +8,8 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv2 or later
  * Text Domain: wp-mcp-ai
+ *
+ * @package WP_MCP_AI
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
