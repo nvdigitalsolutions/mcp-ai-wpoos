@@ -4819,9 +4819,31 @@ class WP_MCP_AI_REST {
 	protected function get_transcript_session( $user_id, $session_key ) {
 		global $wpdb;
 
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'get_transcript_session called',
+			array(
+				'raw_session_key' => $session_key,
+				'raw_user_id'     => $user_id,
+			)
+		);
+
 		$session_key = $this->normalise_transcript_session_key( $session_key );
 
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'session_key after normalization',
+			array(
+				'normalised_session_key' => $session_key,
+			)
+		);
+
 		if ( '' === $session_key ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: session_key is empty after normalization'
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
 				__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
@@ -4839,6 +4861,16 @@ class WP_MCP_AI_REST {
 
 		$table   = $this->get_transcript_table_name();
 		$user_id = absint( $user_id );
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'get_transcript_session: database query parameters',
+			array(
+				'table'       => $table,
+				'user_id'     => $user_id,
+				'session_key' => $session_key,
+			)
+		);
 
 		$query = $wpdb->prepare(
 			"SELECT request_payload,
@@ -4860,6 +4892,16 @@ class WP_MCP_AI_REST {
 		$rows = $wpdb->get_results( $query, ARRAY_A );
 
 		if ( empty( $rows ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: no rows found in database',
+				array(
+					'table'       => $table,
+					'user_id'     => $user_id,
+					'session_key' => $session_key,
+				)
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_transcript_missing',
 				__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
