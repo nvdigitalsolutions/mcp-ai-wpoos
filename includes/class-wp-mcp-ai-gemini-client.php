@@ -401,7 +401,8 @@ class WP_MCP_AI_Gemini_Client {
                 $gemini_role = 'model';
             }
 
-            $parts = array();
+            $parts                 = array();
+            $message_tool_call_ids = array();
 
             if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
                 foreach ( $message['tool_calls'] as $tool_call ) {
@@ -413,7 +414,7 @@ class WP_MCP_AI_Gemini_Client {
                         if ( isset( $tool_call['id'] ) ) {
                             $tool_call_id = sanitize_text_field( $tool_call['id'] );
                             if ( '' !== $tool_call_id ) {
-                                $pending_tool_calls[ $tool_call_id ] = true;
+                                $message_tool_call_ids[] = $tool_call_id;
                             }
                         }
                     }
@@ -428,6 +429,13 @@ class WP_MCP_AI_Gemini_Client {
                     continue;
                 }
 
+                $last_index = count( $contents ) - 1;
+
+                if ( $last_index < 0 || $pending_tool_calls[ $tool_call_id ] !== $last_index ) {
+                    unset( $pending_tool_calls[ $tool_call_id ] );
+                    continue;
+                }
+
                 $function_response = $this->convert_tool_message_to_function_response( $message );
 
                 if ( $function_response ) {
@@ -435,6 +443,7 @@ class WP_MCP_AI_Gemini_Client {
                     $text_segments   = array();
                     unset( $pending_tool_calls[ $tool_call_id ] );
                 } else {
+                    unset( $pending_tool_calls[ $tool_call_id ] );
                     continue;
                 }
             }
@@ -445,6 +454,14 @@ class WP_MCP_AI_Gemini_Client {
 
             if ( empty( $parts ) ) {
                 continue;
+            }
+
+            if ( ! empty( $message_tool_call_ids ) ) {
+                $next_index = count( $contents );
+
+                foreach ( $message_tool_call_ids as $tool_call_id ) {
+                    $pending_tool_calls[ $tool_call_id ] = $next_index;
+                }
             }
 
             $contents[] = array(
