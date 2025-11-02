@@ -54,6 +54,78 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Tool responses captured in the request payload should appear after the
+     * matching tool call when transcripts are reconstructed.
+     */
+    public function test_transcript_moves_tool_responses_after_function_calls() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $append_method  = new ReflectionMethod( $rest_controller, 'append_new_messages' );
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_appended_tool_responses' );
+
+        $append_method->setAccessible( true );
+        $extract_method->setAccessible( true );
+
+        $conversation = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Initial request',
+            ),
+        );
+
+        $request_messages = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Please review the attachment.',
+            ),
+            array(
+                'role'    => 'tool',
+                'content' => 'Document summary from submit_document_prompt.',
+            ),
+        );
+
+        $existing_count = count( $conversation );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $request_messages, '2024-01-01 00:00:00', '2024-01-01 00:00:00' )
+        );
+
+        $tool_responses = $extract_method->invokeArgs( $rest_controller, array( &$conversation, $existing_count ) );
+
+        $this->assertCount( 2, $conversation, 'User request should remain in the conversation.' );
+        $this->assertSame( 'user', $conversation[1]['role'] );
+        $this->assertCount( 1, $tool_responses, 'Tool response should be extracted for later insertion.' );
+        $this->assertSame( 'tool', $tool_responses[0]['role'] );
+
+        $response_messages = array(
+            array(
+                'role'    => 'tool',
+                'content' => 'Tool call: submit_document_prompt',
+            ),
+        );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $response_messages, '2024-01-01 00:00:05', '2024-01-01 00:00:05' )
+        );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $tool_responses, '2024-01-01 00:00:05', '2024-01-01 00:00:05' )
+        );
+
+        $this->assertSame( 'tool', $conversation[2]['role'] );
+        $this->assertStringStartsWith( 'Tool call:', $conversation[2]['content'] );
+        $this->assertSame( 'tool', $conversation[3]['role'] );
+        $this->assertSame( 'Document summary from submit_document_prompt.', $conversation[3]['content'] );
+    }
+
+    /**
      * Ensure successful chat requests create a transcript record when storage is enabled.
      */
     public function test_chat_transcript_saved_to_cct() {

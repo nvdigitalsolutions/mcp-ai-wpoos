@@ -4888,11 +4888,23 @@ class WP_MCP_AI_REST {
 
             $updated_at = $this->format_transcript_timestamp( $row['response_completed_at'], $row['cct_created'] );
 
-            $request_messages  = $this->extract_request_messages( $row );
-            $response_messages = $this->extract_response_messages( $row );
+            $request_messages       = $this->extract_request_messages( $row );
+            $response_messages      = $this->extract_response_messages( $row );
+            $pending_tool_responses = array();
 
-            $this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+            if ( ! empty( $request_messages ) ) {
+                $existing_count = count( $messages );
+
+                $this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+
+                $pending_tool_responses = $this->extract_appended_tool_responses( $messages, $existing_count );
+            }
+
             $this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+
+            if ( ! empty( $pending_tool_responses ) ) {
+                $this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'] );
+            }
 
             if ( ! empty( $response_messages ) ) {
                 $turn_count += count( $response_messages );
@@ -5390,6 +5402,53 @@ class WP_MCP_AI_REST {
             $message['timestamp'] = $timestamp;
             $conversation[]       = $message;
         }
+    }
+
+    /**
+     * Capture any tool responses appended during the current request pass.
+     *
+     * Tool results are initially captured from the chat request payload which
+     * causes them to appear before the matching assistant tool call in the
+     * reconstructed conversation. Moving those responses after the tool call
+     * keeps the transcript in the same order that users observed in the chat
+     * interface.
+     *
+     * @param array $conversation  Current conversation (passed by reference).
+     * @param int   $start_index   Index where new messages were appended.
+     * @return array
+     */
+    protected function extract_appended_tool_responses( array &$conversation, $start_index ) {
+        $total_messages = count( $conversation );
+
+        if ( $start_index >= $total_messages ) {
+            return array();
+        }
+
+        $appended_messages = array_slice( $conversation, $start_index );
+        $conversation      = array_slice( $conversation, 0, $start_index );
+        $tool_responses    = array();
+
+        foreach ( $appended_messages as $message ) {
+            if ( ! is_array( $message ) ) {
+                continue;
+            }
+
+            $role    = isset( $message['role'] ) ? (string) $message['role'] : '';
+            $content = isset( $message['content'] ) ? (string) $message['content'] : '';
+
+            if ( 'tool' === $role && '' !== $content ) {
+                if ( isset( $message['timestamp'] ) ) {
+                    unset( $message['timestamp'] );
+                }
+
+                $tool_responses[] = $message;
+                continue;
+            }
+
+            $conversation[] = $message;
+        }
+
+        return $tool_responses;
     }
 
     /**
