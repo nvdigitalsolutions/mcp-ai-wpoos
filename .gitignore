@@ -1,3 +1,9 @@
 /.codex-wordpress/
 /vendor/
 /.phpunit.result.cache
+/node_modules/
+package-lock.json
+.DS_Store
+*.log
+.env
+.env.local

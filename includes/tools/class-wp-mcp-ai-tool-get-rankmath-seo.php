@@ -19,7 +19,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 	 * @return bool
 	 */
 	public static function is_available() {
-               return defined( 'RANK_MATH_VERSION' ) && class_exists( '\RankMath\Helper' );
+				return defined( 'RANK_MATH_VERSION' ) && class_exists( '\RankMath\Helper' );
 	}
 
 	/**
@@ -182,25 +182,25 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 
 		return array(
 			'post'      => array(
-				'ID'         => $post->ID,
-				'title'      => get_the_title( $post ),
-				'permalink'  => get_permalink( $post ),
-				'post_type'  => $post->post_type,
-				'status'     => get_post_status( $post ),
-				'published'  => get_post_time( DATE_W3C, true, $post ),
-				'modified'   => get_post_modified_time( DATE_W3C, true, $post ),
-				'author_id'  => (int) $post->post_author,
+				'ID'        => $post->ID,
+				'title'     => get_the_title( $post ),
+				'permalink' => get_permalink( $post ),
+				'post_type' => $post->post_type,
+				'status'    => get_post_status( $post ),
+				'published' => get_post_time( DATE_W3C, true, $post ),
+				'modified'  => get_post_modified_time( DATE_W3C, true, $post ),
+				'author_id' => (int) $post->post_author,
 			),
 			'rank_math' => array(
-				'seo_score'         => $seo_score,
-				'seo_score_rating'  => $score_rating,
-				'focus_keywords'    => $focus_keywords,
-				'seo_title'         => $this->sanitize_meta_output( $seo_title ),
-				'seo_description'   => $this->sanitize_meta_output( $seo_description ),
-				'canonical_url'     => esc_url_raw( $canonical_url ),
-				'robots'            => $this->sanitize_meta_output( $robots_meta ),
-				'advanced_robots'   => $this->sanitize_meta_output( $advanced_robots_meta ),
-				'schema'            => $schema_data,
+				'seo_score'        => $seo_score,
+				'seo_score_rating' => $score_rating,
+				'focus_keywords'   => $focus_keywords,
+				'seo_title'        => $this->sanitize_meta_output( $seo_title ),
+				'seo_description'  => $this->sanitize_meta_output( $seo_description ),
+				'canonical_url'    => esc_url_raw( $canonical_url ),
+				'robots'           => $this->sanitize_meta_output( $robots_meta ),
+				'advanced_robots'  => $this->sanitize_meta_output( $advanced_robots_meta ),
+				'schema'           => $schema_data,
 			),
 		);
 	}
@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 				continue;
 			}
 
-			$value = maybe_unserialize( $values[0] );
+			$value                  = maybe_unserialize( $values[0] );
 			$schema[ $schema_type ] = $this->sanitize_meta_output( $value );
 		}
 
@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 		if ( is_array( $value ) ) {
 			return map_deep(
 				$value,
-				function( $item ) {
+				function ( $item ) {
 					if ( is_string( $item ) ) {
 						return wp_kses_post( trim( wp_unslash( $item ) ) );
 					}
