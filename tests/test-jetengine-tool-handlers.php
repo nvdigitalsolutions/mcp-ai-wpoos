@@ -390,4 +390,114 @@ class WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
 
         wp_set_current_user( $this->user_id );
     }
+
+    /**
+     * Forwarded hosts from untrusted clients must be ignored to avoid SSRF.
+     */
+    public function test_dispatch_remote_ignores_untrusted_forwarded_host() {
+        $previous_siteurl = get_option( 'siteurl' );
+        $previous_home    = get_option( 'home' );
+
+        update_option( 'siteurl', 'http://127.0.0.1' );
+        update_option( 'home', 'http://127.0.0.1' );
+
+        $original_server = $_SERVER;
+
+        $_SERVER['REMOTE_ADDR']          = '203.0.113.10';
+        $_SERVER['HTTP_HOST']            = 'example.test';
+        $_SERVER['HTTP_X_FORWARDED_HOST'] = 'attacker.invalid';
+
+        $captured_url = null;
+
+        $http_interceptor = function( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
+            $captured_url = $url;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( array() ),
+                'response' => array(
+                    'code' => 200,
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_interceptor, 10, 3 );
+
+        WP_MCP_AI_JetEngine_Tool_Handlers::dispatch(
+            'get_items',
+            array(
+                'params'    => array(
+                    'instance' => 'library',
+                ),
+                'transport' => 'http',
+            ),
+            array( 'user_id' => $this->user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_interceptor, 10 );
+
+        $_SERVER = $original_server;
+
+        update_option( 'siteurl', $previous_siteurl );
+        update_option( 'home', $previous_home );
+
+        $this->assertNotNull( $captured_url );
+        $parsed = wp_parse_url( $captured_url );
+        $this->assertSame( '127.0.0.1', $parsed['host'] );
+    }
+
+    /**
+     * Trusted proxy requests may override the host when the backend is bound to loopback.
+     */
+    public function test_dispatch_remote_honours_trusted_forwarded_host() {
+        $previous_siteurl = get_option( 'siteurl' );
+        $previous_home    = get_option( 'home' );
+
+        update_option( 'siteurl', 'http://127.0.0.1' );
+        update_option( 'home', 'http://127.0.0.1' );
+
+        $original_server = $_SERVER;
+
+        $_SERVER['REMOTE_ADDR']          = '127.0.0.1';
+        $_SERVER['HTTP_HOST']            = 'example.test';
+        $_SERVER['HTTP_X_FORWARDED_HOST'] = 'example.test';
+
+        $captured_url = null;
+
+        $http_interceptor = function( $preempt, $parsed_args, $url ) use ( &$captured_url ) {
+            $captured_url = $url;
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode( array() ),
+                'response' => array(
+                    'code' => 200,
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $http_interceptor, 10, 3 );
+
+        WP_MCP_AI_JetEngine_Tool_Handlers::dispatch(
+            'get_items',
+            array(
+                'params'    => array(
+                    'instance' => 'library',
+                ),
+                'transport' => 'http',
+            ),
+            array( 'user_id' => $this->user_id )
+        );
+
+        remove_filter( 'pre_http_request', $http_interceptor, 10 );
+
+        $_SERVER = $original_server;
+
+        update_option( 'siteurl', $previous_siteurl );
+        update_option( 'home', $previous_home );
+
+        $this->assertNotNull( $captured_url );
+        $parsed = wp_parse_url( $captured_url );
+        $this->assertSame( 'example.test', $parsed['host'] );
+    }
 }
