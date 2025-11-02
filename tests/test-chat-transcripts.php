@@ -126,6 +126,60 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Nested tool response payloads should be flattened into readable text.
+     */
+    public function test_transcript_flattens_nested_tool_response_content() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'user',
+                            'content' => 'What is in the image?',
+                        ),
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type' => 'output_text',
+                                    'text' => array(
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'The image shows a lighthouse at sunset.',
+                                        ),
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'Warm orange light reflects across the water.',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 2, $messages );
+        $this->assertSame( 'tool', $messages[1]['role'] );
+        $this->assertSame(
+            "The image shows a lighthouse at sunset.\n\nWarm orange light reflects across the water.",
+            $messages[1]['content']
+        );
+    }
+
+    /**
      * Ensure successful chat requests create a transcript record when storage is enabled.
      */
     public function test_chat_transcript_saved_to_cct() {

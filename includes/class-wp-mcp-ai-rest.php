@@ -5161,21 +5161,7 @@ class WP_MCP_AI_REST {
         }
 
         if ( is_array( $content ) ) {
-            $parts = array();
-
-            foreach ( $content as $part ) {
-                if ( ! is_array( $part ) ) {
-                    continue;
-                }
-
-                if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
-                    $parts[] = $part['text'];
-                } elseif ( isset( $part['content'] ) && is_string( $part['content'] ) ) {
-                    $parts[] = $part['content'];
-                } elseif ( isset( $part['value'] ) && is_string( $part['value'] ) ) {
-                    $parts[] = $part['value'];
-                }
-            }
+            $parts = $this->collect_message_content_fragments( $content );
 
             if ( ! empty( $parts ) ) {
                 return $this->clean_transcript_text( implode( "\n\n", $parts ) );
@@ -5187,6 +5173,71 @@ class WP_MCP_AI_REST {
         }
 
         return '';
+    }
+
+    /**
+     * Recursively extract readable fragments from structured message content.
+     *
+     * @param mixed $value Arbitrary content value.
+     * @return array
+     */
+    protected function collect_message_content_fragments( $value ) {
+        $fragments = array();
+
+        if ( is_string( $value ) ) {
+            $fragments[] = $value;
+
+            return $fragments;
+        }
+
+        if ( is_scalar( $value ) ) {
+            $fragments[] = (string) $value;
+
+            return $fragments;
+        }
+
+        if ( ! is_array( $value ) ) {
+            return $fragments;
+        }
+
+        if ( $this->is_sequential_array( $value ) ) {
+            foreach ( $value as $child ) {
+                $fragments = array_merge( $fragments, $this->collect_message_content_fragments( $child ) );
+            }
+
+            return $fragments;
+        }
+
+        $keys_to_extract = array( 'text', 'content', 'value', 'output_text', 'input_text' );
+
+        foreach ( $keys_to_extract as $key ) {
+            if ( array_key_exists( $key, $value ) ) {
+                $fragments = array_merge(
+                    $fragments,
+                    $this->collect_message_content_fragments( $value[ $key ] )
+                );
+            }
+        }
+
+        return $fragments;
+    }
+
+    /**
+     * Determine whether an array is sequentially indexed.
+     *
+     * @param array $array Array to inspect.
+     * @return bool
+     */
+    protected function is_sequential_array( $array ) {
+        if ( ! is_array( $array ) ) {
+            return false;
+        }
+
+        if ( array() === $array ) {
+            return true;
+        }
+
+        return array_keys( $array ) === range( 0, count( $array ) - 1 );
     }
 
     /**
