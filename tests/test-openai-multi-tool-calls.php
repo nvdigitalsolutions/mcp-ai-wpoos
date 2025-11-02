@@ -20,12 +20,12 @@ class WP_MCP_AI_OpenAI_Multi_Tool_Calls_Test extends WP_UnitTestCase {
 
 		$client = new WP_MCP_AI_OpenAI_Client();
 
-		// Use reflection to access the protected method
+		// Use reflection to access the protected method.
 		$reflection = new ReflectionClass( $client );
 		$method     = $reflection->getMethod( 'should_use_responses_api' );
 		$method->setAccessible( true );
 
-		// Test with assistant message containing tool_calls
+		// Test with assistant message containing tool_calls.
 		$messages_with_tool_calls = array(
 			array(
 				'role'    => 'user',
@@ -147,7 +147,7 @@ class WP_MCP_AI_OpenAI_Multi_Tool_Calls_Test extends WP_UnitTestCase {
 	/**
 	 * Test that multiple tool calls are correctly preserved in message structure.
 	 */
-	public function test_multiple_tool_calls_preserved_in_normalisation() {
+	public function test_multiple_tool_calls_preserved_in_normalization() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
