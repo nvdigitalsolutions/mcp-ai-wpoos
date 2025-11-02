@@ -2193,6 +2193,25 @@ class WP_MCP_AI_OpenAI_Client {
 	 * @return bool
 	 */
 	protected function should_use_responses_api( array $messages, array $options ) {
+		// Don't use Responses API when there are tool calls or tool messages in the conversation.
+		// The Responses API doesn't support the tool_calls/tool_call_id mechanism used by Chat Completions.
+		foreach ( $messages as $message ) {
+			if ( ! is_array( $message ) ) {
+				continue;
+			}
+
+			$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+
+			// If there are tool role messages or assistant messages with tool_calls, use Chat Completions API.
+			if ( 'tool' === $role ) {
+				return false;
+			}
+
+			if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) ) {
+				return false;
+			}
+		}
+
 		if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
 			return true;
 		}
