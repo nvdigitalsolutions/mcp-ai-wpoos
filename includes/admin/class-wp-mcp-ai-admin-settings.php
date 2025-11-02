@@ -62,6 +62,9 @@ class WP_MCP_AI_Admin_Settings {
             'auth0_domain'         => '',
             'auth0_audience'       => '',
             'auth0_required_scope' => '',
+            'enable_auth0_github_bridge' => false,
+            'auth0_management_client_id' => '',
+            'auth0_management_client_secret' => '',
             'enable_simple_jwt_login' => false,
             'delete_on_uninstall'  => false,
             'crawl4ai_base_url'    => '',
@@ -1223,6 +1226,30 @@ class WP_MCP_AI_Admin_Settings {
         );
 
         add_settings_field(
+            'enable_auth0_github_bridge',
+            __( 'Enable Auth0 GitHub bridge', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_github_bridge_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_field(
+            'auth0_management_client_id',
+            __( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_management_client_id_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_field(
+            'auth0_management_client_secret',
+            __( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
+            array( $this, 'render_auth0_management_client_secret_field' ),
+            self::PAGE_SLUG,
+            'wp_mcp_ai_authentication_section'
+        );
+
+        add_settings_field(
             'enable_simple_jwt_login',
             __( 'Enable Simple JWT Login tokens', 'wp-mcp-ai' ),
             array( $this, 'render_simple_jwt_login_field' ),
@@ -1679,6 +1706,16 @@ class WP_MCP_AI_Admin_Settings {
             $clean['auth0_required_scope'] = trim( sanitize_text_field( $settings['auth0_required_scope'] ) );
         }
 
+        $clean['enable_auth0_github_bridge'] = ! empty( $settings['enable_auth0_github_bridge'] );
+
+        if ( isset( $settings['auth0_management_client_id'] ) ) {
+            $clean['auth0_management_client_id'] = trim( sanitize_text_field( $settings['auth0_management_client_id'] ) );
+        }
+
+        if ( isset( $settings['auth0_management_client_secret'] ) ) {
+            $clean['auth0_management_client_secret'] = trim( sanitize_text_field( $settings['auth0_management_client_secret'] ) );
+        }
+
         $clean['enable_simple_jwt_login'] = $this->is_simple_jwt_login_available() && ! empty( $settings['enable_simple_jwt_login'] );
 
         $clean['delete_on_uninstall'] = ! empty( $settings['delete_on_uninstall'] );
@@ -2097,6 +2134,47 @@ class WP_MCP_AI_Admin_Settings {
         ?>
         <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_required_scope]" value="<?php echo esc_attr( $settings['auth0_required_scope'] ); ?>" class="regular-text" placeholder="mcp:invoke" />
         <p class="description"><?php esc_html_e( 'Optional space-delimited scope that must be present on remote bearer tokens.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Auth0 GitHub bridge toggle.
+     */
+    public function render_auth0_github_bridge_field() {
+        $settings = self::get_settings();
+        $enabled  = ! empty( $settings['enable_auth0_github_bridge'] );
+        $field_id = 'wp-mcp-ai-enable-auth0-github-bridge';
+
+        printf(
+            '<label for="%1$s"><input id="%1$s" type="checkbox" name="%2$s[enable_auth0_github_bridge]" value="1" %3$s /> %4$s</label>',
+            esc_attr( $field_id ),
+            esc_attr( self::OPTION_NAME ),
+            checked( $enabled, true, false ),
+            esc_html__( 'Resolve Auth0 GitHub identities into WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' )
+        );
+
+        echo '<p class="description">' . esc_html__( 'Enable after configuring the Auth0 Management API credentials below.', 'wp-mcp-ai' ) . '</p>';
+    }
+
+    /**
+     * Render the Auth0 Management API client ID field.
+     */
+    public function render_auth0_management_client_id_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_id]" value="<?php echo esc_attr( $settings['auth0_management_client_id'] ); ?>" class="regular-text" placeholder="client_abc123" autocomplete="off" />
+        <p class="description"><?php esc_html_e( 'Client ID for the Auth0 Machine-to-Machine application authorised for the Management API.', 'wp-mcp-ai' ); ?></p>
+        <?php
+    }
+
+    /**
+     * Render the Auth0 Management API client secret field.
+     */
+    public function render_auth0_management_client_secret_field() {
+        $settings = self::get_settings();
+        ?>
+        <input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_secret]" value="<?php echo esc_attr( $settings['auth0_management_client_secret'] ); ?>" class="regular-text" autocomplete="new-password" />
+        <p class="description"><?php esc_html_e( 'Secret for the Auth0 Management API application. Required when the GitHub profile lacks email or username claims.', 'wp-mcp-ai' ); ?></p>
         <?php
     }
 
