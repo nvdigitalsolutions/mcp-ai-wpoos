@@ -2956,7 +2956,7 @@ class WP_MCP_AI_REST {
 			}
 		}
 
-		if ( 'publish' !== $assistant_post->post_status && ! current_user_can( 'read_post', $assistant_id ) && ! $token_bypasses_visibility ) {
+		if ( 'publish' !== $assistant_post->post_status && ! $this->user_can_access_post( $assistant_id ) && ! $token_bypasses_visibility ) {
 			return new WP_Error(
 				'wp_mcp_ai_assistant_forbidden',
 				__( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
@@ -2965,6 +2965,29 @@ class WP_MCP_AI_REST {
 		}
 
 		return $assistant_post;
+	}
+
+	/**
+	 * Check if the authenticated user (from auth context or session) can read a post.
+	 *
+	 * This method honors the user_id from token authentication context to prevent
+	 * privilege escalation where a bearer token might inadvertently use privileges
+	 * from an active admin session instead of the mapped token user.
+	 *
+	 * @param int $post_id Post identifier to check access for.
+	 * @return bool Whether the user has read access to the post.
+	 */
+	protected function user_can_access_post( $post_id ) {
+		$auth_context = $this->get_auth_context();
+
+		// If token-authenticated, use the auth context user_id to avoid privilege escalation.
+		if ( ! empty( $auth_context['token_authenticated'] ) && isset( $auth_context['user_id'] ) ) {
+			$check_user_id = absint( $auth_context['user_id'] );
+			return user_can( $check_user_id, 'read_post', $post_id );
+		}
+
+		// Fall back to checking the current session user.
+		return current_user_can( 'read_post', $post_id );
 	}
 
 	/**
