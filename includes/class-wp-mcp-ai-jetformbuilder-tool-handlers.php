@@ -300,7 +300,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
      */
     protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
         $method = strtoupper( $method );
-        $url    = self::prepare_remote_rest_url( $route );
+        $url    = WP_MCP_AI_Proxy_Utils::build_rest_url( self::REST_NAMESPACE, $route );
         $args   = array(
             'method'  => $method,
             'timeout' => 20,
