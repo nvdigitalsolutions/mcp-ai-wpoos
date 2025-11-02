@@ -3089,9 +3089,11 @@ class WP_MCP_AI_REST {
             return $messages;
         }
 
-        $filtered            = array();
-        $pending_calls       = array();
-        $saw_prompt_message  = false;
+        $filtered               = array();
+        $pending_calls          = array();
+        $saw_prompt_message     = false;
+        $saw_assistant_response = false;
+        $blocked_tool_messages  = false;
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -3102,6 +3104,8 @@ class WP_MCP_AI_REST {
 
             if ( in_array( $role, array( 'system', 'user' ), true ) ) {
                 $saw_prompt_message = true;
+                $saw_assistant_response = false;
+                $blocked_tool_messages  = false;
                 $pending_calls      = array();
                 $filtered[]         = $message;
                 continue;
@@ -3138,9 +3142,13 @@ class WP_MCP_AI_REST {
                     );
 
                     $pending_calls = array();
+                    $saw_assistant_response = false;
+                    $blocked_tool_messages  = true;
                     continue;
                 }
 
+                $blocked_tool_messages = false;
+                $saw_assistant_response = true;
                 $filtered[] = $message;
                 continue;
             }
@@ -3161,7 +3169,20 @@ class WP_MCP_AI_REST {
                     continue;
                 }
 
-                if ( empty( $pending_calls ) ) {
+                if ( $blocked_tool_messages ) {
+                    WP_MCP_AI_Logger::log_event(
+                        'dropped_tool_message',
+                        'Dropping tool message without matching tool call.',
+                        array(
+                            'tool_call_id' => $tool_call_id,
+                            'reason'       => 'blocked_by_missing_prompt',
+                        )
+                    );
+
+                    continue;
+                }
+
+                if ( empty( $pending_calls ) && $saw_assistant_response ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',
@@ -3170,10 +3191,11 @@ class WP_MCP_AI_REST {
                             'reason'       => 'no_pending_tool_calls',
                         )
                     );
+
                     continue;
                 }
 
-                if ( ! isset( $pending_calls[ $tool_call_id ] ) ) {
+                if ( ! empty( $pending_calls ) && ! isset( $pending_calls[ $tool_call_id ] ) ) {
                     WP_MCP_AI_Logger::log_event(
                         'dropped_tool_message',
                         'Dropping tool message without matching tool call.',
@@ -3186,7 +3208,9 @@ class WP_MCP_AI_REST {
                     continue;
                 }
 
-                unset( $pending_calls[ $tool_call_id ] );
+                if ( isset( $pending_calls[ $tool_call_id ] ) ) {
+                    unset( $pending_calls[ $tool_call_id ] );
+                }
                 $filtered[] = $message;
                 continue;
             }
