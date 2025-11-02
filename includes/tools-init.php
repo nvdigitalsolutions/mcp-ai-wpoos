@@ -1,6 +1,8 @@
 <?php
 /**
  * Backward-compatible loader for default tool registrations.
+ *
+ * @package WP_MCP_AI
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
