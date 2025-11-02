@@ -297,6 +297,75 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure tool messages without a matching call are skipped to avoid Gemini errors.
+     */
+    public function test_create_chat_completion_skips_unpaired_tool_messages() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['gemini_api_key']       = 'gsk-test';
+        $defaults['default_gemini_model'] = 'gemini-test-model';
+
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Gemini_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array( 'args' => $args, 'url' => $url );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'candidates' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Please run the generate_gemini_image tool.',
+            ),
+            array(
+                'role'    => 'tool',
+                'name'    => 'generate_gemini_image',
+                'content' => '{"result":"done"}',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => 'Thanks!',
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'contents', $payload );
+        $this->assertCount( 2, $payload['contents'] );
+
+        foreach ( $payload['contents'] as $entry ) {
+            foreach ( $entry['parts'] as $part ) {
+                $this->assertArrayNotHasKey( 'functionResponse', $part );
+            }
+        }
+    }
+
+    /**
      * Extract the model slug from the generated Gemini endpoint URL.
      *
      * @param string $url Request URL.
