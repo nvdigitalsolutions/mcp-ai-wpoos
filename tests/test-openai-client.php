@@ -1594,6 +1594,16 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
             array(
                 'role'    => 'assistant',
                 'content' => 'Inspecting your PDF…',
+                'tool_calls' => array(
+                    array(
+                        'id'       => 'call-123',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'process_document',
+                            'arguments' => '{"file":"document.pdf"}',
+                        ),
+                    ),
+                ),
             ),
             array(
                 'role'        => 'tool',
@@ -1647,6 +1657,185 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 
         $this->assertSame( 'input_text', $payload['input'][2]['content'][0]['type'] );
         $this->assertSame( 'Summarise the findings.', $payload['input'][2]['content'][0]['text'] );
+    }
+
+    /**
+     * Ensure tool responses that no longer follow the originating tool call are omitted.
+     */
+    public function test_chat_completion_skips_tool_messages_after_intervening_prompt() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Force_Chat_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array( 'args' => $args, 'url' => $url );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'chatcmpl-test',
+                        'choices' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'generate_gemini_image create a red ball',
+                    ),
+                ),
+            ),
+            array(
+                'role'       => 'assistant',
+                'content'    => '',
+                'tool_calls' => array(
+                    array(
+                        'id'       => 'call_123',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'generate_gemini_image',
+                            'arguments' => '{"prompt":"create a red ball"}',
+                        ),
+                    ),
+                ),
+            ),
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'Thanks!',
+                    ),
+                ),
+            ),
+            array(
+                'role'         => 'tool',
+                'tool_call_id' => 'call_123',
+                'name'         => 'generate_gemini_image',
+                'content'      => '{"result":"done"}',
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'messages', $payload );
+        $this->assertCount( 3, $payload['messages'] );
+        $this->assertSame( 'user', $payload['messages'][0]['role'] );
+        $this->assertSame( 'assistant', $payload['messages'][1]['role'] );
+        $this->assertSame( 'user', $payload['messages'][2]['role'] );
+    }
+
+    /**
+     * Ensure tool responses immediately following the matching call are preserved.
+     */
+    public function test_chat_completion_preserves_tool_messages_after_matching_call() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['openai_api_key'] = 'sk-test';
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Force_Chat_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array( 'args' => $args, 'url' => $url );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'id'      => 'chatcmpl-test',
+                        'choices' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'generate_gemini_image create a blue cube',
+                    ),
+                ),
+            ),
+            array(
+                'role'       => 'assistant',
+                'content'    => '',
+                'tool_calls' => array(
+                    array(
+                        'id'       => 'call_456',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'generate_gemini_image',
+                            'arguments' => '{"prompt":"create a blue cube"}',
+                        ),
+                    ),
+                ),
+            ),
+            array(
+                'role'         => 'tool',
+                'tool_call_id' => 'call_456',
+                'name'         => 'generate_gemini_image',
+                'content'      => '{"result":"done"}',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => array(
+                    array(
+                        'type' => 'text',
+                        'text' => 'What next?',
+                    ),
+                ),
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'messages', $payload );
+        $this->assertCount( 4, $payload['messages'] );
+        $this->assertSame( 'tool', $payload['messages'][2]['role'] );
+        $this->assertSame( 'call_456', $payload['messages'][2]['tool_call_id'] );
     }
 
     /**
