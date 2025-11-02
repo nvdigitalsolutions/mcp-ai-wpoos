@@ -373,8 +373,9 @@ class WP_MCP_AI_Gemini_Client {
             );
         }
 
-        $contents         = array();
-        $system_fragments = array();
+        $contents           = array();
+        $system_fragments   = array();
+        $pending_tool_calls = array();
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -400,7 +401,8 @@ class WP_MCP_AI_Gemini_Client {
                 $gemini_role = 'model';
             }
 
-            $parts = array();
+            $parts                 = array();
+            $message_tool_call_ids = array();
 
             if ( 'assistant' === $role && ! empty( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
                 foreach ( $message['tool_calls'] as $tool_call ) {
@@ -408,17 +410,41 @@ class WP_MCP_AI_Gemini_Client {
 
                     if ( $function_call ) {
                         $parts[] = array( 'functionCall' => $function_call );
+
+                        if ( isset( $tool_call['id'] ) ) {
+                            $tool_call_id = sanitize_text_field( $tool_call['id'] );
+                            if ( '' !== $tool_call_id ) {
+                                $message_tool_call_ids[] = $tool_call_id;
+                            }
+                        }
                     }
                 }
             }
 
             if ( 'tool' === $role ) {
                 $gemini_role = 'user';
+                $tool_call_id = isset( $message['tool_call_id'] ) ? sanitize_text_field( $message['tool_call_id'] ) : '';
+
+                if ( '' === $tool_call_id || ! isset( $pending_tool_calls[ $tool_call_id ] ) ) {
+                    continue;
+                }
+
+                $last_index = count( $contents ) - 1;
+
+                if ( $last_index < 0 || $pending_tool_calls[ $tool_call_id ] !== $last_index ) {
+                    unset( $pending_tool_calls[ $tool_call_id ] );
+                    continue;
+                }
+
                 $function_response = $this->convert_tool_message_to_function_response( $message );
 
                 if ( $function_response ) {
-                    $parts[]      = array( 'functionResponse' => $function_response );
-                    $text_segments = array();
+                    $parts[]        = array( 'functionResponse' => $function_response );
+                    $text_segments   = array();
+                    unset( $pending_tool_calls[ $tool_call_id ] );
+                } else {
+                    unset( $pending_tool_calls[ $tool_call_id ] );
+                    continue;
                 }
             }
 
@@ -428,6 +454,14 @@ class WP_MCP_AI_Gemini_Client {
 
             if ( empty( $parts ) ) {
                 continue;
+            }
+
+            if ( ! empty( $message_tool_call_ids ) ) {
+                $next_index = count( $contents );
+
+                foreach ( $message_tool_call_ids as $tool_call_id ) {
+                    $pending_tool_calls[ $tool_call_id ] = $next_index;
+                }
             }
 
             $contents[] = array(
