@@ -54,6 +54,234 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Tool responses captured in the request payload should appear after the
+     * matching tool call when transcripts are reconstructed.
+     */
+    public function test_transcript_moves_tool_responses_after_function_calls() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $append_method  = new ReflectionMethod( $rest_controller, 'append_new_messages' );
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_appended_tool_responses' );
+
+        $append_method->setAccessible( true );
+        $extract_method->setAccessible( true );
+
+        $conversation = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Initial request',
+            ),
+        );
+
+        $request_messages = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Please review the attachment.',
+            ),
+            array(
+                'role'    => 'tool',
+                'content' => 'Document summary from submit_document_prompt.',
+            ),
+        );
+
+        $existing_count = count( $conversation );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $request_messages, '2024-01-01 00:00:00', '2024-01-01 00:00:00' )
+        );
+
+        $tool_responses = $extract_method->invokeArgs( $rest_controller, array( &$conversation, $existing_count ) );
+
+        $this->assertCount( 2, $conversation, 'User request should remain in the conversation.' );
+        $this->assertSame( 'user', $conversation[1]['role'] );
+        $this->assertCount( 1, $tool_responses, 'Tool response should be extracted for later insertion.' );
+        $this->assertSame( 'tool', $tool_responses[0]['role'] );
+
+        $response_messages = array(
+            array(
+                'role'    => 'tool',
+                'content' => 'Tool call: submit_document_prompt',
+            ),
+        );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $response_messages, '2024-01-01 00:00:05', '2024-01-01 00:00:05' )
+        );
+
+        $append_method->invokeArgs(
+            $rest_controller,
+            array( &$conversation, $tool_responses, '2024-01-01 00:00:05', '2024-01-01 00:00:05' )
+        );
+
+        $this->assertSame( 'tool', $conversation[2]['role'] );
+        $this->assertStringStartsWith( 'Tool call:', $conversation[2]['content'] );
+        $this->assertSame( 'tool', $conversation[3]['role'] );
+        $this->assertSame( 'Document summary from submit_document_prompt.', $conversation[3]['content'] );
+    }
+
+    /**
+     * Nested tool response payloads should be flattened into readable text.
+     */
+    public function test_transcript_flattens_nested_tool_response_content() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'user',
+                            'content' => 'What is in the image?',
+                        ),
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type' => 'output_text',
+                                    'text' => array(
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'The image shows a lighthouse at sunset.',
+                                        ),
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'Warm orange light reflects across the water.',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 2, $messages );
+        $this->assertSame( 'tool', $messages[1]['role'] );
+        $this->assertSame(
+            "The image shows a lighthouse at sunset.\n\nWarm orange light reflects across the water.",
+            $messages[1]['content']
+        );
+    }
+
+    /**
+     * Tool responses that provide structured result arrays should be flattened
+     * so textual summaries remain visible in transcripts.
+     */
+    public function test_transcript_flattens_tool_result_payloads() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type'   => 'json_schema',
+                                    'result' => array(
+                                        'summary' => 'Here is your summary.',
+                                        'details' => array(
+                                            array( 'message' => 'First supporting detail.' ),
+                                            array( 'description' => 'Second supporting detail.' ),
+                                        ),
+                                        'metadata' => array(
+                                            'status' => 'ok',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 1, $messages );
+        $this->assertSame( 'tool', $messages[0]['role'] );
+        $this->assertSame(
+            "Here is your summary.\n\nFirst supporting detail.\n\nSecond supporting detail.",
+            $messages[0]['content']
+        );
+    }
+
+    /**
+     * Gemini tool_result payloads that expose output arrays should still render
+     * readable content within saved transcripts.
+     */
+    public function test_transcript_flattens_tool_result_output_segments() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type'   => 'tool_result',
+                                    'output' => array(
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'Gemini identified a clear sky.',
+                                        ),
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'No precipitation expected for the next 24 hours.',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 1, $messages );
+        $this->assertSame( 'tool', $messages[0]['role'] );
+        $this->assertSame(
+            "Gemini identified a clear sky.\n\nNo precipitation expected for the next 24 hours.",
+            $messages[0]['content']
+        );
+    }
+
+    /**
      * Ensure successful chat requests create a transcript record when storage is enabled.
      */
     public function test_chat_transcript_saved_to_cct() {

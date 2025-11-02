@@ -4888,11 +4888,23 @@ class WP_MCP_AI_REST {
 
             $updated_at = $this->format_transcript_timestamp( $row['response_completed_at'], $row['cct_created'] );
 
-            $request_messages  = $this->extract_request_messages( $row );
-            $response_messages = $this->extract_response_messages( $row );
+            $request_messages       = $this->extract_request_messages( $row );
+            $response_messages      = $this->extract_response_messages( $row );
+            $pending_tool_responses = array();
 
-            $this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+            if ( ! empty( $request_messages ) ) {
+                $existing_count = count( $messages );
+
+                $this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
+
+                $pending_tool_responses = $this->extract_appended_tool_responses( $messages, $existing_count );
+            }
+
             $this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+
+            if ( ! empty( $pending_tool_responses ) ) {
+                $this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'] );
+            }
 
             if ( ! empty( $response_messages ) ) {
                 $turn_count += count( $response_messages );
@@ -5149,21 +5161,7 @@ class WP_MCP_AI_REST {
         }
 
         if ( is_array( $content ) ) {
-            $parts = array();
-
-            foreach ( $content as $part ) {
-                if ( ! is_array( $part ) ) {
-                    continue;
-                }
-
-                if ( isset( $part['text'] ) && is_string( $part['text'] ) ) {
-                    $parts[] = $part['text'];
-                } elseif ( isset( $part['content'] ) && is_string( $part['content'] ) ) {
-                    $parts[] = $part['content'];
-                } elseif ( isset( $part['value'] ) && is_string( $part['value'] ) ) {
-                    $parts[] = $part['value'];
-                }
-            }
+            $parts = $this->collect_message_content_fragments( $content );
 
             if ( ! empty( $parts ) ) {
                 return $this->clean_transcript_text( implode( "\n\n", $parts ) );
@@ -5175,6 +5173,190 @@ class WP_MCP_AI_REST {
         }
 
         return '';
+    }
+
+    /**
+     * Recursively extract readable fragments from structured message content.
+     *
+     * @param mixed $value Arbitrary content value.
+     * @return array
+     */
+    protected function collect_message_content_fragments( $value ) {
+        $fragments = array();
+
+        if ( is_string( $value ) ) {
+            $fragments[] = $value;
+
+            return $fragments;
+        }
+
+        if ( is_scalar( $value ) ) {
+            $fragments[] = (string) $value;
+
+            return $fragments;
+        }
+
+        if ( ! is_array( $value ) ) {
+            return $fragments;
+        }
+
+        if ( $this->is_sequential_array( $value ) ) {
+            foreach ( $value as $child ) {
+                $fragments = array_merge( $fragments, $this->collect_message_content_fragments( $child ) );
+            }
+
+            return $fragments;
+        }
+
+        $keys_to_extract = array(
+            'text',
+            'content',
+            'value',
+            'output_text',
+            'input_text',
+            'result',
+            'output',
+            'message',
+            'summary',
+            'description',
+            'details',
+            'body',
+            'response',
+            'caption',
+            'notes',
+            'note',
+            'answer',
+        );
+
+        $keys_to_skip = array(
+            'type',
+            'role',
+            'id',
+            'tool_call_id',
+            'tool',
+            'name',
+            'slug',
+            'index',
+            'finish_reason',
+            'object',
+            'model',
+            'provider',
+            'status',
+            'status_code',
+            'code',
+            'created',
+            'created_at',
+            'usage',
+            'metadata',
+            'headers',
+            'function',
+            'arguments',
+            'tool_calls',
+            'tools',
+            'assistant_id',
+            'assistant_model',
+            'session_key',
+            'latency_ms',
+            'request_started_at',
+            'response_completed_at',
+            'cct_created',
+            'mime_type',
+            'file_id',
+            'download_url',
+            'downloadurl',
+            'url',
+            'permalink',
+            'href',
+            'image',
+            'image_url',
+            'imagefile',
+            'image_file',
+            'height',
+            'width',
+            'size',
+            'bytes',
+            'quality',
+            'format',
+            'duration_formatted',
+            'prompt',
+            'system_prompt',
+            'temperature',
+            'top_p',
+            'top_k',
+            'max_output_tokens',
+            'stop',
+            'stop_sequences',
+            'frequency_penalty',
+            'presence_penalty',
+            'seed',
+            'n',
+            'attachments',
+            'attachment',
+            'attachment_id',
+            'file_ids',
+            'display_name',
+            'options',
+            'config',
+            'settings',
+            'params',
+            'parameters',
+            'context',
+            'actions',
+            'action',
+            'request',
+        );
+
+        foreach ( $value as $key => $child ) {
+            $normalised_key = is_string( $key ) ? sanitize_key( $key ) : '';
+
+            if ( in_array( $normalised_key, $keys_to_skip, true ) ) {
+                continue;
+            }
+
+            if ( in_array( $normalised_key, $keys_to_extract, true ) ) {
+                $fragments = array_merge(
+                    $fragments,
+                    $this->collect_message_content_fragments( $child )
+                );
+                continue;
+            }
+
+            if ( is_array( $child ) ) {
+                $fragments = array_merge(
+                    $fragments,
+                    $this->collect_message_content_fragments( $child )
+                );
+                continue;
+            }
+
+            if ( is_string( $child ) || is_numeric( $child ) ) {
+                $text = $this->clean_transcript_text( (string) $child );
+
+                if ( '' !== $text ) {
+                    $fragments[] = $text;
+                }
+            }
+        }
+
+        return $fragments;
+    }
+
+    /**
+     * Determine whether an array is sequentially indexed.
+     *
+     * @param array $array Array to inspect.
+     * @return bool
+     */
+    protected function is_sequential_array( $array ) {
+        if ( ! is_array( $array ) ) {
+            return false;
+        }
+
+        if ( array() === $array ) {
+            return true;
+        }
+
+        return array_keys( $array ) === range( 0, count( $array ) - 1 );
     }
 
     /**
@@ -5390,6 +5572,53 @@ class WP_MCP_AI_REST {
             $message['timestamp'] = $timestamp;
             $conversation[]       = $message;
         }
+    }
+
+    /**
+     * Capture any tool responses appended during the current request pass.
+     *
+     * Tool results are initially captured from the chat request payload which
+     * causes them to appear before the matching assistant tool call in the
+     * reconstructed conversation. Moving those responses after the tool call
+     * keeps the transcript in the same order that users observed in the chat
+     * interface.
+     *
+     * @param array $conversation  Current conversation (passed by reference).
+     * @param int   $start_index   Index where new messages were appended.
+     * @return array
+     */
+    protected function extract_appended_tool_responses( array &$conversation, $start_index ) {
+        $total_messages = count( $conversation );
+
+        if ( $start_index >= $total_messages ) {
+            return array();
+        }
+
+        $appended_messages = array_slice( $conversation, $start_index );
+        $conversation      = array_slice( $conversation, 0, $start_index );
+        $tool_responses    = array();
+
+        foreach ( $appended_messages as $message ) {
+            if ( ! is_array( $message ) ) {
+                continue;
+            }
+
+            $role    = isset( $message['role'] ) ? (string) $message['role'] : '';
+            $content = isset( $message['content'] ) ? (string) $message['content'] : '';
+
+            if ( 'tool' === $role && '' !== $content ) {
+                if ( isset( $message['timestamp'] ) ) {
+                    unset( $message['timestamp'] );
+                }
+
+                $tool_responses[] = $message;
+                continue;
+            }
+
+            $conversation[] = $message;
+        }
+
+        return $tool_responses;
     }
 
     /**
