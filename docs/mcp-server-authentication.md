@@ -16,10 +16,12 @@ The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Re
 | Client | Required headers | Notes |
 | --- | --- | --- |
 | Remote MCP assistant | `Authorization: Bearer <Auth0 access token>` | Issue an Auth0 access token for your MCP API and transmit it with each request. |
-| Remote MCP assistant (assistant-issued credential) | `Authorization: Bearer cred_xxxxx.SECRET` | Tokens generated in the assistant editor validate directly against the MCP REST layer and automatically scope the request to the issuing assistant.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 |
+| Remote MCP assistant (assistant-issued credential) | `Authorization: Bearer cred_xxxxx.SECRET` | Tokens generated in the assistant editor validate directly against the MCP REST layer and automatically scope the request to the issuing assistant. Compatible with LM Studio, Claude Desktop, and other MCP clients that accept raw bearer secrets.【F:includes/class-wp-mcp-ai-rest.php†L316-L444】【F:includes/class-wp-mcp-ai-rest.php†L1282-L1321】【F:includes/class-wp-mcp-ai-credentials.php†L242-L297】 |
 | Remote MCP assistant (Simple JWT Login) | `Authorization: Bearer <JWT>` | Available when Simple JWT Login integration is enabled. Tokens are validated via the plugin’s services (with a manual JWT fallback), mapped to WordPress users, and scoped to the assistant encoded in the claims. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】【F:includes/class-wp-mcp-ai-rest.php†L2769-L2808】 |
 | WordPress dashboard / shortcode UI | `X-WP-Nonce: <nonce from wp_create_nonce('wp_rest')>` | Automatically injected by the plugin's UI scripts when rendering the chat interface. |
 | Guest visitors (chat shortcode, Elementor) | `X-WP-MCP-AI-Guest: <temporary token>` (or `guest_token` query/body param) | Shortcodes that enable `allow_guests="true"` mint a one-hour token and pass it to the REST layer so unauthenticated visitors can continue conversations without exposing privileged credentials.【F:includes/class-wp-mcp-ai-shortcode.php†L31-L226】【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】 |
+
+> **ChatGPT connectors:** OpenAI’s current beta requires an Auth0 tenant for connector authentication, so the assistant-issued credentials described here cannot be supplied directly yet. Until ChatGPT adds native bearer-token support, connect through Auth0 or use MCP clients such as LM Studio or Claude Desktop that accept the plugin’s `cred_xxxxx.SECRET` tokens out of the box.
 
 ## Assistant-issued credentials
 
