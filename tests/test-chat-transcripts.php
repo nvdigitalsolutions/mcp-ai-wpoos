@@ -180,6 +180,108 @@ class WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Tool responses that provide structured result arrays should be flattened
+     * so textual summaries remain visible in transcripts.
+     */
+    public function test_transcript_flattens_tool_result_payloads() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type'   => 'json_schema',
+                                    'result' => array(
+                                        'summary' => 'Here is your summary.',
+                                        'details' => array(
+                                            array( 'message' => 'First supporting detail.' ),
+                                            array( 'description' => 'Second supporting detail.' ),
+                                        ),
+                                        'metadata' => array(
+                                            'status' => 'ok',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 1, $messages );
+        $this->assertSame( 'tool', $messages[0]['role'] );
+        $this->assertSame(
+            "Here is your summary.\n\nFirst supporting detail.\n\nSecond supporting detail.",
+            $messages[0]['content']
+        );
+    }
+
+    /**
+     * Gemini tool_result payloads that expose output arrays should still render
+     * readable content within saved transcripts.
+     */
+    public function test_transcript_flattens_tool_result_output_segments() {
+        $mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+        $extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+        $extract_method->setAccessible( true );
+
+        $row = array(
+            'request_payload' => wp_json_encode(
+                array(
+                    'messages' => array(
+                        array(
+                            'role'    => 'tool',
+                            'content' => array(
+                                array(
+                                    'type'   => 'tool_result',
+                                    'output' => array(
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'Gemini identified a clear sky.',
+                                        ),
+                                        array(
+                                            'type' => 'text',
+                                            'text' => 'No precipitation expected for the next 24 hours.',
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+            ),
+        );
+
+        $messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+        $this->assertCount( 1, $messages );
+        $this->assertSame( 'tool', $messages[0]['role'] );
+        $this->assertSame(
+            "Gemini identified a clear sky.\n\nNo precipitation expected for the next 24 hours.",
+            $messages[0]['content']
+        );
+    }
+
+    /**
      * Ensure successful chat requests create a transcript record when storage is enabled.
      */
     public function test_chat_transcript_saved_to_cct() {

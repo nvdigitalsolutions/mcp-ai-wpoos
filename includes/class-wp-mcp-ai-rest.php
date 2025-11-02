@@ -5208,14 +5208,133 @@ class WP_MCP_AI_REST {
             return $fragments;
         }
 
-        $keys_to_extract = array( 'text', 'content', 'value', 'output_text', 'input_text' );
+        $keys_to_extract = array(
+            'text',
+            'content',
+            'value',
+            'output_text',
+            'input_text',
+            'result',
+            'output',
+            'message',
+            'summary',
+            'description',
+            'details',
+            'body',
+            'response',
+            'caption',
+            'notes',
+            'note',
+            'answer',
+        );
 
-        foreach ( $keys_to_extract as $key ) {
-            if ( array_key_exists( $key, $value ) ) {
+        $keys_to_skip = array(
+            'type',
+            'role',
+            'id',
+            'tool_call_id',
+            'tool',
+            'name',
+            'slug',
+            'index',
+            'finish_reason',
+            'object',
+            'model',
+            'provider',
+            'status',
+            'status_code',
+            'code',
+            'created',
+            'created_at',
+            'usage',
+            'metadata',
+            'headers',
+            'function',
+            'arguments',
+            'tool_calls',
+            'tools',
+            'assistant_id',
+            'assistant_model',
+            'session_key',
+            'latency_ms',
+            'request_started_at',
+            'response_completed_at',
+            'cct_created',
+            'mime_type',
+            'file_id',
+            'download_url',
+            'downloadurl',
+            'url',
+            'permalink',
+            'href',
+            'image',
+            'image_url',
+            'imagefile',
+            'image_file',
+            'height',
+            'width',
+            'size',
+            'bytes',
+            'quality',
+            'format',
+            'duration_formatted',
+            'prompt',
+            'system_prompt',
+            'temperature',
+            'top_p',
+            'top_k',
+            'max_output_tokens',
+            'stop',
+            'stop_sequences',
+            'frequency_penalty',
+            'presence_penalty',
+            'seed',
+            'n',
+            'attachments',
+            'attachment',
+            'attachment_id',
+            'file_ids',
+            'display_name',
+            'options',
+            'config',
+            'settings',
+            'params',
+            'parameters',
+            'context',
+            'actions',
+            'action',
+            'request',
+        );
+
+        foreach ( $value as $key => $child ) {
+            $normalised_key = is_string( $key ) ? sanitize_key( $key ) : '';
+
+            if ( in_array( $normalised_key, $keys_to_skip, true ) ) {
+                continue;
+            }
+
+            if ( in_array( $normalised_key, $keys_to_extract, true ) ) {
                 $fragments = array_merge(
                     $fragments,
-                    $this->collect_message_content_fragments( $value[ $key ] )
+                    $this->collect_message_content_fragments( $child )
                 );
+                continue;
+            }
+
+            if ( is_array( $child ) ) {
+                $fragments = array_merge(
+                    $fragments,
+                    $this->collect_message_content_fragments( $child )
+                );
+                continue;
+            }
+
+            if ( is_string( $child ) || is_numeric( $child ) ) {
+                $text = $this->clean_transcript_text( (string) $child );
+
+                if ( '' !== $text ) {
+                    $fragments[] = $text;
+                }
             }
         }
 
