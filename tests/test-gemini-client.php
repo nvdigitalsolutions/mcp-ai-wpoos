@@ -297,6 +297,127 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
     }
 
     /**
+     * Ensure multiple tool responses following a single assistant tool call are retained in order.
+     */
+    public function test_create_chat_completion_allows_multiple_tool_responses_after_single_call() {
+        $defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+        $defaults['gemini_api_key']       = 'gsk-test';
+        $defaults['default_gemini_model'] = 'gemini-test-model';
+
+        update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+        $client           = new WP_MCP_AI_Gemini_Client();
+        $captured_request = null;
+
+        $filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+            $captured_request = array( 'args' => $args, 'url' => $url );
+
+            return array(
+                'headers'  => array(),
+                'body'     => wp_json_encode(
+                    array(
+                        'candidates' => array(),
+                    )
+                ),
+                'response' => array(
+                    'code'    => 200,
+                    'message' => 'OK',
+                ),
+            );
+        };
+
+        add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+        $messages = array(
+            array(
+                'role'    => 'user',
+                'content' => 'Please gather weather and time information.',
+            ),
+            array(
+                'role'       => 'assistant',
+                'content'    => '',
+                'tool_calls' => array(
+                    array(
+                        'id'       => 'call_weather',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'get_weather',
+                            'arguments' => '{"location":"London"}',
+                        ),
+                    ),
+                    array(
+                        'id'       => 'call_time',
+                        'type'     => 'function',
+                        'function' => array(
+                            'name'      => 'get_time',
+                            'arguments' => '{"location":"London"}',
+                        ),
+                    ),
+                ),
+            ),
+            array(
+                'role'         => 'tool',
+                'tool_call_id' => 'call_weather',
+                'name'         => 'get_weather',
+                'content'      => '{"result":"sunny"}',
+            ),
+            array(
+                'role'         => 'tool',
+                'tool_call_id' => 'call_time',
+                'name'         => 'get_time',
+                'content'      => '{"result":"10:00"}',
+            ),
+            array(
+                'role'    => 'user',
+                'content' => 'Thank you!',
+            ),
+        );
+
+        $response = $client->create_chat_completion( $messages, array() );
+
+        remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+        $this->assertIsArray( $response );
+        $this->assertArrayHasKey( 'choices', $response );
+        $this->assertNotNull( $captured_request );
+
+        $payload = json_decode( $captured_request['args']['body'], true );
+
+        $this->assertIsArray( $payload );
+        $this->assertArrayHasKey( 'contents', $payload );
+        $this->assertCount( 5, $payload['contents'] );
+
+        $this->assertSame( 'model', $payload['contents'][1]['role'] );
+        $this->assertArrayHasKey( 'functionCall', $payload['contents'][1]['parts'][0] );
+        $this->assertSame( 'get_weather', $payload['contents'][1]['parts'][0]['functionCall']['name'] );
+
+        $this->assertSame( 'user', $payload['contents'][2]['role'] );
+        $this->assertArrayHasKey( 'functionResponse', $payload['contents'][2]['parts'][0] );
+        $this->assertSame( 'get_weather', $payload['contents'][2]['parts'][0]['functionResponse']['name'] );
+        $this->assertSame(
+            array(
+                'result'        => 'sunny',
+                'tool_call_id'  => 'call_weather',
+            ),
+            $payload['contents'][2]['parts'][0]['functionResponse']['response']
+        );
+
+        $this->assertSame( 'user', $payload['contents'][3]['role'] );
+        $this->assertArrayHasKey( 'functionResponse', $payload['contents'][3]['parts'][0] );
+        $this->assertSame( 'get_time', $payload['contents'][3]['parts'][0]['functionResponse']['name'] );
+        $this->assertSame(
+            array(
+                'result'        => '10:00',
+                'tool_call_id'  => 'call_time',
+            ),
+            $payload['contents'][3]['parts'][0]['functionResponse']['response']
+        );
+
+        $this->assertSame( 'user', $payload['contents'][4]['role'] );
+        $this->assertSame( 'Thank you!', $payload['contents'][4]['parts'][0]['text'] );
+    }
+
+    /**
      * Ensure tool messages without a matching call are skipped to avoid Gemini errors.
      */
     public function test_create_chat_completion_skips_unpaired_tool_messages() {

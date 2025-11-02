@@ -373,9 +373,10 @@ class WP_MCP_AI_Gemini_Client {
             );
         }
 
-        $contents           = array();
-        $system_fragments   = array();
-        $pending_tool_calls = array();
+        $contents               = array();
+        $system_fragments       = array();
+        $pending_tool_calls     = array();
+        $latest_assistant_index = null;
 
         foreach ( $messages as $message ) {
             if ( ! is_array( $message ) ) {
@@ -398,7 +399,14 @@ class WP_MCP_AI_Gemini_Client {
 
             $gemini_role = 'user';
             if ( 'assistant' === $role ) {
+                $pending_tool_calls     = array();
+                $latest_assistant_index = null;
                 $gemini_role = 'model';
+            }
+
+            if ( 'user' === $role ) {
+                $pending_tool_calls     = array();
+                $latest_assistant_index = null;
             }
 
             $parts                 = array();
@@ -429,9 +437,15 @@ class WP_MCP_AI_Gemini_Client {
                     continue;
                 }
 
-                $last_index = count( $contents ) - 1;
+                $last_index    = count( $contents ) - 1;
+                $origin_index  = $pending_tool_calls[ $tool_call_id ];
 
-                if ( $last_index < 0 || $pending_tool_calls[ $tool_call_id ] !== $last_index ) {
+                if ( $last_index < 0 || null === $latest_assistant_index ) {
+                    unset( $pending_tool_calls[ $tool_call_id ] );
+                    continue;
+                }
+
+                if ( $origin_index !== $latest_assistant_index || $origin_index > $last_index ) {
                     unset( $pending_tool_calls[ $tool_call_id ] );
                     continue;
                 }
@@ -462,12 +476,20 @@ class WP_MCP_AI_Gemini_Client {
                 foreach ( $message_tool_call_ids as $tool_call_id ) {
                     $pending_tool_calls[ $tool_call_id ] = $next_index;
                 }
+
+                $latest_assistant_index = $next_index;
+            } elseif ( 'assistant' === $role ) {
+                $latest_assistant_index = null;
             }
 
             $contents[] = array(
                 'role'  => $gemini_role,
                 'parts' => $parts,
             );
+
+            if ( 'assistant' === $role && null === $latest_assistant_index ) {
+                $latest_assistant_index = count( $contents ) - 1;
+            }
         }
 
         if ( ! empty( $options['system_prompt'] ) ) {
