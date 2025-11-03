@@ -2302,6 +2302,15 @@ class WP_MCP_AI_OpenAI_Client {
 				$entry['content'] = $this->normalise_responses_content_segments( $entry['content'], $attachment_lookup, $role );
 			}
 
+			// The Responses API doesn't support tool_calls or tool_call_id in the input array.
+			// Remove them if present to ensure compliance with the API specification.
+			if ( isset( $entry['tool_calls'] ) ) {
+				unset( $entry['tool_calls'] );
+			}
+			if ( isset( $entry['tool_call_id'] ) ) {
+				unset( $entry['tool_call_id'] );
+			}
+
 			$prepared[] = $entry;
 		}
 
