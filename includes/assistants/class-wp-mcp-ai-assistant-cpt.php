@@ -430,29 +430,6 @@ class WP_MCP_AI_Assistant_CPT {
 	}
 
 	/**
-	 * Ensure admin menu icon styles load so the CPT icon matches JetEngine's sizing.
-	 */
-	public static function enqueue_admin_menu_icon_styles() {
-		static $enqueued = false;
-
-		if ( $enqueued ) {
-			return;
-		}
-
-		$enqueued = true;
-
-		$post_type_class = sanitize_html_class( self::POST_TYPE );
-		$styles          = sprintf(
-			'#adminmenu .menu-icon-%1$s a.menu-top{display:flex;align-items:center;gap:8px;padding:0 12px 0 6px;}#adminmenu .menu-icon-%1$s .wp-menu-image{display:flex;align-items:center;justify-content:center;width:20px;height:20px;margin:0;}#adminmenu .menu-icon-%1$s .wp-menu-name{display:flex;align-items:center;}#adminmenu .menu-icon-%1$s .wp-menu-image img{width:20px;height:20px;max-width:none;display:block;object-fit:contain;}',
-			$post_type_class
-		);
-
-		wp_register_style( 'wp-mcp-ai-admin-menu-icon', false, array(), null );
-		wp_enqueue_style( 'wp-mcp-ai-admin-menu-icon' );
-		wp_add_inline_style( 'wp-mcp-ai-admin-menu-icon', $styles );
-	}
-
-	/**
 	 * Register the assistant custom post type.
 	 */
 	public static function register_post_type() {
