@@ -744,6 +744,7 @@ class WP_MCP_AI_OpenAI_Client {
 		$response_mime     = '';
 		$response_format   = '';
 		$response_created  = 0;
+		$response_model    = $model;
 		$response_revision = '';
 
 		if ( $is_json_response || '' === $content_type ) {
@@ -820,6 +821,7 @@ class WP_MCP_AI_OpenAI_Client {
 			}
 
 			$response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
+			$response_model    = isset( $decoded['model'] ) ? sanitize_text_field( $decoded['model'] ) : $model;
 			$response_revision = isset( $image_response['revised_prompt'] ) ? (string) $image_response['revised_prompt'] : '';
 		} elseif ( $this->is_image_content_type( $content_type ) || 'application/octet-stream' === $content_type ) {
 			$image_data = $body;
@@ -857,7 +859,7 @@ class WP_MCP_AI_OpenAI_Client {
 			'image'          => $image_data,
 			'format'         => $response_format,
 			'mime_type'      => $response_mime,
-			'model'          => $model,
+			'model'          => $response_model,
 			'prompt'         => $prompt,
 			'size'           => $size,
 			'quality'        => $quality,
@@ -869,7 +871,7 @@ class WP_MCP_AI_OpenAI_Client {
 			'openai_image_response',
 			'OpenAI image generation completed.',
 			array(
-				'model'   => $model,
+				'model'   => $response_model,
 				'size'    => $size,
 				'quality' => $quality,
 				'format'  => $response_format,
