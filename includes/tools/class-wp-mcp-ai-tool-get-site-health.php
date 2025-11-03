@@ -114,17 +114,17 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			)
 		);
 
-		$dependencies_loaded    = $this->ensure_site_health_dependencies();
-		$wp_site_health_exists  = class_exists( 'WP_Site_Health', false );
-		$get_tests_callable     = is_callable( array( 'WP_Site_Health', 'get_tests' ) );
+		$dependencies_loaded   = $this->ensure_site_health_dependencies();
+		$wp_site_health_exists = class_exists( 'WP_Site_Health', false );
+		$get_tests_callable    = is_callable( array( 'WP_Site_Health', 'get_tests' ) );
 
 		WP_MCP_AI_Logger::log_event(
 			'site_health_dependency_check',
 			'Site Health dependencies check completed.',
 			array(
-				'dependencies_loaded'    => $dependencies_loaded,
-				'wp_site_health_exists'  => $wp_site_health_exists,
-				'get_tests_callable'     => $get_tests_callable,
+				'dependencies_loaded'   => $dependencies_loaded,
+				'wp_site_health_exists' => $wp_site_health_exists,
+				'get_tests_callable'    => $get_tests_callable,
 			)
 		);
 

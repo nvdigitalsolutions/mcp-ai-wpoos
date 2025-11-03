@@ -554,6 +554,82 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		}
 	}
 
+	if ( ! class_exists( 'WP_MCP_AI_CLI_Queue_Command' ) ) {
+		/**
+		 * WP-CLI commands for managing the job queue.
+		 */
+		class WP_MCP_AI_CLI_Queue_Command extends WP_CLI_Command {
+
+			/**
+			 * Display queue statistics.
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     wp mcp-ai queue stats
+			 *
+			 * @subcommand stats
+			 */
+			public function stats() {
+				$stats = WP_MCP_AI_Job_Queue_Manager::get_queue_stats();
+
+				WP_CLI::line( 'Job Queue Statistics:' );
+				WP_CLI::line( '  Total jobs:   ' . $stats['total'] );
+				WP_CLI::line( '  Active jobs:  ' . $stats['active'] );
+				WP_CLI::line( '  Pending jobs: ' . $stats['pending'] );
+				WP_CLI::line( '  Failed jobs:  ' . $stats['failed'] );
+			}
+
+			/**
+			 * Process the job queue.
+			 *
+			 * ## OPTIONS
+			 *
+			 * [--max-concurrent=<num>]
+			 * : Maximum number of concurrent jobs to process. Default: 3
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     wp mcp-ai queue process
+			 *     wp mcp-ai queue process --max-concurrent=5
+			 *
+			 * @subcommand process
+			 */
+			public function process( $args, $assoc_args ) {
+				$max_concurrent = isset( $assoc_args['max-concurrent'] ) ? absint( $assoc_args['max-concurrent'] ) : 3;
+
+				WP_CLI::line( 'Processing job queue...' );
+
+				$result = WP_MCP_AI_Job_Queue_Manager::process_queue( $max_concurrent );
+
+				WP_CLI::success(
+					sprintf(
+						'Processed %d jobs. %d jobs currently active.',
+						$result['processed'],
+						$result['active']
+					)
+				);
+			}
+
+			/**
+			 * Clear the job queue.
+			 *
+			 * ## EXAMPLES
+			 *
+			 *     wp mcp-ai queue clear
+			 *
+			 * @subcommand clear
+			 */
+			public function clear() {
+				WP_CLI::confirm( 'Are you sure you want to clear the entire job queue?' );
+
+				WP_MCP_AI_Job_Queue_Manager::clear_queue();
+
+				WP_CLI::success( 'Job queue cleared.' );
+			}
+		}
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
+	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
 }
