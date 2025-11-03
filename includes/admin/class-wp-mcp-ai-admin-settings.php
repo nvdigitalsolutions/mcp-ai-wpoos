@@ -1316,7 +1316,7 @@ class WP_MCP_AI_Admin_Settings {
 
 		add_settings_field(
 			'default_provider',
-			__( 'Default Provider', 'wp-mcp-ai' ),
+			__( 'Default API Provider', 'wp-mcp-ai' ),
 			array( $this, 'render_default_provider_field' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_assistant_section'
@@ -3424,7 +3424,7 @@ class WP_MCP_AI_Admin_Settings {
 			}
 			?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Select which provider new assistants should use when no override is set.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default API for the system. This provider will be used by assistants and API requests when no specific provider is set. Changing this affects all new conversations.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 

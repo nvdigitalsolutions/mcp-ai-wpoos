@@ -51,6 +51,9 @@ class WP_MCP_AI_Language_Model_Router {
 	/**
 	 * Dispatch a chat completion request to the appropriate provider.
 	 *
+	 * Uses the provider specified in options, or falls back to the configured
+	 * default API provider from settings. If no default is configured, uses OpenAI.
+	 *
 	 * @param array $messages Sanitized message payload.
 	 * @param array $options  Request options.
 	 * @return array|WP_Error
@@ -58,8 +61,10 @@ class WP_MCP_AI_Language_Model_Router {
 	public function create_chat_completion( array $messages, array $options = array() ) {
 		$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
 
+		// If no provider specified, use the configured default API setting.
 		if ( empty( $provider ) ) {
-			$provider = 'openai';
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 		}
 
 		switch ( $provider ) {
