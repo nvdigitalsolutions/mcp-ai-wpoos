@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "wordpress-editorial": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_aaa.SECRET1"
+      },
+      "sse": true,
+      "timeout": 30000
+    },
+    "wordpress-support": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_bbb.SECRET2"
+      },
+      "sse": true,
+      "timeout": 30000
+    },
+    "wordpress-analytics": {
+      "url": "https://analytics.example.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_ccc.SECRET3"
+      },
+      "sse": true,
+      "timeout": 45000
+    }
+  }
+}

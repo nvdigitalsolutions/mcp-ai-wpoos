@@ -32,6 +32,10 @@
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
   - [Using WP MCP AI as an MCP server](#using-wp-mcp-ai-as-an-mcp-server)
   - [Operating multiple MCP deployments](#operating-multiple-mcp-deployments)
+- [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
+  - [Claude Desktop setup](#claude-desktop-setup)
+  - [LM Studio setup](#lm-studio-setup)
+  - [ChatGPT connector setup](#chatgpt-connector-setup)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
 - [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
@@ -387,6 +391,87 @@ Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Auth
 Provision a separate WordPress site (or network site) for each MCP server you need, activate WP MCP AI, and repeat the configuration steps above with environment-specific Auth0 audiences, scopes, and provider keys. Because the assistant directory response includes the resolved REST base and namespace metadata, MCP clients can be pointed at different deployments simply by swapping the base URL and the bearer credential minted for that site’s assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L48-L118】【F:includes/class-wp-mcp-ai-rest.php†L653-L703】
 
 Sites that enable the Simple JWT Login integration can now reuse those bearer tokens alongside Auth0 credentials. The plugin validates tokens with Simple JWT Login’s native services, falls back to manual JWT decoding when the dependency cannot resolve a user, and automatically scopes REST requests to the assistant encoded in the token so cross-assistant hops are blocked with actionable errors.【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】【F:includes/class-wp-mcp-ai-rest.php†L2769-L2808】
+
+
+## 🌐 Connecting Remote MCP Clients
+
+WP MCP AI works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
+
+### Quick Start
+
+1. **Generate an assistant credential** from any published assistant's **API Credentials** meta box
+2. **Copy the token** (format: `cred_xxxxx.SECRET`) — shown only once!
+3. **Configure your MCP client** with your site's base URL and the credential
+4. **Test the connection** using the provided test script or WP-CLI command
+
+### Claude Desktop setup
+
+Claude Desktop supports MCP servers through a JSON configuration file. Add your WordPress site:
+
+```json
+{
+  "mcpServers": {
+    "wordpress-site": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
+      },
+      "sse": true
+    }
+  }
+}
+```
+
+See the complete [Claude Desktop setup guide](docs/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
+
+### LM Studio setup
+
+LM Studio provides a UI for adding MCP servers. Configure it with:
+
+- **Server Name:** WordPress Site (or your preferred name)
+- **Base URL:** `https://your-site.com/wp-json/mcp-ai/v1`
+- **Authentication Type:** Bearer Token
+- **Token:** `cred_xxxxx.SECRET`
+- **Enable SSE:** ✓ (checked)
+
+Alternatively, use LM Studio's JSON configuration file — see the [LM Studio setup guide](docs/remote-client-setup.md#lm-studio-setup) and [example config](assets/examples/lmstudio-config.json).
+
+### ChatGPT connector setup
+
+⚠️ **Note:** ChatGPT connectors currently require Auth0 authentication. Assistant-issued credentials are not yet supported by OpenAI's ChatGPT platform.
+
+To connect via ChatGPT:
+1. Configure Auth0 in **Settings → MCP AI**
+2. Generate an Auth0 access token with the configured audience
+3. Add the MCP server in ChatGPT's connector settings
+
+See the [ChatGPT connector guide](docs/remote-client-setup.md#chatgpt-connector-setup) for detailed Auth0 setup steps.
+
+### Testing your connection
+
+Use the built-in test script to verify connectivity:
+
+```bash
+./bin/test-remote-connection.sh \
+  -u https://your-site.com/wp-json/mcp-ai/v1 \
+  -t cred_xxxxx.SECRET
+```
+
+Or use WP-CLI:
+
+```bash
+wp mcp-ai remote https://your-site.com/wp-json/mcp-ai/v1 \
+  --token=cred_xxxxx.SECRET
+```
+
+Expected output confirms the server is reachable and lists available assistants.
+
+### Complete documentation
+
+For comprehensive setup guides, troubleshooting, and advanced configurations, see:
+- **[Remote Client Setup Guide](docs/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
+- **[MCP Server Authentication](docs/mcp-server-authentication.md)** – Authentication methods and credential management
+- **[REST API Reference](docs/rest-api.md)** – Endpoint documentation and payload examples
 
 ## 🤖 ChatGPT Connector
 OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because WP MCP AI issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
