@@ -2177,6 +2177,12 @@ class WP_MCP_AI_Admin_Settings {
 				submit_button();
 				?>
 			</form>
+			<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
+				<form id="wp-mcp-ai-prune-log-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: none;">
+					<?php wp_nonce_field( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' ); ?>
+					<input type="hidden" name="action" value="wp_mcp_ai_prune_log" />
+				</form>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -3648,11 +3654,9 @@ class WP_MCP_AI_Admin_Settings {
 					<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
 				<?php endif; ?>
 				<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="wp-mcp-ai-log-meta__actions">
-						<?php wp_nonce_field( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' ); ?>
-						<input type="hidden" name="action" value="wp_mcp_ai_prune_log" />
-						<?php submit_button( __( 'Prune log file', 'wp-mcp-ai' ), 'secondary', 'wp_mcp_ai_prune_log', false ); ?>
-					</form>
+					<div class="wp-mcp-ai-log-meta__actions">
+						<?php submit_button( __( 'Prune log file', 'wp-mcp-ai' ), 'secondary', 'wp_mcp_ai_prune_log', false, array( 'form' => 'wp-mcp-ai-prune-log-form' ) ); ?>
+					</div>
 				<?php elseif ( '' !== $log_file_path && $log_file_exists ) : ?>
 					<p class="description"><?php esc_html_e( 'The PHP error log is not writable. Update the file permissions to prune it from the dashboard.', 'wp-mcp-ai' ); ?></p>
 				<?php endif; ?>
