@@ -154,6 +154,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			$payload = array(
 				'created' => 999,
+				'model'   => 'gpt-image-1',
 				'data'    => array(
 					array(
 						'b64_json' => $png_base64,
@@ -226,6 +227,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 				$payload = array(
 					'created' => 321,
+					'model'   => 'dall-e-3',
 					'data'    => array(
 						array(
 							'url'            => $image_url,
@@ -304,6 +306,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			$payload = array(
 				'created' => 123,
+				'model'   => 'gpt-image-1',
 				'data'    => array(
 					array(
 						'b64_json' => $png_base64,
