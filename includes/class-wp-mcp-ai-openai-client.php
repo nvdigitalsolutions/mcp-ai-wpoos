@@ -871,7 +871,7 @@ class WP_MCP_AI_OpenAI_Client {
 			'openai_image_response',
 			'OpenAI image generation completed.',
 			array(
-				'model'   => $model,
+				'model'   => $response_model,
 				'size'    => $size,
 				'quality' => $quality,
 				'format'  => $response_format,
