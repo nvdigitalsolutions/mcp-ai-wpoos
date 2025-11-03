@@ -104,6 +104,15 @@ function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
 
 add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
 
+/**
+ * Check if base version mode is enabled.
+ *
+ * @return bool Whether base version mode is active.
+ */
+function wp_mcp_ai_is_base_version() {
+	return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
+}
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
@@ -124,10 +133,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.ph
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
@@ -136,13 +141,21 @@ require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
-require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
-require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-auth0-github.php';
+
+// Load third-party plugin integrations only when not in base version mode.
+if ( ! wp_mcp_ai_is_base_version() ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-auth0-github.php';
+}
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
@@ -157,12 +170,24 @@ WP_MCP_AI_Response_Attachments::init();
 
 WP_MCP_AI_HTTP::bootstrap();
 
-WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
-WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
-
-WP_MCP_AI_ChatKit_Integration::init();
-WP_MCP_AI_Simple_JWT_Login_Integration::init();
-WP_MCP_AI_Integration_Auth0_Github::init();
+// Initialize third-party plugin integrations only when not in base version mode.
+if ( ! wp_mcp_ai_is_base_version() ) {
+	if ( class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) ) {
+		WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
+	}
+	if ( class_exists( 'WP_MCP_AI_JetFormBuilder_Tool_Handlers' ) ) {
+		WP_MCP_AI_JetFormBuilder_Tool_Handlers::bootstrap();
+	}
+	if ( class_exists( 'WP_MCP_AI_ChatKit_Integration' ) ) {
+		WP_MCP_AI_ChatKit_Integration::init();
+	}
+	if ( class_exists( 'WP_MCP_AI_Simple_JWT_Login_Integration' ) ) {
+		WP_MCP_AI_Simple_JWT_Login_Integration::init();
+	}
+	if ( class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
+		WP_MCP_AI_Integration_Auth0_Github::init();
+	}
+}
 
 /**
  * Load the plugin textdomain for localisation support.

@@ -273,6 +273,8 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 ---
 
 ## 📦 Installation
+
+### Standard Installation
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
 2. Activate **WP MCP AI** from the WordPress admin
    - Ensure [JetEngine](https://crocoblock.com/plugins/jetengine/) is active with the **Custom Content Types** module enabled before switching the plugin on. WP MCP AI automatically provisions the `ai_chat_transcripts` CCT on JetEngine init, so no manual setup is required beyond enabling the module; existing CCT definitions are left untouched if you have already created one manually.
@@ -280,6 +282,44 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
+
+### Base Version Installation (WordPress Core Only)
+
+For a simpler setup that works with only base WordPress (no third-party plugins required), enable **Base Version Mode** by adding this constant to your `wp-config.php` file:
+
+```php
+define( 'WP_MCP_AI_BASE_VERSION', true );
+```
+
+**Base Version includes 35 essential tools that work with vanilla WordPress:**
+- Content management (search, save posts, attachments)
+- AI media generation (images via OpenAI/Gemini, speech, transcription)
+- Research tools (web search, weather, disaster alerts)
+- Site operations (health checks, logs, cron jobs, cache management)
+- WordPress-native email (via wp_mail)
+
+**Base Version excludes 30 tools requiring third-party plugins or external APIs:**
+- WooCommerce tools (3)
+- JetEngine/JetFormBuilder tools (5)
+- Elementor/RankMath/WPCode tools (3)
+- Google services (5)
+- Social media integrations (8)
+- External messaging services (4)
+- QuickBooks and other business APIs (2)
+
+📖 See [BASE-VERSION.md](BASE-VERSION.md) for the complete tool list and customization options.
+
+**When to use Base Version:**
+- Starting fresh with WordPress
+- Testing or development environments
+- Simpler installations without external dependencies
+- Sites that don't need ecommerce or advanced integrations
+
+**When to use Full Version:**
+- Production sites with WooCommerce, JetEngine, or Elementor
+- Sites needing social media automation
+- Advanced workflows requiring external APIs
+
 
 ---
 
