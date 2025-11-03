@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view Site Health results.', 'wp-mcp-ai' ) );
 		}
 
-		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
+		$is_multisite   = is_multisite();
+		$is_site_member = $is_multisite ? is_user_member_of_blog( $user_id, get_current_blog_id() ) : null;
+
+		if ( $is_multisite && ! $is_site_member ) {
 			WP_MCP_AI_Logger::log_error(
 				'Site Health access denied - user not member of site in multisite.',
 				array(
@@ -104,22 +107,24 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			'site_health_multisite_check',
 			'Multisite check completed.',
 			array(
-				'is_multisite'   => is_multisite(),
+				'is_multisite'   => $is_multisite,
 				'blog_id'        => get_current_blog_id(),
 				'user_id'        => $user_id,
-				'is_site_member' => is_multisite() ? is_user_member_of_blog( $user_id, get_current_blog_id() ) : null,
+				'is_site_member' => $is_site_member,
 			)
 		);
 
-		$dependencies_loaded = $this->ensure_site_health_dependencies();
+		$dependencies_loaded    = $this->ensure_site_health_dependencies();
+		$wp_site_health_exists  = class_exists( 'WP_Site_Health', false );
+		$get_tests_callable     = is_callable( array( 'WP_Site_Health', 'get_tests' ) );
 
 		WP_MCP_AI_Logger::log_event(
 			'site_health_dependency_check',
 			'Site Health dependencies check completed.',
 			array(
 				'dependencies_loaded'    => $dependencies_loaded,
-				'wp_site_health_exists'  => class_exists( 'WP_Site_Health', false ),
-				'get_tests_callable'     => is_callable( array( 'WP_Site_Health', 'get_tests' ) ),
+				'wp_site_health_exists'  => $wp_site_health_exists,
+				'get_tests_callable'     => $get_tests_callable,
 			)
 		);
 
@@ -127,17 +132,17 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			WP_MCP_AI_Logger::log_error(
 				'Site Health unavailable - dependencies could not be loaded.',
 				array(
-					'wp_site_health_exists' => class_exists( 'WP_Site_Health', false ),
+					'wp_site_health_exists' => $wp_site_health_exists,
 				)
 			);
 			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'The WordPress Site Health component is unavailable.', 'wp-mcp-ai' ) );
 		}
 
-		if ( ! is_callable( array( 'WP_Site_Health', 'get_tests' ) ) ) {
+		if ( ! $get_tests_callable ) {
 			WP_MCP_AI_Logger::log_error(
 				'Site Health unavailable - get_tests method not callable.',
 				array(
-					'wp_site_health_exists' => class_exists( 'WP_Site_Health', false ),
+					'wp_site_health_exists' => $wp_site_health_exists,
 					'get_tests_callable'    => false,
 				)
 			);
