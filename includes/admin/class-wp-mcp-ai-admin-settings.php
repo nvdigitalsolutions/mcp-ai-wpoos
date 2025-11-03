@@ -1470,9 +1470,6 @@ class WP_MCP_AI_Admin_Settings {
 			'cloudflare_zone_id',
 			__( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
 			array( $this, 'render_cloudflare_zone_id_field' ),
-			'mailjet_api_key',
-			__( 'Mailjet API Key', 'wp-mcp-ai' ),
-			array( $this, 'render_mailjet_api_key_field' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_tools_section'
 		);
@@ -1481,6 +1478,19 @@ class WP_MCP_AI_Admin_Settings {
 			'cloudflare_api_token',
 			__( 'Cloudflare API Token', 'wp-mcp-ai' ),
 			array( $this, 'render_cloudflare_api_token_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
+			'mailjet_api_key',
+			__( 'Mailjet API Key', 'wp-mcp-ai' ),
+			array( $this, 'render_mailjet_api_key_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
 			'mailjet_api_secret',
 			__( 'Mailjet API Secret', 'wp-mcp-ai' ),
 			array( $this, 'render_mailjet_api_secret_field' ),
@@ -3039,13 +3049,6 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_zone_id]" value="<?php echo esc_attr( $settings['cloudflare_zone_id'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Cloudflare zone identifier (a 32 character string) for the site you wish to purge.', 'wp-mcp-ai' ); ?></p>
-	 * Render the Mailjet API key field.
-	 */
-	public function render_mailjet_api_key_field() {
-		$settings = self::get_settings();
-		?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 
@@ -3057,6 +3060,21 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the Mailjet API key field.
+	 */
+	public function render_mailjet_api_key_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
 	 * Render the Mailjet API secret field.
 	 */
 	public function render_mailjet_api_secret_field() {
