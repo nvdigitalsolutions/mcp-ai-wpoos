@@ -35,6 +35,8 @@ class WP_MCP_AI_Admin_Settings {
 		add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
 		add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 		add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'handle_test_ollama_connection' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'handle_fetch_ollama_models' ) );
 		if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 		}
@@ -2029,6 +2031,15 @@ class WP_MCP_AI_Admin_Settings {
 			array( 'wp-color-picker', 'jquery' ),
 			WP_MCP_AI_VERSION,
 			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-admin-settings',
+			'wpMcpAiAdmin',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_admin_nonce' ),
+			)
 		);
 
 		$inline_styles = '.wp-mcp-ai-chat-colors__group{margin-bottom:1.5rem;padding:1rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;}'
@@ -4053,4 +4064,89 @@ class WP_MCP_AI_Admin_Settings {
 
 		return $max_bytes;
 	}
+
+	/**
+	 * Handle AJAX request to test Ollama connection.
+	 */
+	public function handle_test_ollama_connection() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+		if ( empty( $endpoint_url ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Temporarily set the endpoint URL for testing.
+		$original_settings = self::get_settings();
+		$test_settings     = $original_settings;
+		$test_settings['ollama_endpoint_url'] = $endpoint_url;
+
+		// Create a temporary Ollama client instance.
+		$ollama_client = new WP_MCP_AI_Ollama_Client();
+
+		// Update settings temporarily.
+		update_option( self::OPTION_NAME, $test_settings );
+
+		$result = $ollama_client->test_connection();
+
+		// Restore original settings.
+		update_option( self::OPTION_NAME, $original_settings );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Handle AJAX request to fetch Ollama models.
+	 */
+	public function handle_fetch_ollama_models() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+		if ( empty( $endpoint_url ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Temporarily set the endpoint URL for fetching models.
+		$original_settings = self::get_settings();
+		$test_settings     = $original_settings;
+		$test_settings['ollama_endpoint_url'] = $endpoint_url;
+
+		// Create a temporary Ollama client instance.
+		$ollama_client = new WP_MCP_AI_Ollama_Client();
+
+		// Update settings temporarily.
+		update_option( self::OPTION_NAME, $test_settings );
+
+		$models = $ollama_client->list_models();
+
+		// Restore original settings.
+		update_option( self::OPTION_NAME, $original_settings );
+
+		if ( is_wp_error( $models ) ) {
+			wp_send_json_error( array( 'message' => $models->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'models' => $models ) );
+	}
 }
+
