@@ -4529,18 +4529,23 @@ class WP_MCP_AI_Admin_Settings {
 
 		$servers = array();
 		foreach ( $servers_data['servers'] as $server ) {
+			// Validate that expected fields exist.
+			if ( ! isset( $server['id'] ) || ! isset( $server['label'] ) ) {
+				continue;
+			}
+
 			$servers[] = array(
-				'id'     => $server['id'],
-				'label'  => $server['label'],
-				'status' => $server['status'],
+				'id'     => sanitize_text_field( $server['id'] ),
+				'label'  => sanitize_text_field( $server['label'] ),
+				'status' => isset( $server['status'] ) ? sanitize_text_field( $server['status'] ) : 'unknown',
 			);
 		}
 
 		// Step 3: Fetch applications from the first server.
 		$apps = array();
 		if ( ! empty( $servers ) ) {
-			$first_server_id = $servers[0]['id'];
-			$apps_url        = 'https://api.cloudways.com/api/v1/apps?server_id=' . $first_server_id;
+			$first_server_id = absint( $servers[0]['id'] );
+			$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v1/apps' );
 			$apps_response   = wp_remote_get(
 				$apps_url,
 				array(
@@ -4558,9 +4563,14 @@ class WP_MCP_AI_Admin_Settings {
 
 				if ( 200 === $apps_code && ! empty( $apps_data['apps'] ) ) {
 					foreach ( $apps_data['apps'] as $app ) {
+						// Validate that expected fields exist.
+						if ( ! isset( $app['id'] ) || ! isset( $app['label'] ) ) {
+							continue;
+						}
+
 						$apps[] = array(
-							'id'        => $app['id'],
-							'label'     => $app['label'],
+							'id'        => sanitize_text_field( $app['id'] ),
+							'label'     => sanitize_text_field( $app['label'] ),
 							'server_id' => $first_server_id,
 						);
 					}
