@@ -1827,7 +1827,14 @@
         })
             .then(function (response) {
                 if (!response.ok) {
-                    throw new Error('Delete failed');
+                    if (response.status === 401) {
+                        throw new Error('unauthorized');
+                    } else if (response.status === 404) {
+                        throw new Error('not_found');
+                    } else if (response.status >= 500) {
+                        throw new Error('server_error');
+                    }
+                    throw new Error('delete_failed');
                 }
                 return response.json();
             })
@@ -1854,8 +1861,20 @@
                     setHistoryStatus(state, '', false);
                 }, 3000);
             })
-            .catch(function () {
-                setHistoryStatus(state, getString('historyDeleteError', 'Unable to delete conversation.'), true);
+            .catch(function (error) {
+                var errorMessage;
+                
+                if (error && error.message === 'unauthorized') {
+                    errorMessage = getString('historyDeleteUnauthorized', 'You are not authorized to delete this conversation.');
+                } else if (error && error.message === 'not_found') {
+                    errorMessage = getString('historyDeleteNotFound', 'This conversation could not be found.');
+                } else if (error && error.message === 'server_error') {
+                    errorMessage = getString('historyDeleteServerError', 'A server error occurred. Please try again later.');
+                } else {
+                    errorMessage = getString('historyDeleteError', 'Unable to delete conversation.');
+                }
+                
+                setHistoryStatus(state, errorMessage, true);
             });
     }
 

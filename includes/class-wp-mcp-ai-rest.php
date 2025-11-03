@@ -563,17 +563,13 @@ class WP_MCP_AI_REST {
 			);
 		}
 
-		$user_id = absint( $request->get_param( 'user_id' ) );
-
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
-		}
+		$user_id = get_current_user_id();
 
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_user',
-				__( 'A valid user is required to delete a transcript.', 'wp-mcp-ai' ),
-				array( 'status' => 400 )
+				__( 'You must be logged in to delete a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 401 )
 			);
 		}
 
