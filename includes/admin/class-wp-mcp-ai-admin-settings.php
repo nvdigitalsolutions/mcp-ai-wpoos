@@ -4628,15 +4628,21 @@ class WP_MCP_AI_Admin_Settings {
 		}
 
 		$zone_id   = isset( $_POST['zone_id'] ) ? sanitize_text_field( wp_unslash( $_POST['zone_id'] ) ) : '';
-		$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
+		$api_token = isset( $_POST['api_token'] ) ? trim( wp_unslash( $_POST['api_token'] ) ) : '';
 
 		if ( empty( $zone_id ) || empty( $api_token ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please provide both Zone ID and API Token.', 'wp-mcp-ai' ) ) );
 			return;
 		}
 
+		// Validate Zone ID format (should be 32 hexadecimal characters).
+		if ( ! preg_match( '/^[a-f0-9]{32}$/i', $zone_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid Zone ID format. Zone ID should be a 32-character hexadecimal string.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
 		// Test the connection by fetching zone details.
-		$api_url = 'https://api.cloudflare.com/client/v4/zones/' . $zone_id;
+		$api_url = 'https://api.cloudflare.com/client/v4/zones/' . sanitize_key( $zone_id );
 
 		$response = wp_remote_get(
 			$api_url,
