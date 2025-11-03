@@ -118,17 +118,83 @@ This fix ensures that:
 - The conversation flow is preserved in the correct order
 - Users can review their complete chat history
 
+## Database Schema Verification
+
+The JetEngine CCT table `wp_jet_cct_ai_chat_transcripts` has the following schema:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | auto-increment | Primary key |
+| `session_key` | text | Correlation key grouping related messages (max 96 chars) |
+| `user_id` | number | WordPress user ID |
+| `assistant_id` | text | Internal assistant identifier |
+| `assistant_model` | text | Model string (e.g., "gpt-4o-mini") |
+| `request_payload` | textarea/JSON | Full request payload with messages array |
+| `response_payload` | textarea/JSON | Assistant response with choices array |
+| `metadata` | textarea/JSON | Usage, tokens, finish_reasons, etc. |
+| `latency_ms` | number | Response time in milliseconds |
+| `request_started_at` | datetime-local | When request processing began |
+| `response_completed_at` | datetime-local | When response was completed |
+| `cct_created` | datetime | Auto-generated creation timestamp |
+
+The database query in `get_transcript_session()` correctly:
+- Filters by `session_key` and `user_id`
+- Orders by `cct_created ASC, id ASC` for chronological reconstruction
+- Retrieves all necessary fields for message extraction
+
+## Frontend JavaScript Verification
+
+The frontend code in `assets/js/user-chats.js` correctly:
+- Fetches transcript data from `/wp-json/mcp-ai/v1/chat-transcripts?session_key=<key>&user_id=<id>`
+- Handles both the session list and individual session details
+- Renders messages from the `session.messages` array
+- Displays role labels, content, and timestamps
+- Shows appropriate error messages when data is unavailable
+
+The `renderConversation()` function (lines 348-440):
+- Checks for `session.messages` array
+- Iterates through all messages
+- Normalizes roles (user, assistant, tool, system)
+- Displays message content and metadata
+- Shows "No messages" placeholder when array is empty
+
 ## Verification Steps
 
 To verify the fix works:
 
-1. **Database Check**: Query the `wp_jet_cct_ai_chat_transcripts` table to ensure records exist with the correct `session_key`
-2. **REST API Check**: Call `/wp-json/mcp-ai/v1/chat-transcripts?session_key=<key>` and verify the response contains all messages
-3. **Browser Console**: Check for JavaScript errors when viewing chat history
-4. **Message Content**: Verify that assistant messages with tool calls appear in the transcript
+1. **Database Check**: 
+   - Query: `SELECT * FROM wp_jet_cct_ai_chat_transcripts WHERE session_key = '<your-key>'`
+   - Verify records exist with correct `session_key` and non-empty payloads
+   - Check that `request_payload` and `response_payload` contain valid JSON
+
+2. **REST API Check**: 
+   - Call: `GET /wp-json/mcp-ai/v1/chat-transcripts?session_key=<key>&user_id=<id>`
+   - Verify response has structure: `{ "session": { "messages": [...], ... } }`
+   - Check that all messages (including assistant messages with tool calls) appear
+   - Verify message order is chronological
+
+3. **Browser Console**: 
+   - Open Developer Tools → Console tab
+   - Load the chat history page
+   - Check for JavaScript errors or warnings
+   - Verify network requests succeed (200 status)
+
+4. **Message Content**: 
+   - Verify that assistant messages with tool calls appear in the transcript
+   - Check that tool call messages show "Tool call: <function_name>"
+   - Ensure message ordering matches the conversation flow
+
+5. **Debug Logging** (if issues persist):
+   - Enable debug logging in WP MCP AI settings
+   - Review logs for the extraction process
+   - Look for "extract_request_messages" and "extract_response_messages" events
+   - Check message counts and any skipped messages
 
 ## Related Code
 
 - `class-wp-mcp-ai-chat-transcript-recorder.php`: Records transcripts to the database
+- `class-wp-mcp-ai-jetengine-cct.php`: Defines the database schema and CCT registration
+- `class-wp-mcp-ai-rest.php`: REST API endpoints and transcript reconstruction logic
 - `assets/js/user-chats.js`: Frontend JavaScript that fetches and displays transcripts
 - `tests/test-chat-transcripts.php`: Existing tests for transcript recording
+- `tests/test-transcript-reconstruction.php`: New tests for message extraction and reconstruction
