@@ -4191,7 +4191,9 @@
             return;
         }
 
-        // Restore session key if available
+        // Restore session key if available and compatible
+        // Note: We only restore if no session key is set to avoid overwriting active sessions
+        // If a session key already exists, the saved conversation might be from a different session
         if (saved.sessionKey && !state.config.sessionKey) {
             state.config.sessionKey = saved.sessionKey;
         }
@@ -4227,10 +4229,18 @@
                     displayPayload.text = content;
                 } else if (Array.isArray(content)) {
                     // Extract text from structured content
+                    // Handles text segments; other types (images, files) are not rendered
+                    // but remain in the conversation for API calls
                     var textParts = [];
                     content.forEach(function (segment) {
                         if (segment && segment.type === 'text' && segment.text) {
                             textParts.push(segment.text);
+                        } else if (segment && segment.type === 'input_image') {
+                            // Add placeholder for image attachments
+                            textParts.push('[Image attachment]');
+                        } else if (segment && segment.type === 'input_file') {
+                            // Add placeholder for file attachments
+                            textParts.push('[File attachment]');
                         }
                     });
                     displayPayload.text = textParts.join('\n');
