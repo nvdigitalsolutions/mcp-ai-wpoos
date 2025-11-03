@@ -1,4 +1,4 @@
-# WP Open Operator System (oWPOOS)
+# WP Open Operator System (WPOOS)
 
 **Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com)**
