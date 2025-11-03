@@ -173,6 +173,8 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Generate Gemini Image | `generate_gemini_image` | Uses Gemini’s multimodal image endpoint to render creative, aspect-ratio-aware visuals that are persisted as WordPress attachments.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】|
 | Generate OpenAI Speech | `generate_openai_speech` | Converts text to audio via OpenAI’s text-to-speech models, honouring default voice/format selections and storing results in the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】|
 | Transcribe OpenAI Audio | `transcribe_openai_audio` | Sends uploaded audio to OpenAI’s transcription/translation endpoints and returns structured transcripts with language and duration metadata.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】|
+| Cloud Vision Product Search | `cloud_vision_product_search` | Searches for similar products using Google Cloud Vision API Product Search feature with configurable product sets, categories, and filters.【F:includes/tools/class-wp-mcp-ai-tool-cloud-vision-product-search.php†L17-L300】|
+| Cloud Vision Object Localization | `cloud_vision_object_localization` | Detects and localizes multiple objects in an image, providing object names, confidence scores, and bounding box coordinates.【F:includes/tools/class-wp-mcp-ai-tool-cloud-vision-object-localization.php†L17-L200】|
 
 ### Research & situational awareness
 | Tool | Slug | Summary |
@@ -299,6 +301,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Review Send Group Email permissions** in **Settings → MCP AI → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
 - [ ] **Connect QuickBooks Online** under **Settings → MCP AI → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → MCP AI → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
+- [ ] **Configure Google Cloud Vision** in **Settings → MCP AI → Google Cloud Vision API Key or Service Account JSON** to enable Product Search and Object Localization features. Product Search requires additional setup in GCP.
 
 ## 🧠 Language Model Providers (OpenAI & Gemini)
 

@@ -80,6 +80,8 @@ class WP_MCP_AI_Admin_Settings {
 			'quickbooks_api_key'                => '',
 			'google_analytics_property_id'      => '',
 			'google_analytics_credentials_json' => '',
+			'google_vision_api_key'             => '',
+			'google_vision_credentials_json'    => '',
 			'gmail_client_id'                   => '',
 			'gmail_client_secret'               => '',
 			'gmail_refresh_token'               => '',
@@ -229,6 +231,16 @@ class WP_MCP_AI_Admin_Settings {
 				),
 				'description'      => __( 'Supplies authenticated access to the Google Analytics Data API for GA4 properties.', 'wp-mcp-ai' ),
 				'usage'            => __( 'Paste a service account credential and default property before enabling Analytics reporting tools.', 'wp-mcp-ai' ),
+			),
+			'google_vision'    => array(
+				'label'            => __( 'Google Cloud Vision', 'wp-mcp-ai' ),
+				'required_options' => array(),
+				'fields'           => array(
+					'google_vision_api_key'          => __( 'API Key', 'wp-mcp-ai' ),
+					'google_vision_credentials_json' => __( 'Service account JSON', 'wp-mcp-ai' ),
+				),
+				'description'      => __( 'Enables Cloud Vision API features including Product Search and Object Localization.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Provide either an API key or service account JSON to enable Vision API tools. Product Search requires additional setup in GCP.', 'wp-mcp-ai' ),
 			),
 			'gmail'            => array(
 				'label'            => __( 'Gmail', 'wp-mcp-ai' ),
@@ -1806,6 +1818,31 @@ class WP_MCP_AI_Admin_Settings {
 						self::OPTION_NAME,
 						'google_analytics_credentials_json',
 						__( 'The Google Analytics service account JSON could not be parsed. Please paste a valid credential.', 'wp-mcp-ai' ),
+						'error'
+					);
+				}
+			}
+		}
+
+		if ( isset( $settings['google_vision_api_key'] ) ) {
+			$clean['google_vision_api_key'] = trim( sanitize_text_field( $settings['google_vision_api_key'] ) );
+		}
+
+		if ( isset( $settings['google_vision_credentials_json'] ) ) {
+			$raw_credentials = trim( (string) wp_unslash( $settings['google_vision_credentials_json'] ) );
+
+			if ( '' === $raw_credentials ) {
+				$clean['google_vision_credentials_json'] = '';
+			} else {
+				$decoded = json_decode( $raw_credentials, true );
+
+				if ( is_array( $decoded ) ) {
+					$clean['google_vision_credentials_json'] = wp_json_encode( $decoded );
+				} else {
+					add_settings_error(
+						self::OPTION_NAME,
+						'google_vision_credentials_json',
+						__( 'The Google Cloud Vision service account JSON could not be parsed. Please paste a valid credential.', 'wp-mcp-ai' ),
 						'error'
 					);
 				}
