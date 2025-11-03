@@ -299,6 +299,32 @@ function wp_mcp_ai_bootstrap() {
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
 
 /**
+ * Helper function to iterate through all sites in a multisite network.
+ *
+ * @param callable $callback Callback function to execute for each site.
+ * @param string   $action   Action name for error logging (e.g., 'activation', 'deactivation').
+ */
+function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
+	if ( ! is_multisite() || ! is_callable( $callback ) ) {
+		return;
+	}
+
+	// Get all sites in the network.
+	$sites = get_sites( array( 'number' => 0 ) );
+
+	foreach ( $sites as $site ) {
+		switch_to_blog( $site->blog_id );
+		try {
+			call_user_func( $callback );
+		} catch ( Exception $e ) {
+			// Log the error and continue with remaining sites.
+			error_log( sprintf( 'WP MCP AI %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+		}
+		restore_current_blog();
+	}
+}
+
+/**
  * Activate plugin on a newly created site in a multisite network.
  *
  * @param int|WP_Site $blog WordPress 5.1+ passes a WP_Site object, earlier versions pass blog ID.
@@ -342,19 +368,7 @@ function wp_mcp_ai_activate( $network_wide = false ) {
 	$network_wide = (bool) $network_wide;
 
 	if ( is_multisite() && $network_wide ) {
-		// Get all sites in the network.
-		$sites = get_sites( array( 'number' => 0 ) );
-
-		foreach ( $sites as $site ) {
-			switch_to_blog( $site->blog_id );
-			try {
-				wp_mcp_ai_activate_single_site();
-			} catch ( Exception $e ) {
-				// Log the error and continue with remaining sites.
-				error_log( sprintf( 'WP MCP AI activation failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
-			}
-			restore_current_blog();
-		}
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_activate_single_site', 'activation' );
 	} else {
 		wp_mcp_ai_activate_single_site();
 	}
@@ -383,19 +397,7 @@ function wp_mcp_ai_deactivate( $network_wide = false ) {
 	$network_wide = (bool) $network_wide;
 
 	if ( is_multisite() && $network_wide ) {
-		// Get all sites in the network.
-		$sites = get_sites( array( 'number' => 0 ) );
-
-		foreach ( $sites as $site ) {
-			switch_to_blog( $site->blog_id );
-			try {
-				wp_mcp_ai_deactivate_single_site();
-			} catch ( Exception $e ) {
-				// Log the error and continue with remaining sites.
-				error_log( sprintf( 'WP MCP AI deactivation failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
-			}
-			restore_current_blog();
-		}
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_deactivate_single_site', 'deactivation' );
 	} else {
 		wp_mcp_ai_deactivate_single_site();
 	}
@@ -415,19 +417,7 @@ register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
  */
 function wp_mcp_ai_uninstall() {
 	if ( is_multisite() ) {
-		// Get all sites in the network.
-		$sites = get_sites( array( 'number' => 0 ) );
-
-		foreach ( $sites as $site ) {
-			switch_to_blog( $site->blog_id );
-			try {
-				wp_mcp_ai_uninstall_single_site();
-			} catch ( Exception $e ) {
-				// Log the error and continue with remaining sites to ensure cleanup.
-				error_log( sprintf( 'WP MCP AI uninstall failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
-			}
-			restore_current_blog();
-		}
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_uninstall_single_site', 'uninstall' );
 	} else {
 		wp_mcp_ai_uninstall_single_site();
 	}
