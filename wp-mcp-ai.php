@@ -303,14 +303,27 @@ add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
  *
  * @param callable $callback Callback function to execute for each site.
  * @param string   $action   Action name for error logging (e.g., 'activation', 'deactivation').
+ * @return void
  */
 function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
 	if ( ! is_multisite() || ! is_callable( $callback ) ) {
 		return;
 	}
 
-	// Get all sites in the network.
-	$sites = get_sites( array( 'number' => 0 ) );
+	/**
+	 * Filters the arguments for get_sites() when iterating network sites.
+	 *
+	 * Allows customization of site retrieval, including pagination for large networks.
+	 *
+	 * @param array $args Arguments passed to get_sites(). Default: array( 'number' => 0 ).
+	 */
+	$get_sites_args = apply_filters(
+		'wp_mcp_ai_iterate_network_sites_args',
+		array( 'number' => 0 )
+	);
+
+	// Get sites in the network.
+	$sites = get_sites( $get_sites_args );
 
 	foreach ( $sites as $site ) {
 		switch_to_blog( $site->blog_id );
@@ -328,6 +341,7 @@ function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
  * Activate plugin on a newly created site in a multisite network.
  *
  * @param int|WP_Site $blog WordPress 5.1+ passes a WP_Site object, earlier versions pass blog ID.
+ * @return void
  */
 function wp_mcp_ai_new_site_activation( $blog ) {
 	if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
@@ -362,6 +376,7 @@ add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
  * Plugin activation handler.
  *
  * @param bool $network_wide Whether the plugin is being activated network-wide.
+ * @return void
  */
 function wp_mcp_ai_activate( $network_wide = false ) {
 	// Ensure network_wide is a boolean.
@@ -376,6 +391,8 @@ function wp_mcp_ai_activate( $network_wide = false ) {
 
 /**
  * Activate the plugin on a single site.
+ *
+ * @return void
  */
 function wp_mcp_ai_activate_single_site() {
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
@@ -391,6 +408,7 @@ register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
  * Plugin deactivation handler.
  *
  * @param bool $network_wide Whether the plugin is being deactivated network-wide.
+ * @return void
  */
 function wp_mcp_ai_deactivate( $network_wide = false ) {
 	// Ensure network_wide is a boolean.
@@ -405,6 +423,8 @@ function wp_mcp_ai_deactivate( $network_wide = false ) {
 
 /**
  * Deactivate the plugin on a single site.
+ *
+ * @return void
  */
 function wp_mcp_ai_deactivate_single_site() {
 	flush_rewrite_rules();
@@ -414,6 +434,8 @@ register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
 
 /**
  * Plugin uninstall handler.
+ *
+ * @return void
  */
 function wp_mcp_ai_uninstall() {
 	if ( is_multisite() ) {
@@ -425,6 +447,8 @@ function wp_mcp_ai_uninstall() {
 
 /**
  * Uninstall the plugin on a single site.
+ *
+ * @return void
  */
 function wp_mcp_ai_uninstall_single_site() {
 	$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
