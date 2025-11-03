@@ -1,14 +1,14 @@
 (function () {
     'use strict';
 
-    var globalConfig = window.wpMcpAiUserChats || {};
-    var REST_PATH = '/chat-transcripts';
+    const globalConfig = window.wpMcpAiUserChats || {};
+    const REST_PATH = '/chat-transcripts';
 
     function mergeStrings(instanceStrings) {
-        var merged = {};
-        var globalStrings = globalConfig.strings || {};
-        var localStrings = instanceStrings || {};
-        var key;
+        const merged = {};
+        const globalStrings = globalConfig.strings || {};
+        const localStrings = instanceStrings || {};
+        let key;
 
         for (key in globalStrings) {
             if (!Object.prototype.hasOwnProperty.call(globalStrings, key) || 'roleLabels' === key) {
@@ -26,9 +26,9 @@
             merged[key] = localStrings[key];
         }
 
-        var roles = {};
-        var globalRoles = globalStrings.roleLabels || {};
-        var localRoles = localStrings.roleLabels || {};
+        const roles = {};
+        const globalRoles = globalStrings.roleLabels || {};
+        const localRoles = localStrings.roleLabels || {};
 
         for (key in globalRoles) {
             if (Object.prototype.hasOwnProperty.call(globalRoles, key)) {
@@ -48,7 +48,7 @@
     }
 
     function parseConfig(container) {
-        var raw = container.getAttribute('data-wp-mcp-ai-user-chats');
+        const raw = container.getAttribute('data-wp-mcp-ai-user-chats');
 
         if (!raw) {
             return null;
@@ -62,7 +62,7 @@
     }
 
     function normalizeRestUrl() {
-        var url = typeof globalConfig.restUrl === 'string' ? globalConfig.restUrl : '';
+        const url = typeof globalConfig.restUrl === 'string' ? globalConfig.restUrl : '';
 
         if (!url) {
             return '';
@@ -72,26 +72,26 @@
     }
 
     function buildRestUrl(params) {
-        var base = normalizeRestUrl();
+        const base = normalizeRestUrl();
 
         if (!base) {
             return '';
         }
 
-        var url = base + REST_PATH;
+        let url = base + REST_PATH;
 
         if (!params) {
             return url;
         }
 
         if (typeof window.URLSearchParams === 'function') {
-            var search = new window.URLSearchParams();
-            for (var key in params) {
+            const search = new window.URLSearchParams();
+            for (const key in params) {
                 if (!Object.prototype.hasOwnProperty.call(params, key)) {
                     continue;
                 }
 
-                var value = params[key];
+                const value = params[key];
                 if (value === null || value === undefined || '' === value) {
                     continue;
                 }
@@ -99,19 +99,19 @@
                 search.append(key, value);
             }
 
-            var query = search.toString();
+            const query = search.toString();
             if (query) {
                 url += '?' + query;
             }
         } else {
-            var parts = [];
+            const parts = [];
 
-            for (var keyAlt in params) {
+            for (const keyAlt in params) {
                 if (!Object.prototype.hasOwnProperty.call(params, keyAlt)) {
                     continue;
                 }
 
-                var val = params[keyAlt];
+                const val = params[keyAlt];
                 if (val === null || val === undefined || '' === val) {
                     continue;
                 }
@@ -128,7 +128,7 @@
     }
 
     function buildHeaders() {
-        var headers = {
+        const headers = {
             'Accept': 'application/json'
         };
 
@@ -152,7 +152,7 @@
             return '';
         }
 
-        var date = new Date(value);
+        const date = new Date(value);
 
         if (isNaN(date.getTime())) {
             return '';
@@ -175,7 +175,7 @@
     }
 
     function getString(state, key, fallback) {
-        var value = state.strings && state.strings[key];
+        const value = state.strings && state.strings[key];
 
         if (typeof value === 'string' && value) {
             return value;
@@ -189,16 +189,16 @@
             return session.assistant_title;
         }
 
-        var template = getString(state, 'sessionLabel', 'Chat session %s');
-        var placeholder = template.indexOf('%s') !== -1 ? template : template + ' %s';
-        var number = index >= 0 ? index + 1 : (session && session.session_key ? session.session_key : '1');
+        const template = getString(state, 'sessionLabel', 'Chat session %s');
+        const placeholder = template.indexOf('%s') !== -1 ? template : template + ' %s';
+        const number = index >= 0 ? index + 1 : (session && session.session_key ? session.session_key : '1');
 
         return placeholder.replace('%s', number);
     }
 
     function formatTurnCount(state, count) {
-        var template = getString(state, 'turnCountLabel', '%d messages');
-        var value = parseInt(count, 10);
+        const template = getString(state, 'turnCountLabel', '%d messages');
+        const value = parseInt(count, 10);
 
         if (isNaN(value)) {
             return '';
@@ -212,7 +212,7 @@
     }
 
     function normalizeRole(role) {
-        var value = (role || '').toString().toLowerCase();
+        const value = (role || '').toString().toLowerCase();
 
         if ('assistant' === value || 'user' === value || 'system' === value) {
             return value;
@@ -230,12 +230,12 @@
             return;
         }
 
-        for (var key in state.sessionButtons) {
+        for (const key in state.sessionButtons) {
             if (!Object.prototype.hasOwnProperty.call(state.sessionButtons, key)) {
                 continue;
             }
 
-            var button = state.sessionButtons[key];
+            const button = state.sessionButtons[key];
 
             if (!button) {
                 continue;
@@ -263,18 +263,18 @@
         clearElement(state.listEl);
         state.sessionButtons = {};
 
-        for (var index = 0; index < state.sessions.length; index++) {
-            var session = state.sessions[index];
-            var listItem = document.createElement('li');
-            var button = document.createElement('button');
-            var title = document.createElement('span');
-            var preview = document.createElement('span');
-            var meta = document.createElement('div');
-            var updatedLabel = document.createElement('span');
-            var startedLabel = document.createElement('span');
-            var turnsLabel = document.createElement('span');
+        for (let index = 0; index < state.sessions.length; index++) {
+            const session = state.sessions[index];
+            const listItem = document.createElement('li');
+            const button = document.createElement('button');
+            const title = document.createElement('span');
+            const preview = document.createElement('span');
+            const meta = document.createElement('div');
+            const updatedLabel = document.createElement('span');
+            const startedLabel = document.createElement('span');
+            const turnsLabel = document.createElement('span');
 
-            var buttonKey = session.session_key || ('session-' + index);
+            const buttonKey = session.session_key || ('session-' + index);
 
             listItem.className = 'wp-mcp-ai-user-chats__session';
             button.type = 'button';
@@ -293,14 +293,14 @@
 
             meta.className = 'wp-mcp-ai-user-chats__meta';
 
-            var formattedUpdated = formatDate(session.updated_at || session.completed_at);
+            const formattedUpdated = formatDate(session.updated_at || session.completed_at);
             if (formattedUpdated) {
                 updatedLabel.className = 'wp-mcp-ai-user-chats__timestamp';
                 updatedLabel.textContent = getString(state, 'updatedLabel', 'Last activity') + ': ' + formattedUpdated;
                 meta.appendChild(updatedLabel);
             }
 
-            var formattedStarted = formatDate(session.started_at || session.first_created);
+            const formattedStarted = formatDate(session.started_at || session.first_created);
             if (formattedStarted) {
                 startedLabel.className = 'wp-mcp-ai-user-chats__timestamp';
                 startedLabel.textContent = getString(state, 'startedLabel', 'Started') + ': ' + formattedStarted;
@@ -314,7 +314,7 @@
             }
 
             if (session.assistant_model) {
-                var modelLabel = document.createElement('span');
+                const modelLabel = document.createElement('span');
                 modelLabel.className = 'wp-mcp-ai-user-chats__assistant';
                 modelLabel.textContent = session.assistant_model;
                 meta.appendChild(modelLabel);
@@ -352,7 +352,7 @@
 
         clearElement(state.messagesEl);
 
-        var title = formatSessionLabel(state, session, -1);
+        let title = formatSessionLabel(state, session, -1);
         if (session.assistant_title) {
             title = session.assistant_title;
         }
@@ -362,7 +362,7 @@
         }
 
         if (state.conversationMetaEl) {
-            var metaParts = [];
+            const metaParts = [];
             if (session.assistant_title) {
                 metaParts.push(getString(state, 'assistantLabel', 'Assistant') + ': ' + session.assistant_title);
             }
@@ -371,18 +371,18 @@
                 metaParts.push(session.assistant_model);
             }
 
-            var startedAt = formatDate(session.started_at);
+            const startedAt = formatDate(session.started_at);
             if (startedAt) {
                 metaParts.push(getString(state, 'startedLabel', 'Started') + ': ' + startedAt);
             }
 
-            var updatedAt = formatDate(session.updated_at);
+            const updatedAt = formatDate(session.updated_at);
             if (updatedAt) {
                 metaParts.push(getString(state, 'updatedLabel', 'Last activity') + ': ' + updatedAt);
             }
 
             if (session.turn_count) {
-                var formattedCount = formatTurnCount(state, session.turn_count);
+                const formattedCount = formatTurnCount(state, session.turn_count);
                 if (formattedCount) {
                     metaParts.push(formattedCount);
                 }
@@ -392,27 +392,27 @@
         }
 
         if (!session.messages || !session.messages.length) {
-            var emptyMessage = document.createElement('li');
+            const emptyMessage = document.createElement('li');
             emptyMessage.className = 'wp-mcp-ai-user-chats__message';
 
-            var emptyContent = document.createElement('div');
+            const emptyContent = document.createElement('div');
             emptyContent.className = 'wp-mcp-ai-user-chats__message-content';
             emptyContent.textContent = getString(state, 'emptySession', 'No messages are stored for this chat yet.');
 
             emptyMessage.appendChild(emptyContent);
             state.messagesEl.appendChild(emptyMessage);
         } else {
-            for (var index = 0; index < session.messages.length; index++) {
-                var message = session.messages[index];
-                var normalizedRole = normalizeRole(message.role);
-                var messageItem = document.createElement('li');
-                var roleLabel = document.createElement('span');
-                var content = document.createElement('div');
+            for (let index = 0; index < session.messages.length; index++) {
+                const message = session.messages[index];
+                const normalizedRole = normalizeRole(message.role);
+                const messageItem = document.createElement('li');
+                const roleLabel = document.createElement('span');
+                const content = document.createElement('div');
 
                 messageItem.className = 'wp-mcp-ai-user-chats__message wp-mcp-ai-user-chats__message--' + normalizedRole;
 
                 roleLabel.className = 'wp-mcp-ai-user-chats__message-role';
-                var friendlyRole = state.roleLabels && state.roleLabels[normalizedRole];
+                let friendlyRole = state.roleLabels && state.roleLabels[normalizedRole];
                 if (!friendlyRole && message.role) {
                     friendlyRole = message.role.charAt(0).toUpperCase() + message.role.slice(1);
                 }
@@ -424,7 +424,7 @@
                 messageItem.appendChild(content);
 
                 if (message.timestamp) {
-                    var meta = document.createElement('div');
+                    const meta = document.createElement('div');
                     meta.className = 'wp-mcp-ai-user-chats__message-meta';
                     meta.textContent = formatDate(message.timestamp);
                     messageItem.appendChild(meta);
@@ -468,7 +468,7 @@
             return;
         }
 
-        var url = buildRestUrl({
+        const url = buildRestUrl({
             session_key: sessionKey,
             user_id: state.config.userId
         });
@@ -490,7 +490,7 @@
                     return {};
                 }).then(function (body) {
                     if (!response.ok) {
-                        var errorMessage = body && body.message ? body.message : getString(state, 'errorLoadingSession', 'Unable to load the selected chat.');
+                        const errorMessage = body && body.message ? body.message : getString(state, 'errorLoadingSession', 'Unable to load the selected chat.');
                         throw new Error(errorMessage);
                     }
 
@@ -501,7 +501,7 @@
                 state.loadingSession = false;
 
                 if (!data || !data.session) {
-                    var sessionError = data && data.message ? data.message : getString(state, 'errorLoadingSession', 'Unable to load the selected chat.');
+                    const sessionError = data && data.message ? data.message : getString(state, 'errorLoadingSession', 'Unable to load the selected chat.');
                     setStatus(state, sessionError);
                     return;
                 }
@@ -522,7 +522,7 @@
             return;
         }
 
-        var params = {
+        const params = {
             user_id: state.config.userId
         };
 
@@ -530,7 +530,7 @@
             params.per_page = state.config.maxSessions;
         }
 
-        var url = buildRestUrl(params);
+        const url = buildRestUrl(params);
 
         if (!url) {
             setStatus(state, getString(state, 'errorLoadingList', 'Unable to load chats right now.'));
@@ -549,7 +549,7 @@
                     return {};
                 }).then(function (body) {
                     if (!response.ok) {
-                        var errorMessage = body && body.message ? body.message : getString(state, 'errorLoadingList', 'Unable to load chats right now.');
+                        const errorMessage = body && body.message ? body.message : getString(state, 'errorLoadingList', 'Unable to load chats right now.');
                         throw new Error(errorMessage);
                     }
 
@@ -561,7 +561,7 @@
 
                 state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
                 state.totalSessions = typeof data.total === 'number' ? data.total : state.sessions.length;
-                var responseMessage = data && data.message ? data.message : '';
+                const responseMessage = data && data.message ? data.message : '';
 
                 if (!state.sessions.length) {
                     if (state.listWrapper) {
@@ -598,20 +598,20 @@
             return;
         }
 
-        var config = parseConfig(container) || {};
-        var userId = parseInt(config.userId, 10);
+        const config = parseConfig(container) || {};
+        let userId = parseInt(config.userId, 10);
 
         if (isNaN(userId)) {
             userId = 0;
         }
 
-        var maxSessions = parseInt(config.maxSessions, 10);
+        let maxSessions = parseInt(config.maxSessions, 10);
         if (isNaN(maxSessions)) {
             maxSessions = 0;
         }
 
-        var strings = mergeStrings(config.strings);
-        var state = {
+        const strings = mergeStrings(config.strings);
+        const state = {
             container: container,
             config: {
                 userId: userId,
@@ -648,10 +648,10 @@
     }
 
     function initAll(scope) {
-        var context = scope || document;
-        var nodes = context.querySelectorAll('[data-wp-mcp-ai-user-chats]');
+        const context = scope || document;
+        const nodes = context.querySelectorAll('[data-wp-mcp-ai-user-chats]');
 
-        for (var index = 0; index < nodes.length; index++) {
+        for (let index = 0; index < nodes.length; index++) {
             initContainer(nodes[index]);
         }
     }
