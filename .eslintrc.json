@@ -1,4 +1,7 @@
 {
+	"extends": [
+		"wordpress"
+	],
 	"env": {
 		"browser": true,
 		"es2020": true,
