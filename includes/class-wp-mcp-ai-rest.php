@@ -4954,9 +4954,28 @@ class WP_MCP_AI_REST {
 
 			$updated_at = $this->format_transcript_timestamp( $row['response_completed_at'], $row['cct_created'] );
 
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: processing row',
+				array(
+					'has_request_payload'  => ! empty( $row['request_payload'] ) ? 'yes' : 'no',
+					'has_response_payload' => ! empty( $row['response_payload'] ) ? 'yes' : 'no',
+					'current_message_count' => count( $messages ),
+				)
+			);
+
 			$request_messages       = $this->extract_request_messages( $row );
 			$response_messages      = $this->extract_response_messages( $row );
 			$pending_tool_responses = array();
+
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: extracted messages from row',
+				array(
+					'request_messages_count'  => count( $request_messages ),
+					'response_messages_count' => count( $response_messages ),
+				)
+			);
 
 			if ( ! empty( $request_messages ) ) {
 				$existing_count = count( $messages );
@@ -4964,18 +4983,54 @@ class WP_MCP_AI_REST {
 				$this->append_new_messages( $messages, $request_messages, $row['request_started_at'], $row['cct_created'] );
 
 				$pending_tool_responses = $this->extract_appended_tool_responses( $messages, $existing_count );
+				
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'get_transcript_session: appended request messages',
+					array(
+						'new_message_count' => count( $messages ) - $existing_count,
+						'pending_tool_responses_count' => count( $pending_tool_responses ),
+					)
+				);
 			}
 
+			$before_response = count( $messages );
 			$this->append_new_messages( $messages, $response_messages, $row['response_completed_at'], $row['cct_created'] );
+			
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'get_transcript_session: appended response messages',
+				array(
+					'new_message_count' => count( $messages ) - $before_response,
+				)
+			);
 
 			if ( ! empty( $pending_tool_responses ) ) {
+				$before_tool = count( $messages );
 				$this->append_new_messages( $messages, $pending_tool_responses, $row['response_completed_at'], $row['cct_created'] );
+				
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'get_transcript_session: appended pending tool responses',
+					array(
+						'new_message_count' => count( $messages ) - $before_tool,
+					)
+				);
 			}
 
 			if ( ! empty( $response_messages ) ) {
 				$turn_count += count( $response_messages );
 			}
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'get_transcript_session: final reconstruction complete',
+			array(
+				'total_messages' => count( $messages ),
+				'turn_count'     => $turn_count,
+			)
+		);
 
 		if ( $turn_count <= 0 ) {
 			$turn_count = count( $messages );
@@ -5471,31 +5526,60 @@ class WP_MCP_AI_REST {
 	 */
 	protected function extract_request_messages( array $row ) {
 		if ( empty( $row['request_payload'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'extract_request_messages: empty request_payload',
+				array( 'row_keys' => array_keys( $row ) )
+			);
 			return array();
 		}
 
 		$payload = json_decode( $row['request_payload'], true );
 
 		if ( ! is_array( $payload ) || empty( $payload['messages'] ) || ! is_array( $payload['messages'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'extract_request_messages: invalid payload structure',
+				array(
+					'is_array'     => is_array( $payload ),
+					'has_messages' => isset( $payload['messages'] ) ? 'yes' : 'no',
+					'is_messages_array' => isset( $payload['messages'] ) && is_array( $payload['messages'] ) ? 'yes' : 'no',
+				)
+			);
 			return array();
 		}
 
 		$messages = array();
 
-		foreach ( $payload['messages'] as $message ) {
+		foreach ( $payload['messages'] as $index => $message ) {
 			if ( ! is_array( $message ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'extract_request_messages: skipping non-array message',
+					array( 'index' => $index, 'type' => gettype( $message ) )
+				);
 				continue;
 			}
 
 			$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
 
 			if ( '' === $role ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'extract_request_messages: skipping message with empty role',
+					array( 'index' => $index, 'message_keys' => array_keys( $message ) )
+				);
 				continue;
 			}
 
 			$content = $this->prepare_message_text( $message );
 
 			if ( '' === $content && 'tool' !== $role && 'system' !== $role ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'extract_request_messages: skipping message with empty content',
+					array( 'index' => $index, 'role' => $role )
+				);
 				continue;
 			}
 
@@ -5504,6 +5588,12 @@ class WP_MCP_AI_REST {
 				'content' => $content,
 			);
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'extract_request_messages: extracted messages',
+			array( 'count' => count( $messages ) )
+		);
 
 		return $messages;
 	}
@@ -5516,35 +5606,77 @@ class WP_MCP_AI_REST {
 	 */
 	protected function extract_response_messages( array $row ) {
 		if ( empty( $row['response_payload'] ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'extract_response_messages: empty response_payload',
+				array( 'row_keys' => array_keys( $row ) )
+			);
 			return array();
 		}
 
 		$payload = json_decode( $row['response_payload'], true );
 
 		if ( ! is_array( $payload ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'extract_response_messages: payload is not an array',
+				array( 'type' => gettype( $payload ) )
+			);
 			return array();
 		}
 
 		$messages = array();
 
 		if ( isset( $payload['choices'] ) && is_array( $payload['choices'] ) ) {
-			foreach ( $payload['choices'] as $choice ) {
+			foreach ( $payload['choices'] as $choice_index => $choice ) {
 				if ( empty( $choice['message'] ) || ! is_array( $choice['message'] ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'extract_response_messages: skipping choice with invalid message',
+						array(
+							'choice_index' => $choice_index,
+							'has_message'  => isset( $choice['message'] ) ? 'yes' : 'no',
+							'is_array'     => isset( $choice['message'] ) && is_array( $choice['message'] ) ? 'yes' : 'no',
+						)
+					);
 					continue;
 				}
 
 				$role    = isset( $choice['message']['role'] ) ? sanitize_key( $choice['message']['role'] ) : 'assistant';
 				$content = $this->prepare_message_text( $choice['message'] );
 
-				if ( '' !== $content || 'tool' === $role ) {
+				// Always include assistant messages, even with empty content, if they have tool_calls
+				$has_tool_calls = ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] );
+				
+				if ( '' !== $content || 'tool' === $role || $has_tool_calls ) {
 					$messages[] = array(
 						'role'    => $role,
 						'content' => $content,
 					);
+					
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'extract_response_messages: added message',
+						array(
+							'choice_index'    => $choice_index,
+							'role'            => $role,
+							'content_length'  => strlen( $content ),
+							'has_tool_calls'  => $has_tool_calls ? 'yes' : 'no',
+						)
+					);
+				} else {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'extract_response_messages: skipping message with empty content',
+						array(
+							'choice_index' => $choice_index,
+							'role'         => $role,
+						)
+					);
 				}
 
-				if ( ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] ) ) {
-					foreach ( $choice['message']['tool_calls'] as $tool_call ) {
+				if ( $has_tool_calls ) {
+					foreach ( $choice['message']['tool_calls'] as $tool_index => $tool_call ) {
 						$tool_message = $this->format_tool_call_message( $tool_call );
 
 						if ( '' !== $tool_message ) {
@@ -5552,11 +5684,33 @@ class WP_MCP_AI_REST {
 								'role'    => 'tool',
 								'content' => $tool_message,
 							);
+							
+							WP_MCP_AI_Logger::log_event(
+								'debug',
+								'extract_response_messages: added tool call message',
+								array(
+									'choice_index' => $choice_index,
+									'tool_index'   => $tool_index,
+									'content_length' => strlen( $tool_message ),
+								)
+							);
 						}
 					}
 				}
 			}
+		} else {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'extract_response_messages: payload has no choices array',
+				array( 'payload_keys' => array_keys( $payload ) )
+			);
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'extract_response_messages: extracted messages',
+			array( 'count' => count( $messages ) )
+		);
 
 		return $messages;
 	}
@@ -5617,6 +5771,10 @@ class WP_MCP_AI_REST {
 	 */
 	protected function append_new_messages( array &$conversation, array $new_messages, $primary_timestamp, $fallback_timestamp ) {
 		if ( empty( $new_messages ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'append_new_messages: no new messages to append'
+			);
 			return;
 		}
 
@@ -5625,19 +5783,46 @@ class WP_MCP_AI_REST {
 		$new_count      = count( $new_messages );
 		$position       = 0;
 
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'append_new_messages: starting append process',
+			array(
+				'existing_count' => $existing_count,
+				'new_count'      => $new_count,
+				'timestamp'      => $timestamp,
+			)
+		);
+
 		while ( $position < $existing_count && $position < $new_count ) {
 			if ( ! $this->messages_match( $conversation[ $position ], $new_messages[ $position ] ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'append_new_messages: found first non-matching message at position',
+					array( 'position' => $position )
+				);
 				break;
 			}
 
 			++$position;
 		}
 
+		$added_count = 0;
 		for ( $index = $position; $index < $new_count; $index++ ) {
 			$message              = $new_messages[ $index ];
 			$message['timestamp'] = $timestamp;
 			$conversation[]       = $message;
+			$added_count++;
 		}
+		
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'append_new_messages: completed append',
+			array(
+				'skipped_duplicates' => $position,
+				'added_count'        => $added_count,
+				'final_count'        => count( $conversation ),
+			)
+		);
 	}
 
 	/**
