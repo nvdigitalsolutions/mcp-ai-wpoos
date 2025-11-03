@@ -21,6 +21,98 @@
     var MAX_TRANSCRIBE_BYTES = 26214400;
     var TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     var TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
+    var STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
+    var STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+    function getStorageKey(assistantId) {
+        return STORAGE_KEY_PREFIX + assistantId;
+    }
+
+    function saveConversationToStorage(state) {
+        if (!state || !state.config || !state.config.assistantId) {
+            return;
+        }
+
+        if (!window.localStorage) {
+            return;
+        }
+
+        try {
+            var storageKey = getStorageKey(state.config.assistantId);
+            var data = {
+                conversation: state.conversation || [],
+                sessionKey: state.config.sessionKey || '',
+                timestamp: Date.now(),
+                assistantId: state.config.assistantId
+            };
+
+            window.localStorage.setItem(storageKey, JSON.stringify(data));
+        } catch (error) {
+            // Silently fail if localStorage is not available or quota exceeded
+        }
+    }
+
+    function loadConversationFromStorage(state) {
+        if (!state || !state.config || !state.config.assistantId) {
+            return null;
+        }
+
+        if (!window.localStorage) {
+            return null;
+        }
+
+        try {
+            var storageKey = getStorageKey(state.config.assistantId);
+            var stored = window.localStorage.getItem(storageKey);
+
+            if (!stored) {
+                return null;
+            }
+
+            var data = JSON.parse(stored);
+
+            if (!data || typeof data !== 'object') {
+                return null;
+            }
+
+            // Check if data is expired
+            var age = Date.now() - (data.timestamp || 0);
+            if (age > STORAGE_EXPIRY_MS) {
+                window.localStorage.removeItem(storageKey);
+                return null;
+            }
+
+            // Verify it's for the same assistant
+            if (data.assistantId !== state.config.assistantId) {
+                return null;
+            }
+
+            return {
+                conversation: Array.isArray(data.conversation) ? data.conversation : [],
+                sessionKey: data.sessionKey || ''
+            };
+        } catch (error) {
+            // Return null if parsing fails
+            return null;
+        }
+    }
+
+    function clearConversationFromStorage(state) {
+        if (!state || !state.config || !state.config.assistantId) {
+            return;
+        }
+
+        if (!window.localStorage) {
+            return;
+        }
+
+        try {
+            var storageKey = getStorageKey(state.config.assistantId);
+            window.localStorage.removeItem(storageKey);
+        } catch (error) {
+            // Silently fail
+        }
+    }
 
     function registerObjectUrl(url) {
         if (!url) {
@@ -2057,6 +2149,9 @@
             }
         });
 
+        // Save the loaded conversation to localStorage
+        saveConversationToStorage(state);
+
         setTranscriptExpanded(state, true);
         setStatus(state.container, '');
     }
@@ -4079,7 +4174,90 @@
 
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+
+            // Load and restore conversation from localStorage
+            restoreConversationFromStorage(state);
         });
+    }
+
+    function restoreConversationFromStorage(state) {
+        if (!state) {
+            return;
+        }
+
+        var saved = loadConversationFromStorage(state);
+
+        if (!saved || !Array.isArray(saved.conversation) || !saved.conversation.length) {
+            return;
+        }
+
+        // Restore session key if available
+        if (saved.sessionKey && !state.config.sessionKey) {
+            state.config.sessionKey = saved.sessionKey;
+        }
+
+        // Restore conversation state
+        state.conversation = saved.conversation;
+
+        // Render each message in the UI
+        saved.conversation.forEach(function (message) {
+            if (!message || !message.role) {
+                return;
+            }
+
+            var role = message.role;
+            var content = message.content;
+
+            if (role === 'system') {
+                // Skip system messages in UI
+                return;
+            }
+
+            if (role === 'tool') {
+                // Render tool responses
+                appendMessage(state.messagesEl, 'tool', content);
+                return;
+            }
+
+            if (role === 'user') {
+                // Render user messages
+                var displayPayload = { text: '' };
+
+                if (typeof content === 'string') {
+                    displayPayload.text = content;
+                } else if (Array.isArray(content)) {
+                    // Extract text from structured content
+                    var textParts = [];
+                    content.forEach(function (segment) {
+                        if (segment && segment.type === 'text' && segment.text) {
+                            textParts.push(segment.text);
+                        }
+                    });
+                    displayPayload.text = textParts.join('\n');
+                }
+
+                appendMessage(state.messagesEl, 'user', displayPayload);
+                return;
+            }
+
+            if (role === 'assistant') {
+                // Render assistant messages
+                var assistantPayload = { text: content || '' };
+                
+                appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
+                    speech: {
+                        state: state,
+                        text: content || '',
+                    },
+                });
+                return;
+            }
+        });
+
+        // Scroll to bottom after restoration
+        if (state.messagesEl) {
+            state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
+        }
     }
 
     function handleSubmit(event, state) {
@@ -4146,6 +4324,9 @@
         var previousConversationLength = state.conversation.length;
         state.conversation.push({ role: 'user', content: payloadContent });
 
+        // Save conversation immediately after user message
+        saveConversationToStorage(state);
+
         state.pendingAttachments = [];
         renderPendingAttachments(state);
         updateAttachButtonState(state);
@@ -4194,6 +4375,7 @@
                 return handleChatResponse(state, data);
             })
             .then(function (result) {
+                saveConversationToStorage(state);
                 finalize();
                 return result;
             }, function (error) {
