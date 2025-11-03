@@ -309,25 +309,24 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function get_allowed_audio_mime_types( $attachment_id ) {
 		$mimes = array(
-			'audio/aac',
-			'audio/flac',
-			'audio/m4a',
-			'audio/mp4',
-			'audio/mp3',
 			'audio/mpeg',
-			'audio/ogg',
-			'audio/opus',
+			'audio/mp3',
 			'audio/wav',
-			'audio/x-aac',
-			'audio/x-flac',
-			'audio/x-m4a',
-			'audio/x-mp3',
-			'audio/x-mpeg',
-			'audio/x-ms-wma',
 			'audio/x-wav',
 			'audio/webm',
+			'audio/ogg',
+			'audio/m4a',
+			'audio/x-m4a',
+			'audio/flac',
+			'audio/x-flac',
+			'audio/mp4',
+			'audio/mpga',
+			'audio/x-mpga',
+			'audio/opus',
+			'audio/amr',
+			'audio/x-mpeg',
+			'audio/x-mp3',
 			'video/mp4',
-			'video/quicktime',
 		);
 
 		/**
