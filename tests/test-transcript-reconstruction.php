@@ -140,12 +140,15 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
-		// Should include the assistant message (even with empty content) and the tool call
-		$this->assertGreaterThanOrEqual( 2, count( $messages ) );
+		// Should include only the assistant message with tool_calls preserved
+		$this->assertCount( 1, $messages, 'Should extract only the assistant message, not create fake tool messages' );
 		$this->assertSame( 'assistant', $messages[0]['role'] );
-		// Empty content is acceptable when there are tool_calls
-		$this->assertSame( 'tool', $messages[1]['role'] );
-		$this->assertStringContainsString( 'get_weather', $messages[1]['content'] );
+		// Tool calls should be preserved in the assistant message
+		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
+		$this->assertIsArray( $messages[0]['tool_calls'] );
+		$this->assertCount( 1, $messages[0]['tool_calls'] );
+		$this->assertSame( 'call_abc123', $messages[0]['tool_calls'][0]['id'] );
+		$this->assertSame( 'get_weather', $messages[0]['tool_calls'][0]['function']['name'] );
 	}
 
 	/**
@@ -172,6 +175,8 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 								'content'    => '',
 								'tool_calls' => array(
 									array(
+										'id'       => 'call_xyz789',
+										'type'     => 'function',
 										'function' => array(
 											'name'      => 'search_documents',
 											'arguments' => '{"query":"annual report"}',
@@ -187,19 +192,15 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
-		// The assistant message should be included even though content is empty
-		$this->assertGreaterThanOrEqual( 2, count( $messages ) );
+		// The assistant message should be included with tool_calls preserved
+		$this->assertCount( 1, $messages, 'Should extract only the assistant message' );
 		
-		// Find the assistant message
-		$has_assistant_message = false;
-		foreach ( $messages as $message ) {
-			if ( $message['role'] === 'assistant' ) {
-				$has_assistant_message = true;
-				break;
-			}
-		}
-		
-		$this->assertTrue( $has_assistant_message, 'Assistant message with tool_calls should be preserved even with empty content' );
+		// Verify assistant message has tool_calls
+		$this->assertSame( 'assistant', $messages[0]['role'] );
+		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
+		$this->assertIsArray( $messages[0]['tool_calls'] );
+		$this->assertCount( 1, $messages[0]['tool_calls'] );
+		$this->assertSame( 'call_xyz789', $messages[0]['tool_calls'][0]['id'] );
 	}
 
 	/**
@@ -272,6 +273,92 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $messages );
 		$this->assertCount( 0, $messages );
+	}
+
+	/**
+	 * Test that extract_request_messages preserves tool_call_id for tool messages.
+	 */
+	public function test_extract_request_messages_preserves_tool_call_id() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+		$extract_method->setAccessible( true );
+
+		// Test with tool message that has tool_call_id
+		$row = array(
+			'request_payload' => wp_json_encode(
+				array(
+					'messages' => array(
+						array(
+							'role'         => 'tool',
+							'content'      => '{"temperature": 20, "conditions": "partly cloudy"}',
+							'tool_call_id' => 'call_abc123',
+							'name'         => 'get_weather',
+						),
+					),
+				)
+			),
+		);
+
+		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+		$this->assertCount( 1, $messages );
+		$this->assertSame( 'tool', $messages[0]['role'] );
+		$this->assertArrayHasKey( 'tool_call_id', $messages[0], 'Tool message should preserve tool_call_id' );
+		$this->assertSame( 'call_abc123', $messages[0]['tool_call_id'] );
+		$this->assertArrayHasKey( 'name', $messages[0], 'Tool message should preserve name' );
+		$this->assertSame( 'get_weather', $messages[0]['name'] );
+	}
+
+	/**
+	 * Test that extract_request_messages preserves tool_calls in assistant messages.
+	 */
+	public function test_extract_request_messages_preserves_assistant_tool_calls() {
+		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
+
+		$extract_method = new ReflectionMethod( $rest_controller, 'extract_request_messages' );
+		$extract_method->setAccessible( true );
+
+		// Test with assistant message that has tool_calls
+		$row = array(
+			'request_payload' => wp_json_encode(
+				array(
+					'messages' => array(
+						array(
+							'role'       => 'assistant',
+							'content'    => '',
+							'tool_calls' => array(
+								array(
+									'id'       => 'call_def456',
+									'type'     => 'function',
+									'function' => array(
+										'name'      => 'calculate_sum',
+										'arguments' => '{"numbers":[1,2,3]}',
+									),
+								),
+							),
+						),
+					),
+				)
+			),
+		);
+
+		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
+
+		$this->assertCount( 1, $messages );
+		$this->assertSame( 'assistant', $messages[0]['role'] );
+		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
+		$this->assertIsArray( $messages[0]['tool_calls'] );
+		$this->assertCount( 1, $messages[0]['tool_calls'] );
+		$this->assertSame( 'call_def456', $messages[0]['tool_calls'][0]['id'] );
 	}
 
 	/**

@@ -5676,10 +5676,27 @@ class WP_MCP_AI_REST {
 				continue;
 			}
 
-			$messages[] = array(
+			$message_entry = array(
 				'role'    => $role,
 				'content' => $content,
 			);
+
+			// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation)
+			if ( 'tool' === $role && isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
+				$message_entry['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+			}
+
+			// Preserve name for tool messages (optional but helpful for debugging)
+			if ( 'tool' === $role && isset( $message['name'] ) && '' !== $message['name'] ) {
+				$message_entry['name'] = sanitize_text_field( $message['name'] );
+			}
+
+			// Preserve tool_calls for assistant messages (required when assistant makes tool calls)
+			if ( 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] ) ) {
+				$message_entry['tool_calls'] = $message['tool_calls'];
+			}
+
+			$messages[] = $message_entry;
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -5742,10 +5759,19 @@ class WP_MCP_AI_REST {
 				$has_tool_calls = ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] );
 				
 				if ( '' !== $content || 'tool' === $role || $has_tool_calls ) {
-					$messages[] = array(
+					$message_entry = array(
 						'role'    => $role,
 						'content' => $content,
 					);
+
+					// Preserve tool_calls in the assistant message for proper OpenAI schema compliance.
+					// Tool calls should remain in the assistant message, not be converted to tool role messages.
+					// Only actual tool responses (with tool_call_id) should be tool role messages.
+					if ( $has_tool_calls ) {
+						$message_entry['tool_calls'] = $choice['message']['tool_calls'];
+					}
+
+					$messages[] = $message_entry;
 					
 					WP_MCP_AI_Logger::log_event(
 						'debug',
@@ -5766,29 +5792,6 @@ class WP_MCP_AI_REST {
 							'role'         => $role,
 						)
 					);
-				}
-
-				if ( $has_tool_calls ) {
-					foreach ( $choice['message']['tool_calls'] as $tool_index => $tool_call ) {
-						$tool_message = $this->format_tool_call_message( $tool_call );
-
-						if ( '' !== $tool_message ) {
-							$messages[] = array(
-								'role'    => 'tool',
-								'content' => $tool_message,
-							);
-							
-							WP_MCP_AI_Logger::log_event(
-								'debug',
-								'extract_response_messages: added tool call message',
-								array(
-									'choice_index' => $choice_index,
-									'tool_index'   => $tool_index,
-									'content_length' => strlen( $tool_message ),
-								)
-							);
-						}
-					}
 				}
 			}
 		} else {
