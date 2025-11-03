@@ -857,13 +857,51 @@
     border-radius: 10px;
     background: var(--wp-mcp-ai-color-shortcut-background, rgba(148, 163, 184, 0.08));
     overflow: hidden;
+    position: relative;
+}
+
+.wp-mcp-ai-chat__history-delete {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--wp-mcp-ai-color-shortcut-text, rgba(15, 23, 42, 0.5));
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    padding: 0;
+    z-index: 1;
+}
+
+.wp-mcp-ai-chat__history-delete:hover {
+    background: var(--wp-mcp-ai-color-error-background, rgba(220, 38, 38, 0.1));
+    border-color: var(--wp-mcp-ai-color-error, rgba(220, 38, 38, 0.3));
+    color: var(--wp-mcp-ai-color-error, #dc2626);
+}
+
+.wp-mcp-ai-chat__history-delete:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-error, rgba(220, 38, 38, 0.4));
+}
+
+.wp-mcp-ai-chat__history-delete svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
 .wp-mcp-ai-chat__history-session {
     width: 100%;
     background: transparent;
     border: none;
-    padding: 0.85rem 1rem;
+    padding: 0.85rem 3rem 0.85rem 1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;

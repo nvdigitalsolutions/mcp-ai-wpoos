@@ -338,6 +338,25 @@ class WP_MCP_AI_REST {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/chat-transcripts/(?P<session_key>[^/]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'callback'            => array( $this, 'handle_chat_transcript_delete' ),
+					'args'                => array(
+						'session_key' => array(
+							'type'     => 'string',
+							'required' => true,
+						),
+					),
+				),
+			),
+			true
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/tools',
 			array(
 				array(
@@ -521,6 +540,84 @@ class WP_MCP_AI_REST {
 				'total'    => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
 				'per_page' => $per_page,
 				'page'     => $page,
+			)
+		);
+	}
+
+	/**
+	 * Handle deletion of a chat transcript session.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_chat_transcript_delete( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$session_key = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+
+		if ( '' === $session_key ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_invalid_session',
+				__( 'A valid session key is required to delete a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$user_id = absint( $request->get_param( 'user_id' ) );
+
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+
+		if ( ! $user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_missing_user',
+				__( 'A valid user is required to delete a transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$table = $this->get_transcript_table_name();
+
+		if ( '' === $table ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_unavailable',
+				__( 'Chat transcripts are not configured or available.', 'wp-mcp-ai' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		if ( ! $this->transcript_table_exists() ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_unavailable',
+				__( 'The transcript storage table does not exist.', 'wp-mcp-ai' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		// Delete all transcript entries for this session and user
+		$deleted = $wpdb->delete(
+			$table,
+			array(
+				'session_key' => $session_key,
+				'cct_author_id' => $user_id,
+			),
+			array( '%s', '%d' )
+		);
+
+		if ( false === $deleted ) {
+			return new WP_Error(
+				'wp_mcp_ai_transcripts_delete_failed',
+				__( 'Failed to delete the transcript.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'deleted' => $deleted,
+				'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
 			)
 		);
 	}

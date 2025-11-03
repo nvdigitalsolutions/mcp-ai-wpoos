@@ -1742,11 +1742,33 @@
                 '</svg>';
             button.appendChild(icon);
 
+            var deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'wp-mcp-ai-chat__history-delete';
+            deleteButton.setAttribute('aria-label', getString('deleteConversation', 'Delete this conversation'));
+            deleteButton.setAttribute('title', getString('deleteConversation', 'Delete this conversation'));
+            deleteButton.innerHTML =
+                '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+                '<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />' +
+                '</svg>';
+
+            deleteButton.addEventListener('click', function (event) {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                }
+                if (event && typeof event.stopPropagation === 'function') {
+                    event.stopPropagation();
+                }
+
+                handleHistoryDelete(state, session, item);
+            });
+
             var details = document.createElement('div');
             details.className = 'wp-mcp-ai-chat__history-messages';
             details.hidden = true;
 
             item.appendChild(button);
+            item.appendChild(deleteButton);
             item.appendChild(details);
 
             button.addEventListener('click', function (event) {
@@ -1772,20 +1794,77 @@
         state.historyList.appendChild(fragment);
     }
 
+    function handleHistoryDelete(state, session, item) {
+        if (!state || !session || !session.session_key) {
+            return;
+        }
+
+        var confirmMessage = getString(
+            'confirmDeleteConversation',
+            'Are you sure you want to delete this conversation? This action cannot be undone.'
+        );
+
+        if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+            if (!window.confirm(confirmMessage)) {
+                return;
+            }
+        }
+
+        var sessionKey = session.session_key;
+        var endpoint = getHistoryEndpoint(state);
+
+        if (!endpoint) {
+            setHistoryStatus(state, getString('historyDeleteError', 'Unable to delete conversation.'), true);
+            return;
+        }
+
+        var deleteUrl = endpoint + '/' + encodeURIComponent(sessionKey);
+
+        fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: buildHistoryHeaders(state),
+            credentials: 'same-origin',
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error('Delete failed');
+                }
+                return response.json();
+            })
+            .then(function () {
+                if (item && item.parentNode) {
+                    item.parentNode.removeChild(item);
+                }
+
+                state.historySessions = state.historySessions.filter(function (s) {
+                    return s.session_key !== sessionKey;
+                });
+
+                if (state.activeHistorySessionKey === sessionKey) {
+                    state.activeHistorySessionKey = '';
+                }
+
+                if (state.historySessionDetails && state.historySessionDetails[sessionKey]) {
+                    delete state.historySessionDetails[sessionKey];
+                }
+
+                setHistoryStatus(state, getString('historyDeleteSuccess', 'Conversation deleted successfully.'), false);
+
+                setTimeout(function () {
+                    setHistoryStatus(state, '', false);
+                }, 3000);
+            })
+            .catch(function () {
+                setHistoryStatus(state, getString('historyDeleteError', 'Unable to delete conversation.'), true);
+            });
+    }
+
     function toggleHistoryVisibility(state) {
         if (!state) {
             return;
         }
 
-        var isExpanded = !!state.historyVisible;
-
-        if (state.historyToggle && state.historyToggle.getAttribute) {
-            isExpanded = state.historyToggle.getAttribute('aria-expanded') === 'true';
-        } else if (state.historyContainer) {
-            isExpanded = !state.historyContainer.hidden;
-        }
-
-        setHistoryVisibility(state, !isExpanded);
+        setHistoryVisibility(state, !state.historyVisible);
     }
 
     function setHistoryVisibility(state, visible) {
