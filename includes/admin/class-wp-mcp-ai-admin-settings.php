@@ -4628,7 +4628,7 @@ class WP_MCP_AI_Admin_Settings {
 		}
 
 		$zone_id   = isset( $_POST['zone_id'] ) ? sanitize_text_field( wp_unslash( $_POST['zone_id'] ) ) : '';
-		$api_token = isset( $_POST['api_token'] ) ? trim( wp_unslash( $_POST['api_token'] ) ) : '';
+		$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
 
 		if ( empty( $zone_id ) || empty( $api_token ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please provide both Zone ID and API Token.', 'wp-mcp-ai' ) ) );
