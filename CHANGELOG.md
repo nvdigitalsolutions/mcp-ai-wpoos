@@ -5,6 +5,10 @@
 ```markdown
 # WP MCP AI – Changelog
 
+## [Unreleased]
+### Added
+- Automatic activation of JetEngine Data Stores module when JetEngine is installed and active.
+
 ## [1.0.0] – 2025-10-23
 ### Changed
 - Expanded chat interaction logging to keep structured message content while trimming oversized payloads.
