@@ -13,6 +13,7 @@ Use this checklist to confirm the plugin is configured and ready for production 
 ## Authentication & Security
 - For remote MCP assistants, provision Auth0 bearer tokens with the API audience and scopes that match the plugin settings. Same-origin UIs continue using the WordPress REST nonce.
 - Familiarize yourself with the structured REST errors returned by the plugin so clients can present actionable remediation guidance when authentication fails.
+- Confirm the WordPress roles that will use the front-end chat have the `upload_files` capability when attachments are required; the uploader honours core Media Library permissions.
 
 ## Assistant Content & Tools
 - For each AI Assistant post, curate the allowed tools (core, WooCommerce, JetEngine, or custom), set the assistant defaults (model, temperature, system prompt), and attach any media knowledge or vector store IDs needed for retrieval workflows.
