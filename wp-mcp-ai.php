@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: WP MCP AI
- * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
+ * Plugin Name: WP Open Operator System
+ * Plugin URI: https://github.com/nvdigitalsolutions/wp-oos
  * Description: Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
  * Version: 1.0.0
  * Author: NV Digital Solutions
