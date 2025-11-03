@@ -3360,6 +3360,42 @@ class WP_MCP_AI_REST {
 		$context['provider']     = isset( $context['provider'] ) ? sanitize_key( $context['provider'] ) : '';
 		$context['model']        = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
 
+		// Apply message count limit before token-based trimming.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$max_message_count = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
+		$max_message_count = (int) apply_filters( 'wp_mcp_ai_max_history_messages', $max_message_count, $context );
+
+		if ( $max_message_count > 0 && count( $messages ) > $max_message_count ) {
+			// Separate system messages from other messages.
+			$system_messages = array();
+			$other_messages  = array();
+
+			foreach ( $messages as $message ) {
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+				if ( 'system' === $role ) {
+					$system_messages[] = $message;
+				} else {
+					$other_messages[] = $message;
+				}
+			}
+
+			// Keep system messages plus the most recent N non-system messages.
+			$available_for_history = max( 1, $max_message_count - count( $system_messages ) );
+			$other_messages        = array_slice( $other_messages, -$available_for_history );
+
+			// Recombine: system messages first, then history.
+			$messages = array_merge( $system_messages, $other_messages );
+
+			WP_MCP_AI_Logger::log_event(
+				'chat_request_history_trimmed',
+				'Chat request trimmed to maximum history message count.',
+				array(
+					'max_message_count' => $max_message_count,
+					'final_count'       => count( $messages ),
+				)
+			);
+		}
+
 		$limit_tokens = $this->determine_chat_request_token_limit( $context );
 		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_chat_request_token_limit', $limit_tokens, $messages, $attachments, $context );
 
