@@ -218,4 +218,24 @@ class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'tool_role_rules', $config );
 		$this->assertSame( array(), $config['tool_role_rules'] );
 	}
+
+	/**
+	 * Ensure all supported providers are accepted by sanitize_provider_meta.
+	 */
+	public function test_sanitize_provider_meta_accepts_all_providers() {
+		$this->assertSame( 'openai', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 'openai' ) );
+		$this->assertSame( 'gemini', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 'gemini' ) );
+		$this->assertSame( 'ollama', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 'ollama' ) );
+		$this->assertSame( 'lm_studio', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 'lm_studio' ) );
+	}
+
+	/**
+	 * Ensure invalid provider values are rejected.
+	 */
+	public function test_sanitize_provider_meta_rejects_invalid_providers() {
+		$this->assertSame( '', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 'invalid' ) );
+		$this->assertSame( '', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( '' ) );
+		$this->assertSame( '', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( 123 ) );
+		$this->assertSame( '', WP_MCP_AI_Assistant_CPT::sanitize_provider_meta( null ) );
+	}
 }

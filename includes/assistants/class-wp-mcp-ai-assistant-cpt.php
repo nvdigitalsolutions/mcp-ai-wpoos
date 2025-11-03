@@ -842,9 +842,9 @@ class WP_MCP_AI_Assistant_CPT {
 	public static function sanitize_provider_meta( $provider ) {
 		$provider = is_string( $provider ) ? sanitize_key( $provider ) : '';
 
-		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+		$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama', 'lm_studio' ) );
 		if ( ! is_array( $allowed_providers ) ) {
-			$allowed_providers = array( 'openai', 'gemini' );
+			$allowed_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
 		}
 
 		if ( ! in_array( $provider, $allowed_providers, true ) ) {
@@ -2311,9 +2311,9 @@ class WP_MCP_AI_Assistant_CPT {
 			$provider = $default_provider;
 		}
 
-		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama', 'lm_studio' ) );
 		if ( ! is_array( $provider_choices ) ) {
-			$provider_choices = array( 'openai', 'gemini' );
+			$provider_choices = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
 		}
 
 		if ( '' === $temperature ) {
@@ -2331,7 +2331,18 @@ class WP_MCP_AI_Assistant_CPT {
 						continue;
 					}
 
-					$label = 'openai' === $choice ? __( 'OpenAI', 'wp-mcp-ai' ) : __( 'Gemini', 'wp-mcp-ai' );
+					$label = '';
+					if ( 'openai' === $choice ) {
+						$label = __( 'OpenAI', 'wp-mcp-ai' );
+					} elseif ( 'gemini' === $choice ) {
+						$label = __( 'Gemini', 'wp-mcp-ai' );
+					} elseif ( 'ollama' === $choice ) {
+						$label = __( 'Ollama', 'wp-mcp-ai' );
+					} elseif ( 'lm_studio' === $choice ) {
+						$label = __( 'LM Studio', 'wp-mcp-ai' );
+					} else {
+						$label = ucfirst( str_replace( '_', ' ', $choice ) );
+					}
 					?>
 					<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $provider, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php
