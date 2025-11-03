@@ -57,6 +57,33 @@ Welcome to the WP MCP AI plugin documentation. This directory contains comprehen
    - Production checklist
    - **Security reference** guide
 
+### For Users & Integration
+
+7. **[Remote Client Setup Guide](remote-client-setup.md)** (13.5KB)
+   - Comprehensive setup for Claude Desktop, LM Studio, ChatGPT
+   - Authentication methods and credential management
+   - Step-by-step configuration instructions
+   - Troubleshooting common connection issues
+   - **Integration guide** for MCP clients
+
+8. **[Quick Start Guide](remote-client-quickstart.md)** (4.2KB)
+   - 5-minute setup for Claude Desktop
+   - Essential steps only
+   - Common issues and quick fixes
+   - **Fast track** for basic connections
+
+9. **[MCP Server Authentication](mcp-server-authentication.md)** (5.5KB)
+   - Authentication mechanisms explained
+   - Bearer tokens, credentials, Auth0 setup
+   - Error codes and remediation
+   - **Authentication reference** guide
+
+10. **[REST API Reference](rest-api.md)** (15KB+)
+    - Endpoint documentation
+    - Request/response formats
+    - Payload examples
+    - **API integration** guide
+
 ---
 
 ## 🎯 Quick Start Guides
@@ -67,6 +94,13 @@ Welcome to the WP MCP AI plugin documentation. This directory contains comprehen
 2. Set up pre-commit hooks (template in Best Practices)
 3. Review [Code Review](CODE_REVIEW.md) for architecture understanding
 4. Check [Action Items](ACTION_ITEMS.md) for current priorities
+
+### Connect Remote MCP Clients
+
+1. Read [Quick Start Guide](remote-client-quickstart.md) for 5-minute setup
+2. Review [Remote Client Setup](remote-client-setup.md) for detailed instructions
+3. Check [MCP Server Authentication](mcp-server-authentication.md) for auth details
+4. Use test script: `./bin/test-remote-connection.sh -u YOUR_URL -t YOUR_TOKEN`
 
 ### Code Review Follow-up
 
