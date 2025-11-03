@@ -309,7 +309,15 @@ function wp_mcp_ai_new_site_activation( $blog ) {
 	}
 
 	// Handle both WP_Site object (WP 5.1+) and blog ID (earlier versions).
-	$blog_id = is_object( $blog ) ? $blog->blog_id : $blog;
+	if ( is_object( $blog ) && isset( $blog->blog_id ) ) {
+		$blog_id = (int) $blog->blog_id;
+	} elseif ( is_numeric( $blog ) ) {
+		$blog_id = (int) $blog;
+	} else {
+		// Invalid parameter, log error and return.
+		error_log( 'WP MCP AI: Invalid blog parameter passed to new_site_activation' );
+		return;
+	}
 
 	switch_to_blog( $blog_id );
 	try {
@@ -330,6 +338,9 @@ add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
  * @param bool $network_wide Whether the plugin is being activated network-wide.
  */
 function wp_mcp_ai_activate( $network_wide = false ) {
+	// Ensure network_wide is a boolean.
+	$network_wide = (bool) $network_wide;
+
 	if ( is_multisite() && $network_wide ) {
 		// Get all sites in the network.
 		$sites = get_sites( array( 'number' => 0 ) );
@@ -368,6 +379,9 @@ register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
  * @param bool $network_wide Whether the plugin is being deactivated network-wide.
  */
 function wp_mcp_ai_deactivate( $network_wide = false ) {
+	// Ensure network_wide is a boolean.
+	$network_wide = (bool) $network_wide;
+
 	if ( is_multisite() && $network_wide ) {
 		// Get all sites in the network.
 		$sites = get_sites( array( 'number' => 0 ) );
