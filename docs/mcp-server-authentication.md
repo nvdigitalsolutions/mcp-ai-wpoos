@@ -38,3 +38,13 @@ Every authentication failure is returned as a structured JSON error so MCP clien
 | `wp_mcp_ai_insufficient_permissions` | `403` | WordPress-authenticated user lacks the `edit_posts` capability. | Promote the account (e.g., Author/Editor) or switch to a different user. |
 
 Each error also contains an `actions` array that mirrors these remediation steps so MCP clients can surface actionable guidance to end users.
+
+## Extending the authentication flow
+
+The REST controller exposes several filters for teams that need to pair Auth0 with an existing identity broker or run requests under a specific WordPress user:
+
+- `wp_mcp_ai_pre_validate_bearer_token` — Return `true` to accept a token that has already been validated by a reverse proxy or edge service, or return a `WP_Error` to stop the request before any Auth0 calls occur.
+- `wp_mcp_ai_bearer_token_payload` — Inspect or mutate the decoded JWT payload before the plugin evaluates the issuer, audience, expiry, or scope claims.
+- `wp_mcp_ai_map_bearer_to_user_id` — Map a validated token to a WordPress user ID so subsequent permission checks run as that account (handy for multi-tenant or headless setups).
+
+Remember to keep custom filters fast; expensive network calls will add latency to every chat request routed through the MCP API.

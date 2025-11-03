@@ -43,6 +43,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧩 Developer hooks and filters for integrating custom behaviours
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
+- 📎 Front-end chat uploads that normalise Media Library attachments for multimodal conversations
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
@@ -178,6 +179,8 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
 - Multiple shortcodes can be added to the same page; each chat instance maintains its own conversation context on the client.
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
+- Editors can upload attachments directly from the chat UI when their role grants the `upload_files` capability. Upload progress is surfaced inline and completed files appear above the composer.
+- Uploaded files are stored in the Media Library and included in the next request as structured segments so the assistant can reference images and documents without extra API calls.
 
 ---
 
@@ -221,6 +224,13 @@ use these `file_id` handles so integrators do not need to upload assets manually
 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
+
+### Attachment controls & safeguards
+
+- Front-end chats use the WordPress Media REST API (`/wp/v2/media`) to upload files, adopting the same permission checks and storage rules as the dashboard uploader.
+- Files larger than 5 MB are rejected by default; adjust the ceiling via the `wp_mcp_ai_max_attachment_bytes` filter.
+- Allow-list MIME types for each usage (image vs. generic file) can be extended with the `wp_mcp_ai_allowed_image_mimes` and `wp_mcp_ai_allowed_file_mimes` filters.
+- Hook `wp_mcp_ai_can_use_attachment` when additional business logic is required before an attachment is exposed to the model (for example, approving files uploaded by subscribers).
 
 ---
 
@@ -313,9 +323,17 @@ Use the following hooks to extend the plugin:
 | `do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request )` | Action | Fires after a chat response is received. |
 | `apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request )` | Filter | Modify the OpenAI request options before dispatch. |
 | `apply_filters( 'wp_mcp_ai_chat_capability', $capability, $assistant_id, $context )` | Filter | Adjust the capability required to use the chat shortcode and REST endpoints (defaults to `edit_posts`). Return `'public'` or an empty value to allow any visitor. |
+| `apply_filters( 'wp_mcp_ai_allowed_message_roles', $roles )` | Filter | Extend or replace the permitted chat message roles (`user`, `assistant`, `system`, `tool` by default). |
+| `apply_filters( 'wp_mcp_ai_pre_validate_bearer_token', $result, $token, $request )` | Filter | Short-circuit Auth0 bearer validation to integrate alternate credential stores. |
+| `apply_filters( 'wp_mcp_ai_bearer_token_payload', $payload, $request )` | Filter | Inspect or transform the decoded bearer token payload before capability checks. |
+| `apply_filters( 'wp_mcp_ai_map_bearer_to_user_id', $user_id, $payload, $request )` | Filter | Associate a validated bearer token with a WordPress user so REST calls inherit that account's permissions. |
 | `do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context )` | Action | Runs immediately before a tool executes. |
 | `apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context )` | Filter | Inspect or transform tool output before it is returned. |
 | `do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result )` | Action | Runs after a tool completes execution. |
+| `apply_filters( 'wp_mcp_ai_max_attachment_bytes', $bytes, $attachment_id, $usage )` | Filter | Increase or lower the attachment size ceiling enforced during chat validation. |
+| `apply_filters( 'wp_mcp_ai_allowed_image_mimes', $mimes )` | Filter | Expand the allowed image MIME types for multimodal messages. |
+| `apply_filters( 'wp_mcp_ai_allowed_file_mimes', $mimes )` | Filter | Expand the generic file MIME allow list for chat uploads. |
+| `apply_filters( 'wp_mcp_ai_can_use_attachment', $allowed, $attachment_id )` | Filter | Enforce custom business rules before an attachment is exposed to the model. |
 | `apply_filters( 'wp_mcp_ai_log_entry', $entry, $type, $message, $context )` | Filter | Intercept or redirect logging output. |
 
 Each hook receives sanitized data and respects the current user's permissions and multisite membership.
