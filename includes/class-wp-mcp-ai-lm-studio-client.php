@@ -177,9 +177,9 @@ class WP_MCP_AI_LM_Studio_Client {
 			foreach ( $decoded['data'] as $model ) {
 				if ( isset( $model['id'] ) ) {
 					$models[] = array(
-						'name'    => $model['id'],
+						'id'       => $model['id'],
 						'owned_by' => isset( $model['owned_by'] ) ? $model['owned_by'] : '',
-						'created' => isset( $model['created'] ) ? $model['created'] : 0,
+						'created'  => isset( $model['created'] ) ? $model['created'] : 0,
 					);
 				}
 			}
@@ -445,7 +445,7 @@ class WP_MCP_AI_LM_Studio_Client {
 		}
 
 		$response['provider'] = 'lm_studio';
-		
+
 		if ( ! isset( $response['model'] ) ) {
 			$response['model'] = $model;
 		}
