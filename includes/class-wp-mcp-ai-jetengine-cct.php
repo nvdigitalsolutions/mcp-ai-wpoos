@@ -22,6 +22,9 @@ class WP_MCP_AI_JetEngine_CCT {
 		// Run after JetEngine initialises the Custom Content Types module but before
 		// the manager registers existing instances (priority 10).
 		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
+		
+		// Ensure data stores module is enabled when JetEngine is active.
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
 	}
 
 	/**
@@ -59,6 +62,42 @@ class WP_MCP_AI_JetEngine_CCT {
 		}
 
 		return $instance->get_item_handler();
+	}
+
+	/**
+	 * Automatically enable the JetEngine data stores module if it's not already active.
+	 */
+	public static function maybe_enable_data_stores() {
+		if ( ! function_exists( 'jet_engine' ) ) {
+			return;
+		}
+
+		$engine = jet_engine();
+
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
+			return;
+		}
+
+		// Check if data stores module is already active.
+		if ( $engine->modules->is_module_active( 'data-stores' ) ) {
+			return;
+		}
+
+		// Check if the module exists.
+		if ( ! method_exists( $engine->modules, 'get_module' ) ) {
+			return;
+		}
+
+		$module = $engine->modules->get_module( 'data-stores' );
+
+		if ( ! $module ) {
+			return;
+		}
+
+		// Activate the data stores module.
+		if ( method_exists( $engine->modules, 'activate_module' ) ) {
+			$engine->modules->activate_module( 'data-stores' );
+		}
 	}
 
 	/**
