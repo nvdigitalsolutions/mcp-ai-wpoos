@@ -2168,8 +2168,11 @@
         });
     }
 
-    function loadHistorySessionIntoChat(state, session, activeItem) {
-        if (!state || !state.messagesEl) {
+    function loadHistorySessionIntoChat(state, session, activeItem, chatWindow) {
+        // Use the provided chatWindow or fall back to state.messagesEl
+        var messagesEl = chatWindow || state.messagesEl;
+        
+        if (!state || !messagesEl) {
             return;
         }
 
@@ -2191,7 +2194,7 @@
             state.config.assistantId = assistantId;
         }
 
-        state.messagesEl.textContent = '';
+        messagesEl.textContent = '';
         state.conversation = [];
         state.pendingAttachments = [];
         state.validationNotice = '';
@@ -2206,7 +2209,7 @@
         var messages = Array.isArray(session.messages) ? session.messages : [];
 
         if (!messages.length) {
-            appendMessage(state.messagesEl, 'system', {
+            appendMessage(messagesEl, 'system', {
                 text: getString('historyNoMessages', 'No messages were saved for this conversation.'),
             });
             setTranscriptExpanded(state, true);
@@ -2241,7 +2244,7 @@
             var payload = { text: trimmedContent };
             var allowMarkdown = role === 'assistant';
 
-            appendMessage(state.messagesEl, role, payload, allowMarkdown);
+            appendMessage(messagesEl, role, payload, allowMarkdown);
             if (hasContent || role === 'tool') {
                 state.conversation.push({ role: role, content: trimmedContent });
             }
@@ -2281,10 +2284,19 @@
 
         var sessionKey = session && session.session_key ? session.session_key : '';
 
+        // Find the main chat window relative to the history item to ensure correct targeting
+        var chatContainer = item.closest('.wp-mcp-ai-chat');
+        var chatWindow = chatContainer ? chatContainer.querySelector('.wp-mcp-ai-chat__messages') : null;
+        
+        if (!chatWindow) {
+            // Fallback to state.messagesEl if DOM traversal fails
+            chatWindow = state.messagesEl;
+        }
+
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
             var cachedSession = state.historySessionDetails[sessionKey];
             renderHistorySessionDetails(state, details, cachedSession);
-            loadHistorySessionIntoChat(state, cachedSession, item);
+            loadHistorySessionIntoChat(state, cachedSession, item, chatWindow);
             return;
         }
 
@@ -2301,7 +2313,7 @@
                 }
 
                 renderHistorySessionDetails(state, details, data);
-                loadHistorySessionIntoChat(state, data, item);
+                loadHistorySessionIntoChat(state, data, item, chatWindow);
             })
             .catch(function (error) {
                 var message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
