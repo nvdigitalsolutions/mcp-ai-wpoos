@@ -1,5 +1,21 @@
 (function ($) {
+    'use strict';
+    
+    // Debug mode - set to false in production
+    const DEBUG = false;
+    
+    function log(message, data) {
+        if (DEBUG && console && console.log) {
+            if (data !== undefined) {
+                console.log('[WP MCP AI] ' + message, data);
+            } else {
+                console.log('[WP MCP AI] ' + message);
+            }
+        }
+    }
+    
     function initColorPickers() {
+        log('Initializing color pickers...');
         $('.wp-mcp-ai-color-field').each(function () {
             const $field = $(this);
             const format = ($field.data('format') || 'hex').toString().toLowerCase();
@@ -20,13 +36,24 @@
                 });
             }
         });
+        log('Color pickers initialized');
     }
 
     function initOllamaHandlers() {
+        log('Initializing Ollama handlers...');
+        const $button = $('#wp-mcp-ai-test-ollama-connection');
+        
+        if ($button.length === 0) {
+            log('Ollama test button not found on this page');
+            return;
+        }
+        
         // Test Ollama connection
-        $('#wp-mcp-ai-test-ollama-connection').on('click', function (e) {
+        $button.on('click', function (e) {
             e.preventDefault();
-            const $button = $(this);
+            log('Ollama test button clicked');
+            
+            const $btn = $(this);
             const $result = $('#wp-mcp-ai-ollama-test-result');
             const endpointUrl = $('input[name="wp_mcp_ai_settings[ollama_endpoint_url]"]').val();
 
@@ -35,8 +62,13 @@
                 return;
             }
 
-            $button.prop('disabled', true).text('Testing...');
+            $btn.prop('disabled', true).text('Testing...');
             $result.html('<span style="color: #3c434a;">Connecting...</span>');
+            
+            log('Sending AJAX request to test Ollama connection', {
+                url: wpMcpAiAdmin.ajaxUrl,
+                endpoint: endpointUrl
+            });
 
             $.ajax({
                 url: wpMcpAiAdmin.ajaxUrl,
@@ -47,20 +79,24 @@
                     endpoint_url: endpointUrl
                 },
                 success: function (response) {
+                    log('Ollama test response:', response);
                     if (response.success) {
                         $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
                     } else {
                         $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
                     }
                 },
-                error: function () {
+                error: function (jqXHR, textStatus, errorThrown) {
+                    log('Ollama test error:', { status: textStatus, error: errorThrown });
                     $result.html('<span style="color: #d63638;">✗ Connection failed</span>');
                 },
                 complete: function () {
-                    $button.prop('disabled', false).text('Test Connection');
+                    log('Ollama test complete');
+                    $btn.prop('disabled', false).text('Test Connection');
                 }
             });
         });
+        log('Ollama handlers initialized');
 
         // Fetch Ollama models
         $('#wp-mcp-ai-fetch-ollama-models').on('click', function (e) {
@@ -412,10 +448,21 @@
     }
 
     $(function () {
+        log('DOM ready, initializing WP MCP AI admin handlers...');
+        
+        // Check if wpMcpAiAdmin is defined
+        if (typeof wpMcpAiAdmin === 'undefined') {
+            console.error('[WP MCP AI] ERROR: wpMcpAiAdmin is not defined! Script may not be properly enqueued.');
+            return;
+        }
+        log('wpMcpAiAdmin loaded:', wpMcpAiAdmin);
+        
         initColorPickers();
         initOllamaHandlers();
         initLMStudioHandlers();
         initCloudwaysHandlers();
         initCloudflareHandlers();
+        
+        log('All admin handlers initialized successfully');
     });
 })(jQuery);
