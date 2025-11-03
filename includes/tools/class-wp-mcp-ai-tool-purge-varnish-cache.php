@@ -263,9 +263,10 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
 		}
 
 		$request_args = array(
-			'method'  => 'PURGE',
-			'headers' => $headers,
-			'timeout' => $timeout,
+			'method'    => 'PURGE',
+			'headers'   => $headers,
+			'timeout'   => $timeout,
+			'sslverify' => false, // Disable SSL verification for localhost requests.
 		);
 
 		$response = wp_remote_request( $purge_url, $request_args );
