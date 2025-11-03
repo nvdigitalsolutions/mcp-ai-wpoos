@@ -240,6 +240,8 @@ class WP_MCP_AI_Tool_Registry {
 			'generate_openai_speech'           => 'media',
 			'transcribe_openai_audio'          => 'media',
 			'generate_perfume_lifestyle_image' => 'media',
+			'cloud_vision_product_search'      => 'media',
+			'cloud_vision_object_localization' => 'media',
 			'get_jetengine_items'              => 'jetengine',
 			'list_jetengine_rest_routes'       => 'jetengine',
 			'invoke_jetengine_route'           => 'jetengine',
@@ -367,6 +369,8 @@ class WP_MCP_AI_Tool_Registry {
 			'WP_MCP_AI_Tool_Get_Tiktok_Insights'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-tiktok-insights.php',
 			'WP_MCP_AI_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-google-business-insights.php',
 			'WP_MCP_AI_Tool_Get_Linkedin_Insights'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-linkedin-insights.php',
+			'WP_MCP_AI_Tool_Cloud_Vision_Product_Search'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cloud-vision-product-search.php',
+			'WP_MCP_AI_Tool_Cloud_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-cloud-vision-object-localization.php',
 		);
 
 		foreach ( $default_tools as $class => $file ) {
