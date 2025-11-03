@@ -132,6 +132,7 @@ class WP_MCP_AI_Shortcode {
 					'unsupportedFileLabel'      => __( 'This file', 'wp-mcp-ai' ),
 					'expandTranscript'          => __( 'Expand conversation', 'wp-mcp-ai' ),
 					'collapseTranscript'        => __( 'Collapse conversation', 'wp-mcp-ai' ),
+					'newConversation'           => __( 'Start new conversation', 'wp-mcp-ai' ),
 					'jsonResponse'              => __( 'JSON response', 'wp-mcp-ai' ),
 					'historyToggleShow'         => __( 'Show previous conversations', 'wp-mcp-ai' ),
 					'historyToggleHide'         => __( 'Hide previous conversations', 'wp-mcp-ai' ),
@@ -385,6 +386,16 @@ class WP_MCP_AI_Shortcode {
 						<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />
 					</svg>
 					<span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'wp-mcp-ai' ); ?></span>
+				</button>
+				<button
+					type="button"
+					class="wp-mcp-ai-chat__new-chat"
+					aria-label="<?php echo esc_attr__( 'Start new conversation', 'wp-mcp-ai' ); ?>"
+				>
+					<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+						<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
+					</svg>
+					<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'wp-mcp-ai' ); ?></span>
 				</button>
 			</div>
 			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'wp-mcp-ai' ); ?>">

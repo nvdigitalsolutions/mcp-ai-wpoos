@@ -1531,6 +1531,68 @@
         }
     }
 
+    function startNewConversation(state) {
+        if (!state) {
+            return;
+        }
+
+        // Confirm with user before clearing the conversation
+        if (state.conversation.length > 0) {
+            const confirmMessage = getString('newConversation', 'Start new conversation') + '?';
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+        }
+
+        // Clear the conversation array
+        state.conversation = [];
+
+        // Clear localStorage
+        clearConversationFromStorage(state);
+
+        // Clear the messages UI
+        if (state.messagesEl) {
+            state.messagesEl.innerHTML = '';
+        }
+
+        // Clear the textarea
+        if (state.textarea) {
+            state.textarea.value = '';
+        }
+
+        // Clear pending attachments
+        state.pendingAttachments = [];
+        renderPendingAttachments(state);
+        updateAttachButtonState(state);
+
+        // Clear status message
+        setStatus(state.container, '');
+
+        // Collapse the transcript if expanded
+        setTranscriptExpanded(state, false);
+
+        // Generate a new session key for the new conversation
+        let newSessionKey;
+        
+        if (typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.randomUUID) {
+            newSessionKey = crypto.randomUUID();
+        } else if (typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.getRandomValues) {
+            // Use crypto.getRandomValues for secure random generation
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            newSessionKey = 'wp-mcp-ai-session-' + Array.from(array, function(byte) {
+                return byte.toString(16).padStart(2, '0');
+            }).join('');
+        } else {
+            // Fallback for environments without crypto API (uses timestamp only)
+            newSessionKey = 'wp-mcp-ai-session-' + Date.now();
+        }
+
+        if (state.config) {
+            state.config.sessionKey = newSessionKey;
+        }
+    }
+
     function updateHistoryToggle(state) {
         if (!state || !state.historyToggle) {
             return;
@@ -4092,6 +4154,7 @@
             const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             const transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
+            const newChatButton = container.querySelector('.wp-mcp-ai-chat__new-chat');
             const historyToggle = container.querySelector('.wp-mcp-ai-chat__history-toggle');
             const historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
             const historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
@@ -4216,6 +4279,16 @@
                     }
 
                     setTranscriptExpanded(state, !state.transcriptExpanded);
+                });
+            }
+
+            if (newChatButton) {
+                newChatButton.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    startNewConversation(state);
                 });
             }
 
