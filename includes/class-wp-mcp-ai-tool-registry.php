@@ -261,6 +261,8 @@ class WP_MCP_AI_Tool_Registry {
 			'get_linkedin_insights'            => 'external-data',
 			'schedule_notify_sms'              => 'communication',
 			'send_whatsapp_message'            => 'communication',
+			'vision_product_search'            => 'external-data',
+			'vision_object_localization'       => 'external-data',
 		);
 
 		/**
@@ -367,6 +369,8 @@ class WP_MCP_AI_Tool_Registry {
 			'WP_MCP_AI_Tool_Get_Tiktok_Insights'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-tiktok-insights.php',
 			'WP_MCP_AI_Tool_Get_Google_Business_Insights' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-google-business-insights.php',
 			'WP_MCP_AI_Tool_Get_Linkedin_Insights'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-linkedin-insights.php',
+			'WP_MCP_AI_Tool_Vision_Product_Search'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-product-search.php',
+			'WP_MCP_AI_Tool_Vision_Object_Localization'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
 		);
 
 		foreach ( $default_tools as $class => $file ) {
