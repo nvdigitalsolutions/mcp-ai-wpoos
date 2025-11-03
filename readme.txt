@@ -32,6 +32,15 @@ This plugin is licensed under the GNU General Public License v2 or later.
 2.  Activate the plugin through the 'Plugins' menu in WordPress.
 3.  Navigate to the WP MCP AI settings page to configure the plugin.
 
+**Multisite Installation:**
+
+This plugin supports WordPress multisite installations and can be activated network-wide or on individual sites:
+
+*   **Network Activation:** Activate the plugin network-wide from the Network Admin > Plugins menu. This will activate the plugin on all sites in the network and automatically activate it on any new sites created in the future.
+*   **Individual Site Activation:** Alternatively, you can activate the plugin on individual sites as needed through each site's Plugins menu.
+
+Note: Plugin settings are configured per-site, allowing each site in the network to have its own OpenAI API keys, assistants, and configuration.
+
 == Changelog ==
 
 = 1.0.0 =

@@ -8,6 +8,7 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv2 or later
  * Text Domain: wp-mcp-ai
+ * Network: true
  *
  * @package WP_MCP_AI
  *
@@ -298,9 +299,102 @@ function wp_mcp_ai_bootstrap() {
 add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
 
 /**
- * Plugin activation handler.
+ * Helper function to iterate through all sites in a multisite network.
+ *
+ * @param callable $callback Callback function to execute for each site.
+ * @param string   $action   Action name for error logging (e.g., 'activation', 'deactivation').
+ * @return void
  */
-function wp_mcp_ai_activate() {
+function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
+	if ( ! is_multisite() || ! is_callable( $callback ) ) {
+		return;
+	}
+
+	/**
+	 * Filters the arguments for get_sites() when iterating network sites.
+	 *
+	 * Allows customization of site retrieval, including pagination for large networks.
+	 *
+	 * @param array $args Arguments passed to get_sites(). Default: array( 'number' => 0 ).
+	 */
+	$get_sites_args = apply_filters(
+		'wp_mcp_ai_iterate_network_sites_args',
+		array( 'number' => 0 )
+	);
+
+	// Get sites in the network.
+	$sites = get_sites( $get_sites_args );
+
+	foreach ( $sites as $site ) {
+		switch_to_blog( $site->blog_id );
+		try {
+			call_user_func( $callback );
+		} catch ( Exception $e ) {
+			// Log the error and continue with remaining sites.
+			error_log( sprintf( 'WP MCP AI %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+		}
+		restore_current_blog();
+	}
+}
+
+/**
+ * Activate plugin on a newly created site in a multisite network.
+ *
+ * @param int|WP_Site $blog WordPress 5.1+ passes a WP_Site object, earlier versions pass blog ID.
+ * @return void
+ */
+function wp_mcp_ai_new_site_activation( $blog ) {
+	if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
+		return;
+	}
+
+	// Handle both WP_Site object (WP 5.1+) and blog ID (earlier versions).
+	if ( is_object( $blog ) && isset( $blog->blog_id ) ) {
+		$blog_id = (int) $blog->blog_id;
+	} elseif ( is_numeric( $blog ) ) {
+		$blog_id = (int) $blog;
+	} else {
+		// Invalid parameter, log error and return.
+		error_log( 'WP MCP AI: Invalid blog parameter passed to new_site_activation' );
+		return;
+	}
+
+	switch_to_blog( $blog_id );
+	try {
+		wp_mcp_ai_activate_single_site();
+	} catch ( Exception $e ) {
+		// Log the error but don't break the site creation process.
+		error_log( sprintf( 'WP MCP AI activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
+	}
+	restore_current_blog();
+}
+
+add_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' );
+add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
+
+/**
+ * Plugin activation handler.
+ *
+ * @param bool $network_wide Whether the plugin is being activated network-wide.
+ * @return void
+ */
+function wp_mcp_ai_activate( $network_wide = false ) {
+	// Ensure network_wide is a boolean.
+	$network_wide = (bool) $network_wide;
+
+	if ( is_multisite() && $network_wide ) {
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_activate_single_site', 'activation' );
+	} else {
+		wp_mcp_ai_activate_single_site();
+	}
+}
+
+/**
+ * Activate the plugin on a single site.
+ *
+ * @return void
+ */
+function wp_mcp_ai_activate_single_site() {
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 	$registry->init();
 
@@ -312,8 +406,27 @@ register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
 
 /**
  * Plugin deactivation handler.
+ *
+ * @param bool $network_wide Whether the plugin is being deactivated network-wide.
+ * @return void
  */
-function wp_mcp_ai_deactivate() {
+function wp_mcp_ai_deactivate( $network_wide = false ) {
+	// Ensure network_wide is a boolean.
+	$network_wide = (bool) $network_wide;
+
+	if ( is_multisite() && $network_wide ) {
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_deactivate_single_site', 'deactivation' );
+	} else {
+		wp_mcp_ai_deactivate_single_site();
+	}
+}
+
+/**
+ * Deactivate the plugin on a single site.
+ *
+ * @return void
+ */
+function wp_mcp_ai_deactivate_single_site() {
 	flush_rewrite_rules();
 }
 
@@ -321,8 +434,23 @@ register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
 
 /**
  * Plugin uninstall handler.
+ *
+ * @return void
  */
 function wp_mcp_ai_uninstall() {
+	if ( is_multisite() ) {
+		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_uninstall_single_site', 'uninstall' );
+	} else {
+		wp_mcp_ai_uninstall_single_site();
+	}
+}
+
+/**
+ * Uninstall the plugin on a single site.
+ *
+ * @return void
+ */
+function wp_mcp_ai_uninstall_single_site() {
 	$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 	if ( ! is_array( $settings ) ) {
