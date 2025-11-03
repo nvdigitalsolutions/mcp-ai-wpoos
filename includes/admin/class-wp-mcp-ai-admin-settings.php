@@ -3389,8 +3389,18 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_cloudways_server_id_field() {
 		$settings = self::get_settings();
 		?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" class="regular-text" autocomplete="off" readonly />
-		<p class="description"><?php esc_html_e( 'Server ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<input 
+			type="text" 
+			id="wp-mcp-ai-cloudways-server-id"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" 
+			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" 
+			class="regular-text" 
+			autocomplete="off" 
+			readonly 
+			aria-describedby="wp-mcp-ai-cloudways-server-id-description"
+			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'wp-mcp-ai' ); ?>"
+		/>
+		<p id="wp-mcp-ai-cloudways-server-id-description" class="description"><?php esc_html_e( 'Server ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
 		<div id="wp-mcp-ai-cloudways-servers-list" style="margin-top: 10px;"></div>
 		<?php
 	}
@@ -3401,8 +3411,18 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_cloudways_app_id_field() {
 		$settings = self::get_settings();
 		?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" class="regular-text" autocomplete="off" readonly />
-		<p class="description"><?php esc_html_e( 'Application ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<input 
+			type="text" 
+			id="wp-mcp-ai-cloudways-app-id"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" 
+			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" 
+			class="regular-text" 
+			autocomplete="off" 
+			readonly 
+			aria-describedby="wp-mcp-ai-cloudways-app-id-description"
+			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'wp-mcp-ai' ); ?>"
+		/>
+		<p id="wp-mcp-ai-cloudways-app-id-description" class="description"><?php esc_html_e( 'Application ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
 		<div id="wp-mcp-ai-cloudways-apps-list" style="margin-top: 10px;"></div>
 		<?php
 	}
