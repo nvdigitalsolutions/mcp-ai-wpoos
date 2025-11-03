@@ -312,13 +312,17 @@ function wp_mcp_ai_new_site_activation( $blog ) {
 	$blog_id = is_object( $blog ) ? $blog->blog_id : $blog;
 
 	switch_to_blog( $blog_id );
-	wp_mcp_ai_activate_single_site();
+	try {
+		wp_mcp_ai_activate_single_site();
+	} catch ( Exception $e ) {
+		// Log the error but don't break the site creation process.
+		error_log( sprintf( 'WP MCP AI activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
+	}
 	restore_current_blog();
 }
 
 add_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' );
 add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
-
 
 /**
  * Plugin activation handler.
@@ -332,7 +336,12 @@ function wp_mcp_ai_activate( $network_wide = false ) {
 
 		foreach ( $sites as $site ) {
 			switch_to_blog( $site->blog_id );
-			wp_mcp_ai_activate_single_site();
+			try {
+				wp_mcp_ai_activate_single_site();
+			} catch ( Exception $e ) {
+				// Log the error and continue with remaining sites.
+				error_log( sprintf( 'WP MCP AI activation failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
+			}
 			restore_current_blog();
 		}
 	} else {
@@ -365,7 +374,12 @@ function wp_mcp_ai_deactivate( $network_wide = false ) {
 
 		foreach ( $sites as $site ) {
 			switch_to_blog( $site->blog_id );
-			wp_mcp_ai_deactivate_single_site();
+			try {
+				wp_mcp_ai_deactivate_single_site();
+			} catch ( Exception $e ) {
+				// Log the error and continue with remaining sites.
+				error_log( sprintf( 'WP MCP AI deactivation failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
+			}
 			restore_current_blog();
 		}
 	} else {
@@ -392,7 +406,12 @@ function wp_mcp_ai_uninstall() {
 
 		foreach ( $sites as $site ) {
 			switch_to_blog( $site->blog_id );
-			wp_mcp_ai_uninstall_single_site();
+			try {
+				wp_mcp_ai_uninstall_single_site();
+			} catch ( Exception $e ) {
+				// Log the error and continue with remaining sites to ensure cleanup.
+				error_log( sprintf( 'WP MCP AI uninstall failed for site %d: %s', $site->blog_id, $e->getMessage() ) );
+			}
 			restore_current_blog();
 		}
 	} else {
