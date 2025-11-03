@@ -71,6 +71,7 @@ class WP_MCP_AI_Admin_Settings {
 			'crawl4ai_api_key'                  => '',
 			'cloudflare_api_token'              => '',
 			'cloudflare_zone_id'                => '',
+			'enable_varnish_purge'              => false,
 			'mailjet_api_key'                   => '',
 			'mailjet_api_secret'                => '',
 			'mailjet_from_email'                => '',
@@ -182,6 +183,20 @@ class WP_MCP_AI_Admin_Settings {
 				),
 				'description'      => __( 'Used by operations automations that purge cache or interact with Cloudflare APIs.', 'wp-mcp-ai' ),
 				'usage'            => __( 'Add these credentials ahead of enabling Cloudflare-related tools.', 'wp-mcp-ai' ),
+			),
+			'varnish'          => array(
+				'label'            => __( 'Varnish', 'wp-mcp-ai' ),
+				'required_options' => array( 'enable_varnish_purge' ),
+				'fields'           => array(
+					'enable_varnish_purge' => __( 'Enable Varnish Purge', 'wp-mcp-ai' ),
+				),
+				'description'      => __( 'Enables purging of local Varnish cache. Sends PURGE requests to 127.0.0.1, which is the standard practice for Varnish on hosting platforms like Cloudways.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Enable this option if your server uses Varnish caching and you need to purge it when content updates.', 'wp-mcp-ai' ),
+				'empty_status'     => array(
+					'status'  => 'info',
+					'label'   => __( 'Not enabled', 'wp-mcp-ai' ),
+					'message' => __( 'Varnish purge is not currently enabled. Enable it if your hosting environment uses Varnish caching.', 'wp-mcp-ai' ),
+				),
 			),
 			'mailjet'          => array(
 				'label'            => __( 'Mailjet', 'wp-mcp-ai' ),
@@ -1483,6 +1498,14 @@ class WP_MCP_AI_Admin_Settings {
 		);
 
 		add_settings_field(
+			'enable_varnish_purge',
+			__( 'Enable Varnish Purge', 'wp-mcp-ai' ),
+			array( $this, 'render_enable_varnish_purge_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
 			'mailjet_api_key',
 			__( 'Mailjet API Key', 'wp-mcp-ai' ),
 			array( $this, 'render_mailjet_api_key_field' ),
@@ -1745,6 +1768,8 @@ class WP_MCP_AI_Admin_Settings {
 		if ( isset( $settings['cloudflare_zone_id'] ) ) {
 			$clean['cloudflare_zone_id'] = trim( sanitize_text_field( $settings['cloudflare_zone_id'] ) );
 		}
+
+		$clean['enable_varnish_purge'] = ! empty( $settings['enable_varnish_purge'] );
 
 		if ( isset( $settings['mailjet_api_key'] ) ) {
 			$clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
@@ -3060,6 +3085,20 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the enable Varnish purge checkbox field.
+	 */
+	public function render_enable_varnish_purge_field() {
+		$settings = self::get_settings();
+		?>
+		<label for="wp-mcp-ai-enable-varnish-purge">
+			<input id="wp-mcp-ai-enable-varnish-purge" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_varnish_purge]" value="1" <?php checked( $settings['enable_varnish_purge'] ); ?> />
+			<?php esc_html_e( 'Enable Varnish cache purging for this site.', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'Enable this if your hosting environment (like Cloudways) uses Varnish caching. The plugin will send PURGE requests to 127.0.0.1 to clear the local cache.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 
