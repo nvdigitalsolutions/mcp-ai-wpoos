@@ -308,25 +308,28 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 	 * @return array
 	 */
 	protected function get_allowed_audio_mime_types( $attachment_id ) {
+		// List of MIME types supported by OpenAI Whisper API for transcription/translation.
+		// Note: Some formats have multiple MIME type variants (e.g., audio/mpeg and audio/mp3)
+		// to ensure compatibility across different systems and file uploads.
 		$mimes = array(
-			'audio/mpeg',
-			'audio/mp3',
-			'audio/wav',
-			'audio/x-wav',
-			'audio/webm',
-			'audio/ogg',
-			'audio/m4a',
-			'audio/x-m4a',
-			'audio/flac',
-			'audio/x-flac',
-			'audio/mp4',
-			'audio/mpga',
-			'audio/x-mpga',
-			'audio/opus',
-			'audio/amr',
-			'audio/x-mpeg',
-			'audio/x-mp3',
-			'video/mp4',
+			'audio/mpeg',      // MP3 (standard MIME type).
+			'audio/mp3',       // MP3 (alternate MIME type).
+			'audio/wav',       // WAV.
+			'audio/x-wav',     // WAV (alternate).
+			'audio/webm',      // WebM.
+			'audio/ogg',       // OGG.
+			'audio/m4a',       // M4A.
+			'audio/x-m4a',     // M4A (alternate).
+			'audio/flac',      // FLAC.
+			'audio/x-flac',    // FLAC (alternate).
+			'audio/mp4',       // MP4 audio.
+			'audio/mpga',      // MPEG audio (OpenAI-specified variant).
+			'audio/x-mpga',    // MPEG audio (alternate).
+			'audio/opus',      // Opus.
+			'audio/amr',       // AMR (Adaptive Multi-Rate).
+			'audio/x-mpeg',    // MPEG (alternate).
+			'audio/x-mp3',     // MP3 (alternate).
+			'video/mp4',       // MP4 video container with audio.
 		);
 
 		/**
