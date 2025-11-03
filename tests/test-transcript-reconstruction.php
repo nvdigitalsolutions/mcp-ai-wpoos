@@ -141,7 +141,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
 		// Should include only the assistant message with tool_calls preserved
-		$this->assertCount( 1, count( $messages ), 'Should extract only the assistant message, not create fake tool messages' );
+		$this->assertCount( 1, $messages, 'Should extract only the assistant message, not create fake tool messages' );
 		$this->assertSame( 'assistant', $messages[0]['role'] );
 		// Tool calls should be preserved in the assistant message
 		$this->assertArrayHasKey( 'tool_calls', $messages[0], 'Assistant message should preserve tool_calls array' );
@@ -193,7 +193,7 @@ class WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
 		$messages = $extract_method->invokeArgs( $rest_controller, array( $row ) );
 
 		// The assistant message should be included with tool_calls preserved
-		$this->assertCount( 1, count( $messages ), 'Should extract only the assistant message' );
+		$this->assertCount( 1, $messages, 'Should extract only the assistant message' );
 		
 		// Verify assistant message has tool_calls
 		$this->assertSame( 'assistant', $messages[0]['role'] );
