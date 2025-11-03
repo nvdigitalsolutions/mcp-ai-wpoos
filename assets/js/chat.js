@@ -1,28 +1,28 @@
 (function () {
     'use strict';
 
-    var globalConfig = window.wpMcpAiChat || {};
-    var instances = window.wpMcpAiChatInstances || {};
-    var objectUrlRegistry = [];
-    var SPEECH_TOOL_NAME = 'generate_openai_speech';
-    var SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
-    var SPEECH_ENABLED_CLASS = 'wp-mcp-ai-speech-enabled';
-    var SPEECH_ERROR_CLASS = 'wp-mcp-ai-speech-button--error';
-    var SPEECH_PLAY_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4l9 6-9 6V4z"></path></svg>';
-    var SPEECH_STOP_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="5" width="8" height="10" rx="1"></rect></svg>';
-    var SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
-    var COPY_BUTTON_CLASS = 'wp-mcp-ai-copy-button';
-    var COPY_ENABLED_CLASS = 'wp-mcp-ai-copy-enabled';
-    var COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
-    var COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
-    var COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
-    var TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
-    var TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
-    var MAX_TRANSCRIBE_BYTES = 26214400;
-    var TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
-    var TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
-    var STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
-    var STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const globalConfig = window.wpMcpAiChat || {};
+    const instances = window.wpMcpAiChatInstances || {};
+    let objectUrlRegistry = [];
+    const SPEECH_TOOL_NAME = 'generate_openai_speech';
+    const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
+    const SPEECH_ENABLED_CLASS = 'wp-mcp-ai-speech-enabled';
+    const SPEECH_ERROR_CLASS = 'wp-mcp-ai-speech-button--error';
+    const SPEECH_PLAY_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4l9 6-9 6V4z"></path></svg>';
+    const SPEECH_STOP_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="5" width="8" height="10" rx="1"></rect></svg>';
+    const SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
+    const COPY_BUTTON_CLASS = 'wp-mcp-ai-copy-button';
+    const COPY_ENABLED_CLASS = 'wp-mcp-ai-copy-enabled';
+    const COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
+    const COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
+    const COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
+    const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
+    const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
+    const MAX_TRANSCRIBE_BYTES = 26214400;
+    const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
+    const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
+    const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
+    const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
     function getStorageKey(assistantId) {
         return STORAGE_KEY_PREFIX + assistantId;
@@ -38,8 +38,8 @@
         }
 
         try {
-            var storageKey = getStorageKey(state.config.assistantId);
-            var data = {
+            const storageKey = getStorageKey(state.config.assistantId);
+            const data = {
                 conversation: state.conversation || [],
                 sessionKey: state.config.sessionKey || '',
                 timestamp: Date.now(),
@@ -62,21 +62,21 @@
         }
 
         try {
-            var storageKey = getStorageKey(state.config.assistantId);
-            var stored = window.localStorage.getItem(storageKey);
+            const storageKey = getStorageKey(state.config.assistantId);
+            const stored = window.localStorage.getItem(storageKey);
 
             if (!stored) {
                 return null;
             }
 
-            var data = JSON.parse(stored);
+            const data = JSON.parse(stored);
 
             if (!data || typeof data !== 'object') {
                 return null;
             }
 
             // Check if data is expired
-            var age = Date.now() - (data.timestamp || 0);
+            const age = Date.now() - (data.timestamp || 0);
             if (age > STORAGE_EXPIRY_MS) {
                 window.localStorage.removeItem(storageKey);
                 return null;
@@ -107,7 +107,7 @@
         }
 
         try {
-            var storageKey = getStorageKey(state.config.assistantId);
+            const storageKey = getStorageKey(state.config.assistantId);
             window.localStorage.removeItem(storageKey);
         } catch (error) {
             // Silently fail
@@ -223,7 +223,7 @@
             return;
         }
 
-        var audio = button._wpMcpAiAudio;
+        let audio = button._wpMcpAiAudio;
         if (!audio && state.activeSpeech && state.activeSpeech.button === button) {
             audio = state.activeSpeech.audio;
         }
@@ -262,17 +262,17 @@
 
         audio.currentTime = 0;
 
-        var playPromise = audio.play();
+        const playPromise = audio.play();
         if (playPromise && typeof playPromise.then === 'function') {
             playPromise.catch(function () {
-                var currentText = button.dataset ? button.dataset.speechText || text : text;
+                const currentText = button.dataset ? button.dataset.speechText || text : text;
                 setSpeechButtonErrorState(state, button, currentText);
             });
         }
     }
 
     function createSpeechAudio(state, button, url, text) {
-        var audio = new Audio(url);
+        const audio = new Audio(url);
         audio.preload = 'auto';
 
         audio.addEventListener('ended', function () {
@@ -312,7 +312,7 @@
             return;
         }
 
-        var audio = button._wpMcpAiAudio;
+        let audio = button._wpMcpAiAudio;
         if (!audio || audio.src !== url) {
             audio = createSpeechAudio(state, button, url, text);
             button._wpMcpAiAudio = audio;
@@ -326,7 +326,7 @@
             return Promise.reject(new Error('Speech tool unavailable.'));
         }
 
-        var payload = {
+        const payload = {
             assistant_id: state.config.assistantId,
             tool: SPEECH_TOOL_NAME,
             arguments: {
@@ -351,7 +351,7 @@
                     return Promise.reject(new Error('Invalid response.'));
                 }
 
-                var result = Object.prototype.hasOwnProperty.call(body, 'result') ? body.result : body;
+                const result = Object.prototype.hasOwnProperty.call(body, 'result') ? body.result : body;
                 if (!result || typeof result !== 'object' || !result.url) {
                     return Promise.reject(new Error('Missing audio result.'));
                 }
@@ -370,12 +370,12 @@
             return;
         }
 
-        var text = normalizeSpeechText(button.dataset.speechText || '');
+        const text = normalizeSpeechText(button.dataset.speechText || '');
         if (!text) {
             return;
         }
 
-        var currentState = button.dataset.state;
+        const currentState = button.dataset.state;
         if (currentState === 'loading') {
             return;
         }
@@ -389,7 +389,7 @@
             state.speechCache = Object.create(null);
         }
 
-        var cache = state.speechCache[text];
+        const cache = state.speechCache[text];
         if (cache && cache.url) {
             ensureSpeechAudio(state, button, cache.url, text);
             return;
@@ -419,13 +419,13 @@
     }
 
     function resolveSpeechText(bubble, text) {
-        var provided = normalizeSpeechText(text || '');
+        const provided = normalizeSpeechText(text || '');
         if (provided) {
             return provided;
         }
 
         if (bubble && bubble.dataset && bubble.dataset.speechText) {
-            var stored = normalizeSpeechText(bubble.dataset.speechText);
+            const stored = normalizeSpeechText(bubble.dataset.speechText);
             if (stored) {
                 return stored;
             }
@@ -435,7 +435,7 @@
             return '';
         }
 
-        var textContent = '';
+        let textContent = '';
         if (typeof bubble.textContent === 'string') {
             textContent = bubble.textContent;
         } else if (bubble.innerText) {
@@ -450,7 +450,7 @@
             return;
         }
 
-        var normalisedText = resolveSpeechText(bubble, text);
+        const normalisedText = resolveSpeechText(bubble, text);
         if (!normalisedText) {
             return;
         }
@@ -467,9 +467,9 @@
             state.speechCache = Object.create(null);
         }
 
-        var existing = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+        const existing = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
         if (existing) {
-            var previousText = normalizeSpeechText(existing.dataset.speechText || '');
+            const previousText = normalizeSpeechText(existing.dataset.speechText || '');
 
             if (previousText && previousText !== normalisedText) {
                 stopSpeechPlayback(state, existing);
@@ -482,7 +482,7 @@
             return;
         }
 
-        var button = document.createElement('button');
+        const button = document.createElement('button');
         button.type = 'button';
         button.className = SPEECH_BUTTON_CLASS;
         button.dataset.speechText = normalisedText;
@@ -549,7 +549,7 @@
 
     function fallbackCopyText(text) {
         return new Promise(function (resolve) {
-            var textarea = document.createElement('textarea');
+            const textarea = document.createElement('textarea');
             textarea.value = text;
             textarea.setAttribute('readonly', '');
             textarea.style.position = 'absolute';
@@ -557,12 +557,12 @@
 
             document.body.appendChild(textarea);
 
-            var selection = document.getSelection ? document.getSelection().rangeCount : 0;
+            const selection = document.getSelection ? document.getSelection().rangeCount : 0;
 
             textarea.select();
             textarea.setSelectionRange(0, textarea.value.length);
 
-            var succeeded = false;
+            let succeeded = false;
 
             try {
                 succeeded = document.execCommand('copy');
@@ -587,7 +587,7 @@
             return;
         }
 
-        var normalisedText = resolveSpeechText(bubble, text);
+        const normalisedText = resolveSpeechText(bubble, text);
         if (!normalisedText) {
             return;
         }
@@ -600,7 +600,7 @@
             bubble.dataset.copyText = normalisedText;
         }
 
-        var existing = bubble.querySelector('.' + COPY_BUTTON_CLASS);
+        const existing = bubble.querySelector('.' + COPY_BUTTON_CLASS);
         if (existing) {
             existing.dataset.copyText = normalisedText;
             existing.disabled = false;
@@ -608,7 +608,7 @@
             return;
         }
 
-        var button = document.createElement('button');
+        const button = document.createElement('button');
         button.type = 'button';
         button.className = COPY_BUTTON_CLASS;
         button.dataset.copyText = normalisedText;
@@ -619,7 +619,7 @@
             event.preventDefault();
             event.stopPropagation();
 
-            var textToCopy = resolveSpeechText(bubble, button.dataset.copyText || text);
+            const textToCopy = resolveSpeechText(bubble, button.dataset.copyText || text);
             if (!textToCopy) {
                 updateCopyButtonState(button, 'error');
                 setTimeout(function () {
@@ -670,7 +670,7 @@
             return;
         }
 
-        var tracks = state.recordingStream.getTracks ? state.recordingStream.getTracks() : [];
+        const tracks = state.recordingStream.getTracks ? state.recordingStream.getTracks() : [];
         tracks.forEach(function (track) {
             try {
                 track.stop();
@@ -687,7 +687,7 @@
 
         state.isRecording = !!recording;
 
-        var button = state.transcribeButton;
+        const button = state.transcribeButton;
         if (button && button.classList) {
             if (state.isRecording) {
                 button.classList.add(TRANSCRIBE_RECORDING_CLASS);
@@ -697,7 +697,7 @@
         }
 
         if (button) {
-            var label = state.isRecording
+            const label = state.isRecording
                 ? getString('stopRecording', 'Stop recording')
                 : getString('transcribeAudio', 'Transcribe audio');
             button.setAttribute('aria-label', label);
@@ -718,11 +718,11 @@
             return;
         }
 
-        var button = state.transcribeButton;
-        var input = state.transcribeInput;
+        const button = state.transcribeButton;
+        const input = state.transcribeInput;
 
-        var canUse = !!state.canUploadAttachments;
-        var disabled = !canUse || state.busy || state.uploading > 0 || state.transcribing;
+        const canUse = !!state.canUploadAttachments;
+        let disabled = !canUse || state.busy || state.uploading > 0 || state.transcribing;
 
         if (state.isRecording) {
             disabled = false;
@@ -758,10 +758,10 @@
         }
 
         if (supportsAudioRecording()) {
-            var shouldRecord = true;
+            let shouldRecord = true;
 
             if (state.transcribeInput) {
-                var message = getString(
+                const message = getString(
                     'transcribeChooseSource',
                     'Press OK to record with your microphone, or Cancel to choose an audio file.'
                 );
@@ -829,9 +829,9 @@
                 });
 
                 state.mediaRecorder.addEventListener('stop', function () {
-                    var chunks = state.recordedChunks || [];
-                    var mimeType = state.mediaRecorder && state.mediaRecorder.mimeType ? state.mediaRecorder.mimeType : 'audio/webm';
-                    var baseMimeType = typeof mimeType === 'string' ? mimeType.split(';')[0] : '';
+                    const chunks = state.recordedChunks || [];
+                    const mimeType = state.mediaRecorder && state.mediaRecorder.mimeType ? state.mediaRecorder.mimeType : 'audio/webm';
+                    let baseMimeType = typeof mimeType === 'string' ? mimeType.split(';')[0] : '';
                     if (!baseMimeType && typeof mimeType === 'string') {
                         baseMimeType = mimeType;
                     }
@@ -845,9 +845,9 @@
                         return;
                     }
 
-                    var blob = null;
+                    let blob = null;
                     try {
-                        var blobType = baseMimeType || mimeType;
+                        let blobType = baseMimeType || mimeType;
                         if (blobType && typeof blobType === 'string') {
                             blobType = blobType.split(';')[0];
                         }
@@ -862,20 +862,20 @@
                         return;
                     }
 
-                    var extension = '';
+                    let extension = '';
                     if (baseMimeType && baseMimeType.indexOf('/') !== -1) {
                         extension = baseMimeType.split('/')[1] || '';
                     }
 
-                    var safeExtension = extension ? extension.replace(/[^a-z0-9]/gi, '') : 'webm';
+                    let safeExtension = extension ? extension.replace(/[^a-z0-9]/gi, '') : 'webm';
                     if (!safeExtension) {
                         safeExtension = 'webm';
                     }
-                    var fileName = 'transcription-' + Date.now() + '.' + safeExtension;
+                    const fileName = 'transcription-' + Date.now() + '.' + safeExtension;
 
-                    var file = null;
+                    let file = null;
                     try {
-                        var fileType = blob && blob.type ? blob.type : baseMimeType || 'audio/webm';
+                        let fileType = blob && blob.type ? blob.type : baseMimeType || 'audio/webm';
                         if (fileType && typeof fileType === 'string') {
                             fileType = fileType.split(';')[0];
                         }
@@ -943,14 +943,14 @@
             return;
         }
 
-        var files = Array.prototype.slice.call(event.target.files);
+        const files = Array.prototype.slice.call(event.target.files);
         event.target.value = '';
 
         if (!files.length) {
             return;
         }
 
-        var file = files[0];
+        const file = files[0];
         transcribeAudioFile(state, file);
     }
 
@@ -976,7 +976,7 @@
 
         setStatus(state.container, getString('transcribing', 'Transcribing audio…'));
 
-        var uploadedRecord = null;
+        let uploadedRecord = null;
 
         uploadAudioForTranscription(state, file)
             .then(function (record) {
@@ -992,18 +992,18 @@
                 return requestTranscription(state, record);
             })
             .then(function (response) {
-                var result = extractTranscriptionResult(response);
+                const result = extractTranscriptionResult(response);
                 insertTranscriptionResult(state, result, uploadedRecord || file);
 
-                var label = '';
+                let label = '';
                 if (uploadedRecord && uploadedRecord.name) {
                     label = uploadedRecord.name;
                 } else if (file && file.name) {
                     label = file.name;
                 }
 
-                var messageLabel = label || getString('transcribeAudio', 'Transcribe audio');
-                var message = formatString(
+                const messageLabel = label || getString('transcribeAudio', 'Transcribe audio');
+                const message = formatString(
                     getString('transcriptionSuccess', 'Inserted transcription from “%s”.'),
                     messageLabel
                 );
@@ -1030,17 +1030,17 @@
             return Promise.reject(new Error('Upload unavailable'));
         }
 
-        var headers = {
+        const headers = {
             'X-WP-Nonce': globalConfig.nonce || '',
             Accept: 'application/json',
         };
 
-        var contentDisposition = createContentDispositionHeader(file.name || 'audio');
+        const contentDisposition = createContentDispositionHeader(file.name || 'audio');
         if (contentDisposition) {
             headers['Content-Disposition'] = contentDisposition;
         }
 
-        var contentType = '';
+        let contentType = '';
         if (file && file.type && typeof file.type === 'string') {
             contentType = file.type.split(';')[0];
         }
@@ -1055,7 +1055,7 @@
         })
             .then(function (response) {
                 if (!response.ok) {
-                    var error = new Error('Upload failed');
+                    const error = new Error('Upload failed');
                     error.response = response;
                     throw error;
                 }
@@ -1076,7 +1076,7 @@
             return Promise.reject(new Error('Tools endpoint unavailable'));
         }
 
-        var payload = {
+        const payload = {
             assistant_id: state.config.assistantId,
             tool: TRANSCRIBE_TOOL_NAME,
             arguments: {
@@ -1115,14 +1115,14 @@
             return;
         }
 
-        var payload = result || {};
-        var text = '';
+        const payload = result || {};
+        let text = '';
 
         if (payload && typeof payload.text === 'string') {
             text = payload.text.trim();
         }
 
-        var metaParts = [];
+        const metaParts = [];
         if (record && record.name) {
             metaParts.push(record.name);
         }
@@ -1132,7 +1132,7 @@
         }
 
         if (typeof payload.duration === 'number') {
-            var duration = formatDuration(payload.duration);
+            const duration = formatDuration(payload.duration);
             if (duration) {
                 metaParts.push('Duration: ' + duration);
             }
@@ -1142,7 +1142,7 @@
             metaParts.push('Translated to English');
         }
 
-        var segmentsText = '';
+        let segmentsText = '';
         if (Array.isArray(payload.segments) && payload.segments.length) {
             segmentsText = payload.segments
                 .map(function (segment) {
@@ -1150,10 +1150,10 @@
                         return '';
                     }
 
-                    var start = formatDuration(segment.start);
-                    var end = formatDuration(segment.end);
-                    var segmentText = segment.text || '';
-                    var prefix = '';
+                    const start = formatDuration(segment.start);
+                    const end = formatDuration(segment.end);
+                    const segmentText = segment.text || '';
+                    let prefix = '';
 
                     if (start && end) {
                         prefix = start + '–' + end;
@@ -1173,12 +1173,12 @@
                 .join('\n');
         }
 
-        var hasTextContent = Boolean(text) || Boolean(segmentsText);
+        const hasTextContent = Boolean(text) || Boolean(segmentsText);
         if (!hasTextContent) {
             return;
         }
 
-        var sections = [];
+        const sections = [];
         if (metaParts.length) {
             sections.push(metaParts.join(' • '));
         }
@@ -1191,36 +1191,36 @@
             sections.push(segmentsText);
         }
 
-        var combined = sections.join('\n\n').trim();
+        const combined = sections.join('\n\n').trim();
         if (!combined) {
             return;
         }
 
-        var existing = state.textarea.value || '';
-        var trimmedExisting = existing.replace(/\s+$/, '');
-        var newValue = trimmedExisting ? trimmedExisting + '\n\n' + combined : combined;
+        const existing = state.textarea.value || '';
+        const trimmedExisting = existing.replace(/\s+$/, '');
+        const newValue = trimmedExisting ? trimmedExisting + '\n\n' + combined : combined;
 
         state.textarea.value = newValue;
         state.textarea.focus();
 
         try {
-            var caret = newValue.length;
+            const caret = newValue.length;
             state.textarea.setSelectionRange(caret, caret);
         } catch (error) {}
     }
 
     function formatDuration(value) {
-        var seconds = Number(value);
+        const seconds = Number(value);
         if (!isFinite(seconds) || seconds < 0) {
             return '';
         }
 
-        var totalSeconds = Math.round(seconds);
-        var hours = Math.floor(totalSeconds / 3600);
-        var minutes = Math.floor((totalSeconds % 3600) / 60);
-        var secs = totalSeconds % 60;
+        const totalSeconds = Math.round(seconds);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const secs = totalSeconds % 60;
 
-        var parts = [];
+        const parts = [];
         if (hours) {
             parts.push(hours);
         }
@@ -1236,7 +1236,7 @@
             return;
         }
 
-        var payload = '';
+        let payload = '';
 
         if (button.dataset) {
             payload = button.dataset.shortcutPayload || button.dataset.shortcutTool || '';
@@ -1256,7 +1256,7 @@
         state.textarea.focus();
 
         try {
-            var caret = state.textarea.value.length;
+            const caret = state.textarea.value.length;
             state.textarea.setSelectionRange(caret, caret);
         } catch (error) {}
 
@@ -1268,12 +1268,12 @@
             return;
         }
 
-        var container = state.toolShortcutsContainer;
+        const container = state.toolShortcutsContainer;
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
 
-        var shortcuts = [];
+        let shortcuts = [];
         if (state.config && Array.isArray(state.config.toolShortcuts)) {
             shortcuts = state.config.toolShortcuts;
         }
@@ -1283,10 +1283,10 @@
                 return;
             }
 
-            var label = '';
-            var payload = '';
-            var tool = '';
-            var description = '';
+            let label = '';
+            let payload = '';
+            let tool = '';
+            let description = '';
 
             if (typeof shortcut === 'string') {
                 label = shortcut;
@@ -1326,7 +1326,7 @@
                 payload = tool || label;
             }
 
-            var button = document.createElement('button');
+            const button = document.createElement('button');
             button.type = 'button';
             button.className = TOOL_SHORTCUT_BUTTON_CLASS;
             button.textContent = label;
@@ -1343,8 +1343,8 @@
                 button.dataset.shortcutDescription = description;
             }
 
-            var ariaTemplate = getString('toolShortcutLabel', 'Insert task: %s');
-            var ariaLabel = formatString(ariaTemplate, label);
+            const ariaTemplate = getString('toolShortcutLabel', 'Insert task: %s');
+            let ariaLabel = formatString(ariaTemplate, label);
 
             if (description) {
                 ariaLabel += '. ' + description;
@@ -1369,11 +1369,11 @@
             return;
         }
 
-        var selector = '.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble';
-        var bubbles = state.messagesEl.querySelectorAll(selector);
+        const selector = '.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble';
+        const bubbles = state.messagesEl.querySelectorAll(selector);
 
         Array.prototype.forEach.call(bubbles, function (bubble) {
-            var storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
+            const storedText = bubble && bubble.dataset ? bubble.dataset.speechText || '' : '';
             attachSpeechButton(bubble, state, storedText);
             attachCopyButton(bubble, storedText);
         });
@@ -1384,15 +1384,15 @@
             return [];
         }
 
-        var seen = {};
-        var result = [];
+        const seen = {};
+        const result = [];
 
         value.forEach(function (item) {
             if (typeof item !== 'string') {
                 return;
             }
 
-            var normalised = item.trim().toLowerCase();
+            const normalised = item.trim().toLowerCase();
             if (!normalised || seen[normalised]) {
                 return;
             }
@@ -1409,8 +1409,8 @@
             return '';
         }
 
-        var name = String(file.name);
-        var dotIndex = name.lastIndexOf('.');
+        const name = String(file.name);
+        const dotIndex = name.lastIndexOf('.');
 
         if (dotIndex === -1) {
             return '';
@@ -1428,18 +1428,18 @@
             return true;
         }
 
-        var allowedImageMimes = Array.isArray(state.config.allowedImageMimes) ? state.config.allowedImageMimes : [];
-        var allowedFileMimes = Array.isArray(state.config.allowedFileMimes) ? state.config.allowedFileMimes : [];
-        var allowedExtensions = Array.isArray(state.config.allowedExtensions) ? state.config.allowedExtensions : [];
+        const allowedImageMimes = Array.isArray(state.config.allowedImageMimes) ? state.config.allowedImageMimes : [];
+        const allowedFileMimes = Array.isArray(state.config.allowedFileMimes) ? state.config.allowedFileMimes : [];
+        const allowedExtensions = Array.isArray(state.config.allowedExtensions) ? state.config.allowedExtensions : [];
 
         if (!allowedImageMimes.length && !allowedFileMimes.length && !allowedExtensions.length) {
             return true;
         }
 
-        var mime = (file.type || '').toLowerCase();
+        let mime = (file.type || '').toLowerCase();
 
         if (mime) {
-            var semicolonIndex = mime.indexOf(';');
+            const semicolonIndex = mime.indexOf(';');
 
             if (semicolonIndex !== -1) {
                 mime = mime.slice(0, semicolonIndex);
@@ -1453,7 +1453,7 @@
                 return true;
             }
 
-            var extensionFromMime = getFileExtension(file);
+            const extensionFromMime = getFileExtension(file);
             if (extensionFromMime && allowedExtensions.indexOf(extensionFromMime) !== -1) {
                 return true;
             }
@@ -1461,7 +1461,7 @@
             return false;
         }
 
-        var extension = getFileExtension(file);
+        const extension = getFileExtension(file);
         if (extension) {
             return allowedExtensions.indexOf(extension) !== -1;
         }
@@ -1481,11 +1481,11 @@
     }
 
     function getRoleLabel(role) {
-        var labels = globalConfig.strings && globalConfig.strings.roleLabels ? globalConfig.strings.roleLabels : null;
-        var normalised = typeof role === 'string' ? role.toLowerCase() : '';
+        const labels = globalConfig.strings && globalConfig.strings.roleLabels ? globalConfig.strings.roleLabels : null;
+        const normalised = typeof role === 'string' ? role.toLowerCase() : '';
 
         if (labels && Object.prototype.hasOwnProperty.call(labels, normalised)) {
-            var label = labels[normalised];
+            const label = labels[normalised];
             if (typeof label === 'string' && label) {
                 return label;
             }
@@ -1514,13 +1514,13 @@
         }
 
         if (state.transcriptToggle) {
-            var label = state.transcriptExpanded
+            const label = state.transcriptExpanded
                 ? getString('collapseTranscript', 'Collapse conversation')
                 : getString('expandTranscript', 'Expand conversation');
             state.transcriptToggle.setAttribute('aria-expanded', state.transcriptExpanded ? 'true' : 'false');
             state.transcriptToggle.setAttribute('aria-label', label);
 
-            var screenReaderText = state.transcriptToggle.querySelector('.screen-reader-text');
+            const screenReaderText = state.transcriptToggle.querySelector('.screen-reader-text');
             if (screenReaderText) {
                 screenReaderText.textContent = label;
             }
@@ -1536,15 +1536,15 @@
             return;
         }
 
-        var expanded = !!state.historyVisible;
-        var label = expanded
+        const expanded = !!state.historyVisible;
+        const label = expanded
             ? getString('historyToggleHide', 'Hide previous conversations')
             : getString('historyToggleShow', 'Show previous conversations');
 
         state.historyToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         state.historyToggle.setAttribute('aria-label', label);
 
-        var screenReaderText = state.historyToggle.querySelector('.screen-reader-text');
+        const screenReaderText = state.historyToggle.querySelector('.screen-reader-text');
         if (screenReaderText) {
             screenReaderText.textContent = label;
         }
@@ -1591,8 +1591,8 @@
     }
 
     function buildHistoryHeaders(state) {
-        var headers = { 'Accept': 'application/json' };
-        var nonce = '';
+        const headers = { 'Accept': 'application/json' };
+        let nonce = '';
 
         if (state && state.config) {
             if (state.config.restNonce) {
@@ -1620,7 +1620,7 @@
             return '';
         }
 
-        var date = new Date(value);
+        const date = new Date(value);
 
         if (isNaN(date.getTime())) {
             return '';
@@ -1643,13 +1643,13 @@
     }
 
     function formatHistoryMessageCount(count) {
-        var total = parseInt(count, 10) || 0;
+        const total = parseInt(count, 10) || 0;
 
         if (total === 1) {
             return getString('historySingleMessage', '1 message');
         }
 
-        var template = getString('historyMessageCount', '%d messages');
+        const template = getString('historyMessageCount', '%d messages');
 
         if (template.indexOf('%d') !== -1) {
             return template.replace('%d', total);
@@ -1667,19 +1667,19 @@
             return session.assistant_title;
         }
 
-        var template = getString('historyPreviewFallback', 'Conversation %s');
-        var placeholder = template.indexOf('%s') !== -1 ? template : template + ' %s';
-        var number = typeof index === 'number' ? index + 1 : 1;
+        const template = getString('historyPreviewFallback', 'Conversation %s');
+        const placeholder = template.indexOf('%s') !== -1 ? template : template + ' %s';
+        const number = typeof index === 'number' ? index + 1 : 1;
 
         return placeholder.replace('%s', number);
     }
 
     function buildHistoryMeta(state, session) {
-        var parts = [];
+        const parts = [];
 
         if (session) {
-            var timestamp = session.updated_at || session.completed_at || session.started_at;
-            var formattedDate = formatHistoryDate(timestamp);
+            const timestamp = session.updated_at || session.completed_at || session.started_at;
+            const formattedDate = formatHistoryDate(timestamp);
 
             if (formattedDate) {
                 parts.push(formattedDate);
@@ -1704,29 +1704,29 @@
             return;
         }
 
-        var fragment = document.createDocumentFragment();
+        const fragment = document.createDocumentFragment();
 
         state.historySessions.forEach(function (session, index) {
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__history-item';
 
-            var button = document.createElement('button');
+            const button = document.createElement('button');
             button.type = 'button';
             button.className = 'wp-mcp-ai-chat__history-session';
             button.setAttribute('aria-expanded', 'false');
             button.dataset.sessionKey = session && session.session_key ? session.session_key : '';
 
-            var content = document.createElement('div');
+            const content = document.createElement('div');
             content.className = 'wp-mcp-ai-chat__history-session-content';
 
-            var title = document.createElement('span');
+            const title = document.createElement('span');
             title.className = 'wp-mcp-ai-chat__history-session-title';
             title.textContent = formatHistorySessionTitle(state, session, index);
             content.appendChild(title);
 
-            var metaText = buildHistoryMeta(state, session);
+            const metaText = buildHistoryMeta(state, session);
             if (metaText) {
-                var meta = document.createElement('span');
+                const meta = document.createElement('span');
                 meta.className = 'wp-mcp-ai-chat__history-session-meta';
                 meta.textContent = metaText;
                 content.appendChild(meta);
@@ -1734,7 +1734,7 @@
 
             button.appendChild(content);
 
-            var icon = document.createElement('span');
+            const icon = document.createElement('span');
             icon.className = 'wp-mcp-ai-chat__history-session-icon';
             icon.innerHTML =
                 '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -1742,7 +1742,7 @@
                 '</svg>';
             button.appendChild(icon);
 
-            var deleteButton = document.createElement('button');
+            const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
             deleteButton.className = 'wp-mcp-ai-chat__history-delete';
             deleteButton.setAttribute('aria-label', getString('deleteConversation', 'Delete this conversation'));
@@ -1763,7 +1763,7 @@
                 handleHistoryDelete(state, session, item);
             });
 
-            var details = document.createElement('div');
+            const details = document.createElement('div');
             details.className = 'wp-mcp-ai-chat__history-messages';
             details.hidden = true;
 
@@ -1799,7 +1799,7 @@
             return;
         }
 
-        var confirmMessage = getString(
+        const confirmMessage = getString(
             'confirmDeleteConversation',
             'Are you sure you want to delete this conversation? This action cannot be undone.'
         );
@@ -1810,15 +1810,15 @@
             }
         }
 
-        var sessionKey = session.session_key;
-        var endpoint = getHistoryEndpoint(state);
+        const sessionKey = session.session_key;
+        const endpoint = getHistoryEndpoint(state);
 
         if (!endpoint) {
             setHistoryStatus(state, getString('historyDeleteError', 'Unable to delete conversation.'), true);
             return;
         }
 
-        var deleteUrl = endpoint + '/' + encodeURIComponent(sessionKey);
+        const deleteUrl = endpoint + '/' + encodeURIComponent(sessionKey);
 
         fetch(deleteUrl, {
             method: 'DELETE',
@@ -1862,7 +1862,7 @@
                 }, 3000);
             })
             .catch(function (error) {
-                var errorMessage;
+                let errorMessage;
                 
                 if (error && error.message === 'unauthorized') {
                     errorMessage = getString('historyDeleteUnauthorized', 'You are not authorized to delete this conversation.');
@@ -1918,7 +1918,7 @@
     }
 
     function loadHistorySessions(state) {
-        var endpoint = getHistoryEndpoint(state);
+        const endpoint = getHistoryEndpoint(state);
 
         if (!endpoint) {
             state.historyLoaded = true;
@@ -1930,15 +1930,15 @@
         state.historyLoading = true;
         setHistoryStatus(state, getString('historyLoading', 'Loading conversations…'), false);
 
-        var perPage = state.config && state.config.historyPerPage ? state.config.historyPerPage : globalConfig.historyPerPage;
+        let perPage = state.config && state.config.historyPerPage ? state.config.historyPerPage : globalConfig.historyPerPage;
         if (!perPage || perPage < 1) {
             perPage = 20;
         }
 
         return fetchHistorySessions(state, endpoint, perPage)
             .then(function (data) {
-                var sessions = Array.isArray(data && data.sessions) ? data.sessions : [];
-                var assistantId = state.config && state.config.assistantId ? parseInt(state.config.assistantId, 10) : 0;
+                let sessions = Array.isArray(data && data.sessions) ? data.sessions : [];
+                const assistantId = state.config && state.config.assistantId ? parseInt(state.config.assistantId, 10) : 0;
 
                 if (assistantId) {
                     sessions = sessions.filter(function (session) {
@@ -1952,7 +1952,7 @@
                 renderHistorySessions(state);
 
                 if (!sessions.length) {
-                    var message = data && data.message ? data.message : getString('historyEmpty', 'No previous conversations yet.');
+                    const message = data && data.message ? data.message : getString('historyEmpty', 'No previous conversations yet.');
                     setHistoryStatus(state, message, false);
                 } else {
                     setHistoryStatus(state, '', false);
@@ -1962,7 +1962,7 @@
                 state.historySessions = [];
                 renderHistorySessions(state);
 
-                var message = error && error.message ? error.message : getString('historyError', 'Unable to load conversation history.');
+                const message = error && error.message ? error.message : getString('historyError', 'Unable to load conversation history.');
                 setHistoryStatus(state, message, true);
                 state.historyLoaded = false;
             })
@@ -1973,7 +1973,7 @@
     }
 
     function fetchHistorySessions(state, endpoint, perPage) {
-        var url = endpoint;
+        let url = endpoint;
 
         if (perPage && perPage > 0) {
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
@@ -1990,8 +1990,8 @@
                 })
                 .then(function (data) {
                     if (!response.ok) {
-                        var message = data && data.message ? data.message : getString('historyError', 'Unable to load conversation history.');
-                        var error = new Error(message);
+                        const message = data && data.message ? data.message : getString('historyError', 'Unable to load conversation history.');
+                        const error = new Error(message);
                         error.status = response.status;
                         throw error;
                     }
@@ -2006,13 +2006,13 @@
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        var endpoint = getHistoryEndpoint(state);
+        const endpoint = getHistoryEndpoint(state);
 
         if (!endpoint) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        var url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        const url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
 
         return fetch(url, {
             method: 'GET',
@@ -2025,8 +2025,8 @@
                 })
                 .then(function (data) {
                     if (!response.ok) {
-                        var message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
-                        var error = new Error(message);
+                        const message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
+                        const error = new Error(message);
                         error.status = response.status;
                         throw error;
                     }
@@ -2053,7 +2053,7 @@
         container.hidden = false;
         container.textContent = '';
 
-        var notice = document.createElement('p');
+        const notice = document.createElement('p');
         notice.className = 'wp-mcp-ai-chat__history-notice';
         notice.textContent = getString('historySessionLoading', 'Loading conversation…');
         container.appendChild(notice);
@@ -2067,7 +2067,7 @@
         container.dataset.loaded = 'error';
         container.textContent = '';
 
-        var notice = document.createElement('p');
+        const notice = document.createElement('p');
         notice.className = 'wp-mcp-ai-chat__history-notice wp-mcp-ai-chat__history-notice--error';
         notice.textContent = message || getString('historySessionError', 'Unable to load this conversation. Please try again.');
         container.appendChild(notice);
@@ -2082,14 +2082,14 @@
         container.textContent = '';
 
         if (!session || !Array.isArray(session.messages) || !session.messages.length) {
-            var empty = document.createElement('p');
+            const empty = document.createElement('p');
             empty.className = 'wp-mcp-ai-chat__history-notice';
             empty.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
             container.appendChild(empty);
             return;
         }
 
-        var list = document.createElement('ul');
+        const list = document.createElement('ul');
         list.className = 'wp-mcp-ai-chat__history-message-list';
 
         session.messages.forEach(function (message) {
@@ -2097,22 +2097,22 @@
                 return;
             }
 
-            var role = typeof message.role === 'string' ? message.role.toLowerCase() : 'assistant';
-            var text = typeof message.content === 'string' ? message.content : '';
+            const role = typeof message.role === 'string' ? message.role.toLowerCase() : 'assistant';
+            const text = typeof message.content === 'string' ? message.content : '';
 
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__history-message wp-mcp-ai-chat__history-message--' + role;
 
-            var roleLabel = document.createElement('span');
+            const roleLabel = document.createElement('span');
             roleLabel.className = 'wp-mcp-ai-chat__history-message-role';
             roleLabel.textContent = getRoleLabel(role);
             item.appendChild(roleLabel);
 
-            var body = document.createElement('div');
+            const body = document.createElement('div');
             body.className = 'wp-mcp-ai-chat__history-message-text';
 
             if (text) {
-                var normalised = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
+                const normalised = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
                 body.innerHTML = escapeHtml(normalised).replace(/\n/g, '<br />');
             } else {
                 body.textContent = '';
@@ -2123,7 +2123,7 @@
         });
 
         if (!list.children.length) {
-            var fallback = document.createElement('p');
+            const fallback = document.createElement('p');
             fallback.className = 'wp-mcp-ai-chat__history-notice';
             fallback.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
             container.appendChild(fallback);
@@ -2138,7 +2138,7 @@
             return '';
         }
 
-        var normalised = String(role).toLowerCase();
+        const normalised = String(role).toLowerCase();
 
         if (normalised === 'function' || normalised === 'tool_result' || normalised === 'observation') {
             return 'tool';
@@ -2158,7 +2158,7 @@
 
         state.activeHistorySessionKey = sessionKey || '';
 
-        var items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
+        const items = state.historyList.querySelectorAll('.wp-mcp-ai-chat__history-item');
         Array.prototype.forEach.call(items, function (node) {
             if (node === activeItem) {
                 node.classList.add('wp-mcp-ai-chat__history-item--active');
@@ -2170,7 +2170,7 @@
 
     function loadHistorySessionIntoChat(state, session, activeItem, chatWindow) {
         // Use the provided chatWindow or fall back to state.messagesEl
-        var messagesEl = chatWindow || state.messagesEl;
+        const messagesEl = chatWindow || state.messagesEl;
         
         if (!state || !messagesEl) {
             return;
@@ -2182,14 +2182,14 @@
             return;
         }
 
-        var sessionKey = session.session_key ? String(session.session_key) : '';
+        const sessionKey = session.session_key ? String(session.session_key) : '';
         setActiveHistorySession(state, sessionKey, activeItem);
 
         if (sessionKey) {
             state.config.sessionKey = sessionKey;
         }
 
-        var assistantId = parseInt(session.assistant_id, 10);
+        const assistantId = parseInt(session.assistant_id, 10);
         if (!isNaN(assistantId) && assistantId > 0) {
             state.config.assistantId = assistantId;
         }
@@ -2206,7 +2206,7 @@
             state.textarea.value = '';
         }
 
-        var messages = Array.isArray(session.messages) ? session.messages : [];
+        const messages = Array.isArray(session.messages) ? session.messages : [];
 
         if (!messages.length) {
             appendMessage(messagesEl, 'system', {
@@ -2222,27 +2222,27 @@
                 return;
             }
 
-            var role = normaliseHistoryRole(message.role);
+            const role = normaliseHistoryRole(message.role);
             if (!role) {
                 return;
             }
 
-            var content = '';
+            let content = '';
             if (typeof message.content === 'string') {
                 content = message.content;
             } else if (message.content && typeof message.content.text === 'string') {
                 content = message.content.text;
             }
 
-            var trimmedContent = typeof content === 'string' ? content : '';
-            var hasContent = trimmedContent.trim() !== '';
+            const trimmedContent = typeof content === 'string' ? content : '';
+            const hasContent = trimmedContent.trim() !== '';
 
             if (!hasContent && role !== 'tool') {
                 return;
             }
 
-            var payload = { text: trimmedContent };
-            var allowMarkdown = role === 'assistant';
+            const payload = { text: trimmedContent };
+            const allowMarkdown = role === 'assistant';
 
             appendMessage(messagesEl, role, payload, allowMarkdown);
             if (hasContent || role === 'tool') {
@@ -2262,14 +2262,14 @@
             return;
         }
 
-        var button = item.querySelector('.wp-mcp-ai-chat__history-session');
-        var details = item.querySelector('.wp-mcp-ai-chat__history-messages');
+        const button = item.querySelector('.wp-mcp-ai-chat__history-session');
+        const details = item.querySelector('.wp-mcp-ai-chat__history-messages');
 
         if (!button || !details) {
             return;
         }
 
-        var expanded = button.getAttribute('aria-expanded') === 'true';
+        const expanded = button.getAttribute('aria-expanded') === 'true';
 
         if (expanded) {
             button.setAttribute('aria-expanded', 'false');
@@ -2282,11 +2282,11 @@
         details.hidden = false;
         item.classList.add('wp-mcp-ai-chat__history-item--expanded');
 
-        var sessionKey = session && session.session_key ? session.session_key : '';
+        const sessionKey = session && session.session_key ? session.session_key : '';
 
         // Find the main chat window relative to the history item to ensure correct targeting
-        var chatContainer = item.closest('.wp-mcp-ai-chat');
-        var chatWindow = chatContainer ? chatContainer.querySelector('.wp-mcp-ai-chat__messages') : null;
+        const chatContainer = item.closest('.wp-mcp-ai-chat');
+        let chatWindow = chatContainer ? chatContainer.querySelector('.wp-mcp-ai-chat__messages') : null;
         
         if (!chatWindow) {
             // Fallback to state.messagesEl if DOM traversal fails
@@ -2294,7 +2294,7 @@
         }
 
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
-            var cachedSession = state.historySessionDetails[sessionKey];
+            const cachedSession = state.historySessionDetails[sessionKey];
             renderHistorySessionDetails(state, details, cachedSession);
             loadHistorySessionIntoChat(state, cachedSession, item, chatWindow);
             return;
@@ -2316,13 +2316,13 @@
                 loadHistorySessionIntoChat(state, data, item, chatWindow);
             })
             .catch(function (error) {
-                var message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
+                const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
                 renderHistorySessionError(state, details, message);
             });
     }
 
     function buildJsonHeaders(state) {
-        var headers = {
+        const headers = {
             'Content-Type': 'application/json',
             'X-WP-Nonce': globalConfig.nonce || '',
         };
@@ -2345,15 +2345,15 @@
 
         state.validationNotice = '';
 
-        var files = Array.prototype.slice.call(event.target.files);
+        const files = Array.prototype.slice.call(event.target.files);
         event.target.value = '';
 
         if (!files.length) {
             return;
         }
 
-        var allowedFiles = [];
-        var rejectedFiles = [];
+        const allowedFiles = [];
+        const rejectedFiles = [];
 
         files.forEach(function (file) {
             if (isFileTypeAllowed(file, state)) {
@@ -2364,10 +2364,10 @@
         });
 
         if (rejectedFiles.length) {
-            var notice;
+            let notice;
 
             if (rejectedFiles.length === 1) {
-                var label = (rejectedFiles[0] && rejectedFiles[0].name) || getString('unsupportedFileLabel', 'This file');
+                const label = (rejectedFiles[0] && rejectedFiles[0].name) || getString('unsupportedFileLabel', 'This file');
                 notice = formatString(
                     getString('unsupportedFileType', '“%s” is not a supported file type. Please choose a different file.'),
                     label
@@ -2387,7 +2387,7 @@
             return;
         }
 
-        var sequence = Promise.resolve();
+        let sequence = Promise.resolve();
 
         allowedFiles.forEach(function (file) {
             sequence = sequence.then(function () {
@@ -2414,17 +2414,17 @@
         state.uploading = (state.uploading || 0) + 1;
         updateAttachButtonState(state);
 
-        var message = formatString(getString('uploadingFile', 'Uploading “%s”…'), file.name || '');
+        const message = formatString(getString('uploadingFile', 'Uploading “%s”…'), file.name || '');
         setStatus(state.container, message);
 
-        var hadError = false;
+        let hadError = false;
 
-        var headers = {
+        const headers = {
             'X-WP-Nonce': globalConfig.nonce || '',
             Accept: 'application/json',
         };
 
-        var contentDisposition = createContentDispositionHeader(file.name || 'attachment');
+        const contentDisposition = createContentDispositionHeader(file.name || 'attachment');
         if (contentDisposition) {
             headers['Content-Disposition'] = contentDisposition;
         }
@@ -2439,7 +2439,7 @@
         })
             .then(function (response) {
                 if (!response.ok) {
-                    var error = new Error('Upload failed');
+                    const error = new Error('Upload failed');
                     error.response = response;
                     throw error;
                 }
@@ -2447,7 +2447,7 @@
                 return response.json();
             })
             .then(function (data) {
-                var record = normaliseUploadResponse(data, file);
+                const record = normaliseUploadResponse(data, file);
                 if (!record) {
                     return;
                 }
@@ -2480,7 +2480,7 @@
             return null;
         }
 
-        var id = data.id;
+        let id = data.id;
         if (!id && data.data && typeof data.data.id !== 'undefined') {
             id = data.data.id;
         }
@@ -2489,8 +2489,8 @@
             return null;
         }
 
-        var fileId = 'wp-attachment-' + id;
-        var title = '';
+        const fileId = 'wp-attachment-' + id;
+        let title = '';
 
         if (data.title) {
             if (typeof data.title === 'string') {
@@ -2504,11 +2504,11 @@
             title = data.slug;
         }
 
-        var name = title || (file && file.name) || '';
-        var url = data.source_url || (data.guid && data.guid.rendered) || '';
-        var mime = data.mime_type || (file && file.type) || '';
+        const name = title || (file && file.name) || '';
+        const url = data.source_url || (data.guid && data.guid.rendered) || '';
+        const mime = data.mime_type || (file && file.type) || '';
 
-        var size = null;
+        let size = null;
         if (data.media_details && typeof data.media_details === 'object') {
             if (typeof data.media_details.filesize === 'number') {
                 size = data.media_details.filesize;
@@ -2523,7 +2523,7 @@
             size = file.size;
         }
 
-        var isImage = typeof mime === 'string' && mime.indexOf('image/') === 0;
+        const isImage = typeof mime === 'string' && mime.indexOf('image/') === 0;
 
         return {
             id: id,
@@ -2542,7 +2542,7 @@
             error.response
                 .json()
                 .then(function (body) {
-                    var message = body && (body.message || (body.data && body.data.message));
+                    const message = body && (body.message || (body.data && body.data.message));
                     setStatus(state.container, message || getString('uploadError', 'The file could not be uploaded. Please try again.'));
                 })
                 .catch(function () {
@@ -2558,8 +2558,8 @@
     }
 
     function renderPendingAttachments(state) {
-        var container = state.attachmentsContainer;
-        var list = state.attachmentsList;
+        const container = state.attachmentsContainer;
+        const list = state.attachmentsList;
 
         if (!container || !list) {
             return;
@@ -2575,20 +2575,20 @@
         container.hidden = false;
 
         state.pendingAttachments.forEach(function (attachment) {
-            var item = document.createElement('li');
+            const item = document.createElement('li');
             item.className = 'wp-mcp-ai-chat__attachments-item';
 
-            var info = document.createElement('div');
+            const info = document.createElement('div');
             info.className = 'wp-mcp-ai-chat__attachments-info';
 
-            var name = document.createElement('div');
+            const name = document.createElement('div');
             name.className = 'wp-mcp-ai-chat__attachments-name';
             name.textContent = attachment.name || attachment.originalName || getString('downloadAttachment', 'Download attachment');
             info.appendChild(name);
 
-            var metaText = buildAttachmentMeta(attachment);
+            const metaText = buildAttachmentMeta(attachment);
             if (metaText) {
-                var meta = document.createElement('div');
+                const meta = document.createElement('div');
                 meta.className = 'wp-mcp-ai-chat__attachments-meta';
                 meta.textContent = metaText;
                 info.appendChild(meta);
@@ -2596,7 +2596,7 @@
 
             item.appendChild(info);
 
-            var removeButton = document.createElement('button');
+            const removeButton = document.createElement('button');
             removeButton.type = 'button';
             removeButton.className = 'wp-mcp-ai-chat__attachments-remove';
             removeButton.textContent = getString('removeAttachment', 'Remove');
@@ -2644,7 +2644,7 @@
             return;
         }
 
-        var disabled = !!state.busy || state.uploading > 0;
+        const disabled = !!state.busy || state.uploading > 0;
 
         if (state.attachButton) {
             state.attachButton.disabled = disabled;
@@ -2655,7 +2655,7 @@
         }
 
         if (state.attachmentsList) {
-            var removeButtons = state.attachmentsList.querySelectorAll('.wp-mcp-ai-chat__attachments-remove');
+            const removeButtons = state.attachmentsList.querySelectorAll('.wp-mcp-ai-chat__attachments-remove');
             Array.prototype.forEach.call(removeButtons, function (button) {
                 button.disabled = disabled;
             });
@@ -2669,18 +2669,18 @@
             return null;
         }
 
-        var record = attachment;
+        let record = attachment;
 
         if (attachment.fileId && state && state.attachmentLibrary && state.attachmentLibrary[attachment.fileId]) {
             record = state.attachmentLibrary[attachment.fileId];
         }
 
-        var url = getAttachmentUrlFromRecord(record, state) || attachment.url || '';
+        const url = getAttachmentUrlFromRecord(record, state) || attachment.url || '';
         if (!url) {
             return null;
         }
 
-        var label = record.name || record.originalName || attachment.name || attachment.originalName || '';
+        let label = record.name || record.originalName || attachment.name || attachment.originalName || '';
         if (!label) {
             label = getString('downloadAttachment', 'Download attachment');
         }
@@ -2698,10 +2698,10 @@
             return null;
         }
 
-        var id = attachment.id;
+        let id = attachment.id;
 
         if (!id && attachment.fileId && attachment.fileId.indexOf('wp-attachment-') === 0) {
-            var parsed = parseInt(attachment.fileId.replace('wp-attachment-', ''), 10);
+            const parsed = parseInt(attachment.fileId.replace('wp-attachment-', ''), 10);
             if (!isNaN(parsed)) {
                 id = parsed;
             }
@@ -2711,8 +2711,8 @@
             return null;
         }
 
-        var mime = attachment.mime || attachment.type || '';
-        var isImage = typeof attachment.isImage === 'boolean' ? attachment.isImage : typeof mime === 'string' && mime.indexOf('image/') === 0;
+        const mime = attachment.mime || attachment.type || '';
+        const isImage = typeof attachment.isImage === 'boolean' ? attachment.isImage : typeof mime === 'string' && mime.indexOf('image/') === 0;
 
         if (isImage) {
             return {
@@ -2721,12 +2721,12 @@
             };
         }
 
-        var segment = {
+        const segment = {
             type: 'input_file',
             attachment_id: id,
         };
 
-        var displayName = attachment.originalName || attachment.name || '';
+        const displayName = attachment.originalName || attachment.name || '';
         if (displayName) {
             segment.display_name = displayName;
         }
@@ -2735,8 +2735,8 @@
     }
 
     function prepareAssistantDisplay(message, state) {
-        var text = '';
-        var attachments = [];
+        let text = '';
+        let attachments = [];
 
         if (message && typeof message.content !== 'undefined') {
             text = normaliseContent(message.content);
@@ -2755,10 +2755,10 @@
             return [];
         }
 
-        var lookup = buildAttachmentLookup(message, state);
-        var attachments = [];
-        var attachmentsByKey = {};
-        var defaultAttachmentLabel = getString('downloadAttachment', 'Download attachment');
+        const lookup = buildAttachmentLookup(message, state);
+        const attachments = [];
+        const attachmentsByKey = {};
+        const defaultAttachmentLabel = getString('downloadAttachment', 'Download attachment');
 
         function normaliseMeta(meta) {
             if (!meta) {
@@ -2789,9 +2789,9 @@
                 return;
             }
 
-            var extra = normaliseMeta(extraMeta);
-            var label = fallbackLabel ? String(fallbackLabel).trim() : '';
-            var existing = attachmentsByKey[key];
+            const extra = normaliseMeta(extraMeta);
+            const label = fallbackLabel ? String(fallbackLabel).trim() : '';
+            const existing = attachmentsByKey[key];
 
             if (existing) {
                 if (label && (!existing.label || existing.label === defaultAttachmentLabel)) {
@@ -2822,13 +2822,13 @@
                 return;
             }
 
-            var url = getAttachmentUrlFromRecord(record, state);
+            const url = getAttachmentUrlFromRecord(record, state);
             if (!url) {
                 return;
             }
 
-            var key = record.fileId || url;
-            var label = record.name || record.originalName || record.downloadName || '';
+            const key = record.fileId || url;
+            let label = record.name || record.originalName || record.downloadName || '';
             if (!label) {
                 label = defaultAttachmentLabel;
             }
@@ -2851,7 +2851,7 @@
                 return;
             }
 
-            var key = 'url:' + url;
+            const key = 'url:' + url;
             registerAttachmentEntry(
                 key,
                 {
@@ -2877,9 +2877,9 @@
                 return;
             }
 
-            var label = fallbackLabel || candidate.label || candidate.title || candidate.name || candidate.text || '';
-            var extraMeta = candidate.quote || candidate.meta || '';
-            var fileId = '';
+            let label = fallbackLabel || candidate.label || candidate.title || candidate.name || candidate.text || '';
+            let extraMeta = candidate.quote || candidate.meta || '';
+            let fileId = '';
 
             if (candidate.file_id) {
                 fileId = candidate.file_id;
@@ -2905,13 +2905,13 @@
                 }
             }
 
-            var record = fileId ? lookup[fileId] : null;
+            const record = fileId ? lookup[fileId] : null;
             if (record) {
                 addAttachment(record, label, extraMeta);
                 return;
             }
 
-            var url = candidate.url || (candidate.link && candidate.link.url) || (candidate.web && candidate.web.url) || '';
+            let url = candidate.url || (candidate.link && candidate.link.url) || (candidate.web && candidate.web.url) || '';
             if (!url && candidate.file && typeof candidate.file === 'object') {
                 url = candidate.file.url || candidate.file.download_url || candidate.file.href || candidate.file.source_url || '';
             }
@@ -2947,7 +2947,7 @@
                 return;
             }
 
-            var toolCallId = '';
+            let toolCallId = '';
 
             if (typeof segment.tool_call_id === 'string' && segment.tool_call_id) {
                 toolCallId = segment.tool_call_id;
@@ -2961,7 +2961,7 @@
                 return;
             }
 
-            var fallbackLabel = '';
+            let fallbackLabel = '';
             if (typeof segment.label === 'string' && segment.label.trim()) {
                 fallbackLabel = segment.label.trim();
             } else if (typeof segment.title === 'string' && segment.title.trim()) {
@@ -2972,13 +2972,13 @@
                 fallbackLabel = segment.tool_name.trim();
             }
 
-            var lookupResult = findToolResultInConversation(state, toolCallId);
+            const lookupResult = findToolResultInConversation(state, toolCallId);
             if (!lookupResult || !lookupResult.result) {
                 return;
             }
 
-            var toolName = fallbackLabel || lookupResult.toolName || '';
-            var normalised = normaliseToolResultForDisplay(toolName, lookupResult.result);
+            const toolName = fallbackLabel || lookupResult.toolName || '';
+            const normalised = normaliseToolResultForDisplay(toolName, lookupResult.result);
 
             if (!normalised || !normalised.attachments || !normalised.attachments.length) {
                 return;
@@ -2989,7 +2989,7 @@
                     return;
                 }
 
-                var entry = {
+                const entry = {
                     url: attachment.url,
                     label: attachment.label || defaultAttachmentLabel,
                     downloadName: attachment.downloadName || '',
@@ -3023,7 +3023,7 @@
                 return;
             }
 
-            var type = typeof segment.type === 'string' ? segment.type : '';
+            const type = typeof segment.type === 'string' ? segment.type : '';
 
             if (type === 'tool_result') {
                 attachToolResultAttachments(segment);
@@ -3055,7 +3055,7 @@
             processAnnotationCollection(segment.citations);
 
             if (type === 'input_file' || type === 'output_file' || type === 'file_path' || type === 'file') {
-                var fileId = segment.file_id || (segment.file && segment.file.id) || segment.id || '';
+                const fileId = segment.file_id || (segment.file && segment.file.id) || segment.id || '';
                 if (fileId && lookup[fileId]) {
                     addAttachment(lookup[fileId], segment.display_name || (segment.file && segment.file.filename), segment.quote || '');
                 }
@@ -3063,21 +3063,21 @@
             }
 
             if (type === 'input_image' || type === 'image_file' || type === 'output_image') {
-                var inlineFileId = segment.file_id || '';
+                let inlineFileId = segment.file_id || '';
                 if (!inlineFileId) {
-                    var imageFile = segment.image_file || segment.image || segment.file || null;
+                    const imageFile = segment.image_file || segment.image || segment.file || null;
                     if (imageFile) {
                         inlineFileId = imageFile.file_id || imageFile.id || '';
                     }
                 }
 
                 if (inlineFileId && lookup[inlineFileId]) {
-                    var imageMeta = segment.image_file || segment.image || segment.file || {};
+                    const imageMeta = segment.image_file || segment.image || segment.file || {};
                     addAttachment(lookup[inlineFileId], segment.caption || imageMeta.display_name || imageMeta.filename, segment.quote || '');
                     return;
                 }
 
-                var url = '';
+                let url = '';
                 if (typeof segment.image_url === 'string') {
                     url = segment.image_url;
                 } else if (segment.image_url && typeof segment.image_url.url === 'string') {
@@ -3111,7 +3111,7 @@
     }
 
     function buildAttachmentLookup(message, state) {
-        var lookup = {};
+        const lookup = {};
 
         function shouldReplace(existing, candidate) {
             if (!existing) {
@@ -3142,7 +3142,7 @@
                 return;
             }
 
-            var downloadUrl = record.url || '';
+            let downloadUrl = record.url || '';
             if (!downloadUrl) {
                 downloadUrl = buildFileDownloadUrl(state, record.fileId);
                 if (downloadUrl) {
@@ -3165,7 +3165,7 @@
             }
 
             if (state && state.attachmentLibrary) {
-                var existing = state.attachmentLibrary[record.fileId];
+                const existing = state.attachmentLibrary[record.fileId];
                 if (existing && !existing.url && downloadUrl) {
                     existing.url = downloadUrl;
                 }
@@ -3177,7 +3177,7 @@
 
         if (message && Array.isArray(message.attachments)) {
             message.attachments.forEach(function (item) {
-                var record = normaliseAttachmentRecord(item);
+                const record = normaliseAttachmentRecord(item);
                 if (record) {
                     registerRecord(record);
                 }
@@ -3190,7 +3190,7 @@
                     return;
                 }
 
-                var record = null;
+                let record = null;
 
                 if (reference.file && typeof reference.file === 'object') {
                     record = normaliseAttachmentRecord(reference.file);
@@ -3230,7 +3230,7 @@
             return '';
         }
 
-        var base = '';
+        let base = '';
 
         if (state && state.config && state.config.filesEndpoint) {
             base = state.config.filesEndpoint;
@@ -3246,18 +3246,18 @@
             base = base.slice(0, -1);
         }
 
-        var url = base + '/' + encodeURIComponent(String(fileId)) + '/download';
-        var params = [];
+        let url = base + '/' + encodeURIComponent(String(fileId)) + '/download';
+        const params = [];
 
         if (state && state.config && state.config.assistantId) {
             params.push('assistant_id=' + encodeURIComponent(state.config.assistantId));
         }
 
-        var guestToken = state && state.config ? state.config.guestToken : '';
+        const guestToken = state && state.config ? state.config.guestToken : '';
         if (guestToken) {
             params.push('guest_token=' + encodeURIComponent(guestToken));
         } else {
-            var nonce = '';
+            let nonce = '';
             if (state && state.config && state.config.restNonce) {
                 nonce = state.config.restNonce;
             } else if (globalConfig.nonce) {
@@ -3282,8 +3282,8 @@
         }
 
         function pickString() {
-            for (var index = 0; index < arguments.length; index++) {
-                var candidate = arguments[index];
+            for (let index = 0; index < arguments.length; index++) {
+                const candidate = arguments[index];
                 if (typeof candidate === 'string' && candidate) {
                     return candidate;
                 }
@@ -3292,7 +3292,7 @@
             return '';
         }
 
-        var fileId = raw.file_id || raw.id || raw.fileId || raw.reference_id || '';
+        let fileId = raw.file_id || raw.id || raw.fileId || raw.reference_id || '';
         if (!fileId && raw.image_file && raw.image_file.file_id) {
             fileId = raw.image_file.file_id;
         }
@@ -3305,7 +3305,7 @@
             return null;
         }
 
-        var name = pickString(
+        let name = pickString(
             raw.display_name,
             raw.filename,
             raw.name,
@@ -3321,7 +3321,7 @@
             name = pickString(raw.caption, raw.original_name);
         }
 
-        var downloadName = pickString(
+        let downloadName = pickString(
             raw.filename,
             raw.name,
             raw.download_name,
@@ -3329,7 +3329,7 @@
             raw.display_name
         );
 
-        var url = pickString(
+        let url = pickString(
             raw.url,
             raw.download_url,
             raw.href,
@@ -3338,16 +3338,16 @@
             raw.image_url && raw.image_url.url ? raw.image_url.url : ''
         );
 
-        var mime = pickString(raw.mime_type, raw.type, raw.mime);
+        let mime = pickString(raw.mime_type, raw.type, raw.mime);
 
-        var size = null;
+        let size = null;
         if (typeof raw.bytes === 'number') {
             size = raw.bytes;
         } else if (typeof raw.size === 'number') {
             size = raw.size;
         }
 
-        var data = '';
+        let data = '';
         if (typeof raw.data === 'string') {
             data = raw.data;
         } else if (raw.data && typeof raw.data.base64 === 'string') {
@@ -3355,7 +3355,7 @@
         }
 
         if (raw.file && typeof raw.file === 'object') {
-            var fileEntry = raw.file;
+            const fileEntry = raw.file;
 
             if (!name) {
                 if (typeof fileEntry.display_name === 'string' && fileEntry.display_name) {
@@ -3423,7 +3423,7 @@
         }
 
         if (record.fileId) {
-            var fallbackUrl = buildFileDownloadUrl(state, record.fileId);
+            const fallbackUrl = buildFileDownloadUrl(state, record.fileId);
             if (fallbackUrl) {
                 record.url = fallbackUrl;
                 return record.url;
@@ -3431,12 +3431,12 @@
         }
 
         if (record.data) {
-            var cacheKey = record.fileId || record.downloadName || '';
+            const cacheKey = record.fileId || record.downloadName || '';
             if (cacheKey && state && state.attachmentBlobUrls && state.attachmentBlobUrls[cacheKey]) {
                 return state.attachmentBlobUrls[cacheKey];
             }
 
-            var objectUrl = createObjectUrlFromBase64(record.data, record.mime);
+            const objectUrl = createObjectUrlFromBase64(record.data, record.mime);
             if (objectUrl) {
                 if (cacheKey && state && state.attachmentBlobUrls) {
                     state.attachmentBlobUrls[cacheKey] = objectUrl;
@@ -3451,15 +3451,15 @@
 
     function createObjectUrlFromBase64(base64, mimeType) {
         try {
-            var binary = atob(base64);
-            var length = binary.length;
-            var bytes = new Uint8Array(length);
+            const binary = atob(base64);
+            const length = binary.length;
+            const bytes = new Uint8Array(length);
 
-            for (var index = 0; index < length; index++) {
+            for (let index = 0; index < length; index++) {
                 bytes[index] = binary.charCodeAt(index);
             }
 
-            var blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+            const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
             return URL.createObjectURL(blob);
         } catch (error) {
             if (window.console && console.error) {
@@ -3474,8 +3474,8 @@
             return '';
         }
 
-        var parts = [];
-        var size = null;
+        const parts = [];
+        let size = null;
 
         if (typeof record.size === 'number') {
             size = record.size;
@@ -3487,7 +3487,7 @@
             parts.push(formatBytes(size));
         }
 
-        var mime = record.mime || record.mime_type || record.type;
+        const mime = record.mime || record.mime_type || record.type;
         if (mime) {
             parts.push(mime);
         }
@@ -3500,9 +3500,9 @@
             return null;
         }
 
-        var nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
+        const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
 
-        var url = '';
+        let url = '';
         if (typeof result.url === 'string' && result.url.trim()) {
             url = result.url.trim();
         } else if (typeof result.download_url === 'string' && result.download_url.trim()) {
@@ -3523,8 +3523,8 @@
             return null;
         }
 
-        var attachments = [];
-        var label = '';
+        const attachments = [];
+        let label = '';
 
         if (typeof result.title === 'string' && result.title.trim()) {
             label = result.title.trim();
@@ -3542,8 +3542,8 @@
             }
         }
 
-        var metaParts = [];
-        var metaRecord = {
+        const metaParts = [];
+        const metaRecord = {
             bytes: typeof result.bytes === 'number' ? result.bytes : null,
             mime_type: result.mime_type || result.mimeType || '',
         };
@@ -3556,12 +3556,12 @@
             metaRecord.mime_type = nestedImage.mime_type || nestedImage.mimeType || '';
         }
 
-        var baseMeta = buildAttachmentMeta(metaRecord);
+        const baseMeta = buildAttachmentMeta(metaRecord);
         if (baseMeta) {
             metaParts.push(baseMeta);
         }
 
-        var attachmentId = typeof result.attachment_id === 'number' ? result.attachment_id : null;
+        let attachmentId = typeof result.attachment_id === 'number' ? result.attachment_id : null;
         if (!attachmentId && nestedImage && typeof nestedImage.attachment_id === 'number') {
             attachmentId = nestedImage.attachment_id;
         }
@@ -3570,28 +3570,28 @@
             metaParts.push('ID: ' + attachmentId);
         }
 
-        var sizeValue = '';
+        let sizeValue = '';
         if (typeof result.size === 'string' && result.size.trim()) {
             sizeValue = result.size.trim();
         } else if (nestedImage && typeof nestedImage.size === 'string' && nestedImage.size.trim()) {
             sizeValue = nestedImage.size.trim();
         }
 
-        var qualityValue = '';
+        let qualityValue = '';
         if (typeof result.quality === 'string' && result.quality.trim()) {
             qualityValue = result.quality.trim();
         } else if (nestedImage && typeof nestedImage.quality === 'string' && nestedImage.quality.trim()) {
             qualityValue = nestedImage.quality.trim();
         }
 
-        var aspectRatioValue = '';
+        let aspectRatioValue = '';
         if (typeof result.aspect_ratio === 'string' && result.aspect_ratio.trim()) {
             aspectRatioValue = result.aspect_ratio.trim();
         } else if (nestedImage && typeof nestedImage.aspect_ratio === 'string' && nestedImage.aspect_ratio.trim()) {
             aspectRatioValue = nestedImage.aspect_ratio.trim();
         }
 
-        var formatValue = '';
+        let formatValue = '';
         if (typeof result.format === 'string' && result.format.trim()) {
             formatValue = result.format.trim();
         } else if (nestedImage && typeof nestedImage.format === 'string' && nestedImage.format.trim()) {
@@ -3624,9 +3624,9 @@
             }
         }
 
-        var attachmentMeta = metaParts.join(' • ');
+        const attachmentMeta = metaParts.join(' • ');
 
-        var downloadName = '';
+        let downloadName = '';
         if (typeof result.file_name === 'string' && result.file_name.trim()) {
             downloadName = result.file_name.trim();
         } else if (typeof result.fileName === 'string' && result.fileName.trim()) {
@@ -3654,7 +3654,7 @@
             return null;
         }
 
-        var text = '';
+        let text = '';
 
         if (typeof result.text === 'string' && result.text.trim()) {
             text = result.text.trim();
@@ -3682,7 +3682,7 @@
         }
 
         if (typeof content === 'string') {
-            var trimmed = content.trim();
+            const trimmed = content.trim();
 
             if (!trimmed) {
                 return null;
@@ -3695,8 +3695,8 @@
             }
         }
 
-        var visited = seen || null;
-        var shouldTrack = typeof content === 'object';
+        let visited = seen || null;
+        const shouldTrack = typeof content === 'object';
 
         if (shouldTrack && content !== null) {
             if (!visited && typeof WeakSet === 'function') {
@@ -3713,8 +3713,8 @@
         }
 
         if (Array.isArray(content)) {
-            for (var index = 0; index < content.length; index++) {
-                var parsedItem = parseToolMessagePayload(content[index], visited);
+            for (let index = 0; index < content.length; index++) {
+                const parsedItem = parseToolMessagePayload(content[index], visited);
                 if (parsedItem) {
                     return parsedItem;
                 }
@@ -3755,16 +3755,16 @@
             return parseToolMessagePayload(content.result, visited);
         }
 
-        var keys = Object.keys(content);
-        for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
+        const keys = Object.keys(content);
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
             if (!Object.prototype.hasOwnProperty.call(content, key)) {
                 continue;
             }
 
-            var candidate = content[key];
+            const candidate = content[key];
             if (candidate && typeof candidate === 'object') {
-                var parsed = parseToolMessagePayload(candidate, visited);
+                const parsed = parseToolMessagePayload(candidate, visited);
                 if (parsed) {
                     return parsed;
                 }
@@ -3779,13 +3779,13 @@
             return null;
         }
 
-        for (var index = state.conversation.length - 1; index >= 0; index--) {
-            var entry = state.conversation[index];
+        for (let index = state.conversation.length - 1; index >= 0; index--) {
+            const entry = state.conversation[index];
             if (!entry || entry.role !== 'tool') {
                 continue;
             }
 
-            var entryCallId = '';
+            let entryCallId = '';
 
             if (typeof entry.tool_call_id === 'string' && entry.tool_call_id) {
                 entryCallId = entry.tool_call_id;
@@ -3797,7 +3797,7 @@
                 continue;
             }
 
-            var payload = parseToolMessagePayload(entry.content);
+            let payload = parseToolMessagePayload(entry.content);
 
             if (!payload && typeof entry.content === 'object' && entry.content !== null) {
                 payload = parseToolMessagePayload({ content: entry.content });
@@ -3811,7 +3811,7 @@
                 continue;
             }
 
-            var toolName = '';
+            let toolName = '';
             if (typeof entry.name === 'string' && entry.name.trim()) {
                 toolName = entry.name.trim();
             }
@@ -3831,7 +3831,7 @@
         }
 
         if (typeof value === 'string') {
-            var parsed = parseFloat(value);
+            const parsed = parseFloat(value);
             if (!isNaN(parsed) && isFinite(parsed)) {
                 return parsed;
             }
@@ -3841,10 +3841,10 @@
     }
 
     function getCrawl4aiPollDelay(metadata, state) {
-        var poll = metadata && Object.prototype.hasOwnProperty.call(metadata, 'poll_interval') ? metadata.poll_interval : null;
-        var parsed = parseNumberValue(poll);
+        const poll = metadata && Object.prototype.hasOwnProperty.call(metadata, 'poll_interval') ? metadata.poll_interval : null;
+        const parsed = parseNumberValue(poll);
         if (isNaN(parsed) || parsed <= 0) {
-            var fallback = state && state.config ? parseInt(state.config.crawl4aiDefaultPollMs, 10) : 0;
+            let fallback = state && state.config ? parseInt(state.config.crawl4aiDefaultPollMs, 10) : 0;
             if (!fallback || fallback < 1000) {
                 fallback = 5000;
             }
@@ -3855,8 +3855,8 @@
     }
 
     function getCrawl4aiTimeout(metadata) {
-        var timeout = metadata && Object.prototype.hasOwnProperty.call(metadata, 'wait_timeout') ? metadata.wait_timeout : null;
-        var parsed = parseNumberValue(timeout);
+        const timeout = metadata && Object.prototype.hasOwnProperty.call(metadata, 'wait_timeout') ? metadata.wait_timeout : null;
+        const parsed = parseNumberValue(timeout);
         if (isNaN(parsed) || parsed <= 0) {
             return 600000;
         }
@@ -3869,7 +3869,7 @@
             return false;
         }
 
-        var taskId = typeof result.task_id === 'string' ? result.task_id : '';
+        const taskId = typeof result.task_id === 'string' ? result.task_id : '';
         if (!taskId) {
             return false;
         }
@@ -3878,7 +3878,7 @@
             return false;
         }
 
-        var status = typeof result.status === 'string' ? result.status.toLowerCase() : '';
+        const status = typeof result.status === 'string' ? result.status.toLowerCase() : '';
         return !status || status === 'pending' || status === 'queued' || status === 'running';
     }
 
@@ -3887,7 +3887,7 @@
             return '';
         }
 
-        var base = state.config.crawl4aiTaskEndpoint;
+        let base = state.config.crawl4aiTaskEndpoint;
         if (base.charAt(base.length - 1) !== '/') {
             base += '/';
         }
@@ -3896,7 +3896,7 @@
     }
 
     function fetchCrawl4aiTask(state, taskId) {
-        var url = buildCrawl4aiTaskUrl(state, taskId);
+        const url = buildCrawl4aiTaskUrl(state, taskId);
         if (!url) {
             return Promise.reject(new Error('Crawl4AI endpoint not configured.'));
         }
@@ -3911,7 +3911,7 @@
             }
 
             if (!response.ok) {
-                var error = new Error('HTTP ' + response.status);
+                const error = new Error('HTTP ' + response.status);
                 error.status = response.status;
                 throw error;
             }
@@ -3925,7 +3925,7 @@
             return;
         }
 
-        var bubble = entry.querySelector('.wp-mcp-ai-chat__bubble');
+        const bubble = entry.querySelector('.wp-mcp-ai-chat__bubble');
         if (!bubble) {
             return;
         }
@@ -3942,12 +3942,12 @@
             return Promise.resolve(result);
         }
 
-        var taskId = result.task_id;
-        var metadata = result && typeof result === 'object' && result.metadata ? result.metadata : {};
-        var pollDelay = getCrawl4aiPollDelay(metadata, state);
-        var timeout = getCrawl4aiTimeout(metadata);
-        var startTime = Date.now();
-        var pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Crawl queued. Results will appear shortly.'));
+        const taskId = result.task_id;
+        const metadata = result && typeof result === 'object' && result.metadata ? result.metadata : {};
+        const pollDelay = getCrawl4aiPollDelay(metadata, state);
+        const timeout = getCrawl4aiTimeout(metadata);
+        const startTime = Date.now();
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Crawl queued. Results will appear shortly.'));
 
         state.pendingCrawlTasks[taskId] = {
             entry: pendingEntry,
@@ -3959,7 +3959,7 @@
 
         return new Promise(function (resolve, reject) {
             function cleanup() {
-                var record = state.pendingCrawlTasks[taskId];
+                const record = state.pendingCrawlTasks[taskId];
                 if (record && record.timer) {
                     clearTimeout(record.timer);
                 }
@@ -3968,7 +3968,7 @@
             }
 
             function scheduleNext() {
-                var record = state.pendingCrawlTasks[taskId];
+                const record = state.pendingCrawlTasks[taskId];
                 if (!record) {
                     return;
                 }
@@ -3977,7 +3977,7 @@
             }
 
             function poll() {
-                var record = state.pendingCrawlTasks[taskId];
+                const record = state.pendingCrawlTasks[taskId];
                 if (!record) {
                     return;
                 }
@@ -3997,10 +3997,10 @@
                             return;
                         }
 
-                        var status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+                        const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
                         if (status === 'failed' || status === 'error') {
                             cleanup();
-                            var errorMessage = payload && payload.metadata && payload.metadata.error ? payload.metadata.error : getString('toolError', 'The tool request failed.');
+                            const errorMessage = payload && payload.metadata && payload.metadata.error ? payload.metadata.error : getString('toolError', 'The tool request failed.');
                             updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), errorMessage));
                             reject(new Error(errorMessage));
                             return;
@@ -4026,7 +4026,7 @@
                     })
                     .catch(function (error) {
                         cleanup();
-                        var message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
+                        const message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
                         updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), message));
                         reject(error);
                     });
@@ -4041,19 +4041,19 @@
             return '';
         }
 
-        var units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        var exponent = Math.floor(Math.log(bytes) / Math.log(1024));
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let exponent = Math.floor(Math.log(bytes) / Math.log(1024));
         exponent = Math.min(units.length - 1, Math.max(exponent, 0));
 
-        var value = bytes / Math.pow(1024, exponent);
-        var decimals = exponent === 0 ? 0 : value >= 10 ? 1 : 2;
+        const value = bytes / Math.pow(1024, exponent);
+        const decimals = exponent === 0 ? 0 : value >= 10 ? 1 : 2;
 
         return value.toFixed(decimals) + ' ' + units[exponent];
     }
 
     function createContentDispositionHeader(filename) {
-        var fallback = (filename || 'attachment').replace(/"/g, '');
-        var encoded = encodeRFC5987ValueChars(filename || fallback);
+        const fallback = (filename || 'attachment').replace(/"/g, '');
+        const encoded = encodeRFC5987ValueChars(filename || fallback);
 
         return 'attachment; filename="' + fallback + '"; filename*=UTF-8\'' + encoded + '\'';
     }
@@ -4069,39 +4069,39 @@
     }
 
     function init() {
-        var containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+        const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
-            var instanceId = container.getAttribute('id');
-            var config = instances[instanceId];
+            const instanceId = container.getAttribute('id');
+            const config = instances[instanceId];
 
             if (!config) {
                 setStatus(container, getString('missingAssistant', 'Assistant configuration missing.'));
                 return;
             }
 
-            var form = container.querySelector('.wp-mcp-ai-chat__form');
-            var textarea = container.querySelector('.wp-mcp-ai-chat__input');
-            var messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
-            var statusEl = container.querySelector('.wp-mcp-ai-chat__status');
-            var attachmentsContainer = container.querySelector('.wp-mcp-ai-chat__attachments');
-            var attachmentsList = container.querySelector('.wp-mcp-ai-chat__attachments-list');
-            var attachmentsHeader = container.querySelector('.wp-mcp-ai-chat__attachments-header');
-            var attachButton = container.querySelector('.wp-mcp-ai-chat__attach');
-            var fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
-            var transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
-            var transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
-            var toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
-            var transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
-            var historyToggle = container.querySelector('.wp-mcp-ai-chat__history-toggle');
-            var historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
-            var historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
-            var historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
+            const form = container.querySelector('.wp-mcp-ai-chat__form');
+            const textarea = container.querySelector('.wp-mcp-ai-chat__input');
+            const messagesEl = container.querySelector('.wp-mcp-ai-chat__messages');
+            const statusEl = container.querySelector('.wp-mcp-ai-chat__status');
+            const attachmentsContainer = container.querySelector('.wp-mcp-ai-chat__attachments');
+            const attachmentsList = container.querySelector('.wp-mcp-ai-chat__attachments-list');
+            const attachmentsHeader = container.querySelector('.wp-mcp-ai-chat__attachments-header');
+            const attachButton = container.querySelector('.wp-mcp-ai-chat__attach');
+            const fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
+            const transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
+            const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
+            const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
+            const transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
+            const historyToggle = container.querySelector('.wp-mcp-ai-chat__history-toggle');
+            const historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
+            const historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
+            const historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
             }
 
-            var instanceConfig = Object.assign({}, config);
+            const instanceConfig = Object.assign({}, config);
             if (!instanceConfig.uploadEndpoint) {
                 instanceConfig.uploadEndpoint = globalConfig.uploadEndpoint || '';
             }
@@ -4147,7 +4147,7 @@
                 fileInput.setAttribute('accept', instanceConfig.fileAccept);
             }
 
-            var state = {
+            const state = {
                 conversation: [],
                 busy: false,
                 uploading: 0,
@@ -4295,7 +4295,7 @@
             return;
         }
 
-        var saved = loadConversationFromStorage(state);
+        const saved = loadConversationFromStorage(state);
 
         if (!saved || !Array.isArray(saved.conversation) || !saved.conversation.length) {
             return;
@@ -4317,8 +4317,8 @@
                 return;
             }
 
-            var role = message.role;
-            var content = message.content;
+            const role = message.role;
+            const content = message.content;
 
             if (role === 'system') {
                 // Skip system messages in UI
@@ -4333,13 +4333,13 @@
 
             if (role === 'user') {
                 // Render user messages
-                var displayPayload = { text: '' };
+                const displayPayload = { text: '' };
 
                 if (typeof content === 'string') {
                     displayPayload.text = content;
                 } else if (Array.isArray(content)) {
                     // Extract text from structured content and show placeholders for attachments
-                    var textParts = [];
+                    const textParts = [];
                     content.forEach(function (segment) {
                         if (segment && segment.type === 'text' && segment.text) {
                             textParts.push(segment.text);
@@ -4360,7 +4360,7 @@
 
             if (role === 'assistant') {
                 // Render assistant messages
-                var assistantPayload = { text: content || '' };
+                const assistantPayload = { text: content || '' };
                 
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                     speech: {
@@ -4389,10 +4389,10 @@
             return;
         }
 
-        var inputValue = state.textarea.value;
-        var trimmedMessage = inputValue.trim();
-        var pending = state.pendingAttachments.slice();
-        var hasAttachments = pending.length > 0;
+        const inputValue = state.textarea.value;
+        const trimmedMessage = inputValue.trim();
+        const pending = state.pendingAttachments.slice();
+        const hasAttachments = pending.length > 0;
 
         if (!trimmedMessage && !hasAttachments) {
             setStatus(state.container, getString('emptyMessage', 'Enter a message before sending.'));
@@ -4401,7 +4401,7 @@
 
         state.textarea.value = '';
 
-        var segments = [];
+        const segments = [];
         if (trimmedMessage) {
             segments.push({
                 type: 'text',
@@ -4409,21 +4409,21 @@
             });
         }
 
-        var displayAttachments = [];
+        const displayAttachments = [];
 
         pending.forEach(function (attachment) {
-            var segment = createSegmentFromAttachment(attachment);
+            const segment = createSegmentFromAttachment(attachment);
             if (segment) {
                 segments.push(segment);
             }
 
-            var displayAttachment = buildDisplayAttachment(attachment, state);
+            const displayAttachment = buildDisplayAttachment(attachment, state);
             if (displayAttachment) {
                 displayAttachments.push(displayAttachment);
             }
         });
 
-        var userMessageElement = null;
+        let userMessageElement = null;
 
         if (trimmedMessage || displayAttachments.length) {
             userMessageElement = appendMessage(state.messagesEl, 'user', {
@@ -4432,14 +4432,14 @@
             });
         }
 
-        var payloadContent;
+        let payloadContent;
         if (segments.length === 1 && segments[0].type === 'text') {
             payloadContent = segments[0].text;
         } else {
             payloadContent = segments;
         }
 
-        var previousConversationLength = state.conversation.length;
+        const previousConversationLength = state.conversation.length;
         state.conversation.push({ role: 'user', content: payloadContent });
 
         // Save conversation immediately after user message
@@ -4462,7 +4462,7 @@
         disableForm(state, true);
         setStatus(state.container, getString('sending', 'Sending…'));
 
-        var payload = {
+        const payload = {
             assistant_id: state.config.assistantId,
             messages: state.conversation,
             save_transcript: state.config.saveTranscript !== false,
@@ -4529,7 +4529,7 @@
                 state.textarea.focus();
 
                 if (typeof state.textarea.setSelectionRange === 'function') {
-                    var length = state.textarea.value.length;
+                    const length = state.textarea.value.length;
                     state.textarea.setSelectionRange(length, length);
                 }
             }
@@ -4541,7 +4541,7 @@
             return message.refusal.trim();
         }
 
-        var metadata = message && message.metadata ? message.metadata : null;
+        const metadata = message && message.metadata ? message.metadata : null;
         if (metadata && typeof metadata === 'object') {
             if (typeof metadata.warning === 'string' && metadata.warning.trim()) {
                 return metadata.warning.trim();
@@ -4560,7 +4560,7 @@
             }
         }
 
-        var filterResults = message && message.content_filter_results ? message.content_filter_results : null;
+        const filterResults = message && message.content_filter_results ? message.content_filter_results : null;
         if (filterResults && typeof filterResults === 'object') {
             if (typeof filterResults.message === 'string' && filterResults.message.trim()) {
                 return filterResults.message.trim();
@@ -4577,7 +4577,7 @@
             }
         }
 
-        var finishReason = choice && typeof choice.finish_reason === 'string' ? choice.finish_reason.trim() : '';
+        const finishReason = choice && typeof choice.finish_reason === 'string' ? choice.finish_reason.trim() : '';
 
         if (finishReason === 'content_filter') {
             return getString('responseFiltered', 'The assistant response was blocked by safety filters.');
@@ -4595,25 +4595,25 @@
     }
 
     function handleChatResponse(state, data) {
-        var chatData = data && data.data ? data.data : null;
-        var choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
-        var choice = choices.length ? choices[0] : null;
-        var message = choice && choice.message ? choice.message : null;
+        const chatData = data && data.data ? data.data : null;
+        const choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
+        const choice = choices.length ? choices[0] : null;
+        const message = choice && choice.message ? choice.message : null;
 
         if (!message) {
             setStatus(state.container, getString('error', 'Something went wrong.'));
             return Promise.resolve();
         }
 
-        var assistantMessage = { role: 'assistant' };
-        var assistantDisplay = prepareAssistantDisplay(message, state);
-        var hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
-        var hasDisplayAttachments = assistantDisplay.attachments.length > 0;
-        var hasDisplayContent = hasDisplayText || hasDisplayAttachments;
-        var hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
+        const assistantMessage = { role: 'assistant' };
+        const assistantDisplay = prepareAssistantDisplay(message, state);
+        let hasDisplayText = typeof assistantDisplay.text === 'string' && assistantDisplay.text.trim() !== '';
+        const hasDisplayAttachments = assistantDisplay.attachments.length > 0;
+        let hasDisplayContent = hasDisplayText || hasDisplayAttachments;
+        const hasToolCalls = message.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length;
 
         if (!hasDisplayContent) {
-            var fallbackText = '';
+            let fallbackText = '';
 
             function normaliseCandidate(candidate) {
                 if (candidate === null || typeof candidate === 'undefined') {
@@ -4664,7 +4664,7 @@
             }
 
             if (!fallbackText && chatData && chatData.response && typeof chatData.response === 'object') {
-                var nestedResponse = chatData.response;
+                const nestedResponse = chatData.response;
 
                 if (typeof nestedResponse.output_text !== 'undefined' && nestedResponse.output_text !== null) {
                     fallbackText = normaliseCandidate(nestedResponse.output_text).trim();
@@ -4701,7 +4701,7 @@
         }
 
         if (!hasDisplayContent && !hasToolCalls) {
-            var notice = extractFilteredResponseNotice(choice, message);
+            let notice = extractFilteredResponseNotice(choice, message);
             if (!notice) {
                 notice = getString('responseMissing', 'The assistant response could not be displayed.');
             }
@@ -4742,7 +4742,7 @@
             return Promise.resolve();
         }
 
-        var sequence = Promise.resolve();
+        let sequence = Promise.resolve();
 
         toolCalls.forEach(function (call) {
             sequence = sequence.then(function () {
@@ -4757,16 +4757,16 @@
     }
 
     function executeTool(state, call) {
-        var functionCall = call && call['function'] ? call['function'] : null;
+        const functionCall = call && call['function'] ? call['function'] : null;
         if (!functionCall || !functionCall.name) {
             return Promise.resolve();
         }
 
-        var toolName = functionCall.name;
-        var executingText = formatString(getString('toolExecuting', 'Running tool: %s'), toolName);
+        const toolName = functionCall.name;
+        const executingText = formatString(getString('toolExecuting', 'Running tool: %s'), toolName);
         appendMessage(state.messagesEl, 'assistant', executingText);
 
-        var args = {};
+        let args = {};
         if (functionCall.arguments) {
             try {
                 args = JSON.parse(functionCall.arguments);
@@ -4777,7 +4777,7 @@
             }
         }
 
-        var payload = {
+        const payload = {
             assistant_id: state.config.assistantId,
             tool: toolName,
             arguments: args,
@@ -4796,12 +4796,12 @@
                 return response.json();
             })
             .then(function (response) {
-                var result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
+                const result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
                 return waitForCrawl4aiTask(state, toolName, result);
             })
             .then(function (result) {
                 if (window.console && console.log) {
-                    var logSafeResult = result;
+                    let logSafeResult = result;
                     
                     if (result && typeof result === 'object') {
                         logSafeResult = {
@@ -4821,15 +4821,15 @@
                     });
                 }
 
-                var toolContent = '';
-                var displayPayload = '';
+                let toolContent = '';
+                let displayPayload = '';
 
                 if (typeof result === 'string') {
                     toolContent = result;
                     displayPayload = result;
                 } else if (result !== null && typeof result !== 'undefined') {
                     if (typeof result === 'object') {
-                        var normalised = normaliseToolResultForDisplay(toolName, result);
+                        const normalised = normaliseToolResultForDisplay(toolName, result);
 
                         try {
                             toolContent = JSON.stringify(result, null, 2);
@@ -4841,7 +4841,7 @@
                             displayPayload = normalised;
 
                             if (window.console && console.log) {
-                                var logSafeNormalised = {
+                                const logSafeNormalised = {
                                     text: normalised.text,
                                     attachmentCount: normalised.attachments ? normalised.attachments.length : 0,
                                 };
@@ -4870,7 +4870,7 @@
 
                 appendMessage(state.messagesEl, 'tool', displayPayload);
 
-                var toolMessage = {
+                const toolMessage = {
                     role: 'tool',
                     content: toolContent,
                 };
@@ -4893,7 +4893,7 @@
     }
 
     function handleError(state, error) {
-        var fallbackMessage = getString('error', 'Something went wrong.');
+        const fallbackMessage = getString('error', 'Something went wrong.');
 
         function extractMessage(payload) {
             if (!payload) {
@@ -4913,18 +4913,18 @@
             }
 
             if (payload.data) {
-                var dataMessage = extractMessage(payload.data);
+                const dataMessage = extractMessage(payload.data);
                 if (dataMessage) {
                     return dataMessage;
                 }
             }
 
-            var nestedKeys = ['last_error', 'error', 'incomplete_details', 'response'];
+            const nestedKeys = ['last_error', 'error', 'incomplete_details', 'response'];
 
-            for (var i = 0; i < nestedKeys.length; i++) {
-                var key = nestedKeys[i];
+            for (let i = 0; i < nestedKeys.length; i++) {
+                const key = nestedKeys[i];
                 if (payload[key]) {
-                    var nestedMessage = extractMessage(payload[key]);
+                    const nestedMessage = extractMessage(payload[key]);
                     if (nestedMessage) {
                         return nestedMessage;
                     }
@@ -4935,7 +4935,7 @@
         }
 
         function handleResolvedMessage(resolvedMessage) {
-            var message = resolvedMessage;
+            let message = resolvedMessage;
 
             if (typeof message !== 'string') {
                 message = '';
@@ -4962,8 +4962,8 @@
     }
 
     function disableForm(state, disabled) {
-        var container = state.container;
-        var elements = container.querySelectorAll('button, textarea, input');
+        const container = state.container;
+        const elements = container.querySelectorAll('button, textarea, input');
         Array.prototype.forEach.call(elements, function (element) {
             element.disabled = disabled;
         });
@@ -4981,7 +4981,7 @@
     }
 
     function setStatus(container, message) {
-        var statusEl = container.querySelector('.wp-mcp-ai-chat__status');
+        const statusEl = container.querySelector('.wp-mcp-ai-chat__status');
         if (!statusEl) {
             return;
         }
@@ -5001,8 +5001,8 @@
             return null;
         }
 
-        var text = '';
-        var attachments = [];
+        let text = '';
+        let attachments = [];
 
         if (typeof payload === 'object' && !Array.isArray(payload)) {
             if (Array.isArray(payload.attachments)) {
@@ -5012,12 +5012,12 @@
                             return null;
                         }
 
-                        var url = attachment.url || '';
+                        const url = attachment.url || '';
                         if (!url) {
                             return null;
                         }
 
-                        var label = attachment.label || attachment.name || '';
+                        let label = attachment.label || attachment.name || '';
                         if (!label) {
                             label = getString('downloadAttachment', 'Download attachment');
                         }
@@ -5049,9 +5049,9 @@
             text = '';
         }
 
-        var hasText = text.trim() !== '';
-        var hasAttachments = attachments.length > 0;
-        var showJsonResponse =
+        const hasText = text.trim() !== '';
+        const hasAttachments = attachments.length > 0;
+        const showJsonResponse =
             hasText &&
             !hasAttachments &&
             shouldDisplayJsonResponse(role, text, allowMarkdown);
@@ -5060,10 +5060,10 @@
             return null;
         }
 
-        var entry = document.createElement('div');
+        const entry = document.createElement('div');
         entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__message--' + role;
 
-        var bubble = document.createElement('div');
+        const bubble = document.createElement('div');
         bubble.className = 'wp-mcp-ai-chat__bubble';
 
         if (showJsonResponse) {
@@ -5073,20 +5073,20 @@
             if (allowMarkdown) {
                 bubble.innerHTML = renderMarkdown(text);
             } else {
-                var normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
+                const normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
                 bubble.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
             }
         }
 
         if (hasAttachments) {
-            var list = document.createElement('ul');
+            const list = document.createElement('ul');
             list.className = 'wp-mcp-ai-chat__bubble-attachments';
 
             attachments.forEach(function (attachment) {
-                var item = document.createElement('li');
+                const item = document.createElement('li');
                 item.className = 'wp-mcp-ai-chat__bubble-attachment';
 
-                var link = document.createElement('a');
+                const link = document.createElement('a');
                 link.href = attachment.url;
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer';
@@ -5099,7 +5099,7 @@
                 item.appendChild(link);
 
                 if (attachment.meta) {
-                    var meta = document.createElement('span');
+                    const meta = document.createElement('span');
                     meta.className = 'wp-mcp-ai-chat__attachments-meta';
                     meta.textContent = attachment.meta;
                     item.appendChild(document.createTextNode(' – '));
@@ -5113,8 +5113,8 @@
         }
 
         if (role === 'assistant') {
-            var speechState = options && options.speech ? options.speech.state || null : null;
-            var speechText = options && options.speech ? options.speech.text || '' : text;
+            const speechState = options && options.speech ? options.speech.state || null : null;
+            const speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(bubble, speechState, speechText);
             attachCopyButton(bubble, speechText);
         }
@@ -5143,12 +5143,12 @@
             return false;
         }
 
-        var trimmed = text.trim();
+        const trimmed = text.trim();
         if (!trimmed) {
             return false;
         }
 
-        var firstChar = trimmed.charAt(0);
+        const firstChar = trimmed.charAt(0);
         if (firstChar !== '{' && firstChar !== '[') {
             return false;
         }
@@ -5162,13 +5162,13 @@
     }
 
     function createJsonResponseElement(text) {
-        var details = document.createElement('details');
+        const details = document.createElement('details');
         details.className = 'wp-mcp-ai-chat__json-response';
 
-        var summary = document.createElement('summary');
+        const summary = document.createElement('summary');
         summary.className = 'wp-mcp-ai-chat__json-summary';
 
-        var icon = document.createElement('span');
+        const icon = document.createElement('span');
         icon.className = 'wp-mcp-ai-chat__json-icon';
         icon.innerHTML =
             '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -5176,14 +5176,14 @@
             '</svg>';
         summary.appendChild(icon);
 
-        var label = document.createElement('span');
+        const label = document.createElement('span');
         label.className = 'wp-mcp-ai-chat__json-label';
         label.textContent = getString('jsonResponse', 'JSON response');
         summary.appendChild(label);
 
         details.appendChild(summary);
 
-        var pre = document.createElement('pre');
+        const pre = document.createElement('pre');
         pre.className = 'wp-mcp-ai-chat__json-content';
         pre.textContent = text;
         details.appendChild(pre);
@@ -5196,14 +5196,14 @@
             return '';
         }
 
-        var placeholderBase = 'WP_MCP_AI_' + Math.random().toString(36).slice(2);
-        var codeBlocks = [];
-        var inlineCodes = [];
-        var links = [];
-        var processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
+        const placeholderBase = 'WP_MCP_AI_' + Math.random().toString(36).slice(2);
+        const codeBlocks = [];
+        const inlineCodes = [];
+        const links = [];
+        let processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
 
         processed = processed.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, function (match, language, code) {
-            var placeholder = '@@' + placeholderBase + '_CODE_' + codeBlocks.length + '@@';
+            const placeholder = '@@' + placeholderBase + '_CODE_' + codeBlocks.length + '@@';
             codeBlocks.push({
                 placeholder: placeholder,
                 language: (language || '').trim(),
@@ -5213,7 +5213,7 @@
         });
 
         processed = processed.replace(/`([^`]+)`/g, function (match, code) {
-            var placeholder = '@@' + placeholderBase + '_INLINE_' + inlineCodes.length + '@@';
+            const placeholder = '@@' + placeholderBase + '_INLINE_' + inlineCodes.length + '@@';
             inlineCodes.push({
                 placeholder: placeholder,
                 code: code,
@@ -5222,7 +5222,7 @@
         });
 
         processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (match, label, url) {
-            var placeholder = '@@' + placeholderBase + '_LINK_' + links.length + '@@';
+            const placeholder = '@@' + placeholderBase + '_LINK_' + links.length + '@@';
             links.push({
                 placeholder: placeholder,
                 label: label,
@@ -5233,16 +5233,16 @@
 
         processed = escapeHtml(processed);
 
-        var codePlaceholderMap = {};
+        const codePlaceholderMap = {};
         codeBlocks.forEach(function (item) {
             codePlaceholderMap[item.placeholder] = true;
         });
 
-        var lines = processed.split('\n');
-        var htmlParts = [];
-        var paragraphLines = [];
-        var listType = '';
-        var listItems = [];
+        const lines = processed.split('\n');
+        const htmlParts = [];
+        let paragraphLines = [];
+        let listType = '';
+        let listItems = [];
 
         function flushParagraph() {
             if (!paragraphLines.length) {
@@ -5265,7 +5265,7 @@
         }
 
         lines.forEach(function (line) {
-            var trimmed = line.trim();
+            const trimmed = line.trim();
 
             if (!trimmed) {
                 flushParagraph();
@@ -5287,19 +5287,19 @@
                 return;
             }
 
-            var headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+            const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
             if (headingMatch) {
                 flushParagraph();
                 flushList();
-                var level = headingMatch[1].length;
-                var headingText = formatInline(headingMatch[2]);
+                const level = headingMatch[1].length;
+                const headingText = formatInline(headingMatch[2]);
                 htmlParts.push('<h' + level + '>' + headingText + '</h' + level + '>');
                 return;
             }
 
-            var orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+            const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
             if (orderedMatch) {
-                var orderedText = formatInline(orderedMatch[2]);
+                const orderedText = formatInline(orderedMatch[2]);
                 if (listType !== 'ol') {
                     flushParagraph();
                     flushList();
@@ -5309,9 +5309,9 @@
                 return;
             }
 
-            var bulletMatch = trimmed.match(/^[-*+]\s+(.*)$/);
+            const bulletMatch = trimmed.match(/^[-*+]\s+(.*)$/);
             if (bulletMatch) {
-                var bulletText = formatInline(bulletMatch[1]);
+                const bulletText = formatInline(bulletMatch[1]);
                 if (listType !== 'ul') {
                     flushParagraph();
                     flushList();
@@ -5331,16 +5331,16 @@
         flushParagraph();
         flushList();
 
-        var html = htmlParts.join('');
+        let html = htmlParts.join('');
 
         inlineCodes.forEach(function (item) {
             html = replaceAll(html, item.placeholder, '<code>' + escapeHtml(item.code) + '</code>');
         });
 
         links.forEach(function (item) {
-            var labelHtml = renderInlineLabel(item.label);
-            var href = sanitizeUrl(item.url);
-            var attributes = ' href="' + href + '"';
+            const labelHtml = renderInlineLabel(item.label);
+            const href = sanitizeUrl(item.url);
+            let attributes = ' href="' + href + '"';
             if (/^https?:/i.test(href)) {
                 attributes += ' target="_blank" rel="noopener noreferrer"';
             }
@@ -5348,9 +5348,9 @@
         });
 
         codeBlocks.forEach(function (item) {
-            var language = item.language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
-            var className = language ? ' class="language-' + language + '"' : '';
-            var codeHtml = '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre>';
+            const language = item.language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
+            const className = language ? ' class="language-' + language + '"' : '';
+            const codeHtml = '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre>';
             html = replaceAll(html, item.placeholder, codeHtml);
         });
 
@@ -5362,12 +5362,12 @@
             return '';
         }
 
-        var inlineBase = 'WP_MCP_AI_INLINE_' + Math.random().toString(36).slice(2);
-        var inlineCodes = [];
-        var processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, ' ');
+        const inlineBase = 'WP_MCP_AI_INLINE_' + Math.random().toString(36).slice(2);
+        const inlineCodes = [];
+        let processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, ' ');
 
         processed = processed.replace(/`([^`]+)`/g, function (match, code) {
-            var placeholder = '@@' + inlineBase + '_CODE_' + inlineCodes.length + '@@';
+            const placeholder = '@@' + inlineBase + '_CODE_' + inlineCodes.length + '@@';
             inlineCodes.push({
                 placeholder: placeholder,
                 code: code,
@@ -5390,14 +5390,14 @@
             return '#';
         }
 
-        var trimmed = url.trim();
+        const trimmed = url.trim();
         if (!trimmed) {
             return '#';
         }
 
         try {
-            var parsed = new URL(trimmed, window.location.origin);
-            var protocol = parsed.protocol ? parsed.protocol.replace(/:$/, '').toLowerCase() : '';
+            const parsed = new URL(trimmed, window.location.origin);
+            const protocol = parsed.protocol ? parsed.protocol.replace(/:$/, '').toLowerCase() : '';
             if (protocol && ['http', 'https', 'mailto', 'tel'].indexOf(protocol) === -1) {
                 return '#';
             }
@@ -5430,7 +5430,7 @@
     }
 
     function formatInline(text) {
-        var result = text;
+        let result = text;
         result = result.replace(/~~(?=\S)(.+?)(?<=\S)~~/g, '<del>$1</del>');
         result = result.replace(/\*\*(?=\S)(.+?)(?<=\S)\*\*/g, '<strong>$1</strong>');
         result = result.replace(/\*(?=\S)(.+?)(?<=\S)\*/g, '<em>$1</em>');
@@ -5469,7 +5469,7 @@
         }
 
         if (typeof value === 'string' || typeof value === 'number') {
-            var normalised = String(value).trim();
+            const normalised = String(value).trim();
             return normalised ? [normalised] : [];
         }
 
@@ -5484,7 +5484,7 @@
         }
 
         if (typeof value === 'object') {
-            var segments = [];
+            let segments = [];
 
             if (typeof value.text === 'string') {
                 segments.push(value.text);
@@ -5516,7 +5516,7 @@
                 segments.push(value.content);
             }
 
-            var nestedKeys = ['summary', 'reasoning', 'content', 'steps', 'output', 'parts', 'messages'];
+            const nestedKeys = ['summary', 'reasoning', 'content', 'steps', 'output', 'parts', 'messages'];
             nestedKeys.forEach(function (key) {
                 if (value[key] && value[key] !== value) {
                     segments = segments.concat(extractNestedText(value[key], depth + 1));
@@ -5530,7 +5530,7 @@
     }
 
     function dedupeTextParts(parts) {
-        var seen = Object.create(null);
+        const seen = Object.create(null);
 
         return parts
             .map(function (part) {
@@ -5555,7 +5555,7 @@
             return '';
         }
 
-        var fragments = [];
+        let fragments = [];
 
         fragments = fragments.concat(extractNestedText(piece.summary, 0));
         fragments = fragments.concat(extractNestedText(piece.reasoning, 0));
@@ -5563,13 +5563,13 @@
         fragments = fragments.concat(extractNestedText(piece.output, 0));
         fragments = fragments.concat(extractNestedText(piece.content, 0));
 
-        var unique = dedupeTextParts(fragments);
+        const unique = dedupeTextParts(fragments);
 
         if (!unique.length) {
             return '';
         }
 
-        var heading = getString('reasoningLabel', 'Reasoning');
+        const heading = getString('reasoningLabel', 'Reasoning');
         return heading + ':\n\n' + unique.join('\n\n');
     }
 
@@ -5578,11 +5578,11 @@
             return '';
         }
 
-        var parts = [];
-        var name = typeof piece.name === 'string' ? piece.name.trim() : '';
-        var status = typeof piece.status === 'string' ? piece.status.trim() : '';
-        var callId = typeof piece.call_id === 'string' ? piece.call_id.trim() : '';
-        var identifier = typeof piece.id === 'string' ? piece.id.trim() : '';
+        const parts = [];
+        const name = typeof piece.name === 'string' ? piece.name.trim() : '';
+        const status = typeof piece.status === 'string' ? piece.status.trim() : '';
+        const callId = typeof piece.call_id === 'string' ? piece.call_id.trim() : '';
+        const identifier = typeof piece.id === 'string' ? piece.id.trim() : '';
 
         if (name) {
             parts.push(formatString(getString('functionCallTitle', 'Function call: %s'), name));
@@ -5600,12 +5600,12 @@
             parts.push(formatString(getString('functionCallId', 'Call ID: %s'), identifier));
         }
 
-        var rawArguments = typeof piece.arguments !== 'undefined' ? piece.arguments : null;
-        var argumentText = '';
-        var parsedArguments = null;
+        const rawArguments = typeof piece.arguments !== 'undefined' ? piece.arguments : null;
+        let argumentText = '';
+        let parsedArguments = null;
 
         if (typeof rawArguments === 'string') {
-            var trimmed = rawArguments.trim();
+            const trimmed = rawArguments.trim();
 
             if (trimmed) {
                 try {
@@ -5626,7 +5626,7 @@
         }
 
         if (argumentText) {
-            var argumentsLabel = getString('functionCallArgumentsLabel', 'Arguments:');
+            const argumentsLabel = getString('functionCallArgumentsLabel', 'Arguments:');
 
             if (parsedArguments) {
                 parts.push(argumentsLabel + '\n```json\n' + argumentText + '\n```');
@@ -5672,7 +5672,7 @@
             return piece.value;
         }
 
-        var type = typeof piece.type === 'string' ? piece.type : '';
+        const type = typeof piece.type === 'string' ? piece.type : '';
 
         if (type === 'reasoning') {
             return renderReasoningSegment(piece);
@@ -5683,7 +5683,7 @@
         }
 
         if (type === 'image_file') {
-            var label = '';
+            let label = '';
 
             if (piece.caption && typeof piece.caption === 'string') {
                 label = piece.caption;
@@ -5721,7 +5721,7 @@
         }
 
         if (type === 'tool_result') {
-            var parts = [];
+            const parts = [];
 
             if (piece.output) {
                 if (typeof piece.output === 'string') {
@@ -5748,7 +5748,7 @@
                 parts.push(normaliseContent(piece.content));
             }
 
-            var toolText = parts
+            const toolText = parts
                 .filter(function (value) {
                     return value && value.trim();
                 })

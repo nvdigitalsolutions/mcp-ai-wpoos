@@ -1,8 +1,8 @@
 (function ($) {
     function initColorPickers() {
         $('.wp-mcp-ai-color-field').each(function () {
-            var $field = $(this);
-            var format = ($field.data('format') || 'hex').toString().toLowerCase();
+            const $field = $(this);
+            const format = ($field.data('format') || 'hex').toString().toLowerCase();
 
             if ('rgba' === format) {
                 return;
@@ -26,9 +26,9 @@
         // Test Ollama connection
         $('#wp-mcp-ai-test-ollama-connection').on('click', function (e) {
             e.preventDefault();
-            var $button = $(this);
-            var $result = $('#wp-mcp-ai-ollama-test-result');
-            var endpointUrl = $('input[name="wp_mcp_ai_settings[ollama_endpoint_url]"]').val();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-ollama-test-result');
+            const endpointUrl = $('input[name="wp_mcp_ai_settings[ollama_endpoint_url]"]').val();
 
             if (!endpointUrl) {
                 $result.html('<span style="color: #d63638;">Please enter an endpoint URL first.</span>');
@@ -65,9 +65,9 @@
         // Fetch Ollama models
         $('#wp-mcp-ai-fetch-ollama-models').on('click', function (e) {
             e.preventDefault();
-            var $button = $(this);
-            var $modelsList = $('#wp-mcp-ai-ollama-models-list');
-            var endpointUrl = $('input[name="wp_mcp_ai_settings[ollama_endpoint_url]"]').val();
+            const $button = $(this);
+            const $modelsList = $('#wp-mcp-ai-ollama-models-list');
+            const endpointUrl = $('input[name="wp_mcp_ai_settings[ollama_endpoint_url]"]').val();
 
             if (!endpointUrl) {
                 $modelsList.html('<p style="color: #d63638;">Please enter an endpoint URL first.</p>');
@@ -87,9 +87,9 @@
                 },
                 success: function (response) {
                     if (response.success && response.data.models.length > 0) {
-                        var html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                        let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
                         response.data.models.forEach(function (model) {
-                            var sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
+                            const sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
                             html += '<li style="margin-bottom: 5px;">';
                             html += '<a href="#" class="wp-mcp-ai-select-ollama-model" data-model="' + model.name + '">';
                             html += model.name + sizeInfo;
@@ -119,7 +119,7 @@
         // Handle Ollama model selection
         $(document).on('click', '.wp-mcp-ai-select-ollama-model', function (e) {
             e.preventDefault();
-            var modelName = $(this).data('model');
+            const modelName = $(this).data('model');
             $('input[name="wp_mcp_ai_settings[ollama_model]"]').val(modelName);
             $('#wp-mcp-ai-ollama-models-list').prepend('<p style="color: #00a32a; font-weight: bold;">Selected: ' + modelName + '</p>');
         });
@@ -129,9 +129,9 @@
         // Test LM Studio connection
         $('#wp-mcp-ai-test-lm-studio-connection').on('click', function (e) {
             e.preventDefault();
-            var $button = $(this);
-            var $result = $('#wp-mcp-ai-lm-studio-test-result');
-            var endpointUrl = $('input[name="wp_mcp_ai_settings[lm_studio_endpoint_url]"]').val();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-lm-studio-test-result');
+            const endpointUrl = $('input[name="wp_mcp_ai_settings[lm_studio_endpoint_url]"]').val();
 
             if (!endpointUrl) {
                 $result.html('<span style="color: #d63638;">Please enter an endpoint URL first.</span>');
@@ -168,9 +168,9 @@
         // Fetch LM Studio models
         $('#wp-mcp-ai-fetch-lm-studio-models').on('click', function (e) {
             e.preventDefault();
-            var $button = $(this);
-            var $modelsList = $('#wp-mcp-ai-lm-studio-models-list');
-            var endpointUrl = $('input[name="wp_mcp_ai_settings[lm_studio_endpoint_url]"]').val();
+            const $button = $(this);
+            const $modelsList = $('#wp-mcp-ai-lm-studio-models-list');
+            const endpointUrl = $('input[name="wp_mcp_ai_settings[lm_studio_endpoint_url]"]').val();
 
             if (!endpointUrl) {
                 $modelsList.html('<p style="color: #d63638;">Please enter an endpoint URL first.</p>');
@@ -190,7 +190,7 @@
                 },
                 success: function (response) {
                     if (response.success && response.data.models.length > 0) {
-                        var html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                        let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
                         response.data.models.forEach(function (model) {
                             html += '<li style="margin-bottom: 5px;">';
                             html += '<a href="#" class="wp-mcp-ai-select-lm-studio-model" data-model="' + model.id + '">';
@@ -218,7 +218,7 @@
         // Handle LM Studio model selection
         $(document).on('click', '.wp-mcp-ai-select-lm-studio-model', function (e) {
             e.preventDefault();
-            var modelName = $(this).data('model');
+            const modelName = $(this).data('model');
             $('input[name="wp_mcp_ai_settings[lm_studio_model]"]').val(modelName);
             $('#wp-mcp-ai-lm-studio-models-list').prepend('<p style="color: #00a32a; font-weight: bold;">Selected: ' + modelName + '</p>');
         });
@@ -226,10 +226,10 @@
 
     function formatBytes(bytes, decimals = 2) {
         if (bytes === 0) return '0 Bytes';
-        var k = 1024;
-        var dm = decimals < 0 ? 0 : decimals;
-        var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
@@ -237,12 +237,12 @@
         // Fetch Cloudways data
         $('#wp-mcp-ai-fetch-cloudways-data').on('click', function (e) {
             e.preventDefault();
-            var $button = $(this);
-            var $result = $('#wp-mcp-ai-cloudways-fetch-result');
-            var $serversList = $('#wp-mcp-ai-cloudways-servers-list');
-            var $appsList = $('#wp-mcp-ai-cloudways-apps-list');
-            var email = $('input[name="wp_mcp_ai_settings[cloudways_email]"]').val();
-            var apiKey = $('input[name="wp_mcp_ai_settings[cloudways_api_key]"]').val();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-cloudways-fetch-result');
+            const $serversList = $('#wp-mcp-ai-cloudways-servers-list');
+            const $appsList = $('#wp-mcp-ai-cloudways-apps-list');
+            const email = $('input[name="wp_mcp_ai_settings[cloudways_email]"]').val();
+            const apiKey = $('input[name="wp_mcp_ai_settings[cloudways_api_key]"]').val();
 
             if (!email || !apiKey) {
                 $result.html('<span style="color: #d63638;">Please enter both email and API key first.</span>');
@@ -269,15 +269,15 @@
 
                         // Display servers
                         if (response.data.servers && response.data.servers.length > 0) {
-                            var $serversList = $('#wp-mcp-ai-cloudways-servers-list');
+                            const $serversList = $('#wp-mcp-ai-cloudways-servers-list');
                             $serversList.empty();
                             
-                            var $serversTitle = $('<p><strong>Select a server:</strong></p>');
-                            var $serversUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            const $serversTitle = $('<p><strong>Select a server:</strong></p>');
+                            const $serversUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
                             
                             response.data.servers.forEach(function (server) {
-                                var $li = $('<li style="margin-bottom: 5px;"></li>');
-                                var $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
+                                const $li = $('<li style="margin-bottom: 5px;"></li>');
+                                const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
                                 $link.attr('data-server-id', server.id);
                                 $link.text(server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')');
                                 $li.append($link);
@@ -289,15 +289,15 @@
 
                         // Display apps
                         if (response.data.apps && response.data.apps.length > 0) {
-                            var $appsList = $('#wp-mcp-ai-cloudways-apps-list');
+                            const $appsList = $('#wp-mcp-ai-cloudways-apps-list');
                             $appsList.empty();
                             
-                            var $appsTitle = $('<p><strong>Select an application:</strong></p>');
-                            var $appsUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            const $appsTitle = $('<p><strong>Select an application:</strong></p>');
+                            const $appsUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
                             
                             response.data.apps.forEach(function (app) {
-                                var $li = $('<li style="margin-bottom: 5px;"></li>');
-                                var $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
+                                const $li = $('<li style="margin-bottom: 5px;"></li>');
+                                const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
                                 $link.attr('data-app-id', app.id);
                                 $link.attr('data-server-id', app.server_id);
                                 $link.text(app.label + ' (ID: ' + app.id + ')');
@@ -323,10 +323,10 @@
         // Handle server selection
         $(document).on('click', '.wp-mcp-ai-select-cloudways-server', function (e) {
             e.preventDefault();
-            var serverId = $(this).data('server-id');
+            const serverId = $(this).data('server-id');
             $('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
             
-            var $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+            const $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
             $message.text('Selected Server ID: ' + serverId);
             $('#wp-mcp-ai-cloudways-servers-list').prepend($message);
         });
@@ -334,14 +334,80 @@
         // Handle app selection
         $(document).on('click', '.wp-mcp-ai-select-cloudways-app', function (e) {
             e.preventDefault();
-            var appId = $(this).data('app-id');
-            var serverId = $(this).data('server-id');
+            const appId = $(this).data('app-id');
+            const serverId = $(this).data('server-id');
             $('input[name="wp_mcp_ai_settings[cloudways_app_id]"]').val(appId);
             $('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
             
-            var $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+            const $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
             $message.text('Selected App ID: ' + appId + ' (Server ID: ' + serverId + ')');
             $('#wp-mcp-ai-cloudways-apps-list').prepend($message);
+        });
+    }
+
+    function initCloudflareHandlers() {
+        // Test Cloudflare connection
+        $('#wp-mcp-ai-test-cloudflare-connection').on('click', function (e) {
+            e.preventDefault();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-cloudflare-test-result');
+            const $zoneInfo = $('#wp-mcp-ai-cloudflare-zone-info');
+            const zoneId = $('input[name="wp_mcp_ai_settings[cloudflare_zone_id]"]').val();
+            const apiToken = $('input[name="wp_mcp_ai_settings[cloudflare_api_token]"]').val();
+
+            if (!zoneId || !apiToken) {
+                $result.html('<span style="color: #d63638;">Please enter both Zone ID and API Token first.</span>');
+                return;
+            }
+
+            $button.prop('disabled', true).text('Testing...');
+            $result.html('<span style="color: #3c434a;">Connecting to Cloudflare...</span>');
+            $zoneInfo.html('');
+
+            $.ajax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_test_cloudflare_connection',
+                    nonce: wpMcpAiAdmin.nonce,
+                    zone_id: zoneId,
+                    api_token: apiToken
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                        
+                        // Display zone information if available
+                        if (response.data.zone_info) {
+                            const info = response.data.zone_info;
+                            let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+                            html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
+                            html += '<ul style="margin: 0; padding-left: 20px;">';
+                            if (info.name) {
+                                html += '<li><strong>Domain:</strong> ' + info.name + '</li>';
+                            }
+                            if (info.status) {
+                                html += '<li><strong>Status:</strong> ' + info.status + '</li>';
+                            }
+                            if (info.plan) {
+                                html += '<li><strong>Plan:</strong> ' + info.plan + '</li>';
+                            }
+                            html += '</ul></div>';
+                            $zoneInfo.html(html);
+                        }
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                        $zoneInfo.html('');
+                    }
+                },
+                error: function () {
+                    $result.html('<span style="color: #d63638;">✗ Connection failed</span>');
+                    $zoneInfo.html('');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
+                }
+            });
         });
     }
 
@@ -350,5 +416,6 @@
         initOllamaHandlers();
         initLMStudioHandlers();
         initCloudwaysHandlers();
+        initCloudflareHandlers();
     });
 })(jQuery);

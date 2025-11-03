@@ -40,6 +40,7 @@ class WP_MCP_AI_Admin_Settings {
 		add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'handle_test_lm_studio_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'handle_fetch_lm_studio_models' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'handle_fetch_cloudways_data' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'handle_test_cloudflare_connection' ) );
 		if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 		}
@@ -3340,7 +3341,12 @@ class WP_MCP_AI_Admin_Settings {
 		$settings = self::get_settings();
 		?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?></p>
+		<p class="description">
+			<?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?>
+			<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<span id="wp-mcp-ai-cloudflare-test-result" style="margin-left: 10px;"></span>
+		</p>
+		<div id="wp-mcp-ai-cloudflare-zone-info" style="margin-top: 10px;"></div>
 		<?php
 	}
 
@@ -4606,6 +4612,93 @@ class WP_MCP_AI_Admin_Settings {
 			array(
 				'servers' => $servers,
 				'apps'    => $apps,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX request to test Cloudflare connection.
+	 */
+	public function handle_test_cloudflare_connection() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$zone_id   = isset( $_POST['zone_id'] ) ? sanitize_text_field( wp_unslash( $_POST['zone_id'] ) ) : '';
+		$api_token = isset( $_POST['api_token'] ) ? sanitize_text_field( wp_unslash( $_POST['api_token'] ) ) : '';
+
+		if ( empty( $zone_id ) || empty( $api_token ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide both Zone ID and API Token.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Validate Zone ID format (should be 32 hexadecimal characters).
+		if ( ! preg_match( '/^[a-f0-9]{32}$/i', $zone_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid Zone ID format. Zone ID should be a 32-character hexadecimal string.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Test the connection by fetching zone details.
+		$api_url = 'https://api.cloudflare.com/client/v4/zones/' . sanitize_key( $zone_id );
+
+		$response = wp_remote_get(
+			$api_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $api_token,
+					'Content-Type'  => 'application/json',
+				),
+				'timeout' => 15,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Connection failed: %s', 'wp-mcp-ai' ),
+						$response->get_error_message()
+					),
+				)
+			);
+			return;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $response );
+		$response_body = wp_remote_retrieve_body( $response );
+		$data          = json_decode( $response_body, true );
+
+		if ( 200 !== $response_code ) {
+			$error_message = __( 'Invalid credentials or zone not found.', 'wp-mcp-ai' );
+			if ( isset( $data['errors'][0]['message'] ) ) {
+				$error_message = sanitize_text_field( $data['errors'][0]['message'] );
+			}
+			wp_send_json_error( array( 'message' => $error_message ) );
+			return;
+		}
+
+		if ( ! isset( $data['success'] ) || ! $data['success'] || ! isset( $data['result'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unexpected response from Cloudflare API.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$zone = $data['result'];
+
+		// Prepare zone information for display.
+		$zone_info = array(
+			'name'   => isset( $zone['name'] ) ? sanitize_text_field( $zone['name'] ) : '',
+			'status' => isset( $zone['status'] ) ? sanitize_text_field( $zone['status'] ) : '',
+			'plan'   => isset( $zone['plan']['name'] ) ? sanitize_text_field( $zone['plan']['name'] ) : '',
+		);
+
+		wp_send_json_success(
+			array(
+				'message'   => __( 'Successfully connected to Cloudflare!', 'wp-mcp-ai' ),
+				'zone_info' => $zone_info,
 			)
 		);
 	}
