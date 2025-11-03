@@ -213,12 +213,14 @@ CHAT_URL="$BASE_URL/chat"
 
 # Determine assistant ID for chat probe
 CHAT_ASSISTANT_ID="$ASSISTANT_ID"
+CHAT_SKIPPED=false
 if [ -z "$CHAT_ASSISTANT_ID" ] && [ "$HAS_JQ" = true ]; then
     # Try to extract first assistant ID from previous response
     CHAT_ASSISTANT_ID=$(echo "$BODY" | jq -r '.assistants[0].id // ""' 2>/dev/null)
 fi
 
 if [ -z "$CHAT_ASSISTANT_ID" ]; then
+    CHAT_SKIPPED=true
     print_warning "No assistant ID available for chat test, skipping..."
 else
     CHAT_PAYLOAD=$(cat <<EOF
@@ -308,7 +310,19 @@ echo "================================================"
 echo "Test Summary"
 echo "================================================"
 
-if [ "$HTTP_CODE" = "200" ]; then
+# Determine overall success based on both /assistants and /chat probes
+OVERALL_SUCCESS=true
+
+if [ "$HTTP_CODE" != "200" ]; then
+    OVERALL_SUCCESS=false
+fi
+
+# If chat test was not skipped, check its result
+if [ "$CHAT_SKIPPED" = false ] && [ "$CHAT_HTTP_CODE" != "200" ]; then
+    OVERALL_SUCCESS=false
+fi
+
+if [ "$OVERALL_SUCCESS" = true ]; then
     print_success "Connection test PASSED"
     echo ""
     print_info "Your MCP server is reachable and functioning correctly."
