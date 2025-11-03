@@ -268,6 +268,11 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
 			'timeout' => $timeout,
 		);
 
+		// Disable SSL verification only for localhost/loopback addresses to prevent certificate mismatch.
+		if ( $this->is_loopback_address( $varnish_host ) ) {
+			$request_args['sslverify'] = false;
+		}
+
 		$response = wp_remote_request( $purge_url, $request_args );
 
 		if ( is_wp_error( $response ) ) {
@@ -387,5 +392,42 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
 		$path   = isset( $parts['path'] ) ? $parts['path'] : '';
 
 		return $scheme . $parts['host'] . $path;
+	}
+
+	/**
+	 * Check if a host is a loopback/localhost address.
+	 *
+	 * @param string $host Host address to check.
+	 * @return bool True if the host is a loopback address, false otherwise.
+	 */
+	protected function is_loopback_address( $host ) {
+		if ( empty( $host ) ) {
+			return false;
+		}
+
+		// Normalize the host.
+		$host = strtolower( trim( $host ) );
+
+		// Check for common localhost names.
+		if ( in_array( $host, array( 'localhost', 'localhost.localdomain' ), true ) ) {
+			return true;
+		}
+
+		// Check for IPv4 loopback (127.0.0.0/8).
+		if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			$parts = explode( '.', $host );
+			if ( isset( $parts[0] ) && '127' === $parts[0] ) {
+				return true;
+			}
+		}
+
+		// Check for IPv6 loopback (::1).
+		if ( filter_var( $host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			if ( '::1' === $host || '0:0:0:0:0:0:0:1' === $host ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
