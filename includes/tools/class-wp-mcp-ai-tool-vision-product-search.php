@@ -142,6 +142,9 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
 			$product_search_params['filter'] = sanitize_text_field( $arguments['filter'] );
 		}
 
+		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 10;
+		$max_results = min( 100, max( 1, $max_results ) );
+
 		// Build the request body.
 		$request_body = array(
 			'requests' => array(
@@ -150,7 +153,7 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
 					'features' => array(
 						array(
 							'type'       => 'PRODUCT_SEARCH',
-							'maxResults' => isset( $arguments['max_results'] ) ? min( 100, max( 1, absint( $arguments['max_results'] ) ) ) : 10,
+							'maxResults' => $max_results,
 						),
 					),
 				),

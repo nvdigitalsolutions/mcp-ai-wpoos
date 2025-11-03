@@ -13,6 +13,27 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Helper method to create a Google authentication error response.
+	 *
+	 * @return array Mock HTTP response with authentication error.
+	 */
+	private function get_auth_error_response() {
+		return array(
+			'body'     => wp_json_encode(
+				array(
+					'error' => array(
+						'code'    => 401,
+						'message' => 'Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential.',
+						'status'  => 'UNAUTHENTICATED',
+					),
+				)
+			),
+			'response' => array( 'code' => 401 ),
+			'headers'  => array(),
+		);
+	}
+
+	/**
 	 * Product Search tool should block users lacking the required capability.
 	 */
 	public function test_product_search_requires_capability() {
@@ -94,20 +115,7 @@ class WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Vision_Product_Search();
 
 		$http_stub = function ( $preempt, $args, $url ) {
-			// Simulate Google API authentication error.
-			return array(
-				'body'     => wp_json_encode(
-					array(
-						'error' => array(
-							'code'    => 401,
-							'message' => 'Request is missing required authentication credential. Expected OAuth 2 access token, login cookie or other valid authentication credential.',
-							'status'  => 'UNAUTHENTICATED',
-						),
-					)
-				),
-				'response' => array( 'code' => 401 ),
-				'headers'  => array(),
-			);
+			return $this->get_auth_error_response();
 		};
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );

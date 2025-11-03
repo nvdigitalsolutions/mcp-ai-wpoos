@@ -183,8 +183,6 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Get GDACS Events | `get_gdacs_events` | Fetches Global Disaster Alert and Coordination System events with optional date filters and capability checks for emergency planning.【F:includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php†L12-L200】|
 | Get NHC Active Storms | `get_nhc_active_storms` | Retrieves the National Hurricane Center’s active storm feed, sanitising advisory data for assistant consumption.【F:includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php†L15-L146】|
 | Get Open-Meteo Forecast | `get_open_meteo_forecast` | Pulls hourly weather data from Open-Meteo with coordinate, timezone, and variable controls for itinerary-aware responses.【F:includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php†L15-L309】|
-| Vision Product Search | `vision_product_search` | Searches for similar products using Google Cloud Vision API Product Search feature. Demonstrates unauthenticated API calls that fail with Google authentication errors.
-| Vision Object Localization | `vision_object_localization` | Detects and localizes multiple objects in images using Google Cloud Vision API. Demonstrates unauthenticated API calls that fail with Google authentication errors.
 
 ### Commerce & finance operations
 | Tool | Slug | Summary |
