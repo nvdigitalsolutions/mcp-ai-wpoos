@@ -57,8 +57,17 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	// Prepare the API request.
 	$api_url = 'https://api.remove.bg/v1.0/removebg';
 
+	// Validate that the image path is safe to read.
+	$realpath = realpath( $image_path );
+	if ( false === $realpath ) {
+		return new WP_Error(
+			'wp_mcp_ai_invalid_image_path',
+			__( 'Invalid image path provided.', 'wp-mcp-ai' )
+		);
+	}
+
 	// Read image file.
-	$image_data = file_get_contents( $image_path );
+	$image_data = file_get_contents( $realpath );
 	if ( false === $image_data ) {
 		return new WP_Error(
 			'wp_mcp_ai_image_read_failed',
@@ -67,7 +76,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	}
 
 	// Prepare request body.
-	$boundary = wp_generate_password( 24, false );
+	$boundary = '----WebKitFormBoundary' . uniqid( '', true );
 	$body     = '';
 
 	// Add image file to multipart body.
@@ -152,7 +161,6 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	$pathinfo          = pathinfo( $original_filename );
 	$filename_base     = isset( $pathinfo['filename'] ) ? $pathinfo['filename'] : 'image';
 	$new_filename      = $filename_base . '-no-bg-' . time() . '.png';
-	$new_file_path     = $upload_dir['path'] . '/' . $new_filename;
 
 	// Save the processed image.
 	if ( ! function_exists( 'wp_upload_bits' ) ) {
