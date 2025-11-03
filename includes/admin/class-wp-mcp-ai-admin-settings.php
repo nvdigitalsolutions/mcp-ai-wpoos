@@ -1824,6 +1824,31 @@ class WP_MCP_AI_Admin_Settings {
 			}
 		}
 
+		if ( isset( $settings['google_vision_api_key'] ) ) {
+			$clean['google_vision_api_key'] = trim( sanitize_text_field( $settings['google_vision_api_key'] ) );
+		}
+
+		if ( isset( $settings['google_vision_credentials_json'] ) ) {
+			$raw_credentials = trim( (string) wp_unslash( $settings['google_vision_credentials_json'] ) );
+
+			if ( '' === $raw_credentials ) {
+				$clean['google_vision_credentials_json'] = '';
+			} else {
+				$decoded = json_decode( $raw_credentials, true );
+
+				if ( is_array( $decoded ) ) {
+					$clean['google_vision_credentials_json'] = wp_json_encode( $decoded );
+				} else {
+					add_settings_error(
+						self::OPTION_NAME,
+						'google_vision_credentials_json',
+						__( 'The Google Cloud Vision service account JSON could not be parsed. Please paste a valid credential.', 'wp-mcp-ai' ),
+						'error'
+					);
+				}
+			}
+		}
+
 		if ( isset( $settings['quickbooks_company_id'] ) ) {
 			$clean['quickbooks_company_id'] = trim( sanitize_text_field( $settings['quickbooks_company_id'] ) );
 		}
