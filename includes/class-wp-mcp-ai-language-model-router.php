@@ -36,20 +36,32 @@ class WP_MCP_AI_Language_Model_Router {
 	protected $ollama_client;
 
 	/**
+	 * LM Studio client instance.
+	 *
+	 * @var WP_MCP_AI_LM_Studio_Client
+	 */
+	protected $lm_studio_client;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_OpenAI_Client $openai_client  OpenAI client instance.
-	 * @param WP_MCP_AI_Gemini_Client $gemini_client Gemini client instance.
-	 * @param WP_MCP_AI_Ollama_Client $ollama_client Ollama client instance (optional).
+	 * @param WP_MCP_AI_OpenAI_Client    $openai_client     OpenAI client instance.
+	 * @param WP_MCP_AI_Gemini_Client    $gemini_client     Gemini client instance.
+	 * @param WP_MCP_AI_Ollama_Client    $ollama_client     Ollama client instance (optional).
+	 * @param WP_MCP_AI_LM_Studio_Client $lm_studio_client  LM Studio client instance (optional).
 	 */
-	public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null ) {
-		$this->openai_client = $openai_client;
-		$this->gemini_client = $gemini_client;
-		$this->ollama_client = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
+	public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null ) {
+		$this->openai_client    = $openai_client;
+		$this->gemini_client    = $gemini_client;
+		$this->ollama_client    = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
+		$this->lm_studio_client = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
 	}
 
 	/**
 	 * Dispatch a chat completion request to the appropriate provider.
+	 *
+	 * Uses the provider specified in options, or falls back to the configured
+	 * default API provider from settings. If no default is configured, uses OpenAI.
 	 *
 	 * @param array $messages Sanitized message payload.
 	 * @param array $options  Request options.
@@ -58,8 +70,10 @@ class WP_MCP_AI_Language_Model_Router {
 	public function create_chat_completion( array $messages, array $options = array() ) {
 		$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
 
+		// If no provider specified, use the configured default API setting.
 		if ( empty( $provider ) ) {
-			$provider = 'openai';
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
 		}
 
 		switch ( $provider ) {
@@ -68,6 +82,9 @@ class WP_MCP_AI_Language_Model_Router {
 
 			case 'ollama':
 				return $this->ollama_client->create_chat_completion( $messages, $options );
+
+			case 'lm_studio':
+				return $this->lm_studio_client->create_chat_completion( $messages, $options );
 
 			case 'openai':
 			default:

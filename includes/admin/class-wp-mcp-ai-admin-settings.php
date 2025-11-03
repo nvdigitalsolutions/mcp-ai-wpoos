@@ -37,6 +37,8 @@ class WP_MCP_AI_Admin_Settings {
 		add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'handle_test_ollama_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'handle_fetch_ollama_models' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'handle_test_lm_studio_connection' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'handle_fetch_lm_studio_models' ) );
 		if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 		}
@@ -53,6 +55,8 @@ class WP_MCP_AI_Admin_Settings {
 			'gemini_api_key'                    => '',
 			'ollama_endpoint_url'               => '',
 			'ollama_model'                      => '',
+			'lm_studio_endpoint_url'            => '',
+			'lm_studio_model'                   => '',
 			'default_assistant'                 => 0,
 			'enable_logging'                    => false,
 			'default_model'                     => 'gpt-4o-mini',
@@ -146,8 +150,18 @@ class WP_MCP_AI_Admin_Settings {
 					'ollama_endpoint_url' => __( 'Endpoint URL', 'wp-mcp-ai' ),
 					'ollama_model'        => __( 'Model', 'wp-mcp-ai' ),
 				),
-				'description'      => __( 'Connects to a local Ollama or LM Studio instance for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
-				'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:11434) and select a model from your local instance.', 'wp-mcp-ai' ),
+				'description'      => __( 'Connects to a local Ollama instance for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:11434) and select a model from your Ollama instance.', 'wp-mcp-ai' ),
+			),
+			'lm_studio'        => array(
+				'label'            => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'required_options' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
+				'fields'           => array(
+					'lm_studio_endpoint_url' => __( 'Endpoint URL', 'wp-mcp-ai' ),
+					'lm_studio_model'        => __( 'Model', 'wp-mcp-ai' ),
+				),
+				'description'      => __( 'Connects to a local LM Studio server with OpenAI-compatible API for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:1234) and select a model from your LM Studio server.', 'wp-mcp-ai' ),
 			),
 			'brave'            => array(
 				'label'            => __( 'Brave Search', 'wp-mcp-ai' ),
@@ -908,6 +922,15 @@ class WP_MCP_AI_Admin_Settings {
 	}
 
 	/**
+	 * Returns the list of available provider choices.
+	 *
+	 * @return array
+	 */
+	public static function get_available_providers() {
+		return array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+	}
+
+	/**
 	 * Returns the display labels for color groups.
 	 *
 	 * @return array
@@ -1245,6 +1268,29 @@ class WP_MCP_AI_Admin_Settings {
 		);
 
 		add_settings_section(
+			'wp_mcp_ai_lm_studio_section',
+			__( 'LM Studio Configuration (Local AI)', 'wp-mcp-ai' ),
+			array( $this, 'render_lm_studio_section_description' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'lm_studio_endpoint_url',
+			__( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
+			array( $this, 'render_lm_studio_endpoint_url_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_lm_studio_section'
+		);
+
+		add_settings_field(
+			'lm_studio_model',
+			__( 'LM Studio Model', 'wp-mcp-ai' ),
+			array( $this, 'render_lm_studio_model_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_lm_studio_section'
+		);
+
+		add_settings_section(
 			'wp_mcp_ai_authentication_section',
 			__( 'Authentication', 'wp-mcp-ai' ),
 			'__return_false',
@@ -1316,7 +1362,7 @@ class WP_MCP_AI_Admin_Settings {
 
 		add_settings_field(
 			'default_provider',
-			__( 'Default Provider', 'wp-mcp-ai' ),
+			__( 'Default API Provider', 'wp-mcp-ai' ),
 			array( $this, 'render_default_provider_field' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_assistant_section'
@@ -1708,6 +1754,15 @@ class WP_MCP_AI_Admin_Settings {
 
 		if ( isset( $settings['ollama_model'] ) ) {
 			$clean['ollama_model'] = trim( sanitize_text_field( $settings['ollama_model'] ) );
+		}
+
+		if ( isset( $settings['lm_studio_endpoint_url'] ) ) {
+			$url = trim( $settings['lm_studio_endpoint_url'] );
+			$clean['lm_studio_endpoint_url'] = $url ? esc_url_raw( $url ) : '';
+		}
+
+		if ( isset( $settings['lm_studio_model'] ) ) {
+			$clean['lm_studio_model'] = trim( sanitize_text_field( $settings['lm_studio_model'] ) );
 		}
 
 		if ( isset( $settings['default_assistant'] ) ) {
@@ -2431,7 +2486,7 @@ class WP_MCP_AI_Admin_Settings {
 	 */
 	public function render_ollama_section_description() {
 		?>
-		<p><?php esc_html_e( 'Connect to a local Ollama or LM Studio instance for privacy-focused, cost-free AI processing using your own hardware.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Connect to a local Ollama instance for privacy-focused, cost-free AI processing using your own hardware. Ollama uses its native API format.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 
@@ -2443,7 +2498,7 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_endpoint_url]" value="<?php echo esc_attr( $settings['ollama_endpoint_url'] ); ?>" class="regular-text" placeholder="http://localhost:11434" />
 		<p class="description">
-			<?php esc_html_e( 'Enter the URL where your Ollama or LM Studio instance is running (e.g., http://localhost:11434).', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enter the URL where your Ollama instance is running (e.g., http://localhost:11434).', 'wp-mcp-ai' ); ?>
 			<button type="button" id="wp-mcp-ai-test-ollama-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
 			<span id="wp-mcp-ai-ollama-test-result" style="margin-left: 10px;"></span>
 		</p>
@@ -2460,6 +2515,43 @@ class WP_MCP_AI_Admin_Settings {
 		<button type="button" id="wp-mcp-ai-fetch-ollama-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'wp-mcp-ai' ); ?></button>
 		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your Ollama instance.', 'wp-mcp-ai' ); ?></p>
 		<div id="wp-mcp-ai-ollama-models-list" style="margin-top: 10px;"></div>
+		<?php
+	}
+
+	/**
+	 * Render the LM Studio section description.
+	 */
+	public function render_lm_studio_section_description() {
+		?>
+		<p><?php esc_html_e( 'Connect to a local LM Studio instance for privacy-focused, cost-free AI processing using your own hardware. LM Studio provides an OpenAI-compatible API.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the LM Studio endpoint URL field.
+	 */
+	public function render_lm_studio_endpoint_url_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_endpoint_url]" value="<?php echo esc_attr( $settings['lm_studio_endpoint_url'] ); ?>" class="regular-text" placeholder="http://localhost:1234" />
+		<p class="description">
+			<?php esc_html_e( 'Enter the URL where your LM Studio server is running (e.g., http://localhost:1234).', 'wp-mcp-ai' ); ?>
+			<button type="button" id="wp-mcp-ai-test-lm-studio-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<span id="wp-mcp-ai-lm-studio-test-result" style="margin-left: 10px;"></span>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render the LM Studio model field.
+	 */
+	public function render_lm_studio_model_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_model]" id="wp-mcp-ai-lm-studio-model" value="<?php echo esc_attr( $settings['lm_studio_model'] ); ?>" class="regular-text" placeholder="local-model" />
+		<button type="button" id="wp-mcp-ai-fetch-lm-studio-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'wp-mcp-ai' ); ?></button>
+		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your LM Studio server.', 'wp-mcp-ai' ); ?></p>
+		<div id="wp-mcp-ai-lm-studio-models-list" style="margin-top: 10px;"></div>
 		<?php
 	}
 
@@ -3395,10 +3487,10 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_default_provider_field() {
 		$settings = self::get_settings();
 		$current  = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
-		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama' ) );
+		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', self::get_available_providers() );
 
 		if ( ! is_array( $choices ) ) {
-			$choices = array( 'openai', 'gemini', 'ollama' );
+			$choices = self::get_available_providers();
 		}
 		?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
@@ -3415,6 +3507,8 @@ class WP_MCP_AI_Admin_Settings {
 					$label = __( 'Gemini', 'wp-mcp-ai' );
 				} elseif ( 'ollama' === $choice ) {
 					$label = __( 'Ollama (Local AI)', 'wp-mcp-ai' );
+				} elseif ( 'lm_studio' === $choice ) {
+					$label = __( 'LM Studio (Local AI)', 'wp-mcp-ai' );
 				} else {
 					$label = ucfirst( $choice );
 				}
@@ -3424,7 +3518,7 @@ class WP_MCP_AI_Admin_Settings {
 			}
 			?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Select which provider new assistants should use when no override is set.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default API for the system. This provider will be used by assistants and API requests when no specific provider is set. Changing this affects all new conversations.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 
@@ -4137,6 +4231,90 @@ class WP_MCP_AI_Admin_Settings {
 		update_option( self::OPTION_NAME, $test_settings );
 
 		$models = $ollama_client->list_models();
+
+		// Restore original settings.
+		update_option( self::OPTION_NAME, $original_settings );
+
+		if ( is_wp_error( $models ) ) {
+			wp_send_json_error( array( 'message' => $models->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success( array( 'models' => $models ) );
+	}
+
+	/**
+	 * Handle AJAX request to test LM Studio connection.
+	 */
+	public function handle_test_lm_studio_connection() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+		if ( empty( $endpoint_url ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Temporarily set the endpoint URL for testing.
+		$original_settings = self::get_settings();
+		$test_settings     = $original_settings;
+		$test_settings['lm_studio_endpoint_url'] = $endpoint_url;
+
+		// Create a temporary LM Studio client instance.
+		$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
+
+		// Update settings temporarily.
+		update_option( self::OPTION_NAME, $test_settings );
+
+		$result = $lm_studio_client->test_connection();
+
+		// Restore original settings.
+		update_option( self::OPTION_NAME, $original_settings );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+			return;
+		}
+
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Handle AJAX request to fetch LM Studio models.
+	 */
+	public function handle_fetch_lm_studio_models() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$endpoint_url = isset( $_POST['endpoint_url'] ) ? esc_url_raw( wp_unslash( $_POST['endpoint_url'] ) ) : '';
+
+		if ( empty( $endpoint_url ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide an endpoint URL.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Temporarily set the endpoint URL for fetching models.
+		$original_settings = self::get_settings();
+		$test_settings     = $original_settings;
+		$test_settings['lm_studio_endpoint_url'] = $endpoint_url;
+
+		// Create a temporary LM Studio client instance.
+		$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
+
+		// Update settings temporarily.
+		update_option( self::OPTION_NAME, $test_settings );
+
+		$models = $lm_studio_client->list_models();
 
 		// Restore original settings.
 		update_option( self::OPTION_NAME, $original_settings );
