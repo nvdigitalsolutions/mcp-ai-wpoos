@@ -1572,9 +1572,21 @@
         setTranscriptExpanded(state, false);
 
         // Generate a new session key for the new conversation
-        const newSessionKey = typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : 'wp-mcp-ai-session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
+        let newSessionKey;
+        
+        if (typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.randomUUID) {
+            newSessionKey = crypto.randomUUID();
+        } else if (typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.getRandomValues) {
+            // Use crypto.getRandomValues for secure random generation
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            newSessionKey = 'wp-mcp-ai-session-' + Array.from(array, function(byte) {
+                return byte.toString(16).padStart(2, '0');
+            }).join('');
+        } else {
+            // Fallback for environments without crypto API (uses timestamp only)
+            newSessionKey = 'wp-mcp-ai-session-' + Date.now();
+        }
 
         if (state.config) {
             state.config.sessionKey = newSessionKey;
