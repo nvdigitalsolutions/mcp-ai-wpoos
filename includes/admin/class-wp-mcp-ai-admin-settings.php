@@ -922,6 +922,15 @@ class WP_MCP_AI_Admin_Settings {
 	}
 
 	/**
+	 * Returns the list of available provider choices.
+	 *
+	 * @return array
+	 */
+	public static function get_available_providers() {
+		return array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+	}
+
+	/**
 	 * Returns the display labels for color groups.
 	 *
 	 * @return array
@@ -3478,10 +3487,10 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_default_provider_field() {
 		$settings = self::get_settings();
 		$current  = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
-		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama', 'lm_studio' ) );
+		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', self::get_available_providers() );
 
 		if ( ! is_array( $choices ) ) {
-			$choices = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			$choices = self::get_available_providers();
 		}
 		?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
