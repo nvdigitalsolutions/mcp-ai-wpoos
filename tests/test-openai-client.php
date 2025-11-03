@@ -11,6 +11,29 @@ class WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
 }
 
 /**
+ * Helper client that forces the Responses API endpoint during detection.
+ */
+class WP_MCP_AI_Force_Responses_Client extends WP_MCP_AI_OpenAI_Client {
+
+	/** @inheritDoc */
+	protected function should_use_responses_api( array $messages, array $options ) {
+		return true;
+	}
+
+	/**
+	 * Make prepare_responses_input public for testing.
+	 *
+	 * @param array $original_messages   Original chat messages.
+	 * @param array $normalised_messages Messages after normalisation.
+	 * @param array $attachments         Attachment payloads.
+	 * @return array
+	 */
+	public function public_prepare_responses_input( array $original_messages, array $normalised_messages, array $attachments = array() ) {
+		return $this->prepare_responses_input( $original_messages, $normalised_messages, $attachments );
+	}
+}
+
+/**
  * Tests for the OpenAI client wrapper.
  */
 class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
@@ -2537,5 +2560,80 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $response );
 		$this->assertFalse( $response['translated'] );
 		$this->assertSame( 'verbose_json', $response['format'] );
+	}
+
+	/**
+	 * Verify that tool_calls and tool_call_id are stripped from Responses API input.
+	 *
+	 * The Responses API doesn't support the tool_calls/tool_call_id mechanism used by
+	 * Chat Completions. This test ensures that if messages somehow contain these fields,
+	 * they are removed before being sent to the Responses API.
+	 */
+	public function test_responses_api_strips_tool_calls_from_input() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$client = new WP_MCP_AI_Force_Responses_Client();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Hello',
+					),
+				),
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => array(
+					array(
+						'type' => 'text',
+						'text' => 'I will call a tool.',
+					),
+				),
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'test_tool',
+							'arguments' => '{}',
+						),
+					),
+				),
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'test_tool',
+				'content'      => 'Tool result',
+			),
+		);
+
+		// Prepare the input using the public wrapper method.
+		$prepared_input = $client->public_prepare_responses_input( $messages, $messages, array() );
+
+		// Verify the input was prepared.
+		$this->assertIsArray( $prepared_input );
+		$this->assertCount( 3, $prepared_input );
+
+		// Verify tool_calls is not present in the assistant message.
+		$this->assertArrayNotHasKey( 'tool_calls', $prepared_input[1], 'tool_calls should be stripped from assistant messages in Responses API input' );
+
+		// Verify tool_call_id is not present in the tool message.
+		$this->assertArrayNotHasKey( 'tool_call_id', $prepared_input[2], 'tool_call_id should be stripped from tool messages in Responses API input' );
+
+		// Verify content is still present.
+		$this->assertArrayHasKey( 'content', $prepared_input[0] );
+		$this->assertArrayHasKey( 'content', $prepared_input[1] );
+		$this->assertArrayHasKey( 'content', $prepared_input[2] );
+
+		// Verify roles are still present.
+		$this->assertSame( 'user', $prepared_input[0]['role'] );
+		$this->assertSame( 'assistant', $prepared_input[1]['role'] );
+		$this->assertSame( 'tool', $prepared_input[2]['role'] );
 	}
 }
