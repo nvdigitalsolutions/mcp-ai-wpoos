@@ -1,6 +1,6 @@
-=== WP MCP AI ===
+=== OpenWP Operator System (oWPOS) ===
 Contributors: nvdigitalsolutions
-Donate link: https://nvdigitalsolutions.com
+Donate link: https://nvdigitalsolutions.com/openwp-operator-system
 Tags: ai, assistant, jetengine, openai, gpt, chatbot
 Requires at least: 6.0
 Tested up to: 6.7
