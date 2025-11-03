@@ -1,7 +1,7 @@
 # WP Open Operator System (WP-OOS)
 
 **Version:** 1.0.0 (Beta)
-**Maintained by [NV Digital](https://nvdigitalsolutions.com)**
+**Maintained by [NV Digital](https://nvdigitalsolutions.com/wp-oos)**
 **License:** GPLv2 or later
 **Requires:** WordPress 6.0+, PHP 7.4+
 
