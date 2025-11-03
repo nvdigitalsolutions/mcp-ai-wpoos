@@ -185,11 +185,36 @@ Potential improvements for future versions:
 
 ## Testing
 
-A test HTML page is available at `/tmp/test-localStorage.html` that demonstrates:
+You can test the localStorage functionality using your browser's Developer Console:
 
-- Saving conversation data
-- Loading conversation data
-- Clearing conversation data
-- Expiry behavior
+```javascript
+// Create a test conversation
+var testState = {
+    config: { assistantId: 999, sessionKey: 'test-session' },
+    conversation: [
+        { role: 'user', content: 'Test message' },
+        { role: 'assistant', content: 'Test response' }
+    ]
+};
 
-Open the file in a browser to run the tests.
+// Save it
+saveConversationToStorage(testState);
+
+// Load it back
+var loaded = loadConversationFromStorage(testState);
+console.log('Loaded:', loaded);
+
+// Clear it
+clearConversationFromStorage(testState);
+```
+
+Or manually inspect localStorage:
+
+```javascript
+// View all saved conversations
+Object.keys(localStorage).forEach(key => {
+    if (key.startsWith('wp_mcp_ai_chat_')) {
+        console.log(key, localStorage.getItem(key));
+    }
+});
+```
