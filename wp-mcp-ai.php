@@ -116,6 +116,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-budget-manager.php
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
