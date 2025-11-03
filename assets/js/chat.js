@@ -1574,7 +1574,7 @@
         // Generate a new session key for the new conversation
         const newSessionKey = typeof window !== 'undefined' && typeof window.crypto !== 'undefined' && crypto.randomUUID
             ? crypto.randomUUID()
-            : 'wp-mcp-ai-session-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            : 'wp-mcp-ai-session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 11);
 
         if (state.config) {
             state.config.sessionKey = newSessionKey;
