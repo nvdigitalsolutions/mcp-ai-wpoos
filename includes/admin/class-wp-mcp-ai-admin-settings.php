@@ -49,6 +49,8 @@ class WP_MCP_AI_Admin_Settings {
 		return array(
 			'openai_api_key'                    => '',
 			'gemini_api_key'                    => '',
+			'ollama_endpoint_url'               => '',
+			'ollama_model'                      => '',
 			'default_assistant'                 => 0,
 			'enable_logging'                    => false,
 			'default_model'                     => 'gpt-4o-mini',
@@ -134,6 +136,16 @@ class WP_MCP_AI_Admin_Settings {
 				),
 				'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'wp-mcp-ai' ),
 				'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'wp-mcp-ai' ),
+			),
+			'ollama'           => array(
+				'label'            => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'required_options' => array( 'ollama_endpoint_url', 'ollama_model' ),
+				'fields'           => array(
+					'ollama_endpoint_url' => __( 'Endpoint URL', 'wp-mcp-ai' ),
+					'ollama_model'        => __( 'Model', 'wp-mcp-ai' ),
+				),
+				'description'      => __( 'Connects to a local Ollama or LM Studio instance for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:11434) and select a model from your local instance.', 'wp-mcp-ai' ),
 			),
 			'brave'            => array(
 				'label'            => __( 'Brave Search', 'wp-mcp-ai' ),
@@ -1208,6 +1220,29 @@ class WP_MCP_AI_Admin_Settings {
 		);
 
 		add_settings_section(
+			'wp_mcp_ai_ollama_section',
+			__( 'Ollama Configuration (Local AI)', 'wp-mcp-ai' ),
+			array( $this, 'render_ollama_section_description' ),
+			self::PAGE_SLUG
+		);
+
+		add_settings_field(
+			'ollama_endpoint_url',
+			__( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
+			array( $this, 'render_ollama_endpoint_url_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ollama_section'
+		);
+
+		add_settings_field(
+			'ollama_model',
+			__( 'Ollama Model', 'wp-mcp-ai' ),
+			array( $this, 'render_ollama_model_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_ollama_section'
+		);
+
+		add_settings_section(
 			'wp_mcp_ai_authentication_section',
 			__( 'Authentication', 'wp-mcp-ai' ),
 			'__return_false',
@@ -1664,6 +1699,15 @@ class WP_MCP_AI_Admin_Settings {
 			$clean['gemini_api_key'] = trim( sanitize_text_field( $settings['gemini_api_key'] ) );
 		}
 
+		if ( isset( $settings['ollama_endpoint_url'] ) ) {
+			$url = trim( $settings['ollama_endpoint_url'] );
+			$clean['ollama_endpoint_url'] = $url ? esc_url_raw( $url ) : '';
+		}
+
+		if ( isset( $settings['ollama_model'] ) ) {
+			$clean['ollama_model'] = trim( sanitize_text_field( $settings['ollama_model'] ) );
+		}
+
 		if ( isset( $settings['default_assistant'] ) ) {
 			$clean['default_assistant'] = absint( $settings['default_assistant'] );
 		}
@@ -1680,7 +1724,7 @@ class WP_MCP_AI_Admin_Settings {
 
 		if ( isset( $settings['default_provider'] ) ) {
 			$provider = sanitize_key( $settings['default_provider'] );
-			$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+			$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama' ) );
 
 			if ( ! is_array( $allowed ) ) {
 				$allowed = array( 'openai', 'gemini' );
@@ -2368,6 +2412,43 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the Ollama section description.
+	 */
+	public function render_ollama_section_description() {
+		?>
+		<p><?php esc_html_e( 'Connect to a local Ollama or LM Studio instance for privacy-focused, cost-free AI processing using your own hardware.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the Ollama endpoint URL field.
+	 */
+	public function render_ollama_endpoint_url_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_endpoint_url]" value="<?php echo esc_attr( $settings['ollama_endpoint_url'] ); ?>" class="regular-text" placeholder="http://localhost:11434" />
+		<p class="description">
+			<?php esc_html_e( 'Enter the URL where your Ollama or LM Studio instance is running (e.g., http://localhost:11434).', 'wp-mcp-ai' ); ?>
+			<button type="button" id="wp-mcp-ai-test-ollama-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<span id="wp-mcp-ai-ollama-test-result" style="margin-left: 10px;"></span>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render the Ollama model field.
+	 */
+	public function render_ollama_model_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_model]" id="wp-mcp-ai-ollama-model" value="<?php echo esc_attr( $settings['ollama_model'] ); ?>" class="regular-text" placeholder="llama2" />
+		<button type="button" id="wp-mcp-ai-fetch-ollama-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'wp-mcp-ai' ); ?></button>
+		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your Ollama instance.', 'wp-mcp-ai' ); ?></p>
+		<div id="wp-mcp-ai-ollama-models-list" style="margin-top: 10px;"></div>
 		<?php
 	}
 
@@ -3303,10 +3384,10 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_default_provider_field() {
 		$settings = self::get_settings();
 		$current  = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
-		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
+		$choices  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama' ) );
 
 		if ( ! is_array( $choices ) ) {
-			$choices = array( 'openai', 'gemini' );
+			$choices = array( 'openai', 'gemini', 'ollama' );
 		}
 		?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_provider]" id="wp-mcp-ai-default-provider" class="regular-text">
@@ -3317,7 +3398,15 @@ class WP_MCP_AI_Admin_Settings {
 					continue;
 				}
 
-				$label = 'openai' === $choice ? __( 'OpenAI', 'wp-mcp-ai' ) : __( 'Gemini', 'wp-mcp-ai' );
+				if ( 'openai' === $choice ) {
+					$label = __( 'OpenAI', 'wp-mcp-ai' );
+				} elseif ( 'gemini' === $choice ) {
+					$label = __( 'Gemini', 'wp-mcp-ai' );
+				} elseif ( 'ollama' === $choice ) {
+					$label = __( 'Ollama (Local AI)', 'wp-mcp-ai' );
+				} else {
+					$label = ucfirst( $choice );
+				}
 				?>
 				<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $current, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php

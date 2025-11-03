@@ -29,14 +29,23 @@ class WP_MCP_AI_Language_Model_Router {
 	protected $gemini_client;
 
 	/**
+	 * Ollama client instance.
+	 *
+	 * @var WP_MCP_AI_Ollama_Client
+	 */
+	protected $ollama_client;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param WP_MCP_AI_OpenAI_Client $openai_client  OpenAI client instance.
 	 * @param WP_MCP_AI_Gemini_Client $gemini_client Gemini client instance.
+	 * @param WP_MCP_AI_Ollama_Client $ollama_client Ollama client instance (optional).
 	 */
-	public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client ) {
+	public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null ) {
 		$this->openai_client = $openai_client;
 		$this->gemini_client = $gemini_client;
+		$this->ollama_client = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
 	}
 
 	/**
@@ -56,6 +65,9 @@ class WP_MCP_AI_Language_Model_Router {
 		switch ( $provider ) {
 			case 'gemini':
 				return $this->gemini_client->create_chat_completion( $messages, $options );
+
+			case 'ollama':
+				return $this->ollama_client->create_chat_completion( $messages, $options );
 
 			case 'openai':
 			default:
