@@ -4564,7 +4564,7 @@ class WP_MCP_AI_Admin_Settings {
 		// Step 3: Fetch applications from the first server.
 		$apps = array();
 		if ( ! empty( $servers ) ) {
-			$first_server_id = absint( $servers[0]['id'] );
+			$first_server_id = $servers[0]['id'];
 			$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v1/apps' );
 			$apps_response   = wp_remote_get(
 				$apps_url,

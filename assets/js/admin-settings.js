@@ -269,30 +269,43 @@
 
                         // Display servers
                         if (response.data.servers && response.data.servers.length > 0) {
-                            var serversHtml = '<p><strong>Select a server:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                            var $serversList = $('#wp-mcp-ai-cloudways-servers-list');
+                            $serversList.empty();
+                            
+                            var $serversTitle = $('<p><strong>Select a server:</strong></p>');
+                            var $serversUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            
                             response.data.servers.forEach(function (server) {
-                                serversHtml += '<li style="margin-bottom: 5px;">';
-                                serversHtml += '<a href="#" class="wp-mcp-ai-select-cloudways-server" data-server-id="' + server.id + '">';
-                                serversHtml += server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')';
-                                serversHtml += '</a>';
-                                serversHtml += '</li>';
+                                var $li = $('<li style="margin-bottom: 5px;"></li>');
+                                var $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
+                                $link.attr('data-server-id', server.id);
+                                $link.text(server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')');
+                                $li.append($link);
+                                $serversUl.append($li);
                             });
-                            serversHtml += '</ul>';
-                            $serversList.html(serversHtml);
+                            
+                            $serversList.append($serversTitle).append($serversUl);
                         }
 
                         // Display apps
                         if (response.data.apps && response.data.apps.length > 0) {
-                            var appsHtml = '<p><strong>Select an application:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                            var $appsList = $('#wp-mcp-ai-cloudways-apps-list');
+                            $appsList.empty();
+                            
+                            var $appsTitle = $('<p><strong>Select an application:</strong></p>');
+                            var $appsUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            
                             response.data.apps.forEach(function (app) {
-                                appsHtml += '<li style="margin-bottom: 5px;">';
-                                appsHtml += '<a href="#" class="wp-mcp-ai-select-cloudways-app" data-app-id="' + app.id + '" data-server-id="' + app.server_id + '">';
-                                appsHtml += app.label + ' (ID: ' + app.id + ')';
-                                appsHtml += '</a>';
-                                appsHtml += '</li>';
+                                var $li = $('<li style="margin-bottom: 5px;"></li>');
+                                var $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
+                                $link.attr('data-app-id', app.id);
+                                $link.attr('data-server-id', app.server_id);
+                                $link.text(app.label + ' (ID: ' + app.id + ')');
+                                $li.append($link);
+                                $appsUl.append($li);
                             });
-                            appsHtml += '</ul>';
-                            $appsList.html(appsHtml);
+                            
+                            $appsList.append($appsTitle).append($appsUl);
                         }
                     } else {
                         $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
@@ -312,7 +325,10 @@
             e.preventDefault();
             var serverId = $(this).data('server-id');
             $('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
-            $('#wp-mcp-ai-cloudways-servers-list').prepend('<p style="color: #00a32a; font-weight: bold;">Selected Server ID: ' + serverId + '</p>');
+            
+            var $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+            $message.text('Selected Server ID: ' + serverId);
+            $('#wp-mcp-ai-cloudways-servers-list').prepend($message);
         });
 
         // Handle app selection
@@ -322,7 +338,10 @@
             var serverId = $(this).data('server-id');
             $('input[name="wp_mcp_ai_settings[cloudways_app_id]"]').val(appId);
             $('input[name="wp_mcp_ai_settings[cloudways_server_id]"]').val(serverId);
-            $('#wp-mcp-ai-cloudways-apps-list').prepend('<p style="color: #00a32a; font-weight: bold;">Selected App ID: ' + appId + ' (Server ID: ' + serverId + ')</p>');
+            
+            var $message = $('<p style="color: #00a32a; font-weight: bold;"></p>');
+            $message.text('Selected App ID: ' + appId + ' (Server ID: ' + serverId + ')');
+            $('#wp-mcp-ai-cloudways-apps-list').prepend($message);
         });
     }
 
