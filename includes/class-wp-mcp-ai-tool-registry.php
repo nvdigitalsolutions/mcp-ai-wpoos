@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Registry {
 		 *
 		 * @param bool $is_base_version Whether base version mode is enabled.
 		 */
-		return apply_filters( 'wp_mcp_ai_base_version', defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION );
+		return apply_filters( 'wp_mcp_ai_base_version', function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() );
 	}
 
 	/**

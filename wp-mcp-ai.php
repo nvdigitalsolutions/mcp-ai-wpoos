@@ -104,6 +104,15 @@ function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
 
 add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
 
+/**
+ * Check if base version mode is enabled.
+ *
+ * @return bool Whether base version mode is active.
+ */
+function wp_mcp_ai_is_base_version() {
+	return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
+}
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
@@ -136,9 +145,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
 // Load third-party plugin integrations only when not in base version mode.
-$is_base_version = defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
-
-if ( ! $is_base_version ) {
+if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
@@ -164,7 +171,7 @@ WP_MCP_AI_Response_Attachments::init();
 WP_MCP_AI_HTTP::bootstrap();
 
 // Initialize third-party plugin integrations only when not in base version mode.
-if ( ! ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) ) {
+if ( ! wp_mcp_ai_is_base_version() ) {
 	if ( class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) ) {
 		WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 	}
