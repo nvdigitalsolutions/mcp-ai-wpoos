@@ -118,6 +118,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
@@ -250,9 +252,11 @@ final class WP_MCP_AI {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$openai_client = new WP_MCP_AI_OpenAI_Client();
-		$gemini_client = new WP_MCP_AI_Gemini_Client();
-		$router        = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client );
+		$openai_client    = new WP_MCP_AI_OpenAI_Client();
+		$gemini_client    = new WP_MCP_AI_Gemini_Client();
+		$ollama_client    = new WP_MCP_AI_Ollama_Client();
+		$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
+		$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
 
 		$this->admin_settings     = new WP_MCP_AI_Admin_Settings();
 		$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );

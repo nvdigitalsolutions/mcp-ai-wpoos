@@ -20,7 +20,7 @@
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
 - [📦 Installation](#-installation)
 - [⚙️ Configuration Checklist (Action Items)](#-configuration-checklist-action-items)
-- [🧠 Language Model Providers (OpenAI & Gemini)](#-language-model-providers-openai--gemini)
+- [🧠 Language Model Providers (OpenAI, Gemini & Ollama)](#-language-model-providers-openai-gemini--ollama)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [🧊 Elementor Widgets](#-elementor-widgets)
@@ -302,9 +302,29 @@ Complete these after installation to unlock every integration point:
 - [ ] **Connect QuickBooks Online** under **Settings → MCP AI → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → MCP AI → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 
-## 🧠 Language Model Providers (OpenAI & Gemini)
+## 🧠 Language Model Providers (OpenAI, Gemini & Ollama)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI or Gemini while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, or a local Ollama instance while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+
+### Local AI with Ollama
+
+The Ollama provider enables privacy-focused, cost-free AI processing by connecting to a local Ollama or LM Studio instance running on your server or development machine. This is ideal for:
+- **Privacy-sensitive deployments** where data must stay on-premises
+- **Development and testing** without incurring API costs
+- **Custom or fine-tuned models** not available through cloud providers
+- **Air-gapped environments** without internet access
+
+To configure Ollama:
+1. Install [Ollama](https://ollama.ai) on your server or local machine
+2. Pull a model (e.g., `ollama pull llama2`)
+3. Navigate to **Settings → MCP AI → Ollama Configuration**
+4. Enter your Ollama endpoint URL (default: `http://localhost:11434`)
+5. Click "Test Connection" to verify connectivity
+6. Click "Fetch Models" to see available models
+7. Select a model from the list or manually enter a model name
+8. Set "Default Provider" to "Ollama (Local AI)" if you want it as the system default
+
+The Ollama client supports the standard chat completion flow and automatically normalizes responses to match the OpenAI format for downstream compatibility. Note that some advanced features like tool calling may vary depending on the specific Ollama model you're using.
 
 ### OpenAI model coverage
 

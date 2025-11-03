@@ -1,0 +1,318 @@
+<?php
+/**
+ * Tests for the Ollama client wrapper.
+ */
+class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
+
+	/**
+	 * Ensure an error is returned when the Ollama endpoint URL is missing.
+	 */
+	public function test_create_chat_completion_requires_endpoint() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_ollama_endpoint', $response->get_error_code() );
+
+		$data = $response->get_error_data();
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+		$this->assertArrayHasKey( 'actions', $data );
+		$this->assertArrayHasKey( 'configure_ollama_endpoint', $data['actions'] );
+	}
+
+	/**
+	 * Ensure an error is returned when the Ollama model is missing.
+	 */
+	public function test_create_chat_completion_requires_model() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults['ollama_model']         = '';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_ollama_model', $response->get_error_code() );
+
+		$data = $response->get_error_data();
+		$this->assertIsArray( $data );
+		$this->assertSame( 400, $data['status'] );
+		$this->assertArrayHasKey( 'actions', $data );
+		$this->assertArrayHasKey( 'configure_ollama_model', $data['actions'] );
+	}
+
+	/**
+	 * Ensure the Ollama client normalizes the response correctly.
+	 */
+	public function test_create_chat_completion_normalizes_response() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults['ollama_model']         = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Ollama_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'llama2',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Hello from Ollama',
+						),
+						'done'    => true,
+						'prompt_eval_count' => 10,
+						'eval_count'        => 20,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertSame( 'ollama', $response['provider'] );
+		$this->assertSame( 'llama2', $response['model'] );
+		$this->assertNotEmpty( $response['choices'] );
+
+		$choice = $response['choices'][0];
+		$this->assertArrayHasKey( 'message', $choice );
+		$this->assertArrayHasKey( 'content', $choice['message'] );
+		$this->assertIsArray( $choice['message']['content'] );
+
+		$this->assertArrayHasKey( 'usage', $response );
+		$this->assertSame( 10, $response['usage']['prompt_tokens'] );
+		$this->assertSame( 20, $response['usage']['completion_tokens'] );
+	}
+
+	/**
+	 * Ensure the test connection method works correctly.
+	 */
+	public function test_connection_test_succeeds() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models' => array(),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$result = $client->test_connection();
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'success', $result );
+		$this->assertTrue( $result['success'] );
+		$this->assertArrayHasKey( 'message', $result );
+	}
+
+	/**
+	 * Ensure the list models method returns models correctly.
+	 */
+	public function test_list_models_returns_models() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models' => array(
+							array(
+								'name'         => 'llama2',
+								'size'         => 1234567890,
+								'modified_at'  => '2024-01-01T00:00:00Z',
+								'digest'       => 'abc123',
+								'details'      => array(
+									'family'         => 'llama',
+									'format'         => 'gguf',
+									'parameter_size' => '7B',
+								),
+							),
+							array(
+								'name'         => 'codellama',
+								'size'         => 987654321,
+								'modified_at'  => '2024-01-02T00:00:00Z',
+								'digest'       => 'def456',
+								'details'      => array(
+									'family'         => 'llama',
+									'format'         => 'gguf',
+									'parameter_size' => '13B',
+								),
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$models = $client->list_models();
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $models );
+		$this->assertCount( 2, $models );
+
+		$this->assertSame( 'llama2', $models[0]['name'] );
+		$this->assertSame( 1234567890, $models[0]['size'] );
+		$this->assertSame( 'llama', $models[0]['family'] );
+
+		$this->assertSame( 'codellama', $models[1]['name'] );
+		$this->assertSame( 987654321, $models[1]['size'] );
+		$this->assertSame( 'llama', $models[1]['family'] );
+	}
+
+	/**
+	 * Ensure the client handles empty messages array gracefully.
+	 */
+	public function test_create_chat_completion_requires_messages() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults['ollama_model']         = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client   = new WP_MCP_AI_Ollama_Client();
+		$response = $client->create_chat_completion( array(), array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_messages', $response->get_error_code() );
+	}
+
+	/**
+	 * Ensure the client uses the provided model override.
+	 */
+	public function test_create_chat_completion_uses_model_override() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults['ollama_model']         = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Ollama_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'codellama',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Hello',
+						),
+						'done'    => true,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array( 'model' => 'codellama' ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'model', $response );
+		$this->assertSame( 'codellama', $response['model'] );
+
+		$this->assertNotNull( $captured_request );
+		$this->assertArrayHasKey( 'args', $captured_request );
+		$this->assertArrayHasKey( 'body', $captured_request['args'] );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertIsArray( $payload );
+		$this->assertArrayHasKey( 'model', $payload );
+		$this->assertSame( 'codellama', $payload['model'] );
+	}
+}
