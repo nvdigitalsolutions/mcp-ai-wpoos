@@ -39,6 +39,7 @@ class WP_MCP_AI_Admin_Settings {
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'handle_fetch_ollama_models' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'handle_test_lm_studio_connection' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'handle_fetch_lm_studio_models' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'handle_fetch_cloudways_data' ) );
 		if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 		}
@@ -80,6 +81,10 @@ class WP_MCP_AI_Admin_Settings {
 			'cloudflare_api_token'              => '',
 			'cloudflare_zone_id'                => '',
 			'enable_varnish_purge'              => false,
+			'cloudways_email'                   => '',
+			'cloudways_api_key'                 => '',
+			'cloudways_server_id'               => '',
+			'cloudways_app_id'                  => '',
 			'mailjet_api_key'                   => '',
 			'mailjet_api_secret'                => '',
 			'mailjet_from_email'                => '',
@@ -225,6 +230,19 @@ class WP_MCP_AI_Admin_Settings {
 					'label'   => __( 'Not enabled', 'wp-mcp-ai' ),
 					'message' => __( 'Varnish purge is not currently enabled. Enable it if your hosting environment uses Varnish caching.', 'wp-mcp-ai' ),
 				),
+			),
+			'cloudways'        => array(
+				'label'            => __( 'Cloudways', 'wp-mcp-ai' ),
+				'required_options' => array( 'cloudways_email', 'cloudways_api_key' ),
+				'fields'           => array(
+					'cloudways_email'     => __( 'Account Email', 'wp-mcp-ai' ),
+					'cloudways_api_key'   => __( 'API Key', 'wp-mcp-ai' ),
+					'cloudways_server_id' => __( 'Server ID', 'wp-mcp-ai' ),
+					'cloudways_app_id'    => __( 'Application ID', 'wp-mcp-ai' ),
+				),
+				'description'      => __( 'Connects to Cloudways hosting platform for server and application management.', 'wp-mcp-ai' ),
+				'usage'            => __( 'Enter your Cloudways account email and API key. Use the "Fetch Cloudways Data" button to automatically retrieve your server and application IDs.', 'wp-mcp-ai' ),
+				'docs_url'         => 'https://developers.cloudways.com/docs/',
 			),
 			'mailjet'          => array(
 				'label'            => __( 'Mailjet', 'wp-mcp-ai' ),
@@ -1589,6 +1607,38 @@ class WP_MCP_AI_Admin_Settings {
 		);
 
 		add_settings_field(
+			'cloudways_email',
+			__( 'Cloudways Account Email', 'wp-mcp-ai' ),
+			array( $this, 'render_cloudways_email_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
+			'cloudways_api_key',
+			__( 'Cloudways API Key', 'wp-mcp-ai' ),
+			array( $this, 'render_cloudways_api_key_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
+			'cloudways_server_id',
+			__( 'Cloudways Server ID', 'wp-mcp-ai' ),
+			array( $this, 'render_cloudways_server_id_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
+			'cloudways_app_id',
+			__( 'Cloudways Application ID', 'wp-mcp-ai' ),
+			array( $this, 'render_cloudways_app_id_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_tools_section'
+		);
+
+		add_settings_field(
 			'mailjet_api_key',
 			__( 'Mailjet API Key', 'wp-mcp-ai' ),
 			array( $this, 'render_mailjet_api_key_field' ),
@@ -1871,6 +1921,22 @@ class WP_MCP_AI_Admin_Settings {
 		}
 
 		$clean['enable_varnish_purge'] = ! empty( $settings['enable_varnish_purge'] );
+
+		if ( isset( $settings['cloudways_email'] ) ) {
+			$clean['cloudways_email'] = sanitize_email( $settings['cloudways_email'] );
+		}
+
+		if ( isset( $settings['cloudways_api_key'] ) ) {
+			$clean['cloudways_api_key'] = trim( sanitize_text_field( $settings['cloudways_api_key'] ) );
+		}
+
+		if ( isset( $settings['cloudways_server_id'] ) ) {
+			$clean['cloudways_server_id'] = trim( sanitize_text_field( $settings['cloudways_server_id'] ) );
+		}
+
+		if ( isset( $settings['cloudways_app_id'] ) ) {
+			$clean['cloudways_app_id'] = trim( sanitize_text_field( $settings['cloudways_app_id'] ) );
+		}
 
 		if ( isset( $settings['mailjet_api_key'] ) ) {
 			$clean['mailjet_api_key'] = trim( sanitize_text_field( $settings['mailjet_api_key'] ) );
@@ -3293,6 +3359,81 @@ class WP_MCP_AI_Admin_Settings {
 	}
 
 	/**
+	 * Render the Cloudways email field.
+	 */
+	public function render_cloudways_email_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_email]" value="<?php echo esc_attr( $settings['cloudways_email'] ); ?>" class="regular-text" autocomplete="off" placeholder="your-email@example.com" />
+		<p class="description">
+			<?php esc_html_e( 'Your Cloudways account email address.', 'wp-mcp-ai' ); ?>
+			<a href="https://developers.cloudways.com/docs/#authentication" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Learn how to generate your API key', 'wp-mcp-ai' ); ?></a>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render the Cloudways API key field.
+	 */
+	public function render_cloudways_api_key_field() {
+		$settings = self::get_settings();
+		?>
+		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_api_key]" value="<?php echo esc_attr( $settings['cloudways_api_key'] ); ?>" class="regular-text" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'API key from your Cloudways account settings.', 'wp-mcp-ai' ); ?></p>
+		<div style="margin-top: 10px;">
+			<button type="button" id="wp-mcp-ai-fetch-cloudways-data" class="button button-secondary">
+				<?php esc_html_e( 'Fetch Cloudways Data', 'wp-mcp-ai' ); ?>
+			</button>
+			<span id="wp-mcp-ai-cloudways-fetch-result" style="margin-left: 10px;"></span>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the Cloudways server ID field.
+	 */
+	public function render_cloudways_server_id_field() {
+		$settings = self::get_settings();
+		?>
+		<input 
+			type="text" 
+			id="wp-mcp-ai-cloudways-server-id"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" 
+			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" 
+			class="regular-text" 
+			autocomplete="off" 
+			readonly 
+			aria-describedby="wp-mcp-ai-cloudways-server-id-description"
+			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'wp-mcp-ai' ); ?>"
+		/>
+		<p id="wp-mcp-ai-cloudways-server-id-description" class="description"><?php esc_html_e( 'Server ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<div id="wp-mcp-ai-cloudways-servers-list" style="margin-top: 10px;"></div>
+		<?php
+	}
+
+	/**
+	 * Render the Cloudways application ID field.
+	 */
+	public function render_cloudways_app_id_field() {
+		$settings = self::get_settings();
+		?>
+		<input 
+			type="text" 
+			id="wp-mcp-ai-cloudways-app-id"
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" 
+			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" 
+			class="regular-text" 
+			autocomplete="off" 
+			readonly 
+			aria-describedby="wp-mcp-ai-cloudways-app-id-description"
+			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'wp-mcp-ai' ); ?>"
+		/>
+		<p id="wp-mcp-ai-cloudways-app-id-description" class="description"><?php esc_html_e( 'Application ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<div id="wp-mcp-ai-cloudways-apps-list" style="margin-top: 10px;"></div>
+		<?php
+	}
+
+	/**
 	 * Render the Mailjet API key field.
 	 */
 	public function render_mailjet_api_key_field() {
@@ -4329,6 +4470,144 @@ class WP_MCP_AI_Admin_Settings {
 		}
 
 		wp_send_json_success( array( 'models' => $models ) );
+	}
+
+	/**
+	 * Handle AJAX request to fetch Cloudways data (servers and applications).
+	 */
+	public function handle_fetch_cloudways_data() {
+		check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+
+		if ( empty( $email ) || empty( $api_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide both email and API key.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Step 1: Get OAuth access token.
+		$oauth_url  = 'https://api.cloudways.com/api/v1/oauth/access_token';
+		$oauth_body = array(
+			'email'   => $email,
+			'api_key' => $api_key,
+		);
+
+		$oauth_response = wp_remote_post(
+			$oauth_url,
+			array(
+				'body'    => wp_json_encode( $oauth_body ),
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout' => 30,
+			)
+		);
+
+		if ( is_wp_error( $oauth_response ) ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to connect to Cloudways API: ', 'wp-mcp-ai' ) . $oauth_response->get_error_message() ) );
+			return;
+		}
+
+		$oauth_code = wp_remote_retrieve_response_code( $oauth_response );
+		$oauth_data = json_decode( wp_remote_retrieve_body( $oauth_response ), true );
+
+		if ( 200 !== $oauth_code || empty( $oauth_data['access_token'] ) ) {
+			$error_message = ! empty( $oauth_data['message'] ) ? $oauth_data['message'] : __( 'Invalid credentials.', 'wp-mcp-ai' );
+			wp_send_json_error( array( 'message' => $error_message ) );
+			return;
+		}
+
+		$access_token = $oauth_data['access_token'];
+
+		// Step 2: Fetch servers.
+		$servers_url      = 'https://api.cloudways.com/api/v1/server';
+		$servers_response = wp_remote_get(
+			$servers_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $access_token,
+					'Accept'        => 'application/json',
+				),
+				'timeout' => 30,
+			)
+		);
+
+		if ( is_wp_error( $servers_response ) ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to fetch servers: ', 'wp-mcp-ai' ) . $servers_response->get_error_message() ) );
+			return;
+		}
+
+		$servers_code = wp_remote_retrieve_response_code( $servers_response );
+		$servers_data = json_decode( wp_remote_retrieve_body( $servers_response ), true );
+
+		if ( 200 !== $servers_code || empty( $servers_data['servers'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No servers found or failed to fetch servers.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		$servers = array();
+		foreach ( $servers_data['servers'] as $server ) {
+			// Validate that expected fields exist.
+			if ( ! isset( $server['id'] ) || ! isset( $server['label'] ) ) {
+				continue;
+			}
+
+			$servers[] = array(
+				'id'     => sanitize_text_field( $server['id'] ),
+				'label'  => sanitize_text_field( $server['label'] ),
+				'status' => isset( $server['status'] ) ? sanitize_text_field( $server['status'] ) : 'unknown',
+			);
+		}
+
+		// Step 3: Fetch applications from the first server.
+		$apps = array();
+		if ( ! empty( $servers ) ) {
+			$first_server_id = $servers[0]['id'];
+			$apps_url        = add_query_arg( 'server_id', $first_server_id, 'https://api.cloudways.com/api/v1/apps' );
+			$apps_response   = wp_remote_get(
+				$apps_url,
+				array(
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $access_token,
+						'Accept'        => 'application/json',
+					),
+					'timeout' => 30,
+				)
+			);
+
+			if ( ! is_wp_error( $apps_response ) ) {
+				$apps_code = wp_remote_retrieve_response_code( $apps_response );
+				$apps_data = json_decode( wp_remote_retrieve_body( $apps_response ), true );
+
+				if ( 200 === $apps_code && ! empty( $apps_data['apps'] ) ) {
+					foreach ( $apps_data['apps'] as $app ) {
+						// Validate that expected fields exist.
+						if ( ! isset( $app['id'] ) || ! isset( $app['label'] ) ) {
+							continue;
+						}
+
+						$apps[] = array(
+							'id'        => sanitize_text_field( $app['id'] ),
+							'label'     => sanitize_text_field( $app['label'] ),
+							'server_id' => $first_server_id,
+						);
+					}
+				}
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'servers' => $servers,
+				'apps'    => $apps,
+			)
+		);
 	}
 }
 
