@@ -253,6 +253,17 @@ WP MCP AI ships multiple ways to embed assistants on the front end:
 
 Guest tokens are honoured by the REST endpoints through the `X-WP-MCP-AI-Guest` header or `guest_token` parameter, allowing the chat shortcode and Elementor widget to make authenticated requests on behalf of public visitors without exposing persistent credentials.【F:includes/class-wp-mcp-ai-rest.php†L289-L307】【F:includes/class-wp-mcp-ai-rest.php†L2088-L2104】
 
+### Chat History Persistence
+
+The chat interface automatically persists conversation history to the browser's localStorage, preventing data loss when users navigate away or refresh the page. Conversations are:
+
+- **Automatically saved** after each user message and assistant response
+- **Automatically restored** when returning to the chat page (within 24 hours)
+- **Stored per assistant** so different assistant conversations remain separate
+- **Complementary to JetEngine storage** which provides permanent server-side transcript archiving
+
+See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
+
 ---
 
 ## 📦 Installation
