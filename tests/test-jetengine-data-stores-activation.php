@@ -77,8 +77,9 @@ class WP_MCP_AI_JetEngine_Data_Stores_Activation_Test extends WP_UnitTestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
+		// Reset the global mock to ensure a fresh state.
 		global $wp_mcp_ai_mock_jet_engine_cct;
-		$wp_mcp_ai_mock_jet_engine_cct = new Jet_Engine();
+		$wp_mcp_ai_mock_jet_engine_cct = null;
 	}
 
 	/**
