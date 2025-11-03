@@ -2188,7 +2188,23 @@ class WP_MCP_AI_Admin_Settings {
 			. '.wp-mcp-ai-connector-checklist__item--missing{background:#fef2f2;border-color:#fca5a5;}'
 			. '.wp-mcp-ai-connector-checklist__item--missing .wp-mcp-ai-connector-checklist__status{color:#b91c1c;}'
 			. '.wp-mcp-ai-connector-checklist__item--inactive{background:#f8fafc;border-color:#cbd5f5;}'
-			. '.wp-mcp-ai-connector-checklist__item--inactive .wp-mcp-ai-connector-checklist__status{color:#1e3a8a;}';
+			. '.wp-mcp-ai-connector-checklist__item--inactive .wp-mcp-ai-connector-checklist__status{color:#1e3a8a;}'
+			. '.wp-mcp-ai-error-log-section{margin-top:2rem;padding:1.25rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;box-shadow:0 1px 2px rgba(15,23,42,0.05);}'
+			. '.wp-mcp-ai-error-log-section h2{margin-top:0;margin-bottom:0.75rem;font-size:1.25rem;border-bottom:1px solid #e2e8f0;padding-bottom:0.5rem;}'
+			. '.wp-mcp-ai-log-preview{margin:1rem 0;padding:0;list-style:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;max-height:400px;overflow-y:auto;}'
+			. '.wp-mcp-ai-log-preview li{padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;font-family:monospace;font-size:0.875rem;}'
+			. '.wp-mcp-ai-log-preview li:last-child{border-bottom:none;}'
+			. '.wp-mcp-ai-log-preview__time{color:#64748b;font-weight:normal;}'
+			. '.wp-mcp-ai-log-preview__type{font-weight:700;padding:0.125rem 0.5rem;border-radius:3px;background:#fee;color:#b91c1c;}'
+			. '.wp-mcp-ai-log-preview__message{color:#0f172a;}'
+			. '.wp-mcp-ai-log-preview__context{margin-top:0.5rem;}'
+			. '.wp-mcp-ai-log-preview__context summary{cursor:pointer;color:#2563eb;font-weight:600;}'
+			. '.wp-mcp-ai-log-preview__context summary:hover{text-decoration:underline;}'
+			. '.wp-mcp-ai-log-preview__context pre{margin-top:0.5rem;padding:0.75rem;background:#1e293b;color:#e2e8f0;border-radius:4px;overflow-x:auto;font-size:0.8125rem;line-height:1.5;}'
+			. '.wp-mcp-ai-log-meta{margin-top:1rem;padding-top:1rem;border-top:1px solid #e2e8f0;}'
+			. '.wp-mcp-ai-log-meta .description{margin-bottom:0.75rem;}'
+			. '.wp-mcp-ai-log-meta code{background:#f1f5f9;padding:0.125rem 0.375rem;border-radius:3px;font-size:0.875rem;}'
+			. '.wp-mcp-ai-log-meta__actions{margin-top:1rem;}';
 
 		wp_add_inline_style( 'wp-color-picker', $inline_styles );
 	}
@@ -2244,6 +2260,7 @@ class WP_MCP_AI_Admin_Settings {
 				submit_button();
 				?>
 			</form>
+			<?php $this->render_error_log_section(); ?>
 			<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
 				<form id="wp-mcp-ai-prune-log-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: none;">
 					<?php wp_nonce_field( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' ); ?>
@@ -3702,10 +3719,24 @@ class WP_MCP_AI_Admin_Settings {
 			<input id="wp-mcp-ai-enable-logging" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_logging]" value="1" <?php checked( $settings['enable_logging'] ); ?> />
 			<?php esc_html_e( 'Write OpenAI request and response details to the debug log.', 'wp-mcp-ai' ); ?>
 		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, detailed error and debug logs will be displayed in a separate section below.', 'wp-mcp-ai' ); ?></p>
 		<?php
-		if ( ! empty( $settings['enable_logging'] ) ) :
-			$entries = WP_MCP_AI_Logger::get_recent_error_messages();
-			?>
+	}
+
+	/**
+	 * Render the error log section (displayed separately from the form).
+	 */
+	public function render_error_log_section() {
+		$settings = self::get_settings();
+
+		if ( empty( $settings['enable_logging'] ) ) {
+			return;
+		}
+
+		$entries = WP_MCP_AI_Logger::get_recent_error_messages();
+		?>
+		<div class="wp-mcp-ai-error-log-section">
+			<h2><?php esc_html_e( 'Error Log', 'wp-mcp-ai' ); ?></h2>
 			<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
 			<?php if ( empty( $entries ) ) : ?>
 				<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
@@ -3808,7 +3839,7 @@ class WP_MCP_AI_Admin_Settings {
 					<p class="description"><?php esc_html_e( 'The PHP error log is not writable. Update the file permissions to prune it from the dashboard.', 'wp-mcp-ai' ); ?></p>
 				<?php endif; ?>
 			</div>
-		<?php endif; ?>
+		</div>
 		<?php
 	}
 
