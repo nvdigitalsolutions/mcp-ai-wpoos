@@ -61,7 +61,6 @@ class WP_MCP_AI_Assistant_CPT {
 		add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
 		add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 		add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_admin_menu_icon_styles' ) );
 	}
 
 	/**
@@ -480,7 +479,7 @@ class WP_MCP_AI_Assistant_CPT {
 			'rest_base'         => 'mcp-ai-assistants',
 			'capability_type'   => 'post',
 			'supports'          => array( 'title', 'editor' ),
-			'menu_icon'         => WP_MCP_AI_URL . 'assets/images/ai-icon.svg',
+			'menu_icon'         => 'dashicons-lightbulb',
 			'has_archive'       => false,
 			'rewrite'           => false,
 			'show_in_nav_menus' => false,
