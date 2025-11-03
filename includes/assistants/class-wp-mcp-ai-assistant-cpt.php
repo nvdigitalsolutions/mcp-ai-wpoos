@@ -2331,18 +2331,14 @@ class WP_MCP_AI_Assistant_CPT {
 						continue;
 					}
 
-					$label = '';
-					if ( 'openai' === $choice ) {
-						$label = __( 'OpenAI', 'wp-mcp-ai' );
-					} elseif ( 'gemini' === $choice ) {
-						$label = __( 'Gemini', 'wp-mcp-ai' );
-					} elseif ( 'ollama' === $choice ) {
-						$label = __( 'Ollama', 'wp-mcp-ai' );
-					} elseif ( 'lm_studio' === $choice ) {
-						$label = __( 'LM Studio', 'wp-mcp-ai' );
-					} else {
-						$label = ucfirst( str_replace( '_', ' ', $choice ) );
-					}
+					$provider_labels = array(
+						'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
+						'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
+						'ollama'    => __( 'Ollama', 'wp-mcp-ai' ),
+						'lm_studio' => __( 'LM Studio', 'wp-mcp-ai' ),
+					);
+
+					$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
 					?>
 					<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $provider, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 					<?php
