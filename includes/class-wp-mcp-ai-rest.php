@@ -3379,8 +3379,26 @@ class WP_MCP_AI_REST {
 				}
 			}
 
-			// Keep system messages plus the most recent N non-system messages.
-			$available_for_history = max( 1, $max_message_count - count( $system_messages ) );
+			// Ensure we have room for at least 2 non-system messages.
+			// If system messages exceed the limit, keep only the most recent ones.
+			$min_history_slots = 2;
+			if ( count( $system_messages ) > ( $max_message_count - $min_history_slots ) ) {
+				$max_system_messages = max( 1, $max_message_count - $min_history_slots );
+				$system_messages     = array_slice( $system_messages, -$max_system_messages );
+
+				WP_MCP_AI_Logger::log_event(
+					'chat_request_system_messages_trimmed',
+					'System messages exceeded limit and were trimmed.',
+					array(
+						'max_message_count'    => $max_message_count,
+						'system_message_count' => count( $system_messages ),
+						'min_history_slots'    => $min_history_slots,
+					)
+				);
+			}
+
+			// Keep the most recent N non-system messages.
+			$available_for_history = max( $min_history_slots, $max_message_count - count( $system_messages ) );
 			$other_messages        = array_slice( $other_messages, -$available_for_history );
 
 			// Recombine: system messages first, then history.

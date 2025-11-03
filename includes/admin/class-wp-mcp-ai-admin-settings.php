@@ -4046,7 +4046,7 @@ class WP_MCP_AI_Admin_Settings {
 		$current  = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
 		?>
 		<input type="number" min="1" max="50" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_history_messages]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
-		<p class="description"><?php esc_html_e( 'Maximum number of conversation history messages to retain per chat (6-8 recommended). Older messages will be trimmed.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Maximum number of conversation messages to retain per chat. Recommended: 6-8 for optimal performance, higher values increase token usage. System messages are always preserved.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 
