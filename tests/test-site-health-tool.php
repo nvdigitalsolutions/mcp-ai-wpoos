@@ -12,11 +12,85 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	public function test_execute_requires_site_health_capability() {
 		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 
+		$logged_errors = array();
+
+		// Capture error log events.
+		add_filter(
+			'wp_mcp_ai_log_entry',
+			function ( $entry ) use ( &$logged_errors ) {
+				if ( isset( $entry['type'] ) && 'error' === $entry['type'] ) {
+					$logged_errors[] = $entry;
+				}
+				return $entry;
+			}
+		);
+
 		$tool   = new WP_MCP_AI_Tool_Get_Site_Health();
 		$result = $tool->execute( array(), array( 'user_id' => $subscriber_id ) );
 
+		remove_all_filters( 'wp_mcp_ai_log_entry' );
+
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_forbidden', $result->get_error_code() );
+
+		// Verify that an error was logged.
+		$this->assertNotEmpty( $logged_errors, 'Should log an error when access is denied' );
+		$this->assertStringContainsString( 'insufficient permissions', $logged_errors[0]['message'], 'Error message should mention permissions' );
+		$this->assertArrayHasKey( 'context', $logged_errors[0], 'Error should have context' );
+		$this->assertArrayHasKey( 'user_id', $logged_errors[0]['context'], 'Error context should include user_id' );
+		$this->assertSame( $subscriber_id, $logged_errors[0]['context']['user_id'], 'Logged user_id should match' );
+	}
+
+	/**
+	 * Ensure that logging events are triggered during tool execution.
+	 */
+	public function test_execute_logs_diagnostic_information() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$logged_events = array();
+
+		// Capture log events.
+		add_filter(
+			'wp_mcp_ai_log_entry',
+			function ( $entry ) use ( &$logged_events ) {
+				$logged_events[] = $entry;
+				return $entry;
+			}
+		);
+
+		$tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+		add_filter( 'site_status_tests', array( $this, 'filter_site_status_tests' ) );
+
+		try {
+			$tool->execute( array(), array( 'user_id' => $admin_id ) );
+		} finally {
+			remove_filter( 'site_status_tests', array( $this, 'filter_site_status_tests' ) );
+			remove_all_filters( 'wp_mcp_ai_log_entry' );
+		}
+
+		// Verify that expected log events were triggered.
+		$event_types = array_column( $logged_events, 'type' );
+
+		$this->assertContains( 'site_health_check', $event_types, 'Should log initial access check' );
+		$this->assertContains( 'site_health_capability_check', $event_types, 'Should log capability check result' );
+		$this->assertContains( 'site_health_multisite_check', $event_types, 'Should log multisite check' );
+		$this->assertContains( 'site_health_dependency_check', $event_types, 'Should log dependency check' );
+
+		// Verify user_id is logged in the initial check.
+		$initial_check = array_values(
+			array_filter(
+				$logged_events,
+				function ( $event ) {
+					return isset( $event['type'] ) && 'site_health_check' === $event['type'];
+				}
+			)
+		);
+
+		$this->assertNotEmpty( $initial_check, 'Initial check event should be logged' );
+		$this->assertArrayHasKey( 'context', $initial_check[0], 'Event should have context' );
+		$this->assertArrayHasKey( 'user_id', $initial_check[0]['context'], 'Context should include user_id' );
+		$this->assertSame( $admin_id, $initial_check[0]['context']['user_id'], 'Logged user_id should match' );
 	}
 
 	/**
