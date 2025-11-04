@@ -81,14 +81,19 @@ function wp_mcp_ai_load_textdomain() {
     load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
-add_action( 'init', 'wp_mcp_ai_load_textdomain' );
+add_action( 'init', 'wp_mcp_ai_load_textdomain', 0 );
 
 /**
  * Bootstrap the plugin once all dependencies are loaded.
  */
 function wp_mcp_ai_bootstrap() {
     $registry = WP_MCP_AI_Tool_Registry::get_instance();
-    $registry->init();
+
+    if ( did_action( 'init' ) ) {
+        $registry->init();
+    } else {
+        add_action( 'init', array( $registry, 'init' ), 5 );
+    }
 
     $openai_client = new WP_MCP_AI_OpenAI_Client();
     $gemini_client = new WP_MCP_AI_Gemini_Client();

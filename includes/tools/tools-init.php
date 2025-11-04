@@ -9,6 +9,6 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-add_action( 'plugins_loaded', function() {
+add_action( 'init', function() {
     WP_MCP_AI_Tool_Registry::get_instance()->init();
 }, 5 );
