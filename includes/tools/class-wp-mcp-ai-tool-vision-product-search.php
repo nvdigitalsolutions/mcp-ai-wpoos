@@ -49,15 +49,15 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'image_url'       => array(
+				'image_url'        => array(
 					'type'        => 'string',
 					'description' => __( 'URL of the product image to search for.', 'wp-mcp-ai' ),
 				),
-				'image_content'   => array(
+				'image_content'    => array(
 					'type'        => 'string',
 					'description' => __( 'Base64-encoded image content as an alternative to image_url.', 'wp-mcp-ai' ),
 				),
-				'product_set'     => array(
+				'product_set'      => array(
 					'type'        => 'string',
 					'description' => __( 'Optional product set resource name to search within.', 'wp-mcp-ai' ),
 				),
@@ -65,11 +65,11 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
 					'type'        => 'string',
 					'description' => __( 'Optional product category to filter results.', 'wp-mcp-ai' ),
 				),
-				'filter'          => array(
+				'filter'           => array(
 					'type'        => 'string',
 					'description' => __( 'Optional filter expression for product search.', 'wp-mcp-ai' ),
 				),
-				'max_results'     => array(
+				'max_results'      => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => 100,

@@ -197,7 +197,7 @@ class WP_MCP_AI_Response_Attachments_Tests extends WP_UnitTestCase {
 					if ( isset( $callback['function'] ) && is_array( $callback['function'] ) ) {
 						if ( $callback['function'][0] === 'WP_MCP_AI_Response_Attachments' &&
 							$callback['function'][1] === 'handle_chat_response' ) {
-							$count++;
+							++$count;
 						}
 					}
 				}

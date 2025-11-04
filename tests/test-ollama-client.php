@@ -34,9 +34,9 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure an error is returned when the Ollama model is missing.
 	 */
 	public function test_create_chat_completion_requires_model() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
-		$defaults['ollama_model']         = '';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = '';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -64,9 +64,9 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure the Ollama client normalizes the response correctly.
 	 */
 	public function test_create_chat_completion_normalizes_response() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
-		$defaults['ollama_model']         = 'llama2';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -83,12 +83,12 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 				'headers'  => array(),
 				'body'     => wp_json_encode(
 					array(
-						'model'   => 'llama2',
-						'message' => array(
+						'model'             => 'llama2',
+						'message'           => array(
 							'role'    => 'assistant',
 							'content' => 'Hello from Ollama',
 						),
-						'done'    => true,
+						'done'              => true,
 						'prompt_eval_count' => 10,
 						'eval_count'        => 20,
 					)
@@ -133,8 +133,8 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure the test connection method works correctly.
 	 */
 	public function test_connection_test_succeeds() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -171,8 +171,8 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure the list models method returns models correctly.
 	 */
 	public function test_list_models_returns_models() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -185,22 +185,22 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 					array(
 						'models' => array(
 							array(
-								'name'         => 'llama2',
-								'size'         => 1234567890,
-								'modified_at'  => '2024-01-01T00:00:00Z',
-								'digest'       => 'abc123',
-								'details'      => array(
+								'name'        => 'llama2',
+								'size'        => 1234567890,
+								'modified_at' => '2024-01-01T00:00:00Z',
+								'digest'      => 'abc123',
+								'details'     => array(
 									'family'         => 'llama',
 									'format'         => 'gguf',
 									'parameter_size' => '7B',
 								),
 							),
 							array(
-								'name'         => 'codellama',
-								'size'         => 987654321,
-								'modified_at'  => '2024-01-02T00:00:00Z',
-								'digest'       => 'def456',
-								'details'      => array(
+								'name'        => 'codellama',
+								'size'        => 987654321,
+								'modified_at' => '2024-01-02T00:00:00Z',
+								'digest'      => 'def456',
+								'details'     => array(
 									'family'         => 'llama',
 									'format'         => 'gguf',
 									'parameter_size' => '13B',
@@ -238,9 +238,9 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure the client handles empty messages array gracefully.
 	 */
 	public function test_create_chat_completion_requires_messages() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
-		$defaults['ollama_model']         = 'llama2';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
@@ -255,9 +255,9 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	 * Ensure the client uses the provided model override.
 	 */
 	public function test_create_chat_completion_uses_model_override() {
-		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
-		$defaults['ollama_endpoint_url']  = 'http://localhost:11434';
-		$defaults['ollama_model']         = 'llama2';
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 

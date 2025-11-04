@@ -219,7 +219,7 @@ class Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
 						'text' => 'Please provide comprehensive analysis of this image.',
 					),
 					array(
-						'type'  => 'image_url',
+						'type'      => 'image_url',
 						'image_url' => array(
 							'url' => 'https://example.com/image.jpg',
 						),

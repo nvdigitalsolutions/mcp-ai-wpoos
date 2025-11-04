@@ -55,9 +55,9 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 			WP_MCP_AI_Logger::log_error(
 				'Input token limit exceeded.',
 				array(
-					'model'       => $model,
-					'error'       => $validation->get_error_message(),
-					'error_data'  => $validation->get_error_data(),
+					'model'      => $model,
+					'error'      => $validation->get_error_message(),
+					'error_data' => $validation->get_error_data(),
 				)
 			);
 			return $validation;
@@ -147,8 +147,8 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 			'max_tokens_calculated',
 			'Calculated max_tokens for output.',
 			array(
-				'model'           => $model,
-				'max_tokens'      => $max_output,
+				'model'            => $model,
+				'max_tokens'       => $max_output,
 				'available_budget' => $budget['available'],
 			)
 		);
