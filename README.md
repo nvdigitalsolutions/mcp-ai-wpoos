@@ -7,59 +7,50 @@
 
 ## 📑 Table of Contents
 
+### Getting Started
 - [🧩 Overview](#-overview)
 - [🚀 Features](#-features)
-  - [Assistant & conversation tools](#assistant--conversation-tools)
-  - [Language routing & knowledge management](#language-routing--knowledge-management)
-  - [Media generation & transcription](#media-generation--transcription)
-  - [Commerce & finance workflows](#commerce--finance-workflows)
-  - [Communications & outreach](#communications--outreach)
-  - [Integrations, security & controls](#integrations-security--controls)
+- [📦 Installation](#-installation)
+- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
+- [📚 Documentation](#-documentation)
+
+### Core Functionality
 - [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
 - [🛠 Built-in tools & automations](#-built-in-tools--automations)
 - [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
-- [📦 Installation](#-installation)
-- [⚙️ Configuration Checklist (Action Items)](#-configuration-checklist-action-items)
-- [🧠 Language Model Providers (OpenAI, Gemini & Ollama)](#-language-model-providers-openai-gemini--ollama)
+- [💬 Frontend Shortcode](#-frontend-shortcode)
+
+### AI Providers & Integration
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini--ollama)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [🧊 Elementor Widgets](#-elementor-widgets)
-  - [Chat surfaces and companion blocks](#chat-surfaces-and-companion-blocks)
-  - [Operations dashboards](#operations-dashboards)
-- [🧮 Usage Tracking](#-usage-tracking)
-- [🧷 Attachment MIME Controls](#-attachment-mime-controls)
-- [🕵️ Code Review](#-code-review)
+
+### Remote MCP Setup
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
-  - [Using WP oOS as an MCP server](#using-wp-oos-as-an-mcp-server)
-  - [Operating multiple MCP deployments](#operating-multiple-mcp-deployments)
 - [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
-  - [Claude Desktop setup](#claude-desktop-setup)
-  - [LM Studio setup](#lm-studio-setup)
-  - [ChatGPT connector setup](#chatgpt-connector-setup)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
+- [🔑 Assistant API Credentials](#-assistant-api-credentials)
+
+### Assistant Management
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
 - [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
-- [🔑 Assistant API credentials](#-assistant-api-credentials)
+- [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
+
+### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
-  - [🔁 Codex environment startup script](#-codex-environment-startup-script)
 - [🧑‍💻 Development Tooling](#-development-tooling)
 - [🧪 Testing & QA](#-testing--qa)
-- [💬 Frontend Shortcode](#-frontend-shortcode)
-  - [How it works](#how-it-works)
-  - [Requirements](#requirements)
-  - [Tips](#tips)
-  - [Elementor widget](#elementor-widget)
-- [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
-  - [Supported segment types](#supported-segment-types)
+- [🧩 Hooks & Filters](#-hooks--filters)
+- [🧰 WP-CLI Commands](#-wp-cli-commands)
+
+### Reference
 - [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
 - [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
 - [🧾 Logging](#-logging)
-- [🧾 JetEngine REST Endpoint Report Helper](#-jetengine-rest-endpoint-report-helper)
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
 - [✅ Manual QA Scenarios](#-manual-qa-scenarios)
-- [🧩 Hooks & Filters](#-hooks--filters)
-- [🧰 WP-CLI Commands](#-wp-cli-commands)
 
 ---
 
@@ -326,6 +317,33 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Sites needing social media automation
 - Advanced workflows requiring external APIs
 
+
+---
+
+## 📚 Documentation
+
+WP oOS includes comprehensive documentation covering all aspects of the plugin:
+
+### Quick Links
+- **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 32 documentation files
+- **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 65+ built-in tools
+- **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
+
+### For New Users
+- [Setup Checklist](docs/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
+- [Remote Client Quickstart](docs/remote-client-quickstart.md) - Connect Claude Desktop, LM Studio, or other MCP clients
+- [Best Practices](docs/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
+
+### For Developers
+- [Code Review Report](docs/CODE_REVIEW.md) - Comprehensive code quality analysis (20KB)
+- [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
+- [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
+
+### For Administrators
+- [Deployment Troubleshooting](docs/deployment-troubleshooting.md) - Common issues and solutions
+- [Multisite Support](docs/multisite-support.md) - WordPress multisite configuration
+- [Rate Limit Protection](docs/rate-limit-protection.md) - API rate limiting setup
 
 ---
 
@@ -941,3 +959,93 @@ Manage the WP oOS environment from the command line when WP-CLI is available.
 Filter `wp_mcp_ai_supported_plugins` to expose additional managed dependencies to the CLI helpers.
 
 Each hook receives sanitized data and respects the current user's permissions and multisite membership.
+
+---
+
+## 🆘 Getting Help & Support
+
+### Documentation Resources
+
+Start with the comprehensive documentation before seeking additional support:
+
+1. **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast answers to common questions and tasks
+2. **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Navigate all 32 documentation files
+3. **[Troubleshooting Guide](docs/deployment-troubleshooting.md)** - Solutions to common issues
+4. **[REST API Reference](docs/rest-api.md)** - Complete API documentation
+
+### Before Reporting Issues
+
+When encountering problems, please:
+
+- [ ] Check the [troubleshooting guide](docs/deployment-troubleshooting.md)
+- [ ] Enable logging in Settings → WP oOS to capture detailed errors
+- [ ] Review the [common issues section](#common-issues) below
+- [ ] Search [existing GitHub issues](https://github.com/nvdigitalsolutions/wp-mcp-ai/issues)
+- [ ] Test with a default assistant to isolate configuration issues
+
+### Common Issues
+
+#### Chat Not Working
+1. Verify OpenAI API key is configured in Settings → WP oOS
+2. Ensure assistant is published
+3. Check user has `edit_posts` capability or add `allow_guests="true"` to shortcode
+4. Enable logging and check browser console for errors
+
+#### Tool Execution Failures
+1. Verify tool is enabled for the assistant
+2. Check required dependencies are installed (WooCommerce, JetEngine, etc.)
+3. Ensure user has necessary capabilities
+4. Review tool-specific requirements in [tool reference](docs/tool-reference.md)
+
+#### Remote Client Connection Issues
+1. Verify credentials are correct and not expired
+2. Test with [remote client quickstart guide](docs/remote-client-quickstart.md)
+3. Use WP-CLI command: `wp mcp-ai remote <url> --token=<token>`
+4. Review [authentication documentation](docs/mcp-server-authentication.md)
+
+### Reporting Issues
+
+When creating a GitHub issue, please include:
+
+- **Plugin version** (found in WordPress admin)
+- **WordPress version** and PHP version
+- **Error messages** from logs (enable logging in settings)
+- **Steps to reproduce** the issue
+- **Expected behavior** vs actual behavior
+- **Screenshots** if applicable
+
+Create issues at: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
+
+### Contributing
+
+We welcome contributions! Please see:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [CODE_REVIEW.md](docs/CODE_REVIEW.md) - Code quality standards
+- [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
+
+### Security Vulnerabilities
+
+For security issues, please review our [Security Policy](SECURITY.md) and report vulnerabilities responsibly.
+
+**Do not** create public GitHub issues for security vulnerabilities.
+
+### Community & Updates
+
+- **GitHub Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai
+- **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
+- **License:** GPLv2 or later
+
+---
+
+## 📄 License
+
+This plugin is licensed under the GNU General Public License v2.0 or later.
+
+See [LICENSE](LICENSE) for full text.
+
+---
+
+**Thank you for using WP Open Operator System!**
+
+For the latest updates, documentation, and support, visit the [GitHub repository](https://github.com/nvdigitalsolutions/wp-mcp-ai).
