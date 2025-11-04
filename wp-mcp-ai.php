@@ -470,7 +470,9 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		WP_MCP_AI_Assistant_CPT::register_post_type();
+		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
+		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
+		// The post type will be registered on the next page load via the init hook.
 		flush_rewrite_rules();
 	}
 }
