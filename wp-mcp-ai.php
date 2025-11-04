@@ -21,15 +21,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Security: Verify authorization key file exists in WordPress root directory.
+ * Security: Optional authorization key file verification.
  * 
- * The plugin requires a .wp-mcp-ai-key file in the WordPress root directory
- * containing a valid authorization key. This provides an additional security layer
- * to prevent unauthorized plugin activation.
+ * By default, this security check is DISABLED to allow easy plugin activation.
  * 
- * To bypass this check in development, define: WP_MCP_AI_SKIP_KEY_CHECK
+ * To enable the security check, add this to wp-config.php:
+ *   define( 'WP_MCP_AI_REQUIRE_KEY', true );
+ * 
+ * When enabled, the plugin requires a .wp-mcp-ai-key file in the WordPress root
+ * directory containing a valid authorization key. This provides an additional
+ * security layer to prevent unauthorized plugin activation.
  */
-if ( ! defined( 'WP_MCP_AI_SKIP_KEY_CHECK' ) || ! WP_MCP_AI_SKIP_KEY_CHECK ) {
+if ( defined( 'WP_MCP_AI_REQUIRE_KEY' ) && WP_MCP_AI_REQUIRE_KEY ) {
 	$key_file = ABSPATH . '.wp-mcp-ai-key';
 	$expected_key = 'WP_MCP_AI_AUTH_' . md5( 'wp-mcp-ai-security-key-v1' );
 	

@@ -269,20 +269,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 ### Standard Installation
 
-#### 1. Security Key Setup (Required)
-Before activating the plugin, create a security key file in your WordPress root directory:
-
-```bash
-# In your WordPress root directory (where wp-config.php is located)
-echo "WP_MCP_AI_AUTH_eb9923d6159ee0283ffdcfcb1bbfb821" > .wp-mcp-ai-key
-chmod 600 .wp-mcp-ai-key
-```
-
-📖 **See [SECURITY-KEY-SETUP.md](SECURITY-KEY-SETUP.md) for detailed instructions and troubleshooting.**
-
-**Note:** The plugin will not load without this key file. For development environments, you can bypass this check by adding `define( 'WP_MCP_AI_SKIP_KEY_CHECK', true );` to `wp-config.php`.
-
-#### 2. Plugin Installation
+#### 1. Plugin Installation
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
 2. Activate **WP oOS** from the WordPress admin
    - Ensure [JetEngine](https://crocoblock.com/plugins/jetengine/) is active with the **Custom Content Types** module enabled before switching the plugin on. WP oOS automatically provisions the `ai_chat_transcripts` CCT on JetEngine init, so no manual setup is required beyond enabling the module; existing CCT definitions are left untouched if you have already created one manually.
@@ -331,6 +318,31 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Production sites with WooCommerce, JetEngine, or Elementor
 - Sites needing social media automation
 - Advanced workflows requiring external APIs
+
+### Optional Security Key (Advanced)
+
+By default, the plugin works without any additional security requirements. However, for high-security environments, you can enable an optional authorization key check.
+
+**To enable the security key requirement**, add this to your `wp-config.php`:
+
+```php
+define( 'WP_MCP_AI_REQUIRE_KEY', true );
+```
+
+Then create the key file in your WordPress root directory:
+
+```bash
+# In your WordPress root directory (where wp-config.php is located)
+echo "WP_MCP_AI_AUTH_eb9923d6159ee0283ffdcfcb1bbfb821" > .wp-mcp-ai-key
+chmod 600 .wp-mcp-ai-key
+```
+
+📖 **See [SECURITY-KEY-SETUP.md](SECURITY-KEY-SETUP.md) for detailed instructions.**
+
+**When to enable the security key:**
+- High-security production environments
+- Sites requiring explicit deployment authorization
+- Preventing unauthorized plugin activation on compromised servers
 
 
 ---

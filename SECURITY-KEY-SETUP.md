@@ -1,12 +1,22 @@
-# WP MCP AI Security Key Setup
+# WP MCP AI Security Key Setup (Optional)
 
 ## Overview
 
-For enhanced security, WP Open Operator System requires an authorization key file in your WordPress root directory before the plugin will load. This prevents unauthorized activation and provides an additional security layer.
+**By default, the security key check is DISABLED** and the plugin works without any additional requirements.
 
-## Installation Steps
+For enhanced security in production environments, you can optionally enable an authorization key requirement. When enabled, WP Open Operator System requires an authorization key file in your WordPress root directory before the plugin will load. This prevents unauthorized activation and provides an additional security layer.
 
-### 1. Generate the Key File
+## Enabling the Security Key Check
+
+### 1. Enable in wp-config.php
+
+Add this constant to your `wp-config.php` file:
+
+```php
+define( 'WP_MCP_AI_REQUIRE_KEY', true );
+```
+
+### 2. Generate the Key File
 
 Create a file named `.wp-mcp-ai-key` in your WordPress root directory (the same directory where `wp-config.php` is located).
 
@@ -32,10 +42,12 @@ This ensures only the web server can read the file.
 
 ### 4. Verify Setup
 
-After creating the key file:
+After enabling the check and creating the key file:
 1. Refresh your WordPress admin dashboard
 2. The plugin should load without any error messages
 3. If you see an error about a missing or invalid key, verify the file exists and contains the correct key
+
+**Note:** If you have NOT added `define( 'WP_MCP_AI_REQUIRE_KEY', true );` to wp-config.php, the plugin will work without the key file
 
 ## File Location
 
@@ -51,15 +63,15 @@ The key file must be in the WordPress root directory:
 └── ...
 ```
 
-## Development Mode
+## Disabling the Security Check
 
-For development or testing environments, you can bypass the key check by adding this constant to your `wp-config.php`:
+The security key check is disabled by default. If you previously enabled it and want to disable it again, simply remove or comment out the constant in your `wp-config.php`:
 
 ```php
-define( 'WP_MCP_AI_SKIP_KEY_CHECK', true );
+// define( 'WP_MCP_AI_REQUIRE_KEY', true );  // Commented out = disabled
 ```
 
-**Warning:** Never use this in production environments as it removes the security protection.
+Or remove the line entirely.
 
 ## Troubleshooting
 
