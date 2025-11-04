@@ -2148,10 +2148,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			};
 
-			add_filter( 'rest_pre_serve_request', $callback, 10, 4 );
+			add_filter( 'rest_pre_serve_request', $callback, 999, 4 );
 
 			$response = new WP_REST_Response( null, 200 );
 			$response->set_headers( $headers );
+			$response->header( 'Content-Type', 'text/event-stream; charset=UTF-8' );
 
 			return $response;
 		}
