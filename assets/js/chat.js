@@ -2231,9 +2231,9 @@
     }
 
     function loadHistorySessionIntoChat(state, session, activeItem, chatWindow) {
-        // Always use state.messagesEl to ensure we're loading into the main chat window
-        // The chatWindow parameter is kept for backwards compatibility but we prioritize state.messagesEl
-        const messagesEl = state && state.messagesEl ? state.messagesEl : chatWindow;
+        // Prioritize state.messagesEl over chatWindow for loading into the main chat window
+        // The chatWindow parameter is kept for backwards compatibility
+        const messagesEl = state.messagesEl || chatWindow;
         
         if (!state || !messagesEl) {
             return;
