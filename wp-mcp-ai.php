@@ -214,116 +214,116 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	 * Main plugin container class.
 	 */
 	final class WP_MCP_AI {
-	/**
-	 * Singleton instance.
-	 *
-	 * @var WP_MCP_AI
-	 */
-	private static $instance;
+		/**
+		 * Singleton instance.
+		 *
+		 * @var WP_MCP_AI
+		 */
+		private static $instance;
 
-	/**
-	 * Admin settings instance.
-	 *
-	 * @var WP_MCP_AI_Admin_Settings
-	 */
-	public $admin_settings;
+		/**
+		 * Admin settings instance.
+		 *
+		 * @var WP_MCP_AI_Admin_Settings
+		 */
+		public $admin_settings;
 
-	/**
-	 * Assistant CPT instance.
-	 *
-	 * @var WP_MCP_AI_Assistant_CPT
-	 */
-	public $assistant_cpt;
+		/**
+		 * Assistant CPT instance.
+		 *
+		 * @var WP_MCP_AI_Assistant_CPT
+		 */
+		public $assistant_cpt;
 
-	/**
-	 * Crawl4AI Local API instance.
-	 *
-	 * @var WP_MCP_AI_Crawl4AI_Local_API
-	 */
-	public $crawl4ai_local_api;
+		/**
+		 * Crawl4AI Local API instance.
+		 *
+		 * @var WP_MCP_AI_Crawl4AI_Local_API
+		 */
+		public $crawl4ai_local_api;
 
-	/**
-	 * REST controller instance.
-	 *
-	 * @var WP_MCP_AI_REST
-	 */
-	public $rest_controller;
+		/**
+		 * REST controller instance.
+		 *
+		 * @var WP_MCP_AI_REST
+		 */
+		public $rest_controller;
 
-	/**
-	 * Shortcodes instance.
-	 *
-	 * @var WP_MCP_AI_Shortcodes
-	 */
-	public $shortcodes;
+		/**
+		 * Shortcodes instance.
+		 *
+		 * @var WP_MCP_AI_Shortcodes
+		 */
+		public $shortcodes;
 
-	/**
-	 * Admin cron manager instance.
-	 *
-	 * @var WP_MCP_AI_Admin_Cron_Manager
-	 */
-	public $admin_cron_manager;
+		/**
+		 * Admin cron manager instance.
+		 *
+		 * @var WP_MCP_AI_Admin_Cron_Manager
+		 */
+		public $admin_cron_manager;
 
-	/**
-	 * Returns the singleton instance.
-	 *
-	 * @return WP_MCP_AI
-	 */
-	public static function instance() {
-		if ( is_null( self::$instance ) ) {
-			self::$instance = new self();
-		}
-		return self::$instance;
-	}
-
-	/**
-	 * Private constructor to prevent direct instantiation.
-	 */
-	private function __construct() {
-		// Bootstrap happens via the bootstrap() method.
-	}
-
-	/**
-	 * Bootstrap the plugin.
-	 */
-	public function bootstrap() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$registry->init();
-
-		$openai_client    = new WP_MCP_AI_OpenAI_Client();
-		$gemini_client    = new WP_MCP_AI_Gemini_Client();
-		$ollama_client    = new WP_MCP_AI_Ollama_Client();
-		$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
-		$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
-
-		$this->admin_settings     = new WP_MCP_AI_Admin_Settings();
-		$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
-		$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
-		$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
-		$this->shortcodes         = new WP_MCP_AI_Shortcodes();
-
-		if ( is_admin() ) {
-			$this->admin_cron_manager = new WP_MCP_AI_Admin_Cron_Manager();
+		/**
+		 * Returns the singleton instance.
+		 *
+		 * @return WP_MCP_AI
+		 */
+		public static function instance() {
+			if ( is_null( self::$instance ) ) {
+				self::$instance = new self();
+			}
+			return self::$instance;
 		}
 
-		// Maintain backward compatibility with code that accesses $GLOBALS directly.
-		$GLOBALS['wp_mcp_ai_admin_settings']     = $this->admin_settings;
-		$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
-		$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
-		$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
-		$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
-
-		if ( is_admin() ) {
-			$GLOBALS['wp_mcp_ai_admin_cron_manager'] = $this->admin_cron_manager;
+		/**
+		 * Private constructor to prevent direct instantiation.
+		 */
+		private function __construct() {
+			// Bootstrap happens via the bootstrap() method.
 		}
 
-		WP_MCP_AI_Crawler::init();
+		/**
+		 * Bootstrap the plugin.
+		 */
+		public function bootstrap() {
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			$registry->init();
 
-		WP_MCP_AI_Usage_Tracker::init();
+			$openai_client    = new WP_MCP_AI_OpenAI_Client();
+			$gemini_client    = new WP_MCP_AI_Gemini_Client();
+			$ollama_client    = new WP_MCP_AI_Ollama_Client();
+			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
+			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
 
-		if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
-			WP_MCP_AI_Elementor_Integration::maybe_init();
+			$this->admin_settings     = new WP_MCP_AI_Admin_Settings();
+			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
+			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
+			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
+			$this->shortcodes         = new WP_MCP_AI_Shortcodes();
+
+			if ( is_admin() ) {
+				$this->admin_cron_manager = new WP_MCP_AI_Admin_Cron_Manager();
+			}
+
+			// Maintain backward compatibility with code that accesses $GLOBALS directly.
+			$GLOBALS['wp_mcp_ai_admin_settings']     = $this->admin_settings;
+			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
+			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
+			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
+			$GLOBALS['wp_mcp_ai_shortcodes']         = $this->shortcodes;
+
+			if ( is_admin() ) {
+				$GLOBALS['wp_mcp_ai_admin_cron_manager'] = $this->admin_cron_manager;
+			}
+
+			WP_MCP_AI_Crawler::init();
+
+			WP_MCP_AI_Usage_Tracker::init();
+
+			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
+				WP_MCP_AI_Elementor_Integration::maybe_init();
+			}
 		}
-	}
 	}
 }
 
