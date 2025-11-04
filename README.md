@@ -64,6 +64,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 ## 🚀 Features
 
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
+
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
@@ -441,13 +443,15 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 - WordPress-native email (via wp_mail)
 
 **Base Version excludes 30 tools requiring third-party plugins or external APIs:**
-- WooCommerce tools (3)
-- JetEngine/JetFormBuilder tools (5)
-- Elementor/RankMath/WPCode tools (3)
-- Google services (5)
-- Social media integrations (8)
-- External messaging services (4)
-- QuickBooks and other business APIs (2)
+- **Third-party WordPress plugins** (11 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
+  - WooCommerce tools (3)
+  - JetEngine/JetFormBuilder tools (5)
+  - Elementor/RankMath/WPCode tools (3)
+- **External API services** (19 tools) - Require API credentials
+  - Google services (5)
+  - Social media integrations (8)
+  - External messaging services (4)
+  - QuickBooks and other business APIs (2)
 
 ### Full Version Installation (Opt-in)
 
@@ -463,12 +467,16 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Starting fresh with WordPress
 - Testing or development environments
 - Simpler installations without external dependencies
-- Sites that don't need ecommerce or advanced integrations
+- Sites that don't need e-commerce or advanced integrations
+- Don't want to purchase/install third-party plugins
 
 **When to use Full Version:**
-- Production sites with WooCommerce, JetEngine, or Elementor
-- Sites needing social media automation
+- Production sites with WooCommerce, JetEngine, or Elementor already installed
+- Sites needing social media automation (requires API credentials)
 - Advanced workflows requiring external APIs
+- Need server-side chat transcript storage (requires JetEngine)
+
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 
 ---
