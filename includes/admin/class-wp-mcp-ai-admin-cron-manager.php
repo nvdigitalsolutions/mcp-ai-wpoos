@@ -107,17 +107,28 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'WP oOS Cron Manager', 'wp-mcp-ai' ); ?></h1>
-			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
-				<?php if ( '1' === $_GET['updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+			<?php
+			// Display update status message if present in query string.
+			// Nonce verification not required as this is a read-only display of status after redirect.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+			if ( isset( $_GET['updated'] ) ) :
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+				if ( '1' === $_GET['updated'] ) :
+					?>
 					<div class="notice notice-success is-dismissible">
 						<p><?php esc_html_e( 'Cron event removed successfully.', 'wp-mcp-ai' ); ?></p>
 					</div>
-				<?php elseif ( '0' === $_GET['updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
+					<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+				elseif ( '0' === $_GET['updated'] ) :
+					?>
 					<div class="notice notice-error is-dismissible">
 						<p><?php esc_html_e( 'The cron event could not be removed. It may have already run or been deleted.', 'wp-mcp-ai' ); ?></p>
 					</div>
-				<?php endif; ?>
-			<?php endif; ?>
+					<?php
+				endif;
+			endif;
+			?>
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__empty">
 					<p><?php esc_html_e( 'No cron events have been scheduled through WP oOS yet.', 'wp-mcp-ai' ); ?></p>
