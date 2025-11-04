@@ -3754,6 +3754,10 @@
             text = result.message.trim();
         } else if (typeof result.text === 'string' && result.text.trim()) {
             text = result.text.trim();
+        } else if (typeof result.summary === 'string' && result.summary.trim()) {
+            text = result.summary.trim();
+        } else if (typeof result.title === 'string' && result.title.trim()) {
+            text = result.title.trim();
         } else if (Array.isArray(result.notices) && result.notices.length > 0) {
             // Some tools return 'notices' array with messages
             const firstNotice = result.notices.find(function(notice) {
@@ -3808,6 +3812,14 @@
                 url: result.link.trim(),
                 label: 'Open Link',
                 type: 'link'
+            });
+        }
+
+        if (typeof result.htmlLink === 'string' && result.htmlLink.trim()) {
+            links.push({
+                url: result.htmlLink.trim(),
+                label: 'View',
+                type: 'htmlLink'
             });
         }
 
