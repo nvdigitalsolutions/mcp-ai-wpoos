@@ -2787,7 +2787,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param WP_Post $post    Post object.
 		 */
 		public function save_post( $post_id, $post ) {
-			if ( ! $post instanceof WP_Post || self::POST_TYPE !== $post->post_type ) {
+			// Post type check is no longer needed since we use save_post_{post_type} hook.
+			if ( ! $post instanceof WP_Post ) {
 				return;
 			}
 
