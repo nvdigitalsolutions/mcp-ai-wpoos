@@ -20,6 +20,38 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Security: Verify authorization key file exists in WordPress root directory.
+ * 
+ * The plugin requires a .wp-mcp-ai-key file in the WordPress root directory
+ * containing a valid authorization key. This provides an additional security layer
+ * to prevent unauthorized plugin activation.
+ * 
+ * To bypass this check in development, define: WP_MCP_AI_SKIP_KEY_CHECK
+ */
+if ( ! defined( 'WP_MCP_AI_SKIP_KEY_CHECK' ) || ! WP_MCP_AI_SKIP_KEY_CHECK ) {
+	$key_file = ABSPATH . '.wp-mcp-ai-key';
+	$expected_key = 'WP_MCP_AI_AUTH_' . md5( 'wp-mcp-ai-security-key-v1' );
+	
+	if ( ! file_exists( $key_file ) ) {
+		// Key file doesn't exist
+		add_action( 'admin_notices', function() {
+			echo '<div class="error"><p><strong>WP Open Operator System:</strong> Authorization key file missing. Please create <code>.wp-mcp-ai-key</code> in your WordPress root directory with the required key. <a href="https://github.com/nvdigitalsolutions/wp-mcp-ai#security-key-setup" target="_blank">Learn more</a></p></div>';
+		} );
+		return; // Stop plugin execution
+	}
+	
+	$actual_key = trim( file_get_contents( $key_file ) );
+	
+	if ( $actual_key !== $expected_key ) {
+		// Key doesn't match
+		add_action( 'admin_notices', function() {
+			echo '<div class="error"><p><strong>WP Open Operator System:</strong> Invalid authorization key. The key in <code>.wp-mcp-ai-key</code> does not match the expected value. Please verify your key file.</p></div>';
+		} );
+		return; // Stop plugin execution
+	}
+}
+
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
 	define( 'WP_MCP_AI_VERSION', '1.0.0' );
 }
