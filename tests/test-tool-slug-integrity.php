@@ -34,9 +34,7 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 
 			// Convert class name to expected slug
 			// WP_MCP_AI_Tool_Send_Group_Email -> send_group_email
-			$expected_slug = str_replace( 'WP_MCP_AI_Tool_', '', $class_name );
-			$expected_slug = strtolower( preg_replace( '/(?<!^)[A-Z]/', '_$0', $expected_slug ) );
-			$expected_slug = str_replace( '__', '_', $expected_slug );
+			$expected_slug = $this->class_name_to_slug( $class_name );
 
 			if ( $slug !== $expected_slug ) {
 				$mismatches[] = array(
@@ -59,8 +57,19 @@ class WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
 			}
 			$this->fail( $error_message );
 		}
+	}
 
-		$this->assertTrue( true, 'All tools have matching slugs' );
+	/**
+	 * Convert a tool class name to its expected slug.
+	 *
+	 * @param string $class_name Full class name (e.g., 'WP_MCP_AI_Tool_Send_Group_Email').
+	 * @return string Expected slug (e.g., 'send_group_email').
+	 */
+	protected function class_name_to_slug( $class_name ) {
+		$slug = str_replace( 'WP_MCP_AI_Tool_', '', $class_name );
+		$slug = strtolower( preg_replace( '/(?<!^)[A-Z]/', '_$0', $slug ) );
+		$slug = str_replace( '__', '_', $slug );
+		return $slug;
 	}
 
 	/**
