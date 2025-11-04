@@ -65,8 +65,72 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->client   = $client;
 
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
+			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
+		}
+
+		/**
+		 * Clean all output buffers.
+		 *
+		 * Helper method to reduce code duplication.
+		 * Includes safety measures to prevent infinite loops.
+		 */
+		private function clean_all_output_buffers() {
+			$max_iterations = 100; // Safety limit.
+			$iterations     = 0;
+
+			while ( ob_get_level() > 0 && $iterations < $max_iterations ) {
+				if ( ! ob_end_clean() ) {
+					break; // If ob_end_clean fails, stop trying.
+				}
+				++$iterations;
+			}
+		}
+
+		/**
+		 * Clean output buffer before REST API processing.
+		 *
+		 * Prevents PHP errors/warnings from contaminating JSON responses.
+		 */
+		public function clean_output_buffer() {
+			// Check if we're handling a REST request for our namespace.
+			// Use rest_get_url_prefix() to handle subdirectory installations.
+			$rest_prefix = rest_get_url_prefix();
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			
+			// Parse and validate URI safely.
+			$parsed_uri = wp_parse_url( $request_uri, PHP_URL_PATH );
+			if ( ! $parsed_uri || false === strpos( $parsed_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
+				return;
+			}
+
+			// Clean any existing output and start fresh.
+			$this->clean_all_output_buffers();
+			ob_start();
+		}
+
+		/**
+		 * Ensure clean JSON output before serving REST response.
+		 *
+		 * @param bool             $served  Whether the request has already been served.
+		 * @param WP_HTTP_Response $result  Result to send to the client.
+		 * @param WP_REST_Request  $request Request used to generate the response.
+		 * @param WP_REST_Server   $server  Server instance.
+		 * @return bool
+		 */
+		public function ensure_clean_json_output( $served, $result, $request, $server ) {
+			// Only process our endpoints.
+			$route = $request->get_route();
+			if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
+				return $served;
+			}
+
+			// Clean any stray output before serving.
+			$this->clean_all_output_buffers();
+
+			return $served;
 		}
 
 		/**

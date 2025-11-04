@@ -130,6 +130,12 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+// Start output buffering early to catch any warnings/notices from includes.
+// Suppress any output that could break JSON responses later.
+if ( ! @ob_start() ) {
+	ob_start(); // Fallback without error suppression.
+}
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
@@ -175,6 +181,9 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-auth0-github.php';
 }
+
+// Clean any output that may have been generated during includes.
+ob_end_clean();
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
@@ -334,6 +343,31 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
 				WP_MCP_AI_Elementor_Integration::maybe_init();
+			}
+
+			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
+			add_action( 'admin_enqueue_scripts', array( $this, 'disable_auth_check_in_elementor' ), 20 );
+		}
+
+		/**
+		 * Disable wp-auth-check heartbeat in Elementor editor.
+		 *
+		 * Prevents JavaScript errors related to missing DOM elements.
+		 * Elementor uses a query parameter to identify editor mode, which is
+		 * validated by Elementor's own nonce verification in its editor loader.
+		 */
+		public function disable_auth_check_in_elementor() {
+			// Check if Elementor is active and in editor mode.
+			if ( ! isset( $_GET['action'] ) ) {
+				return;
+			}
+
+			$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+			
+			// Elementor editor uses 'elementor' action parameter.
+			// This is a safe check as Elementor's editor loader validates capabilities and nonces.
+			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
+				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 			}
 		}
 	}
