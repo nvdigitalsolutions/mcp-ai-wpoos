@@ -102,22 +102,20 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 	 * JSON responses when widgets are loaded.
 	 */
 	public function test_output_buffering_captures_php_warnings() {
-		// Create a temporary file that triggers a notice by using an undefined variable.
+		// Create a temporary file that explicitly triggers a notice.
 		$temp_file = sys_get_temp_dir() . '/test-widget-warning-' . uniqid() . '.php';
 		file_put_contents(
 			$temp_file,
-			'<?php echo $undefined_var; // This will trigger a notice and output when warnings are enabled ?>'
+			'<?php trigger_error( "Test notice from widget", E_USER_NOTICE ); ?>'
 		);
 
 		// Start capturing all output.
 		ob_start();
 
-		// Simulate the output buffering pattern with error reporting enabled.
-		$old_error_reporting = error_reporting( E_ALL );
+		// Simulate the output buffering pattern.
 		ob_start();
 		require_once $temp_file;
 		$captured = ob_get_clean();
-		error_reporting( $old_error_reporting );
 
 		// Get any output that leaked through.
 		$leaked_output = ob_get_clean();
