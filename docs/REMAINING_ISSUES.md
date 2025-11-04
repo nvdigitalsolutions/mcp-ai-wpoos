@@ -2,7 +2,7 @@
 
 This document tracks code quality issues that need manual review or cannot be automatically fixed.
 
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-04 06:23 UTC (Re-checked after site changes)
 
 ## Variable Naming Convention Issues
 
@@ -10,8 +10,9 @@ This document tracks code quality issues that need manual review or cannot be au
 Some errors are from external library object properties (e.g., DOMNode, plugin headers) that cannot be renamed as they come from WordPress core or PHP extensions:
 
 **Files Affected:**
-- `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` - WordPress plugin header properties (`$plugin_object->Name`, `$plugin_object->Version`)
-- `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` - DOM API properties (`$domNode->childNodes`, `$domNode->parentNode`, `$domNode->wholeText`, `$domElement->tagName`, `$domElement->textContent`, `$domElement->nodeType`)
+- `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164) - WordPress plugin header properties (`$plugin->Name`, `$plugin->Version`)
+- `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452) - DOM API property (`$anchor->textContent`)
+- `includes/class-wp-mcp-ai-rest.php` (line 4716) - DOM API property (`$reader->nodeType`)
 
 **Status:** ⚠️ **STILL AN ISSUE**
 
@@ -52,7 +53,7 @@ Multiple tool `execute()` methods are missing `@param` documentation for:
 - `$arguments` parameter (array)
 - `$context` parameter (array)
 
-This affects approximately 20+ tool classes and should be standardized across all tool implementations.
+This affects approximately **60 files** (120 missing @param instances) and should be standardized across all tool implementations.
 
 **Example files affected:**
 - Various tool classes in `includes/tools/` directory
@@ -87,10 +88,10 @@ Some violations are intentional or required by external APIs:
 
 ### High Priority (Remaining)
 - [ ] Add @package tag to 8 remaining files (15-20 minutes)
-- [ ] Add phpcs:ignore comments for external API properties in 2 files (20-30 minutes)
+- [ ] Add phpcs:ignore comments for external API properties in 3 files (30-40 minutes)
 
 ### Medium Priority (Remaining)
-- [ ] Add missing parameter documentation to ~20+ tool execute() methods (2-3 hours)
+- [ ] Add missing parameter documentation to ~60 files with execute() methods (4-6 hours)
 - [ ] Add missing file docblocks to test files (30 minutes)
 
 ### Low Priority
@@ -107,8 +108,9 @@ Some violations are intentional or required by external APIs:
 ## Recommendations
 
 1. **Add phpcs:ignore selectively** for external API properties with explanation in:
-   - `includes/tools/class-wp-mcp-ai-tool-get-update-status.php`
-   - `includes/tools/class-wp-mcp-ai-tool-get-site-health.php`
+   - `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164)
+   - `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452)
+   - `includes/class-wp-mcp-ai-rest.php` (line 4716)
 
 2. ~~**Refactor internal variables** to use snake_case consistently~~ ✅ COMPLETED
 
