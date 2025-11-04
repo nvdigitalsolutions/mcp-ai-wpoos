@@ -23,6 +23,7 @@
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
     
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
@@ -3629,9 +3630,118 @@
         return parts.join(' • ');
     }
 
+    function normaliseCrawl4aiResult(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        // Extract results array
+        const results = Array.isArray(result.results) ? result.results : [];
+        if (!results.length) {
+            // No results yet, show status message
+            const status = result.status || 'unknown';
+            const taskId = result.task_id || '';
+            let text = 'Crawl job status: ' + status;
+            if (taskId) {
+                text += ' (Task ID: ' + taskId + ')';
+            }
+            return {
+                text: text,
+                attachments: []
+            };
+        }
+
+        // Build display from crawled results
+        const textParts = [];
+        const status = result.status || 'completed';
+
+        // Add summary header
+        const urlCount = results.length;
+        let summaryText = `Crawled ${urlCount} ${urlCount === 1 ? 'page' : 'pages'}`;
+        if (status !== 'completed') {
+            summaryText += ` (Status: ${status})`;
+        }
+        textParts.push(summaryText);
+
+        // Process each crawled result
+        results.forEach(function(crawlResult, index) {
+            if (!crawlResult || typeof crawlResult !== 'object') {
+                return;
+            }
+
+            const resultParts = [];
+            
+            // Add URL with status code
+            const url = crawlResult.url || '';
+            const statusCode = crawlResult.status_code;
+            if (url) {
+                let urlLine = `**URL ${index + 1}:** ${url}`;
+                if (statusCode) {
+                    urlLine += ` (HTTP ${statusCode})`;
+                }
+                resultParts.push(urlLine);
+            }
+
+            // Add content type if available
+            const contentType = crawlResult.content_type;
+            if (contentType) {
+                resultParts.push('**Content-Type:** ' + contentType);
+            }
+
+            // Add the main content - prefer markdown, fall back to text
+            let content = '';
+            if (crawlResult.markdown && typeof crawlResult.markdown === 'string') {
+                content = crawlResult.markdown.trim();
+            } else if (crawlResult.text && typeof crawlResult.text === 'string') {
+                content = crawlResult.text.trim();
+            }
+
+            if (content) {
+                // Limit content length for very long pages
+                if (content.length > CRAWL4AI_MAX_CONTENT_LENGTH) {
+                    content = content.substring(0, CRAWL4AI_MAX_CONTENT_LENGTH) + `\n\n[Content truncated - ${content.length} characters total]`;
+                }
+                resultParts.push('\n' + content);
+            }
+
+            if (resultParts.length > 0) {
+                textParts.push('\n---\n' + resultParts.join('\n'));
+            }
+        });
+
+        // Add metadata if available
+        const metadata = result.metadata;
+        if (metadata && typeof metadata === 'object') {
+            const metaParts = [];
+            
+            if (metadata.mode) {
+                metaParts.push('Mode: ' + metadata.mode);
+            }
+            
+            if (metadata.fetched_at || metadata.queued_at) {
+                const timestamp = metadata.fetched_at || metadata.queued_at;
+                metaParts.push('Timestamp: ' + timestamp);
+            }
+
+            if (metaParts.length > 0) {
+                textParts.push('\n*' + metaParts.join(' • ') + '*');
+            }
+        }
+
+        return {
+            text: textParts.join('\n\n'),
+            attachments: []
+        };
+    }
+
     function normaliseToolResultForDisplay(toolName, result) {
         if (!result || typeof result !== 'object') {
             return null;
+        }
+
+        // Special handling for run_crawl4ai_job tool
+        if (toolName === 'run_crawl4ai_job') {
+            return normaliseCrawl4aiResult(result);
         }
 
         const nestedImage = result && result.image && typeof result.image === 'object' ? result.image : null;
