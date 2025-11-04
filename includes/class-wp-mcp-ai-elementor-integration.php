@@ -54,13 +54,25 @@ class WP_MCP_AI_Elementor_Integration {
 			return;
 		}
 
+		// Load the shared trait first, as all widgets depend on it.
+		$trait_path = WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
+		if ( ! file_exists( $trait_path ) ) {
+			return;
+		}
+
+		require_once $trait_path;
+
+		// Verify the trait was successfully loaded before proceeding.
+		if ( ! trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {
+			return;
+		}
+
 		$widget_files = array(
-			'trait-wp-mcp-ai-elementor-text-formatting.php',
+			'class-wp-mcp-ai-elementor-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-defaults-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php',
 			'class-wp-mcp-ai-elementor-assistant-tools-widget.php',
-			'class-wp-mcp-ai-elementor-widget.php',
 			'class-wp-mcp-ai-elementor-chat-intro-widget.php',
 			'class-wp-mcp-ai-elementor-chat-faq-widget.php',
 			'class-wp-mcp-ai-elementor-chat-usage-timer-widget.php',
@@ -83,10 +95,10 @@ class WP_MCP_AI_Elementor_Integration {
 
 		$widget_classes = array(
 			'WP_MCP_AI_Elementor_Widget',
-			'WP_MCP_AI_Elementor_Assistant_Tools_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Defaults_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget',
 			'WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget',
+			'WP_MCP_AI_Elementor_Assistant_Tools_Widget',
 			'WP_MCP_AI_Elementor_Chat_Intro_Widget',
 			'WP_MCP_AI_Elementor_Chat_FAQ_Widget',
 			'WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget',
