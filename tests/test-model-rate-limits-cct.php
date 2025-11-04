@@ -57,6 +57,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gpt-4o', $model_names );
 		$this->assertContains( 'gpt-4o-mini', $model_names );
 		$this->assertContains( 'o1-preview', $model_names );
+		$this->assertContains( 'gpt-5', $model_names );
+		$this->assertContains( 'gpt-5-mini', $model_names );
 	}
 
 	/**
@@ -278,5 +280,90 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model = reset( $gemini_pro );
 		// Gemini 1.5 Pro has 2M context window.
 		$this->assertGreaterThan( 1000000, $model['context_window'] );
+	}
+
+	/**
+	 * Test that Ollama models are included.
+	 */
+	public function test_default_models_include_ollama() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$ollama_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return 'other' === $model['provider'];
+			}
+		);
+
+		$this->assertNotEmpty( $ollama_models );
+
+		// Check for specific models.
+		$model_names = array_column( $ollama_models, 'model_name' );
+		$this->assertContains( 'llama3', $model_names );
+		$this->assertContains( 'mistral', $model_names );
+		$this->assertContains( 'codellama', $model_names );
+	}
+
+	/**
+	 * Test that Ollama models have no rate limits (local deployment).
+	 */
+	public function test_ollama_models_have_no_rate_limits() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$llama3 = array_filter(
+			$default_models,
+			function ( $model ) {
+				return 'llama3' === $model['model_name'];
+			}
+		);
+
+		$this->assertNotEmpty( $llama3 );
+
+		$model = reset( $llama3 );
+		// Local models should have 0 TPM (no API limits).
+		$this->assertSame( 0, $model['tpm_limit'] );
+		$this->assertSame( 0, $model['rpm_limit'] );
+		$this->assertSame( 0.0, $model['cost_per_1k_input_tokens'] );
+		$this->assertSame( 0.0, $model['cost_per_1k_output_tokens'] );
+	}
+
+	/**
+	 * Test that GPT-5 models are included.
+	 */
+	public function test_default_models_include_gpt5() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$gpt5_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return in_array( $model['model_name'], array( 'gpt-5', 'gpt-5-mini' ) );
+			}
+		);
+
+		$this->assertCount( 2, $gpt5_models );
+
+		// Check GPT-5 has high TPM.
+		$gpt5 = array_filter(
+			$gpt5_models,
+			function ( $model ) {
+				return 'gpt-5' === $model['model_name'];
+			}
+		);
+
+		$this->assertNotEmpty( $gpt5 );
+		$model = reset( $gpt5 );
+		$this->assertGreaterThanOrEqual( 500000, $model['tpm_limit'] );
 	}
 }

@@ -41,7 +41,7 @@ By maintaining a database of model limits, the system can:
 
 ## Default Models
 
-The CCT automatically populates with 27 models on first load:
+The CCT automatically populates with 37 models on first load:
 
 ### OpenAI Models (10 models)
 - **gpt-4o**: 30,000 TPM (Tier 1), 128K context
@@ -77,6 +77,20 @@ The CCT automatically populates with 27 models on first load:
 
 ### Azure OpenAI (1 model)
 - **gpt-4o** (Azure): 450,000 TPM, 128K context
+
+### GPT-5 Models (2 models)
+- **gpt-5**: 500,000 TPM (Tier 1), 128K context - up to 40M TPM in Tier 5
+- **gpt-5-mini**: 500,000 TPM (Tier 1), 128K context - up to 180M TPM in Tier 5
+
+### Ollama / LM Studio Models (8 models - local deployment)
+- **llama3**: 8K context, no rate limits (local)
+- **llama3:70b**: 8K context, no rate limits (local)
+- **mistral**: 8K context, no rate limits (local)
+- **codellama**: 16K context, optimized for code
+- **phi3**: 4K context, efficient small model
+- **deepseek-coder**: 16K context, specialized for coding
+- **qwen2**: 32K context, large context window
+- **gemma2**: 8K context, Google's open model
 
 ## Usage
 
