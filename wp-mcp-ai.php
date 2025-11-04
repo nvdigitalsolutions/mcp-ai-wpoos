@@ -432,6 +432,9 @@ function wp_mcp_ai_activate( $network_wide = false ) {
  * @return void
  */
 function wp_mcp_ai_activate_single_site() {
+	// Load textdomain before registering post type to avoid translation loading warnings.
+	load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 	$registry->init();
 
