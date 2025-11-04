@@ -28,20 +28,20 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 */
 	public function handle_mcp_request( WP_REST_Request $request ) {
 		$body = $request->get_body();
-		
+
 		if ( empty( $body ) ) {
 			return $this->mcp_error_response( null, -32700, 'Parse error: Empty request body' );
 		}
 
 		$message = json_decode( $body, true );
-		
+
 		if ( null === $message || ! is_array( $message ) ) {
 			return $this->mcp_error_response( null, -32700, 'Parse error: Invalid JSON' );
 		}
 
 		// Validate JSON-RPC 2.0 structure.
 		if ( ! isset( $message['jsonrpc'] ) || '2.0' !== $message['jsonrpc'] ) {
-			return $this->mcp_error_response( 
+			return $this->mcp_error_response(
 				isset( $message['id'] ) ? $message['id'] : null,
 				-32600,
 				'Invalid Request: jsonrpc field must be "2.0"'
@@ -153,7 +153,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 */
 	protected function mcp_tools_list( $params, WP_REST_Request $request ) {
 		$assistant_id = 0;
-		
+
 		// Check if assistant_id is provided in params.
 		if ( isset( $params['assistant_id'] ) ) {
 			$assistant_id = absint( $params['assistant_id'] );
@@ -161,7 +161,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		$assistant_id = $this->resolve_assistant_id( $assistant_id );
 		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
-		
+
 		if ( is_wp_error( $scoped_id ) ) {
 			return $scoped_id;
 		}
@@ -174,14 +174,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		} else {
 			// Get tools allowed for this assistant.
 			$assistant_post = $this->validate_assistant_access( $assistant_id );
-			
+
 			if ( is_wp_error( $assistant_post ) ) {
 				return $assistant_post;
 			}
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 			$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-			
+
 			$tools = array();
 			foreach ( $allowed_tools as $tool_slug ) {
 				$tool = $this->registry->get_tool( $tool_slug );
@@ -195,7 +195,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$mcp_tools = array();
 		foreach ( $tools as $tool ) {
 			$schema = $tool->get_json_schema();
-			
+
 			$mcp_tools[] = array(
 				'name'        => $tool->get_slug(),
 				'description' => $tool->get_description(),
@@ -228,7 +228,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Use existing tool execution infrastructure.
 		$request->set_param( 'tool', $tool_name );
 		$request->set_param( 'arguments', $arguments );
-		
+
 		if ( isset( $params['assistant_id'] ) ) {
 			$request->set_param( 'assistant_id', absint( $params['assistant_id'] ) );
 		}
@@ -261,14 +261,14 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 */
 	protected function mcp_resources_list( $params, WP_REST_Request $request ) {
 		$assistant_id = 0;
-		
+
 		if ( isset( $params['assistant_id'] ) ) {
 			$assistant_id = absint( $params['assistant_id'] );
 		}
 
 		$assistant_id = $this->resolve_assistant_id( $assistant_id );
 		$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
-		
+
 		if ( is_wp_error( $scoped_id ) ) {
 			return $scoped_id;
 		}
@@ -279,10 +279,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		if ( $assistant_id ) {
 			$assistant_post = $this->validate_assistant_access( $assistant_id );
-			
+
 			if ( ! is_wp_error( $assistant_post ) ) {
 				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-				
+
 				// Add memory files as resources.
 				if ( isset( $config['memory_files'] ) && is_array( $config['memory_files'] ) ) {
 					foreach ( $config['memory_files'] as $file_id ) {
@@ -328,7 +328,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
 				$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post->ID );
-				
+
 				$prompts[] = array(
 					'name'        => $post->post_name,
 					'description' => get_the_title( $post ),
