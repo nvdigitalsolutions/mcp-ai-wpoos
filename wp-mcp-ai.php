@@ -286,6 +286,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_cron_manager;
 
 		/**
+		 * Output buffer level when starting Elementor AJAX buffering.
+		 *
+		 * @var int|null
+		 */
+		private $elementor_buffer_level = null;
+
+		/**
 		 * Returns the singleton instance.
 		 *
 		 * @return WP_MCP_AI
@@ -386,7 +393,61 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
 				}
+				
+				// Track the current buffer level before starting our buffer.
+				// This allows us to clean only the buffer(s) we create.
+				$this->elementor_buffer_level = ob_get_level();
+				
+				// Start output buffering to catch any stray output that could break JSON responses.
+				// This protects against any echoed content, warnings, or notices that occur
+				// during the Elementor save process.
+				ob_start();
+				
+				// Register a shutdown function to clean the buffer before Elementor sends its response.
+				// We use priority 0 to run before most other shutdown handlers.
+				add_action( 'shutdown', array( $this, 'clean_elementor_output_buffer' ), 0 );
 			}
+		}
+		
+		/**
+		 * Clean the output buffer during Elementor AJAX requests.
+		 *
+		 * This runs during shutdown to ensure any stray output is discarded
+		 * before Elementor sends its JSON response.
+		 */
+		public function clean_elementor_output_buffer() {
+			// Check if this is an Elementor AJAX request by verifying the action parameter.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			if ( ! isset( $_REQUEST['action'] ) ) {
+				return;
+			}
+			
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+			
+			// Only clean buffer for Elementor actions to avoid interfering with other code.
+			if ( strpos( $action, 'elementor' ) !== 0 ) {
+				return;
+			}
+			
+			// Only clean the buffer if we created one.
+			if ( null === $this->elementor_buffer_level ) {
+				return;
+			}
+			
+			// Get the current output buffer level.
+			$current_level = ob_get_level();
+			
+			// Clean buffers down to the level we recorded before starting buffering.
+			// This ensures we only clean the buffer(s) we created, not existing ones.
+			// We use > (not >=) because elementor_buffer_level is the level BEFORE we started.
+			while ( $current_level > 0 && $current_level > $this->elementor_buffer_level ) {
+				ob_end_clean();
+				$current_level = ob_get_level();
+			}
+			
+			// Reset the tracked level.
+			$this->elementor_buffer_level = null;
 		}
 
 		/**
