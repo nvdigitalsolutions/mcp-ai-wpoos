@@ -39,7 +39,34 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 	 * @return array|WP_Error Response or error.
 	 */
 	public function create_chat_completion( array $messages, array $options = array() ) {
-		$model = ! empty( $options['model'] ) ? $options['model'] : WP_MCP_AI_Admin_Settings::get_default_model();
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$model    = ! empty( $options['model'] ) ? $options['model'] : WP_MCP_AI_Admin_Settings::get_default_model();
+
+		// Apply intelligent model routing if enabled.
+		if ( ! isset( $options['disable_auto_routing'] ) || ! $options['disable_auto_routing'] ) {
+			$model = WP_MCP_AI_Model_Selector::select_model( $messages, $options, $model );
+			// Update options with selected model.
+			$options['model'] = $model;
+		}
+
+		// Validate input token limit (12k max).
+		$validation = WP_MCP_AI_Token_Budget_Manager::validate_input_tokens( $messages, $model );
+		if ( is_wp_error( $validation ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Input token limit exceeded.',
+				array(
+					'model'       => $model,
+					'error'       => $validation->get_error_message(),
+					'error_data'  => $validation->get_error_data(),
+				)
+			);
+			return $validation;
+		}
+
+		// Set explicit max_tokens for output if not already set.
+		if ( ! isset( $options['max_tokens'] ) ) {
+			$options['max_tokens'] = $this->calculate_max_output_tokens( $messages, $model );
+		}
 
 		// Apply token budget optimization if requested.
 		if ( ! empty( $options['optimize_tokens'] ) ) {
@@ -97,6 +124,36 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Calculate appropriate max_tokens for output based on model and input.
+	 *
+	 * @param array  $messages Messages array.
+	 * @param string $model    Model identifier.
+	 *
+	 * @return int Maximum output tokens.
+	 */
+	protected function calculate_max_output_tokens( array $messages, $model ) {
+		$budget = WP_MCP_AI_Token_Budget_Manager::calculate_budget( $model, $messages );
+
+		// Reserve 20% of available tokens for output, but cap at 4096.
+		$max_output = min( 4096, (int) ( $budget['available'] * 0.2 ) );
+
+		// Ensure minimum of 512 tokens for output.
+		$max_output = max( 512, $max_output );
+
+		WP_MCP_AI_Logger::log_event(
+			'max_tokens_calculated',
+			'Calculated max_tokens for output.',
+			array(
+				'model'           => $model,
+				'max_tokens'      => $max_output,
+				'available_budget' => $budget['available'],
+			)
+		);
+
+		return $max_output;
 	}
 
 	/**
@@ -250,9 +307,13 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 	 */
 	public function split_document( $content, $model, $chunk_size = null, $overlap = 0 ) {
 		if ( null === $chunk_size ) {
-			// Use a safe default based on model limit.
-			$model_limit = WP_MCP_AI_Token_Budget_Manager::get_model_limit( $model );
-			$chunk_size  = (int) ( $model_limit * 0.5 ); // 50% of model limit per chunk.
+			// Use the recommended chunk size (6-8k tokens).
+			$chunk_size = WP_MCP_AI_Token_Budget_Manager::get_recommended_chunk_size( $model );
+		}
+
+		if ( 0 === $overlap ) {
+			// Use default overlap.
+			$overlap = WP_MCP_AI_Token_Budget_Manager::DEFAULT_CHUNK_OVERLAP;
 		}
 
 		return WP_MCP_AI_Token_Budget_Manager::split_document( $content, $chunk_size, $overlap );

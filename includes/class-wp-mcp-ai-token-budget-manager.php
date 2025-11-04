@@ -25,6 +25,21 @@ class WP_MCP_AI_Token_Budget_Manager {
 	const MIN_CHUNK_SIZE = 1000;
 
 	/**
+	 * Maximum input tokens per OpenAI request (12k limit).
+	 */
+	const MAX_INPUT_TOKENS = 12000;
+
+	/**
+	 * Default chunk size for large documents (6-8k tokens).
+	 */
+	const DEFAULT_CHUNK_SIZE = 7000;
+
+	/**
+	 * Default chunk overlap in tokens.
+	 */
+	const DEFAULT_CHUNK_OVERLAP = 200;
+
+	/**
 	 * Model token limits (max context tokens).
 	 *
 	 * @var array
@@ -324,6 +339,54 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		// Recommend streaming if we expect a large response.
 		return $budget['reserved'] >= $streaming_threshold;
+	}
+
+	/**
+	 * Validate that input tokens are within OpenAI limits.
+	 *
+	 * @param array  $messages Messages array.
+	 * @param string $model    Model identifier.
+	 *
+	 * @return bool|WP_Error True if valid, WP_Error if exceeds limit.
+	 */
+	public static function validate_input_tokens( array $messages, $model ) {
+		$budget = self::calculate_budget( $model, $messages );
+
+		if ( $budget['used'] > self::MAX_INPUT_TOKENS ) {
+			return new WP_Error(
+				'wp_mcp_ai_input_tokens_exceeded',
+				sprintf(
+					/* translators: %1$d: used tokens, %2$d: maximum allowed tokens */
+					__( 'Input exceeds maximum token limit. Used: %1$d tokens, Maximum: %2$d tokens. Please reduce message length or split into chunks.', 'wp-mcp-ai' ),
+					$budget['used'],
+					self::MAX_INPUT_TOKENS
+				),
+				array(
+					'status'      => 400,
+					'used_tokens' => $budget['used'],
+					'max_tokens'  => self::MAX_INPUT_TOKENS,
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get recommended chunk size for document splitting.
+	 *
+	 * @param string $model Model identifier (optional).
+	 *
+	 * @return int Chunk size in tokens.
+	 */
+	public static function get_recommended_chunk_size( $model = '' ) {
+		/**
+		 * Filter the recommended chunk size for document splitting.
+		 *
+		 * @param int    $chunk_size Default chunk size.
+		 * @param string $model      Model identifier.
+		 */
+		return apply_filters( 'wp_mcp_ai_recommended_chunk_size', self::DEFAULT_CHUNK_SIZE, $model );
 	}
 
 	/**
