@@ -27,7 +27,6 @@ class WP_MCP_AI_Model_Selector {
 	 */
 	protected static $complex_keywords = array(
 		'analyze',
-		'analyze',
 		'detailed analysis',
 		'comprehensive',
 		'in-depth',
