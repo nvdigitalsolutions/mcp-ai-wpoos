@@ -41,9 +41,11 @@ if ( ! defined( 'WP_MCP_AI_SKIP_KEY_CHECK' ) || ! WP_MCP_AI_SKIP_KEY_CHECK ) {
 		return; // Stop plugin execution
 	}
 	
-	$actual_key = trim( file_get_contents( $key_file ) );
+	// Read key file with size limit to prevent memory exhaustion attacks.
+	$actual_key = trim( file_get_contents( $key_file, false, null, 0, 1024 ) );
 	
-	if ( $actual_key !== $expected_key ) {
+	// Use hash_equals() for timing-safe comparison to prevent timing attacks.
+	if ( ! hash_equals( $expected_key, $actual_key ) ) {
 		// Key doesn't match
 		add_action( 'admin_notices', function() {
 			echo '<div class="error"><p><strong>WP Open Operator System:</strong> Invalid authorization key. The key in <code>.wp-mcp-ai-key</code> does not match the expected value. Please verify your key file.</p></div>';
