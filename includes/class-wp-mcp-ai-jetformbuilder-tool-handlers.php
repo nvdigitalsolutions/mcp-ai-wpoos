@@ -129,7 +129,7 @@ class WP_MCP_AI_JetFormBuilder_Tool_Handlers {
 	 * @param string $version  Version string.
 	 * @return bool
 	 */
-	public static function maybe_suppress_route_warning( $trigger, $function, $message, $version ) {
+	public static function maybe_suppress_route_warning( $trigger, $function = '', $message = '', $version = '' ) {
 		if ( 'register_rest_route' === $function && false !== strpos( $message, '<code>jet-form-builder/v1</code>' ) ) {
 			return false;
 		}

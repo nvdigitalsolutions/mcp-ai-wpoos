@@ -145,7 +145,7 @@ class WP_MCP_AI_JetEngine_CCT {
 
 		$data->after_item_update( $item, true );
 
-		if ( method_exists( $data->db, 'query_raw' ) ) {
+		if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
 			$data->db->query_raw( 'post_types' );
 		}
 	}
@@ -158,6 +158,10 @@ class WP_MCP_AI_JetEngine_CCT {
 	 */
 	protected static function cct_exists( $module ) {
 		$data = $module->manager->data;
+
+		if ( empty( $data->db ) ) {
+			return false;
+		}
 
 		$records = $data->db->query(
 			'post_types',
