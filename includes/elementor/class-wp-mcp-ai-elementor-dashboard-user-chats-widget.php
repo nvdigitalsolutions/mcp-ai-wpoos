@@ -72,6 +72,21 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	}
 
 	/**
+	 * Check if currently in Elementor editor mode.
+	 *
+	 * @return bool True if in Elementor editor mode, false otherwise.
+	 */
+	protected function is_elementor_editor() {
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Register controls for the widget settings.
 	 */
 	protected function register_controls() {
@@ -228,15 +243,6 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			$user_id = get_current_user_id();
 		}
 
-		// Check if we're in Elementor editor mode.
-		$is_elementor_editor = false;
-		if ( class_exists( '\Elementor\Plugin' ) ) {
-			$elementor = \Elementor\Plugin::instance();
-			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
-				$is_elementor_editor = true;
-			}
-		}
-
 		echo '<div class="wp-mcp-ai-user-chats">';
 
 		if ( '' !== $title ) {
@@ -251,8 +257,8 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			}
 		}
 
-		// Show placeholder in Elementor editor mode.
-		if ( $is_elementor_editor ) {
+		// Show placeholder in Elementor editor mode to prevent JavaScript conflicts.
+		if ( $this->is_elementor_editor() ) {
 			echo '<div class="wp-mcp-ai-user-chats__editor-placeholder" style="padding: 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center;">';
 			echo '<p style="margin: 0;">' . esc_html__( 'Chat history will be displayed here on the live page.', 'wp-mcp-ai' ) . '</p>';
 			echo '</div>';
@@ -309,11 +315,8 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	 */
 	protected function enqueue_assets() {
 		// Don't enqueue scripts in Elementor editor mode to prevent JavaScript conflicts.
-		if ( class_exists( '\Elementor\Plugin' ) ) {
-			$elementor = \Elementor\Plugin::instance();
-			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
-				return;
-			}
+		if ( $this->is_elementor_editor() ) {
+			return;
 		}
 
 		if ( ! self::$assets_registered ) {
