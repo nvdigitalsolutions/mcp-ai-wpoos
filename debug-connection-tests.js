@@ -1,7 +1,7 @@
 /**
  * Debug script for connection test buttons
  * 
- * Add this to the browser console on the WP WP oOS settings page to diagnose
+ * Add this to the browser console on the WP oOS settings page to diagnose
  * why the "Test Connection" buttons are not working.
  */
 

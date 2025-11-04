@@ -285,7 +285,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 ### Base Version (Default)
 
-**WP WP oOS runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**WP oOS runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
 **Base Version includes 35 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
