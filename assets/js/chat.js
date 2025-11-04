@@ -3761,7 +3761,7 @@
         } else if (Array.isArray(result.notices) && result.notices.length > 0) {
             // Some tools return 'notices' array with messages
             const firstNotice = result.notices.find(function(notice) {
-                return typeof notice === 'string' && notice.trim();
+                return typeof notice === 'string' && notice.trim().length > 0;
             });
             if (firstNotice) {
                 text = firstNotice.trim();
@@ -3772,7 +3772,7 @@
         } else if (Array.isArray(result.messages) && result.messages.length > 0) {
             // Some tools return 'messages' array
             const firstMessage = result.messages.find(function(msg) {
-                return typeof msg === 'string' && msg.trim();
+                return typeof msg === 'string' && msg.trim().length > 0;
             });
             if (firstMessage) {
                 text = firstMessage.trim();
@@ -3835,11 +3835,13 @@
             identifiers.push('Attachment ID: ' + result.attachment_id);
         }
 
-        // If we have text and identifiers, append them
-        if (text && identifiers.length > 0) {
-            text += ' (' + identifiers.join(', ') + ')';
-        } else if (!text && identifiers.length > 0) {
-            text = identifiers.join(', ');
+        // Append identifiers to text if available
+        if (identifiers.length > 0) {
+            if (text) {
+                text += ' (' + identifiers.join(', ') + ')';
+            } else {
+                text = identifiers.join(', ');
+            }
         }
 
         // Extract status information if we don't have text yet
