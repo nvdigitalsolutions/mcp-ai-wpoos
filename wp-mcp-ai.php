@@ -386,6 +386,31 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
 				}
+				
+				// Start output buffering to catch any stray output that could break JSON responses.
+				// This protects against any echoed content, warnings, or notices that occur
+				// during the Elementor save process.
+				ob_start();
+				
+				// Register a shutdown function to clean the buffer before Elementor sends its response.
+				// We use priority 0 to run before most other shutdown handlers.
+				add_action( 'shutdown', array( $this, 'clean_elementor_output_buffer' ), 0 );
+			}
+		}
+		
+		/**
+		 * Clean the output buffer during Elementor AJAX requests.
+		 *
+		 * This runs during shutdown to ensure any stray output is discarded
+		 * before Elementor sends its JSON response.
+		 */
+		public function clean_elementor_output_buffer() {
+			// Get the current output buffer level to safely clean only our buffer.
+			$level = ob_get_level();
+			
+			if ( $level > 0 ) {
+				// Discard the buffered output to prevent it from breaking the JSON response.
+				ob_end_clean();
 			}
 		}
 

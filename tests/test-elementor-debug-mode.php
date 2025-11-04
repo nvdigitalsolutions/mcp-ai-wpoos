@@ -216,6 +216,90 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 			// Clean up.
 			unset( $_REQUEST['action'] );
+			
+			// Clean up any output buffers that were started.
+			while ( ob_get_level() > 1 ) {
+				ob_end_clean();
+			}
 		}
+	}
+
+	/**
+	 * Test that output buffering is started for Elementor AJAX requests.
+	 */
+	public function test_output_buffering_started_for_elementor_ajax() {
+		// Record the initial output buffer level.
+		$initial_level = ob_get_level();
+
+		// Simulate an Elementor AJAX request.
+		$_REQUEST['action'] = 'elementor_ajax';
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// Verify a new output buffer was started.
+		$new_level = ob_get_level();
+		$this->assertGreaterThan( $initial_level, $new_level, 'Output buffer should be started for Elementor AJAX' );
+
+		// Clean up.
+		unset( $_REQUEST['action'] );
+		while ( ob_get_level() > $initial_level ) {
+			ob_end_clean();
+		}
+	}
+
+	/**
+	 * Test that output buffering captures stray output during Elementor AJAX save.
+	 */
+	public function test_output_buffering_captures_stray_output() {
+		// Simulate an Elementor AJAX request.
+		$_REQUEST['action'] = 'elementor_save_builder';
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// Simulate some stray output that would normally break JSON responses.
+		echo 'This output should be captured';
+		
+		// Get the buffered content.
+		$buffered = ob_get_contents();
+		
+		// Verify the output was captured.
+		$this->assertStringContainsString( 'This output should be captured', $buffered, 'Stray output should be captured in buffer' );
+
+		// Clean up.
+		unset( $_REQUEST['action'] );
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+	}
+
+	/**
+	 * Test that clean_elementor_output_buffer method exists.
+	 */
+	public function test_clean_output_buffer_method_exists() {
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI', 'clean_elementor_output_buffer' ),
+			'clean_elementor_output_buffer method should exist'
+		);
+	}
+
+	/**
+	 * Test that clean_elementor_output_buffer safely cleans the buffer.
+	 */
+	public function test_clean_output_buffer_works() {
+		// Start a buffer with some content.
+		ob_start();
+		echo 'Test content';
+		
+		// Create plugin instance and call the cleanup method.
+		$plugin = wp_mcp_ai();
+		$plugin->clean_elementor_output_buffer();
+		
+		// Verify the buffer was cleaned (no output should appear).
+		// Since we cleaned the buffer, ob_get_level should be 0 or back to original.
+		$this->assertEquals( 0, ob_get_level(), 'Output buffer should be cleaned' );
 	}
 }
