@@ -2143,7 +2143,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					flush();
 				}
 
-				remove_filter( 'rest_pre_serve_request', $callback, 10 );
+				remove_filter( 'rest_pre_serve_request', $callback, 999 );
 
 				return true;
 			};
