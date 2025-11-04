@@ -29,6 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
 		 * Tool registry instance.
@@ -2935,20 +2936,36 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID.
 		 * @param WP_Post $post    Post object.
 		 */
-		protected function sync_to_cct( $post_id, $post ) {
-			// Only sync in Full Version when JetEngine is available.
-			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-				return;
-			}
+	protected function sync_to_cct( $post_id, $post ) {
+		// Only sync in Full Version when JetEngine is available.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return;
+		}
 
-			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
-				return;
-			}
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
+			return;
+		}
 
+		// Prevent concurrent sync operations using a transient lock.
+		$lock_key = 'wp_mcp_ai_sync_lock_' . $post_id;
+		if ( get_transient( $lock_key ) ) {
+			// Another sync is in progress, skip to prevent locking.
+			return;
+		}
+
+		// Set a short-lived lock (5 seconds should be more than enough).
+		set_transient( $lock_key, true, self::SYNC_LOCK_TIMEOUT );
+
+		try {
 			// Get the CCT item handler.
 			$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
 			if ( ! $handler ) {
+				return;
+			}
+
+			// Validate handler has required methods.
+			if ( ! method_exists( $handler, 'update_item' ) ) {
 				return;
 			}
 
@@ -2996,7 +3013,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					update_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', $new_item_id );
 				}
 			}
+		} catch ( Exception $e ) {
+			// Log error but don't block the save process.
+			if ( function_exists( 'error_log' ) ) {
+				error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
+			}
+		} finally {
+			// Always release the lock.
+			delete_transient( $lock_key );
 		}
+	}
 
 		/**
 		 * Retrieve the configuration for a specific assistant.
