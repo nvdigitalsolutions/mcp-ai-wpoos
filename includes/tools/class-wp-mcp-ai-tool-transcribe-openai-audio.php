@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		$file_size = @filesize( $file_path );
+		$file_size = filesize( $file_path );
 		if ( false === $file_size ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_size_unknown',
