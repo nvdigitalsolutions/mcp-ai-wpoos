@@ -131,7 +131,10 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 }
 
 // Start output buffering early to catch any warnings/notices from includes.
-ob_start();
+// Suppress any output that could break JSON responses later.
+if ( ! @ob_start() ) {
+	ob_start(); // Fallback without error suppression.
+}
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';

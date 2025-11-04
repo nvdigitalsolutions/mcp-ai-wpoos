@@ -75,10 +75,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Clean all output buffers.
 		 *
 		 * Helper method to reduce code duplication.
+		 * Includes safety measures to prevent infinite loops.
 		 */
 		private function clean_all_output_buffers() {
-			while ( ob_get_level() > 0 ) {
-				ob_end_clean();
+			$max_iterations = 100; // Safety limit.
+			$iterations     = 0;
+
+			while ( ob_get_level() > 0 && $iterations < $max_iterations ) {
+				if ( ! ob_end_clean() ) {
+					break; // If ob_end_clean fails, stop trying.
+				}
+				++$iterations;
 			}
 		}
 
@@ -91,9 +98,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Check if we're handling a REST request for our namespace.
 			// Use rest_get_url_prefix() to handle subdirectory installations.
 			$rest_prefix = rest_get_url_prefix();
-			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
 			
-			if ( false === strpos( $request_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
+			// Parse and validate URI safely.
+			$parsed_uri = wp_parse_url( $request_uri, PHP_URL_PATH );
+			if ( ! $parsed_uri || false === strpos( $parsed_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
 				return;
 			}
 

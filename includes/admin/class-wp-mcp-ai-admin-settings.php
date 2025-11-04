@@ -48,15 +48,30 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Clean all output buffers safely.
+		 *
+		 * Includes safety measures to prevent infinite loops.
+		 */
+		private function clean_all_buffers() {
+			$max_iterations = 100; // Safety limit.
+			$iterations     = 0;
+
+			while ( ob_get_level() > 0 && $iterations < $max_iterations ) {
+				if ( ! ob_end_clean() ) {
+					break; // If ob_end_clean fails, stop trying.
+				}
+				++$iterations;
+			}
+		}
+
+		/**
 		 * Safe AJAX handler wrapper that catches any output before JSON responses.
 		 *
 		 * Prevents PHP errors, warnings, and notices from breaking JSON responses.
 		 */
 		public function safe_ajax_handler() {
 			// Clean any previous output.
-			while ( ob_get_level() > 0 ) {
-				ob_end_clean();
-			}
+			$this->clean_all_buffers();
 
 			// Start fresh output buffering.
 			ob_start();
@@ -71,23 +86,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 			);
 
-			$action        = current_action();
+			$action         = current_action();
 			$handler_method = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
 
 			if ( ! $handler_method || ! method_exists( $this, $handler_method ) ) {
-				ob_end_clean();
+				$this->clean_all_buffers();
 				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'wp-mcp-ai' ) ) );
 				return;
 			}
 
 			// Call the actual handler.
+			// Catch both Exception and Error (PHP 7+) for comprehensive error handling.
 			try {
 				call_user_func( array( $this, $handler_method ) );
-			} catch ( Exception $e ) {
-				// Clean any output from the exception.
-				if ( ob_get_level() > 0 ) {
-					ob_end_clean();
-				}
+			} catch ( \Throwable $e ) {
+				// Clean any output from the exception/error.
+				$this->clean_all_buffers();
 				wp_send_json_error(
 					array(
 						'message' => $e->getMessage(),
@@ -97,9 +111,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			// Clean any leftover output buffer.
-			if ( ob_get_level() > 0 ) {
-				ob_end_clean();
-			}
+			$this->clean_all_buffers();
 		}
 
 		/**
