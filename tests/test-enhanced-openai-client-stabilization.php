@@ -155,7 +155,7 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 					$call_count++;
 
 					if ( 1 === $call_count ) {
-							$captured_options_simple = $options;
+						$captured_options_simple = $options;
 					} else {
 						$captured_options_complex = $options;
 					}
@@ -259,11 +259,11 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 					$call_count++;
 
 					if ( $call_count < 3 ) {
-							return new WP_Error(
-								'wp_mcp_ai_api_error',
-								'Rate limited',
-								array( 'status' => 429 )
-							);
+						return new WP_Error(
+							'wp_mcp_ai_api_error',
+							'Rate limited',
+							array( 'status' => 429 )
+						);
 					}
 
 					return array( 'success' => true );
