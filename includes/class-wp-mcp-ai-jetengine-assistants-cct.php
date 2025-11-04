@@ -16,6 +16,12 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 	const SLUG = 'assistants';
 
 	/**
+	 * Base ID for meta field identifiers.
+	 * Using 20000 range to avoid conflicts with other CCT fields.
+	 */
+	const FIELD_ID_BASE = 20000;
+
+	/**
 	 * Hook into JetEngine to provision the assistants content type.
 	 */
 	public static function bootstrap() {
@@ -39,7 +45,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 	/**
 	 * Retrieve the JetEngine item handler for the assistants content type.
 	 *
-	 * Consumers can use the returned handler similarly to \`jet_engine()->cct->item_handler\`
+	 * Consumers can use the returned handler similarly to `jet_engine()->cct->item_handler`
 	 * when interacting with the assistants records programmatically.
 	 *
 	 * @return object|null
@@ -282,9 +288,11 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 	 * @return array
 	 */
 	protected static function get_meta_fields() {
+		$base_id = self::FIELD_ID_BASE;
+
 		$fields = array(
 			self::build_field(
-				20001,
+				++$base_id,
 				'title',
 				__( 'Title', 'wp-mcp-ai' ),
 				'text',
@@ -294,7 +302,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20002,
+				++$base_id,
 				'description',
 				__( 'Description', 'wp-mcp-ai' ),
 				'textarea',
@@ -304,7 +312,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20003,
+				++$base_id,
 				'provider',
 				__( 'Provider', 'wp-mcp-ai' ),
 				'text',
@@ -313,7 +321,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20004,
+				++$base_id,
 				'model',
 				__( 'Model', 'wp-mcp-ai' ),
 				'text',
@@ -322,7 +330,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20005,
+				++$base_id,
 				'system_prompt',
 				__( 'System Prompt', 'wp-mcp-ai' ),
 				'textarea',
@@ -332,7 +340,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20006,
+				++$base_id,
 				'temperature',
 				__( 'Temperature', 'wp-mcp-ai' ),
 				'number',
@@ -344,7 +352,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 				)
 			),
 			self::build_field(
-				20007,
+				++$base_id,
 				'tools',
 				__( 'Tools', 'wp-mcp-ai' ),
 				'textarea',
