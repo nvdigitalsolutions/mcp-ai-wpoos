@@ -22,12 +22,12 @@ class WP_MCP_AI_Rate_Limit_Manager {
 	/**
 	 * Default initial retry delay in seconds.
 	 */
-	const DEFAULT_INITIAL_DELAY = 1;
+	const DEFAULT_INITIAL_DELAY = 2;
 
 	/**
 	 * Default maximum retry delay in seconds.
 	 */
-	const DEFAULT_MAX_DELAY = 60;
+	const DEFAULT_MAX_DELAY = 30;
 
 	/**
 	 * Default maximum number of retries.
