@@ -405,6 +405,20 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * before Elementor sends its JSON response.
 		 */
 		public function clean_elementor_output_buffer() {
+			// Check if this is an Elementor AJAX request by verifying the action parameter.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			if ( ! isset( $_REQUEST['action'] ) ) {
+				return;
+			}
+			
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+			
+			// Only clean buffer for Elementor actions to avoid interfering with other code.
+			if ( strpos( $action, 'elementor' ) !== 0 ) {
+				return;
+			}
+			
 			// Get the current output buffer level to safely clean only our buffer.
 			$level = ob_get_level();
 			

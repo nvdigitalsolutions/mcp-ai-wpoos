@@ -218,7 +218,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 			unset( $_REQUEST['action'] );
 			
 			// Clean up any output buffers that were started.
-			while ( ob_get_level() > 1 ) {
+			while ( ob_get_level() > 0 ) {
 				ob_end_clean();
 			}
 		}
@@ -244,7 +244,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Clean up.
 		unset( $_REQUEST['action'] );
-		while ( ob_get_level() > $initial_level ) {
+		while ( ob_get_level() > 0 ) {
 			ob_end_clean();
 		}
 	}
