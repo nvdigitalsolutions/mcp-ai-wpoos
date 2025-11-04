@@ -2,7 +2,7 @@
 namespace SimpleJWTLogin\Modules\Settings {
 	if ( ! class_exists( __NAMESPACE__ . '\\AuthenticationSettings' ) ) {
 		class AuthenticationSettings {
-			public const JWT_PAYLOAD_PARAM_EXP = 'exp';
+			const JWT_PAYLOAD_PARAM_EXP = 'exp';
 		}
 	}
 }
