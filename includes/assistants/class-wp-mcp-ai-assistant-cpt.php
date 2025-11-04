@@ -2498,7 +2498,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
 			}
 
-			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			// Extract post_id before nonce verification to construct proper nonce action.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2506.
+			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0;
 			if ( ! $post_id ) {
 				wp_die( esc_html__( 'Invalid assistant.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
 			}
@@ -2538,8 +2540,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
 			}
 
-			$post_id       = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			// Extract parameters before nonce verification to construct proper nonce action.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2550.
+			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2550.
+			$credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : '';
 
 			if ( ! $post_id || '' === $credential_id ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
@@ -2572,8 +2577,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				wp_die( esc_html__( 'You do not have permission to manage assistant credentials.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
 			}
 
-			$post_id       = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			// Extract parameters before nonce verification to construct proper nonce action.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2584.
+			$post_id = isset( $_REQUEST['post_id'] ) ? absint( wp_unslash( $_REQUEST['post_id'] ) ) : 0;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified immediately after on line 2584.
+			$credential_id = isset( $_REQUEST['credential_id'] ) ? sanitize_key( wp_unslash( $_REQUEST['credential_id'] ) ) : '';
 
 			if ( ! $post_id || '' === $credential_id ) {
 				wp_die( esc_html__( 'Invalid credential request.', 'wp-mcp-ai' ), '', array( 'response' => 400 ) );
@@ -2616,7 +2624,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return;
 			}
 
-			$post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// Get post ID from query string for admin edit screen.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Standard WordPress admin screen parameter.
+			$post_id = isset( $_GET['post'] ) ? absint( wp_unslash( $_GET['post'] ) ) : 0;
 			if ( ! $post_id ) {
 				return;
 			}
@@ -2638,13 +2648,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				);
 			}
 
-			$notice = isset( $_GET['wp_mcp_ai_notice'] ) ? sanitize_key( wp_unslash( $_GET['wp_mcp_ai_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// Display admin notice if present in query string after redirect.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+			$notice = isset( $_GET['wp_mcp_ai_notice'] ) ? sanitize_key( wp_unslash( $_GET['wp_mcp_ai_notice'] ) ) : '';
 
 			if ( '' === $notice ) {
 				return;
 			}
 
-			$error_code = isset( $_GET['error'] ) ? sanitize_key( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+			$error_code = isset( $_GET['error'] ) ? sanitize_key( wp_unslash( $_GET['error'] ) ) : '';
 			$message    = $this->get_notice_message( $notice, $error_code );
 
 			if ( '' === $message ) {
