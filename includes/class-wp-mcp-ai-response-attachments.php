@@ -565,7 +565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 				return;
 			}
 
-			@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			unlink( $file_path );
 		}
 	}
 }

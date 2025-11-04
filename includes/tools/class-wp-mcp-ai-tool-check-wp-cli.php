@@ -439,8 +439,8 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
 		$match   = $match ? $this->normalise_path( $match ) : '';
 
 		foreach ( array_slice( $candidates, 0, 15 ) as $candidate ) {
-			$exists     = @file_exists( $candidate );
-			$executable = $exists ? @is_executable( $candidate ) : false;
+			$exists     = file_exists( $candidate );
+			$executable = $exists ? is_executable( $candidate ) : false;
 			$is_match   = $match && $candidate === $match;
 			$summary[]  = array(
 				'path'       => $candidate,

@@ -203,11 +203,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return null;
 			}
 
-			if ( ! @is_file( $path ) ) {
+			if ( ! file_exists( $path ) || ! is_file( $path ) ) {
 				return null;
 			}
 
-			$size = @filesize( $path );
+			$size = filesize( $path );
 
 			if ( false === $size ) {
 				return null;
@@ -250,21 +250,21 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				);
 			}
 
-			if ( ! @is_file( $path ) ) {
+			if ( ! file_exists( $path ) || ! is_file( $path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_unavailable',
 					__( 'The PHP error log has not been created yet.', 'wp-mcp-ai' )
 				);
 			}
 
-			if ( ! @is_writable( $path ) ) {
+			if ( ! is_writable( $path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_unwritable',
 					__( 'The PHP error log is not writable. Update the file permissions and try again.', 'wp-mcp-ai' )
 				);
 			}
 
-			$handle = @fopen( $path, 'w' );
+			$handle = fopen( $path, 'w' );
 
 			if ( false === $handle ) {
 				return new WP_Error(

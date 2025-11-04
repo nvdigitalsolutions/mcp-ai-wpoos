@@ -4473,11 +4473,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$encountered_permitted = true;
 
 				$file_path = get_attached_file( $file_id );
-				if ( ! $file_path ) {
+				if ( ! $file_path || ! file_exists( $file_path ) ) {
 					continue;
 				}
 
-				$file_size = @filesize( $file_path );
+				$file_size = filesize( $file_path );
 
 				if ( false === $file_size ) {
 					return new WP_Error(

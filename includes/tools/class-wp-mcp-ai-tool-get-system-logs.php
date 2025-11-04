@@ -458,7 +458,11 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 	 * @return array
 	 */
 	protected function tail_file( $path, $line_limit, $byte_limit ) {
-		$handle = @fopen( $path, 'rb' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		if ( ! file_exists( $path ) ) {
+			return array();
+		}
+
+		$handle = fopen( $path, 'rb' );
 
 		if ( ! $handle ) {
 			return array();

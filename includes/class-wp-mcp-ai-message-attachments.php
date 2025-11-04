@@ -459,7 +459,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				return new WP_Error( 'wp_mcp_ai_attachment_missing_file', __( 'The attachment file could not be located.', 'wp-mcp-ai' ) );
 			}
 
-			$file_size = @filesize( $file_path );
+			$file_size = filesize( $file_path );
 			if ( false === $file_size ) {
 				return new WP_Error( 'wp_mcp_ai_attachment_size_unknown', __( 'Could not determine attachment size.', 'wp-mcp-ai' ) );
 			}
@@ -1221,7 +1221,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 * @return int
 		 */
 		protected function get_file_modified_time( $file_path ) {
-			$modified = @filemtime( $file_path );
+			if ( ! file_exists( $file_path ) ) {
+				return 0;
+			}
+
+			$modified = filemtime( $file_path );
 
 			if ( false === $modified ) {
 				return 0;
