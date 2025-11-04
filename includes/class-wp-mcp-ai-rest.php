@@ -1081,7 +1081,7 @@ class WP_MCP_AI_REST {
 		return new WP_Error(
 			'wp_mcp_ai_insufficient_permissions',
 			sprintf(
-				__( 'The authenticated user cannot access the MCP AI API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
+				__( 'The authenticated user cannot access the WP oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
 				$capability
 			),
 			array(

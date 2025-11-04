@@ -80,7 +80,7 @@ ALL TESTS PASSED ✓
 
 ### WordPress Admin Test
 
-1. Navigate to **Settings → MCP AI**
+1. Navigate to **Settings → WP oOS**
 2. Find the **LM Studio Configuration** section
 3. Enter endpoint: `http://127.0.0.1:1234`
 4. Click **Test Connection**

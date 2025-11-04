@@ -4887,7 +4887,7 @@
                         };
                     }
                     
-                    console.log('[WP MCP AI] Tool response received:', {
+                    console.log('[WP oOS] Tool response received:', {
                         tool: toolName,
                         result: logSafeResult,
                         timestamp: new Date().toISOString(),
@@ -4927,7 +4927,7 @@
                                     };
                                 }
                                 
-                                console.log('[WP MCP AI] Tool payload normalized for display:', {
+                                console.log('[WP oOS] Tool payload normalized for display:', {
                                     tool: toolName,
                                     normalizedPayload: logSafeNormalised,
                                 });

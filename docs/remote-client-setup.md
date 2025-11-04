@@ -1,6 +1,6 @@
 # Remote MCP Client Setup Guide
 
-This guide explains how to connect to your WordPress MCP AI plugin from popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors.
+This guide explains how to connect to your WordPress WP oOS plugin from popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors.
 
 ## Table of Contents
 
@@ -39,7 +39,7 @@ Before connecting any MCP client, ensure:
 1. **WP oOS is installed and activated** on your WordPress site
 2. **At least one assistant is published** under **AI Assistants** in your WordPress admin
 3. **Your WordPress site is accessible via HTTPS** (required for secure bearer token transmission)
-4. **OpenAI API key is configured** in **Settings → MCP AI**
+4. **OpenAI API key is configured** in **Settings → WP oOS**
 5. **Your server supports REST API access** (check `/wp-json/mcp-ai/v1/assistants` is reachable)
 
 ### Finding Your MCP Server URL
@@ -213,12 +213,12 @@ If using LM Studio's JSON config file (usually `~/.lmstudio/mcp.json` or similar
 ### Prerequisites
 
 - An Auth0 account and tenant
-- Auth0 configured in **Settings → MCP AI** on your WordPress site
+- Auth0 configured in **Settings → WP oOS** on your WordPress site
 - Machine-to-Machine application created in Auth0 for the MCP API
 
 ### Step 1: Configure Auth0 in WordPress
 
-1. Navigate to **Settings → MCP AI**
+1. Navigate to **Settings → WP oOS**
 2. Scroll to **Auth0 Configuration**
 3. Enter:
    - **Auth0 Domain:** `your-tenant.auth0.com`
@@ -432,7 +432,7 @@ Example error:
 **Problem:** Too many requests returning 429 errors
 
 **Solutions:**
-1. Check **Settings → MCP AI → Rate Limiting** configuration
+1. Check **Settings → WP oOS → Rate Limiting** configuration
 2. Increase limits for trusted clients
 3. Use rate limit filters to exempt specific tokens
 4. Consider caching frequently-accessed data
@@ -454,7 +454,7 @@ Example error:
 **Solutions:**
 1. Verify memory files are attached in **Base Knowledge** meta box
 2. Check file sizes don't exceed limits (5MB default)
-3. Ensure MIME types are allowed in **Settings → MCP AI → Attachments**
+3. Ensure MIME types are allowed in **Settings → WP oOS → Attachments**
 4. Review file permissions and accessibility
 
 ---
@@ -466,7 +466,7 @@ Once connected successfully:
 1. **Explore available tools** – Each assistant exposes different tool sets
 2. **Review tool documentation** – See [`docs/tool-reference.md`](tool-reference.md)
 3. **Test common workflows** – Try content search, post creation, etc.
-4. **Monitor usage** – Track consumption in **Settings → MCP AI**
+4. **Monitor usage** – Track consumption in **Settings → WP oOS**
 5. **Secure your deployment** – Review [deployment troubleshooting](deployment-troubleshooting.md)
 
 ## Additional Resources

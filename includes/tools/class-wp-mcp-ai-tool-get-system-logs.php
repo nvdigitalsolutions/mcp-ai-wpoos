@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Returns recent log entries from WordPress and MCP AI.
+ * Returns recent log entries from WordPress and WP oOS.
  */
 class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 	/**
@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent log entries from WordPress, MCP AI, and plugin log files for diagnostics.', 'wp-mcp-ai' );
+		return __( 'Returns recent log entries from WordPress, WP oOS, and plugin log files for diagnostics.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -43,14 +43,14 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 			'properties'           => array(
 				'activity_limit'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of MCP AI activity entries to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of WP oOS activity entries to return.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of MCP AI activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 				),
 				'error_limit'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of MCP AI error entries to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of WP oOS error entries to return.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 20,
@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 	}
 
 	/**
-	 * Return recent MCP AI log entries.
+	 * Return recent WP oOS log entries.
 	 *
 	 * @param array $args Prepared arguments.
 	 * @return array
@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 			$logs['recent_errors']   = WP_MCP_AI_Logger::get_recent_error_messages( $args['error_limit'] );
 			$logs['recent_activity'] = WP_MCP_AI_Logger::get_recent_activity_entries( $args['activity_limit'], $args['activity_types'] );
 		} else {
-			$logs['message'] = __( 'MCP AI logging is disabled. Enable logging in the MCP AI settings to capture entries.', 'wp-mcp-ai' );
+			$logs['message'] = __( 'WP oOS logging is disabled. Enable logging in the WP oOS settings to capture entries.', 'wp-mcp-ai' );
 		}
 
 		return $logs;

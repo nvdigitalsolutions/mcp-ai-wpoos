@@ -1,6 +1,6 @@
 # MCP Client Configuration Examples
 
-This directory contains example configuration files for connecting various MCP clients to your WordPress MCP AI server.
+This directory contains example configuration files for connecting various MCP clients to your WordPress WP oOS server.
 
 ## Configuration Files
 

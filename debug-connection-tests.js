@@ -1,7 +1,7 @@
 /**
  * Debug script for connection test buttons
  * 
- * Add this to the browser console on the WP MCP AI settings page to diagnose
+ * Add this to the browser console on the WP oOS settings page to diagnose
  * why the "Test Connection" buttons are not working.
  */
 
@@ -68,7 +68,7 @@
     // Check for JavaScript errors in console
     console.log('\n--- Recommendations ---');
     console.log('1. Check the browser console for JavaScript errors');
-    console.log('2. Verify you are on the Settings → MCP AI page');
+    console.log('2. Verify you are on the Settings → WP oOS page');
     console.log('3. Check Network tab when clicking buttons to see if AJAX request is sent');
     console.log('4. Try refreshing the page with Ctrl+Shift+R (hard refresh)');
     console.log('5. If still not working, check if admin-settings.js is loaded:');

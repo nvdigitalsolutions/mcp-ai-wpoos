@@ -47,7 +47,7 @@ Run the diagnostic script in `/debug-connection-tests.js`
 
 **Check:**
 - Verify you're on: `wp-admin/options-general.php?page=wp-mcp-ai-settings`
-- The script only loads on the MCP AI settings page
+- The script only loads on the WP oOS settings page
 
 ### 5. Script Enqueuing Issue
 
@@ -93,7 +93,7 @@ The `wp_localize_script` call failed. Check:
 
 ## Quick Diagnostic Script
 
-Paste this in your browser console while on the MCP AI settings page:
+Paste this in your browser console while on the WP oOS settings page:
 
 ```javascript
 // From /debug-connection-tests.js

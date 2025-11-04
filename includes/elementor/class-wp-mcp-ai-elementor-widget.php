@@ -1,6 +1,6 @@
 <?php
 /**
- * Elementor widget for rendering the MCP AI chat shortcode.
+ * Elementor widget for rendering the WP oOS chat shortcode.
  *
  * @package WP_MCP_AI
  */
@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'MCP AI Chat', 'wp-mcp-ai' );
+		return __( 'WP oOS Chat', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -1110,13 +1110,13 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		if ( '' !== $url ) {
 			return sprintf(
 				/* translators: 1: Opening anchor tag, 2: closing anchor tag. */
-				__( 'Global chat colors are managed under %1$sSettings → MCP AI → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
+				__( 'Global chat colors are managed under %1$sSettings → WP oOS → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
 				'<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">',
 				'</a>'
 			);
 		}
 
-		return __( 'Global chat colors are managed under Settings → MCP AI → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
+		return __( 'Global chat colors are managed under Settings → WP oOS → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
 	}
 
 	/**
