@@ -17,6 +17,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	class WP_MCP_AI_REST {
 		use WP_MCP_AI_REST_MCP_Methods;
+
 		const REST_NAMESPACE              = 'mcp-ai/v1';
 		const MEMORY_MAX_DOCUMENT_CHARS   = 4000;
 		const MEMORY_CHUNK_CHARS          = 1200;
@@ -57,12 +58,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected $auth_context = array();
 
-	/**
-	 * Request-scoped cache for validated assistants to reduce duplicate lookups.
-	 *
-	 * @var array
-	 */
-	protected $assistant_cache = array();
+		/**
+		 * Request-scoped cache for validated assistants to reduce duplicate lookups.
+		 *
+		 * @var array
+		 */
+		protected $assistant_cache = array();
 
 		/**
 		 * Constructor.
@@ -109,7 +110,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Use rest_get_url_prefix() to handle subdirectory installations.
 			$rest_prefix = rest_get_url_prefix();
 			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-			
+
 			// Parse and validate URI safely.
 			$parsed_uri = wp_parse_url( $request_uri, PHP_URL_PATH );
 			if ( ! $parsed_uri || false === strpos( $parsed_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
@@ -3166,15 +3167,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return WP_Post|WP_Error
 		 */
 		protected function validate_assistant_access( $assistant_id ) {
-			$assistant_id   = absint( $assistant_id );
+			$assistant_id = absint( $assistant_id );
 
-		// Check cache for repeated validations within the same request (optimization can be disabled with WP_MCP_AI_DISABLE_CACHE).
-		if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
-			$cache_key = 'assistant_' . $assistant_id;
-			if ( isset( $this->assistant_cache[ $cache_key ] ) ) {
-				return $this->assistant_cache[ $cache_key ];
+			// Check cache for repeated validations within the same request (optimization can be disabled with WP_MCP_AI_DISABLE_CACHE).
+			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+				$cache_key = 'assistant_' . $assistant_id;
+				if ( isset( $this->assistant_cache[ $cache_key ] ) ) {
+					return $this->assistant_cache[ $cache_key ];
+				}
 			}
-		}
 			$assistant_post = $assistant_id ? get_post( $assistant_id ) : null;
 
 			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
@@ -3208,11 +3209,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-
-		// Cache the successful result.
-		if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
-			$this->assistant_cache[ $cache_key ] = $assistant_post;
-		}
+			// Cache the successful result.
+			if ( ! defined( 'WP_MCP_AI_DISABLE_CACHE' ) || ! WP_MCP_AI_DISABLE_CACHE ) {
+				$this->assistant_cache[ $cache_key ] = $assistant_post;
+			}
 			return $assistant_post;
 		}
 

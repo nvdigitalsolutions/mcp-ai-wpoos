@@ -24,10 +24,10 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
-		
+
 		// Backup original display_errors setting.
 		$this->original_display_errors = ini_get( 'display_errors' );
-		
+
 		// Ensure DOING_AJAX is defined for tests that need it.
 		if ( ! defined( 'DOING_AJAX' ) ) {
 			define( 'DOING_AJAX', true );
@@ -42,7 +42,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 		if ( false !== $this->original_display_errors ) {
 			@ini_set( 'display_errors', $this->original_display_errors );
 		}
-		
+
 		parent::tear_down();
 	}
 
@@ -81,10 +81,10 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate an Elementor AJAX request.
 		$_REQUEST['action'] = 'elementor_ajax';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
-		
+
 		// Call the suppress method.
 		$plugin->suppress_debug_in_elementor_ajax();
 
@@ -109,7 +109,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate a non-Elementor AJAX request.
 		$_REQUEST['action'] = 'my_custom_action';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		$plugin->suppress_debug_in_elementor_ajax();
@@ -139,7 +139,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate Elementor editor mode.
 		$_GET['action'] = 'elementor';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		$plugin->disable_auth_check_in_elementor();
@@ -169,7 +169,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate a regular admin page (no Elementor action).
 		$_GET['page'] = 'some-admin-page';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		$plugin->disable_auth_check_in_elementor();
@@ -202,7 +202,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 			// Simulate the AJAX request.
 			$_REQUEST['action'] = $action;
-			
+
 			// Call the suppress method.
 			$plugin = wp_mcp_ai();
 			$plugin->suppress_debug_in_elementor_ajax();
@@ -216,7 +216,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 			// Clean up.
 			unset( $_REQUEST['action'] );
-			
+
 			// Clean up any output buffers that were started.
 			while ( ob_get_level() > 0 ) {
 				ob_end_clean();
@@ -233,7 +233,7 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate an Elementor AJAX request.
 		$_REQUEST['action'] = 'elementor_ajax';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		$plugin->suppress_debug_in_elementor_ajax();
@@ -255,17 +255,17 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	public function test_output_buffering_captures_stray_output() {
 		// Simulate an Elementor AJAX request.
 		$_REQUEST['action'] = 'elementor_save_builder';
-		
+
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		$plugin->suppress_debug_in_elementor_ajax();
 
 		// Simulate some stray output that would normally break JSON responses.
 		echo 'This output should be captured';
-		
+
 		// Get the buffered content.
 		$buffered = ob_get_contents();
-		
+
 		// Verify the output was captured.
 		$this->assertStringContainsString( 'This output should be captured', $buffered, 'Stray output should be captured in buffer' );
 
@@ -292,31 +292,31 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	public function test_clean_output_buffer_works() {
 		// Record initial buffer level.
 		$initial_level = ob_get_level();
-		
+
 		// Simulate an Elementor AJAX request.
 		$_REQUEST['action'] = 'elementor_save_builder';
-		
+
 		// Create plugin instance and simulate the full flow.
 		$plugin = wp_mcp_ai();
-		
+
 		// Call suppress_debug_in_elementor_ajax to set up the buffer tracking.
 		$plugin->suppress_debug_in_elementor_ajax();
-		
+
 		// Now a buffer should be started.
 		$this->assertGreaterThan( $initial_level, ob_get_level(), 'Buffer should be started' );
-		
+
 		// Add some content to the buffer.
 		echo 'Test content';
-		
+
 		// Call the cleanup method.
 		$plugin->clean_elementor_output_buffer();
-		
+
 		// Verify the buffer was cleaned and we're back to the initial level.
 		$this->assertEquals( $initial_level, ob_get_level(), 'Output buffer should be cleaned back to initial level' );
-		
+
 		// Clean up.
 		unset( $_REQUEST['action'] );
-		
+
 		// Make sure we're back to a clean state.
 		while ( ob_get_level() > 0 ) {
 			ob_end_clean();

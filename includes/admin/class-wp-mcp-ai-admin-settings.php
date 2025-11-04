@@ -78,11 +78,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			// Map action to handler method.
 			$action_map = array(
-				'wp_ajax_wp_mcp_ai_test_ollama_connection'      => 'handle_test_ollama_connection',
-				'wp_ajax_wp_mcp_ai_fetch_ollama_models'         => 'handle_fetch_ollama_models',
-				'wp_ajax_wp_mcp_ai_test_lm_studio_connection'   => 'handle_test_lm_studio_connection',
-				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models'      => 'handle_fetch_lm_studio_models',
-				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'        => 'handle_fetch_cloudways_data',
+				'wp_ajax_wp_mcp_ai_test_ollama_connection' => 'handle_test_ollama_connection',
+				'wp_ajax_wp_mcp_ai_fetch_ollama_models'    => 'handle_fetch_ollama_models',
+				'wp_ajax_wp_mcp_ai_test_lm_studio_connection' => 'handle_test_lm_studio_connection',
+				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
+				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 			);
 
