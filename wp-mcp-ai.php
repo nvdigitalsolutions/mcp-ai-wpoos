@@ -394,13 +394,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 					@ini_set( 'display_errors', '0' );
 				}
 				
+				// Track the current buffer level before starting our buffer.
+				// This allows us to clean only the buffer(s) we create.
+				$this->elementor_buffer_level = ob_get_level();
+				
 				// Start output buffering to catch any stray output that could break JSON responses.
 				// This protects against any echoed content, warnings, or notices that occur
 				// during the Elementor save process.
 				ob_start();
-				
-				// Track the buffer level we created so we can clean it up safely.
-				$this->elementor_buffer_level = ob_get_level();
 				
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
 				// We use priority 0 to run before most other shutdown handlers.
@@ -437,9 +438,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Get the current output buffer level.
 			$current_level = ob_get_level();
 			
-			// Clean buffers down to the level before we started buffering.
+			// Clean buffers down to the level we recorded before starting buffering.
 			// This ensures we only clean the buffer(s) we created, not existing ones.
-			while ( $current_level > 0 && $current_level >= $this->elementor_buffer_level ) {
+			// We use > (not >=) because elementor_buffer_level is the level BEFORE we started.
+			while ( $current_level > 0 && $current_level > $this->elementor_buffer_level ) {
 				ob_end_clean();
 				$current_level = ob_get_level();
 			}
