@@ -29,19 +29,15 @@ class WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
 		return 'A mock tool for testing';
 	}
 
-	public function get_input_schema() {
+	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(),
 		);
 	}
 
-	public function execute( $context, $input ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		return array( 'result' => 'success' );
-	}
-
-	public function is_available( $context ) {
-		return true;
 	}
 }
 
