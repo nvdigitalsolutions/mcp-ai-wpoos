@@ -220,7 +220,8 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			return $options;
 		}
 
-		$assistants = get_posts(
+		// Suppress any PHP notices/warnings that could break Elementor's JSON response.
+		$assistants = @get_posts(
 			array(
 				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
 				'post_status'      => 'publish',
@@ -232,12 +233,15 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			)
 		);
 
-		if ( empty( $assistants ) ) {
+		if ( ! is_array( $assistants ) || empty( $assistants ) ) {
 			return $options;
 		}
 
 		foreach ( $assistants as $assistant_id ) {
-			$options[ (string) $assistant_id ] = get_the_title( $assistant_id );
+			$title = @get_the_title( $assistant_id );
+			if ( $title ) {
+				$options[ (string) $assistant_id ] = $title;
+			}
 		}
 
 		return $options;
