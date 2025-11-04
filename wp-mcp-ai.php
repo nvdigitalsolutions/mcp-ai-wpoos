@@ -199,7 +199,7 @@ function wp_mcp_ai_load_textdomain() {
 	load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }
 
-add_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain', 5 );
+add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
 
 /**
  * Main plugin container class.
