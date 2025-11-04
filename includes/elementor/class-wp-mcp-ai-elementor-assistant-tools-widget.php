@@ -404,6 +404,12 @@ JS;
 	 * @return array
 	 */
 	protected function get_assistant_options() {
+		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $options;
+		}
+
 		$assistants = get_posts(
 			array(
 				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -415,8 +421,6 @@ JS;
 				'fields'           => 'ids',
 			)
 		);
-
-		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
 
 		if ( empty( $assistants ) ) {
 			return $options;
