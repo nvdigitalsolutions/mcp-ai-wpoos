@@ -98,7 +98,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Check if we're handling a REST request for our namespace.
 			// Use rest_get_url_prefix() to handle subdirectory installations.
 			$rest_prefix = rest_get_url_prefix();
-			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 			
 			// Parse and validate URI safely.
 			$parsed_uri = wp_parse_url( $request_uri, PHP_URL_PATH );
