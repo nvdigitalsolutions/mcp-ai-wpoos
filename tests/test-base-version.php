@@ -23,9 +23,12 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that base version can be explicitly enabled.
+	 * Test that base version is enabled when constant is explicitly true.
 	 */
 	public function test_base_version_explicitly_enabled() {
+		// Test via the tool registry filter which wraps wp_mcp_ai_is_base_version().
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
 		// Store callback for cleanup.
 		$callback = function ( $is_base ) {
 			// Override to simulate constant being set to true.
@@ -35,16 +38,25 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 		// Use filter to simulate constant being set to true.
 		add_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 
-		$this->assertTrue( wp_mcp_ai_is_base_version(), 'Base version should be enabled when constant is true' );
+		// The tool registry uses this filter internally.
+		$reflection = new ReflectionClass( $registry );
+		$method     = $reflection->getMethod( 'is_base_version' );
+		$method->setAccessible( true );
+		$result = $method->invoke( $registry );
+
+		$this->assertTrue( $result, 'Base version should be enabled when filter returns true' );
 
 		// Clean up specific filter.
 		remove_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 	}
 
 	/**
-	 * Test that base version can be disabled.
+	 * Test that base version can be disabled via filter.
 	 */
 	public function test_base_version_can_be_disabled() {
+		// Test via the tool registry filter which wraps wp_mcp_ai_is_base_version().
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
 		// Store callback for cleanup.
 		$callback = function ( $is_base ) {
 			// Override to simulate constant being set to false.
@@ -54,7 +66,13 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 		// Use filter to simulate constant being set to false.
 		add_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 
-		$this->assertFalse( wp_mcp_ai_is_base_version(), 'Base version should be disabled when constant is false' );
+		// The tool registry uses this filter internally.
+		$reflection = new ReflectionClass( $registry );
+		$method     = $reflection->getMethod( 'is_base_version' );
+		$method->setAccessible( true );
+		$result = $method->invoke( $registry );
+
+		$this->assertFalse( $result, 'Base version should be disabled when filter returns false' );
 
 		// Clean up specific filter.
 		remove_filter( 'wp_mcp_ai_base_version', $callback, 999 );
