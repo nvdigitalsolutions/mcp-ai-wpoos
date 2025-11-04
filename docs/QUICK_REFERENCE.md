@@ -425,8 +425,8 @@ Settings → WP oOS → Chat Theme
 ## 📚 Additional Resources
 
 ### Full Documentation
-- [Complete README](../README.md) - 943 lines of comprehensive docs
-- [Documentation Index](DOCUMENTATION_INDEX.md) - All 32 documentation files
+- [Complete README](../README.md) - 1,027 lines of comprehensive docs
+- [Documentation Index](DOCUMENTATION_INDEX.md) - All 36 documentation files
 - [Tool Reference](tool-reference.md) - All 65+ tools detailed
 - [REST API Guide](rest-api.md) - Complete API documentation
 
