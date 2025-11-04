@@ -256,14 +256,10 @@ class WP_MCP_AI_Shortcode {
 			return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
 		}
 
-		// Show placeholder in Elementor editor mode to prevent JavaScript conflicts.
-		if ( $this->is_elementor_editor() ) {
-			return '<div class="wp-mcp-ai-chat__editor-placeholder" style="padding: 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center;">' .
-				'<p style="margin: 0;"><strong>' . esc_html__( 'WP oOS Chat Widget', 'wp-mcp-ai' ) . '</strong></p>' .
-				'<p style="margin: 10px 0 0;">' . esc_html( sprintf( __( 'Assistant: %s', 'wp-mcp-ai' ), get_the_title( $assistant_id ) ) ) . '</p>' .
-				'<p style="margin: 5px 0 0; font-size: 12px; color: #646970;">' . esc_html__( 'The chat interface will be displayed on the live page.', 'wp-mcp-ai' ) . '</p>' .
-				'</div>';
-		}
+		// Render the actual widget in Elementor editor for better preview.
+		// The WP_DEBUG fix in the main plugin class ensures debug output
+		// won't break the editor when WP_DEBUG is enabled.
+		$is_elementor_editor = $this->is_elementor_editor();
 
 		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
 			$this->register_assets();
@@ -347,6 +343,12 @@ class WP_MCP_AI_Shortcode {
 		$messages_id = $instance_id . '-messages';
 		?>
 		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
+			<?php if ( $is_elementor_editor ) : ?>
+				<div class="wp-mcp-ai-chat__editor-notice" style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 15px; color: #0c5460; font-size: 13px;">
+					<strong><?php esc_html_e( 'Editor Preview:', 'wp-mcp-ai' ); ?></strong>
+					<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'wp-mcp-ai' ); ?>
+				</div>
+			<?php endif; ?>
 			<div class="wp-mcp-ai-chat__assistant">
 				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
 					<?php echo esc_html( get_the_title( $assistant_id ) ); ?>
