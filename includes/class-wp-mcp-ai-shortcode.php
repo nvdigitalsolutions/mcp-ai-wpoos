@@ -241,6 +241,24 @@ class WP_MCP_AI_Shortcode {
 			return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
 		}
 
+		// Don't enqueue scripts in Elementor editor mode to prevent JavaScript conflicts.
+		$is_elementor_editor = false;
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
+				$is_elementor_editor = true;
+			}
+		}
+
+		// Show placeholder in Elementor editor mode.
+		if ( $is_elementor_editor ) {
+			return '<div class="wp-mcp-ai-chat__editor-placeholder" style="padding: 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center;">' .
+				'<p style="margin: 0;"><strong>' . esc_html__( 'WP oOS Chat Widget', 'wp-mcp-ai' ) . '</strong></p>' .
+				'<p style="margin: 10px 0 0;">' . esc_html( sprintf( __( 'Assistant: %s', 'wp-mcp-ai' ), get_the_title( $assistant_id ) ) ) . '</p>' .
+				'<p style="margin: 5px 0 0; font-size: 12px; color: #646970;">' . esc_html__( 'The chat interface will be displayed on the live page.', 'wp-mcp-ai' ) . '</p>' .
+				'</div>';
+		}
+
 		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
 			$this->register_assets();
 		}

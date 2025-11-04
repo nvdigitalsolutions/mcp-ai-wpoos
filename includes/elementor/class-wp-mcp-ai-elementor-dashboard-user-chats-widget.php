@@ -228,6 +228,15 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			$user_id = get_current_user_id();
 		}
 
+		// Check if we're in Elementor editor mode.
+		$is_elementor_editor = false;
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
+				$is_elementor_editor = true;
+			}
+		}
+
 		echo '<div class="wp-mcp-ai-user-chats">';
 
 		if ( '' !== $title ) {
@@ -240,6 +249,15 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			if ( '' !== $description_output ) {
 				echo '<div class="wp-mcp-ai-user-chats__description">' . $description_output . '</div>';
 			}
+		}
+
+		// Show placeholder in Elementor editor mode.
+		if ( $is_elementor_editor ) {
+			echo '<div class="wp-mcp-ai-user-chats__editor-placeholder" style="padding: 20px; background: #f0f0f1; border: 2px dashed #c3c4c7; text-align: center;">';
+			echo '<p style="margin: 0;">' . esc_html__( 'Chat history will be displayed here on the live page.', 'wp-mcp-ai' ) . '</p>';
+			echo '</div>';
+			echo '</div>';
+			return;
 		}
 
 		if ( ! $user_id ) {
@@ -290,6 +308,14 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	 * Ensure the required scripts and styles are loaded.
 	 */
 	protected function enqueue_assets() {
+		// Don't enqueue scripts in Elementor editor mode to prevent JavaScript conflicts.
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && $elementor->editor && $elementor->editor->is_edit_mode() ) {
+				return;
+			}
+		}
+
 		if ( ! self::$assets_registered ) {
 			$script_relative = 'assets/js/user-chats.js';
 			$style_relative  = 'assets/css/user-chats.css';
