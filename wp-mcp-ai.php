@@ -29,91 +29,97 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 	require_once WP_MCP_AI_PATH . 'vendor/autoload.php';
 }
 
-/**
- * Retrieve the capability required to access the chat interface.
- *
- * Site owners can filter the returned capability to relax access controls.
- * For example, allow subscribers (with the `read` capability) or even
- * unauthenticated visitors by returning `'public'` or an empty value.
- *
- * @since 1.0.0
- *
- * @param int    $assistant_id Assistant post ID, when known.
- * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
- *
- * @return string|false Capability string. Return `'public'` to allow any visitor,
- *                      or a falsy value to skip the check entirely.
- */
-function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = 'general' ) {
-	$assistant_id = absint( $assistant_id );
-	$context      = $context ? sanitize_key( $context ) : 'general';
-
+if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 	/**
-	 * Filters the capability required to use the front-end chat interface.
+	 * Retrieve the capability required to access the chat interface.
 	 *
-	 * Returning `'public'`, `false`, or an empty string disables the capability
-	 * check, making the chat available to all visitors who satisfy the
-	 * authentication requirements.
+	 * Site owners can filter the returned capability to relax access controls.
+	 * For example, allow subscribers (with the `read` capability) or even
+	 * unauthenticated visitors by returning `'public'` or an empty value.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $capability  Capability required to access the chat. Defaults to `edit_posts`.
-	 * @param int    $assistant_id Assistant post ID, when available.
+	 * @param int    $assistant_id Assistant post ID, when known.
 	 * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+	 *
+	 * @return string|false Capability string. Return `'public'` to allow any visitor,
+	 *                      or a falsy value to skip the check entirely.
 	 */
-	$capability = apply_filters( 'wp_mcp_ai_chat_capability', 'edit_posts', $assistant_id, $context );
+	function wp_mcp_ai_get_required_chat_capability( $assistant_id = 0, $context = 'general' ) {
+		$assistant_id = absint( $assistant_id );
+		$context      = $context ? sanitize_key( $context ) : 'general';
 
-	if ( is_string( $capability ) ) {
-		$capability = sanitize_key( $capability );
+		/**
+		 * Filters the capability required to use the front-end chat interface.
+		 *
+		 * Returning `'public'`, `false`, or an empty string disables the capability
+		 * check, making the chat available to all visitors who satisfy the
+		 * authentication requirements.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $capability  Capability required to access the chat. Defaults to `edit_posts`.
+		 * @param int    $assistant_id Assistant post ID, when available.
+		 * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+		 */
+		$capability = apply_filters( 'wp_mcp_ai_chat_capability', 'edit_posts', $assistant_id, $context );
+
+		if ( is_string( $capability ) ) {
+			$capability = sanitize_key( $capability );
+		}
+
+		return $capability;
 	}
-
-	return $capability;
 }
 
-/**
- * Provide a fallback Crawl4AI base URL from the environment when available.
- *
- * @param string $base_url Base URL stored in the plugin settings.
- * @param array  $settings Entire plugin settings array.
- * @param array  $context  Execution context passed to the tool.
- * @return string
- */
-function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
-	if ( ! empty( $base_url ) ) {
+if ( ! function_exists( 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
+	/**
+	 * Provide a fallback Crawl4AI base URL from the environment when available.
+	 *
+	 * @param string $base_url Base URL stored in the plugin settings.
+	 * @param array  $settings Entire plugin settings array.
+	 * @param array  $context  Execution context passed to the tool.
+	 * @return string
+	 */
+	function wp_mcp_ai_filter_crawl4ai_base_url( $base_url, $settings, $context ) {
+		if ( ! empty( $base_url ) ) {
+			return $base_url;
+		}
+
+		if ( defined( 'WP_MCP_AI_CRAWL4AI_BASE_URL' ) && WP_MCP_AI_CRAWL4AI_BASE_URL ) {
+			return WP_MCP_AI_CRAWL4AI_BASE_URL;
+		}
+
+		$environment_candidates = array(
+			'WP_MCP_AI_CRAWL4AI_BASE_URL',
+			'CRAWL4AI_BASE_URL',
+		);
+
+		foreach ( $environment_candidates as $env_key ) {
+			$candidate = getenv( $env_key );
+			if ( is_string( $candidate ) && '' !== trim( $candidate ) ) {
+				return $candidate;
+			}
+		}
+
 		return $base_url;
 	}
-
-	if ( defined( 'WP_MCP_AI_CRAWL4AI_BASE_URL' ) && WP_MCP_AI_CRAWL4AI_BASE_URL ) {
-		return WP_MCP_AI_CRAWL4AI_BASE_URL;
-	}
-
-	$environment_candidates = array(
-		'WP_MCP_AI_CRAWL4AI_BASE_URL',
-		'CRAWL4AI_BASE_URL',
-	);
-
-	foreach ( $environment_candidates as $env_key ) {
-		$candidate = getenv( $env_key );
-		if ( is_string( $candidate ) && '' !== trim( $candidate ) ) {
-			return $candidate;
-		}
-	}
-
-	return $base_url;
 }
 
 add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
 
-/**
- * Check if base version mode is enabled.
- *
- * Base version is enabled by default. To disable it and use the full version,
- * add this to wp-config.php: define( 'WP_MCP_AI_BASE_VERSION', false );
- *
- * @return bool Whether base version mode is active.
- */
-function wp_mcp_ai_is_base_version() {
-	return ! defined( 'WP_MCP_AI_BASE_VERSION' ) || WP_MCP_AI_BASE_VERSION;
+if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
+	/**
+	 * Check if base version mode is enabled.
+	 *
+	 * Base version is enabled by default. To disable it and use the full version,
+	 * add this to wp-config.php: define( 'WP_MCP_AI_BASE_VERSION', false );
+	 *
+	 * @return bool Whether base version mode is active.
+	 */
+	function wp_mcp_ai_is_base_version() {
+		return ! defined( 'WP_MCP_AI_BASE_VERSION' ) || WP_MCP_AI_BASE_VERSION;
+	}
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
@@ -192,19 +198,22 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	}
 }
 
-/**
- * Load the plugin textdomain for localisation support.
- */
-function wp_mcp_ai_load_textdomain() {
-	load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
+	/**
+	 * Load the plugin textdomain for localisation support.
+	 */
+	function wp_mcp_ai_load_textdomain() {
+		load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+	}
+
+	add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
 }
 
-add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
-
-/**
- * Main plugin container class.
- */
-final class WP_MCP_AI {
+if ( ! class_exists( 'WP_MCP_AI' ) ) {
+	/**
+	 * Main plugin container class.
+	 */
+	final class WP_MCP_AI {
 	/**
 	 * Singleton instance.
 	 *
@@ -315,279 +324,302 @@ final class WP_MCP_AI {
 			WP_MCP_AI_Elementor_Integration::maybe_init();
 		}
 	}
+	}
 }
 
-/**
- * Returns the main instance of WP_MCP_AI.
- *
- * @return WP_MCP_AI
- */
-function wp_mcp_ai() {
-	return WP_MCP_AI::instance();
+if ( ! function_exists( 'wp_mcp_ai' ) ) {
+	/**
+	 * Returns the main instance of WP_MCP_AI.
+	 *
+	 * @return WP_MCP_AI
+	 */
+	function wp_mcp_ai() {
+		return WP_MCP_AI::instance();
+	}
 }
 
-/**
- * Bootstrap the plugin once all dependencies are loaded.
- */
-function wp_mcp_ai_bootstrap() {
-	wp_mcp_ai()->bootstrap();
-}
-
-add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
-
-/**
- * Helper function to iterate through all sites in a multisite network.
- *
- * @param callable $callback Callback function to execute for each site.
- * @param string   $action   Action name for error logging (e.g., 'activation', 'deactivation').
- * @return void
- */
-function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
-	if ( ! is_multisite() || ! is_callable( $callback ) ) {
-		return;
+if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
+	/**
+	 * Bootstrap the plugin once all dependencies are loaded.
+	 */
+	function wp_mcp_ai_bootstrap() {
+		wp_mcp_ai()->bootstrap();
 	}
 
+	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
 	/**
-	 * Filters the arguments for get_sites() when iterating network sites.
+	 * Helper function to iterate through all sites in a multisite network.
 	 *
-	 * Allows customization of site retrieval, including pagination for large networks.
-	 *
-	 * @param array $args Arguments passed to get_sites(). Default: array( 'number' => 0 ).
+	 * @param callable $callback Callback function to execute for each site.
+	 * @param string   $action   Action name for error logging (e.g., 'activation', 'deactivation').
+	 * @return void
 	 */
-	$get_sites_args = apply_filters(
-		'wp_mcp_ai_iterate_network_sites_args',
-		array( 'number' => 0 )
-	);
+	function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
+		if ( ! is_multisite() || ! is_callable( $callback ) ) {
+			return;
+		}
 
-	// Get sites in the network.
-	$sites = get_sites( $get_sites_args );
+		/**
+		 * Filters the arguments for get_sites() when iterating network sites.
+		 *
+		 * Allows customization of site retrieval, including pagination for large networks.
+		 *
+		 * @param array $args Arguments passed to get_sites(). Default: array( 'number' => 0 ).
+		 */
+		$get_sites_args = apply_filters(
+			'wp_mcp_ai_iterate_network_sites_args',
+			array( 'number' => 0 )
+		);
 
-	foreach ( $sites as $site ) {
-		switch_to_blog( $site->blog_id );
+		// Get sites in the network.
+		$sites = get_sites( $get_sites_args );
+
+		foreach ( $sites as $site ) {
+			switch_to_blog( $site->blog_id );
+			try {
+				call_user_func( $callback );
+			} catch ( Exception $e ) {
+				// Log the error and continue with remaining sites.
+				error_log( sprintf( 'WP oOS %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+			}
+			restore_current_blog();
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
+	/**
+	 * Activate plugin on a newly created site in a multisite network.
+	 *
+	 * @param int|WP_Site $blog WordPress 5.1+ passes a WP_Site object, earlier versions pass blog ID.
+	 * @return void
+	 */
+	function wp_mcp_ai_new_site_activation( $blog ) {
+		if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
+			return;
+		}
+
+		// Handle both WP_Site object (WP 5.1+) and blog ID (earlier versions).
+		if ( is_object( $blog ) && isset( $blog->blog_id ) ) {
+			$blog_id = (int) $blog->blog_id;
+		} elseif ( is_numeric( $blog ) ) {
+			$blog_id = (int) $blog;
+		} else {
+			// Invalid parameter, log error and return.
+			error_log( 'WP oOS: Invalid blog parameter passed to new_site_activation' );
+			return;
+		}
+
+		switch_to_blog( $blog_id );
 		try {
-			call_user_func( $callback );
+			wp_mcp_ai_activate_single_site();
 		} catch ( Exception $e ) {
-			// Log the error and continue with remaining sites.
-			error_log( sprintf( 'WP oOS %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+			// Log the error but don't break the site creation process.
+			error_log( sprintf( 'WP oOS activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
 		}
 		restore_current_blog();
 	}
+
+	add_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' );
+	add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
 }
 
-/**
- * Activate plugin on a newly created site in a multisite network.
- *
- * @param int|WP_Site $blog WordPress 5.1+ passes a WP_Site object, earlier versions pass blog ID.
- * @return void
- */
-function wp_mcp_ai_new_site_activation( $blog ) {
-	if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
-		return;
-	}
+if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
+	/**
+	 * Plugin activation handler.
+	 *
+	 * @param bool $network_wide Whether the plugin is being activated network-wide.
+	 * @return void
+	 */
+	function wp_mcp_ai_activate( $network_wide = false ) {
+		// Ensure network_wide is a boolean.
+		$network_wide = (bool) $network_wide;
 
-	// Handle both WP_Site object (WP 5.1+) and blog ID (earlier versions).
-	if ( is_object( $blog ) && isset( $blog->blog_id ) ) {
-		$blog_id = (int) $blog->blog_id;
-	} elseif ( is_numeric( $blog ) ) {
-		$blog_id = (int) $blog;
-	} else {
-		// Invalid parameter, log error and return.
-		error_log( 'WP oOS: Invalid blog parameter passed to new_site_activation' );
-		return;
-	}
-
-	switch_to_blog( $blog_id );
-	try {
-		wp_mcp_ai_activate_single_site();
-	} catch ( Exception $e ) {
-		// Log the error but don't break the site creation process.
-		error_log( sprintf( 'WP oOS activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
-	}
-	restore_current_blog();
-}
-
-add_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' );
-add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
-
-/**
- * Plugin activation handler.
- *
- * @param bool $network_wide Whether the plugin is being activated network-wide.
- * @return void
- */
-function wp_mcp_ai_activate( $network_wide = false ) {
-	// Ensure network_wide is a boolean.
-	$network_wide = (bool) $network_wide;
-
-	if ( is_multisite() && $network_wide ) {
-		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_activate_single_site', 'activation' );
-	} else {
-		wp_mcp_ai_activate_single_site();
+		if ( is_multisite() && $network_wide ) {
+			wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_activate_single_site', 'activation' );
+		} else {
+			wp_mcp_ai_activate_single_site();
+		}
 	}
 }
 
-/**
- * Activate the plugin on a single site.
- *
- * @return void
- */
-function wp_mcp_ai_activate_single_site() {
-	$registry = WP_MCP_AI_Tool_Registry::get_instance();
-	$registry->init();
+if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
+	/**
+	 * Activate the plugin on a single site.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_activate_single_site() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
 
-	WP_MCP_AI_Assistant_CPT::register_post_type();
-	flush_rewrite_rules();
+		WP_MCP_AI_Assistant_CPT::register_post_type();
+		flush_rewrite_rules();
+	}
 }
 
 register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
 
-/**
- * Plugin deactivation handler.
- *
- * @param bool $network_wide Whether the plugin is being deactivated network-wide.
- * @return void
- */
-function wp_mcp_ai_deactivate( $network_wide = false ) {
-	// Ensure network_wide is a boolean.
-	$network_wide = (bool) $network_wide;
+if ( ! function_exists( 'wp_mcp_ai_deactivate' ) ) {
+	/**
+	 * Plugin deactivation handler.
+	 *
+	 * @param bool $network_wide Whether the plugin is being deactivated network-wide.
+	 * @return void
+	 */
+	function wp_mcp_ai_deactivate( $network_wide = false ) {
+		// Ensure network_wide is a boolean.
+		$network_wide = (bool) $network_wide;
 
-	if ( is_multisite() && $network_wide ) {
-		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_deactivate_single_site', 'deactivation' );
-	} else {
-		wp_mcp_ai_deactivate_single_site();
+		if ( is_multisite() && $network_wide ) {
+			wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_deactivate_single_site', 'deactivation' );
+		} else {
+			wp_mcp_ai_deactivate_single_site();
+		}
 	}
 }
 
-/**
- * Deactivate the plugin on a single site.
- *
- * @return void
- */
-function wp_mcp_ai_deactivate_single_site() {
-	flush_rewrite_rules();
+if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
+	/**
+	 * Deactivate the plugin on a single site.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_deactivate_single_site() {
+		flush_rewrite_rules();
+	}
 }
 
 register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
 
-/**
- * Plugin uninstall handler.
- *
- * @return void
- */
-function wp_mcp_ai_uninstall() {
-	if ( is_multisite() ) {
-		wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_uninstall_single_site', 'uninstall' );
-	} else {
-		wp_mcp_ai_uninstall_single_site();
+if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {
+	/**
+	 * Plugin uninstall handler.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_uninstall() {
+		if ( is_multisite() ) {
+			wp_mcp_ai_iterate_network_sites( 'wp_mcp_ai_uninstall_single_site', 'uninstall' );
+		} else {
+			wp_mcp_ai_uninstall_single_site();
+		}
 	}
 }
 
-/**
- * Uninstall the plugin on a single site.
- *
- * @return void
- */
-function wp_mcp_ai_uninstall_single_site() {
-	$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-
-	if ( ! is_array( $settings ) ) {
-		$settings = array();
-	}
-
-	$settings = wp_parse_args( $settings, WP_MCP_AI_Admin_Settings::get_default_settings() );
-
-	if ( empty( $settings['delete_on_uninstall'] ) ) {
-		return;
-	}
-
+if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 	/**
-	 * Fires before WP oOS performs its uninstall cleanup routines.
-	 */
-	do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
-
-	$assistant_ids = get_posts(
-		array(
-			'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-			'post_status'    => 'any',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
-		)
-	);
-
-	if ( ! empty( $assistant_ids ) ) {
-		foreach ( $assistant_ids as $assistant_id ) {
-			wp_delete_post( $assistant_id, true );
-		}
-	}
-
-	$settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
-	delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
-	delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
-
-	/**
-	 * Fires after WP oOS completes its uninstall cleanup routines.
+	 * Uninstall the plugin on a single site.
 	 *
-	 * @param array $summary Summary of cleanup actions performed.
+	 * @return void
 	 */
-	do_action(
-		'wp_mcp_ai_after_uninstall_cleanup',
-		array(
-			'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
-			'settings_deleted'   => (bool) $settings_deleted,
-		)
-	);
+	function wp_mcp_ai_uninstall_single_site() {
+		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+		if ( ! is_array( $settings ) ) {
+			$settings = array();
+		}
+
+		$settings = wp_parse_args( $settings, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		if ( empty( $settings['delete_on_uninstall'] ) ) {
+			return;
+		}
+
+		/**
+		 * Fires before WP oOS performs its uninstall cleanup routines.
+		 */
+		do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
+
+		$assistant_ids = get_posts(
+			array(
+				'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		if ( ! empty( $assistant_ids ) ) {
+			foreach ( $assistant_ids as $assistant_id ) {
+				wp_delete_post( $assistant_id, true );
+			}
+		}
+
+		$settings_deleted = delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+		delete_option( WP_MCP_AI_Credentials::INDEX_OPTION );
+		delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
+
+		/**
+		 * Fires after WP oOS completes its uninstall cleanup routines.
+		 *
+		 * @param array $summary Summary of cleanup actions performed.
+		 */
+		do_action(
+			'wp_mcp_ai_after_uninstall_cleanup',
+			array(
+				'assistants_deleted' => is_array( $assistant_ids ) ? count( $assistant_ids ) : 0,
+				'settings_deleted'   => (bool) $settings_deleted,
+			)
+		);
+	}
 }
 
 register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );
 
-/**
- * Ensure additional file-search formats can be uploaded when enabled.
- *
- * @param array|string $mimes Allowed mime types keyed by file extension.
- * @return array
- */
-function wp_mcp_ai_extend_upload_mimes( $mimes ) {
-	if ( ! is_array( $mimes ) ) {
-		$mimes = array();
-	}
+if ( ! function_exists( 'wp_mcp_ai_extend_upload_mimes' ) ) {
+	/**
+	 * Ensure additional file-search formats can be uploaded when enabled.
+	 *
+	 * @param array|string $mimes Allowed mime types keyed by file extension.
+	 * @return array
+	 */
+	function wp_mcp_ai_extend_upload_mimes( $mimes ) {
+		if ( ! is_array( $mimes ) ) {
+			$mimes = array();
+		}
 
-	if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+		if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+			return $mimes;
+		}
+
+		$allowed_sets = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+		$file_mimes   = isset( $allowed_sets['file'] ) ? (array) $allowed_sets['file'] : array();
+
+		$jsonl_candidates = array(
+			'application/jsonl',
+			'application/x-ndjson',
+		);
+
+		$selected_jsonl_mime = '';
+
+		foreach ( $jsonl_candidates as $candidate ) {
+			if ( in_array( $candidate, $file_mimes, true ) ) {
+				$selected_jsonl_mime = $candidate;
+				break;
+			}
+		}
+
+		if ( '' !== $selected_jsonl_mime ) {
+			$mimes['jsonl'] = $selected_jsonl_mime;
+		}
+
+		if ( in_array( 'application/x-ndjson', $file_mimes, true ) ) {
+			$mimes['ndjson'] = 'application/x-ndjson';
+		} elseif ( '' !== $selected_jsonl_mime ) {
+			$mimes['ndjson'] = $selected_jsonl_mime;
+		}
+
+		if ( in_array( 'text/markdown', $file_mimes, true ) ) {
+			$mimes['md']       = 'text/markdown';
+			$mimes['markdown'] = 'text/markdown';
+		}
+
 		return $mimes;
 	}
 
-	$allowed_sets = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
-	$file_mimes   = isset( $allowed_sets['file'] ) ? (array) $allowed_sets['file'] : array();
-
-	$jsonl_candidates = array(
-		'application/jsonl',
-		'application/x-ndjson',
-	);
-
-	$selected_jsonl_mime = '';
-
-	foreach ( $jsonl_candidates as $candidate ) {
-		if ( in_array( $candidate, $file_mimes, true ) ) {
-			$selected_jsonl_mime = $candidate;
-			break;
-		}
-	}
-
-	if ( '' !== $selected_jsonl_mime ) {
-		$mimes['jsonl'] = $selected_jsonl_mime;
-	}
-
-	if ( in_array( 'application/x-ndjson', $file_mimes, true ) ) {
-		$mimes['ndjson'] = 'application/x-ndjson';
-	} elseif ( '' !== $selected_jsonl_mime ) {
-		$mimes['ndjson'] = $selected_jsonl_mime;
-	}
-
-	if ( in_array( 'text/markdown', $file_mimes, true ) ) {
-		$mimes['md']       = 'text/markdown';
-		$mimes['markdown'] = 'text/markdown';
-	}
-
-	return $mimes;
+	add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );
 }
-
-add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );

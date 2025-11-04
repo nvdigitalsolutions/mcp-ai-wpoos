@@ -11,10 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
 
-/**
- * Maintains a list of available tool providers.
- */
-class WP_MCP_AI_Tool_Registry {
+if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+	/**
+	 * Maintains a list of available tool providers.
+	 */
+	class WP_MCP_AI_Tool_Registry {
 	/**
 	 * Singleton instance.
 	 *
@@ -434,4 +435,5 @@ class WP_MCP_AI_Tool_Registry {
 			}
 		}
 	}
+}
 }

@@ -9,10 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Handles registration and rendering of the plugin's settings page.
- */
-class WP_MCP_AI_Admin_Settings {
+if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+	/**
+	 * Handles registration and rendering of the plugin's settings page.
+	 */
+	class WP_MCP_AI_Admin_Settings {
 	const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
 	const OPTION_NAME                    = 'wp_mcp_ai_settings';
 	const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
@@ -4805,6 +4806,7 @@ class WP_MCP_AI_Admin_Settings {
 				'zone_info' => $zone_info,
 			)
 		);
+	}
 	}
 }
 

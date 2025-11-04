@@ -9,10 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Registers the plugin's REST API endpoints.
- */
-class WP_MCP_AI_REST {
+if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+	/**
+	 * Registers the plugin's REST API endpoints.
+	 */
+	class WP_MCP_AI_REST {
 	const REST_NAMESPACE              = 'mcp-ai/v1';
 	const MEMORY_MAX_DOCUMENT_CHARS   = 4000;
 	const MEMORY_CHUNK_CHARS          = 1200;
@@ -6062,5 +6063,6 @@ class WP_MCP_AI_REST {
 	 */
 	protected function mb_substr( $string, $start, $length ) {
 		return function_exists( 'mb_substr' ) ? mb_substr( $string, $start, $length ) : substr( $string, $start, $length );
+	}
 	}
 }

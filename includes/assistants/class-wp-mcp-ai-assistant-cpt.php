@@ -9,10 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Registers the assistant custom post type and associated meta boxes.
- */
-class WP_MCP_AI_Assistant_CPT {
+if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+	/**
+	 * Registers the assistant custom post type and associated meta boxes.
+	 */
+	class WP_MCP_AI_Assistant_CPT {
 	const POST_TYPE                    = 'mcp_ai_assistant';
 	const META_TOOLS                   = '_wp_mcp_ai_tools';
 	const META_PROVIDER                = '_wp_mcp_ai_provider';
@@ -3360,4 +3361,5 @@ class WP_MCP_AI_Assistant_CPT {
 
 		return $role_slugs;
 	}
+}
 }
