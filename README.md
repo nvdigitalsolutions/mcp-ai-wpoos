@@ -38,6 +38,7 @@
   - [ChatGPT connector setup](#chatgpt-connector-setup)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🛠 Assistant Editor Overview](#-assistant-editor-overview)
+- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
 - [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
 - [🔑 Assistant API credentials](#-assistant-api-credentials)
 - [🐳 Local Development with Docker](#-local-development-with-docker)
@@ -72,7 +73,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 ## 🚀 Features
 
 ### Assistant & conversation tools
-- 🧠 Create AI Assistants via a custom post type (`ai_assistant`)
+- 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
+- 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
 - 🔍 Search Media Library knowledge attachments with permission-aware download URLs
@@ -565,6 +567,52 @@ Assistant posts ship with dedicated controls that map directly to runtime behavi
 - **Prompt Shortcuts** – Capture labelled prompts with optional descriptions and tool affinities; they render as accessible quick actions in the chat UI so operators can seed conversations instantly.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 
 If an API or shortcode request omits the `assistant` parameter, the plugin automatically uses the default assistant configured in the global settings.
+
+## 📊 Assistant Storage: CPT vs CCT
+
+WP oOS uses a **Custom Post Type (CPT)** as the primary storage for AI assistants, with automatic synchronization to a **JetEngine Custom Content Type (CCT)** when JetEngine is available.
+
+### Storage Architecture
+
+- **CPT (`mcp_ai_assistant`)**: The authoritative source for all assistant data
+  - Full-featured WordPress editor with 14 meta fields
+  - Supports credentials, shortcuts, memory files, and advanced features
+  - Always available in both Base and Full versions
+  - Primary REST endpoint: `/wp-json/mcp-ai/v1/`
+
+- **CCT (`assistants`)**: Synchronized secondary storage (Full Version only)
+  - Receives automatic updates when CPT is saved
+  - 7 basic fields: title, description, provider, model, system_prompt, temperature, tools
+  - Available via JetEngine REST endpoint: `/wp-json/jet-cct/assistants`
+  - Ideal for JetEngine-based integrations and queries
+
+### Automatic Synchronization (v1.0.0+)
+
+When you save an assistant through the WordPress admin:
+
+1. **CPT is updated** with all settings
+2. **CCT is automatically synced** (if JetEngine is active)
+3. **Link is maintained** via `_wp_mcp_ai_cct_item_id` meta
+4. **Deletion cascades** - removing CPT also removes linked CCT item
+
+**What gets synced:** Basic configuration (title, description, provider, model, system_prompt, temperature, tools)  
+**What's CPT-only:** Advanced features (credentials, shortcuts, memory files, role rules, vector store, external actions)
+
+### When to Use Each Endpoint
+
+**Use CPT endpoint (`/wp-json/mcp-ai/v1/`)** for:
+- Chat, tools, and directory interactions
+- Full assistant configuration access
+- Credential-based authentication
+- Primary integration scenarios
+
+**Use CCT endpoint (`/wp-json/jet-cct/assistants`)** for:
+- JetEngine-specific queries and filters
+- Building JetEngine relations
+- Integrating with JetEngine dashboards
+- Querying basic assistant metadata
+
+➡️ **[Read the complete CPT vs CCT guide](docs/assistant-storage-cpt-vs-cct.md)** for detailed comparisons, code examples, and migration information.
 
 ## ⚡ Assistant Tool Shortcuts
 
