@@ -23,10 +23,19 @@
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+    
+    // Performance optimization settings - can be disabled for debugging
+    // Set window.wpMcpAiChatDebugMode = true to disable optimizations
+    const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
+    const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
     function getStorageKey(assistantId) {
         return STORAGE_KEY_PREFIX + assistantId;
     }
+
+    // Debounced storage saves to reduce write frequency
+    const storageSaveTimers = {};
+    const STORAGE_SAVE_DEBOUNCE_MS = 300;
 
     function saveConversationToStorage(state) {
         if (!state || !state.config || !state.config.assistantId) {
@@ -37,19 +46,47 @@
             return;
         }
 
-        try {
-            const storageKey = getStorageKey(state.config.assistantId);
-            const data = {
-                conversation: state.conversation || [],
-                sessionKey: state.config.sessionKey || '',
-                timestamp: Date.now(),
-                assistantId: state.config.assistantId
-            };
-
-            window.localStorage.setItem(storageKey, JSON.stringify(data));
-        } catch (error) {
-            // Silently fail if localStorage is not available or quota exceeded
+        const assistantId = state.config.assistantId;
+        
+        // Skip debouncing in debug mode for immediate saves
+        if (!OPTIMIZATIONS_ENABLED) {
+            try {
+                const storageKey = getStorageKey(assistantId);
+                const data = {
+                    conversation: state.conversation || [],
+                    sessionKey: state.config.sessionKey || '',
+                    timestamp: Date.now(),
+                    assistantId: assistantId
+                };
+                window.localStorage.setItem(storageKey, JSON.stringify(data));
+            } catch (error) {
+                // Silently fail if localStorage is not available or quota exceeded
+            }
+            return;
         }
+
+        // Clear existing timer for this assistant
+        if (storageSaveTimers[assistantId]) {
+            clearTimeout(storageSaveTimers[assistantId]);
+        }
+
+        // Debounce the save operation to reduce localStorage writes
+        storageSaveTimers[assistantId] = setTimeout(function() {
+            try {
+                const storageKey = getStorageKey(assistantId);
+                const data = {
+                    conversation: state.conversation || [],
+                    sessionKey: state.config.sessionKey || '',
+                    timestamp: Date.now(),
+                    assistantId: assistantId
+                };
+
+                window.localStorage.setItem(storageKey, JSON.stringify(data));
+                delete storageSaveTimers[assistantId];
+            } catch (error) {
+                // Silently fail if localStorage is not available or quota exceeded
+            }
+        }, STORAGE_SAVE_DEBOUNCE_MS);
     }
 
     function loadConversationFromStorage(state) {
@@ -5208,6 +5245,10 @@
             const list = document.createElement('ul');
             list.className = 'wp-mcp-ai-chat__bubble-attachments';
 
+            // Use DocumentFragment to batch DOM operations (optimization, disabled in debug mode)
+            const useFragment = OPTIMIZATIONS_ENABLED;
+            const container = useFragment ? document.createDocumentFragment() : list;
+            
             attachments.forEach(function (attachment) {
                 const item = document.createElement('li');
                 item.className = 'wp-mcp-ai-chat__bubble-attachment';
@@ -5232,9 +5273,12 @@
                     item.appendChild(meta);
                 }
 
-                list.appendChild(item);
+                container.appendChild(item);
             });
 
+            if (useFragment) {
+                list.appendChild(container);
+            }
             bubble.appendChild(list);
         }
 
