@@ -2107,6 +2107,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
+            credentials: 'same-origin',
         }).then(function (response) {
             return response
                 .json()
@@ -2142,6 +2143,7 @@
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
+            credentials: 'same-origin',
         }).then(function (response) {
             return response
                 .json()
