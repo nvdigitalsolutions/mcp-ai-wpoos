@@ -1,4 +1,4 @@
-# WP MCP AI (Core Plugin)
+# WP OOS (Core Plugin)
 
 **Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com)**  
@@ -8,7 +8,7 @@
 ---
 
 ## 🧩 Overview
-**WP MCP AI** is a modular AI framework for WordPress and JetEngine that connects your site’s data with OpenAI’s GPT models.
+**WP OOS** is a modular AI framework for WordPress and JetEngine that connects your site’s data with OpenAI’s GPT models.
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
 ---
@@ -52,8 +52,8 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 📦 Installation
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
-2. Activate **WP MCP AI** from the WordPress admin
-3. Go to **Settings → MCP AI**
+2. Activate **WP OOS** from the WordPress admin
+3. Go to **Settings → WP OOS**
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
@@ -64,16 +64,16 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 Complete these after installation to unlock every integration point:
 
-- [ ] **Add your OpenAI API key** in **Settings → MCP AI → OpenAI API Key** so API calls are authorised.
-- [ ] **Confirm or override the default model** via **Settings → MCP AI → Default Model** (`gpt-4o-mini` ships as the default).
-- [ ] **Adjust the request timeout** under **Settings → MCP AI → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
-- [ ] **Select a default assistant** with **Settings → MCP AI → Default Assistant** so REST and shortcode requests have a fallback.
-- [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
-- [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
+- [ ] **Add your OpenAI API key** in **Settings → WP OOS → OpenAI API Key** so API calls are authorised.
+- [ ] **Confirm or override the default model** via **Settings → WP OOS → Default Model** (`gpt-4o-mini` ships as the default).
+- [ ] **Adjust the request timeout** under **Settings → WP OOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
+- [ ] **Select a default assistant** with **Settings → WP OOS → Default Assistant** so REST and shortcode requests have a fallback.
+- [ ] **Decide on logging** with **Settings → WP OOS → Enable Logging** when you need verbose diagnostics.
+- [ ] **Choose your uninstall behaviour** via **Settings → WP OOS → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
 
 ## 🔒 MCP Server Authentication
 
-Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP MCP AI**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
+Remote MCP assistants should authenticate with Auth0-issued bearer tokens (`Authorization: Bearer YOUR_TOKEN`) whose audience and scope align with the values configured under **Settings → WP OOS**. Same-origin experiences (the dashboard editor and shortcode UI) continue to rely on the `X-WP-Nonce` header tied to the logged-in WordPress session. Review [docs/mcp-server-authentication.md](docs/mcp-server-authentication.md) for a complete setup guide plus a breakdown of the structured error responses returned on failure, and keep the [deployment troubleshooting checklist](docs/deployment-troubleshooting.md) handy when diagnosing capability or credential regressions.
 
 ---
 
@@ -117,7 +117,7 @@ The script performs the following steps:
 - Installs the [SQLite Database Integration](https://wordpress.org/plugins/sqlite-database-integration/) plugin so WordPress can run without a MySQL server.
 - Symlinks this repository into the new install's `wp-content/plugins/wp-mcp-ai` directory.
 - Installs Composer development dependencies (when available) and provisions the WordPress test suite so `composer run test` works immediately.
-- Runs `wp core install`, activates the **WP MCP AI** plugin, enables pretty permalinks, and sets a default site tagline.
+- Runs `wp core install`, activates the **WP OOS** plugin, enables pretty permalinks, and sets a default site tagline.
 - Boots a development server on port `8000` via `wp server` and logs output to `.codex-wordpress/wp-server.log`.
 
 Default credentials:
@@ -173,7 +173,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 
 ### Requirements
 - The assistant post must be **published** and the current user must have the `edit_posts` capability (matching the REST permission check).
-- An OpenAI API key and default model must be configured in **Settings → MCP AI**.
+- An OpenAI API key and default model must be configured in **Settings → WP OOS**.
 
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
@@ -243,7 +243,7 @@ system channel, retaining the existing chunking/truncation safeguards.
 
 ## 🪵 Logging
 
-- Enable or disable logging from **Settings → MCP AI → Enable Logging**.
+- Enable or disable logging from **Settings → WP OOS → Enable Logging**.
 - When logging is enabled the plugin records:
   - Chat requests and responses processed by the REST API.
   - Tool executions (including permission denials).

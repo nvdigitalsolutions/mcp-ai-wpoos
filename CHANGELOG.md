@@ -3,7 +3,7 @@
 
 ### 📄 `CHANGELOG.md`
 ```markdown
-# WP MCP AI – Changelog
+# WP OOS – Changelog
 
 ## [1.0.0] – 2025-10-23
 ### Changed

@@ -90,8 +90,8 @@ class WP_MCP_AI_Admin_Settings {
      */
     public function register_settings_page() {
         add_options_page(
-            __( 'WP MCP AI', 'wp-mcp-ai' ),
-            __( 'WP MCP AI', 'wp-mcp-ai' ),
+            __( 'WP OOS', 'wp-mcp-ai' ),
+            __( 'WP OOS', 'wp-mcp-ai' ),
             'manage_options',
             self::PAGE_SLUG,
             array( $this, 'render_settings_page' )
@@ -353,7 +353,7 @@ class WP_MCP_AI_Admin_Settings {
         $settings = self::get_settings();
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e( 'WP MCP AI Settings', 'wp-mcp-ai' ); ?></h1>
+            <h1><?php esc_html_e( 'WP OOS Settings', 'wp-mcp-ai' ); ?></h1>
             <form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
                 <?php
                 settings_fields( self::SETTINGS_GROUP );
