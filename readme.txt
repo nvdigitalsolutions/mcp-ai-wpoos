@@ -15,13 +15,25 @@ Please retain credit in derivative works.
 
 == Description ==
 
-This plugin provides a robust framework for integrating AI-powered assistants into WordPress. It is designed to work with JetEngine and utilizes OpenAI's GPT models to offer intelligent, conversational experiences.
+This plugin provides a robust framework for integrating AI-powered assistants into WordPress. It works perfectly with vanilla WordPress and optionally integrates with third-party plugins like JetEngine, WooCommerce, and Elementor for enhanced functionality.
 
 **Key Features:**
-*   Create and manage AI assistants.
-*   Integrates with JetEngine for dynamic content.
-*   Supports OpenAI GPT models.
-*   Extensible with custom tools and capabilities.
+*   Create and manage AI assistants with OpenAI, Gemini, or Ollama
+*   35+ built-in tools for content, media, research, and site operations
+*   Works with vanilla WordPress (no third-party plugins required)
+*   Optional integrations with JetEngine, WooCommerce, Elementor, Rank Math, and WPCode
+*   MCP (Model Context Protocol) server for Claude Desktop, LM Studio, and other clients
+*   Chat interface via shortcode or Elementor widgets
+*   Extensible with custom tools and capabilities
+
+**Third-Party Plugin Support (Optional):**
+*   **JetEngine** (paid) - Server-side chat transcript storage, custom content access
+*   **WooCommerce** (free) - E-commerce automation, product/order management
+*   **Elementor** (freemium) - Template management, pre-built widgets
+*   **Rank Math SEO** (freemium) - SEO analysis and optimization
+*   **WPCode** (freemium) - Code snippet automation
+
+All third-party plugins are completely optional. WP oOS provides full AI assistant functionality without them.
 
 Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
 This plugin is licensed under the GNU General Public License v2 or later.
@@ -30,7 +42,20 @@ This plugin is licensed under the GNU General Public License v2 or later.
 
 1.  Upload the `wp-mcp-ai` folder to the `/wp-content/plugins/` directory.
 2.  Activate the plugin through the 'Plugins' menu in WordPress.
-3.  Navigate to the WP oOS settings page to configure the plugin.
+3.  Navigate to Settings → WP oOS to configure your OpenAI API key.
+4.  Create a new AI Assistant under the AI Assistants menu.
+5.  Add the chat shortcode `[mcp_ai_chat assistant="123"]` to any page.
+
+**Optional Third-Party Plugins:**
+
+Install these plugins separately if you need their features:
+*   JetEngine (paid) - For server-side chat transcript storage
+*   WooCommerce (free) - For e-commerce automation tools
+*   Elementor (freemium) - For template management and widgets
+*   Rank Math SEO (freemium) - For SEO analysis tools
+*   WPCode (freemium) - For code snippet automation
+
+The plugin works perfectly without any of these.
 
 **Multisite Installation:**
 

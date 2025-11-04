@@ -11,6 +11,7 @@
 - [🧩 Overview](#-overview)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
+- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 - [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
@@ -62,6 +63,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 ---
 
 ## 🚀 Features
+
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -259,7 +262,29 @@ The chat interface automatically persists conversation history to the browser's 
 - **Automatically saved** after each user message and assistant response
 - **Automatically restored** when returning to the chat page (within 24 hours)
 - **Stored per assistant** so different assistant conversations remain separate
-- **Complementary to JetEngine storage** which provides permanent server-side transcript archiving
+- **Server-side storage available with JetEngine** - See note below about optional JetEngine integration
+
+#### Server-Side Chat Transcript Storage (Requires JetEngine)
+
+⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/) (not included with WP oOS)
+
+Without JetEngine, chat conversations are **only stored in browser localStorage** (client-side, 24-hour retention). To enable permanent server-side chat transcript archiving:
+
+1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/) plugin (third-party, paid plugin from Crocoblock)
+2. Enable the **Custom Content Types** module in JetEngine settings
+3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent storage
+
+**What you get with JetEngine:**
+- ✅ Permanent server-side chat transcript storage
+- ✅ Cross-device conversation access
+- ✅ Admin visibility into chat history
+- ✅ Database-backed chat logs for compliance/auditing
+
+**Without JetEngine:**
+- ⚠️ Chat history only stored in browser localStorage
+- ⚠️ Limited to 24-hour retention
+- ⚠️ No cross-device synchronization
+- ⚠️ Lost if browser data is cleared
 
 See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for complete details on the persistence mechanism, data structure, and troubleshooting.
 
@@ -270,11 +295,141 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 ### Standard Installation
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
 2. Activate **WP oOS** from the WordPress admin
-   - Ensure [JetEngine](https://crocoblock.com/plugins/jetengine/) is active with the **Custom Content Types** module enabled before switching the plugin on. WP oOS automatically provisions the `ai_chat_transcripts` CCT on JetEngine init, so no manual setup is required beyond enabling the module; existing CCT definitions are left untouched if you have already created one manually.
 3. Go to **Settings → WP oOS**
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
+
+### Optional: JetEngine Integration
+
+⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/) is a paid plugin from Crocoblock
+
+**JetEngine is completely optional** - WP oOS works perfectly without it. However, if you want server-side chat transcript storage:
+
+1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/) separately
+2. Enable the **Custom Content Types** module in JetEngine settings
+3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent chat storage
+
+**What works WITHOUT JetEngine:**
+- ✅ All core AI assistant features
+- ✅ Chat interface and conversations
+- ✅ 35+ base tools (60+ in Full Version with other plugins)
+- ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
+- ✅ Browser-based chat history (localStorage, 24 hours)
+- ✅ OpenAI/Gemini/Ollama integrations
+
+**What requires JetEngine:**
+- ❌ Server-side chat transcript storage (chat history only in browser without it)
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies))
+
+---
+
+## 🔌 What You Lose Without Third-Party Plugins
+
+WP oOS works perfectly with vanilla WordPress, but certain features require third-party plugins (sold separately). Here's exactly what you lose without each plugin:
+
+### Without JetEngine (Crocoblock - Paid Plugin)
+
+**Lost Features:**
+- ❌ **Server-side chat transcript storage** - Chat history only stored in browser localStorage (24 hours)
+- ❌ **Cross-device chat synchronization** - No database-backed conversation history
+- ❌ **Admin chat history access** - Cannot view/audit conversations from admin panel
+- ❌ **Assistant CCT synchronization** - Assistants only in WordPress CPT (MCP server still works perfectly)
+
+**Lost Tools (5 tools):**
+- `get_jetengine_items` - Query JetEngine custom post types
+- `list_jetengine_rest_routes` - List JetEngine REST API routes
+- `invoke_jetengine_route` - Execute JetEngine REST operations
+- `get_jetformbuilder_forms` - List JetFormBuilder forms (also requires JetFormBuilder)
+- `get_jetformbuilder_submissions` - Get form submissions (also requires JetFormBuilder)
+
+**✅ Still Works:** All core features, MCP server, 35+ base tools, AI conversations
+
+[Get JetEngine →](https://crocoblock.com/plugins/jetengine/)
+
+---
+
+### Without WooCommerce (Free Plugin)
+
+**Lost Features:**
+- ❌ **E-commerce automation** - Cannot create or manage products via AI
+- ❌ **Order management** - Cannot query or analyze orders
+- ❌ **Product catalog access** - Cannot search or update product data
+
+**Lost Tools (3 tools):**
+- `create_woo_product` - Build draft WooCommerce products with AI-generated descriptions, pricing, and images
+- `get_woo_products` - Search and retrieve product catalog with pricing and stock status
+- `get_woo_recent_orders` - Summarize recent orders with billing details and totals
+
+**Use Cases Lost:** E-commerce content generation, order fulfillment assistance, product merchandising
+
+[Get WooCommerce →](https://wordpress.org/plugins/woocommerce/)
+
+---
+
+### Without Elementor (Freemium Plugin)
+
+**Lost Features:**
+- ❌ **Template management** - Cannot list or reference Elementor templates via AI
+- ❌ **Elementor widgets** - Cannot use pre-built chat/dashboard widgets (shortcodes still work)
+
+**Lost Tools (1 tool):**
+- `get_elementor_templates` - List Elementor library templates with status, type, and edit links
+
+**Lost UI Components:**
+- Elementor Chat Widget
+- Elementor Chat Intro Widget
+- Elementor Dashboard Widgets (Tool Matrix, User Capabilities, Activity Feed, etc.)
+
+**✅ Still Works:** Standard `[mcp_ai_chat]` shortcode, all AI features
+
+[Get Elementor →](https://wordpress.org/plugins/elementor/)
+
+---
+
+### Without Rank Math SEO (Freemium Plugin)
+
+**Lost Features:**
+- ❌ **SEO analysis** - Cannot query SEO scores or optimization recommendations
+- ❌ **Schema data access** - Cannot retrieve structured data for posts
+
+**Lost Tools (1 tool):**
+- `get_rankmath_seo` - Get SEO scores, focus keywords, robots metadata, and schema details for posts
+
+**Use Cases Lost:** AI-powered SEO content optimization, SEO audit assistance
+
+[Get Rank Math →](https://wordpress.org/plugins/seo-by-rank-math/)
+
+---
+
+### Without WPCode (Freemium Plugin)
+
+**Lost Features:**
+- ❌ **Code snippet management** - Cannot create or update code snippets via AI
+- ❌ **Custom functionality automation** - Cannot automate adding hooks, filters, or custom code
+
+**Lost Tools (1 tool):**
+- `create_wpcode_snippet` - Create or update code snippets with validation and activation control
+
+**Use Cases Lost:** AI-assisted custom development, automated code snippet generation
+
+[Get WPCode →](https://wordpress.org/plugins/insert-headers-and-footers/)
+
+---
+
+### Summary: Third-Party Plugin Dependencies
+
+| Plugin | Type | Tools Lost | Key Feature Lost |
+|--------|------|------------|------------------|
+| **JetEngine** | Paid (Crocoblock) | 5 | Server-side chat transcript storage |
+| **WooCommerce** | Free | 3 | E-commerce automation |
+| **Elementor** | Freemium | 1 + Widgets | Elementor template integration |
+| **Rank Math** | Freemium | 1 | SEO analysis |
+| **WPCode** | Freemium | 1 | Code snippet management |
+
+**Total Impact:** Without these plugins, you lose **11 tools** but retain **35+ core tools** and all essential AI assistant functionality.
+
+---
 
 ### Base Version (Default)
 
@@ -288,13 +443,15 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 - WordPress-native email (via wp_mail)
 
 **Base Version excludes 30 tools requiring third-party plugins or external APIs:**
-- WooCommerce tools (3)
-- JetEngine/JetFormBuilder tools (5)
-- Elementor/RankMath/WPCode tools (3)
-- Google services (5)
-- Social media integrations (8)
-- External messaging services (4)
-- QuickBooks and other business APIs (2)
+- **Third-party WordPress plugins** (11 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
+  - WooCommerce tools (3)
+  - JetEngine/JetFormBuilder tools (5)
+  - Elementor/RankMath/WPCode tools (3)
+- **External API services** (19 tools) - Require API credentials
+  - Google services (5)
+  - Social media integrations (8)
+  - External messaging services (4)
+  - QuickBooks and other business APIs (2)
 
 ### Full Version Installation (Opt-in)
 
@@ -310,12 +467,16 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Starting fresh with WordPress
 - Testing or development environments
 - Simpler installations without external dependencies
-- Sites that don't need ecommerce or advanced integrations
+- Sites that don't need e-commerce or advanced integrations
+- Don't want to purchase/install third-party plugins
 
 **When to use Full Version:**
-- Production sites with WooCommerce, JetEngine, or Elementor
-- Sites needing social media automation
+- Production sites with WooCommerce, JetEngine, or Elementor already installed
+- Sites needing social media automation (requires API credentials)
 - Advanced workflows requiring external APIs
+- Need server-side chat transcript storage (requires JetEngine)
+
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -884,12 +1045,26 @@ Each filter receives the full data set so you can extend or replace the output w
 
 ## 🔌 Optional Tools & Dependencies
 
-The plugin registers several tools automatically. Tools that rely on third-party plugins only load when their dependency is active:
+**WP oOS works perfectly with vanilla WordPress** - you don't need any third-party plugins for core functionality.
 
-- **WooCommerce Catalog Tools** – Visible only when WooCommerce is active. If WooCommerce is missing, an informational notice is shown to administrators and the order and product tools will not be listed for assistants.
-- **JetEngine Items Tool** – Visible only when JetEngine is active. Administrators are informed when JetEngine is not detected and the tool remains unavailable to assistants.
+However, certain features require third-party plugins (sold separately). The plugin automatically detects which plugins are active and enables the corresponding tools:
 
-Each tool description in the admin UI reiterates the dependency so editors understand why a tool might be unavailable.
+### Plugin Detection & Tool Loading
+
+- **JetEngine** (5 tools) – Server-side chat transcripts, JetEngine content access, JetFormBuilder integration
+- **WooCommerce** (3 tools) – E-commerce automation, product/order management
+- **Elementor** (1 tool + widgets) – Template management, pre-built chat widgets
+- **Rank Math SEO** (1 tool) – SEO analysis and schema data access
+- **WPCode** (1 tool) – Code snippet management and automation
+
+**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+
+### How It Works
+
+1. Each tool description in the admin UI shows which plugin it requires
+2. Tools are automatically hidden when their dependency is missing
+3. Administrators see informational notices explaining unavailable tools
+4. No errors occur - the plugin gracefully handles missing dependencies
 
 ---
 
