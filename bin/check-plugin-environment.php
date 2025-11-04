@@ -5,6 +5,20 @@
  *
  * @package WP_MCP_AI
  */
+
+// Polyfill for WordPress escaping functions in CLI context.
+if ( ! function_exists( 'esc_html' ) ) {
+	/**
+	 * Escaping for HTML blocks.
+	 *
+	 * @param string $text Text to escape.
+	 * @return string Escaped text.
+	 */
+	function esc_html( $text ) {
+		return htmlspecialchars( $text, ENT_QUOTES, 'UTF-8' );
+	}
+}
+
 $min_php_version     = '7.4.0';
 $current_php_version = PHP_VERSION;
 
@@ -41,7 +55,7 @@ if ( ! $plugin_version ) {
 	exit( 1 );
 }
 
-printf( "Detected plugin version: %s\n", $plugin_version );
+printf( "Detected plugin version: %s\n", esc_html( $plugin_version ) );
 
 $changelog_file = __DIR__ . '/../CHANGELOG.md';
 $latest_release = null;
@@ -59,7 +73,7 @@ if ( is_file( $changelog_file ) ) {
 }
 
 if ( $latest_release ) {
-	printf( "Latest release noted in changelog: %s\n", $latest_release );
+	printf( "Latest release noted in changelog: %s\n", esc_html( $latest_release ) );
 	if ( version_compare( $plugin_version, $latest_release, '==' ) ) {
 		echo "Plugin is on the latest recorded version.\n";
 	} elseif ( version_compare( $plugin_version, $latest_release, '<' ) ) {
@@ -79,7 +93,7 @@ if ( ! is_string( $error_log_path ) || '' === trim( $error_log_path ) ) {
 
 $error_log_path = trim( $error_log_path );
 
-printf( "PHP error_log path: %s\n", $error_log_path );
+printf( "PHP error_log path: %s\n", esc_html( $error_log_path ) );
 
 if ( 'syslog' === strtolower( $error_log_path ) ) {
 	echo "Error log is set to syslog; manual inspection required.\n";
