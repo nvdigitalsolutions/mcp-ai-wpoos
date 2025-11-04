@@ -404,6 +404,12 @@ JS;
 	 * @return array
 	 */
 	protected function get_assistant_options() {
+		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
+
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return $options;
+		}
+
 		$assistants = get_posts(
 			array(
 				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
@@ -415,8 +421,6 @@ JS;
 				'fields'           => 'ids',
 			)
 		);
-
-		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
 
 		if ( empty( $assistants ) ) {
 			return $options;
@@ -442,6 +446,15 @@ JS;
 	 * }
 	 */
 	protected function get_assistant_tools( $assistant_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return array(
+				'registered'         => array(),
+				'missing'            => array(),
+				'requested'          => array(),
+				'registry_available' => false,
+			);
+		}
+
 		$stored = get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
 
 		if ( ! is_array( $stored ) ) {
