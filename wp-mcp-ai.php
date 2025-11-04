@@ -347,27 +347,73 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
 			add_action( 'admin_enqueue_scripts', array( $this, 'disable_auth_check_in_elementor' ), 20 );
+			
+			// Suppress debug output during Elementor AJAX requests.
+			add_action( 'admin_init', array( $this, 'suppress_debug_in_elementor_ajax' ), 1 );
+		}
+
+		/**
+		 * Suppress debug output during Elementor AJAX requests.
+		 *
+		 * Prevents PHP warnings, notices, and deprecation messages from breaking
+		 * Elementor's JSON responses when WP_DEBUG is enabled.
+		 */
+		public function suppress_debug_in_elementor_ajax() {
+			// Only apply to AJAX requests.
+			if ( ! wp_doing_ajax() ) {
+				return;
+			}
+
+			// Check if this is an Elementor-related AJAX request.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			if ( ! isset( $_REQUEST['action'] ) ) {
+				return;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+			
+			// Check if this is an Elementor action.
+			if ( strpos( $action, 'elementor' ) === 0 ) {
+				// Suppress display_errors to prevent debug output from breaking JSON responses.
+				// Error suppression is intentional: some hosts disable ini_set changes,
+				// and we prefer graceful degradation over throwing warnings.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					@ini_set( 'display_errors', '0' );
+				}
+			}
 		}
 
 		/**
 		 * Disable wp-auth-check heartbeat in Elementor editor.
 		 *
 		 * Prevents JavaScript errors related to missing DOM elements.
+		 * Also prevents debug output from breaking JSON responses when WP_DEBUG is enabled.
 		 * Elementor uses a query parameter to identify editor mode, which is
 		 * validated by Elementor's own nonce verification in its editor loader.
 		 */
 		public function disable_auth_check_in_elementor() {
 			// Check if Elementor is active and in editor mode.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
 			if ( ! isset( $_GET['action'] ) ) {
 				return;
 			}
 
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
 			$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
 			
 			// Elementor editor uses 'elementor' action parameter.
 			// This is a safe check as Elementor's editor loader validates capabilities and nonces.
 			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
+				
+				// Prevent debug output from breaking Elementor's JSON responses.
+				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
+				// Error suppression is intentional: some hosts disable ini_set changes,
+				// and we prefer graceful degradation over throwing warnings.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					@ini_set( 'display_errors', '0' );
+				}
 			}
 		}
 	}
