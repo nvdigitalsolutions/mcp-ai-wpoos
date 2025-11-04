@@ -3754,6 +3754,28 @@
             text = result.message.trim();
         } else if (typeof result.text === 'string' && result.text.trim()) {
             text = result.text.trim();
+        } else if (Array.isArray(result.notices) && result.notices.length > 0) {
+            // Some tools return 'notices' array with messages
+            const firstNotice = result.notices.find(function(notice) {
+                return typeof notice === 'string' && notice.trim();
+            });
+            if (firstNotice) {
+                text = firstNotice.trim();
+                if (result.notices.length > 1) {
+                    text += ' (+' + (result.notices.length - 1) + ' more)';
+                }
+            }
+        } else if (Array.isArray(result.messages) && result.messages.length > 0) {
+            // Some tools return 'messages' array
+            const firstMessage = result.messages.find(function(msg) {
+                return typeof msg === 'string' && msg.trim();
+            });
+            if (firstMessage) {
+                text = firstMessage.trim();
+                if (result.messages.length > 1) {
+                    text += ' (+' + (result.messages.length - 1) + ' more)';
+                }
+            }
         }
 
         // Extract actionable links (permalink, edit_link, link, etc.)
@@ -3770,6 +3792,14 @@
                 url: result.edit_link.trim(),
                 label: 'Edit',
                 type: 'edit_link'
+            });
+        }
+
+        if (typeof result.edit_url === 'string' && result.edit_url.trim()) {
+            links.push({
+                url: result.edit_url.trim(),
+                label: 'Edit',
+                type: 'edit_url'
             });
         }
 
@@ -3802,10 +3832,12 @@
 
         // Extract status information if we don't have text yet
         if (!text) {
-            if (result.sent === true || result.success === true) {
+            if (result.sent === true || result.success === true || result.ok === true) {
                 text = 'Operation completed successfully.';
             } else if (result.created === true) {
                 text = 'Resource created successfully.';
+            } else if (result.updated === true) {
+                text = 'Resource updated successfully.';
             }
         }
 
