@@ -188,7 +188,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return false;
 			}
 
-			return @is_file( $path );
+			return file_exists( $path ) && is_file( $path );
 		}
 
 		/**
@@ -228,11 +228,11 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				return false;
 			}
 
-			if ( ! @is_file( $path ) ) {
+			if ( ! file_exists( $path ) || ! is_file( $path ) ) {
 				return false;
 			}
 
-			return @is_writable( $path );
+			return is_writable( $path );
 		}
 
 		/**

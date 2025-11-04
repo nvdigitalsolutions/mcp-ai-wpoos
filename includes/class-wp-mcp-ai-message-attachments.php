@@ -1201,11 +1201,11 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 * @return string
 		 */
 		protected function hash_file_contents( $file_path ) {
-			if ( ! is_readable( $file_path ) ) {
+			if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
 				return '';
 			}
 
-			$hash = @md5_file( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file
+			$hash = md5_file( $file_path ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_md5_file
 
 			if ( false === $hash ) {
 				return '';

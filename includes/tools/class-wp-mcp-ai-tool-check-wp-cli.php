@@ -367,7 +367,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
 			return false;
 		}
 
-		return @is_file( $path ) && @is_executable( $path );
+		return file_exists( $path ) && is_file( $path ) && is_executable( $path );
 	}
 
 	/**
@@ -385,7 +385,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
 			return false;
 		}
 
-		return @is_file( $path ) && @is_readable( $path );
+		return file_exists( $path ) && is_file( $path ) && is_readable( $path );
 	}
 
 	/**

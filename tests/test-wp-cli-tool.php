@@ -19,7 +19,7 @@ class WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		foreach ( $this->temp_files as $file ) {
 			if ( $file && file_exists( $file ) ) {
-				@unlink( $file );
+				unlink( $file );
 			}
 		}
 
