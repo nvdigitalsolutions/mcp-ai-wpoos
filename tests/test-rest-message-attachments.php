@@ -961,7 +961,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$filter_callback = function ( $preempt, $args, $url ) {
@@ -1008,13 +1008,13 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		ob_start();
 		$served = call_user_func( $closure, false, $response, $request, rest_get_server() );
@@ -1023,7 +1023,7 @@ class WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
 		$this->assertTrue( $served );
 		$this->assertSame( 'Example content', $output );
 
-		unset( $hook->callbacks[10][ $closure_key ] );
+		unset( $hook->callbacks[999][ $closure_key ] );
 
 		wp_set_current_user( 0 );
 	}

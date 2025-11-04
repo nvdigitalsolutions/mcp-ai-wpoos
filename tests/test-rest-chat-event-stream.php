@@ -37,7 +37,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -72,13 +72,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -88,8 +88,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'data: {', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 
 		wp_set_current_user( 0 );
@@ -190,7 +190,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -225,13 +225,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -240,8 +240,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'event: message', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 
 		wp_set_current_user( 0 );
@@ -281,7 +281,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -316,13 +316,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -331,8 +331,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'event: message', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 
 		wp_set_current_user( 0 );
@@ -372,7 +372,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -401,13 +401,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -416,8 +416,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'event: message', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 
 		wp_set_current_user( 0 );
@@ -457,7 +457,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -485,7 +485,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 			: null;
 
 		if ( $hook instanceof WP_Hook ) {
-			$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+			$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 			$added_keys   = array_diff( $current_keys, $existing_keys );
 			$this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream disabled.' );
 		}
@@ -527,7 +527,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -556,7 +556,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 			: null;
 
 		if ( $hook instanceof WP_Hook ) {
-			$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+			$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 			$added_keys   = array_diff( $current_keys, $existing_keys );
 			$this->assertEmpty( $added_keys, 'Streaming callback should not be registered when stream explicitly disabled.' );
 		}
@@ -604,7 +604,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -633,13 +633,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -648,8 +648,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'event: message', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 	}
 
@@ -687,7 +687,7 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$existing_keys = array();
 		if ( isset( $GLOBALS['wp_filter']['rest_pre_serve_request'] ) && $GLOBALS['wp_filter']['rest_pre_serve_request'] instanceof WP_Hook ) {
-			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[10] ?? array() );
+			$existing_keys = array_keys( $GLOBALS['wp_filter']['rest_pre_serve_request']->callbacks[999] ?? array() );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
@@ -716,13 +716,13 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_Hook::class, $hook );
 
-		$current_keys = array_keys( $hook->callbacks[10] ?? array() );
+		$current_keys = array_keys( $hook->callbacks[999] ?? array() );
 		$added_keys   = array_diff( $current_keys, $existing_keys );
 
 		$this->assertNotEmpty( $added_keys );
 
 		$closure_key = array_pop( $added_keys );
-		$closure     = $hook->callbacks[10][ $closure_key ]['function'];
+		$closure     = $hook->callbacks[999][ $closure_key ]['function'];
 
 		$output = $this->extract_event_stream_frames( $closure );
 		$served = $this->safely_invoke_event_stream_callback( $closure, $response, $request );
@@ -731,8 +731,8 @@ class WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'event: message', $output );
 		$this->assertStringContainsString( 'data: [DONE]', $output );
 
-		if ( isset( $hook->callbacks[10][ $closure_key ] ) ) {
-			unset( $hook->callbacks[10][ $closure_key ] );
+		if ( isset( $hook->callbacks[999][ $closure_key ] ) ) {
+			unset( $hook->callbacks[999][ $closure_key ] );
 		}
 	}
 
