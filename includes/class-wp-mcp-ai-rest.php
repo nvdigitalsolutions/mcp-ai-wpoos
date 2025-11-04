@@ -9,11 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
+
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
 	 * Registers the plugin's REST API endpoints.
 	 */
 	class WP_MCP_AI_REST {
+		use WP_MCP_AI_REST_MCP_Methods;
 		const REST_NAMESPACE              = 'mcp-ai/v1';
 		const MEMORY_MAX_DOCUMENT_CHARS   = 4000;
 		const MEMORY_CHUNK_CHARS          = 1200;
@@ -498,6 +501,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/mcp',
+				array(
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_mcp_request' ),
+						'args'                => array(),
+					),
+				),
+				true
+			);
 		}
 
 		public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
@@ -825,6 +842,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'tools'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/tools' ) ) ),
 					'file_download' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/files' ) ) ),
 					'sse'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/sse' ) ) ),
+					'mcp'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/mcp' ) ) ),
 				),
 			);
 
