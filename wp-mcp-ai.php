@@ -361,7 +361,11 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 */
 		public function suppress_debug_in_elementor_ajax() {
 			// Only apply to AJAX requests.
-			if ( ! wp_doing_ajax() ) {
+			// Use function_exists check for backwards compatibility with WordPress < 4.7.0.
+			$is_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+				|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+			
+			if ( ! $is_ajax ) {
 				return;
 			}
 
