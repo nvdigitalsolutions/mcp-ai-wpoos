@@ -1,4 +1,4 @@
-# Contributing to WP MCP AI
+# Contributing to WP OOS
 
 Thanks for taking the time to contribute! This guide summarises the steps you need to get a local environment running, configure API access, run automated checks, and extend the tool registry.
 
@@ -26,7 +26,7 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 
 ## Configuring API Keys
 
-1. In the WordPress admin dashboard, navigate to **Settings → WP MCP AI**.
+1. In the WordPress admin dashboard, navigate to **Settings → WP OOS**.
 2. Paste your OpenAI API key into the **OpenAI API Key** field.
 3. (Optional) Update the default model, timeout, or choose a default assistant post.
 4. Save the settings. They are stored in the `wp_mcp_ai_settings` option. You can also script this step via WP-CLI:
@@ -98,4 +98,4 @@ Each tool must implement `WP_MCP_AI_Tool_Interface` (`includes/tools/class-wp-mc
 4. Submit a pull request that explains the motivation for the change and any testing details.
 5. Respond to review feedback – we appreciate collaborative iteration!
 
-Thank you for helping improve WP MCP AI. 🚀
+Thank you for helping improve WP OOS. 🚀

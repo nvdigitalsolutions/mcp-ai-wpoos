@@ -18,7 +18,7 @@ The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Re
 
 ## Server-side validation
 
-1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP MCP AI**, and downloads the tenant's JWKS (cached for one hour).
+1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP OOS**, and downloads the tenant's JWKS (cached for one hour).
 2. The token header and payload are decoded, the signature is verified against the JWKS public key via OpenSSL, and the `iss`, `aud`, and optional scope claims are enforced.
 3. If validation succeeds the request proceeds; otherwise, a structured error describing the remediation steps is returned to the client. WordPress-authenticated requests still require an `X-WP-Nonce` header and the `edit_posts` capability.
 4. Custom validation logic can hook into `wp_mcp_ai_pre_validate_bearer_token` to short-circuit the process or `wp_mcp_ai_bearer_token_payload` to inspect claims.

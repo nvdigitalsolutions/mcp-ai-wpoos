@@ -1,14 +1,14 @@
-# MCP AI Plugin Setup Checklist
+# WP OOS Plugin Setup Checklist
 
 Use this checklist to confirm the plugin is configured and ready for production use.
 
 ## Configuration
-- Enter the OpenAI API key under **Settings → MCP AI → OpenAI API Key** so requests authenticate correctly.
-- Review or change the default model in **Settings → MCP AI → Default Model**. The plugin ships with `gpt-4o-mini` selected.
-- Adjust **Settings → MCP AI → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
-- Set a fallback assistant in **Settings → MCP AI → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
-- Decide whether to enable request logging at **Settings → MCP AI → Enable Logging** for diagnostics.
-- Choose an uninstall behavior in **Settings → MCP AI → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
+- Enter the OpenAI API key under **Settings → WP OOS → OpenAI API Key** so requests authenticate correctly.
+- Review or change the default model in **Settings → WP OOS → Default Model**. The plugin ships with `gpt-4o-mini` selected.
+- Adjust **Settings → WP OOS → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
+- Set a fallback assistant in **Settings → WP OOS → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
+- Decide whether to enable request logging at **Settings → WP OOS → Enable Logging** for diagnostics.
+- Choose an uninstall behavior in **Settings → WP OOS → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
 
 ## Authentication & Security
 - For remote MCP assistants, provision Auth0 bearer tokens with the API audience and scopes that match the plugin settings. Same-origin UIs continue using the WordPress REST nonce.
