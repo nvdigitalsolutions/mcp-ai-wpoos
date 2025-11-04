@@ -20,9 +20,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP_MCP_AI_VERSION', '1.0.0' );
-define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
-define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
+if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
+	define( 'WP_MCP_AI_VERSION', '1.0.0' );
+}
+if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
+	define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
+}
+if ( ! defined( 'WP_MCP_AI_URL' ) ) {
+	define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
+}
 
 // Load Composer dependencies when available.
 if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
