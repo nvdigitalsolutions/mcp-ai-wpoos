@@ -356,7 +356,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 			return '';
 		}
 
-		$file_size = @filesize( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$file_size = filesize( $file_path );
 
 		if ( false === $file_size ) {
 			return '';
