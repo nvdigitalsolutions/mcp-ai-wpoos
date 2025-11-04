@@ -250,6 +250,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 			$title_text = get_the_title( $attachment_id );
 
 			if ( '' === $title_text ) {
+				/* translators: %d: attachment ID */
 				$title_text = sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $attachment_id );
 			}
 

@@ -1756,6 +1756,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				echo '<summary id="' . esc_attr( $summary_id ) . '" class="wp-mcp-ai-tools__summary">';
 				echo '<span class="wp-mcp-ai-tools__summary-title">' . esc_html( $group_label ) . '</span>';
 				echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">' . esc_html( number_format_i18n( $group_count ) ) . '</span>';
+	/* translators: %d: number of tools in the group */
 				echo '<span class="screen-reader-text">' . esc_html( sprintf( _n( '%d tool in this group', '%d tools in this group', $group_count, 'wp-mcp-ai' ), $group_count ) ) . '</span>';
 				echo '</summary>';
 				echo '<ul class="wp-mcp-ai-tools__list" id="' . esc_attr( $list_id ) . '" role="group" aria-label="' . esc_attr( $group_label ) . '">';
@@ -1929,6 +1930,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tool_options[ $slug ] = $tool->get_name();
 			}
 
+			/* translators: %d: shortcut number */
 			$summary_template = __( 'Shortcut %d', 'wp-mcp-ai' );
 			$tool_default     = __( 'No specific tool', 'wp-mcp-ai' );
 			?>
@@ -1965,7 +1967,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						</summary>
 						<fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="<?php echo esc_attr( $index ); ?>">
 							<legend class="screen-reader-text">
-								<?php printf( esc_html__( 'Shortcut %d', 'wp-mcp-ai' ), intval( $index ) + 1 ); ?>
+								<?php /* translators: %d: shortcut number */ printf( esc_html__( 'Shortcut %d', 'wp-mcp-ai' ), intval( $index ) + 1 ); ?>
 							</legend>
 							<p>
 								<label>
@@ -2401,6 +2403,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$title   = $entry['title'];
 				?>
 				<li data-id="<?php echo esc_attr( $file_id ); ?>">
+				<?php /* translators: %d: attachment ID */ ?>
 					<span class="wp-mcp-ai-memory-file-title"><?php echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) ); ?></span>
 					<button type="button" class="button-link wp-mcp-ai-remove-memory"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 					<input type="hidden" name="wp_mcp_ai_memory_files[]" value="<?php echo esc_attr( $file_id ); ?>" />

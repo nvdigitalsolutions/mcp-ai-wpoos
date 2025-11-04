@@ -78,6 +78,7 @@ class WP_MCP_AI_Remote_Tester {
 				'url'       => $assistants_url,
 				'status'    => 'error',
 				'http_code' => null,
+				/* translators: %s: error message from the failed request */
 				'message'   => sprintf( __( 'Request failed: %s', 'wp-mcp-ai' ), $response->get_error_message() ),
 				'details'   => array(
 					'error_code' => $response->get_error_code(),
@@ -225,6 +226,7 @@ class WP_MCP_AI_Remote_Tester {
 				'url'       => $chat_url,
 				'status'    => 'error',
 				'http_code' => null,
+				/* translators: %s: error message from the failed request */
 				'message'   => sprintf( __( 'Request failed: %s', 'wp-mcp-ai' ), $chat_response->get_error_message() ),
 				'details'   => array(
 					'error_code' => $chat_response->get_error_code(),
@@ -281,10 +283,12 @@ class WP_MCP_AI_Remote_Tester {
 			$message_parts = array( __( 'Chat endpoint reachable.', 'wp-mcp-ai' ) );
 
 			if ( isset( $chat_details['probe_status'] ) ) {
+				/* translators: %s: probe status */
 				$message_parts[] = sprintf( __( 'Status: %s.', 'wp-mcp-ai' ), $chat_details['probe_status'] );
 			}
 
 			if ( isset( $chat_details['probe_checked_at'] ) ) {
+				/* translators: %s: timestamp when the check was performed */
 				$message_parts[] = sprintf( __( 'Checked at %s.', 'wp-mcp-ai' ), $chat_details['probe_checked_at'] );
 			}
 
@@ -473,6 +477,7 @@ class WP_MCP_AI_Remote_Tester {
 		if ( is_array( $decoded ) && isset( $decoded['assistants'] ) && is_array( $decoded['assistants'] ) ) {
 			$count   = count( $decoded['assistants'] );
 			$parts[] = sprintf(
+				/* translators: %d: number of assistants received */
 				_n( 'Received %d assistant.', 'Received %d assistants.', $count, 'wp-mcp-ai' ),
 				$count
 			);
@@ -480,12 +485,14 @@ class WP_MCP_AI_Remote_Tester {
 
 		if ( is_array( $decoded ) && isset( $decoded['token_scope']['type'] ) ) {
 			$parts[] = sprintf(
+				/* translators: %s: OAuth token scope type */
 				__( 'Token scope: %s.', 'wp-mcp-ai' ),
 				$decoded['token_scope']['type']
 			);
 		}
 
 		if ( empty( $parts ) ) {
+			/* translators: %d: HTTP status code */
 			$parts[] = sprintf( __( 'Received HTTP %d.', 'wp-mcp-ai' ), $code );
 		}
 
@@ -506,8 +513,10 @@ class WP_MCP_AI_Remote_Tester {
 
 		if ( $code > 0 ) {
 			if ( $http_message ) {
+				/* translators: 1: HTTP status code, 2: HTTP status message */
 				$parts[] = sprintf( __( 'HTTP %1$d %2$s.', 'wp-mcp-ai' ), $code, $http_message );
 			} else {
+				/* translators: %d: HTTP status code */
 				$parts[] = sprintf( __( 'HTTP %d.', 'wp-mcp-ai' ), $code );
 			}
 		}

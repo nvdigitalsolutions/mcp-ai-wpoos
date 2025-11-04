@@ -348,10 +348,12 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 				'errorLoadingList'    => __( 'Unable to load chats right now.', 'wp-mcp-ai' ),
 				'errorLoadingSession' => __( 'Unable to load the selected chat.', 'wp-mcp-ai' ),
 				'back'                => __( 'Back to chats', 'wp-mcp-ai' ),
+	/* translators: %s: chat session identifier */
 				'sessionLabel'        => __( 'Chat session %s', 'wp-mcp-ai' ),
 				'assistantLabel'      => __( 'Assistant', 'wp-mcp-ai' ),
 				'startedLabel'        => __( 'Started', 'wp-mcp-ai' ),
 				'updatedLabel'        => __( 'Last activity', 'wp-mcp-ai' ),
+	/* translators: %d: number of messages */
 				'turnCountLabel'      => __( '%d messages', 'wp-mcp-ai' ),
 				'roleLabels'          => array(
 					'system'    => __( 'System', 'wp-mcp-ai' ),
