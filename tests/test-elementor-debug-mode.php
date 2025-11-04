@@ -1,0 +1,227 @@
+<?php
+/**
+ * Tests for Elementor editor functionality with WP_DEBUG enabled.
+ *
+ * Verifies that the Elementor editor loads correctly when WP_DEBUG is enabled
+ * by suppressing display_errors to prevent debug output from breaking JSON responses.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Test class for Elementor editor with WP_DEBUG enabled.
+ */
+class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
+	/**
+	 * Backup of original display_errors setting.
+	 *
+	 * @var string|false
+	 */
+	private $original_display_errors;
+
+	/**
+	 * Set up before each test.
+	 */
+	public function set_up() {
+		parent::set_up();
+		
+		// Backup original display_errors setting.
+		$this->original_display_errors = ini_get( 'display_errors' );
+	}
+
+	/**
+	 * Clean up after each test.
+	 */
+	public function tear_down() {
+		// Restore original display_errors setting.
+		if ( false !== $this->original_display_errors ) {
+			@ini_set( 'display_errors', $this->original_display_errors );
+		}
+		
+		parent::tear_down();
+	}
+
+	/**
+	 * Test that suppress_debug_in_elementor_ajax method exists.
+	 */
+	public function test_suppress_debug_method_exists() {
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI', 'suppress_debug_in_elementor_ajax' ),
+			'suppress_debug_in_elementor_ajax method should exist'
+		);
+	}
+
+	/**
+	 * Test that disable_auth_check_in_elementor method exists.
+	 */
+	public function test_disable_auth_check_method_exists() {
+		$this->assertTrue(
+			method_exists( 'WP_MCP_AI', 'disable_auth_check_in_elementor' ),
+			'disable_auth_check_in_elementor method should exist'
+		);
+	}
+
+	/**
+	 * Test that display_errors is suppressed during Elementor AJAX requests when WP_DEBUG is enabled.
+	 */
+	public function test_display_errors_suppressed_for_elementor_ajax() {
+		// Skip if WP_DEBUG is not defined or false.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
+		}
+
+		// Set display_errors to '1' to simulate debug mode.
+		@ini_set( 'display_errors', '1' );
+		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should start as 1' );
+
+		// Simulate an Elementor AJAX request.
+		$_REQUEST['action'] = 'elementor_ajax';
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		
+		// Simulate wp_doing_ajax() returning true.
+		define( 'DOING_AJAX', true );
+		
+		// Call the suppress method.
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// Verify display_errors was suppressed.
+		$this->assertEquals( '0', ini_get( 'display_errors' ), 'display_errors should be suppressed for Elementor AJAX' );
+
+		// Clean up.
+		unset( $_REQUEST['action'] );
+	}
+
+	/**
+	 * Test that display_errors is NOT suppressed for non-Elementor AJAX requests.
+	 */
+	public function test_display_errors_not_suppressed_for_other_ajax() {
+		// Skip if WP_DEBUG is not defined or false.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
+		}
+
+		// Set display_errors to '1' to simulate debug mode.
+		@ini_set( 'display_errors', '1' );
+
+		// Simulate a non-Elementor AJAX request.
+		$_REQUEST['action'] = 'my_custom_action';
+		
+		if ( ! defined( 'DOING_AJAX' ) ) {
+			define( 'DOING_AJAX', true );
+		}
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		$plugin->suppress_debug_in_elementor_ajax();
+
+		// Verify display_errors was NOT suppressed.
+		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should not be suppressed for non-Elementor AJAX' );
+
+		// Clean up.
+		unset( $_REQUEST['action'] );
+	}
+
+	/**
+	 * Test that display_errors is suppressed in Elementor editor page when WP_DEBUG is enabled.
+	 */
+	public function test_display_errors_suppressed_in_elementor_editor() {
+		// Skip if WP_DEBUG is not defined or false.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
+		}
+
+		// Set display_errors to '1' to simulate debug mode.
+		@ini_set( 'display_errors', '1' );
+
+		// Create a user with edit_posts capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		// Simulate Elementor editor mode.
+		$_GET['action'] = 'elementor';
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		$plugin->disable_auth_check_in_elementor();
+
+		// Verify display_errors was suppressed.
+		$this->assertEquals( '0', ini_get( 'display_errors' ), 'display_errors should be suppressed in Elementor editor' );
+
+		// Clean up.
+		unset( $_GET['action'] );
+	}
+
+	/**
+	 * Test that display_errors is NOT suppressed on regular admin pages.
+	 */
+	public function test_display_errors_not_suppressed_on_regular_pages() {
+		// Skip if WP_DEBUG is not defined or false.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
+		}
+
+		// Set display_errors to '1' to simulate debug mode.
+		@ini_set( 'display_errors', '1' );
+
+		// Create a user with edit_posts capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		// Simulate a regular admin page (no Elementor action).
+		$_GET['page'] = 'some-admin-page';
+		
+		// Create plugin instance and call the method.
+		$plugin = wp_mcp_ai();
+		$plugin->disable_auth_check_in_elementor();
+
+		// Verify display_errors was NOT suppressed.
+		$this->assertEquals( '1', ini_get( 'display_errors' ), 'display_errors should not be suppressed on regular pages' );
+
+		// Clean up.
+		unset( $_GET['page'] );
+	}
+
+	/**
+	 * Test that the fix handles various Elementor action patterns.
+	 */
+	public function test_elementor_action_patterns_detected() {
+		// Skip if WP_DEBUG is not defined or false.
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'WP_DEBUG must be enabled for this test' );
+		}
+
+		$elementor_actions = array(
+			'elementor_ajax',
+			'elementor_render_widget',
+			'elementor_get_templates',
+		);
+
+		foreach ( $elementor_actions as $action ) {
+			// Reset display_errors.
+			@ini_set( 'display_errors', '1' );
+
+			// Simulate the AJAX request.
+			$_REQUEST['action'] = $action;
+			
+			if ( ! defined( 'DOING_AJAX' ) ) {
+				define( 'DOING_AJAX', true );
+			}
+			
+			// Call the suppress method.
+			$plugin = wp_mcp_ai();
+			$plugin->suppress_debug_in_elementor_ajax();
+
+			// Verify display_errors was suppressed.
+			$this->assertEquals(
+				'0',
+				ini_get( 'display_errors' ),
+				"display_errors should be suppressed for action: {$action}"
+			);
+
+			// Clean up.
+			unset( $_REQUEST['action'] );
+		}
+	}
+}
