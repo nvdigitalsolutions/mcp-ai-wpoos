@@ -29,6 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
 		 * Tool registry instance.
@@ -2953,20 +2954,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		// Set a short-lived lock (5 seconds should be more than enough).
-		set_transient( $lock_key, true, 5 );
+		set_transient( $lock_key, true, self::SYNC_LOCK_TIMEOUT );
 
 		try {
 			// Get the CCT item handler.
 			$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
 			if ( ! $handler ) {
-				delete_transient( $lock_key );
 				return;
 			}
 
 			// Validate handler has required methods.
 			if ( ! method_exists( $handler, 'update_item' ) ) {
-				delete_transient( $lock_key );
 				return;
 			}
 
