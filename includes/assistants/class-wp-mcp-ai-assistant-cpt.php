@@ -62,7 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
-			add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
+			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
 		}
 
 		/**
@@ -2735,13 +2735,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		/**
 		 * Remove credential index entries when an assistant is deleted.
 		 *
-		 * @param int $post_id Post ID being deleted.
+		 * @param int     $post_id Post ID being deleted.
+		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id ) {
-			if ( self::POST_TYPE !== get_post_type( $post_id ) ) {
-				return;
-			}
-
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) {
+			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 
 			// Also remove the linked CCT item if it exists.
