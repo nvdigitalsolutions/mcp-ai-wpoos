@@ -30,7 +30,7 @@ class WP_MCP_AI_ChatKit_Integration {
 	 * Hook into WordPress to register the integration when ChatKit is available.
 	 */
 	public static function init() {
-		add_action( 'init', array( __CLASS__, 'maybe_bootstrap' ) );
+		add_action( 'init', array( __CLASS__, 'maybe_bootstrap' ), 10 );
 	}
 
 	/**
