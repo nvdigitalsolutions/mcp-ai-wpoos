@@ -290,6 +290,9 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	 * Test that clean_elementor_output_buffer safely cleans the buffer.
 	 */
 	public function test_clean_output_buffer_works() {
+		// Simulate an Elementor AJAX request.
+		$_REQUEST['action'] = 'elementor_save_builder';
+		
 		// Start a buffer with some content.
 		ob_start();
 		echo 'Test content';
@@ -301,5 +304,8 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 		// Verify the buffer was cleaned (no output should appear).
 		// Since we cleaned the buffer, ob_get_level should be 0 or back to original.
 		$this->assertEquals( 0, ob_get_level(), 'Output buffer should be cleaned' );
+		
+		// Clean up.
+		unset( $_REQUEST['action'] );
 	}
 }

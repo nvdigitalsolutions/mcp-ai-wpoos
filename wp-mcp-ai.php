@@ -286,6 +286,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_cron_manager;
 
 		/**
+		 * Output buffer level when starting Elementor AJAX buffering.
+		 *
+		 * @var int|null
+		 */
+		private $elementor_buffer_level = null;
+
+		/**
 		 * Returns the singleton instance.
 		 *
 		 * @return WP_MCP_AI
@@ -392,6 +399,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				// during the Elementor save process.
 				ob_start();
 				
+				// Track the buffer level we created so we can clean it up safely.
+				$this->elementor_buffer_level = ob_get_level();
+				
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
 				// We use priority 0 to run before most other shutdown handlers.
 				add_action( 'shutdown', array( $this, 'clean_elementor_output_buffer' ), 0 );
@@ -419,13 +429,23 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				return;
 			}
 			
-			// Get the current output buffer level to safely clean only our buffer.
-			$level = ob_get_level();
-			
-			if ( $level > 0 ) {
-				// Discard the buffered output to prevent it from breaking the JSON response.
-				ob_end_clean();
+			// Only clean the buffer if we created one.
+			if ( null === $this->elementor_buffer_level ) {
+				return;
 			}
+			
+			// Get the current output buffer level.
+			$current_level = ob_get_level();
+			
+			// Clean buffers down to the level before we started buffering.
+			// This ensures we only clean the buffer(s) we created, not existing ones.
+			while ( $current_level > 0 && $current_level >= $this->elementor_buffer_level ) {
+				ob_end_clean();
+				$current_level = ob_get_level();
+			}
+			
+			// Reset the tracked level.
+			$this->elementor_buffer_level = null;
 		}
 
 		/**
