@@ -1,26 +1,56 @@
 # Assistant Storage: CPT vs CCT
 
-This document explains the different assistant storage mechanisms available in WP oOS and when to use each approach.
+This document explains the different assistant storage mechanisms available in WP oOS and how they support the MCP server functionality.
+
+---
+
+## ⚠️ For MCP Client Developers: Quick Answer
+
+**Q: Which endpoint should MCP clients (Claude Desktop, LM Studio, etc.) use?**
+
+**A: ALWAYS use `/wp-json/mcp-ai/v1/`** 
+
+This is the MCP server endpoint. It:
+- ✅ Implements the MCP protocol
+- ✅ Provides full assistant data
+- ✅ Supports chat, tools, and SSE
+- ✅ Uses CPT as its data source
+
+**DO NOT use `/wp-json/jet-cct/assistants`** - that's for JetEngine WordPress integrations only, not MCP clients.
+
+---
+
+## MCP Server Context
+
+**WP oOS functions as an MCP (Model Context Protocol) server** that exposes AI assistants and tools via REST API endpoints at `/wp-json/mcp-ai/v1/`. MCP clients like Claude Desktop, LM Studio, and other AI applications connect to this server to:
+
+- Discover available assistants (`GET /assistants`)
+- Execute chat conversations (`POST /chat`)
+- Invoke tools (`POST /tools`)
+- Stream responses via Server-Sent Events (`GET /sse`)
+
+**The MCP server always uses the CPT (Custom Post Type) as its data source.** The CCT synchronization is a convenience feature for JetEngine-based integrations but does not affect MCP server functionality.
 
 ## Overview
 
 WP oOS provides **two distinct methods** for storing AI assistant configurations:
 
-1. **CPT (Custom Post Type)** - WordPress native Custom Post Type (`mcp_ai_assistant`)
-2. **CCT (Custom Content Type)** - JetEngine Custom Content Type (`assistants`)
+1. **CPT (Custom Post Type)** - WordPress native Custom Post Type (`mcp_ai_assistant`) - **MCP Server Data Source**
+2. **CCT (Custom Content Type)** - JetEngine Custom Content Type (`assistants`) - **Optional Sync Target**
 
-**Important:** As of version 1.0.0, these systems work together through **automatic synchronization**. When you save an assistant in the CPT admin interface and JetEngine is available, the settings are automatically synchronized to the CCT for API consumers that prefer the JetEngine endpoint.
+**Important:** As of version 1.0.0, these systems work together through **automatic synchronization**. When you save an assistant in the CPT admin interface and JetEngine is available, the settings are automatically synchronized to the CCT for API consumers that prefer the JetEngine endpoint. **The MCP server (`/wp-json/mcp-ai/v1/`) always reads from the CPT** - the CCT is purely for JetEngine integrations.
 
-## CPT (Custom Post Type) - Default Implementation
+## CPT (Custom Post Type) - Default Implementation & MCP Server Source
 
 ### What is it?
 
-The CPT implementation uses WordPress's built-in Custom Post Type system to store assistant configurations. This is the **primary, fully-featured, and recommended** implementation.
+The CPT implementation uses WordPress's built-in Custom Post Type system to store assistant configurations. This is the **primary, fully-featured implementation** and the **exclusive data source for the MCP server**.
 
-**File:** `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` (3,365 lines)
+**File:** `includes/assistants/class-wp-mcp-ai-assistant-cpt.php` (3,365+ lines)
 
 ### Key Characteristics
 
+- **MCP Server Data Source**: All MCP endpoints (`/assistants`, `/chat`, `/tools`) read from CPT
 - **Always available**: Loaded in both Base and Full versions
 - **Full-featured**: Complete admin UI with meta boxes for all assistant settings
 - **Extensive functionality**: 
@@ -69,14 +99,21 @@ const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
 
 ### REST API Support
 
-The CPT is the **primary implementation** integrated with the REST API:
+The CPT is the **exclusive data source for the MCP server**:
 
 ```php
 // From includes/class-wp-mcp-ai-rest.php
+// MCP server endpoints ALWAYS use CPT
 $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 ```
 
-All REST endpoints (`/chat`, `/tools`, `/assistants`) use the CPT by default.
+**MCP Server Endpoints (using CPT):**
+- `GET /wp-json/mcp-ai/v1/assistants` - Assistant directory for MCP clients
+- `POST /wp-json/mcp-ai/v1/chat` - Chat completions
+- `POST /wp-json/mcp-ai/v1/tools` - Direct tool execution
+- `GET /wp-json/mcp-ai/v1/sse` - Server-Sent Events for streaming
+
+**These endpoints are what make WP oOS function as an MCP server.** They enable Claude Desktop, LM Studio, and other MCP clients to discover assistants, execute tools, and conduct conversations.
 
 ### Automatic CCT Synchronization
 
@@ -108,22 +145,24 @@ protected function sync_to_cct( $post_id, $post ) {
 
 **Deletion:** When a CPT assistant is deleted, the linked CCT item is automatically removed to maintain data consistency.
 
-## CCT (Custom Content Type) - JetEngine Implementation
+## CCT (Custom Content Type) - JetEngine Integration (NOT used by MCP Server)
 
 ### What is it?
 
-The CCT implementation uses JetEngine's Custom Content Types module to store assistant configurations as structured data in JetEngine's database tables.
+The CCT implementation uses JetEngine's Custom Content Types module to store assistant configurations as structured data in JetEngine's database tables. **This is NOT used by the MCP server** - it's a convenience sync for JetEngine-based tools and queries.
 
 **File:** `includes/class-wp-mcp-ai-jetengine-assistants-cct.php` (399 lines)
 
 ### Key Characteristics
 
 - **JetEngine required**: Only available in Full Version mode when JetEngine is active
-- **Simplified fields**: Basic assistant metadata only
+- **Sync target only**: Receives automatic updates from CPT, does not feed MCP server
+- **Simplified fields**: Basic assistant metadata only (7 fields vs 14 in CPT)
 - **Automatic provisioning**: Self-registers on plugin activation
 - **Lightweight**: Minimal configuration compared to CPT
 - **CCT slug**: `assistants`
 - **Admin UI location**: JetEngine → Assistants (when JetEngine CCT module is enabled)
+- **Purpose**: Enables JetEngine queries, relations, and dashboards - NOT for MCP functionality
 
 ### Meta Fields (CCT)
 
@@ -164,6 +203,8 @@ The CCT is configured for REST API access and **receives synchronized data from 
 ```
 
 JetEngine exposes this at `/wp-json/jet-cct/assistants`. **As of v1.0.0**, this endpoint is automatically populated with data from CPT assistants when they are saved.
+
+**⚠️ Important: The MCP server does NOT use this endpoint.** The CCT REST API is only for JetEngine-specific integrations. MCP clients should use `/wp-json/mcp-ai/v1/` which reads from the CPT.
 
 ### When to Use CCT
 
@@ -382,14 +423,33 @@ This is different from the assistants CCT and serves a completely different purp
 
 ## Recommendations
 
-### For Most Users
+### For MCP Clients (Claude Desktop, LM Studio, etc.)
+
+**✅ ALWAYS use `/wp-json/mcp-ai/v1/`** (the MCP server endpoint)
+
+This is the **only correct endpoint for MCP clients** because:
+- ✅ Implements the MCP protocol specification
+- ✅ Provides full assistant configuration (14+ fields)
+- ✅ Supports MCP-specific features (tools, resources, SSE)
+- ✅ Works in Base and Full versions
+- ✅ Has proper MCP authentication (credentials, Auth0, JWT)
+- ✅ Returns MCP-compliant response format
+
+**❌ DO NOT use `/wp-json/jet-cct/assistants`** for MCP clients:
+- ❌ Not MCP protocol compliant
+- ❌ Only has 7 basic fields (missing credentials, tools config, etc.)
+- ❌ Returns JetEngine format, not MCP format
+- ❌ Requires JetEngine (breaks Base Version)
+- ❌ No MCP-specific features (no tools endpoint, no chat, no SSE)
+
+###For Most Users
 
 **Use CPT (Custom Post Type) - Automatic CCT sync included**
 - Edit assistants through the WordPress CPT interface (WP Admin → AI Assistants)
 - Core features work immediately
 - CCT is automatically synced when JetEngine is available
 - Full documentation and examples available
-- Active REST API support at `/wp-json/mcp-ai/v1/`
+- **MCP clients connect to `/wp-json/mcp-ai/v1/` which uses this data**
 
 ### For JetEngine Power Users
 
@@ -403,16 +463,22 @@ This is different from the assistants CCT and serves a completely different purp
 
 **Choose based on your needs:**
 
-**Use `/wp-json/mcp-ai/v1/` (CPT) if:**
-- You need full assistant configuration
-- You're using credentials for authentication
-- You want chat, tools, and directory endpoints
+**Use `/wp-json/mcp-ai/v1/` (MCP Server - CPT data) if:**
+- ✅ You're building an MCP client (Claude Desktop, LM Studio, etc.)
+- ✅ You need full assistant configuration
+- ✅ You're using credentials for authentication
+- ✅ You want chat, tools, and directory endpoints
+- ✅ You need MCP protocol compliance
+- ✅ You need Server-Sent Events (SSE) streaming
+- **This is the correct endpoint for 99% of use cases**
 
-**Use `/wp-json/jet-cct/assistants` (CCT) if:**
-- You need basic configuration only
-- You prefer JetEngine's REST format
-- You're building JetEngine-integrated apps
-- You want to query using JetEngine filters
+**Use `/wp-json/jet-cct/assistants` (JetEngine CCT) ONLY if:**
+- ⚠️ You're building WordPress-specific JetEngine integrations
+- ⚠️ You only need basic configuration (7 fields)
+- ⚠️ You prefer JetEngine's REST format
+- ⚠️ You're building JetEngine-integrated WordPress dashboards
+- ⚠️ You want to query using JetEngine filters
+- ⚠️ You understand this is NOT for MCP clients
 
 ## Bootstrap Information
 
