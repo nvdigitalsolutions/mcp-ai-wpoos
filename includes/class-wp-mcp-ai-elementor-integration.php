@@ -60,7 +60,10 @@ class WP_MCP_AI_Elementor_Integration {
 			return;
 		}
 
+		// Use output buffering to prevent any PHP output from breaking Elementor's JSON responses.
+		ob_start();
 		require_once $trait_path;
+		ob_end_clean();
 
 		// Verify the trait was successfully loaded before proceeding.
 		if ( ! trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {
@@ -89,7 +92,10 @@ class WP_MCP_AI_Elementor_Integration {
 			$path = WP_MCP_AI_PATH . 'includes/elementor/' . $file;
 
 			if ( file_exists( $path ) ) {
+				// Use output buffering to prevent any PHP output from breaking Elementor's JSON responses.
+				ob_start();
 				require_once $path;
+				ob_end_clean();
 			}
 		}
 
@@ -113,7 +119,11 @@ class WP_MCP_AI_Elementor_Integration {
 
 		foreach ( $widget_classes as $widget_class ) {
 			if ( class_exists( $widget_class ) ) {
-				$widgets_manager->register( new $widget_class() );
+				// Use output buffering to prevent any PHP output during instantiation from breaking Elementor's JSON responses.
+				ob_start();
+				$widget_instance = new $widget_class();
+				ob_end_clean();
+				$widgets_manager->register( $widget_instance );
 			}
 		}
 	}
