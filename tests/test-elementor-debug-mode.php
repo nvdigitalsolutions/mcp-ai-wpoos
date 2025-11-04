@@ -290,22 +290,36 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 	 * Test that clean_elementor_output_buffer safely cleans the buffer.
 	 */
 	public function test_clean_output_buffer_works() {
+		// Record initial buffer level.
+		$initial_level = ob_get_level();
+		
 		// Simulate an Elementor AJAX request.
 		$_REQUEST['action'] = 'elementor_save_builder';
 		
-		// Start a buffer with some content.
-		ob_start();
+		// Create plugin instance and simulate the full flow.
+		$plugin = wp_mcp_ai();
+		
+		// Call suppress_debug_in_elementor_ajax to set up the buffer tracking.
+		$plugin->suppress_debug_in_elementor_ajax();
+		
+		// Now a buffer should be started.
+		$this->assertGreaterThan( $initial_level, ob_get_level(), 'Buffer should be started' );
+		
+		// Add some content to the buffer.
 		echo 'Test content';
 		
-		// Create plugin instance and call the cleanup method.
-		$plugin = wp_mcp_ai();
+		// Call the cleanup method.
 		$plugin->clean_elementor_output_buffer();
 		
-		// Verify the buffer was cleaned (no output should appear).
-		// Since we cleaned the buffer, ob_get_level should be 0 or back to original.
-		$this->assertEquals( 0, ob_get_level(), 'Output buffer should be cleaned' );
+		// Verify the buffer was cleaned and we're back to the initial level.
+		$this->assertEquals( $initial_level, ob_get_level(), 'Output buffer should be cleaned back to initial level' );
 		
 		// Clean up.
 		unset( $_REQUEST['action'] );
+		
+		// Make sure we're back to a clean state.
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
 	}
 }
