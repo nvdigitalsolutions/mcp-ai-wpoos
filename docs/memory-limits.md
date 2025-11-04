@@ -1,6 +1,6 @@
 # Memory document streaming limits
 
-WP MCP AI now reads assistant memory attachments incrementally to reduce peak memory usage. The controller stops reading from each file once enough bytes have been collected to satisfy the chunk budget that is forwarded to the language model.
+WP oOS now reads assistant memory attachments incrementally to reduce peak memory usage. The controller stops reading from each file once enough bytes have been collected to satisfy the chunk budget that is forwarded to the language model.
 
 ## Default limits
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * ChatKit integration bootstrap for WP MCP AI.
+ * ChatKit integration bootstrap for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Register the WP MCP AI integration with ChatKit when available.
+ * Register the WP oOS integration with ChatKit when available.
  */
 class WP_MCP_AI_ChatKit_Integration {
 
@@ -111,7 +111,7 @@ class WP_MCP_AI_ChatKit_Integration {
 		}
 
 		/**
-		 * Fires when the WP MCP AI ChatKit integration registers via an action.
+		 * Fires when the WP oOS ChatKit integration registers via an action.
 		 *
 		 * This mirrors the behaviour of ChatKit's manager objects so that tests or
 		 * other integrations can react consistently when a manager is not present.
@@ -151,8 +151,8 @@ class WP_MCP_AI_ChatKit_Integration {
 
 		$definition = array(
 			'id'             => self::ADDON_ID,
-			'name'           => __( 'WP MCP AI', 'wp-mcp-ai' ),
-			'description'    => __( 'Connect ChatKit workflows to WP MCP AI assistants.', 'wp-mcp-ai' ),
+			'name'           => __( 'WP oOS', 'wp-mcp-ai' ),
+			'description'    => __( 'Connect ChatKit workflows to WP oOS assistants.', 'wp-mcp-ai' ),
 			'version'        => WP_MCP_AI_VERSION,
 			'icon'           => WP_MCP_AI_URL . 'assets/images/ai-icon.svg',
 			'rest_namespace' => $rest_namespace,
@@ -179,7 +179,7 @@ class WP_MCP_AI_ChatKit_Integration {
 				'shortcode'        => array(
 					'type'        => 'shortcode',
 					'label'       => __( 'Shortcode chat surface', 'wp-mcp-ai' ),
-					'description' => __( 'Embed the WP MCP AI chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
+					'description' => __( 'Embed the WP oOS chat UI anywhere shortcodes render using [wp_mcp_ai_chat].', 'wp-mcp-ai' ),
 					'tag'         => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(

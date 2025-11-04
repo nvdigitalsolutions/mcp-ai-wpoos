@@ -113,7 +113,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'enable_varnish_purge' => __( 'Enable Varnish purge in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'enable_varnish_purge' => __( 'Enable Varnish purge in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

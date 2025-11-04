@@ -1,7 +1,7 @@
 # Troubleshooting Guide: Connection Test Buttons Not Working
 
 ## Issue
-When clicking the "Test Connection" buttons on the WP MCP AI settings page, nothing happens.
+When clicking the "Test Connection" buttons on the WP oOS settings page, nothing happens.
 
 ## Common Causes & Solutions
 
@@ -129,7 +129,7 @@ Ollama button click handlers: ✅ 1
 
 1. **Check for plugin conflicts:**
    - Deactivate all other plugins
-   - Activate only WP MCP AI
+   - Activate only WP oOS
    - Test if buttons work
    - Reactivate plugins one by one to find conflict
 
@@ -161,7 +161,7 @@ If the issue persists, add debug logging to the JavaScript:
 // Add to assets/js/admin-settings.js after line 414
 
 $(function () {
-    console.log('WP MCP AI: Initializing admin handlers...');
+    console.log('WP oOS: Initializing admin handlers...');
     console.log('wpMcpAiAdmin:', wpMcpAiAdmin);
     
     initColorPickers();
@@ -179,7 +179,7 @@ $(function () {
     initCloudflareHandlers();
     console.log('✅ Cloudflare handlers initialized');
     
-    console.log('WP MCP AI: All handlers initialized successfully');
+    console.log('WP oOS: All handlers initialized successfully');
 });
 ```
 

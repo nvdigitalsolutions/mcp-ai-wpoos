@@ -1,6 +1,6 @@
 <?php
 /**
- * WP-CLI commands for the WP MCP AI plugin.
+ * WP-CLI commands for the WP oOS plugin.
  *
  * @package WP_MCP_AI
  */
@@ -47,7 +47,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Command' ) ) {
 		/**
-		 * Root WP-CLI command for WP MCP AI.
+		 * Root WP-CLI command for WP oOS.
 		 */
 		class WP_MCP_AI_CLI_Command extends WP_CLI_Command {
 			/**
@@ -120,7 +120,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					),
 					array(
 						'context' => 'plugin',
-						'label'   => 'WP MCP AI Version',
+						'label'   => 'WP oOS Version',
 						'value'   => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
 					),
 					array(

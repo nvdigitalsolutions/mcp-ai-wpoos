@@ -1,6 +1,6 @@
 # Base Version vs. Full Version Comparison
 
-This document provides a detailed comparison between the Base Version and Full Version of WP MCP AI.
+This document provides a detailed comparison between the Base Version and Full Version of WP oOS.
 
 ## Quick Comparison
 

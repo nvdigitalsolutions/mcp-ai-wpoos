@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings for WP MCP AI.
+ * Admin settings for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -107,6 +107,8 @@ class WP_MCP_AI_Admin_Settings {
 			'openai_speech_model'               => 'gpt-4o-mini-tts',
 			'openai_speech_voice'               => 'alloy',
 			'openai_speech_format'              => 'mp3',
+			'openai_embedding_model'            => 'text-embedding-3-small',
+			'max_history_messages'              => 8,
 			'chat_colors'                       => self::get_default_chat_colors(),
 			'allowed_image_mimes'               => array(),
 			'allowed_file_mimes'                => array(),
@@ -1037,6 +1039,26 @@ class WP_MCP_AI_Admin_Settings {
 	}
 
 	/**
+	 * Get the default model for chat completions.
+	 *
+	 * @return string
+	 */
+	public static function get_default_model() {
+		$settings = self::get_settings();
+		return isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini';
+	}
+
+	/**
+	 * Get the embedding model for vector operations.
+	 *
+	 * @return string
+	 */
+	public static function get_embedding_model() {
+		$settings = self::get_settings();
+		return isset( $settings['openai_embedding_model'] ) ? $settings['openai_embedding_model'] : 'text-embedding-3-small';
+	}
+
+	/**
 	 * Determine whether a connector should be considered active for the current settings.
 	 *
 	 * @param array $definition Connector definition.
@@ -1195,8 +1217,8 @@ class WP_MCP_AI_Admin_Settings {
 	 */
 	public function register_settings_page() {
 		add_options_page(
-			__( 'WP MCP AI', 'wp-mcp-ai' ),
-			__( 'WP MCP AI', 'wp-mcp-ai' ),
+			__( 'WP oOS', 'wp-mcp-ai' ),
+			__( 'WP oOS', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_settings_page' )
@@ -1236,6 +1258,22 @@ class WP_MCP_AI_Admin_Settings {
 			'request_timeout',
 			__( 'Request Timeout (seconds)', 'wp-mcp-ai' ),
 			array( $this, 'render_timeout_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_openai_section'
+		);
+
+		add_settings_field(
+			'openai_embedding_model',
+			__( 'OpenAI Embedding Model', 'wp-mcp-ai' ),
+			array( $this, 'render_embedding_model_field' ),
+			self::PAGE_SLUG,
+			'wp_mcp_ai_openai_section'
+		);
+
+		add_settings_field(
+			'max_history_messages',
+			__( 'Max History Messages', 'wp-mcp-ai' ),
+			array( $this, 'render_max_history_messages_field' ),
 			self::PAGE_SLUG,
 			'wp_mcp_ai_openai_section'
 		);
@@ -1868,6 +1906,17 @@ class WP_MCP_AI_Admin_Settings {
 			}
 		}
 
+		if ( isset( $settings['openai_embedding_model'] ) ) {
+			$clean['openai_embedding_model'] = sanitize_text_field( $settings['openai_embedding_model'] );
+		}
+
+		if ( isset( $settings['max_history_messages'] ) ) {
+			$max_messages = absint( $settings['max_history_messages'] );
+			if ( $max_messages > 0 ) {
+				$clean['max_history_messages'] = max( 1, min( 50, $max_messages ) );
+			}
+		}
+
 		if ( isset( $settings['memory_max_file_bytes'] ) ) {
 			$choices = $this->get_memory_max_file_size_choices();
 			$choice  = absint( $settings['memory_max_file_bytes'] );
@@ -2221,7 +2270,7 @@ class WP_MCP_AI_Admin_Settings {
 		$connector_statuses = $this->get_connector_statuses( $settings );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP MCP AI Settings', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
@@ -3495,7 +3544,7 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_mailjet_from_name_field() {
 		$settings = self::get_settings();
 		?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP MCP AI" />
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP oOS" />
 		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
@@ -3974,6 +4023,30 @@ class WP_MCP_AI_Admin_Settings {
 		?>
 		<input type="number" min="5" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[request_timeout]" value="<?php echo esc_attr( $settings['request_timeout'] ); ?>" class="small-text" />
 		<p class="description"><?php esc_html_e( 'How long to wait for OpenAI responses before aborting the request.', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the embedding model field.
+	 */
+	public function render_embedding_model_field() {
+		$settings = self::get_settings();
+		$current  = isset( $settings['openai_embedding_model'] ) ? sanitize_text_field( $settings['openai_embedding_model'] ) : 'text-embedding-3-small';
+		?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_embedding_model]" value="<?php echo esc_attr( $current ); ?>" class="regular-text" placeholder="text-embedding-3-small" />
+		<p class="description"><?php esc_html_e( 'OpenAI embedding model for vector operations (e.g., text-embedding-3-small, text-embedding-3-large).', 'wp-mcp-ai' ); ?></p>
+		<?php
+	}
+
+	/**
+	 * Render the max history messages field.
+	 */
+	public function render_max_history_messages_field() {
+		$settings = self::get_settings();
+		$current  = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
+		?>
+		<input type="number" min="1" max="50" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_history_messages]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
+		<p class="description"><?php esc_html_e( 'Maximum number of conversation messages to retain per chat. Recommended: 6-8 for optimal performance, higher values increase token usage. System messages are always preserved.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Cron manager utilities for WP MCP AI.
+ * Cron manager utilities for WP oOS.
  *
  * @package WP_MCP_AI
  */

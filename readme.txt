@@ -1,4 +1,4 @@
-=== OpenWP Operator System (oWPOS) ===
+=== WP Open Operator System (WP oOS) ===
 Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/openwp-operator-system
 Tags: ai, assistant, jetengine, openai, gpt, chatbot
@@ -30,7 +30,7 @@ This plugin is licensed under the GNU General Public License v2 or later.
 
 1.  Upload the `wp-mcp-ai` folder to the `/wp-content/plugins/` directory.
 2.  Activate the plugin through the 'Plugins' menu in WordPress.
-3.  Navigate to the WP MCP AI settings page to configure the plugin.
+3.  Navigate to the WP oOS settings page to configure the plugin.
 
 **Multisite Installation:**
 

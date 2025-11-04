@@ -71,7 +71,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -231,7 +231,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -346,7 +346,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -598,7 +598,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -1156,7 +1156,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -1315,7 +1315,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -1541,7 +1541,7 @@ class WP_MCP_AI_OpenAI_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

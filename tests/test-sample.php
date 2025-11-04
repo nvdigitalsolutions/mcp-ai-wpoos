@@ -1,6 +1,6 @@
 <?php
 /**
- * Sample test case for WP MCP AI plugin.
+ * Sample test case for WP oOS plugin.
  */
 class WP_MCP_AI_Sample_Test extends WP_UnitTestCase {
 
