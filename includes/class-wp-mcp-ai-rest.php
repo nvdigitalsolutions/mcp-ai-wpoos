@@ -518,6 +518,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 		}
 
+		/**
+		 * Permission callback for chat transcript endpoints.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return bool|WP_Error True if authorized, WP_Error otherwise.
+		 */
 		public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
 			$user_id      = absint( $request->get_param( 'user_id' ) );
 			$current_user = get_current_user_id();
@@ -681,7 +687,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			// Delete all transcript entries for this session and user
+			// Delete all transcript entries for this session and user.
 			$deleted = $wpdb->delete(
 				$table,
 				array(
@@ -953,7 +959,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'title'               => get_the_title( $assistant_post ),
 				'slug'                => $assistant_post->post_name,
 				'status'              => $assistant_post->post_status,
-				'is_default'          => ( $assistant_id === absint( $default_assistant ) ),
+				'is_default'          => ( absint( $default_assistant ) === $assistant_id ),
 				'provider'            => $provider,
 				'model'               => $model,
 				'temperature'         => ( null === $temperature ? null : $temperature ),
@@ -1194,6 +1200,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Build a consistent error response when the authenticated user lacks access.
 		 *
+		 * @param string $capability Required capability name.
 		 * @return WP_Error
 		 */
 		protected function insufficient_permissions_error( $capability = 'edit_posts' ) {
@@ -1204,6 +1211,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_insufficient_permissions',
 				sprintf(
+					/* translators: %s: WordPress capability name */
 					__( 'The authenticated user cannot access the WP oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
 					$capability
 				),
@@ -1211,6 +1219,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'status'  => 403,
 					'actions' => array(
 						'grant_capability' => sprintf(
+							/* translators: %s: WordPress capability name */
 							__( 'Assign a role that includes the "%s" capability.', 'wp-mcp-ai' ),
 							$capability
 						),
@@ -2133,7 +2142,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'X-Content-Type-Options'       => 'nosniff',
 			);
 
-			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( $_SERVER['SERVER_PROTOCOL'], 'HTTP/2' ) ) {
+			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
 				unset( $headers['Connection'] );
 			}
 
@@ -2796,7 +2805,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			foreach ( $candidates as $candidate ) {
-				if ( $normalised_slug === preg_replace( '/[_-]/', '', $candidate ) ) {
+				if ( preg_replace( '/[_-]/', '', $candidate ) === $normalised_slug ) {
 					return true;
 				}
 			}
@@ -4724,6 +4733,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 *
 		 * @param string $file_path File system path.
 		 * @param string $mime_type MIME type.
+		 * @param int    $char_budget Maximum characters to extract (0 for unlimited).
+		 * @param int    $byte_budget Maximum bytes to read (0 for unlimited).
+		 * @param int    $bytes_consumed Reference variable for bytes consumed during extraction.
 		 * @return string|WP_Error
 		 */
 		protected function extract_memory_text( $file_path, $mime_type, $char_budget = 0, $byte_budget = 0, &$bytes_consumed = 0 ) {
@@ -5911,17 +5923,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'content' => $content,
 				);
 
-				// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation)
+				// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation).
 				if ( 'tool' === $role && isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
 					$message_entry['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
 				}
 
-				// Preserve name for tool messages (optional but helpful for debugging)
+				// Preserve name for tool messages (optional but helpful for debugging).
 				if ( 'tool' === $role && isset( $message['name'] ) && '' !== $message['name'] ) {
 					$message_entry['name'] = sanitize_text_field( $message['name'] );
 				}
 
-				// Preserve tool_calls for assistant messages (required when assistant makes tool calls)
+				// Preserve tool_calls for assistant messages (required when assistant makes tool calls).
 				if ( 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] ) ) {
 					$message_entry['tool_calls'] = $message['tool_calls'];
 				}
@@ -5985,7 +5997,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$role    = isset( $choice['message']['role'] ) ? sanitize_key( $choice['message']['role'] ) : 'assistant';
 					$content = $this->prepare_message_text( $choice['message'] );
 
-					// Always include assistant messages, even with empty content, if they have tool_calls
+					// Always include assistant messages, even with empty content, if they have tool_calls.
 					$has_tool_calls = ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] );
 
 					if ( '' !== $content || 'tool' === $role || $has_tool_calls ) {
@@ -6073,6 +6085,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$parts = array();
 
 			if ( '' !== $name ) {
+				/* translators: %s: tool name */
 				$parts[] = sprintf( __( 'Tool call: %s', 'wp-mcp-ai' ), $name );
 			}
 
