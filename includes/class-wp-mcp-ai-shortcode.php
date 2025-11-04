@@ -204,6 +204,22 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * Render the editor preview notice for Elementor editor.
+	 *
+	 * @return string HTML for the editor preview notice.
+	 */
+	protected function render_editor_notice() {
+		ob_start();
+		?>
+		<div class="wp-mcp-ai-chat__editor-notice">
+			<strong><?php esc_html_e( 'Editor Preview:', 'wp-mcp-ai' ); ?></strong>
+			<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'wp-mcp-ai' ); ?>
+		</div>
+		<?php
+		return ob_get_clean();
+	}
+
+	/**
 	 * Render the chat shortcode.
 	 *
 	 * @param array  $atts    Shortcode attributes.
@@ -343,12 +359,11 @@ class WP_MCP_AI_Shortcode {
 		$messages_id = $instance_id . '-messages';
 		?>
 		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
-			<?php if ( $is_elementor_editor ) : ?>
-				<div class="wp-mcp-ai-chat__editor-notice">
-					<strong><?php esc_html_e( 'Editor Preview:', 'wp-mcp-ai' ); ?></strong>
-					<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'wp-mcp-ai' ); ?>
-				</div>
-			<?php endif; ?>
+			<?php
+			if ( $is_elementor_editor ) {
+				echo $this->render_editor_notice(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
+			?>
 			<div class="wp-mcp-ai-chat__assistant">
 				<label class="wp-mcp-ai-chat__label" for="<?php echo esc_attr( $textarea_id ); ?>">
 					<?php echo esc_html( get_the_title( $assistant_id ) ); ?>
