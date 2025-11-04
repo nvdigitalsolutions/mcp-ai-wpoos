@@ -1930,7 +1930,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tool_options[ $slug ] = $tool->get_name();
 			}
 
-/* translators: %d: shortcut number */
+			/* translators: %d: shortcut number */
 			$summary_template = __( 'Shortcut %d', 'wp-mcp-ai' );
 			$tool_default     = __( 'No specific tool', 'wp-mcp-ai' );
 			?>
