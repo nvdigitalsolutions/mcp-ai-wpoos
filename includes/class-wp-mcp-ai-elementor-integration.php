@@ -60,7 +60,10 @@ class WP_MCP_AI_Elementor_Integration {
 			return;
 		}
 
+		// Use output buffering to prevent any PHP output from breaking Elementor's JSON responses.
+		ob_start();
 		require_once $trait_path;
+		ob_end_clean();
 
 		// Verify the trait was successfully loaded before proceeding.
 		if ( ! trait_exists( 'WP_MCP_AI_Elementor_Text_Formatting' ) ) {

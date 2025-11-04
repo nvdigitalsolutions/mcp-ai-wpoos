@@ -193,10 +193,9 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 	/**
 	 * Test that trait files don't produce output.
 	 *
-	 * Note: In the actual implementation (line 63 of the integration class),
-	 * the trait is loaded without output buffering. This test verifies that
-	 * the trait file itself is clean and doesn't produce output, which would
-	 * be a problem even without buffering.
+	 * The trait is loaded with output buffering in the integration class
+	 * (lines 63-66). This test verifies that the trait file itself is clean
+	 * and doesn't produce output.
 	 */
 	public function test_trait_file_produces_no_output() {
 		$trait_path = WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
@@ -204,6 +203,7 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 		$this->assertFileExists( $trait_path );
 
 		// Test that the trait file produces no output when loaded.
+		// This matches the pattern used in the integration class.
 		ob_start();
 		require_once $trait_path;
 		$output = ob_get_clean();
