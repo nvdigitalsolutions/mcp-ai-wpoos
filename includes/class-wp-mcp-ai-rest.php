@@ -4473,8 +4473,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$encountered_permitted = true;
 
 				$file_path = get_attached_file( $file_id );
-				if ( ! $file_path || ! file_exists( $file_path ) ) {
+				if ( ! $file_path ) {
 					continue;
+				}
+
+				if ( ! file_exists( $file_path ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_memory_file_missing',
+						__( 'A memory file could not be located.', 'wp-mcp-ai' ),
+						array(
+							'status'  => 404,
+							'file_id' => $file_id,
+						)
+					);
 				}
 
 				$file_size = filesize( $file_path );
