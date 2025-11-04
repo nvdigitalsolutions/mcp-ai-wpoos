@@ -376,6 +376,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
 				// Suppress display_errors to prevent debug output from breaking JSON responses.
+				// Error suppression is intentional: some hosts disable ini_set changes,
+				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
 				}
@@ -407,6 +409,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				
 				// Prevent debug output from breaking Elementor's JSON responses.
 				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
+				// Error suppression is intentional: some hosts disable ini_set changes,
+				// and we prefer graceful degradation over throwing warnings.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
 				}
