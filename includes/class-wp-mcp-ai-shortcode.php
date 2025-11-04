@@ -344,7 +344,7 @@ class WP_MCP_AI_Shortcode {
 		?>
 		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
 			<?php if ( $is_elementor_editor ) : ?>
-				<div class="wp-mcp-ai-chat__editor-notice" style="padding: 10px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px; margin-bottom: 15px; color: #0c5460; font-size: 13px;">
+				<div class="wp-mcp-ai-chat__editor-notice">
 					<strong><?php esc_html_e( 'Editor Preview:', 'wp-mcp-ai' ); ?></strong>
 					<?php esc_html_e( 'This is a preview of the chat widget. Full functionality will be available on the published page.', 'wp-mcp-ai' ); ?>
 				</div>

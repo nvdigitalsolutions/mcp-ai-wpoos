@@ -1020,3 +1020,19 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Elementor editor preview notice */
+.wp-mcp-ai-chat__editor-notice {
+    padding: 10px;
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    color: #0c5460;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.wp-mcp-ai-chat__editor-notice strong {
+    font-weight: 600;
+}
