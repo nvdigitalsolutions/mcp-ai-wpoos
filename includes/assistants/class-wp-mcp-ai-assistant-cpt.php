@@ -57,12 +57,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
 			add_filter( 'use_block_editor_for_post_type', array( __CLASS__, 'disable_block_editor_for_post_type' ), 10, 2 );
 			add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
-			add_action( 'save_post', array( $this, 'save_post' ), 10, 2 );
+			add_action( 'save_post_' . self::POST_TYPE, array( $this, 'save_post' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
-			add_action( 'before_delete_post', array( $this, 'cleanup_deleted_assistant_credentials' ) );
+			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
 		}
 
 		/**
@@ -2735,13 +2735,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		/**
 		 * Remove credential index entries when an assistant is deleted.
 		 *
-		 * @param int $post_id Post ID being deleted.
+		 * @param int     $post_id Post ID being deleted.
+		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id ) {
-			if ( self::POST_TYPE !== get_post_type( $post_id ) ) {
-				return;
-			}
-
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) {
+			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 
 			// Also remove the linked CCT item if it exists.
@@ -2789,7 +2787,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param WP_Post $post    Post object.
 		 */
 		public function save_post( $post_id, $post ) {
-			if ( ! $post instanceof WP_Post || self::POST_TYPE !== $post->post_type ) {
+			// Post type check is no longer needed since we use save_post_{post_type} hook.
+			if ( ! $post instanceof WP_Post ) {
 				return;
 			}
 
