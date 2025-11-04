@@ -88,7 +88,16 @@ class WP_MCP_AI_Token_Budget_Manager {
 	public static function get_model_limit( $model ) {
 		$model = sanitize_text_field( $model );
 
-		// Check exact match first.
+		// Try to get limit from CCT first if available.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+
+			if ( $cct_data && isset( $cct_data['context_window'] ) && $cct_data['context_window'] > 0 ) {
+				return absint( $cct_data['context_window'] );
+			}
+		}
+
+		// Check exact match in hardcoded fallback.
 		if ( isset( self::$model_limits[ $model ] ) ) {
 			return self::$model_limits[ $model ];
 		}
@@ -102,6 +111,50 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		// Default to a conservative limit.
 		return 8192;
+	}
+
+	/**
+	 * Get the TPM (Tokens Per Minute) rate limit for a model.
+	 *
+	 * @param string $model Model identifier.
+	 *
+	 * @return int|null TPM limit or null if not configured.
+	 */
+	public static function get_model_tpm_limit( $model ) {
+		$model = sanitize_text_field( $model );
+
+		// Try to get TPM limit from CCT.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+
+			if ( $cct_data && isset( $cct_data['tpm_limit'] ) && $cct_data['tpm_limit'] > 0 ) {
+				return absint( $cct_data['tpm_limit'] );
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the RPM (Requests Per Minute) rate limit for a model.
+	 *
+	 * @param string $model Model identifier.
+	 *
+	 * @return int|null RPM limit or null if not configured.
+	 */
+	public static function get_model_rpm_limit( $model ) {
+		$model = sanitize_text_field( $model );
+
+		// Try to get RPM limit from CCT.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+
+			if ( $cct_data && isset( $cct_data['rpm_limit'] ) && $cct_data['rpm_limit'] > 0 ) {
+				return absint( $cct_data['rpm_limit'] );
+			}
+		}
+
+		return null;
 	}
 
 	/**
