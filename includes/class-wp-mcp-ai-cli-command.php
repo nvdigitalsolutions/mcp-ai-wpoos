@@ -282,12 +282,14 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( $result['success'] ) {
 					if ( $token_scope ) {
+						/* translators: %s: OAuth token scope */
 						WP_CLI::line( sprintf( __( 'Token scope: %s', 'wp-mcp-ai' ), $token_scope ) );
 					}
 
 					if ( null !== $assistant_count ) {
 						WP_CLI::success(
 							sprintf(
+								/* translators: %d: number of assistants found */
 								_n( 'Remote MCP API reachable (%d assistant).', 'Remote MCP API reachable (%d assistants).', $assistant_count, 'wp-mcp-ai' ),
 								$assistant_count
 							)
@@ -301,6 +303,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 				if ( ! empty( $rest_errors ) ) {
 					foreach ( array_unique( $rest_errors ) as $error_code ) {
+						/* translators: %s: REST API error code */
 						WP_CLI::warning( sprintf( __( 'REST error code: %s', 'wp-mcp-ai' ), $error_code ) );
 					}
 				}
@@ -442,6 +445,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$plugin = $this->get_supported_plugin( $slug );
 
 				if ( ! $plugin ) {
+					/* translators: %s: plugin slug */
 					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'wp-mcp-ai' ), $slug ) );
 				}
 
@@ -453,10 +457,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$plugin_path = WP_PLUGIN_DIR . '/' . $plugin_file;
 
 				if ( ! file_exists( $plugin_path ) ) {
+					/* translators: 1: plugin name, 2: plugin slug */
 					WP_CLI::error( sprintf( __( '%1$s is not installed. Install it with `wp plugin install %2$s`.', 'wp-mcp-ai' ), $plugin['name'], $plugin['slug'] ) );
 				}
 
 				if ( is_plugin_active( $plugin_file ) ) {
+					/* translators: %s: plugin name */
 					WP_CLI::success( sprintf( __( '%s is already active.', 'wp-mcp-ai' ), $plugin['name'] ) );
 					return;
 				}
@@ -467,6 +473,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					WP_CLI::error( $result );
 				}
 
+				/* translators: %s: plugin name */
 				WP_CLI::success( sprintf( __( '%s activated.', 'wp-mcp-ai' ), $plugin['name'] ) );
 			}
 
@@ -500,6 +507,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$plugin = $this->get_supported_plugin( $slug );
 
 				if ( ! $plugin ) {
+					/* translators: %s: plugin slug */
 					WP_CLI::error( sprintf( __( 'Unsupported plugin slug: %s', 'wp-mcp-ai' ), $slug ) );
 				}
 
@@ -510,6 +518,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				$plugin_file = $plugin['plugin_file'];
 
 				if ( ! is_plugin_active( $plugin_file ) && ! is_plugin_active_for_network( $plugin_file ) ) {
+					/* translators: %s: plugin name */
 					WP_CLI::success( sprintf( __( '%s is already inactive.', 'wp-mcp-ai' ), $plugin['name'] ) );
 					return;
 				}
@@ -517,9 +526,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 				deactivate_plugins( $plugin_file, false, $network );
 
 				if ( is_plugin_active( $plugin_file ) || is_plugin_active_for_network( $plugin_file ) ) {
+					/* translators: %s: plugin name */
 					WP_CLI::error( sprintf( __( 'Failed to deactivate %s.', 'wp-mcp-ai' ), $plugin['name'] ) );
 				}
 
+				/* translators: %s: plugin name */
 				WP_CLI::success( sprintf( __( '%s deactivated.', 'wp-mcp-ai' ), $plugin['name'] ) );
 			}
 
