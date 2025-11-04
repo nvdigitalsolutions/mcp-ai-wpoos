@@ -9,11 +9,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
+
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
 	 * Registers the plugin's REST API endpoints.
 	 */
 	class WP_MCP_AI_REST {
+		use WP_MCP_AI_REST_MCP_Methods;
 		const REST_NAMESPACE              = 'mcp-ai/v1';
 		const MEMORY_MAX_DOCUMENT_CHARS   = 4000;
 		const MEMORY_CHUNK_CHARS          = 1200;
@@ -498,6 +501,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/mcp',
+				array(
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_mcp_request' ),
+						'args'                => array(),
+					),
+				),
+				true
+			);
 		}
 
 		public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
@@ -825,6 +842,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'tools'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/tools' ) ) ),
 					'file_download' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/files' ) ) ),
 					'sse'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/sse' ) ) ),
+					'mcp'           => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( self::REST_NAMESPACE . '/mcp' ) ) ),
 				),
 			);
 
@@ -2071,6 +2089,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Stream the provided payload as an event stream response.
 		 *
+		 * Implements Server-Sent Events (SSE) with modern best practices (2024-2025):
+		 * - Proper Content-Type: text/event-stream with UTF-8
+		 * - Cache-Control: no-cache to prevent proxy/browser caching
+		 * - Connection: keep-alive for persistent streaming
+		 * - Retry directive for automatic client reconnection
+		 * - Event IDs for reconnection state tracking
+		 * - HTTP/2 compatibility (removes Connection header when appropriate)
+		 * - CORS headers for cross-origin access
+		 *
 		 * @param array  $payload Response payload to emit.
 		 * @param string $event   Event name used for the SSE frame.
 		 * @return WP_REST_Response
@@ -2087,7 +2114,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$event_name = 'message';
 			}
 
-			$frames  = $this->build_event_stream_chunk( $event_name, $encoded_payload );
+			// Add retry directive for automatic reconnection (3 seconds).
+			$frames  = "retry: 3000\n\n";
+			$frames .= $this->build_event_stream_chunk( $event_name, $encoded_payload, (string) time() );
 			$frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
 			$headers = array(
@@ -2160,12 +2189,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Build a Server-Sent Events chunk for the provided data.
 		 *
+		 * Formats data according to SSE specification with optional event ID
+		 * for client-side reconnection tracking.
+		 *
 		 * @param string $event  Event name.
 		 * @param string $data   Event data payload.
+		 * @param string $id     Optional event ID for client-side reconnection tracking.
 		 * @return string
 		 */
-		protected function build_event_stream_chunk( $event, $data ) {
+		protected function build_event_stream_chunk( $event, $data, $id = '' ) {
 			$chunk = '';
+
+			$id = (string) $id;
+			if ( '' !== $id ) {
+				$chunk .= 'id: ' . $id . "\n";
+			}
 
 			$event = (string) $event;
 			if ( '' !== $event ) {
