@@ -190,7 +190,7 @@ To upgrade from base version to the full version:
 
 1. Add `define( 'WP_MCP_AI_BASE_VERSION', false );` to wp-config.php
 2. Install any required third-party plugins (WooCommerce, JetEngine, etc.)
-3. Configure API credentials in Settings → MCP AI for external services you want to use
+3. Configure API credentials in Settings → WP oOS for external services you want to use
 4. The additional tools will automatically become available
 
 ## Testing Base Version

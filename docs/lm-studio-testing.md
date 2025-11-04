@@ -91,7 +91,7 @@ The LM Studio integration should work correctly!
 
 ## Testing in WordPress Admin
 
-1. Navigate to **Settings → MCP AI**
+1. Navigate to **Settings → WP oOS**
 2. Scroll to the **LM Studio Configuration** section
 3. Enter your endpoint URL: `http://127.0.0.1:1234`
 4. Click **Test Connection** - should show success

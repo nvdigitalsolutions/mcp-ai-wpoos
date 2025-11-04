@@ -397,7 +397,7 @@ class WP_MCP_AI_HTTP {
 			$message = self::build_timeout_message( $service_label );
 
 			$actions = array(
-				'configure_request_timeout' => __( 'Increase the request timeout under Settings → MCP AI.', 'wp-mcp-ai' ),
+				'configure_request_timeout' => __( 'Increase the request timeout under Settings → WP oOS.', 'wp-mcp-ai' ),
 				'check_server_connectivity' => __( 'Confirm your server can reach the remote service without firewall or network blocks.', 'wp-mcp-ai' ),
 			);
 

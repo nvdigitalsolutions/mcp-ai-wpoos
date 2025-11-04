@@ -7,9 +7,9 @@
     function log(message, data) {
         if (DEBUG && console && console.log) {
             if (data !== undefined) {
-                console.log('[WP MCP AI] ' + message, data);
+                console.log('[WP oOS] ' + message, data);
             } else {
-                console.log('[WP MCP AI] ' + message);
+                console.log('[WP oOS] ' + message);
             }
         }
     }
@@ -448,11 +448,11 @@
     }
 
     $(function () {
-        log('DOM ready, initializing WP MCP AI admin handlers...');
+        log('DOM ready, initializing WP oOS admin handlers...');
         
         // Check if wpMcpAiAdmin is defined
         if (typeof wpMcpAiAdmin === 'undefined') {
-            console.error('[WP MCP AI] ERROR: wpMcpAiAdmin is not defined! Script may not be properly enqueued.');
+            console.error('[WP oOS] ERROR: wpMcpAiAdmin is not defined! Script may not be properly enqueued.');
             return;
         }
         log('wpMcpAiAdmin loaded:', wpMcpAiAdmin);

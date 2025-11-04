@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'MCP AI Theme Preview', 'wp-mcp-ai' );
+		return __( 'WP oOS Theme Preview', 'wp-mcp-ai' );
 	}
 
 	/**

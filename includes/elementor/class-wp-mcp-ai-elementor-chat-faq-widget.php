@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'MCP AI Chat FAQ', 'wp-mcp-ai' );
+		return __( 'WP oOS Chat FAQ', 'wp-mcp-ai' );
 	}
 
 	/**

@@ -119,7 +119,7 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 ### Model defaults
 
-Global settings capture the default provider, model, and timeout used when assistants are created, ensuring every conversation inherits stable generation behaviour until explicitly overridden. These defaults ship with sensible values for OpenAI and Gemini out of the box and can be tailored from the MCP AI settings screen.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L77】
+Global settings capture the default provider, model, and timeout used when assistants are created, ensuring every conversation inherits stable generation behaviour until explicitly overridden. These defaults ship with sensible values for OpenAI and Gemini out of the box and can be tailored from the WP oOS settings screen.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L77】
 
 ### Base knowledge
 
@@ -236,7 +236,7 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Get Site Summary | `get_site_summary` | Provides high-level site metadata, content counts, and admin contact details for context-aware assistants.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】|
 | Get MCP Environment Status | `get_environment_status` | Summarises WordPress versions, MCP defaults, assistant counts, and dependency warnings for incident response.【F:includes/tools/class-wp-mcp-ai-tool-get-environment-status.php†L12-L178】|
 | Get Site Health Status | `get_site_health` | Runs WordPress Site Health diagnostics and returns grouped pass/warn/fail tests with remediation guidance.【F:includes/tools/class-wp-mcp-ai-tool-get-site-health.php†L12-L255】|
-| Get System Logs | `get_system_logs` | Aggregates MCP AI logs, WordPress/PHP error logs, and plugin log files to aid in debugging workflows.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】|
+| Get System Logs | `get_system_logs` | Aggregates WP oOS logs, WordPress/PHP error logs, and plugin log files to aid in debugging workflows.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】|
 | Get Update Status | `get_update_status` | Reports pending core, plugin, and theme updates with version and download metadata for maintenance planning.【F:includes/tools/class-wp-mcp-ai-tool-get-update-status.php†L12-L182】|
 | Probe Assistant Chat | `probe_chat` | Issues a chat probe against a published assistant to confirm sanitisation, configuration, and REST handling without consuming model tokens.【F:includes/tools/class-wp-mcp-ai-tool-probe-chat.php†L12-L178】|
 | Probe Remote MCP REST | `probe_remote_mcp` | Reuses the remote connectivity tester to exercise `/assistants` and `/chat` on another site with optional bearer, guest, or nonce credentials.【F:includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php†L12-L164】|
@@ -278,14 +278,14 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 1. Upload `wp-mcp-ai.zip` to `/wp-content/plugins/`
 2. Activate **WP oOS** from the WordPress admin
    - Ensure [JetEngine](https://crocoblock.com/plugins/jetengine/) is active with the **Custom Content Types** module enabled before switching the plugin on. WP oOS automatically provisions the `ai_chat_transcripts` CCT on JetEngine init, so no manual setup is required beyond enabling the module; existing CCT definitions are left untouched if you have already created one manually.
-3. Go to **Settings → MCP AI**
+3. Go to **Settings → WP oOS**
 4. Enter your OpenAI API key
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
 
 ### Base Version (Default)
 
-**WP MCP AI runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
+**WP WP oOS runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
 **Base Version includes 35 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
@@ -331,24 +331,24 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 Complete these after installation to unlock every integration point:
 
-- [ ] **Add your OpenAI API key** in **Settings → MCP AI → OpenAI API Key** so API calls are authorised.
-- [ ] **Add your Gemini API key** in **Settings → MCP AI → Gemini API Key** if you plan to route assistants through Gemini.
-- [ ] **Confirm or override the default model** via **Settings → MCP AI → Default Model** (`gpt-4o-mini` ships as the default).
-- [ ] **Set a default Gemini model** under **Settings → MCP AI → Default Gemini Model** when Gemini is enabled.
-- [ ] **Choose the default provider** from **Settings → MCP AI → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
-- [ ] **Adjust the request timeout** under **Settings → MCP AI → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
-- [ ] **Select a default assistant** with **Settings → MCP AI → Default Assistant** so REST and shortcode requests have a fallback.
-- [ ] **Decide on logging** with **Settings → MCP AI → Enable Logging** when you need verbose diagnostics.
-- [ ] **Choose your uninstall behaviour** via **Settings → MCP AI → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
-- [ ] **Configure Crawl4AI access** in **Settings → MCP AI → Tools** when you want the Crawl4AI tool to be available to assistants.
-- [ ] **Review attachment MIME overrides** in **Settings → MCP AI → Attachments** before enabling file uploads for end users.
-- [ ] **Review Send Group Email permissions** in **Settings → MCP AI → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
-- [ ] **Connect QuickBooks Online** under **Settings → MCP AI → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
-- [ ] **Configure Mailjet credentials** in **Settings → MCP AI → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
+- [ ] **Add your OpenAI API key** in **Settings → WP oOS → OpenAI API Key** so API calls are authorised.
+- [ ] **Add your Gemini API key** in **Settings → WP oOS → Gemini API Key** if you plan to route assistants through Gemini.
+- [ ] **Confirm or override the default model** via **Settings → WP oOS → Default Model** (`gpt-4o-mini` ships as the default).
+- [ ] **Set a default Gemini model** under **Settings → WP oOS → Default Gemini Model** when Gemini is enabled.
+- [ ] **Choose the default provider** from **Settings → WP oOS → Default Provider** so new assistants know whether to use OpenAI or Gemini by default.
+- [ ] **Adjust the request timeout** under **Settings → WP oOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
+- [ ] **Select a default assistant** with **Settings → WP oOS → Default Assistant** so REST and shortcode requests have a fallback.
+- [ ] **Decide on logging** with **Settings → WP oOS → Enable Logging** when you need verbose diagnostics.
+- [ ] **Choose your uninstall behaviour** via **Settings → WP oOS → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
+- [ ] **Configure Crawl4AI access** in **Settings → WP oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
+- [ ] **Review attachment MIME overrides** in **Settings → WP oOS → Attachments** before enabling file uploads for end users.
+- [ ] **Review Send Group Email permissions** in **Settings → WP oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
+- [ ] **Connect QuickBooks Online** under **Settings → WP oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- [ ] **Configure Mailjet credentials** in **Settings → WP oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 
 ## 🧠 Language Model Providers (OpenAI, Gemini & Ollama)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, or a local Ollama instance while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → MCP AI** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, or a local Ollama instance while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
 ### Local AI with Ollama
 
@@ -361,7 +361,7 @@ The Ollama provider enables privacy-focused, cost-free AI processing by connecti
 To configure Ollama:
 1. Install [Ollama](https://ollama.ai) on your server or local machine
 2. Pull a model (e.g., `ollama pull llama2`)
-3. Navigate to **Settings → MCP AI → Ollama Configuration**
+3. Navigate to **Settings → WP oOS → Ollama Configuration**
 4. Enter your Ollama endpoint URL (default: `http://localhost:11434`)
 5. Click "Test Connection" to verify connectivity
 6. Click "Fetch Models" to see available models
@@ -391,7 +391,7 @@ The plugin ships with presets for OpenAI’s current Responses, Reasoning, Audio
 | Text-to-speech | `gpt-4o-mini-tts` | Up to ~4,096 input tokens per request | Generates natural-sounding speech in multiple voices; longer scripts should be chunked into multiple calls. |
 | Speech-to-text | `gpt-4o-mini-transcribe` | Optimised for recordings ≤ 90 minutes | Handles multilingual transcription and translation; large files are automatically chunked client-side before upload. |
 
-OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → MCP AI** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
+OpenAI regularly revises token policies and media limits, so review the [model specification dashboard](https://platform.openai.com/docs/models) before rolling out new assistants or increasing attachment budgets. Updating your defaults in **Settings → WP oOS** keeps every assistant aligned with the latest provider guidance.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L36-L105】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L2298-L2398】
 
 ## 🧱 ChatKit Integration
 
@@ -405,7 +405,7 @@ Consult [`docs/chatkit-integration.md`](docs/chatkit-integration.md) for a full 
 
 Administrators with `manage_options` capabilities can run the **Run Crawl4AI Job** tool without any external service: when no Crawl4AI endpoint is configured the plugin performs the crawl directly on the WordPress server using the built-in HTTP client, extracts headings and text as Markdown, and records the raw HTML and response metadata for the assistant.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L32-L745】 Errors for individual URLs are captured in the response metadata so partial crawls still return useful context. When a remote Crawl4AI endpoint is configured the request now returns immediately with a task token while WP-Cron powered background polling captures the final payload and makes it available to the assistant UI once the crawl finishes.【F:includes/crawler/class-wp-mcp-ai-crawler.php†L1-L214】【F:assets/js/chat.js†L1-L2200】
 
-Configure remote endpoints or API keys under **Settings → MCP AI → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
+Configure remote endpoints or API keys under **Settings → WP oOS → Tools** to tailor how the Crawl4AI integration runs across environments.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】
 
 Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
@@ -414,17 +414,17 @@ Supplying a Crawl4AI base URL (and optional API key) switches the tool back to p
 Sites running Elementor automatically register a suite of MCP blocks so you can assemble onboarding pages, operational dashboards, and standalone chat layouts without writing markup.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】 The integration only boots when Elementor is present, so non-Elementor installs avoid any overhead.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】
 
 ### Chat surfaces and companion blocks
-- **MCP AI Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
-- **MCP AI Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
-- **MCP AI Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
-- **MCP AI Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
+- **WP oOS Chat** – Renders the assistant interface with the same controls exposed by the `[mcp_ai_chat]` shortcode, including the `allow_guests` toggle for minting temporary visitor tokens.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L138】
+- **WP oOS Chat Intro** – Adds a configurable hero block above the conversation with headings, talking points, and an optional call-to-action button to guide visitors before they engage the model.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L190】
+- **WP oOS Chat FAQ** – Surfaces a repeater-driven FAQ list alongside the chat so product teams can document policies and best practices in context.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php†L47-L150】
+- **WP oOS Usage & Timer** – Combines a focus timer with per-user token totals, gracefully handling logged-out visitors, disabled tracking, and empty usage histories.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php†L48-L340】
 
 ### Operations dashboards
-- **MCP AI Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely. The Send Group Email row now mirrors the capability and recipient limit configured in the MCP settings so editorial policies stay front-of-mind.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
-- **MCP AI User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews. It also surfaces the configured Send Group Email capability and limit so administrators immediately know whether the current user can trigger bulk mail jobs.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
-- **MCP AI Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
-- **MCP AI Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
-- **MCP AI Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
+- **WP oOS Tool Matrix** – Pulls the tool registry, groups integrations by focus area, and highlights the required capability for each assistant tool so administrators can plan enablement safely. The Send Group Email row now mirrors the capability and recipient limit configured in the MCP settings so editorial policies stay front-of-mind.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php†L48-L440】
+- **WP oOS User Capability Snapshot** – Summarises the signed-in operator’s profile, common capabilities, JetEngine access, and multisite memberships to support governance reviews. It also surfaces the configured Send Group Email capability and limit so administrators immediately know whether the current user can trigger bulk mail jobs.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php†L48-L392】
+- **WP oOS Theme Preview** – Renders a mock conversation using the saved chat color tokens and optionally displays a legend of every branding token for quick QA during rollouts.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php†L48-L198】
+- **WP oOS Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
+- **WP oOS Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
 ## 🧮 Usage Tracking
 
@@ -507,7 +507,7 @@ Alternatively, use LM Studio's JSON configuration file — see the [LM Studio se
 ⚠️ **Note:** ChatGPT connectors currently require Auth0 authentication. Assistant-issued credentials are not yet supported by OpenAI's ChatGPT platform.
 
 To connect via ChatGPT:
-1. Configure Auth0 in **Settings → MCP AI**
+1. Configure Auth0 in **Settings → WP oOS**
 2. Generate an Auth0 access token with the configured audience
 3. Add the MCP server in ChatGPT's connector settings
 
@@ -664,7 +664,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ### Manual smoke tests
 - Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the MCP AI settings and reference the retrieval commands in [🪵 Logging](#-logging).
+- For logging-centric debugging, enable logging in the WP oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
 
 ---
 
@@ -682,7 +682,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 
 ### Requirements
 - The assistant post must be **published** and, by default, the current user must have the `edit_posts` capability (matching the REST permission check). Add `allow_guests="true"` to the shortcode when you want anonymous visitors to participate in the chat.
-- An OpenAI API key and default model must be configured in **Settings → MCP AI**.
+- An OpenAI API key and default model must be configured in **Settings → WP oOS**.
 
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
@@ -691,7 +691,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ### Elementor widget
-- Elementor sites automatically gain an **MCP AI Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
+- Elementor sites automatically gain an **WP oOS Chat** widget that mirrors the shortcode controls, including the optional assistant selector and the guest access toggle.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L17-L109】
 - Leaving the assistant control blank falls back to the default assistant configured in the plugin settings, and enabling **Allow Guests** injects the same temporary tokens used by the shortcode flow.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L45-L110】【F:includes/class-wp-mcp-ai-shortcode.php†L132-L224】
 - The Elementor chat widget can surface everything saved on the assistant post—model defaults, knowledge files, prompt shortcuts, and assigned tools—so you can build documentation and dashboards without copying values manually.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
 
@@ -741,7 +741,7 @@ REST requests that include attachments automatically gain access to the bundled 
 Assistant memory files configured on the post (`memory_files`) are also promoted to structured `text` segments on the
 system channel, retaining the existing chunking/truncation safeguards.
 
-Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → MCP AI → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
+Need to relax or tighten the allowed file types? Administrators can override the image and file MIME lists directly in **Settings → WP oOS → Attachments**, and the same values are used by shortcode-driven chat surfaces (including the Elementor widget) when building upload restrictions.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L267】【F:includes/class-wp-mcp-ai-message-attachments.php†L456-L565】【F:includes/class-wp-mcp-ai-shortcode.php†L197-L218】 When JSON Lines support is enabled in the allowlist the plugin also registers `.jsonl` and `.ndjson` extensions with WordPress so uploads succeed without additional filters.【F:wp-mcp-ai.php†L236-L272】
 
 Assistants can also query existing knowledge files with the **Search Attachments** tool, which reuses `WP_MCP_AI_Message_Attachments::user_can_access_attachment()` so only publicly accessible or user-owned media is returned alongside download URLs and file metadata for the model to reuse.【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L15-L207】【F:includes/class-wp-mcp-ai-message-attachments.php†L480-L575】
 
@@ -775,7 +775,7 @@ When the plugin interacts with JetEngine objects it defers to the capabilities e
 
 ## 🪵 Logging
 
-- Enable or disable logging from **Settings → MCP AI → Enable Logging**.
+- Enable or disable logging from **Settings → WP oOS → Enable Logging**.
 - When logging is enabled the plugin records:
   - Chat requests and responses processed by the REST API.
   - Tool executions (including permission denials).
@@ -870,11 +870,11 @@ Use the following hooks to extend the plugin:
 
 ## 🧰 WP-CLI Commands
 
-Manage the MCP AI environment from the command line when WP-CLI is available.
+Manage the WP oOS environment from the command line when WP-CLI is available.
 
 | Command | Description |
 | --- | --- |
-| `wp mcp-ai status` | Summarises WordPress core details, PHP version, and MCP AI supported plugin coverage. |
+| `wp mcp-ai status` | Summarises WordPress core details, PHP version, and WP oOS supported plugin coverage. |
 | `wp mcp-ai remote <base>` | Probes a remote MCP REST namespace (such as `https://example.com/wp-json/mcp-ai/v1`) by loading the assistant directory and issuing a lightweight `POST /chat` probe, reporting connectivity, assistant counts, and token scope metadata. |
 | `wp mcp-ai plugins list` | Lists optional dependencies (WooCommerce, JetEngine, etc.) with install and activation state. |
 | `wp mcp-ai plugins activate <slug>` | Activates a supported plugin; pass `--network` on multisite installations. |

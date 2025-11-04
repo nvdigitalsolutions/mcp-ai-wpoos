@@ -207,7 +207,7 @@ class WP_MCP_AI_ChatKit_Integration {
 				'elementor_widget' => array(
 					'type'        => 'elementor_widget',
 					'label'       => __( 'Elementor chat widget', 'wp-mcp-ai' ),
-					'description' => __( 'Drop the MCP AI Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
+					'description' => __( 'Drop the WP oOS Chat widget into Elementor layouts to mirror the shortcode behaviour.', 'wp-mcp-ai' ),
 					'widget'      => 'wp_mcp_ai_chat',
 					'attributes'  => array(
 						'assistant'       => array(

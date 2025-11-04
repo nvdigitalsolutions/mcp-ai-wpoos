@@ -1,23 +1,23 @@
-# MCP AI Plugin Setup Checklist
+# WP oOS Plugin Setup Checklist
 
 Use this checklist to confirm the plugin is configured and ready for production use.
 
 ## Configuration
-- Enter the OpenAI API key under **Settings → MCP AI → OpenAI API Key** so requests authenticate correctly.
-- Provide the Gemini API key in **Settings → MCP AI → Gemini API Key** when you plan to route conversations through Google’s models.
-- Review or change the default model in **Settings → MCP AI → Default Model**. The plugin ships with `gpt-4o-mini` selected.
-- Pick a default Gemini model in **Settings → MCP AI → Default Gemini Model** before activating Gemini-powered assistants.
-- Choose the global default provider in **Settings → MCP AI → Default Provider** so new assistants inherit the preferred vendor.
-- Adjust **Settings → MCP AI → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
-- Lock down the attachment allowlist with **Settings → MCP AI → Attachments** if your compliance rules require stricter MIME types. The default profile accepts Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, XML, PDFs, Microsoft Office documents, AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM audio, and MP4 or QuickTime video, and enabling JSON Lines support automatically registers the `.jsonl`/`.ndjson` extensions with WordPress for uploads.【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L703】【F:wp-mcp-ai.php†L236-L272】
-- Configure the **Settings → MCP AI → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
-- Supply the QuickBooks Online company ID and API key in **Settings → MCP AI → QuickBooks Company ID / API Key** so finance-focused assistants can fetch reports when permitted.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
-- Enter the Mailjet API key, secret, and sender defaults at **Settings → MCP AI → Mailjet API Key / Mailjet API Secret / Mailjet From Email / Mailjet From Name** to enable Mailjet-powered automations.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
-- Set the defaults for generated speech audio under **Settings → MCP AI → OpenAI Speech Model / Default Speech Voice / Default Speech Format** so text-to-speech results match your publishing requirements.
-- Tune the OpenAI image defaults under **Settings → MCP AI → OpenAI Image Model / Size / Quality / Response Format** before exposing image generation to assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
-- Set a fallback assistant in **Settings → MCP AI → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
-- Decide whether to enable request logging at **Settings → MCP AI → Enable Logging** for diagnostics.
-- Choose an uninstall behavior in **Settings → MCP AI → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
+- Enter the OpenAI API key under **Settings → WP oOS → OpenAI API Key** so requests authenticate correctly.
+- Provide the Gemini API key in **Settings → WP oOS → Gemini API Key** when you plan to route conversations through Google’s models.
+- Review or change the default model in **Settings → WP oOS → Default Model**. The plugin ships with `gpt-4o-mini` selected.
+- Pick a default Gemini model in **Settings → WP oOS → Default Gemini Model** before activating Gemini-powered assistants.
+- Choose the global default provider in **Settings → WP oOS → Default Provider** so new assistants inherit the preferred vendor.
+- Adjust **Settings → WP oOS → Request Timeout** (minimum 5 seconds, default 30 seconds) to match your host limits.
+- Lock down the attachment allowlist with **Settings → WP oOS → Attachments** if your compliance rules require stricter MIME types. The default profile accepts Markdown, CSV/TSV, HTML, JSON/JSONL/NDJSON, XML, PDFs, Microsoft Office documents, AAC/FLAC/M4A/MP3/OGG/OPUS/WAV/WEBM audio, and MP4 or QuickTime video, and enabling JSON Lines support automatically registers the `.jsonl`/`.ndjson` extensions with WordPress for uploads.【F:includes/class-wp-mcp-ai-message-attachments.php†L642-L703】【F:wp-mcp-ai.php†L236-L272】
+- Configure the **Settings → WP oOS → Group Email Capability** and **Group Email Recipient Limit** fields to control who can trigger bulk emails and how many recipients each request may include.
+- Supply the QuickBooks Online company ID and API key in **Settings → WP oOS → QuickBooks Company ID / API Key** so finance-focused assistants can fetch reports when permitted.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
+- Enter the Mailjet API key, secret, and sender defaults at **Settings → WP oOS → Mailjet API Key / Mailjet API Secret / Mailjet From Email / Mailjet From Name** to enable Mailjet-powered automations.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
+- Set the defaults for generated speech audio under **Settings → WP oOS → OpenAI Speech Model / Default Speech Voice / Default Speech Format** so text-to-speech results match your publishing requirements.
+- Tune the OpenAI image defaults under **Settings → WP oOS → OpenAI Image Model / Size / Quality / Response Format** before exposing image generation to assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】
+- Set a fallback assistant in **Settings → WP oOS → Default Assistant** for shortcode or REST calls that omit an explicit assistant ID.
+- Decide whether to enable request logging at **Settings → WP oOS → Enable Logging** for diagnostics.
+- Choose an uninstall behavior in **Settings → WP oOS → Remove Data on Uninstall** if you want plugin data purged when the plugin is removed.
 
 ## Authentication & Security
 - For remote MCP assistants, provision Auth0 bearer tokens with the API audience and scopes that match the plugin settings. Same-origin UIs continue using the WordPress REST nonce.

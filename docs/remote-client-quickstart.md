@@ -1,6 +1,6 @@
-# Quick Start: Connect Claude Desktop to WordPress MCP AI
+# Quick Start: Connect Claude Desktop to WordPress WP oOS
 
-Get your WordPress MCP AI server connected to Claude Desktop in 5 minutes.
+Get your WordPress WP oOS server connected to Claude Desktop in 5 minutes.
 
 ## Prerequisites
 
@@ -86,7 +86,7 @@ If connected successfully, Claude will:
 ### "Assistant not responding"
 
 **Fix**: Check your WordPress
-- Visit **Settings → MCP AI** in WordPress
+- Visit **Settings → WP oOS** in WordPress
 - Verify OpenAI API key is configured
 - Ensure the assistant is published (not draft)
 

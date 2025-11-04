@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the comprehensive testing and documentation effort for connecting remote MCP clients (Claude Desktop, LM Studio, ChatGPT) to WordPress MCP AI.
+This document summarizes the comprehensive testing and documentation effort for connecting remote MCP clients (Claude Desktop, LM Studio, ChatGPT) to WordPress WP oOS.
 
 ## Deliverables
 

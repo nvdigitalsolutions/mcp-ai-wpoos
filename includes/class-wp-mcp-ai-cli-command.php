@@ -24,13 +24,13 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 					'name'        => __( 'WooCommerce', 'wp-mcp-ai' ),
 					'slug'        => 'woocommerce',
 					'plugin_file' => 'woocommerce/woocommerce.php',
-					'description' => __( 'Enables WooCommerce aware MCP AI tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Enables WooCommerce aware WP oOS tools.', 'wp-mcp-ai' ),
 				),
 				'jet-engine'  => array(
 					'name'        => __( 'JetEngine', 'wp-mcp-ai' ),
 					'slug'        => 'jet-engine',
 					'plugin_file' => 'jet-engine/jet-engine.php',
-					'description' => __( 'Unlocks JetEngine powered MCP AI tools.', 'wp-mcp-ai' ),
+					'description' => __( 'Unlocks JetEngine powered WP oOS tools.', 'wp-mcp-ai' ),
 				),
 			);
 
@@ -51,7 +51,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		 */
 		class WP_MCP_AI_CLI_Command extends WP_CLI_Command {
 			/**
-			 * Display a summary of the WordPress and MCP AI environment.
+			 * Display a summary of the WordPress and WP oOS environment.
 			 *
 			 * ## OPTIONS
 			 *
@@ -66,7 +66,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 *
 			 * ## EXAMPLES
 			 *
-			 *     # Show the current MCP AI environment status.
+			 *     # Show the current WP oOS environment status.
 			 *     $ wp mcp-ai status
 			 *
 			 * @since 1.0.0
@@ -312,7 +312,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 	if ( ! class_exists( 'WP_MCP_AI_CLI_Plugins_Command' ) ) {
 		/**
-		 * Manage supported MCP AI plugin dependencies.
+		 * Manage supported WP oOS plugin dependencies.
 		 */
 		class WP_MCP_AI_CLI_Plugins_Command extends WP_CLI_Command {
 			/**

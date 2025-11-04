@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP oOS OAuth Introspection
  * Description: Adds OAuth 2.0 bearer token introspection for WP oOS REST authentication.
- * Author: MCP AI
+ * Author: WP oOS
  * Version: 1.0.0
  *
  * @package WP_MCP_AI
