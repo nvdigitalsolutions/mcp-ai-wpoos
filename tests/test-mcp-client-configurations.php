@@ -1,7 +1,7 @@
 <?php
 /**
  * Tests for MCP client configuration scenarios.
- * 
+ *
  * This test suite validates that the MCP server implementation works correctly
  * with different client configurations, including:
  * 1. Proper MCP configuration (base URL with SSE)
@@ -84,7 +84,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test Scenario 1: Proper MCP configuration with base URL
-	 * 
+	 *
 	 * This simulates the correct configuration:
 	 * {
 	 *   "url": "https://site.com/wp-json/mcp-ai/v1",
@@ -110,9 +110,9 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status(), 'Directory endpoint should return 200' );
 
 		$headers = $response->get_headers();
-		$this->assertStringStartsWith( 
-			'text/event-stream', 
-			$headers['Content-Type'] ?? '', 
+		$this->assertStringStartsWith(
+			'text/event-stream',
+			$headers['Content-Type'] ?? '',
 			'Should return SSE content type when Accept header is set'
 		);
 
@@ -123,7 +123,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test Scenario 2: MCP configuration with /sse endpoint (LM Studio)
-	 * 
+	 *
 	 * This simulates LM Studio configuration:
 	 * {
 	 *   "url": "https://site.com/wp-json/mcp-ai/v1",
@@ -148,9 +148,9 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status(), '/sse endpoint should return 200' );
 
 		$headers = $response->get_headers();
-		$this->assertStringStartsWith( 
-			'text/event-stream', 
-			$headers['Content-Type'] ?? '', 
+		$this->assertStringStartsWith(
+			'text/event-stream',
+			$headers['Content-Type'] ?? '',
 			'/sse endpoint should force SSE content type even without Accept header'
 		);
 
@@ -160,12 +160,12 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test Scenario 3: Incorrect configuration pointing to /chat directly
-	 * 
+	 *
 	 * This simulates the INCORRECT configuration:
 	 * {
 	 *   "url": "https://site.com/wp-json/mcp-ai/chat"
 	 * }
-	 * 
+	 *
 	 * This should fail because /chat is POST-only and expects a message payload.
 	 */
 	public function test_incorrect_configuration_with_chat_url() {
@@ -184,18 +184,18 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 		// The /chat endpoint only accepts POST, not GET
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertNotEquals( 200, $response->get_status(), '/chat should not respond to GET requests' );
-		
+
 		// Should return 404 or method not allowed
-		$this->assertContains( 
-			$response->get_status(), 
-			array( 404, 405 ), 
+		$this->assertContains(
+			$response->get_status(),
+			array( 404, 405 ),
 			'/chat endpoint should return 404 or 405 for GET requests'
 		);
 	}
 
 	/**
 	 * Test Scenario 4: Verify directory response includes all necessary URLs
-	 * 
+	 *
 	 * The directory response should include URLs for chat, tools, sse, etc.
 	 * so clients can discover the correct endpoints.
 	 */
@@ -274,13 +274,13 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test Scenario 6: Document the correct vs incorrect configurations
-	 * 
+	 *
 	 * This test documents the difference for future reference.
 	 */
 	public function test_configuration_documentation() {
 		$correct_config = array(
-			'description' => 'Correct MCP configuration for Claude Desktop/LM Studio',
-			'config'      => array(
+			'description'  => 'Correct MCP configuration for Claude Desktop/LM Studio',
+			'config'       => array(
 				'mcpServers' => array(
 					'my-wordpress' => array(
 						'url'     => 'https://bots.nvdigital.solutions/wp-json/mcp-ai/v1',
@@ -312,7 +312,7 @@ class WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-			'why_fails' => array(
+			'why_fails'   => array(
 				'1. /chat is POST-only, not GET',
 				'2. /chat requires message payload',
 				'3. /chat is not the MCP directory endpoint',

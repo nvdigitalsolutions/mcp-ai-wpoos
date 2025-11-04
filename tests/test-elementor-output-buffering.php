@@ -17,7 +17,7 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		parent::tear_down();
-		
+
 		// Clean up any output buffers that might be left open.
 		while ( ob_get_level() > 0 ) {
 			ob_end_clean();
@@ -178,7 +178,7 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 		} catch ( Exception $e ) {
 			$exception_caught = true;
 			$this->assertEquals( 'Critical error during widget loading', $e->getMessage() );
-			
+
 			// Clean up the buffer since exception prevented normal cleanup.
 			if ( ob_get_level() > 0 ) {
 				ob_end_clean();
@@ -197,7 +197,7 @@ class WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
 	 */
 	public function test_trait_file_produces_no_output() {
 		$trait_path = WP_MCP_AI_PATH . 'includes/elementor/trait-wp-mcp-ai-elementor-text-formatting.php';
-		
+
 		$this->assertFileExists( $trait_path );
 
 		// Test that the trait file produces no output when loaded.

@@ -134,7 +134,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			'protocolVersion' => '2024-11-05',
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
-				'resources' => array( 'subscribe' => false, 'listChanged' => true ),
+				'resources' => array(
+					'subscribe'   => false,
+					'listChanged' => true,
+				),
 				'prompts'   => array( 'listChanged' => true ),
 			),
 			'serverInfo'      => array(

@@ -355,7 +355,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
 			add_action( 'admin_enqueue_scripts', array( $this, 'disable_auth_check_in_elementor' ), 20 );
-			
+
 			// Suppress debug output during Elementor AJAX requests.
 			add_action( 'admin_init', array( $this, 'suppress_debug_in_elementor_ajax' ), 1 );
 		}
@@ -371,7 +371,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Use function_exists check for backwards compatibility with WordPress < 4.7.0.
 			$is_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 				|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-			
+
 			if ( ! $is_ajax ) {
 				return;
 			}
@@ -384,7 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
 			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
-			
+
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
 				// Suppress display_errors to prevent debug output from breaking JSON responses.
@@ -393,22 +393,22 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );
 				}
-				
+
 				// Track the current buffer level before starting our buffer.
 				// This allows us to clean only the buffer(s) we create.
 				$this->elementor_buffer_level = ob_get_level();
-				
+
 				// Start output buffering to catch any stray output that could break JSON responses.
 				// This protects against any echoed content, warnings, or notices that occur
 				// during the Elementor save process.
 				ob_start();
-				
+
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
 				// We use priority 0 to run before most other shutdown handlers.
 				add_action( 'shutdown', array( $this, 'clean_elementor_output_buffer' ), 0 );
 			}
 		}
-		
+
 		/**
 		 * Clean the output buffer during Elementor AJAX requests.
 		 *
@@ -421,23 +421,23 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			if ( ! isset( $_REQUEST['action'] ) ) {
 				return;
 			}
-			
+
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
 			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
-			
+
 			// Only clean buffer for Elementor actions to avoid interfering with other code.
 			if ( strpos( $action, 'elementor' ) !== 0 ) {
 				return;
 			}
-			
+
 			// Only clean the buffer if we created one.
 			if ( null === $this->elementor_buffer_level ) {
 				return;
 			}
-			
+
 			// Get the current output buffer level.
 			$current_level = ob_get_level();
-			
+
 			// Clean buffers down to the level we recorded before starting buffering.
 			// This ensures we only clean the buffer(s) we created, not existing ones.
 			// We use > (not >=) because elementor_buffer_level is the level BEFORE we started.
@@ -445,7 +445,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				ob_end_clean();
 				$current_level = ob_get_level();
 			}
-			
+
 			// Reset the tracked level.
 			$this->elementor_buffer_level = null;
 		}
@@ -467,12 +467,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
 			$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
-			
+
 			// Elementor editor uses 'elementor' action parameter.
 			// This is a safe check as Elementor's editor loader validates capabilities and nonces.
 			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
-				
+
 				// Prevent debug output from breaking Elementor's JSON responses.
 				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
 				// Error suppression is intentional: some hosts disable ini_set changes,

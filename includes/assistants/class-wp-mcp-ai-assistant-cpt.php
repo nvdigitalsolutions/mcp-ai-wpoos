@@ -2935,93 +2935,93 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID.
 		 * @param WP_Post $post    Post object.
 		 */
-	protected function sync_to_cct( $post_id, $post ) {
-		// Only sync in Full Version when JetEngine is available.
-		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
-			return;
-		}
-
-		if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
-			return;
-		}
-
-		// Prevent concurrent sync operations using a transient lock.
-		$lock_key = 'wp_mcp_ai_sync_lock_' . $post_id;
-		if ( get_transient( $lock_key ) ) {
-			// Another sync is in progress, skip to prevent locking.
-			return;
-		}
-
-		// Set a short-lived lock (5 seconds should be more than enough).
-		set_transient( $lock_key, true, self::SYNC_LOCK_TIMEOUT );
-
-		try {
-			// Get the CCT item handler.
-			$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
-
-			if ( ! $handler ) {
+		protected function sync_to_cct( $post_id, $post ) {
+			// Only sync in Full Version when JetEngine is available.
+			if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 				return;
 			}
 
-			// Validate handler has required methods.
-			if ( ! method_exists( $handler, 'update_item' ) ) {
+			if ( ! class_exists( 'WP_MCP_AI_JetEngine_Assistants_CCT' ) ) {
 				return;
 			}
 
-			// Get the full assistant configuration.
-			$config = self::get_assistant_configuration( $post_id );
-
-			// Map CPT data to CCT fields.
-			$cct_data = array(
-				'title'         => $post->post_title,
-				'description'   => $post->post_content,
-				'provider'      => isset( $config['provider'] ) ? $config['provider'] : '',
-				'model'         => isset( $config['model'] ) ? $config['model'] : '',
-				'system_prompt' => isset( $config['system_prompt'] ) ? $config['system_prompt'] : '',
-				'temperature'   => isset( $config['temperature'] ) ? $config['temperature'] : null,
-				'tools'         => isset( $config['tools'] ) && is_array( $config['tools'] ) ? wp_json_encode( $config['tools'] ) : '[]',
-			);
-
-			// Remove null temperature to avoid type issues.
-			if ( null === $cct_data['temperature'] ) {
-				unset( $cct_data['temperature'] );
+			// Prevent concurrent sync operations using a transient lock.
+			$lock_key = 'wp_mcp_ai_sync_lock_' . $post_id;
+			if ( get_transient( $lock_key ) ) {
+				// Another sync is in progress, skip to prevent locking.
+				return;
 			}
 
-			// Check if a CCT item already exists for this CPT post ID.
-			// We use a meta field or custom strategy to link CPT ID to CCT item ID.
-			$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', true );
+			// Set a short-lived lock (5 seconds should be more than enough).
+			set_transient( $lock_key, true, self::SYNC_LOCK_TIMEOUT );
 
-			if ( $cct_item_id ) {
-				// Update existing CCT item.
-				$cct_data['_ID'] = absint( $cct_item_id );
-				$result          = $handler->update_item( $cct_data );
+			try {
+				// Get the CCT item handler.
+				$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
 
-				if ( ! $result ) {
-					// If update failed, the item might have been deleted. Clear the link and create new.
-					delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
-					$cct_item_id = 0;
+				if ( ! $handler ) {
+					return;
 				}
-			}
 
-			if ( ! $cct_item_id ) {
-				// Create new CCT item.
-				$new_item_id = $handler->update_item( $cct_data );
-
-				if ( $new_item_id ) {
-					// Store the link between CPT post ID and CCT item ID.
-					update_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', $new_item_id );
+				// Validate handler has required methods.
+				if ( ! method_exists( $handler, 'update_item' ) ) {
+					return;
 				}
+
+				// Get the full assistant configuration.
+				$config = self::get_assistant_configuration( $post_id );
+
+				// Map CPT data to CCT fields.
+				$cct_data = array(
+					'title'         => $post->post_title,
+					'description'   => $post->post_content,
+					'provider'      => isset( $config['provider'] ) ? $config['provider'] : '',
+					'model'         => isset( $config['model'] ) ? $config['model'] : '',
+					'system_prompt' => isset( $config['system_prompt'] ) ? $config['system_prompt'] : '',
+					'temperature'   => isset( $config['temperature'] ) ? $config['temperature'] : null,
+					'tools'         => isset( $config['tools'] ) && is_array( $config['tools'] ) ? wp_json_encode( $config['tools'] ) : '[]',
+				);
+
+				// Remove null temperature to avoid type issues.
+				if ( null === $cct_data['temperature'] ) {
+					unset( $cct_data['temperature'] );
+				}
+
+				// Check if a CCT item already exists for this CPT post ID.
+				// We use a meta field or custom strategy to link CPT ID to CCT item ID.
+				$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', true );
+
+				if ( $cct_item_id ) {
+					// Update existing CCT item.
+					$cct_data['_ID'] = absint( $cct_item_id );
+					$result          = $handler->update_item( $cct_data );
+
+					if ( ! $result ) {
+						// If update failed, the item might have been deleted. Clear the link and create new.
+						delete_post_meta( $post_id, '_wp_mcp_ai_cct_item_id' );
+						$cct_item_id = 0;
+					}
+				}
+
+				if ( ! $cct_item_id ) {
+					// Create new CCT item.
+					$new_item_id = $handler->update_item( $cct_data );
+
+					if ( $new_item_id ) {
+						// Store the link between CPT post ID and CCT item ID.
+						update_post_meta( $post_id, '_wp_mcp_ai_cct_item_id', $new_item_id );
+					}
+				}
+			} catch ( Exception $e ) {
+				// Log error but don't block the save process.
+				if ( function_exists( 'error_log' ) ) {
+					error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
+				}
+			} finally {
+				// Always release the lock.
+				delete_transient( $lock_key );
 			}
-		} catch ( Exception $e ) {
-			// Log error but don't block the save process.
-			if ( function_exists( 'error_log' ) ) {
-				error_log( 'WP MCP AI: CCT sync failed for post ' . $post_id . ': ' . $e->getMessage() );
-			}
-		} finally {
-			// Always release the lock.
-			delete_transient( $lock_key );
 		}
-	}
 
 		/**
 		 * Retrieve the configuration for a specific assistant.

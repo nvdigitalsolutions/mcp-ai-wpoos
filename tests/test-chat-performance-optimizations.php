@@ -40,11 +40,11 @@ class WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
 		);
 
 		// Initialize REST API.
-		$registry     = new WP_MCP_AI_Tool_Registry();
-		$openai       = new WP_MCP_AI_OpenAI_Client();
-		$gemini       = new WP_MCP_AI_Gemini_Client();
-		$router       = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );
-		$this->rest   = new WP_MCP_AI_REST( $registry, $router );
+		$registry   = new WP_MCP_AI_Tool_Registry();
+		$openai     = new WP_MCP_AI_OpenAI_Client();
+		$gemini     = new WP_MCP_AI_Gemini_Client();
+		$router     = new WP_MCP_AI_Language_Model_Router( $openai, $gemini );
+		$this->rest = new WP_MCP_AI_REST( $registry, $router );
 
 		// Set up admin user.
 		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );

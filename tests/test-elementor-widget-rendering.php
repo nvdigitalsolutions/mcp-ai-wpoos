@@ -24,7 +24,7 @@ class WP_MCP_AI_Elementor_Widget_Rendering_Test extends WP_UnitTestCase {
 	 */
 	public function set_up() {
 		parent::set_up();
-		
+
 		// Create a test assistant.
 		$this->assistant_id = $this->factory->post->create(
 			array(
@@ -43,7 +43,7 @@ class WP_MCP_AI_Elementor_Widget_Rendering_Test extends WP_UnitTestCase {
 		if ( $this->assistant_id ) {
 			wp_delete_post( $this->assistant_id, true );
 		}
-		
+
 		parent::tear_down();
 	}
 
@@ -67,7 +67,7 @@ class WP_MCP_AI_Elementor_Widget_Rendering_Test extends WP_UnitTestCase {
 
 		// Simulate Elementor editor mode.
 		$_GET['action'] = 'elementor';
-		
+
 		// Create a mock Elementor instance to satisfy is_elementor_editor check.
 		if ( ! class_exists( 'Elementor\Plugin' ) ) {
 			// Skip if Elementor is not available.
@@ -119,7 +119,7 @@ class WP_MCP_AI_Elementor_Widget_Rendering_Test extends WP_UnitTestCase {
 
 		// Make sure we're NOT in Elementor editor mode.
 		unset( $_GET['action'] );
-		
+
 		// Render the shortcode.
 		$output = do_shortcode( '[mcp_ai_chat assistant="' . $this->assistant_id . '"]' );
 
