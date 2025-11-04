@@ -21,10 +21,11 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	public static function bootstrap() {
 		// Run after JetEngine initialises the Custom Content Types module but before
 		// the manager registers existing instances (priority 10).
-		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
+		// Using priority 5 to ensure translations are loaded (WordPress 6.7.0+ requirement).
+		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 5 );
 
 		// Ensure data stores module is enabled when JetEngine is active.
-		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 5 );
 
 		// Pre-populate default model data if CCT is empty.
 		add_action( 'init', array( __CLASS__, 'maybe_populate_default_models' ), 20 );
@@ -77,10 +78,16 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			return null;
 		}
 
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return null;
+		}
+
 		$model = sanitize_text_field( $model );
 
 		// Query for exact match first.
-		$items = $handler->query_items(
+		$items = $factory->db->query(
 			array(
 				'model_name' => $model,
 			)
@@ -91,7 +98,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 		}
 
 		// Try prefix match for model families (e.g., gpt-4o-mini matches gpt-4o).
-		$all_items = $handler->query_items( array() );
+		$all_items = $factory->db->query( array() );
 
 		if ( empty( $all_items ) || ! is_array( $all_items ) ) {
 			return null;
@@ -559,8 +566,14 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			return;
 		}
 
+		$factory = $handler->get_factory();
+
+		if ( ! $factory || empty( $factory->db ) ) {
+			return;
+		}
+
 		// Check if data already exists.
-		$existing = $handler->query_items( array() );
+		$existing = $factory->db->query( array() );
 
 		if ( ! empty( $existing ) && is_array( $existing ) && count( $existing ) > 0 ) {
 			return;
