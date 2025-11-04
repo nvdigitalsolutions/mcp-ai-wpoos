@@ -29,7 +29,7 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 		// Use filter to simulate constant being set to true.
 		add_filter(
 			'wp_mcp_ai_base_version',
-			function ( $is_base ) {
+			function () {
 				// Simulate: defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION === true.
 				return true;
 			},
@@ -48,7 +48,7 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 		// Use filter to simulate constant being set to false.
 		add_filter(
 			'wp_mcp_ai_base_version',
-			function ( $is_base ) {
+			function () {
 				// Simulate: defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION === false.
 				return false;
 			},
