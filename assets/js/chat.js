@@ -341,15 +341,22 @@
             body: JSON.stringify(payload),
         })
             .then(function (response) {
-                if (!response.ok) {
-                    throw response;
-                }
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (body) {
+                        if (!response.ok) {
+                            throw response;
+                        }
+                        if (!body || typeof body !== 'object') {
+                            return Promise.reject(new Error('Invalid response.'));
+                        }
+                        return body;
+                    });
             })
             .then(function (body) {
-                if (!body || typeof body !== 'object') {
-                    return Promise.reject(new Error('Invalid response.'));
-                }
 
                 const result = Object.prototype.hasOwnProperty.call(body, 'result') ? body.result : body;
                 if (!result || typeof result !== 'object' || !result.url) {
@@ -1054,13 +1061,19 @@
             credentials: 'same-origin',
         })
             .then(function (response) {
-                if (!response.ok) {
-                    const error = new Error('Upload failed');
-                    error.response = response;
-                    throw error;
-                }
-
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (data) {
+                        if (!response.ok) {
+                            const error = new Error('Upload failed');
+                            error.response = response;
+                            throw error;
+                        }
+                        return data;
+                    });
             })
             .then(function (data) {
                 return normaliseUploadResponse(data, file);
@@ -1090,11 +1103,17 @@
             credentials: 'same-origin',
             body: JSON.stringify(payload),
         }).then(function (response) {
-            if (!response.ok) {
-                throw response;
-            }
-
-            return response.json();
+            return response
+                .json()
+                .catch(function () {
+                    return null;
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        throw response;
+                    }
+                    return data;
+                });
         });
     }
 
@@ -1888,17 +1907,24 @@
             credentials: 'same-origin',
         })
             .then(function (response) {
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        throw new Error('unauthorized');
-                    } else if (response.status === 404) {
-                        throw new Error('not_found');
-                    } else if (response.status >= 500) {
-                        throw new Error('server_error');
-                    }
-                    throw new Error('delete_failed');
-                }
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (data) {
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                throw new Error('unauthorized');
+                            } else if (response.status === 404) {
+                                throw new Error('not_found');
+                            } else if (response.status >= 500) {
+                                throw new Error('server_error');
+                            }
+                            throw new Error('delete_failed');
+                        }
+                        return data;
+                    });
             })
             .then(function () {
                 if (item && item.parentNode) {
@@ -2501,13 +2527,19 @@
             credentials: 'same-origin',
         })
             .then(function (response) {
-                if (!response.ok) {
-                    const error = new Error('Upload failed');
-                    error.response = response;
-                    throw error;
-                }
-
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (data) {
+                        if (!response.ok) {
+                            const error = new Error('Upload failed');
+                            error.response = response;
+                            throw error;
+                        }
+                        return data;
+                    });
             })
             .then(function (data) {
                 const record = normaliseUploadResponse(data, file);
@@ -3973,13 +4005,19 @@
                 return null;
             }
 
-            if (!response.ok) {
-                const error = new Error('HTTP ' + response.status);
-                error.status = response.status;
-                throw error;
-            }
-
-            return response.json();
+            return response
+                .json()
+                .catch(function () {
+                    return null;
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        const error = new Error('HTTP ' + response.status);
+                        error.status = response.status;
+                        throw error;
+                    }
+                    return data;
+                });
         });
     }
 
@@ -4558,10 +4596,17 @@
             body: JSON.stringify(payload),
         })
             .then(function (response) {
-                if (!response.ok) {
-                    throw response;
-                }
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (data) {
+                        if (!response.ok) {
+                            throw response;
+                        }
+                        return data;
+                    });
             })
             .then(function (data) {
                 return handleChatResponse(state, data);
@@ -4864,10 +4909,17 @@
             body: JSON.stringify(payload),
         })
             .then(function (response) {
-                if (!response.ok) {
-                    throw response;
-                }
-                return response.json();
+                return response
+                    .json()
+                    .catch(function () {
+                        return null;
+                    })
+                    .then(function (data) {
+                        if (!response.ok) {
+                            throw response;
+                        }
+                        return data;
+                    });
             })
             .then(function (response) {
                 const result = response && Object.prototype.hasOwnProperty.call(response, 'result') ? response.result : null;
