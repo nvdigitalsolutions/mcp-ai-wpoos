@@ -2824,8 +2824,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 				update_post_meta( $post_id, self::META_TOOLS, $tool_slugs );
 
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_id_meta().
 				$external_action_id = isset( $_POST['wp_mcp_ai_external_action_identifier'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_id_meta().
 				? self::sanitize_external_action_id_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_identifier'] ) )
 				: '';
 
@@ -2835,8 +2835,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					update_post_meta( $post_id, self::META_EXTERNAL_ACTION_ID, $external_action_id );
 				}
 
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_type_meta().
 				$external_action_type = isset( $_POST['wp_mcp_ai_external_action_type'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_type_meta().
 				? self::sanitize_external_action_type_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_type'] ) )
 				: '';
 
@@ -2859,8 +2859,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					update_post_meta( $post_id, self::META_TOOL_ROLE_RULES, $tool_role_rules );
 				}
 
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_disable_tool_shortcuts_meta().
 				$disable_tool_shortcuts = isset( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_disable_tool_shortcuts_meta().
 				? self::sanitize_disable_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] ) )
 				: false;
 
@@ -2902,8 +2902,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_provider_meta().
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_provider_meta().
 				? self::sanitize_provider_meta( wp_unslash( $_POST['wp_mcp_ai_provider'] ) )
 				: '';
 
@@ -2914,7 +2914,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_model_meta().
-			$model = isset( $_POST['wp_mcp_ai_model'] ) ? self::sanitize_model_meta( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : '';
+				$model = isset( $_POST['wp_mcp_ai_model'] ) ? self::sanitize_model_meta( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : '';
 				update_post_meta( $post_id, self::META_MODEL, $model );
 
 				$temperature = null;
@@ -2930,7 +2930,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_system_prompt_meta().
-			$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
+				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
 			}
 
@@ -2945,7 +2945,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				update_post_meta( $post_id, self::META_MEMORY_FILES, $memory_files );
 
 				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_vector_store_meta().
-			$vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? self::sanitize_vector_store_meta( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : '';
+				$vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? self::sanitize_vector_store_meta( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : '';
 				update_post_meta( $post_id, self::META_VECTOR_STORE_ID, $vector_store_id );
 			}
 
