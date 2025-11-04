@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin settings for WP MCP AI.
+ * Admin settings for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -1195,8 +1195,8 @@ class WP_MCP_AI_Admin_Settings {
 	 */
 	public function register_settings_page() {
 		add_options_page(
-			__( 'WP MCP AI', 'wp-mcp-ai' ),
-			__( 'WP MCP AI', 'wp-mcp-ai' ),
+			__( 'WP oOS', 'wp-mcp-ai' ),
+			__( 'WP oOS', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_settings_page' )
@@ -2221,7 +2221,7 @@ class WP_MCP_AI_Admin_Settings {
 		$connector_statuses = $this->get_connector_statuses( $settings );
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP MCP AI Settings', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
@@ -3495,7 +3495,7 @@ class WP_MCP_AI_Admin_Settings {
 	public function render_mailjet_from_name_field() {
 		$settings = self::get_settings();
 		?>
-		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP MCP AI" />
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="WP oOS" />
 		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
 		<?php
 	}

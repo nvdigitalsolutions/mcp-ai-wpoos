@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: WP MCP AI OAuth Introspection
- * Description: Adds OAuth 2.0 bearer token introspection for WP MCP AI REST authentication.
+ * Plugin Name: WP oOS OAuth Introspection
+ * Description: Adds OAuth 2.0 bearer token introspection for WP oOS REST authentication.
  * Author: MCP AI
  * Version: 1.0.0
  *
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
 
 	/**
-	 * OAuth 2.0 token introspection bridge for WP MCP AI.
+	 * OAuth 2.0 token introspection bridge for WP oOS.
 	 */
 	final class WP_MCP_AI_OAuth_Introspection {
 
@@ -245,7 +245,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
 
 			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 				$subject = isset( $introspection['sub'] ) ? sanitize_text_field( (string) $introspection['sub'] ) : 'unknown';
-				error_log( sprintf( 'WP MCP AI OAuth: validated token for subject "%s"', $subject ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf( 'WP oOS OAuth: validated token for subject "%s"', $subject ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 
 			return true;
@@ -368,7 +368,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Introspection' ) ) {
 
 			if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
 				$subject = isset( $payload['sub'] ) ? sanitize_text_field( (string) $payload['sub'] ) : 'unknown';
-				error_log( sprintf( 'WP MCP AI OAuth: mapped subject "%s" to user #%d', $subject, absint( $user_id ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf( 'WP oOS OAuth: mapped subject "%s" to user #%d', $subject, absint( $user_id ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 		}
 

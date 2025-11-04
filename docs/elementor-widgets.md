@@ -1,6 +1,6 @@
 # Elementor widget catalogue
 
-WP MCP AI bundles a set of Elementor widgets that cover the end-to-end assistant experience: onboarding copy, the chat interface, and operations dashboards. The plugin registers every widget automatically whenever Elementor is loaded so you can drop them into any Elementor layout without extra bootstrap code.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】
+WP oOS bundles a set of Elementor widgets that cover the end-to-end assistant experience: onboarding copy, the chat interface, and operations dashboards. The plugin registers every widget automatically whenever Elementor is loaded so you can drop them into any Elementor layout without extra bootstrap code.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】
 
 ## Activation requirements
 

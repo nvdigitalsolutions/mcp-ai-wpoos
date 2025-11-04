@@ -207,7 +207,7 @@ class WP_MCP_AI_LM_Studio_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -222,7 +222,7 @@ class WP_MCP_AI_LM_Studio_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

@@ -365,7 +365,7 @@ function wp_mcp_ai_iterate_network_sites( $callback, $action = 'operation' ) {
 			call_user_func( $callback );
 		} catch ( Exception $e ) {
 			// Log the error and continue with remaining sites.
-			error_log( sprintf( 'WP MCP AI %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
+			error_log( sprintf( 'WP oOS %s failed for site %d: %s', $action, $site->blog_id, $e->getMessage() ) );
 		}
 		restore_current_blog();
 	}
@@ -389,7 +389,7 @@ function wp_mcp_ai_new_site_activation( $blog ) {
 		$blog_id = (int) $blog;
 	} else {
 		// Invalid parameter, log error and return.
-		error_log( 'WP MCP AI: Invalid blog parameter passed to new_site_activation' );
+		error_log( 'WP oOS: Invalid blog parameter passed to new_site_activation' );
 		return;
 	}
 
@@ -398,7 +398,7 @@ function wp_mcp_ai_new_site_activation( $blog ) {
 		wp_mcp_ai_activate_single_site();
 	} catch ( Exception $e ) {
 		// Log the error but don't break the site creation process.
-		error_log( sprintf( 'WP MCP AI activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
+		error_log( sprintf( 'WP oOS activation failed for site %d: %s', $blog_id, $e->getMessage() ) );
 	}
 	restore_current_blog();
 }
@@ -498,7 +498,7 @@ function wp_mcp_ai_uninstall_single_site() {
 	}
 
 	/**
-	 * Fires before WP MCP AI performs its uninstall cleanup routines.
+	 * Fires before WP oOS performs its uninstall cleanup routines.
 	 */
 	do_action( 'wp_mcp_ai_before_uninstall_cleanup' );
 
@@ -522,7 +522,7 @@ function wp_mcp_ai_uninstall_single_site() {
 	delete_option( WP_MCP_AI_Cron_Manager::OPTION_NAME );
 
 	/**
-	 * Fires after WP MCP AI completes its uninstall cleanup routines.
+	 * Fires after WP oOS completes its uninstall cleanup routines.
 	 *
 	 * @param array $summary Summary of cleanup actions performed.
 	 */

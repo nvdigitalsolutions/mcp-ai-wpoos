@@ -196,7 +196,7 @@ class WP_MCP_AI_Remote_Tester {
 			'messages'     => array(
 				array(
 					'role'    => 'user',
-					'content' => __( 'Connectivity probe from WP MCP AI Remote Tester.', 'wp-mcp-ai' ),
+					'content' => __( 'Connectivity probe from WP oOS Remote Tester.', 'wp-mcp-ai' ),
 				),
 			),
 			'options'      => array(

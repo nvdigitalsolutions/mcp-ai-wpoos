@@ -11,7 +11,7 @@ We release patches for security vulnerabilities for the following versions:
 
 ## Reporting a Vulnerability
 
-We take the security of WP MCP AI seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+We take the security of WP oOS seriously. If you believe you have found a security vulnerability, please report it to us as described below.
 
 ### Please Do Not
 
@@ -196,7 +196,7 @@ Choose the authentication method appropriate for your security requirements.
 - [WordPress Security Handbook](https://developer.wordpress.org/apis/security/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OpenAI Security Best Practices](https://platform.openai.com/docs/guides/safety-best-practices)
-- [WP MCP AI Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai)
+- [WP oOS Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai)
 
 ## Contact
 

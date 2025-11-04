@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * Simple environment health check for WP MCP AI plugin.
+ * Simple environment health check for WP oOS plugin.
  *
  * @package WP_MCP_AI
  */

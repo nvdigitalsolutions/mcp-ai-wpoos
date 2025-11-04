@@ -56,7 +56,7 @@ if ( ! defined( 'WP_TESTS_EMAIL' ) ) {
 }
 
 if ( ! defined( 'WP_TESTS_TITLE' ) ) {
-	define( 'WP_TESTS_TITLE', 'WP MCP AI Test Suite' );
+	define( 'WP_TESTS_TITLE', 'WP oOS Test Suite' );
 }
 
 if ( ! defined( 'WP_PHP_BINARY' ) ) {

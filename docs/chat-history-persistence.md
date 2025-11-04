@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP MCP AI chat interface now automatically persists chat conversations to the browser's localStorage, preventing data loss when users navigate away from the page or refresh it. This feature works seamlessly with the existing JetEngine storage backend.
+The WP oOS chat interface now automatically persists chat conversations to the browser's localStorage, preventing data loss when users navigate away from the page or refresh it. This feature works seamlessly with the existing JetEngine storage backend.
 
 ## How It Works
 
@@ -118,7 +118,7 @@ Users or developers can clear conversation data:
 // Clear specific assistant's conversation
 localStorage.removeItem('wp_mcp_ai_chat_123');
 
-// Clear all WP MCP AI conversations
+// Clear all WP oOS conversations
 Object.keys(localStorage).forEach(key => {
     if (key.startsWith('wp_mcp_ai_chat_')) {
         localStorage.removeItem(key);

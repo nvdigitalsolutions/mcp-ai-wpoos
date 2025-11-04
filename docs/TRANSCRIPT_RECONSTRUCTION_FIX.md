@@ -95,7 +95,7 @@ The fix includes extensive debug logging using `WP_MCP_AI_Logger::log_event()` t
 4. **append_new_messages**: Logs deduplication decisions and final message counts
 
 To view these logs:
-1. Enable logging in WP MCP AI settings
+1. Enable logging in WP oOS settings
 2. Set log level to "debug"
 3. Review logs after fetching chat transcripts
 
@@ -185,7 +185,7 @@ To verify the fix works:
    - Ensure message ordering matches the conversation flow
 
 5. **Debug Logging** (if issues persist):
-   - Enable debug logging in WP MCP AI settings
+   - Enable debug logging in WP oOS settings
    - Review logs for the extraction process
    - Look for "extract_request_messages" and "extract_response_messages" events
    - Check message counts and any skipped messages

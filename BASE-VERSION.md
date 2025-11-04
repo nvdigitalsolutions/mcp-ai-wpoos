@@ -1,8 +1,8 @@
-# WP MCP AI - Base Version
+# WP oOS - Base Version
 
 ## Overview
 
-The WP MCP AI plugin supports a "base version" mode that includes only tools and features compatible with a standard WordPress installation. This mode excludes all tools that require third-party plugins or external API credentials.
+The WP oOS plugin supports a "base version" mode that includes only tools and features compatible with a standard WordPress installation. This mode excludes all tools that require third-party plugins or external API credentials.
 
 ## Enabling Base Version Mode
 

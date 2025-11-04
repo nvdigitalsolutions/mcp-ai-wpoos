@@ -1,22 +1,22 @@
 # ChatKit Integration
 
 ## Overview
-WP MCP AI exposes a ChatKit integration so ChatKit operators can trigger the same assistant conversations, tool runs, and attachment downloads that are available through the shortcode or REST API. The integration ships directly with the core plugin, bootstraps automatically, registers itself through every ChatKit add-on hook variant, and keeps the bootstrap idempotent so repeated checks do not duplicate registrations.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L235】
+WP oOS exposes a ChatKit integration so ChatKit operators can trigger the same assistant conversations, tool runs, and attachment downloads that are available through the shortcode or REST API. The integration ships directly with the core plugin, bootstraps automatically, registers itself through every ChatKit add-on hook variant, and keeps the bootstrap idempotent so repeated checks do not duplicate registrations.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L30-L235】
 
 When ChatKit is present the integration definition advertises the `mcp-ai/v1` REST namespace, chat/tool/attachment routes, attachment and guest token support, and the add-on icon/version metadata that ChatKit surfaces in its dashboard.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L156-L185】
 
 ## Requirements
-- **WP MCP AI** 1.0.0 or later.
+- **WP oOS** 1.0.0 or later.
 - The standalone [ChatKit](https://github.com/nvdigitalsolutions/chatkit) plugin installed and activated on the same WordPress site.
 - WordPress users must satisfy the capability returned by `wp_mcp_ai_chat_capability` for the `chatkit` context (defaults to `edit_posts`).【F:includes/class-wp-mcp-ai-chatkit-integration.php†L156-L226】【F:wp-mcp-ai.php†L25-L63】 Override the capability via the `wp_mcp_ai_chat_capability` filter if ChatKit access should be available to broader roles or public visitors.
 
 ## Enabling the integration
-1. Activate WP MCP AI and ChatKit.
-2. Visit **ChatKit → Add-ons** and confirm that **WP MCP AI** appears in the catalog. The integration self-registers once ChatKit fires `plugins_loaded`. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the registration for bespoke bootstrap flows or automated tests.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L32-L109】
+1. Activate WP oOS and ChatKit.
+2. Visit **ChatKit → Add-ons** and confirm that **WP oOS** appears in the catalog. The integration self-registers once ChatKit fires `plugins_loaded`. Return `false` from the `wp_mcp_ai_chatkit_is_available` filter if you need to disable the registration for bespoke bootstrap flows or automated tests.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L32-L109】
 3. Enable the add-on inside ChatKit if the UI requires confirmation.
 
 ## Configuring the connection
-Opening the **WP MCP AI** integration in ChatKit reveals three fields sourced from the definition exported by the plugin.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L186-L220】 Use them as follows:
+Opening the **WP oOS** integration in ChatKit reveals three fields sourced from the definition exported by the plugin.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L186-L220】 Use them as follows:
 
 - **Assistant ID** (required): supply the numeric post ID of the `ai_assistant` entry that should handle ChatKit conversations.
 - **System Prompt Override** (optional): provide an alternate system message for ChatKit-initiated sessions when you need different guardrails from the default assistant prompt.
@@ -42,13 +42,13 @@ Paste JSON similar to the snippet below into ChatKit’s shortcut field to prelo
 The payload string is passed directly to the MCP AI tool registry, so it should contain whatever JSON the target tool expects.
 
 ## Front-end chat surfaces
-The integration definition also advertises the two front-end chat surfaces bundled with WP MCP AI so ChatKit operators can reuse the existing UI without hunting for documentation.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L170-L219】
+The integration definition also advertises the two front-end chat surfaces bundled with WP oOS so ChatKit operators can reuse the existing UI without hunting for documentation.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L170-L219】
 
 - **Shortcode** – Use `[wp_mcp_ai_chat assistant="123" allow_guests="false" save_transcript="true"]` to embed the chat UI anywhere shortcodes run. The attributes mirror the shortcode implementation and expose assistant selection, guest access toggles, and transcript storage flags.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L178-L198】【F:includes/class-wp-mcp-ai-shortcode.php†L180-L331】
 - **Elementor widget** – Drop the **MCP AI Chat** widget (`wp_mcp_ai_chat`) into Elementor layouts. The integration documents the assistant picker, guest toggle, and transcript storage controls so ChatKit surfaces the same configuration affordances that exist in Elementor today.【F:includes/class-wp-mcp-ai-chatkit-integration.php†L199-L219】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L33-L112】
 
 ## REST endpoints exposed to ChatKit
-ChatKit calls WP MCP AI through the `mcp-ai/v1` namespace using the following routes declared in the integration definition：【F:includes/class-wp-mcp-ai-chatkit-integration.php†L166-L180】
+ChatKit calls WP oOS through the `mcp-ai/v1` namespace using the following routes declared in the integration definition：【F:includes/class-wp-mcp-ai-chatkit-integration.php†L166-L180】
 
 | Route | Method | Purpose |
 | --- | --- | --- |

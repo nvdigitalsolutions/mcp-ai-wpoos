@@ -1,6 +1,6 @@
 # Rate-Limit Protection
 
-WP MCP AI includes comprehensive rate-limit protection features to ensure reliable API usage and prevent service disruptions.
+WP oOS includes comprehensive rate-limit protection features to ensure reliable API usage and prevent service disruptions.
 
 ## Features
 
