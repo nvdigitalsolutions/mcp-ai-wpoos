@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$defaults_json = '[]';
 				}
 
-				echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . $open_attr . '>';
+				echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
 				echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
 				echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
 				echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
@@ -1071,7 +1071,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
 					echo '<td>' . esc_html( $created_at ) . '</td>';
 					echo '<td>' . esc_html( $status ) . '</td>';
-					echo '<td>' . $actions . '</td>';
+					echo '<td>' . wp_kses_post( $actions ) . '</td>';
 					echo '</tr>';
 				}
 
@@ -1752,11 +1752,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$list_id      = 'wp-mcp-ai-tools-list-' . $group_suffix;
 				$open_attr    = 0 === $group_index ? ' open' : '';
 
-				echo '<details class="wp-mcp-ai-tools__group" role="group" aria-labelledby="' . esc_attr( $summary_id ) . '"' . $open_attr . '>';
+				echo '<details class="wp-mcp-ai-tools__group" role="group" aria-labelledby="' . esc_attr( $summary_id ) . '"' . esc_attr( $open_attr ) . '>';
 				echo '<summary id="' . esc_attr( $summary_id ) . '" class="wp-mcp-ai-tools__summary">';
 				echo '<span class="wp-mcp-ai-tools__summary-title">' . esc_html( $group_label ) . '</span>';
 				echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">' . esc_html( number_format_i18n( $group_count ) ) . '</span>';
-	/* translators: %d: number of tools in the group */
+				/* translators: %d: number of tools */
 				echo '<span class="screen-reader-text">' . esc_html( sprintf( _n( '%d tool in this group', '%d tools in this group', $group_count, 'wp-mcp-ai' ), $group_count ) ) . '</span>';
 				echo '</summary>';
 				echo '<ul class="wp-mcp-ai-tools__list" id="' . esc_attr( $list_id ) . '" role="group" aria-label="' . esc_attr( $group_label ) . '">';
@@ -1795,9 +1795,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '</label>';
 					echo '</div>';
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe attribute string.
 					echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][tool]" value="' . esc_attr( $slug ) . '" data-tool-control="1"' . $control_disabled . ' />';
 
 					foreach ( $persisted_groups as $group_value ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe attribute string.
 						echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][groups][]" value="' . esc_attr( (string) absint( $group_value ) ) . '" data-tool-control="1"' . $control_disabled . ' />';
 					}
 
@@ -1808,6 +1810,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							continue;
 						}
 
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe attribute string.
 						echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][flags][]" value="' . esc_attr( $flag_value ) . '" data-tool-control="1"' . $control_disabled . ' />';
 					}
 
@@ -1815,6 +1818,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					if ( ! empty( $role_options ) ) {
 						echo '<label for="' . esc_attr( $role_select_id ) . '">' . esc_html__( 'Limit to selected roles', 'wp-mcp-ai' ) . '</label>';
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe attribute string.
 						echo '<select id="' . esc_attr( $role_select_id ) . '" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][roles][]" class="wp-mcp-ai-tools__role-select" multiple size="' . esc_attr( $select_size ) . '" data-tool-control="1"' . $control_disabled . ' aria-describedby="' . esc_attr( $role_helper_id ) . '" aria-disabled="' . esc_attr( $aria_disabled ) . '">';
 
 						foreach ( $role_options as $role_slug => $role_label ) {
@@ -1847,14 +1851,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								name="wp_mcp_ai_external_action_identifier"
 								value="<?php echo esc_attr( $external_action_id ); ?>"
 								class="widefat"
-								data-tool-control="1"<?php echo $control_disabled; ?>
+								data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 							/>
 						</p>
 						<p>
 							<label for="<?php echo esc_attr( $type_field_id ); ?>">
 								<strong><?php esc_html_e( 'Default action type', 'wp-mcp-ai' ); ?></strong>
 							</label>
-							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; ?>>
+							<select id="<?php echo esc_attr( $type_field_id ); ?>" name="wp_mcp_ai_external_action_type" class="widefat" data-tool-control="1"<?php echo $control_disabled; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 								<option value="">
 									<?php esc_html_e( 'Use runtime choice', 'wp-mcp-ai' ); ?>
 								</option>
@@ -1967,7 +1971,10 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						</summary>
 						<fieldset class="wp-mcp-ai-tool-shortcuts__row" data-index="<?php echo esc_attr( $index ); ?>">
 							<legend class="screen-reader-text">
-								<?php /* translators: %d: shortcut number */ printf( esc_html__( 'Shortcut %d', 'wp-mcp-ai' ), intval( $index ) + 1 ); ?>
+								<?php
+								/* translators: %d: shortcut number */
+								printf( esc_html__( 'Shortcut %d', 'wp-mcp-ai' ), intval( $index ) + 1 );
+								?>
 							</legend>
 							<p>
 								<label>
@@ -2403,8 +2410,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$title   = $entry['title'];
 				?>
 				<li data-id="<?php echo esc_attr( $file_id ); ?>">
-				<?php /* translators: %d: attachment ID */ ?>
-					<span class="wp-mcp-ai-memory-file-title"><?php echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) ); ?></span>
+					<span class="wp-mcp-ai-memory-file-title">
+					<?php
+					/* translators: %d: attachment ID */
+					echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) );
+					?>
+				</span>
 					<button type="button" class="button-link wp-mcp-ai-remove-memory"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 					<input type="hidden" name="wp_mcp_ai_memory_files[]" value="<?php echo esc_attr( $file_id ); ?>" />
 				</li>
@@ -2807,12 +2818,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( isset( $_POST['wp_mcp_ai_tools_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_tools_meta_nonce'] ) ), 'wp_mcp_ai_tools_meta' ) ) {
 				$tool_slugs = array();
 				if ( isset( $_POST['wp_mcp_ai_tools'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_tools_meta().
 					$tool_slugs = self::sanitize_tools_meta( wp_unslash( $_POST['wp_mcp_ai_tools'] ) );
 				}
 
 				update_post_meta( $post_id, self::META_TOOLS, $tool_slugs );
 
 				$external_action_id = isset( $_POST['wp_mcp_ai_external_action_identifier'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_id_meta().
 				? self::sanitize_external_action_id_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_identifier'] ) )
 				: '';
 
@@ -2823,6 +2836,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 
 				$external_action_type = isset( $_POST['wp_mcp_ai_external_action_type'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_external_action_type_meta().
 				? self::sanitize_external_action_type_meta( wp_unslash( $_POST['wp_mcp_ai_external_action_type'] ) )
 				: '';
 
@@ -2835,6 +2849,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tool_role_rules = array();
 
 				if ( isset( $_POST['wp_mcp_ai_tool_role_rules'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_tool_role_rules_meta().
 					$tool_role_rules = self::sanitize_tool_role_rules_meta( wp_unslash( $_POST['wp_mcp_ai_tool_role_rules'] ) );
 				}
 
@@ -2845,6 +2860,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 
 				$disable_tool_shortcuts = isset( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_disable_tool_shortcuts_meta().
 				? self::sanitize_disable_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_disable_prebuilt_shortcuts'] ) )
 				: false;
 
@@ -2857,6 +2873,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$prebuilt_tool_shortcuts = array();
 
 				if ( isset( $_POST['wp_mcp_ai_prebuilt_shortcuts'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_prebuilt_tool_shortcuts_meta().
 					$prebuilt_tool_shortcuts = self::sanitize_prebuilt_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_prebuilt_shortcuts'] ) );
 				}
 
@@ -2872,6 +2889,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$tool_shortcuts = array();
 
 				if ( isset( $_POST['wp_mcp_ai_tool_shortcuts'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_tool_shortcuts_meta().
 					$tool_shortcuts = self::sanitize_tool_shortcuts_meta( wp_unslash( $_POST['wp_mcp_ai_tool_shortcuts'] ) );
 				}
 
@@ -2885,6 +2903,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_provider_meta().
 				? self::sanitize_provider_meta( wp_unslash( $_POST['wp_mcp_ai_provider'] ) )
 				: '';
 
@@ -2894,11 +2913,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					update_post_meta( $post_id, self::META_PROVIDER, $provider );
 				}
 
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_model_meta().
 				$model = isset( $_POST['wp_mcp_ai_model'] ) ? self::sanitize_model_meta( wp_unslash( $_POST['wp_mcp_ai_model'] ) ) : '';
 				update_post_meta( $post_id, self::META_MODEL, $model );
 
 				$temperature = null;
 				if ( isset( $_POST['wp_mcp_ai_temperature'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_temperature_meta().
 					$temperature = self::sanitize_temperature_meta( wp_unslash( $_POST['wp_mcp_ai_temperature'] ) );
 				}
 
@@ -2908,6 +2929,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					update_post_meta( $post_id, self::META_TEMPERATURE, $temperature );
 				}
 
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_system_prompt_meta().
 				$system_prompt = isset( $_POST['wp_mcp_ai_system_prompt'] ) ? self::sanitize_system_prompt_meta( wp_unslash( $_POST['wp_mcp_ai_system_prompt'] ) ) : '';
 				update_post_meta( $post_id, self::META_SYSTEM_PROMPT, $system_prompt );
 			}
@@ -2916,11 +2938,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( isset( $_POST['wp_mcp_ai_base_knowledge_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_base_knowledge_meta_nonce'] ) ), 'wp_mcp_ai_base_knowledge_meta' ) ) {
 				$memory_files = array();
 				if ( isset( $_POST['wp_mcp_ai_memory_files'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_memory_files_meta().
 					$memory_files = self::sanitize_memory_files_meta( wp_unslash( $_POST['wp_mcp_ai_memory_files'] ) );
 				}
 
 				update_post_meta( $post_id, self::META_MEMORY_FILES, $memory_files );
 
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_vector_store_meta().
 				$vector_store_id = isset( $_POST['wp_mcp_ai_vector_store_id'] ) ? self::sanitize_vector_store_meta( wp_unslash( $_POST['wp_mcp_ai_vector_store_id'] ) ) : '';
 				update_post_meta( $post_id, self::META_VECTOR_STORE_ID, $vector_store_id );
 			}
