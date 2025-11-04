@@ -36,15 +36,66 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'handle_test_ollama_connection' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'handle_fetch_ollama_models' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'handle_test_lm_studio_connection' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'handle_fetch_lm_studio_models' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'handle_fetch_cloudways_data' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'handle_test_cloudflare_connection' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'safe_ajax_handler' ) );
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 				add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 			}
+		}
+
+		/**
+		 * Safe AJAX handler wrapper that catches any output before JSON responses.
+		 *
+		 * Prevents PHP errors, warnings, and notices from breaking JSON responses.
+		 */
+		public function safe_ajax_handler() {
+			// Clean any previous output.
+			if ( ob_get_level() > 0 ) {
+				ob_clean();
+			}
+
+			// Start fresh output buffering.
+			ob_start();
+
+			// Map action to handler method.
+			$action_map = array(
+				'wp_ajax_wp_mcp_ai_test_ollama_connection'      => 'handle_test_ollama_connection',
+				'wp_ajax_wp_mcp_ai_fetch_ollama_models'         => 'handle_fetch_ollama_models',
+				'wp_ajax_wp_mcp_ai_test_lm_studio_connection'   => 'handle_test_lm_studio_connection',
+				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models'      => 'handle_fetch_lm_studio_models',
+				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'        => 'handle_fetch_cloudways_data',
+				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
+			);
+
+			$action        = current_action();
+			$handler_method = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
+
+			if ( ! $handler_method || ! method_exists( $this, $handler_method ) ) {
+				ob_end_clean();
+				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Call the actual handler.
+			try {
+				call_user_func( array( $this, $handler_method ) );
+			} catch ( Exception $e ) {
+				// Clean any output from the exception.
+				ob_end_clean();
+				wp_send_json_error(
+					array(
+						'message' => $e->getMessage(),
+						'code'    => $e->getCode(),
+					)
+				);
+			}
+
+			// Clean any leftover output buffer.
+			ob_end_clean();
 		}
 
 		/**

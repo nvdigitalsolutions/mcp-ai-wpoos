@@ -33,8 +33,11 @@ class WP_MCP_AI_Elementor_Integration {
 			return;
 		}
 
+		// Use output buffering to catch any errors during initialization.
+		ob_start();
 		$integration = new self();
 		$integration->register_hooks();
+		ob_end_clean();
 	}
 
 	/**
