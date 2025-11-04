@@ -1,4 +1,4 @@
-# MCP AI REST API
+# WP oOS REST API
 
 The plugin exposes its REST surface at `/wp-json/mcp-ai/v1` for both chat completions and direct tool execution. This document summarises the available endpoints, request/response contracts, and common integration pitfalls.
 

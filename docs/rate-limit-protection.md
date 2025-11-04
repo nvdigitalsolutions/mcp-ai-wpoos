@@ -209,4 +209,4 @@ Rate-limit events are logged when logging is enabled in the plugin settings:
 - `job_completed` - When a job completes successfully
 - `job_timeout` - When a job times out
 
-Enable logging in **Settings → MCP AI → Enable Logging** to monitor rate-limit activity.
+Enable logging in **Settings → WP oOS → Enable Logging** to monitor rate-limit activity.

@@ -1,6 +1,6 @@
 <?php
 /**
- * Interface that all MCP AI tools must implement.
+ * Interface that all WP oOS tools must implement.
  *
  * @package WP_MCP_AI
  */
