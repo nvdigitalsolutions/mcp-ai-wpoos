@@ -43,7 +43,7 @@ class WP_MCP_AI_Gemini_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -58,7 +58,7 @@ class WP_MCP_AI_Gemini_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_gemini_model' => __( 'Choose a Gemini model in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_gemini_model' => __( 'Choose a Gemini model in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);
@@ -156,7 +156,7 @@ class WP_MCP_AI_Gemini_Client {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

@@ -16,7 +16,7 @@ This guide explains how to connect to your WordPress MCP AI plugin from popular 
 
 ## Overview
 
-WP MCP AI exposes a Model Context Protocol (MCP) server through its REST API at `/wp-json/mcp-ai/v1`. This allows external AI clients to:
+WP oOS exposes a Model Context Protocol (MCP) server through its REST API at `/wp-json/mcp-ai/v1`. This allows external AI clients to:
 
 - Access your WordPress assistants
 - Execute registered tools
@@ -36,7 +36,7 @@ The plugin supports multiple authentication methods to accommodate different cli
 
 Before connecting any MCP client, ensure:
 
-1. **WP MCP AI is installed and activated** on your WordPress site
+1. **WP oOS is installed and activated** on your WordPress site
 2. **At least one assistant is published** under **AI Assistants** in your WordPress admin
 3. **Your WordPress site is accessible via HTTPS** (required for secure bearer token transmission)
 4. **OpenAI API key is configured** in **Settings → MCP AI**

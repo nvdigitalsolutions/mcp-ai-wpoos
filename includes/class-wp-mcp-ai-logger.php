@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple logging utility for WP MCP AI.
+ * Simple logging utility for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -16,7 +16,7 @@ class WP_MCP_AI_Logger {
 	/**
 	 * Prefix that is added to every log line for easier filtering.
 	 */
-	const PREFIX = '[WP MCP AI]';
+	const PREFIX = '[WP oOS]';
 
 	/**
 	 * Option key for persisting recent error and warning entries.

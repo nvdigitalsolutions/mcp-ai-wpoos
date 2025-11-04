@@ -21,4 +21,4 @@ All built-in controllers enforce the `manage_options` capability inside their pe
 
 ## AI chat transcript storage
 
-WP MCP AI seeds an `ai_chat_transcripts` Custom Content Type (CCT) under JetEngine for recording individual chat turns and debugging metadata. The helper `WP_MCP_AI_JetEngine_CCT::get_slug()` returns the slug while `WP_MCP_AI_JetEngine_CCT::get_item_handler()` exposes the JetEngine item handler (equivalent to calling `jet_engine()->cct->item_handler` after the CCT registers) for programmatic inserts or lookups.
+WP oOS seeds an `ai_chat_transcripts` Custom Content Type (CCT) under JetEngine for recording individual chat turns and debugging metadata. The helper `WP_MCP_AI_JetEngine_CCT::get_slug()` returns the slug while `WP_MCP_AI_JetEngine_CCT::get_item_handler()` exposes the JetEngine item handler (equivalent to calling `jet_engine()->cct->item_handler` after the CCT registers) for programmatic inserts or lookups.

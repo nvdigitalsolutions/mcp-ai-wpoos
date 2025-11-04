@@ -3,7 +3,7 @@
 
 ### 📄 `CHANGELOG.md`
 ```markdown
-# WP MCP AI – Changelog
+# WP oOS – Changelog
 
 ## [Unreleased]
 ### Added

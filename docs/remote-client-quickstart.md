@@ -4,7 +4,7 @@ Get your WordPress MCP AI server connected to Claude Desktop in 5 minutes.
 
 ## Prerequisites
 
-- WordPress site with WP MCP AI plugin installed and activated
+- WordPress site with WP oOS plugin installed and activated
 - At least one published AI Assistant
 - Claude Desktop installed on your computer
 

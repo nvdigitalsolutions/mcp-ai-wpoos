@@ -1,6 +1,6 @@
 # WordPress Development Best Practices Guide
 
-This guide documents coding standards and best practices for the WP MCP AI plugin.
+This guide documents coding standards and best practices for the WP oOS plugin.
 
 ## Table of Contents
 

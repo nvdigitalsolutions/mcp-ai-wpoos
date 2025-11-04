@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin cron manager for WP MCP AI.
+ * Admin cron manager for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -14,7 +14,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 }
 
 /**
- * Renders the management UI for cron events scheduled via WP MCP AI.
+ * Renders the management UI for cron events scheduled via WP oOS.
  */
 class WP_MCP_AI_Admin_Cron_Manager {
 	const PAGE_SLUG = 'wp-mcp-ai-cron-manager';
@@ -33,8 +33,8 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 */
 	public function register_page() {
 		add_management_page(
-			__( 'WP MCP AI Cron Manager', 'wp-mcp-ai' ),
-			__( 'WP MCP AI Crons', 'wp-mcp-ai' ),
+			__( 'WP oOS Cron Manager', 'wp-mcp-ai' ),
+			__( 'WP oOS Crons', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -106,7 +106,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'WP MCP AI Cron Manager', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'WP oOS Cron Manager', 'wp-mcp-ai' ); ?></h1>
 			<?php if ( isset( $_GET['updated'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<?php if ( '1' === $_GET['updated'] ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 					<div class="notice notice-success is-dismissible">
@@ -120,7 +120,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			<?php endif; ?>
 			<?php if ( empty( $jobs ) ) : ?>
 				<div class="wp-mcp-ai-cron-manager__empty">
-					<p><?php esc_html_e( 'No cron events have been scheduled through WP MCP AI yet.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'No cron events have been scheduled through WP oOS yet.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php else : ?>
 				<table class="wp-mcp-ai-cron-manager__table">

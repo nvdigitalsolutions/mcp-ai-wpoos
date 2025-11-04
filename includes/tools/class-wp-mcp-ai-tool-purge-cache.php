@@ -149,7 +149,7 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface {
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_cache' => __( 'Configure cache settings in WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_cache' => __( 'Configure cache settings in WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

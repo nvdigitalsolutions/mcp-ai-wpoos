@@ -153,7 +153,7 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP MCP AI settings.', 'wp-mcp-ai' ),
+						'configure_openai_api_key' => __( 'Add an OpenAI API key in the WP oOS settings.', 'wp-mcp-ai' ),
 					),
 				)
 			);

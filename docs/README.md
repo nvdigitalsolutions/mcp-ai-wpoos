@@ -1,6 +1,6 @@
-# WP MCP AI Documentation
+# WP oOS Documentation
 
-Welcome to the WP MCP AI plugin documentation. This directory contains comprehensive guides, reviews, and best practices for developers, operators, and stakeholders.
+Welcome to the WP oOS plugin documentation. This directory contains comprehensive guides, reviews, and best practices for developers, operators, and stakeholders.
 
 ## 📚 Documentation Index
 

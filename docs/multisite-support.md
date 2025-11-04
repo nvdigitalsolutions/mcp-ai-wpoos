@@ -1,6 +1,6 @@
 # Multisite Support
 
-WP MCP AI fully supports WordPress multisite installations as of version 1.0.0.
+WP oOS fully supports WordPress multisite installations as of version 1.0.0.
 
 ## Features
 
@@ -31,14 +31,14 @@ WP MCP AI fully supports WordPress multisite installations as of version 1.0.0.
 ### Network Activation
 1. Upload the plugin to `/wp-content/plugins/` directory
 2. Go to Network Admin > Plugins
-3. Click "Network Activate" for WP MCP AI
-4. Configure settings on each site individually via Settings > WP MCP AI
+3. Click "Network Activate" for WP oOS
+4. Configure settings on each site individually via Settings > WP oOS
 
 ### Individual Site Activation
 1. Upload the plugin to `/wp-content/plugins/` directory
 2. Go to the individual site's Admin > Plugins
-3. Click "Activate" for WP MCP AI
-4. Configure settings via Settings > WP MCP AI
+3. Click "Activate" for WP oOS
+4. Configure settings via Settings > WP oOS
 
 ## Technical Implementation
 

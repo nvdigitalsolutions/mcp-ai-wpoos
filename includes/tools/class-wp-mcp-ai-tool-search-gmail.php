@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface {
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_gmail_missing_credentials',
-				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token in the WP MCP AI settings.', 'wp-mcp-ai' )
+				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token in the WP oOS settings.', 'wp-mcp-ai' )
 			);
 		}
 

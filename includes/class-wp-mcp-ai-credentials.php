@@ -1,6 +1,6 @@
 <?php
 /**
- * Credential management helpers for WP MCP AI.
+ * Credential management helpers for WP oOS.
  *
  * @package WP_MCP_AI
  */

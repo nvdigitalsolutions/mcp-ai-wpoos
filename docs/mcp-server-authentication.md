@@ -7,7 +7,7 @@ The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Re
 
 * **Auth0 bearer tokens** are the primary mechanism for remote assistants. Provision them through your Auth0 tenant using the API identifier configured in the plugin settings.
 * **Assistant-issued tokens** are minted from the assistant editor’s **API Credentials** meta box, returned once (in the form `cred_xxxxx.SECRET`), and hashed immediately after display so secrets never persist in plain text.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L483-L595】【F:includes/class-wp-mcp-ai-credentials.php†L94-L135】
-* **Simple JWT Login tokens** (optional) reuse the JWTs minted by the Simple JWT Login plugin. WP MCP AI validates them via Simple JWT Login’s services, falls back to manual decoding when necessary, and imports assistant or scope claims so REST requests inherit the correct context.【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】
+* **Simple JWT Login tokens** (optional) reuse the JWTs minted by the Simple JWT Login plugin. WP oOS validates them via Simple JWT Login’s services, falls back to manual decoding when necessary, and imports assistant or scope claims so REST requests inherit the correct context.【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L47-L214】【F:includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php†L240-L378】
 * **Auth0 GitHub bridge** (optional) inspects Auth0 access tokens whose subject starts with `github|`, enriches the request payload with GitHub identifiers, and maps the identity to a WordPress user—creating one on the fly when necessary—so REST requests are logged against familiar accounts.【F:includes/integrations/class-wp-mcp-ai-integration-auth0-github.php†L33-L210】
 * **REST nonces** (`X-WP-Nonce`) remain available for the built-in shortcode, dashboard UI, or any same-origin script that operates on behalf of a logged-in user.
 
@@ -42,7 +42,7 @@ The GitHub bridge lets you reuse Auth0’s GitHub social connection while mainta
 
 1. **Create or verify the Auth0 GitHub connection.** Enable the GitHub social connection in Auth0 and link it to the application that issues MCP access tokens so `sub` values resemble `github|{id}`.
 2. **Provision Management API credentials.** Register a Machine-to-Machine application with access to the Auth0 Management API and note its Client ID/Secret. Grant at least the `read:users` scope so the bridge can fetch missing profile information.
-3. **Configure WordPress.** In **Settings → WP MCP AI**, enable **Auth0 GitHub bridge** and paste the Management API Client ID/Secret alongside your Auth0 domain. These values are stored with the rest of the plugin settings and sanitised on save.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L59-L119】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1184-L1241】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1658-L1698】
+3. **Configure WordPress.** In **Settings → WP oOS**, enable **Auth0 GitHub bridge** and paste the Management API Client ID/Secret alongside your Auth0 domain. These values are stored with the rest of the plugin settings and sanitised on save.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L59-L119】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1184-L1241】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1658-L1698】
 4. **Test with a GitHub-backed token.** Call any MCP REST endpoint using an Auth0 access token minted for a GitHub user. The first request seeds a WordPress account (or links to an existing email address), updates the display name to match Auth0, and records the GitHub ID/login in user meta for subsequent lookups.【F:includes/integrations/class-wp-mcp-ai-integration-auth0-github.php†L211-L402】【F:includes/integrations/class-wp-mcp-ai-integration-auth0-github.php†L403-L463】 Errors returned by the REST layer include actionable messages when Auth0 details are missing or credentials are misconfigured.【F:includes/integrations/class-wp-mcp-ai-integration-auth0-github.php†L124-L209】【F:includes/integrations/class-wp-mcp-ai-integration-auth0-github.php†L290-L402】
 
 ## Testing credentials quickly
@@ -51,7 +51,7 @@ Use the bundled `wp mcp-ai remote` command to verify bearer tokens, guest tokens
 
 ## Server-side validation
 
-1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP MCP AI**, and downloads the tenant's JWKS (cached for one hour).
+1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP oOS**, and downloads the tenant's JWKS (cached for one hour).
 2. The token header and payload are decoded, the signature is verified against the JWKS public key via OpenSSL, and the `iss`, `aud`, and optional scope claims are enforced.
 3. If validation succeeds the request proceeds; otherwise, a structured error describing the remediation steps is returned to the client. WordPress-authenticated requests still require an `X-WP-Nonce` header and the `edit_posts` capability.
 4. Custom validation logic can hook into `wp_mcp_ai_pre_validate_bearer_token` to short-circuit the process or `wp_mcp_ai_bearer_token_payload` to inspect claims.

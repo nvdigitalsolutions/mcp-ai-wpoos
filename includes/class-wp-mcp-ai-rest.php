@@ -1,6 +1,6 @@
 <?php
 /**
- * REST API controller for WP MCP AI.
+ * REST API controller for WP oOS.
  *
  * @package WP_MCP_AI
  */
@@ -762,7 +762,7 @@ class WP_MCP_AI_REST {
 		}
 
 		$response_data['implementation'] = array(
-			'name'    => 'WP MCP AI',
+			'name'    => 'WP oOS',
 			'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 		);
 
@@ -1290,11 +1290,11 @@ class WP_MCP_AI_REST {
 		if ( empty( $domain ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_not_configured',
-				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the WP MCP AI settings screen.', 'wp-mcp-ai' ),
+				__( 'Auth0 authentication is not configured. Set the Auth0 domain in the WP oOS settings screen.', 'wp-mcp-ai' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'configure_auth0_domain' => __( 'In WordPress, visit Settings → WP MCP AI and provide the Auth0 domain.', 'wp-mcp-ai' ),
+						'configure_auth0_domain' => __( 'In WordPress, visit Settings → WP oOS and provide the Auth0 domain.', 'wp-mcp-ai' ),
 					),
 				)
 			);
