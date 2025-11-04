@@ -1204,6 +1204,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_insufficient_permissions',
 				sprintf(
+	/* translators: %s: required capability name */
 					__( 'The authenticated user cannot access the WP oOS API. Grant the account the "%s" capability or switch to another user.', 'wp-mcp-ai' ),
 					$capability
 				),
@@ -1211,6 +1212,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'status'  => 403,
 					'actions' => array(
 						'grant_capability' => sprintf(
+	/* translators: %s: required capability name */
 							__( 'Assign a role that includes the "%s" capability.', 'wp-mcp-ai' ),
 							$capability
 						),
@@ -4629,6 +4631,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $file_size > $max_bytes ) {
 					/* translators: 1: maximum allowed size in bytes, 2: detected file size in bytes. */
 					$message = sprintf(
+	/* translators: 1: maximum file size in bytes, 2: actual file size in bytes */
 						__( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'wp-mcp-ai' ),
 						number_format_i18n( $max_bytes ),
 						number_format_i18n( $file_size )
@@ -6073,6 +6076,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$parts = array();
 
 			if ( '' !== $name ) {
+	/* translators: %s: tool name */
 				$parts[] = sprintf( __( 'Tool call: %s', 'wp-mcp-ai' ), $name );
 			}
 

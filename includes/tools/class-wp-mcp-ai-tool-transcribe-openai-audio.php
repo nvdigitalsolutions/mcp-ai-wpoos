@@ -256,6 +256,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			/* translators: %s: maximum bytes allowed for an audio attachment. */
 			return new WP_Error(
 				'wp_mcp_ai_attachment_too_large',
+				/* translators: %s: maximum file size in bytes */
 				sprintf( __( 'Audio attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ),
 				array( 'status' => 413 )
 			);

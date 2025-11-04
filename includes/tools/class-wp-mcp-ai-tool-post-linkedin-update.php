@@ -187,6 +187,7 @@ class WP_MCP_AI_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface {
 			if ( ! empty( $decoded['message'] ) ) {
 				$message = $decoded['message'];
 			} elseif ( ! empty( $decoded['serviceErrorCode'] ) ) {
+				/* translators: %d: LinkedIn service error code */
 				$message = sprintf( __( 'LinkedIn error code %d returned.', 'wp-mcp-ai' ), (int) $decoded['serviceErrorCode'] );
 			}
 

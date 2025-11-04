@@ -716,6 +716,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( JSON_ERROR_NONE === $json_error && isset( $decoded['error']['message'] ) ) {
 					$message = $decoded['error']['message'];
 				} else {
+	/* translators: %d: HTTP status code */
 					$message = sprintf( __( 'The OpenAI image request failed with status %d.', 'wp-mcp-ai' ), $status_code );
 				}
 
@@ -930,6 +931,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_image_download_error',
+	/* translators: %d: HTTP status code */
 					sprintf( __( 'OpenAI returned an HTTP %d while downloading the generated image.', 'wp-mcp-ai' ), $status_code ),
 					array(
 						'status'   => $status_code,
