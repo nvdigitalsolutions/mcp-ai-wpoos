@@ -26,38 +26,38 @@ class WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
 	 * Test that base version can be explicitly enabled.
 	 */
 	public function test_base_version_explicitly_enabled() {
+		// Store callback for cleanup.
+		$callback = function ( $is_base ) {
+			// Override to simulate constant being set to true.
+			return true;
+		};
+
 		// Use filter to simulate constant being set to true.
-		add_filter(
-			'wp_mcp_ai_base_version',
-			function () {
-				// Simulate: defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION === true.
-				return true;
-			},
-			999
-		);
+		add_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 
 		$this->assertTrue( wp_mcp_ai_is_base_version(), 'Base version should be enabled when constant is true' );
 
-		remove_all_filters( 'wp_mcp_ai_base_version', 999 );
+		// Clean up specific filter.
+		remove_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 	}
 
 	/**
 	 * Test that base version can be disabled.
 	 */
 	public function test_base_version_can_be_disabled() {
+		// Store callback for cleanup.
+		$callback = function ( $is_base ) {
+			// Override to simulate constant being set to false.
+			return false;
+		};
+
 		// Use filter to simulate constant being set to false.
-		add_filter(
-			'wp_mcp_ai_base_version',
-			function () {
-				// Simulate: defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION === false.
-				return false;
-			},
-			999
-		);
+		add_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 
 		$this->assertFalse( wp_mcp_ai_is_base_version(), 'Base version should be disabled when constant is false' );
 
-		remove_all_filters( 'wp_mcp_ai_base_version', 999 );
+		// Clean up specific filter.
+		remove_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 	}
 
 	/**
