@@ -218,7 +218,7 @@ if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 }
 
 if ( ! has_action( 'init', 'wp_mcp_ai_load_textdomain' ) ) {
-	add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
+	add_action( 'init', 'wp_mcp_ai_load_textdomain', -1 );
 }
 
 if ( ! class_exists( 'WP_MCP_AI' ) ) {
