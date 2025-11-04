@@ -2089,6 +2089,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Stream the provided payload as an event stream response.
 		 *
+		 * Implements Server-Sent Events (SSE) with modern best practices (2024-2025):
+		 * - Proper Content-Type: text/event-stream with UTF-8
+		 * - Cache-Control: no-cache to prevent proxy/browser caching
+		 * - Connection: keep-alive for persistent streaming
+		 * - Retry directive for automatic client reconnection
+		 * - Event IDs for reconnection state tracking
+		 * - HTTP/2 compatibility (removes Connection header when appropriate)
+		 * - CORS headers for cross-origin access
+		 *
 		 * @param array  $payload Response payload to emit.
 		 * @param string $event   Event name used for the SSE frame.
 		 * @return WP_REST_Response
@@ -2105,7 +2114,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$event_name = 'message';
 			}
 
-			$frames  = $this->build_event_stream_chunk( $event_name, $encoded_payload );
+			// Add retry directive for automatic reconnection (3 seconds).
+			$frames  = "retry: 3000\n\n";
+			$frames .= $this->build_event_stream_chunk( $event_name, $encoded_payload, (string) time() );
 			$frames .= $this->build_event_stream_chunk( '', '[DONE]' );
 
 			$headers = array(
@@ -2178,12 +2189,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Build a Server-Sent Events chunk for the provided data.
 		 *
+		 * Formats data according to SSE specification with optional event ID
+		 * for client-side reconnection tracking.
+		 *
 		 * @param string $event  Event name.
 		 * @param string $data   Event data payload.
+		 * @param string $id     Optional event ID for client-side reconnection tracking.
 		 * @return string
 		 */
-		protected function build_event_stream_chunk( $event, $data ) {
+		protected function build_event_stream_chunk( $event, $data, $id = '' ) {
 			$chunk = '';
+
+			$id = (string) $id;
+			if ( '' !== $id ) {
+				$chunk .= 'id: ' . $id . "\n";
+			}
 
 			$event = (string) $event;
 			if ( '' !== $event ) {
