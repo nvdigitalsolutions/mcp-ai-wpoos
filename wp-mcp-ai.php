@@ -112,7 +112,9 @@ if ( ! function_exists( 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
 	}
 }
 
-add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
+if ( ! has_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
+	add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url', 5, 3 );
+}
 
 if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
@@ -211,7 +213,9 @@ if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 	function wp_mcp_ai_load_textdomain() {
 		load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
+}
 
+if ( ! has_action( 'init', 'wp_mcp_ai_load_textdomain' ) ) {
 	add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
 }
 
@@ -351,7 +355,9 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 	function wp_mcp_ai_bootstrap() {
 		wp_mcp_ai()->bootstrap();
 	}
+}
 
+if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
 }
 
@@ -428,7 +434,9 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 		}
 		restore_current_blog();
 	}
+}
 
+if ( ! has_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' ) ) {
 	add_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' );
 	add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
 }
@@ -626,6 +634,8 @@ if ( ! function_exists( 'wp_mcp_ai_extend_upload_mimes' ) ) {
 
 		return $mimes;
 	}
+}
 
+if ( ! has_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' ) ) {
 	add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );
 }
