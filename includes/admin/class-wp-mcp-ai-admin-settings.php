@@ -113,6 +113,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'chat_colors'                       => self::get_default_chat_colors(),
 				'allowed_image_mimes'               => array(),
 				'allowed_file_mimes'                => array(),
+				'rest_enable_assistant_create'      => false,
+				'rest_enable_assistant_delete'      => false,
 			);
 		}
 
@@ -1407,6 +1409,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'enable_simple_jwt_login',
 				__( 'Enable Simple JWT Login tokens', 'wp-mcp-ai' ),
 				array( $this, 'render_simple_jwt_login_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_authentication_section'
+			);
+
+			add_settings_field(
+				'rest_enable_assistant_create',
+				__( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
+				array( $this, 'render_rest_enable_assistant_create_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_authentication_section'
+			);
+
+			add_settings_field(
+				'rest_enable_assistant_delete',
+				__( 'Enable REST Assistant Deletion', 'wp-mcp-ai' ),
+				array( $this, 'render_rest_enable_assistant_delete_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
 			);
@@ -3770,6 +3788,34 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php esc_html_e( 'Write OpenAI request and response details to the debug log.', 'wp-mcp-ai' ); ?>
 		</label>
 		<p class="description"><?php esc_html_e( 'When enabled, detailed error and debug logs will be displayed in a separate section below.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the REST enable assistant create field.
+		 */
+		public function render_rest_enable_assistant_create_field() {
+			$settings = self::get_settings();
+			?>
+		<label for="wp-mcp-ai-rest-enable-assistant-create">
+			<input id="wp-mcp-ai-rest-enable-assistant-create" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[rest_enable_assistant_create]" value="1" <?php checked( $settings['rest_enable_assistant_create'] ); ?> />
+			<?php esc_html_e( 'Allow creating assistants via REST API (POST /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can create new assistants remotely. Requires proper authentication (Auth0, assistant credentials, or JWT).', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the REST enable assistant delete field.
+		 */
+		public function render_rest_enable_assistant_delete_field() {
+			$settings = self::get_settings();
+			?>
+		<label for="wp-mcp-ai-rest-enable-assistant-delete">
+			<input id="wp-mcp-ai-rest-enable-assistant-delete" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[rest_enable_assistant_delete]" value="1" <?php checked( $settings['rest_enable_assistant_delete'] ); ?> />
+			<?php esc_html_e( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 

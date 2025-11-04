@@ -260,7 +260,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 					array(
 						'methods'             => WP_REST_Server::CREATABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
+						'permission_callback' => array( $this, 'permissions_check_assistant_create' ),
 						'callback'            => array( $this, 'handle_assistants_index' ),
 					),
 				),
@@ -1065,6 +1065,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$this->set_authenticated_user_id( get_current_user_id() );
+
+			return true;
+		}
+
+		/**
+		 * Permission check for creating assistants via REST API.
+		 *
+		 * Checks both standard permissions AND the rest_enable_assistant_create setting.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_create( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			// Then check if REST assistant creation is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
+				return new WP_Error(
+					'rest_assistant_create_disabled',
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication.', 'wp-mcp-ai' ),
+					array(
+						'status' => 403,
+					)
+				);
+			}
 
 			return true;
 		}
