@@ -23,6 +23,7 @@
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
     
     // Performance optimization settings - can be disabled for debugging
     // Set window.wpMcpAiChatDebugMode = true to disable optimizations
@@ -3656,9 +3657,9 @@
 
         // Add summary header
         const urlCount = results.length;
-        let summaryText = 'Crawled ' + urlCount + ' ' + (urlCount === 1 ? 'page' : 'pages');
+        let summaryText = `Crawled ${urlCount} ${urlCount === 1 ? 'page' : 'pages'}`;
         if (status !== 'completed') {
-            summaryText += ' (Status: ' + status + ')';
+            summaryText += ` (Status: ${status})`;
         }
         textParts.push(summaryText);
 
@@ -3674,9 +3675,9 @@
             const url = crawlResult.url || '';
             const statusCode = crawlResult.status_code;
             if (url) {
-                let urlLine = '**URL ' + (index + 1) + ':** ' + url;
+                let urlLine = `**URL ${index + 1}:** ${url}`;
                 if (statusCode) {
-                    urlLine += ' (HTTP ' + statusCode + ')';
+                    urlLine += ` (HTTP ${statusCode})`;
                 }
                 resultParts.push(urlLine);
             }
@@ -3697,9 +3698,8 @@
 
             if (content) {
                 // Limit content length for very long pages
-                const maxContentLength = 5000;
-                if (content.length > maxContentLength) {
-                    content = content.substring(0, maxContentLength) + '\n\n[Content truncated - ' + content.length + ' characters total]';
+                if (content.length > CRAWL4AI_MAX_CONTENT_LENGTH) {
+                    content = content.substring(0, CRAWL4AI_MAX_CONTENT_LENGTH) + `\n\n[Content truncated - ${content.length} characters total]`;
                 }
                 resultParts.push('\n' + content);
             }
