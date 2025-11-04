@@ -5,6 +5,8 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
+**Total Documentation:** 39 files (35 in docs/ folder, 4 key files in root)
+
 ---
 
 ## 📚 Quick Navigation
@@ -122,10 +124,10 @@ This document provides a comprehensive index of all documentation available for 
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 36
+- **Total Documentation Files:** 39 (35 in docs/, 4 in root)
 - **Total Documentation Size:** ~330KB
 - **Main README Size:** 1,027 lines
-- **Average Doc Size:** ~9.2KB
+- **Average Doc Size:** ~8.5KB
 
 ### Categories
 - **Setup & Installation:** 4 documents
