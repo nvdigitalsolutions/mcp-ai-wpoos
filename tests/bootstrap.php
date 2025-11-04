@@ -79,6 +79,12 @@ if ( ! defined( 'WP_PHPUNIT__TESTS_CONFIG' ) ) {
 
 define( 'WP_TESTS_CONFIG_FILE_PATH', $tests_config );
 
+// Enable full version for tests to load all integration classes.
+// Individual tests can use the wp_mcp_ai_base_version filter to test base version behavior.
+if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
+	define( 'WP_MCP_AI_BASE_VERSION', false );
+}
+
 require_once $_tests_dir . '/includes/functions.php';
 require_once __DIR__ . '/helpers/trait-wp-mcp-ai-docx-test-helper.php';
 

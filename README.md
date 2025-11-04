@@ -283,13 +283,9 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 5. Create a new “AI Assistant” in **AI Assistants**
 6. Add `[mcp_ai_chat assistant="123"]` to a page or post
 
-### Base Version Installation (WordPress Core Only)
+### Base Version (Default)
 
-For a simpler setup that works with only base WordPress (no third-party plugins required), enable **Base Version Mode** by adding this constant to your `wp-config.php` file:
-
-```php
-define( 'WP_MCP_AI_BASE_VERSION', true );
-```
+**WP MCP AI runs in Base Version mode by default**, providing 35 essential tools that work with vanilla WordPress without requiring any third-party plugins:
 
 **Base Version includes 35 essential tools that work with vanilla WordPress:**
 - Content management (search, save posts, attachments)
@@ -306,6 +302,14 @@ define( 'WP_MCP_AI_BASE_VERSION', true );
 - Social media integrations (8)
 - External messaging services (4)
 - QuickBooks and other business APIs (2)
+
+### Full Version Installation (Opt-in)
+
+To enable the **Full Version** with all third-party integrations and external API tools, add this constant to your `wp-config.php` file:
+
+```php
+define( 'WP_MCP_AI_BASE_VERSION', false );
+```
 
 📖 See [BASE-VERSION.md](BASE-VERSION.md) for the complete tool list and customization options.
 

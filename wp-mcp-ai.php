@@ -107,10 +107,13 @@ add_filter( 'wp_mcp_ai_crawl4ai_base_url', 'wp_mcp_ai_filter_crawl4ai_base_url',
 /**
  * Check if base version mode is enabled.
  *
+ * Base version is enabled by default. To disable it and use the full version,
+ * add this to wp-config.php: define( 'WP_MCP_AI_BASE_VERSION', false );
+ *
  * @return bool Whether base version mode is active.
  */
 function wp_mcp_ai_is_base_version() {
-	return defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION;
+	return ! defined( 'WP_MCP_AI_BASE_VERSION' ) || WP_MCP_AI_BASE_VERSION;
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
