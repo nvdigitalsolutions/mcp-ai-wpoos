@@ -54,8 +54,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function safe_ajax_handler() {
 			// Clean any previous output.
-			if ( ob_get_level() > 0 ) {
-				ob_clean();
+			while ( ob_get_level() > 0 ) {
+				ob_end_clean();
 			}
 
 			// Start fresh output buffering.

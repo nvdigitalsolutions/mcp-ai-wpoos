@@ -352,7 +352,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * Prevents JavaScript errors related to missing DOM elements.
 		 */
 		public function disable_auth_check_in_elementor() {
-			if ( isset( $_GET['action'] ) && 'elementor' === $_GET['action'] ) {
+			if ( isset( $_GET['action'] ) && 'elementor' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 			}
 		}

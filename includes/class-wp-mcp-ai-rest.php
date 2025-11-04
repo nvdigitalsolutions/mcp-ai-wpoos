@@ -77,14 +77,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Prevents PHP errors/warnings from contaminating JSON responses.
 		 */
 		public function clean_output_buffer() {
-			// Only clean for our endpoints.
-			$request = rest_get_server()->get_request();
-			if ( ! $request ) {
-				return;
-			}
-
-			$route = $request->get_route();
-			if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
+			// Check if we're handling a REST request for our namespace.
+			$rest_route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			if ( false === strpos( $rest_route, '/' . self::REST_NAMESPACE ) ) {
 				return;
 			}
 
