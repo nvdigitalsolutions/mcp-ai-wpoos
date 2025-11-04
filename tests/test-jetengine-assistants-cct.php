@@ -138,7 +138,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT_Test extends WP_UnitTestCase {
 	public function test_build_field_creates_valid_structure() {
 		$reflection = new ReflectionMethod( WP_MCP_AI_JetEngine_Assistants_CCT::class, 'build_field' );
 		$reflection->setAccessible( true );
-		
+
 		$field = $reflection->invoke( null, 12345, 'test_field', 'Test Field', 'text' );
 
 		$this->assertIsArray( $field );
@@ -163,7 +163,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT_Test extends WP_UnitTestCase {
 	public function test_build_field_applies_overrides() {
 		$reflection = new ReflectionMethod( WP_MCP_AI_JetEngine_Assistants_CCT::class, 'build_field' );
 		$reflection->setAccessible( true );
-		
+
 		$overrides = array(
 			'is_required' => true,
 			'description' => 'Custom description',
@@ -184,7 +184,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT_Test extends WP_UnitTestCase {
 		// This test assumes JetEngine is not loaded in the test environment.
 		// In a real WordPress installation with JetEngine, this would return an object.
 		$handler = WP_MCP_AI_JetEngine_Assistants_CCT::get_item_handler();
-		
+
 		$this->assertNull( $handler, 'Item handler should be null when JetEngine is not available' );
 	}
 

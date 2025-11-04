@@ -99,9 +99,9 @@ class WP_MCP_AI_Model_Selector {
 	 * @return bool True if it's a routing placeholder.
 	 */
 	protected static function is_routing_placeholder( $model ) {
-		$model              = strtolower( sanitize_text_field( $model ) );
-		$routing_keywords   = array( 'auto', 'smart', 'intelligent', 'adaptive' );
-		
+		$model            = strtolower( sanitize_text_field( $model ) );
+		$routing_keywords = array( 'auto', 'smart', 'intelligent', 'adaptive' );
+
 		foreach ( $routing_keywords as $keyword ) {
 			if ( false !== strpos( $model, $keyword ) ) {
 				return true;

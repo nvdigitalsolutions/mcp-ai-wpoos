@@ -47,7 +47,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job with valid data.
 	 */
 	public function test_register_remote_job_success() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url'      => 'http://example.com/api',
 			'arguments'     => array( 'url' => 'https://test.com' ),
@@ -78,7 +78,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job with empty base URL.
 	 */
 	public function test_register_remote_job_empty_base_url() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array();
 
 		$result = WP_MCP_AI_Crawler::register_remote_job( $task_id, $job_args );
@@ -90,7 +90,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job with invalid base URL.
 	 */
 	public function test_register_remote_job_invalid_base_url() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url' => 'not a valid url',
 		);
@@ -105,7 +105,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job applies default poll interval.
 	 */
 	public function test_register_remote_job_default_poll_interval() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url' => 'http://example.com/api',
 		);
@@ -122,7 +122,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job applies default max runtime.
 	 */
 	public function test_register_remote_job_default_max_runtime() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url' => 'http://example.com/api',
 		);
@@ -139,7 +139,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job with custom poll interval.
 	 */
 	public function test_register_remote_job_custom_poll_interval() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url'      => 'http://example.com/api',
 			'poll_interval' => 60,
@@ -155,7 +155,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job enforces minimum poll interval.
 	 */
 	public function test_register_remote_job_minimum_poll_interval() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url'      => 'http://example.com/api',
 			'poll_interval' => 1, // Too low.
@@ -171,7 +171,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test register_remote_job enforces minimum max runtime.
 	 */
 	public function test_register_remote_job_minimum_max_runtime() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url'     => 'http://example.com/api',
 			'wait_timeout' => 10, // Too low.
@@ -195,7 +195,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test get_job_status returns correct structure.
 	 */
 	public function test_get_job_status_structure() {
-		$task_id = 'test_task_123';
+		$task_id  = 'test_task_123';
 		$job_args = array(
 			'base_url'  => 'http://example.com/api',
 			'arguments' => array( 'url' => 'https://test.com' ),
@@ -221,7 +221,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test job stores arguments correctly.
 	 */
 	public function test_job_stores_arguments() {
-		$task_id = 'test_task_123';
+		$task_id   = 'test_task_123';
 		$arguments = array(
 			'url'    => 'https://test.com',
 			'option' => 'value',
@@ -275,7 +275,7 @@ class WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
 	 * Test task_id is sanitized.
 	 */
 	public function test_task_id_sanitization() {
-		$task_id = 'test<script>alert("xss")</script>task';
+		$task_id  = 'test<script>alert("xss")</script>task';
 		$job_args = array(
 			'base_url' => 'http://example.com/api',
 		);

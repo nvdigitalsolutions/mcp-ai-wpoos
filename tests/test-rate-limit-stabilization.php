@@ -56,8 +56,8 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 	public function test_successful_request_no_retry() {
 		$call_count = 0;
 
-		$callable = function() use ( &$call_count ) {
-			$call_count++;
+		$callable = function () use ( &$call_count ) {
+			++$call_count;
 			return array( 'success' => true );
 		};
 
@@ -115,8 +115,8 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 	public function test_429_error_is_retriable() {
 		$call_count = 0;
 
-		$callable = function() use ( &$call_count ) {
-			$call_count++;
+		$callable = function () use ( &$call_count ) {
+			++$call_count;
 
 			if ( $call_count < 3 ) {
 				return new WP_Error(
@@ -139,7 +139,7 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 				'max_delay'     => 5,
 			)
 		);
-		$end_time = time();
+		$end_time   = time();
 
 		$this->assertEquals( 3, $call_count, 'Should retry 429 errors' );
 		$this->assertIsArray( $result );
@@ -155,8 +155,8 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 	public function test_non_retriable_error_no_retry() {
 		$call_count = 0;
 
-		$callable = function() use ( &$call_count ) {
-			$call_count++;
+		$callable = function () use ( &$call_count ) {
+			++$call_count;
 			return new WP_Error(
 				'wp_mcp_ai_api_error',
 				'Bad request',
@@ -177,8 +177,8 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 	public function test_max_retries_exhaustion() {
 		$call_count = 0;
 
-		$callable = function() use ( &$call_count ) {
-			$call_count++;
+		$callable = function () use ( &$call_count ) {
+			++$call_count;
 			return new WP_Error(
 				'wp_mcp_ai_api_error',
 				'Rate limited',
@@ -230,8 +230,8 @@ class Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
 		foreach ( $retriable_statuses as $status ) {
 			$call_count = 0;
 
-			$callable = function() use ( &$call_count, $status ) {
-				$call_count++;
+			$callable = function () use ( &$call_count, $status ) {
+				++$call_count;
 
 				if ( $call_count < 2 ) {
 					return new WP_Error(

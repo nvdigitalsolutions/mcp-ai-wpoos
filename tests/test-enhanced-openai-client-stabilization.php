@@ -75,10 +75,12 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 			->method( 'create_chat_completion' )
 			->with(
 				$this->anything(),
-				$this->callback( function( $options ) use ( &$captured_options ) {
-					$captured_options = $options;
-					return true;
-				} )
+				$this->callback(
+					function ( $options ) use ( &$captured_options ) {
+						$captured_options = $options;
+						return true;
+					}
+				)
 			)
 			->willReturn( array( 'success' => true ) );
 
@@ -106,10 +108,12 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 			->method( 'create_chat_completion' )
 			->with(
 				$this->anything(),
-				$this->callback( function( $options ) use ( &$captured_options ) {
-					$captured_options = $options;
-					return true;
-				} )
+				$this->callback(
+					function ( $options ) use ( &$captured_options ) {
+						$captured_options = $options;
+						return true;
+					}
+				)
 			)
 			->willReturn( array( 'success' => true ) );
 
@@ -145,18 +149,20 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 		// Test simple message.
 		$this->mock_client->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
-			->willReturnCallback( function( $messages, $options ) use ( &$captured_options_simple, &$captured_options_complex ) {
-				static $call_count = 0;
-				$call_count++;
+			->willReturnCallback(
+				function ( $messages, $options ) use ( &$captured_options_simple, &$captured_options_complex ) {
+					static $call_count = 0;
+					$call_count++;
 
-				if ( 1 === $call_count ) {
-					$captured_options_simple = $options;
-				} else {
-					$captured_options_complex = $options;
+					if ( 1 === $call_count ) {
+							$captured_options_simple = $options;
+					} else {
+						$captured_options_complex = $options;
+					}
+
+					return array( 'success' => true );
 				}
-
-				return array( 'success' => true );
-			} );
+			);
 
 		$this->enhanced_client->create_chat_completion( $simple_message, array() );
 		$this->enhanced_client->create_chat_completion( $complex_message, array() );
@@ -181,10 +187,12 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 			->method( 'create_chat_completion' )
 			->with(
 				$this->anything(),
-				$this->callback( function( $options ) use ( &$captured_options ) {
-					$captured_options = $options;
-					return true;
-				} )
+				$this->callback(
+					function ( $options ) use ( &$captured_options ) {
+						$captured_options = $options;
+						return true;
+					}
+				)
 			)
 			->willReturn( array( 'success' => true ) );
 
@@ -246,19 +254,21 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 		$call_count = 0;
 		$this->mock_client->expects( $this->atLeast( 2 ) )
 			->method( 'create_chat_completion' )
-			->willReturnCallback( function() use ( &$call_count ) {
-				$call_count++;
+			->willReturnCallback(
+				function () use ( &$call_count ) {
+					$call_count++;
 
-				if ( $call_count < 3 ) {
-					return new WP_Error(
-						'wp_mcp_ai_api_error',
-						'Rate limited',
-						array( 'status' => 429 )
-					);
+					if ( $call_count < 3 ) {
+							return new WP_Error(
+								'wp_mcp_ai_api_error',
+								'Rate limited',
+								array( 'status' => 429 )
+							);
+					}
+
+					return array( 'success' => true );
 				}
-
-				return array( 'success' => true );
-			} );
+			);
 
 		$result = $this->enhanced_client->create_chat_completion( $messages, array() );
 
@@ -301,10 +311,12 @@ class Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCas
 				->method( 'create_chat_completion' )
 				->with(
 					$this->anything(),
-					$this->callback( function( $options ) use ( &$captured_options ) {
-						$captured_options = $options;
-						return true;
-					} )
+					$this->callback(
+						function ( $options ) use ( &$captured_options ) {
+							$captured_options = $options;
+							return true;
+						}
+					)
 				)
 				->willReturn( array( 'success' => true ) );
 

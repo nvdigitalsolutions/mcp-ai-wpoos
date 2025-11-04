@@ -64,9 +64,14 @@ class Test_WP_MCP_AI_Token_Budget_Manager_Stabilization extends WP_UnitTestCase 
 	 * Test that chunk size can be filtered.
 	 */
 	public function test_recommended_chunk_size_filter() {
-		add_filter( 'wp_mcp_ai_recommended_chunk_size', function( $size, $model ) {
-			return 8000;
-		}, 10, 2 );
+		add_filter(
+			'wp_mcp_ai_recommended_chunk_size',
+			function ( $size, $model ) {
+				return 8000;
+			},
+			10,
+			2
+		);
 
 		$chunk_size = WP_MCP_AI_Token_Budget_Manager::get_recommended_chunk_size( 'gpt-4o' );
 
@@ -130,19 +135,19 @@ class Test_WP_MCP_AI_Token_Budget_Manager_Stabilization extends WP_UnitTestCase 
 	public function test_estimate_tokens() {
 		$test_cases = array(
 			array(
-				'text'     => 'Hello, world!',
-				'min'      => 2,
-				'max'      => 5,
+				'text' => 'Hello, world!',
+				'min'  => 2,
+				'max'  => 5,
 			),
 			array(
-				'text'     => str_repeat( 'word ', 100 ),
-				'min'      => 80,
-				'max'      => 150,
+				'text' => str_repeat( 'word ', 100 ),
+				'min'  => 80,
+				'max'  => 150,
 			),
 			array(
-				'text'     => '',
-				'min'      => 0,
-				'max'      => 0,
+				'text' => '',
+				'min'  => 0,
+				'max'  => 0,
 			),
 		);
 

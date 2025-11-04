@@ -132,12 +132,16 @@ class WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
 		// Set advanced features that should NOT sync to CCT.
 		update_post_meta( $post_id, '_wp_mcp_ai_memory_files', array( 123, 456 ) );
 		update_post_meta( $post_id, '_wp_mcp_ai_vector_store_id', 'vs_abc123' );
-		update_post_meta( $post_id, '_wp_mcp_ai_tool_shortcuts', array(
+		update_post_meta(
+			$post_id,
+			'_wp_mcp_ai_tool_shortcuts',
 			array(
-				'label'   => 'Quick Search',
-				'payload' => 'Search for...',
-			),
-		) );
+				array(
+					'label'   => 'Quick Search',
+					'payload' => 'Search for...',
+				),
+			)
+		);
 
 		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post_id );
 

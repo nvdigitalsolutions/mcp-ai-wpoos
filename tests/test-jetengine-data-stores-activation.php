@@ -9,7 +9,7 @@ if ( ! class_exists( 'Jet_Engine_Modules' ) ) {
 	 */
 	class Jet_Engine_Modules {
 		private $active_modules = array();
-		private $modules = array();
+		private $modules        = array();
 
 		public function __construct() {
 			// Mock data stores module.
