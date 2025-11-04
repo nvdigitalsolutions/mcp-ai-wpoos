@@ -4638,6 +4638,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $file_size > $max_bytes ) {
 					/* translators: 1: maximum allowed size in bytes, 2: detected file size in bytes. */
 					$message = sprintf(
+	/* translators: 1: maximum file size in bytes, 2: actual file size in bytes */
 						__( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'wp-mcp-ai' ),
 						number_format_i18n( $max_bytes ),
 						number_format_i18n( $file_size )

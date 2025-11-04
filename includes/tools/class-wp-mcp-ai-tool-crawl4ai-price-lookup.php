@@ -368,6 +368,7 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
 		if ( $status < 200 || $status >= 300 ) {
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_http_status',
+				/* translators: %d: HTTP status code */
 				sprintf( __( 'The Crawl4AI web search service returned HTTP %d.', 'wp-mcp-ai' ), $status ),
 				array(
 					'status' => $status,

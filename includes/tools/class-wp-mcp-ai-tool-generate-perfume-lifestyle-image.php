@@ -282,6 +282,7 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 	 */
 	protected function prepare_image_segment( $segment, $argument_key, WP_MCP_AI_Message_Attachments $attachments_helper ) {
 		if ( empty( $segment ) || ! is_array( $segment ) ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_missing_image_segment', sprintf( __( 'The %s argument must be an object describing the image source.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
@@ -342,6 +343,7 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 		}
 
 		if ( empty( $prepared['attachment_id'] ) && empty( $prepared['file_id'] ) && empty( $prepared['url'] ) ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_missing_image_source', sprintf( __( 'The %s argument must include an attachment_id, file_id, or url.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
@@ -415,21 +417,25 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 		$validated = wp_http_validate_url( $value );
 
 		if ( ! $validated ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_invalid_url', sprintf( __( 'The %s value must be a valid HTTP or HTTPS URL.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
 		$parsed = wp_parse_url( $validated );
 		if ( empty( $parsed['scheme'] ) || empty( $parsed['host'] ) ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_invalid_url', sprintf( __( 'The %s value must be a valid HTTP or HTTPS URL.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
 		$scheme = strtolower( $parsed['scheme'] );
 		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_invalid_url_scheme', sprintf( __( 'The %s value must use HTTP or HTTPS.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
 		$host = strtolower( $parsed['host'] );
 		if ( $this->host_looks_unsafe( $host ) ) {
+			/* translators: %s: the name of the argument */
 			return new WP_Error( 'wp_mcp_ai_unsafe_url', sprintf( __( 'The %s value points to a disallowed host.', 'wp-mcp-ai' ), $argument_key ) );
 		}
 
@@ -508,12 +514,14 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 
 		$product_instructions = __( 'Analyse the attached product image. Confirm that it depicts a physical perfume product. Summarise distinguishing visual traits (bottle shape, colours, materials, branding) that can be described textually.', 'wp-mcp-ai' );
 		if ( '' !== $product_url ) {
+			/* translators: %s: the product URL */
 			$product_instructions .= ' ' . sprintf( __( 'Reference product URL: %s', 'wp-mcp-ai' ), $product_url );
 		}
 
 		$person_instructions = __( 'Analyse the attached person image. Confirm that it depicts a real person, ensure the clothing and pose are decent, and summarise key visual cues such as gender presentation, age range, hairstyle, outfit details, and notable accessories.', 'wp-mcp-ai' );
 
 		if ( '' !== $scene_description ) {
+			/* translators: %s: the scene description provided by the user */
 			$person_instructions .= ' ' . sprintf( __( 'Incorporate this creative direction when crafting the final lifestyle prompt: %s', 'wp-mcp-ai' ), $scene_description );
 		}
 
@@ -541,6 +549,7 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 		);
 
 		if ( '' !== $scene_description ) {
+			/* translators: %s: scene description provided by the user */
 			$scene_note = sprintf( __( 'Scene brief: %s', 'wp-mcp-ai' ), $scene_description );
 			$messages[] = array(
 				'role'    => 'user',
@@ -830,14 +839,17 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 		$parts[] = __( 'Create a high-quality lifestyle photograph that pairs the referenced person with the featured perfume product.', 'wp-mcp-ai' );
 
 		if ( ! empty( $product_summary['visual_features'] ) ) {
+			/* translators: %s: visual features of the perfume product */
 			$parts[] = sprintf( __( 'Highlight these perfume details: %s.', 'wp-mcp-ai' ), $product_summary['visual_features'] );
 		}
 
 		if ( ! empty( $person_summary['visual_features'] ) ) {
+			/* translators: %s: visual features of the person */
 			$parts[] = sprintf( __( 'Represent the person with: %s.', 'wp-mcp-ai' ), $person_summary['visual_features'] );
 		}
 
 		if ( '' !== $scene_description ) {
+			/* translators: %s: scene description for the image */
 			$parts[] = sprintf( __( 'Scene direction: %s.', 'wp-mcp-ai' ), $scene_description );
 		}
 
@@ -875,16 +887,19 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 
 		if ( ! empty( $product_status ) ) {
 			$lines[] = sprintf(
+				/* translators: %s: comma-separated list of product validation status messages */
 				__( 'Product validation: %s.', 'wp-mcp-ai' ),
 				implode( ', ', $product_status )
 			);
 		}
 
 		if ( ! empty( $product_summary['notes'] ) ) {
+			/* translators: %s: product notes from analysis */
 			$lines[] = sprintf( __( 'Product notes: %s', 'wp-mcp-ai' ), $product_summary['notes'] );
 		}
 
 		if ( ! empty( $product_summary['visual_features'] ) ) {
+			/* translators: %s: visual features of the product */
 			$lines[] = sprintf( __( 'Product features: %s', 'wp-mcp-ai' ), $product_summary['visual_features'] );
 		}
 
@@ -902,68 +917,83 @@ class WP_MCP_AI_Tool_Generate_Perfume_Lifestyle_Image implements WP_MCP_AI_Tool_
 
 		if ( ! empty( $person_status ) ) {
 			$lines[] = sprintf(
+				/* translators: %s: comma-separated list of person validation status messages */
 				__( 'Person validation: %s.', 'wp-mcp-ai' ),
 				implode( ', ', $person_status )
 			);
 		}
 
 		if ( ! empty( $person_summary['notes'] ) ) {
+			/* translators: %s: person notes from analysis */
 			$lines[] = sprintf( __( 'Person notes: %s', 'wp-mcp-ai' ), $person_summary['notes'] );
 		}
 
 		if ( ! empty( $person_summary['visual_features'] ) ) {
+			/* translators: %s: visual features of the person */
 			$lines[] = sprintf( __( 'Person features: %s', 'wp-mcp-ai' ), $person_summary['visual_features'] );
 		}
 
 		if ( ! empty( $analysis_summary['safety_notes'] ) ) {
+			/* translators: %s: safety notes from analysis */
 			$lines[] = sprintf( __( 'Safety notes: %s', 'wp-mcp-ai' ), $analysis_summary['safety_notes'] );
 		}
 
 		if ( ! empty( $analysis_summary['scene_description'] ) ) {
+			/* translators: %s: scene description for the image */
 			$lines[] = sprintf( __( 'Scene direction: %s', 'wp-mcp-ai' ), $analysis_summary['scene_description'] );
 		}
 
 		if ( ! empty( $analysis_summary['product_url'] ) ) {
 			$product_url = esc_url_raw( $analysis_summary['product_url'] );
 			if ( '' !== $product_url ) {
+				/* translators: %s: product URL */
 				$lines[] = sprintf( __( 'Product URL: %s', 'wp-mcp-ai' ), $product_url );
 			}
 		}
 
 		if ( ! empty( $analysis_summary['lifestyle_prompt'] ) ) {
+			/* translators: %s: lifestyle prompt used for image generation */
 			$lines[] = sprintf( __( 'Lifestyle prompt: %s', 'wp-mcp-ai' ), $analysis_summary['lifestyle_prompt'] );
 		}
 
 		if ( ! empty( $analysis_summary['analysis_model'] ) ) {
+			/* translators: %s: name of the AI model used for analysis */
 			$lines[] = sprintf( __( 'Analysis model: %s', 'wp-mcp-ai' ), $analysis_summary['analysis_model'] );
 		}
 
 		$image_settings = array();
 		if ( ! empty( $image_result['model'] ) ) {
+			/* translators: %s: AI model name */
 			$image_settings[] = sprintf( __( 'Model %s', 'wp-mcp-ai' ), $image_result['model'] );
 		}
 		if ( ! empty( $image_result['size'] ) ) {
+			/* translators: %s: image size dimensions */
 			$image_settings[] = sprintf( __( 'Size %s', 'wp-mcp-ai' ), $image_result['size'] );
 		}
 		if ( ! empty( $image_result['quality'] ) ) {
+			/* translators: %s: image quality setting */
 			$image_settings[] = sprintf( __( 'Quality %s', 'wp-mcp-ai' ), $image_result['quality'] );
 		}
 
 		if ( ! empty( $image_settings ) ) {
+			/* translators: %s: comma-separated list of image settings */
 			$lines[] = sprintf( __( 'Image settings: %s.', 'wp-mcp-ai' ), implode( ' • ', $image_settings ) );
 		}
 
 		if ( ! empty( $image_result['file_name'] ) ) {
+			/* translators: %s: generated file name */
 			$lines[] = sprintf( __( 'File name: %s', 'wp-mcp-ai' ), $image_result['file_name'] );
 		}
 
 		if ( ! empty( $image_result['attachment_id'] ) ) {
+			/* translators: %d: WordPress attachment ID number */
 			$lines[] = sprintf( __( 'Attachment ID: %d', 'wp-mcp-ai' ), (int) $image_result['attachment_id'] );
 		}
 
 		if ( ! empty( $image_result['url'] ) ) {
 			$url = esc_url_raw( $image_result['url'] );
 			if ( '' !== $url ) {
+				/* translators: %s: media file URL */
 				$lines[] = sprintf( __( 'Media URL: %s', 'wp-mcp-ai' ), $url );
 			}
 		}

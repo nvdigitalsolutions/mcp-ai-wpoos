@@ -1073,25 +1073,30 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 	protected function build_error_from_response( array $decoded ) {
 		if ( isset( $decoded['error'] ) ) {
 			if ( is_string( $decoded['error'] ) ) {
+	/* translators: %s: error message from Crawl4AI */
 				return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error'] );
 			}
 
 			if ( is_array( $decoded['error'] ) ) {
 				if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) ) {
+	/* translators: %s: error message from Crawl4AI */
 					return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error']['message'] );
 				}
 
 				if ( isset( $decoded['error']['detail'] ) && is_string( $decoded['error']['detail'] ) ) {
+	/* translators: %s: error message from Crawl4AI */
 					return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error']['detail'] );
 				}
 			}
 		}
 
 		if ( isset( $decoded['detail'] ) && is_string( $decoded['detail'] ) ) {
+/* translators: %s: error message from Crawl4AI */
 			return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['detail'] );
 		}
 
 		if ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
+/* translators: %s: error message from Crawl4AI */
 			return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['message'] );
 		}
 
@@ -1687,6 +1692,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
 		if ( $first_url && $first_error ) {
 			return sprintf(
+	/* translators: 1: URL that failed, 2: error message */
 				__( 'Unable to crawl the requested URLs. Example: %1$s (%2$s).', 'wp-mcp-ai' ),
 				$first_url,
 				$first_error
@@ -1695,6 +1701,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
 		if ( $first_url ) {
 			return sprintf(
+	/* translators: %s: example URL that couldn't be crawled */
 				__( 'Unable to crawl the requested URLs. Example URL: %s.', 'wp-mcp-ai' ),
 				$first_url
 			);
@@ -1702,6 +1709,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 
 		if ( $first_error ) {
 			return sprintf(
+	/* translators: %s: example error message */
 				__( 'Unable to crawl the requested URLs. Example error: %s.', 'wp-mcp-ai' ),
 				$first_error
 			);

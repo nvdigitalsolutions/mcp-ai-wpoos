@@ -1235,6 +1235,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				} elseif ( count( $filled ) > 0 ) {
 					$status['status']         = 'partial';
 					$status['status_label']   = __( 'Incomplete', 'wp-mcp-ai' );
+	/* translators: %s: list of missing credentials */
 					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'Add the missing credential: %s.', 'wp-mcp-ai' ) );
 				} elseif ( isset( $definition['empty_status'] ) && is_array( $definition['empty_status'] ) ) {
 					$empty_status = wp_parse_args(
@@ -1252,6 +1253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				} else {
 					$status['status']         = 'missing';
 					$status['status_label']   = __( 'Action required', 'wp-mcp-ai' );
+	/* translators: %s: list of required credentials */
 					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'wp-mcp-ai' ) );
 				}
 
