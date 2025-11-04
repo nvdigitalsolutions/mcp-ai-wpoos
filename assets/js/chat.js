@@ -3653,7 +3653,6 @@
         // Build display from crawled results
         const textParts = [];
         const status = result.status || 'completed';
-        const taskId = result.task_id || '';
 
         // Add summary header
         const urlCount = results.length;
