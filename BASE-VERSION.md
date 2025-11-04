@@ -2,14 +2,18 @@
 
 ## Overview
 
-The WP MCP AI plugin supports a "base version" mode that includes only tools and features compatible with a standard WordPress installation. This mode excludes all tools that require third-party plugins or external API credentials.
+The WP MCP AI plugin runs in "base version" mode by default. This mode includes only tools and features compatible with a standard WordPress installation and excludes all tools that require third-party plugins or external API credentials.
 
-## Enabling Base Version Mode
+## Base Version is Enabled by Default
 
-To enable base version mode, add the following constant to your `wp-config.php` file before the "That's all, stop editing!" line:
+Base version mode is **enabled by default**. No configuration is needed to use the base version.
+
+## Switching to Full Version
+
+To disable base version mode and enable the full version with all third-party integrations, add the following constant to your `wp-config.php` file before the "That's all, stop editing!" line:
 
 ```php
-define( 'WP_MCP_AI_BASE_VERSION', true );
+define( 'WP_MCP_AI_BASE_VERSION', false );
 ```
 
 Alternatively, you can add this to a custom mu-plugin or your theme's functions.php file (though wp-config.php is recommended).
@@ -184,7 +188,7 @@ add_filter( 'wp_mcp_ai_base_version', function( $is_base_version ) {
 
 To upgrade from base version to the full version:
 
-1. Remove the `WP_MCP_AI_BASE_VERSION` constant from wp-config.php
+1. Add `define( 'WP_MCP_AI_BASE_VERSION', false );` to wp-config.php
 2. Install any required third-party plugins (WooCommerce, JetEngine, etc.)
 3. Configure API credentials in Settings → MCP AI for external services you want to use
 4. The additional tools will automatically become available
