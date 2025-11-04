@@ -1653,6 +1653,15 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * @return array
 	 */
 	protected function get_assistant_tools_data( $assistant_id ) {
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return array(
+				'registered'         => array(),
+				'missing'            => array(),
+				'requested'          => array(),
+				'registry_available' => false,
+			);
+		}
+
 		$stored = get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
 
 		if ( ! is_array( $stored ) ) {
