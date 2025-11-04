@@ -374,7 +374,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 			
 			// Check if this is an Elementor action.
-			if ( strpos( $action, 'elementor' ) === 0 || strpos( $action, 'elementor_' ) === 0 ) {
+			if ( strpos( $action, 'elementor' ) === 0 ) {
 				// Suppress display_errors to prevent debug output from breaking JSON responses.
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					@ini_set( 'display_errors', '0' );

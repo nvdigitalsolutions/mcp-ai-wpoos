@@ -27,6 +27,11 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 		
 		// Backup original display_errors setting.
 		$this->original_display_errors = ini_get( 'display_errors' );
+		
+		// Ensure DOING_AJAX is defined for tests that need it.
+		if ( ! defined( 'DOING_AJAX' ) ) {
+			define( 'DOING_AJAX', true );
+		}
 	}
 
 	/**
@@ -80,9 +85,6 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
 		
-		// Simulate wp_doing_ajax() returning true.
-		define( 'DOING_AJAX', true );
-		
 		// Call the suppress method.
 		$plugin->suppress_debug_in_elementor_ajax();
 
@@ -107,10 +109,6 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 		// Simulate a non-Elementor AJAX request.
 		$_REQUEST['action'] = 'my_custom_action';
-		
-		if ( ! defined( 'DOING_AJAX' ) ) {
-			define( 'DOING_AJAX', true );
-		}
 		
 		// Create plugin instance and call the method.
 		$plugin = wp_mcp_ai();
@@ -204,10 +202,6 @@ class WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
 
 			// Simulate the AJAX request.
 			$_REQUEST['action'] = $action;
-			
-			if ( ! defined( 'DOING_AJAX' ) ) {
-				define( 'DOING_AJAX', true );
-			}
 			
 			// Call the suppress method.
 			$plugin = wp_mcp_ai();
