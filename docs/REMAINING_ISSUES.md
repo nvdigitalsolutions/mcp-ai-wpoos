@@ -2,96 +2,137 @@
 
 This document tracks code quality issues that need manual review or cannot be automatically fixed.
 
+**Last Updated:** 2025-11-04 06:23 UTC (Re-checked after site changes)
+
 ## Variable Naming Convention Issues
 
 ### External Library Properties
 Some errors are from external library object properties (e.g., DOMNode, plugin headers) that cannot be renamed as they come from WordPress core or PHP extensions:
 
-**Examples:**
-- `$plugin_object->Name` - WordPress plugin header property
-- `$plugin_object->Version` - WordPress plugin header property  
-- `$domNode->wholeText` - DOM API property
-- `$domElement->tagName` - DOM API property
+**Files Affected:**
+- `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164) - WordPress plugin header properties (`$plugin->Name`, `$plugin->Version`)
+- `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452) - DOM API property (`$anchor->textContent`)
+- `includes/class-wp-mcp-ai-rest.php` (line 4716) - DOM API property (`$reader->nodeType`)
 
-**Action:** These can be suppressed with phpcs:ignore comments as they're external API requirements.
+**Status:** ⚠️ **STILL AN ISSUE**
+
+**Action Required:** Add phpcs:ignore comments with explanations for external API requirements. These properties cannot be renamed as they come from WordPress core or PHP DOM extensions.
 
 ### Internal Variable Naming
-Variables that should be converted from camelCase to snake_case:
+**Status:** ✅ **RESOLVED**
 
-**bin/check-plugin-environment.php:**
-- Line 7: `$minPhpVersion` → `$min_php_version`
-- Line 11: `$currentPhpVersion` → `$current_php_version`
-- Line 18-20: `$pluginFile` → `$plugin_file`
-- Line 24-25: `$pluginContents` → `$plugin_contents`
-
-**includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php:**
-Multiple instances of camelCase variables that should follow WordPress naming conventions.
+All internal camelCase variables in the following files have been fixed:
+- ~~`bin/check-plugin-environment.php`~~ - Variables now use snake_case (`$min_php_version`, `$current_php_version`, `$plugin_file`, `$plugin_contents`)
+- ~~`includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php`~~ - Variables follow WordPress naming conventions
 
 ## Missing @package Tags
 
-Files that need @package tag added to file docblock:
+**Status:** ⚠️ **PARTIALLY RESOLVED**
 
-1. includes/tools-init.php
-2. includes/tools/tools-init.php
-3. bin/check-plugin-environment.php
-4. Various tool files (check with linter)
+Files that **still need** @package tag added to file docblock:
+
+1. `includes/class-assistant-cpt.php`
+2. `includes/class-rest-endpoints.php`
+3. `includes/class-admin-settings.php`
+4. `includes/class-openai-client.php`
+5. `includes/class-tool-registry.php`
+6. `tests/bootstrap.php`
+7. `tests/wp-tests-config.php`
+8. `tests/test-jetengine-assistants-cct.php`
+
+Files that have been **fixed:**
+- ~~`includes/tools-init.php`~~ - ✅ Has @package tag
+- ~~`includes/tools/tools-init.php`~~ - ✅ Has @package tag
+- ~~`bin/check-plugin-environment.php`~~ - ✅ Has @package tag
 
 ## Missing Parameter Documentation
 
-Multiple tool execute() methods are missing @param documentation for:
-- `$arguments` parameter
-- `$context` parameter
+**Status:** ⚠️ **STILL AN ISSUE**
 
-This should be standardized across all tool classes.
+Multiple tool `execute()` methods are missing `@param` documentation for:
+- `$arguments` parameter (array)
+- `$context` parameter (array)
+
+This affects approximately **60 files** (120 missing @param instances) and should be standardized across all tool implementations.
+
+**Example files affected:**
+- Various tool classes in `includes/tools/` directory
+- `includes/class-wp-mcp-ai-jetengine-tool-handlers.php` (also missing `$path_params`, `$requires_id`)
+
+**Action Required:** Add proper @param documentation to all execute() methods following WordPress documentation standards.
 
 ## Suppressed Warnings
 
 ### File Operations
-- `file_get_contents()` usage in bin/check-plugin-environment.php (line 24)
-  - Warning suggests using `wp_remote_get()` but this is a CLI script, not web context
-  - Consider documenting why direct file access is appropriate here
+**Status:** ✅ **PROPERLY HANDLED**
+
+- `file_get_contents()` usage in `bin/check-plugin-environment.php` (line 25) - Now has phpcs:ignore comment with proper explanation: "CLI context, not web request"
+- `file()` usage in `bin/check-plugin-environment.php` (line 94) - Now has phpcs:ignore comment explaining intentional graceful error handling
 
 ### Error Suppression
-- `@file()` usage should be replaced with proper error checking:
-  ```php
-  // Instead of:
-  $lines = @file( $path );
-  
-  // Use:
-  if ( file_exists( $path ) && is_readable( $path ) ) {
-      $lines = file( $path );
-  } else {
-      // Handle error
-  }
-  ```
+**Status:** ✅ **RESOLVED**
+
+- ~~`@file()` usage~~ - No longer uses error suppression operator (@). The code now uses phpcs:ignore comments instead of suppressing errors with @.
 
 ## WordPress Coding Standards Exceptions
 
 Some violations are intentional or required by external APIs:
 
 1. **Namespace curly brace syntax** - Used in integration files for PHP 7.4+ compatibility
-2. **Object properties** - External API properties can't be renamed
-3. **Unused parameters** - Interface implementations may have unused parameters
+2. **Object properties** - External API properties can't be renamed (WordPress plugin headers, PHP DOM API)
+3. **Unused parameters** - Interface implementations may have unused parameters (e.g., `$request` in integration classes)
+4. **Slow query warnings** - Some use of `meta_key` and `meta_value` in queries are intentional for specific functionality
+5. **File operations in CLI context** - Direct file operations in `bin/` scripts are appropriate (not web requests)
+
+## Summary of Current Issues
+
+### High Priority (Remaining)
+- [ ] Add @package tag to 8 remaining files (15-20 minutes)
+- [ ] Add phpcs:ignore comments for external API properties in 3 files (30-40 minutes)
+
+### Medium Priority (Remaining)
+- [ ] Add missing parameter documentation to ~60 files with execute() methods (4-6 hours)
+- [ ] Add missing file docblocks to test files (30 minutes)
+
+### Low Priority
+- [ ] Create coding standards documentation (2-3 hours)
+- [ ] Set up automated checks in CI/CD (1-2 hours)
+- [ ] Review and address slow query warnings (1-2 hours)
+
+### Completed ✅
+- [x] Fix variable naming in bin/check-plugin-environment.php
+- [x] Add @package tags to includes/tools-init.php and includes/tools/tools-init.php
+- [x] Replace @file() error suppression with proper phpcs:ignore comments
+- [x] Document file operations in bin/check-plugin-environment.php
 
 ## Recommendations
 
-1. **Add phpcs:ignore selectively** for external API properties with explanation
-2. **Refactor internal variables** to use snake_case consistently
-3. **Add missing @package tags** to all files
-4. **Document parameters** in all tool execute() methods
-5. **Create coding standards guide** documenting exceptions and patterns
+1. **Add phpcs:ignore selectively** for external API properties with explanation in:
+   - `includes/tools/class-wp-mcp-ai-tool-get-update-status.php` (lines 137, 140, 164)
+   - `includes/tools/class-wp-mcp-ai-tool-get-site-health.php` (line 452)
+   - `includes/class-wp-mcp-ai-rest.php` (line 4716)
 
-## Priority Actions
+2. ~~**Refactor internal variables** to use snake_case consistently~~ ✅ COMPLETED
 
-High Priority:
-- [ ] Add @package tag to main files (10 minutes)
-- [ ] Fix variable naming in bin/check-plugin-environment.php (15 minutes)
-- [ ] Add phpcs:ignore comments with explanations for external properties (30 minutes)
+3. **Add missing @package tags** to 8 remaining core and test files
 
-Medium Priority:
-- [ ] Add missing parameter documentation (1-2 hours)
-- [ ] Review and refactor variable naming in tool files (2-3 hours)
+4. **Document parameters** in all tool execute() methods following this pattern:
+   ```php
+   /**
+    * Execute the tool.
+    *
+    * @param array $arguments Tool arguments.
+    * @param array $context   Execution context including user_id.
+    * @return array|WP_Error Tool results or error.
+    */
+   public function execute( array $arguments = array(), array $context = array() ) {
+   ```
 
-Low Priority:
-- [ ] Create coding standards documentation (2-3 hours)
-- [ ] Set up automated checks in CI/CD (1-2 hours)
+5. **Create coding standards guide** documenting exceptions and patterns for WordPress/PHP external APIs
+
+## Notes
+
+- Many issues mentioned in the original document have been resolved through recent code improvements
+- The remaining issues are mostly documentation-related (missing @package tags and @param docs)
+- External API property naming issues are legitimate exceptions that should be documented with phpcs:ignore comments
+- Test files have many linting issues but these are lower priority as they don't affect production code
