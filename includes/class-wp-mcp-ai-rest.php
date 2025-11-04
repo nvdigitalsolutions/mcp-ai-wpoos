@@ -72,23 +72,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Clean all output buffers.
+		 *
+		 * Helper method to reduce code duplication.
+		 */
+		private function clean_all_output_buffers() {
+			while ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
+		}
+
+		/**
 		 * Clean output buffer before REST API processing.
 		 *
 		 * Prevents PHP errors/warnings from contaminating JSON responses.
 		 */
 		public function clean_output_buffer() {
 			// Check if we're handling a REST request for our namespace.
-			$rest_route = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-			if ( false === strpos( $rest_route, '/' . self::REST_NAMESPACE ) ) {
+			// Use rest_get_url_prefix() to handle subdirectory installations.
+			$rest_prefix = rest_get_url_prefix();
+			$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			
+			if ( false === strpos( $request_uri, '/' . $rest_prefix . '/' . self::REST_NAMESPACE ) ) {
 				return;
 			}
 
-			// Clean any existing output.
-			while ( ob_get_level() > 0 ) {
-				ob_end_clean();
-			}
-
-			// Start fresh output buffering.
+			// Clean any existing output and start fresh.
+			$this->clean_all_output_buffers();
 			ob_start();
 		}
 
@@ -109,9 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Clean any stray output before serving.
-			while ( ob_get_level() > 0 ) {
-				ob_end_clean();
-			}
+			$this->clean_all_output_buffers();
 
 			return $served;
 		}

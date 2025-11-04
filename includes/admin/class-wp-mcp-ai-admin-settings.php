@@ -85,7 +85,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				call_user_func( array( $this, $handler_method ) );
 			} catch ( Exception $e ) {
 				// Clean any output from the exception.
-				ob_end_clean();
+				if ( ob_get_level() > 0 ) {
+					ob_end_clean();
+				}
 				wp_send_json_error(
 					array(
 						'message' => $e->getMessage(),
@@ -95,7 +97,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			// Clean any leftover output buffer.
-			ob_end_clean();
+			if ( ob_get_level() > 0 ) {
+				ob_end_clean();
+			}
 		}
 
 		/**

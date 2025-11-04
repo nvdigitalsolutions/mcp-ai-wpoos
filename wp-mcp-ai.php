@@ -350,9 +350,20 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * Disable wp-auth-check heartbeat in Elementor editor.
 		 *
 		 * Prevents JavaScript errors related to missing DOM elements.
+		 * Elementor uses a query parameter to identify editor mode, which is
+		 * validated by Elementor's own nonce verification in its editor loader.
 		 */
 		public function disable_auth_check_in_elementor() {
-			if ( isset( $_GET['action'] ) && 'elementor' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
+			// Check if Elementor is active and in editor mode.
+			if ( ! isset( $_GET['action'] ) ) {
+				return;
+			}
+
+			$action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+			
+			// Elementor editor uses 'elementor' action parameter.
+			// This is a safe check as Elementor's editor loader validates capabilities and nonces.
+			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 			}
 		}
