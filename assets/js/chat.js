@@ -5285,7 +5285,7 @@
 
                     if (normalized && normalized.attachments && normalized.attachments.length > 0) {
                         // Add attachments to the assistant display.
-                        assistantDisplay.attachments = assistantDisplay.attachments.concat(normalized.attachments);
+                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
                     }
                 });
 

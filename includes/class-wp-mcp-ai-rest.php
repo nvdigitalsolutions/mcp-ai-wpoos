@@ -2056,18 +2056,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
 
+					// Extract tool call metadata for message construction.
+					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
+					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
+
 					// Create a full tool message with structured result for frontend.
 					$full_tool_message = array(
 						'role'    => 'tool',
 						'content' => $tool_result,
 					);
 
-					if ( isset( $tool_call['id'] ) ) {
-						$full_tool_message['tool_call_id'] = $tool_call['id'];
+					if ( '' !== $tool_call_id ) {
+						$full_tool_message['tool_call_id'] = $tool_call_id;
 					}
 
-					if ( isset( $tool_call['function']['name'] ) ) {
-						$full_tool_message['name'] = $tool_call['function']['name'];
+					if ( '' !== $tool_name ) {
+						$full_tool_message['name'] = $tool_name;
 					}
 
 					// Store original tool result for frontend.
@@ -2081,12 +2085,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
 					);
 
-					if ( isset( $tool_call['id'] ) ) {
-						$tool_message['tool_call_id'] = $tool_call['id'];
+					if ( '' !== $tool_call_id ) {
+						$tool_message['tool_call_id'] = $tool_call_id;
 					}
 
-					if ( isset( $tool_call['function']['name'] ) ) {
-						$tool_message['name'] = $tool_call['function']['name'];
+					if ( '' !== $tool_name ) {
+						$tool_message['name'] = $tool_name;
 					}
 
 					$messages[] = $tool_message;
@@ -6624,8 +6628,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					unset( $sanitized['content']['data'] );
 					unset( $sanitized['content']['data_url'] );
 
-					// If content is now empty, remove it entirely.
-					if ( empty( $sanitized['content'] ) ) {
+					// If content array is now empty, remove it entirely.
+					if ( count( $sanitized['content'] ) === 0 ) {
 						unset( $sanitized['content'] );
 					}
 				}
