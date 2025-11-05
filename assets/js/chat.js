@@ -2829,6 +2829,13 @@
     }
 
     function addAttachmentMetadataToSegment(segment, attachment) {
+        if (!segment || typeof segment !== 'object') {
+            return;
+        }
+        if (!attachment || typeof attachment !== 'object') {
+            return;
+        }
+        
         // Include URL and name for display purposes when restoring from localStorage
         if (attachment.url) {
             segment.url = attachment.url;
