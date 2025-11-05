@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 			$error_detail = '';
 
 			// Try to extract error details from the API response.
-			if ( is_array( $error_data ) ) {
+			if ( JSON_ERROR_NONE === json_last_error() && is_array( $error_data ) ) {
 				if ( ! empty( $error_data['reason'] ) ) {
 					$error_detail = sanitize_text_field( $error_data['reason'] );
 				} elseif ( ! empty( $error_data['message'] ) ) {
