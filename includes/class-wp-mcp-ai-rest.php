@@ -2041,6 +2041,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
+				// Add the assistant message with tool_calls to the conversation.
+				// This is required by OpenAI's API: an assistant message with tool_calls
+				// must be followed by tool response messages.
+				$assistant_message = $this->extract_assistant_message_from_response( $response );
+				if ( $assistant_message ) {
+					$messages[] = $assistant_message;
+				}
+
 				// Execute each tool and collect results.
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
@@ -6440,6 +6448,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return array();
+		}
+
+		/**
+		 * Extract the assistant message from an LLM response.
+		 *
+		 * When the LLM response contains tool_calls, we need to add the assistant message
+		 * to the conversation before adding tool response messages, as required by OpenAI's API.
+		 *
+		 * @param array $response LLM response array.
+		 * @return array|null Assistant message array or null if not found.
+		 */
+		protected function extract_assistant_message_from_response( $response ) {
+			if ( ! is_array( $response ) ) {
+				return null;
+			}
+
+			// Check for message in choices array (OpenAI/Gemini format).
+			if ( isset( $response['choices'] ) && is_array( $response['choices'] ) ) {
+				foreach ( $response['choices'] as $choice ) {
+					if ( isset( $choice['message'] ) && is_array( $choice['message'] ) ) {
+						return $choice['message'];
+					}
+				}
+			}
+
+			// Check for direct message format (some providers).
+			if ( isset( $response['role'] ) && 'assistant' === $response['role'] ) {
+				return $response;
+			}
+
+			return null;
 		}
 
 		/**
