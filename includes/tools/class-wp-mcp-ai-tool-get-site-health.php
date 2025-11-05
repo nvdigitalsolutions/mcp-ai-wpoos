@@ -316,16 +316,40 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 	 * @return array|null
 	 */
 	protected function call_site_health_test_callback( $callback ) {
-		$result = call_user_func( $callback );
+		try {
+			$result = call_user_func( $callback );
 
-		if ( null === $result ) {
+			if ( null === $result ) {
+				return null;
+			}
+
+			/** This filter matches core Site Health behaviour. */
+			$result = apply_filters( 'site_status_test_result', $result );
+
+			return is_array( $result ) ? $result : null;
+		} catch ( Exception $e ) {
+			WP_MCP_AI_Logger::log_error(
+				'Site Health test callback threw exception.',
+				array(
+					'error_message' => $e->getMessage(),
+					'error_file'    => $e->getFile(),
+					'error_line'    => $e->getLine(),
+					'callback'      => is_array( $callback ) && count( $callback ) === 2 ? get_class( $callback[0] ) . '::' . $callback[1] : 'unknown',
+				)
+			);
+			return null;
+		} catch ( Throwable $e ) {
+			WP_MCP_AI_Logger::log_error(
+				'Site Health test callback threw error.',
+				array(
+					'error_message' => $e->getMessage(),
+					'error_file'    => $e->getFile(),
+					'error_line'    => $e->getLine(),
+					'callback'      => is_array( $callback ) && count( $callback ) === 2 ? get_class( $callback[0] ) . '::' . $callback[1] : 'unknown',
+				)
+			);
 			return null;
 		}
-
-		/** This filter matches core Site Health behaviour. */
-		$result = apply_filters( 'site_status_test_result', $result );
-
-		return is_array( $result ) ? $result : null;
 	}
 
 	/**
