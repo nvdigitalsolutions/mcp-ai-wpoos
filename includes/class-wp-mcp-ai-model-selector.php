@@ -175,11 +175,11 @@ class WP_MCP_AI_Model_Selector {
 			'model_tpm_exceeded',
 			'Model TPM limit would be exceeded. Checking for fallback options.',
 			array(
-				'model'            => $model,
-				'tpm_limit'        => $tpm_limit,
-				'required_tokens'  => $total_tokens,
-				'input_tokens'     => $budget['used'],
-				'reserved_output'  => $budget['reserved'],
+				'model'           => $model,
+				'tpm_limit'       => $tpm_limit,
+				'required_tokens' => $total_tokens,
+				'input_tokens'    => $budget['used'],
+				'reserved_output' => $budget['reserved'],
 			)
 		);
 

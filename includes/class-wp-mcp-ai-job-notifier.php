@@ -71,9 +71,9 @@ class WP_MCP_AI_Job_Notifier {
 			);
 		}
 
-		$status['progress']    = max( 0, min( 100, floatval( $progress ) ) );
-		$status['updated_at']  = current_time( 'mysql', true );
-		$status['metadata']    = $metadata;
+		$status['progress']   = max( 0, min( 100, floatval( $progress ) ) );
+		$status['updated_at'] = current_time( 'mysql', true );
+		$status['metadata']   = $metadata;
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'progress', $status );
@@ -225,9 +225,9 @@ class WP_MCP_AI_Job_Notifier {
 				array(
 					'url'     => $webhook['url'],
 					'payload' => array(
-						'event'  => $event,
-						'job_id' => $job_id,
-						'data'   => $data,
+						'event'   => $event,
+						'job_id'  => $job_id,
+						'data'    => $data,
 						'sent_at' => current_time( 'c', true ),
 					),
 				)

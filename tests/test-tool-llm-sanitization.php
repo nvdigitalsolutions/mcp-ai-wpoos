@@ -20,9 +20,9 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 
 		// Mock the crawl4ai tool response with large raw data.
 		$mock_result = array(
-			'status'  => 'completed',
-			'task_id' => 'task_123',
-			'results' => array(
+			'status'   => 'completed',
+			'task_id'  => 'task_123',
+			'results'  => array(
 				array(
 					'url'      => 'https://example.com',
 					'markdown' => '# Test Content (already truncated)',
@@ -48,7 +48,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 			),
 		);
 
-		$tool = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
+		$tool      = new WP_MCP_AI_Tool_Run_Crawl4AI_Job();
 		$sanitized = $tool->sanitize_for_llm( $mock_result );
 
 		// 'raw' field should be stripped.
@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 			),
 		);
 
-		$tool = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$tool      = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
 		$sanitized = $tool->sanitize_for_llm( $mock_result );
 
 		// Base64 content should be stripped.
@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// Create a mock tool that implements the sanitizer interface.
 		$mock_tool = $this->getMockBuilder( WP_MCP_AI_Tool_Interface::class )
 			->getMock();
-		
+
 		$mock_tool->method( 'get_slug' )->willReturn( 'test_tool' );
 
 		// Make the mock also implement the sanitizer interface.
@@ -175,7 +175,10 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 				return array();
 			}
 			public function execute( array $arguments = array(), array $context = array() ) {
-				return array( 'test' => 'data', 'large_field' => 'should be removed' );
+				return array(
+					'test'        => 'data',
+					'large_field' => 'should be removed',
+				);
 			}
 			public function sanitize_for_llm( $result ) {
 				// Custom sanitization: only keep 'test' field.
@@ -184,11 +187,11 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		};
 
 		// Register the mock tool.
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
 		$reflection = new ReflectionClass( $registry );
-		$property = $reflection->getProperty( 'tools' );
+		$property   = $reflection->getProperty( 'tools' );
 		$property->setAccessible( true );
-		$tools = $property->getValue( $registry );
+		$tools              = $property->getValue( $registry );
 		$tools['test_tool'] = $mock_tool_with_sanitizer;
 		$property->setValue( $registry, $tools );
 
@@ -201,9 +204,12 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		$method          = $reflection->getMethod( 'sanitize_tool_result_for_llm' );
 		$method->setAccessible( true );
 
-		$result = array( 'test' => 'data', 'large_field' => 'should be removed' );
+		$result           = array(
+			'test'        => 'data',
+			'large_field' => 'should be removed',
+		);
 		$assistant_config = array( 'tools' => array( 'test_tool' ) );
-		
+
 		$sanitized = $method->invoke( $rest_controller, $result, 'test_tool', $assistant_config );
 
 		// Custom sanitization should have been applied.

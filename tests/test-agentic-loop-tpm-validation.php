@@ -42,7 +42,7 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 											'id'       => 'call_crawl_123',
 											'type'     => 'function',
 											'function' => array(
-												'name'      => 'run_crawl4ai_job',
+												'name' => 'run_crawl4ai_job',
 												'arguments' => wp_json_encode(
 													array(
 														'url' => 'https://example.com',
@@ -151,7 +151,7 @@ class WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
 												'id'       => 'call_weather_456',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													'arguments' => wp_json_encode(
 														array(
 															'latitude'  => 48.8566,

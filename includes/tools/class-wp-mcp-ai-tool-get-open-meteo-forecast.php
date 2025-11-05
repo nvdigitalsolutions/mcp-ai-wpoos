@@ -231,7 +231,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		$hourly = $arguments['hourly'];
 
 		if ( is_array( $hourly ) ) {
-			$hourly = array_filter( array_map( 'sanitize_key', $hourly ) );
+			$hourly        = array_filter( array_map( 'sanitize_key', $hourly ) );
 			$hourly_string = implode( ',', $hourly );
 		} else {
 			$hourly_string = sanitize_text_field( $hourly );
@@ -268,8 +268,8 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 			'sunset',
 		);
 
-		$variables      = explode( ',', $hourly_string );
-		$invalid_vars   = array();
+		$variables    = explode( ',', $hourly_string );
+		$invalid_vars = array();
 
 		foreach ( $variables as $var ) {
 			$var = trim( $var );

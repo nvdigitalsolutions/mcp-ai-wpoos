@@ -15,8 +15,8 @@ class Test_Job_Notifier extends WP_UnitTestCase {
 	public function test_job_status_caching() {
 		$job_id = 'test_job_' . wp_generate_uuid4();
 		$status = array(
-			'job_id' => $job_id,
-			'status' => 'running',
+			'job_id'   => $job_id,
+			'status'   => 'running',
 			'progress' => 50.0,
 		);
 

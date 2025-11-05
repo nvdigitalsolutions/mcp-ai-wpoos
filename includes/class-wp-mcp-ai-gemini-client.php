@@ -642,7 +642,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 					case 'input_file':
 						$label = __( '[File attachment]', 'wp-mcp-ai' );
-						
+
 						// Prefer display_name, fallback to name, or use 'File'
 						$name = 'File';
 						if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
@@ -650,14 +650,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						} elseif ( isset( $segment['name'] ) && '' !== $segment['name'] ) {
 							$name = sanitize_text_field( $segment['name'] );
 						}
-						
+
 						// If URL is available, show it with the name
 						if ( isset( $segment['url'] ) && '' !== $segment['url'] ) {
 							$label = '[' . $name . ': ' . esc_url_raw( $segment['url'] ) . ']';
 						} else {
 							$label = '[File: ' . $name . ']';
 						}
-						
+
 						$fragments[] = $label;
 						break;
 

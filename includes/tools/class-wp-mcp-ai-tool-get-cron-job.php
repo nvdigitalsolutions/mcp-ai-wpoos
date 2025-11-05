@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface {
 		if ( 'single' !== $schedule && '' !== $schedule ) {
 			$schedules = wp_get_schedules();
 			if ( isset( $schedules[ $schedule ] ) ) {
-				$result['schedule_display'] = $schedules[ $schedule ]['display'];
+				$result['schedule_display']  = $schedules[ $schedule ]['display'];
 				$result['schedule_interval'] = $schedules[ $schedule ]['interval'];
 			}
 		}

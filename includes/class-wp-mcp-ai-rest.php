@@ -2100,16 +2100,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Validate token budget before next iteration to prevent TPM limit errors.
-				$model              = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
-				$max_output_tokens  = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
-				$tpm_validation     = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+				$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
 
 				if ( is_wp_error( $tpm_validation ) ) {
 					// Check if we should switch to a higher-capacity model.
-					$settings                 = WP_MCP_AI_Admin_Settings::get_settings();
-					$fallback_model           = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
-					$auto_switch_enabled      = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
-					$switched_model           = false;
+					$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
+					$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
+					$switched_model      = false;
 
 					if ( $auto_switch_enabled && $fallback_model !== $model ) {
 						// Try the fallback model.
@@ -2137,9 +2137,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					if ( ! $switched_model ) {
 						// Attempt to truncate messages to fit within the limit.
-						$tpm_limit      = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
-						$target_tokens  = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
-						$messages       = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
+						$tpm_limit     = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+						$target_tokens = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
+						$messages      = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
 
 						// Re-validate after truncation.
 						$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
@@ -4914,7 +4914,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $file_size > $max_bytes ) {
 					/* translators: 1: maximum allowed size in bytes, 2: detected file size in bytes. */
 					$message = sprintf(
-	/* translators: 1: maximum file size in bytes, 2: actual file size in bytes */
+					/* translators: 1: maximum file size in bytes, 2: actual file size in bytes */
 						__( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'wp-mcp-ai' ),
 						number_format_i18n( $max_bytes ),
 						number_format_i18n( $file_size )
@@ -6592,11 +6592,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Execute a single tool call internally during the agentic loop.
 		 *
-		 * @param array            $tool_call        Tool call object from LLM.
-		 * @param int              $assistant_id     Assistant ID.
-		 * @param array            $assistant_config Assistant configuration.
-		 * @param int              $user_id          User ID.
-		 * @param WP_REST_Request  $request          Original REST request.
+		 * @param array           $tool_call        Tool call object from LLM.
+		 * @param int             $assistant_id     Assistant ID.
+		 * @param array           $assistant_config Assistant configuration.
+		 * @param int             $user_id          User ID.
+		 * @param WP_REST_Request $request          Original REST request.
 		 * @return mixed Tool execution result.
 		 */
 		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request ) {
@@ -6618,7 +6618,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			$allowed_tools = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
 			$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
 
 			// Check for document prompt tool special case.

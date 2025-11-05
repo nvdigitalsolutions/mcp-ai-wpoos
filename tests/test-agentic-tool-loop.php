@@ -45,7 +45,7 @@ class WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
 												'id'       => 'call_weather_123',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													'arguments' => wp_json_encode(
 														array(
 															'latitude'  => 48.8566,
@@ -147,7 +147,7 @@ class WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
 												'id'       => 'call_weather_456',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													'arguments' => wp_json_encode(
 														array(
 															'latitude'  => 51.5074,
@@ -161,7 +161,7 @@ class WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
 												'id'       => 'call_time_789',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_current_time',
+													'name' => 'get_current_time',
 													'arguments' => wp_json_encode( array() ),
 												),
 											),

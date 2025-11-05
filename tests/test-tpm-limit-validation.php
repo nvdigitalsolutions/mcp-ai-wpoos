@@ -21,7 +21,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 			),
 		);
 
-		$model            = 'gpt-4o-mini';
+		$model             = 'gpt-4o-mini';
 		$max_output_tokens = 1000;
 
 		$result = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
@@ -85,8 +85,8 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_higher_limit_models' );
 		$method->setAccessible( true );
 
-		$current_model    = 'gpt-4o-mini';
-		$required_tokens  = 250000; // Exceeds gpt-4o-mini's 200k limit but within gpt-4.1-mini's 400k.
+		$current_model   = 'gpt-4o-mini';
+		$required_tokens = 250000; // Exceeds gpt-4o-mini's 200k limit but within gpt-4.1-mini's 400k.
 
 		$suggested = $method->invoke( null, $current_model, $required_tokens );
 

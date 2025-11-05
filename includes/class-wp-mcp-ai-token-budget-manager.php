@@ -469,12 +469,12 @@ class WP_MCP_AI_Token_Budget_Manager {
 			WP_MCP_AI_Logger::log_error(
 				'Request exceeds TPM limit for model.',
 				array(
-					'model'               => $model_name,
-					'tpm_limit'           => $tpm_limit,
-					'requested_tokens'    => $total_tokens,
-					'input_tokens'        => $budget['used'],
-					'reserved_output'     => $budget['reserved'],
-					'max_output_tokens'   => $max_output_tokens,
+					'model'             => $model_name,
+					'tpm_limit'         => $tpm_limit,
+					'requested_tokens'  => $total_tokens,
+					'input_tokens'      => $budget['used'],
+					'reserved_output'   => $budget['reserved'],
+					'max_output_tokens' => $max_output_tokens,
 				)
 			);
 
@@ -488,14 +488,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 					$total_tokens
 				),
 				array(
-					'status'              => 400,
-					'model'               => $model_name,
-					'tpm_limit'           => $tpm_limit,
-					'requested_tokens'    => $total_tokens,
-					'input_tokens'        => $budget['used'],
-					'reserved_output'     => $budget['reserved'],
-					'max_output_tokens'   => $max_output_tokens,
-					'suggested_models'    => self::get_higher_limit_models( $model, $total_tokens ),
+					'status'            => 400,
+					'model'             => $model_name,
+					'tpm_limit'         => $tpm_limit,
+					'requested_tokens'  => $total_tokens,
+					'input_tokens'      => $budget['used'],
+					'reserved_output'   => $budget['reserved'],
+					'max_output_tokens' => $max_output_tokens,
+					'suggested_models'  => self::get_higher_limit_models( $model, $total_tokens ),
 				)
 			);
 		}
@@ -524,11 +524,11 @@ class WP_MCP_AI_Token_Budget_Manager {
 		if ( $is_openai ) {
 			// Suggest OpenAI models with higher limits.
 			$openai_alternatives = array(
-				'gpt-4o'        => 30000,    // Tier 1.
-				'gpt-4.1-mini'  => 400000,   // Future model.
-				'gpt-4.1'       => 300000,   // Future model.
-				'gpt-5-mini'    => 500000,   // Future model.
-				'gpt-5'         => 500000,   // Future model.
+				'gpt-4o'       => 30000,    // Tier 1.
+				'gpt-4.1-mini' => 400000,   // Future model.
+				'gpt-4.1'      => 300000,   // Future model.
+				'gpt-5-mini'   => 500000,   // Future model.
+				'gpt-5'        => 500000,   // Future model.
 			);
 
 			foreach ( $openai_alternatives as $model => $tpm ) {
@@ -544,8 +544,8 @@ class WP_MCP_AI_Token_Budget_Manager {
 		} elseif ( $is_claude ) {
 			// Claude models have varying TPM limits.
 			$claude_alternatives = array(
-				'claude-3-haiku'     => 50000,
-				'claude-3.5-sonnet'  => 40000,
+				'claude-3-haiku'    => 50000,
+				'claude-3.5-sonnet' => 40000,
 			);
 
 			foreach ( $claude_alternatives as $model => $tpm ) {
