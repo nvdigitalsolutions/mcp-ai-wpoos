@@ -607,13 +607,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			return array();
 		}
 
-		$file_contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$file_contents = file_get_contents( $file_path );
 
 		if ( false === $file_contents || '' === $file_contents ) {
 			return array();
 		}
 
-		$encoded = base64_encode( $file_contents ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		$encoded = base64_encode( $file_contents );
 
 		if ( '' === $encoded ) {
 			return array();
