@@ -2585,10 +2585,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					unset( $segment['image'] );
 				}
 
-				if ( isset( $segment['image'] ) ) {
-					unset( $segment['image'] );
-				}
-
 				if ( isset( $segment['image_url'] ) ) {
 					unset( $segment['image_url'] );
 				}
