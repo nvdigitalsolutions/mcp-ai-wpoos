@@ -4971,6 +4971,11 @@
         // For multiple rapid messages, we already added them to conversation
         // during handleSubmit, so we just need to send the current conversation state.
         // Use the first submission's context for restoration if needed.
+        // Note: On error, using the first submission's previousConversationLength will
+        // correctly remove ALL bundled messages (since they were all added after that point).
+        // However, only the first message's input can be restored to the textarea.
+        // This trade-off is acceptable since errors are rare and it's better to restore
+        // one message than lose all of them.
         const firstSubmission = bundledSubmissions[0];
 
         sendChat(state, firstSubmission);
