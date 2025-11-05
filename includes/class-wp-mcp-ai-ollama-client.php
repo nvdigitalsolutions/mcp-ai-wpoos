@@ -172,8 +172,38 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				'stream'   => false,
 			);
 
+			if ( ! isset( $payload['options'] ) ) {
+				$payload['options'] = array();
+			}
+
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] ) {
-				$payload['options'] = array( 'temperature' => (float) $options['temperature'] );
+				$payload['options']['temperature'] = (float) $options['temperature'];
+			}
+
+			// Apply resource-aware num_predict if not explicitly set.
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$num_predict  = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum tokens (num_predict) for Ollama requests.
+				 *
+				 * @param int   $num_predict The maximum tokens to use.
+				 * @param array $options     Request options.
+				 */
+				$num_predict = apply_filters( 'wp_mcp_ai_ollama_num_predict', $num_predict, $options );
+
+				if ( $num_predict > 0 ) {
+					$payload['options']['num_predict'] = $num_predict;
+				}
+			} elseif ( isset( $options['max_tokens'] ) ) {
+				$payload['options']['num_predict'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['num_predict'] ) ) {
+				$payload['options']['num_predict'] = absint( $options['num_predict'] );
+			}
+
+			if ( empty( $payload['options'] ) ) {
+				unset( $payload['options'] );
 			}
 
 			if ( ! empty( $options['system_prompt'] ) ) {
@@ -184,8 +214,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		}
 
 		protected function resolve_timeout( array $options ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );
 			}

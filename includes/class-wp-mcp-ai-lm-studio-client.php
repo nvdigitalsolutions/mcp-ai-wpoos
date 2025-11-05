@@ -397,6 +397,26 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Apply resource-aware max_tokens if not explicitly set.
+			if ( ! isset( $options['max_tokens'] ) ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$max_tokens   = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum tokens for LM Studio requests.
+				 *
+				 * @param int   $max_tokens The maximum tokens to use.
+				 * @param array $options    Request options.
+				 */
+				$max_tokens = apply_filters( 'wp_mcp_ai_lm_studio_max_tokens', $max_tokens, $options );
+
+				if ( $max_tokens > 0 ) {
+					$payload['max_tokens'] = $max_tokens;
+				}
+			} else {
+				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			}
+
 			return $payload;
 		}
 
@@ -407,9 +427,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		 * @return int
 		 */
 		protected function resolve_timeout( array $options ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );
