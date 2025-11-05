@@ -212,7 +212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		private function parse_size_to_bytes( $size ) {
 			$size = trim( $size );
 			$unit = strtoupper( substr( $size, -1 ) );
-			$num  = absint( $size );
+			$num  = (int) $size;
 
 			switch ( $unit ) {
 				case 'G':
