@@ -341,8 +341,18 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 	 */
 	private function log_site_health_callback_error( Throwable $error, $callback ) {
 		$callback_name = 'unknown';
+
 		if ( is_array( $callback ) && count( $callback ) === 2 ) {
-			$callback_name = get_class( $callback[0] ) . '::' . $callback[1];
+			$class_or_object = $callback[0];
+			$method          = $callback[1];
+
+			if ( is_object( $class_or_object ) ) {
+				$callback_name = get_class( $class_or_object ) . '::' . $method;
+			} elseif ( is_string( $class_or_object ) ) {
+				$callback_name = $class_or_object . '::' . $method;
+			}
+		} elseif ( is_string( $callback ) ) {
+			$callback_name = $callback;
 		}
 
 		WP_MCP_AI_Logger::log_error(

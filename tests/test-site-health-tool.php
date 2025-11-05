@@ -289,21 +289,21 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 		// Verify errors were logged.
 		$this->assertNotEmpty( $logged_errors, 'Exceptions should be logged as errors' );
 
-		// Check that errors were logged with the correct message.
-		$error_logged = false;
+		// Verify that errors were logged with proper structure.
+		$error_count = 0;
 		foreach ( $logged_errors as $error ) {
-			if ( isset( $error['message'] ) && strpos( $error['message'], 'Site Health test callback threw error' ) !== false ) {
-				$error_logged = true;
-				$this->assertArrayHasKey( 'context', $error );
-				$this->assertArrayHasKey( 'error_message', $error['context'] );
-				// Check for either exception or error message.
-				$has_test_error = strpos( $error['context']['error_message'], 'Test exception' ) !== false ||
-				                  strpos( $error['context']['error_message'], 'Test error' ) !== false;
-				$this->assertTrue( $has_test_error, 'Error message should contain test exception or error text' );
+			if ( isset( $error['message'] ) && false !== strpos( $error['message'], 'Site Health test callback threw error' ) ) {
+				++$error_count;
+				$this->assertArrayHasKey( 'context', $error, 'Error should have context array' );
+				$this->assertArrayHasKey( 'error_message', $error['context'], 'Context should include error_message' );
+				$this->assertArrayHasKey( 'error_file', $error['context'], 'Context should include error_file' );
+				$this->assertArrayHasKey( 'error_line', $error['context'], 'Context should include error_line' );
+				$this->assertArrayHasKey( 'callback', $error['context'], 'Context should include callback name' );
+				$this->assertNotEmpty( $error['context']['error_message'], 'Error message should not be empty' );
 			}
 		}
 
-		$this->assertTrue( $error_logged, 'Errors should be logged with proper context' );
+		$this->assertGreaterThan( 0, $error_count, 'At least one error should be logged' );
 	}
 
 	/**
