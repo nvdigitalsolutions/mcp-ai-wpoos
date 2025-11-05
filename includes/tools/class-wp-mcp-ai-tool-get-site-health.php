@@ -16,7 +16,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Capability required to run the tool.
 	 */
-	const REQUIRED_CAPABILITY = 'view_site_health_checks';
+	const REQUIRED_CAPABILITY = 'manage_options';
 
 	/**
 	 * {@inheritdoc}
