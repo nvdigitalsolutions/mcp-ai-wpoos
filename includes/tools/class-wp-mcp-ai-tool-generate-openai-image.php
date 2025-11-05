@@ -287,6 +287,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'created'         => isset( $image['created'] ) ? $image['created'] : 0,
 		);
 
+		$inline_content = $this->build_inline_content_payload( $storage );
+
+		if ( ! empty( $inline_content ) ) {
+			$result['content'] = $inline_content;
+		}
+
 		/**
 		 * Allow third parties to filter the image generation result before it is returned.
 		 *
@@ -586,5 +592,53 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		wp_delete_file( $file_path );
+	}
+
+	/**
+	 * Build an inline content payload for the stored image so API clients can render immediately.
+	 *
+	 * @param array $storage Stored attachment metadata.
+	 * @return array
+	 */
+	protected function build_inline_content_payload( array $storage ) {
+		$file_path = isset( $storage['file'] ) ? $storage['file'] : '';
+
+		if ( '' === $file_path || ! is_readable( $file_path ) ) {
+			return array();
+		}
+
+		$file_contents = file_get_contents( $file_path );
+
+		if ( false === $file_contents || '' === $file_contents ) {
+			return array();
+		}
+
+		$encoded = base64_encode( $file_contents );
+
+		if ( '' === $encoded ) {
+			return array();
+		}
+
+		$mime_type = isset( $storage['mime_type'] ) ? $storage['mime_type'] : '';
+
+		$content = array(
+			'encoding' => 'base64',
+			'data'     => $encoded,
+		);
+
+		if ( '' !== $mime_type ) {
+			$content['mime_type'] = $mime_type;
+			$content['data_url']  = sprintf( 'data:%s;base64,%s', $mime_type, $encoded );
+		}
+
+		if ( isset( $storage['file_name'] ) && '' !== $storage['file_name'] ) {
+			$content['file_name'] = $storage['file_name'];
+		}
+
+		if ( isset( $storage['bytes'] ) && $storage['bytes'] ) {
+			$content['bytes'] = (int) $storage['bytes'];
+		}
+
+		return $content;
 	}
 }

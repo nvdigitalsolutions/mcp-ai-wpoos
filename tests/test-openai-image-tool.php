@@ -405,4 +405,64 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 			wp_delete_attachment( $result['attachment_id'], true );
 		}
 	}
+
+	/**
+	 * The tool should include inline base64 content for immediate rendering.
+	 */
+	public function test_execute_includes_inline_content_payload() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+		$png_binary = base64_decode( $png_base64 );
+
+		$http_stub = function ( $preempt, $args, $url ) use ( $png_base64 ) {
+			$payload = array(
+				'created' => time(),
+				'model'   => 'gpt-image-1',
+				'data'    => array(
+					array(
+						'b64_json'       => $png_base64,
+						'revised_prompt' => 'A test image',
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array( 'prompt' => 'A test image' ),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'content', $result );
+		$this->assertIsArray( $result['content'] );
+		$this->assertArrayHasKey( 'encoding', $result['content'] );
+		$this->assertSame( 'base64', $result['content']['encoding'] );
+		$this->assertArrayHasKey( 'data', $result['content'] );
+		$this->assertNotEmpty( $result['content']['data'] );
+		$this->assertArrayHasKey( 'mime_type', $result['content'] );
+		$this->assertSame( 'image/png', $result['content']['mime_type'] );
+		$this->assertArrayHasKey( 'data_url', $result['content'] );
+		$this->assertStringStartsWith( 'data:image/png;base64,', $result['content']['data_url'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
 }
