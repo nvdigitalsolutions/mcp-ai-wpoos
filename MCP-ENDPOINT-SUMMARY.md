@@ -234,4 +234,4 @@ For issues or questions:
 
 ## License
 
-GPL-2.0-or-later (same as the main plugin)
+GPL-3.0-or-later (same as the main plugin)

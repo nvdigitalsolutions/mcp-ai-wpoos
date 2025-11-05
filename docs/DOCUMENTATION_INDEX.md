@@ -232,4 +232,4 @@ This document provides a comprehensive index of all documentation available for 
 
 **Maintained by:** NV Digital Solutions  
 **Documentation Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
-**License:** GPLv2 or later
+**License:** GPLv3 or later

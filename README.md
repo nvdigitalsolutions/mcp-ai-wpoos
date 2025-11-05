@@ -1209,7 +1209,7 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 - **GitHub Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai
 - **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
-- **License:** GPLv2 or later
+- **License:** GPLv3 or later
 
 ---
 

@@ -5,8 +5,8 @@ Tags: ai, assistant, jetengine, openai, gpt, chatbot
 Requires at least: 6.0
 Tested up to: 6.7
 Stable tag: 1.0.0
-License: GPLv2 or later
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
+License: GPLv3 or later
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
 
@@ -36,7 +36,7 @@ This plugin provides a robust framework for integrating AI-powered assistants in
 All third-party plugins are completely optional. WP oOS provides full AI assistant functionality without them.
 
 Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
-This plugin is licensed under the GNU General Public License v2 or later.
+This plugin is licensed under the GNU General Public License v3 or later.
 
 == Installation ==
 
