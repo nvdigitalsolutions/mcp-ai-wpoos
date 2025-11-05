@@ -48,6 +48,7 @@ This document provides a comprehensive index of all documentation available for 
 | [assistant-storage-cpt-vs-cct.md](assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
+| [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [memory-limits.md](memory-limits.md) | Memory management and limits | Developers |
 
 ### Integration Guides

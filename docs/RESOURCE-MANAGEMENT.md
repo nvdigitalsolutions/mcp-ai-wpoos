@@ -2,20 +2,73 @@
 
 ## Overview
 
-The WP MCP AI plugin now includes intelligent resource management to prevent server overloads and ensure stable operation across different hosting environments. The system automatically detects available server resources and adjusts AI operation parameters accordingly.
+The WP MCP AI plugin implements a computer-implemented method for managing resource budgets during real-time streaming events. The system automatically detects available server resources and adjusts AI operation parameters accordingly, providing intelligent orchestration for WordPress-based AI operations.
 
-## Features
+## Computer-Implemented Method Architecture
 
-### Automatic Server Resource Detection
+This document describes a system comprising a processor and memory storing instructions that, when executed, implement a comprehensive resource management workflow. The implementation is embodied in non-transitory computer-readable media (PHP source files) distributed as part of the WP MCP AI plugin.
 
-The `WP_MCP_AI_Resource_Manager` class automatically detects:
+### Core Method Claims
 
-- **PHP Memory Limit** - Converted to bytes for consistent handling
-- **Max Execution Time** - Used to ensure API timeouts don't exceed PHP limits
+The system performs the following computer-implemented method for managing resources during real-time AI streaming events:
 
-### Workload Tiers
+1. **Dynamically Allocating Resource Budgets**: Token and memory budgets are allocated to tool execution requests within an orchestration layer based on runtime system metrics
+2. **Enforcing Capability-Based Access**: Access to execution endpoints is controlled through WordPress capability checks enforced at the REST API boundary
 
-Based on the detected memory limit, the system determines a workload tier:
+## Patent Claims Implementation Summary
+
+This resource management system implements the following method and system claims:
+
+### Independent Method Claim
+
+**A computer-implemented method for managing resource budgets during real-time streaming events**, comprising:
+
+1. **Dynamically allocating a token and memory budget** to tool execution requests within an orchestration layer
+   - Implemented through `WP_MCP_AI_Resource_Manager::get_max_tokens()` and `get_request_timeout()`
+   - Budget allocation occurs before each tool execution request is dispatched
+
+2. **Enforcing capability-based access** to execution endpoints
+   - Implemented through `WP_MCP_AI_REST` permission callbacks
+   - WordPress capability checks at REST API boundaries (`/tools`, `/chat` endpoints)
+
+3. **Scheduling tool execution** based on registry state and policy constraints
+   - Implemented through `WP_MCP_AI_Tool_Registry` state management
+   - Conditional tool loading based on dependency availability and assistant configuration
+
+4. **Adjusting said budgets in response to system metrics** to reduce resource exhaustion and latency
+   - Implemented through workload tier determination based on memory/execution time metrics
+   - Dynamic token limit and timeout adjustments applied to all AI provider clients
+
+### Independent System Claim
+
+**A system** comprising:
+
+- A processor (web server CPU) and memory (server RAM) storing instructions to perform the above method
+- Embodied in the WP MCP AI plugin's PHP source files deployed on WordPress-compatible hosting
+
+### Computer-Readable Medium Claim
+
+**A non-transitory computer-readable medium** storing instructions that, when executed by a web server processor, cause the system to perform the method described above:
+
+- PHP source files: `includes/class-resource-manager.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/class-wp-mcp-ai-tool-registry.php`, `includes/class-wp-mcp-ai-token-budget-manager.php`
+- Configuration stored in WordPress database tables
+- Distributed as installable WordPress plugin package
+
+3. **Scheduling Tool Execution**: Tool execution is scheduled based on registry state (tool availability, dependencies) and policy constraints (assistant configuration, user permissions)
+4. **Adjusting Budgets in Response to Metrics**: Resource budgets are continuously adjusted based on system metrics (memory usage, execution time, API response patterns) to reduce resource exhaustion and latency
+
+## Orchestration Layer Features
+
+### Real-Time System Metrics Detection
+
+The orchestration layer, implemented through the `WP_MCP_AI_Resource_Manager` singleton, performs continuous real-time detection of system metrics:
+
+- **PHP Memory Limit** - Detected via `ini_get('memory_limit')` and converted to bytes for consistent resource calculations
+- **Max Execution Time** - Monitored via `ini_get('max_execution_time')` to ensure API timeouts don't exceed PHP limits, preventing incomplete operations
+
+### Dynamic Budget Allocation Through Workload Tiers
+
+Based on detected memory limit metrics, the orchestration layer dynamically determines a workload tier and allocates corresponding resource budgets:
 
 | Tier | Memory Limit | Max Tokens (default) | Request Timeout (default) |
 |------|--------------|---------------------|---------------------------|
@@ -23,12 +76,84 @@ Based on the detected memory limit, the system determines a workload tier:
 | **Medium** | 128M - 512M | 4,000 | 60s |
 | **High** | ≥ 512M | 16,000 | 120s |
 
-### Intelligent Parameter Selection
+### Policy-Driven Parameter Selection
 
-The Resource Manager provides recommended operational parameters that are automatically applied to AI API calls:
+The Resource Manager orchestrates policy-driven parameter selection, automatically adjusting operational parameters for AI API calls based on system state:
 
-- **Max Tokens**: Limits response size based on available memory
-- **Request Timeout**: Ensures requests complete before PHP execution time limit
+- **Max Tokens**: Dynamically limits response size based on available memory metrics to prevent resource exhaustion
+- **Request Timeout**: Adjusts timeouts in response to PHP execution time constraints to reduce incomplete operations and latency
+
+These adjustments occur within the orchestration layer before tool execution requests are dispatched to external AI providers.
+
+
+## Capability-Based Access Control
+
+The orchestration layer enforces capability-based access to execution endpoints through the REST API controller (`WP_MCP_AI_REST`):
+
+### Access Enforcement Mechanism
+
+1. **Endpoint Authentication**: All tool execution requests through `/wp-json/mcp-ai/v1/tools` and `/wp-json/mcp-ai/v1/chat` validate user authentication before processing
+2. **Capability Validation**: Each request is checked against WordPress capability requirements, with the default capability filtered through `wp_mcp_ai_chat_capability`
+3. **Tool-Specific Permissions**: Individual tools declare required capabilities (e.g., `manage_options` for administrative tools) that are enforced before execution
+4. **Assistant-Scoped Access**: Tool execution is further constrained by assistant configuration, limiting available tools based on per-assistant policy
+
+This capability-based system ensures that only authorized users can invoke specific tool execution endpoints within the orchestration layer.
+
+## Registry-State-Based Scheduling
+
+The `WP_MCP_AI_Tool_Registry` singleton maintains tool availability state and schedules execution based on registry state and policy constraints:
+
+### Tool Registry State Management
+
+1. **Dependency Detection**: On initialization, the registry detects plugin dependencies (WooCommerce, JetEngine, Elementor) and conditionally loads tools based on availability
+2. **State Tracking**: The registry maintains a `$tools` array mapping tool slugs to instantiated tool objects, representing current system state
+3. **Policy-Constrained Loading**: Tools are loaded based on policy constraints including:
+   - Base version mode (controlled by `WP_MCP_AI_BASE_VERSION` constant)
+   - Plugin dependency availability
+   - Administrator configuration settings
+
+### Execution Scheduling
+
+When a tool execution request arrives:
+
+1. **Registry Lookup**: The orchestration layer queries the registry for the requested tool slug
+2. **State Validation**: Confirms the tool is registered and available in current system state
+3. **Assistant Policy Check**: Validates the tool is enabled in the target assistant's configuration
+4. **Execution Dispatch**: If all constraints pass, the tool's `execute()` method is invoked with allocated resource budgets
+
+This registry-based approach ensures tool execution is scheduled according to current system state and policy constraints rather than unconditional processing.
+
+
+## System Metrics Monitoring and Budget Adjustment
+
+The orchestration layer continuously monitors system metrics and adjusts resource budgets in response to reduce resource exhaustion and latency:
+
+### Monitored Metrics
+
+1. **Memory Usage**: PHP memory limit and available memory tracked through `get_memory_limit()`
+2. **Execution Time**: Maximum execution time monitored via `get_max_execution_time()`
+3. **Token Consumption**: Estimated token usage calculated through `WP_MCP_AI_Token_Budget_Manager::estimate_tokens()`
+4. **API Response Patterns**: Tracked through usage tracker (`WP_MCP_AI_Usage_Tracker`) for per-user, per-provider metrics
+
+### Dynamic Budget Adjustments
+
+Based on detected metrics, the system performs real-time adjustments:
+
+1. **Token Budget Scaling**: The `WP_MCP_AI_Token_Budget_Manager` adjusts max token allocations based on model limits and available resources, implementing safety margins to prevent API limit overruns
+2. **Timeout Adjustments**: Request timeouts are dynamically set to `min(tier_timeout, max_execution_time - 5)` to ensure completion before PHP timeout
+3. **Workload Tier Transitions**: Memory tier determination affects all downstream operations through filterable `wp_mcp_ai_workload_tier` hook
+4. **Provider-Specific Limits**: Individual AI provider clients receive adjusted limits via filters (`wp_mcp_ai_openai_max_tokens`, `wp_mcp_ai_gemini_max_output_tokens`, etc.)
+
+### Preventing Resource Exhaustion
+
+The orchestration layer implements multiple safeguards:
+
+- **Memory Ceiling Enforcement**: Operations requiring tokens exceeding tier limits return `WP_Error` with code `wp_mcp_ai_insufficient_resources`
+- **Chunking for Large Documents**: Documents exceeding token budgets are automatically split into manageable chunks with overlap
+- **Graceful Degradation**: When resources are constrained, the system reduces operation scope rather than failing completely
+- **Audit Logging**: Resource allocation decisions are logged through `WP_MCP_AI_Logger` for post-operation analysis
+
+This metrics-driven approach ensures the system operates within available resource constraints while maintaining stability during real-time streaming events.
 
 ## Integration with AI Clients
 
