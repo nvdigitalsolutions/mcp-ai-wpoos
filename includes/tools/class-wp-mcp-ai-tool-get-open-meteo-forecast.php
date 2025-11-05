@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 					'description' => __( 'Geographic longitude in decimal degrees (required).', 'wp-mcp-ai' ),
 				),
 				'hourly'        => array(
-					'description' => __( 'Comma separated list or array of hourly variables (e.g. temperature_2m,relativehumidity_2m).', 'wp-mcp-ai' ),
+					'description' => __( 'Comma separated list or array of hourly variables. Valid hourly variables include: temperature_2m, relative_humidity_2m, precipitation, rain, snowfall, cloud_cover, wind_speed_10m, wind_direction_10m, etc. Note: Do NOT use daily variables like precipitation_sum, rain_sum, snowfall_sum, temperature_2m_max, or temperature_2m_min - these are only valid for daily forecasts.', 'wp-mcp-ai' ),
 					'oneOf'       => array(
 						array(
 							'type' => 'string',
@@ -101,6 +101,11 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 		if ( null === $latitude || null === $longitude ) {
 			return new WP_Error( 'wp_mcp_ai_missing_coordinates', __( 'Valid latitude and longitude values are required.', 'wp-mcp-ai' ) );
+		}
+
+		// Check if hourly validation returned an error.
+		if ( is_wp_error( $hourly ) ) {
+			return $hourly;
 		}
 
 		if ( empty( $hourly ) ) {
@@ -216,7 +221,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	 *
 	 * @param array $arguments Arguments passed to the tool.
 	 *
-	 * @return string
+	 * @return string|WP_Error String of comma-separated variables, or WP_Error if validation fails.
 	 */
 	protected function prepare_hourly_argument( array $arguments ) {
 		if ( empty( $arguments['hourly'] ) ) {
@@ -227,13 +232,66 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 		if ( is_array( $hourly ) ) {
 			$hourly = array_filter( array_map( 'sanitize_key', $hourly ) );
-			return implode( ',', $hourly );
+			$hourly_string = implode( ',', $hourly );
+		} else {
+			$hourly_string = sanitize_text_field( $hourly );
+			$hourly_string = str_replace( ' ', '', $hourly_string );
 		}
 
-		$hourly_string = sanitize_text_field( $hourly );
-		$hourly_string = str_replace( ' ', '', $hourly_string );
+		// Validate that daily-only variables are not being used as hourly variables.
+		$validation_error = $this->validate_hourly_variables( $hourly_string );
+		if ( is_wp_error( $validation_error ) ) {
+			return $validation_error;
+		}
 
 		return $hourly_string;
+	}
+
+	/**
+	 * Validate that daily-only variables are not used as hourly variables.
+	 *
+	 * @param string $hourly_string Comma-separated list of hourly variables.
+	 *
+	 * @return true|WP_Error True if valid, WP_Error if invalid daily variables detected.
+	 */
+	protected function validate_hourly_variables( $hourly_string ) {
+		// List of common daily-only variables that cannot be used as hourly variables.
+		$daily_only_variables = array(
+			'precipitation_sum',
+			'rain_sum',
+			'snowfall_sum',
+			'temperature_2m_max',
+			'temperature_2m_min',
+			'apparent_temperature_max',
+			'apparent_temperature_min',
+			'sunrise',
+			'sunset',
+		);
+
+		$variables      = explode( ',', $hourly_string );
+		$invalid_vars   = array();
+
+		foreach ( $variables as $var ) {
+			$var = trim( $var );
+			if ( in_array( $var, $daily_only_variables, true ) ) {
+				$invalid_vars[] = $var;
+			}
+		}
+
+		if ( ! empty( $invalid_vars ) ) {
+			$invalid_list = implode( ', ', $invalid_vars );
+			
+			return new WP_Error(
+				'wp_mcp_ai_invalid_hourly_variable',
+				sprintf(
+					/* translators: %s: comma-separated list of invalid variables */
+					__( 'The following variables are only available for daily forecasts, not hourly: %s. For hourly precipitation data, use "precipitation" instead of "precipitation_sum". For hourly rain, use "rain" instead of "rain_sum". For hourly snowfall, use "snowfall" instead of "snowfall_sum".', 'wp-mcp-ai' ),
+					$invalid_list
+				)
+			);
+		}
+
+		return true;
 	}
 
 	/**
