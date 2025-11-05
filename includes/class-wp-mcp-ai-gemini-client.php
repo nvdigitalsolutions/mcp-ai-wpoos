@@ -645,7 +645,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
 							$label = '[File: ' . sanitize_text_field( $segment['display_name'] ) . ']';
 						} elseif ( isset( $segment['url'] ) && '' !== $segment['url'] ) {
-							$name  = isset( $segment['display_name'] ) ? sanitize_text_field( $segment['display_name'] ) : ( isset( $segment['name'] ) ? sanitize_text_field( $segment['name'] ) : 'File' );
+							$name = 'File';
+							if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
+								$name = sanitize_text_field( $segment['display_name'] );
+							} elseif ( isset( $segment['name'] ) && '' !== $segment['name'] ) {
+								$name = sanitize_text_field( $segment['name'] );
+							}
 							$label = '[' . $name . ': ' . esc_url_raw( $segment['url'] ) . ']';
 						}
 						$fragments[] = $label;

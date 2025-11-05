@@ -2828,6 +2828,16 @@
         };
     }
 
+    function addAttachmentMetadataToSegment(segment, attachment) {
+        // Include URL and name for display purposes when restoring from localStorage
+        if (attachment.url) {
+            segment.url = attachment.url;
+        }
+        if (attachment.name) {
+            segment.name = attachment.name;
+        }
+    }
+
     function createSegmentFromAttachment(attachment) {
         if (!attachment) {
             return null;
@@ -2855,14 +2865,7 @@
                 attachment_id: id,
             };
             
-            // Include URL and name for display purposes when restoring from localStorage
-            if (attachment.url) {
-                segment.url = attachment.url;
-            }
-            if (attachment.name) {
-                segment.name = attachment.name;
-            }
-            
+            addAttachmentMetadataToSegment(segment, attachment);
             return segment;
         }
 
@@ -2876,11 +2879,7 @@
             segment.display_name = displayName;
         }
         
-        // Include URL for display purposes when restoring from localStorage
-        if (attachment.url) {
-            segment.url = attachment.url;
-        }
-
+        addAttachmentMetadataToSegment(segment, attachment);
         return segment;
     }
 
