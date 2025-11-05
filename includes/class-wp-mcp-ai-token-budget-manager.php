@@ -441,6 +441,130 @@ class WP_MCP_AI_Token_Budget_Manager {
 	}
 
 	/**
+	 * Validate that total request tokens are within TPM (Tokens Per Minute) limits.
+	 *
+	 * @param array  $messages         Messages array.
+	 * @param string $model            Model identifier.
+	 * @param int    $max_output_tokens Optional maximum output tokens.
+	 *
+	 * @return bool|WP_Error True if valid, WP_Error if exceeds TPM limit.
+	 */
+	public static function validate_tpm_limit( array $messages, $model, $max_output_tokens = 0 ) {
+		$tpm_limit = self::get_model_tpm_limit( $model );
+
+		// If no TPM limit is configured, skip validation (e.g., local models).
+		if ( null === $tpm_limit || 0 === $tpm_limit ) {
+			return true;
+		}
+
+		$budget = self::calculate_budget( $model, $messages, $max_output_tokens );
+
+		// Calculate total tokens for the request (input + estimated output).
+		$total_tokens = $budget['used'] + $budget['reserved'];
+
+		// Check if total request tokens exceed the TPM limit.
+		if ( $total_tokens > $tpm_limit ) {
+			$model_name = sanitize_text_field( $model );
+
+			WP_MCP_AI_Logger::log_error(
+				'Request exceeds TPM limit for model.',
+				array(
+					'model'               => $model_name,
+					'tpm_limit'           => $tpm_limit,
+					'requested_tokens'    => $total_tokens,
+					'input_tokens'        => $budget['used'],
+					'reserved_output'     => $budget['reserved'],
+					'max_output_tokens'   => $max_output_tokens,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_tpm_limit_exceeded',
+				sprintf(
+					/* translators: %1$s: model name, %2$d: TPM limit, %3$d: requested tokens */
+					__( 'Request too large for %1$s. Limit: %2$d TPM, Requested: %3$d tokens. Please reduce the input size, use a smaller max_tokens value, or switch to a model with higher limits.', 'wp-mcp-ai' ),
+					$model_name,
+					$tpm_limit,
+					$total_tokens
+				),
+				array(
+					'status'              => 400,
+					'model'               => $model_name,
+					'tpm_limit'           => $tpm_limit,
+					'requested_tokens'    => $total_tokens,
+					'input_tokens'        => $budget['used'],
+					'reserved_output'     => $budget['reserved'],
+					'max_output_tokens'   => $max_output_tokens,
+					'suggested_models'    => self::get_higher_limit_models( $model, $total_tokens ),
+				)
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Get models with higher TPM limits that could handle the request.
+	 *
+	 * @param string $current_model   Current model identifier.
+	 * @param int    $required_tokens Tokens required for the request.
+	 *
+	 * @return array Array of suggested model names.
+	 */
+	protected static function get_higher_limit_models( $current_model, $required_tokens ) {
+		$suggested = array();
+
+		// Check if the model is from OpenAI.
+		$current_model_lower = strtolower( $current_model );
+		$is_openai           = false !== strpos( $current_model_lower, 'gpt' ) || false !== strpos( $current_model_lower, 'o1' );
+		$is_gemini           = false !== strpos( $current_model_lower, 'gemini' );
+		$is_claude           = false !== strpos( $current_model_lower, 'claude' );
+
+		// Suggest models based on the provider.
+		if ( $is_openai ) {
+			// Suggest OpenAI models with higher limits.
+			$openai_alternatives = array(
+				'gpt-4o'        => 30000,    // Tier 1.
+				'gpt-4.1-mini'  => 400000,   // Future model.
+				'gpt-4.1'       => 300000,   // Future model.
+				'gpt-5-mini'    => 500000,   // Future model.
+				'gpt-5'         => 500000,   // Future model.
+			);
+
+			foreach ( $openai_alternatives as $model => $tpm ) {
+				if ( $model !== $current_model && $tpm >= $required_tokens ) {
+					$suggested[] = $model;
+				}
+			}
+		} elseif ( $is_gemini ) {
+			// Gemini models have very high TPM limits (1M).
+			$suggested[] = 'gemini-1.5-flash';
+			$suggested[] = 'gemini-2.0-flash';
+			$suggested[] = 'gemini-1.5-pro';
+		} elseif ( $is_claude ) {
+			// Claude models have varying TPM limits.
+			$claude_alternatives = array(
+				'claude-3-haiku'     => 50000,
+				'claude-3.5-sonnet'  => 40000,
+			);
+
+			foreach ( $claude_alternatives as $model => $tpm ) {
+				if ( $model !== $current_model && $tpm >= $required_tokens ) {
+					$suggested[] = $model;
+				}
+			}
+		}
+
+		// Always suggest Gemini as a fallback for very large requests.
+		if ( $required_tokens > 200000 && ! $is_gemini ) {
+			$suggested[] = 'gemini-1.5-flash';
+			$suggested[] = 'gemini-2.0-flash';
+		}
+
+		return array_unique( $suggested );
+	}
+
+	/**
 	 * Get recommended chunk size for document splitting.
 	 *
 	 * @param string $model Model identifier (optional).
