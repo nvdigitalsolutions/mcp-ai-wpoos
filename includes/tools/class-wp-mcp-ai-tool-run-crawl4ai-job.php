@@ -1272,7 +1272,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			return $response;
 		}
 
-		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 100000, $response );
+		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 30000, $response );
 
 		if ( $limit_tokens <= 0 ) {
 			return $response;
@@ -1729,10 +1729,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 *
 	 * This method strips:
 	 * - 'raw' field (duplicate of truncated results)
+	 * - 'html' field (redundant with markdown, much larger)
 	 * - Verbose metadata (headers, user_agent, timestamps)
 	 *
 	 * Keeps:
-	 * - 'markdown', 'text', 'html' (already truncated, LLM needs this to work with)
+	 * - 'markdown' and 'text' (already truncated, most efficient for LLM)
 	 * - 'url', 'status_code', 'status' (essential metadata)
 	 * - 'task_id' (for status tracking)
 	 *
@@ -1755,6 +1756,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			unset( $sanitized['metadata']['user_agent'] );
 			unset( $sanitized['metadata']['retrieved_at'] );
 			unset( $sanitized['metadata']['fetched_at'] );
+			unset( $sanitized['metadata']['queued_at'] );
 
 			if ( empty( $sanitized['metadata'] ) ) {
 				unset( $sanitized['metadata'] );
@@ -1769,12 +1771,16 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 						return $item;
 					}
 
+					// Remove HTML field - it's redundant and much larger than markdown.
+					unset( $item['html'] );
+
 					// Clean individual result metadata.
 					if ( isset( $item['metadata'] ) && is_array( $item['metadata'] ) ) {
 						unset( $item['metadata']['headers'] );
 						unset( $item['metadata']['user_agent'] );
 						unset( $item['metadata']['retrieved_at'] );
 						unset( $item['metadata']['fetched_at'] );
+						unset( $item['metadata']['queued_at'] );
 
 						if ( empty( $item['metadata'] ) ) {
 							unset( $item['metadata'] );

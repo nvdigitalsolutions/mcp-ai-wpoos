@@ -58,6 +58,10 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'results', $sanitized );
 		$this->assertArrayHasKey( 'markdown', $sanitized['results'][0] );
 		$this->assertEquals( '# Test Content (already truncated)', $sanitized['results'][0]['markdown'] );
+		$this->assertArrayHasKey( 'text', $sanitized['results'][0] );
+
+		// HTML field should be stripped (redundant and large).
+		$this->assertArrayNotHasKey( 'html', $sanitized['results'][0] );
 
 		// Verbose metadata should be stripped.
 		$this->assertArrayNotHasKey( 'headers', $sanitized['results'][0]['metadata'] );
