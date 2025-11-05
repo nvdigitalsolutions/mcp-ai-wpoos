@@ -316,16 +316,54 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 	 * @return array|null
 	 */
 	protected function call_site_health_test_callback( $callback ) {
-		$result = call_user_func( $callback );
+		try {
+			$result = call_user_func( $callback );
 
-		if ( null === $result ) {
+			if ( null === $result ) {
+				return null;
+			}
+
+			/** This filter matches core Site Health behaviour. */
+			$result = apply_filters( 'site_status_test_result', $result );
+
+			return is_array( $result ) ? $result : null;
+		} catch ( Throwable $e ) {
+			$this->log_site_health_callback_error( $e, $callback );
 			return null;
 		}
+	}
 
-		/** This filter matches core Site Health behaviour. */
-		$result = apply_filters( 'site_status_test_result', $result );
+	/**
+	 * Log an error from a Site Health test callback.
+	 *
+	 * @param Throwable $error    The exception or error that was thrown.
+	 * @param callable  $callback The callback that threw the error.
+	 */
+	private function log_site_health_callback_error( Throwable $error, $callback ) {
+		$callback_name = 'unknown';
 
-		return is_array( $result ) ? $result : null;
+		if ( is_array( $callback ) && count( $callback ) === 2 ) {
+			$class_or_object = $callback[0];
+			$method          = $callback[1];
+
+			if ( is_object( $class_or_object ) ) {
+				$callback_name = get_class( $class_or_object ) . '::' . $method;
+			} elseif ( is_string( $class_or_object ) ) {
+				$callback_name = $class_or_object . '::' . $method;
+			}
+		} elseif ( is_string( $callback ) ) {
+			$callback_name = $callback;
+		}
+
+		WP_MCP_AI_Logger::log_error(
+			'Site Health test callback threw error.',
+			array(
+				'error_message' => $error->getMessage(),
+				'error_file'    => $error->getFile(),
+				'error_line'    => $error->getLine(),
+				'callback'      => $callback_name,
+			)
+		);
 	}
 
 	/**
