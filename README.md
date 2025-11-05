@@ -1215,7 +1215,7 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 ## 📄 License
 
-This plugin is licensed under the GNU General Public License v2.0 or later.
+This plugin is licensed under the GNU General Public License v3.0 or later.
 
 See [LICENSE](LICENSE) for full text.
 
