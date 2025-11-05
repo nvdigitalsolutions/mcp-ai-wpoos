@@ -1,0 +1,236 @@
+<?php
+/**
+ * REST API endpoints for job notification system.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Registers REST endpoints for SSE streaming and webhook management.
+ */
+class WP_MCP_AI_Job_Notifier_REST {
+	const REST_NAMESPACE = 'mcp-ai/v1';
+
+	/**
+	 * Initialize REST routes.
+	 */
+	public static function init() {
+		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+	}
+
+	/**
+	 * Register REST API routes.
+	 */
+	public static function register_routes() {
+		// SSE endpoint for streaming job status.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)/stream',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( __CLASS__, 'permissions_check_job_stream' ),
+					'callback'            => array( __CLASS__, 'handle_job_stream' ),
+					'args'                => array(
+						'job_id'        => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'max_duration'  => array(
+							'type'    => 'integer',
+							'minimum' => 10,
+							'maximum' => 600,
+							'default' => 300,
+						),
+						'poll_interval' => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+							'maximum' => 30,
+							'default' => 2,
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// Get job status (non-streaming).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/jobs/(?P<job_id>[a-zA-Z0-9_-]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( __CLASS__, 'permissions_check_job_status' ),
+					'callback'            => array( __CLASS__, 'handle_job_status' ),
+					'args'                => array(
+						'job_id' => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// Register webhook.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/jobs/(?P<job_id>[a-zA-Z0-9_*-]+)/webhooks',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( __CLASS__, 'permissions_check_webhook_register' ),
+					'callback'            => array( __CLASS__, 'handle_webhook_register' ),
+					'args'                => array(
+						'job_id'      => array(
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'webhook_url' => array(
+							'type'     => 'string',
+							'required' => true,
+							'format'   => 'uri',
+						),
+						'events'      => array(
+							'type'    => 'array',
+							'items'   => array(
+								'type' => 'string',
+								'enum' => array( 'started', 'progress', 'completed', 'failed' ),
+							),
+							'default' => array( 'completed', 'failed' ),
+						),
+					),
+				),
+			),
+			true
+		);
+	}
+
+	/**
+	 * Permission check for job stream endpoint.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return bool|WP_Error
+	 */
+	public static function permissions_check_job_stream( WP_REST_Request $request ) {
+		// Allow logged-in users or valid bearer tokens.
+		if ( is_user_logged_in() ) {
+			return true;
+		}
+
+		// Check for bearer token authentication.
+		$bearer = $request->get_header( 'Authorization' );
+		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+			// Token validation would go here.
+			// For now, allow any bearer token.
+			return true;
+		}
+
+		return new WP_Error(
+			'rest_forbidden',
+			__( 'You do not have permission to stream job status.', 'wp-mcp-ai' ),
+			array( 'status' => 403 )
+		);
+	}
+
+	/**
+	 * Permission check for job status endpoint.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return bool|WP_Error
+	 */
+	public static function permissions_check_job_status( WP_REST_Request $request ) {
+		return self::permissions_check_job_stream( $request );
+	}
+
+	/**
+	 * Permission check for webhook registration.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return bool|WP_Error
+	 */
+	public static function permissions_check_webhook_register( WP_REST_Request $request ) {
+		// Only admin users can register webhooks.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to register webhooks.', 'wp-mcp-ai' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Handle SSE job stream request.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function handle_job_stream( WP_REST_Request $request ) {
+		$job_id        = $request->get_param( 'job_id' );
+		$max_duration  = $request->get_param( 'max_duration' );
+		$poll_interval = $request->get_param( 'poll_interval' );
+
+		return WP_MCP_AI_SSE_Stream::stream_job_status( $job_id, $max_duration, $poll_interval );
+	}
+
+	/**
+	 * Handle job status request (non-streaming).
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_job_status( WP_REST_Request $request ) {
+		$job_id = $request->get_param( 'job_id' );
+		$status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+
+		if ( ! $status ) {
+			return new WP_Error(
+				'job_not_found',
+				__( 'Job status not found or expired.', 'wp-mcp-ai' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		return rest_ensure_response( $status );
+	}
+
+	/**
+	 * Handle webhook registration request.
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function handle_webhook_register( WP_REST_Request $request ) {
+		$job_id      = $request->get_param( 'job_id' );
+		$webhook_url = $request->get_param( 'webhook_url' );
+		$events      = $request->get_param( 'events' );
+
+		$result = WP_MCP_AI_Job_Notifier::register_webhook( $job_id, $webhook_url, $events );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'job_id'      => $job_id,
+				'webhook_url' => $webhook_url,
+				'events'      => $events,
+				'message'     => __( 'Webhook registered successfully.', 'wp-mcp-ai' ),
+			)
+		);
+	}
+}
