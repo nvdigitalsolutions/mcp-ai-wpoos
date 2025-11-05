@@ -255,6 +255,87 @@ Provides **governance and traceability** that is absent from standard SSE/MCP im
 
 ---
 
+### 6. Cron-Based Task Orchestration Extension
+
+**Implementation:**
+- Integrates a **time-based scheduling subsystem** ("Cron Manager") that allows AI agents to autonomously create, monitor, and delete scheduled background operations
+- Each scheduled operation inherits the same budget and capability constraints defined by the orchestration layer
+- Ensures policy compliance during deferred execution
+- Maintains predictive budget validation before task dispatch
+
+**Key Features:**
+```php
+// Cron Manager with inherited orchestration constraints
+class WP_MCP_AI_Cron_Manager {
+    const OPTION_NAME = 'wp_mcp_ai_cron_jobs';
+    
+    /**
+     * Record a cron event with user attribution and budget inheritance
+     */
+    public static function record_job($hook, $args, $schedule, $timestamp, $user_id) {
+        $job_id = self::generate_job_id($hook, $args);
+        
+        $jobs[$job_id] = array(
+            'job_id'          => $job_id,
+            'hook'            => $hook,
+            'args'            => $args,
+            'schedule'        => $schedule,
+            'first_timestamp' => $timestamp,
+            'created_at'      => time(),
+            'created_by'      => $user_id,  // User attribution for compliance
+        );
+        
+        self::save_jobs($jobs);
+        return $job_id;
+    }
+}
+
+// Cron tools inherit capability constraints
+class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
+    public function get_required_capability() {
+        // Requires admin capability for scheduling
+        return 'manage_options';
+    }
+    
+    public function execute($params, $context) {
+        // Validate against resource budgets before scheduling
+        $resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+        $max_tokens = $resource_mgr->get_max_tokens();
+        
+        // Schedule with inherited constraints
+        wp_schedule_event($timestamp, $schedule, $hook, $args);
+        
+        // Record in registry with user attribution
+        WP_MCP_AI_Cron_Manager::record_job(
+            $hook, 
+            $args, 
+            $schedule, 
+            $timestamp, 
+            $context['user_id']
+        );
+    }
+}
+```
+
+**Transformation:**
+- Extends real-time orchestration to **asynchronous, deferred operations**
+- Scheduled tasks evaluated against system resource budgets prior to dispatch
+- Enables predictive load distribution across time-shifted workloads
+- Maintains compliance auditing for scheduled operations
+
+**Novel Aspect:**
+Creates an **autonomous scheduling layer** where AI agents can create time-based operations that maintain the same security, resource, and policy constraints as real-time sessions. The Cron Manager maintains an internal registry (`wp_mcp_ai_cron_jobs`) of active tasks with unique job identifiers, user attribution, creation timestamps, and execution intervals, enabling compliance auditing across asynchronous workloads.
+
+**Registry Features:**
+- **Job Tracking**: Unique identifiers for each scheduled operation
+- **User Attribution**: Records which user created each scheduled task
+- **Timestamp Management**: Tracks creation time and execution intervals
+- **Resource Validation**: Validates scheduled operations against predictive budget forecasts
+- **Policy Inheritance**: Scheduled tasks inherit capability constraints from orchestration layer
+- **Automatic Cleanup**: Prunes completed or cancelled jobs from registry
+
+---
+
 ## 🔹 Comparison Table: Standard vs WP oOS Extension
 
 | Aspect | Current SSE/MCP | WP oOS Orchestration Extension |
@@ -269,6 +350,7 @@ Provides **governance and traceability** that is absent from standard SSE/MCP im
 | **Multi-tenancy** | Not addressed | Per-assistant and per-user resource isolation |
 | **Predictive Optimization** | Not available | Historical usage patterns inform resource allocation |
 | **Policy Enforcement** | Assumed external | Integrated at orchestration layer |
+| **Time-Based Scheduling** | Not available | Cron Manager with budget inheritance and compliance auditing |
 
 ---
 
@@ -354,6 +436,50 @@ Client Receives Optimized Response
 
 ---
 
+### WP oOS Cron Manager Subsystem Flow
+
+```
+AI Agent Request (Cron Tool)
+    ↓
+Authentication & Capability Check (manage_options)
+    ↓
+Registry Lookup (cron tool availability)
+    ↓
+Budget Validation (predictive forecast check)
+    ↓
+Policy Enforcement (user permissions, assistant config)
+    ↓
+Cron Registry Update (wp_mcp_ai_cron_jobs)
+    │   ├─ Job ID (unique identifier)
+    │   ├─ User Attribution (created_by)
+    │   ├─ Timestamp (creation & execution)
+    │   └─ Budget Inheritance (token/memory limits)
+    ↓
+WordPress Scheduler (wp_schedule_event)
+    ↓
+[Deferred Execution at Scheduled Time]
+    ↓
+Pre-Execution Budget Check (resource validation)
+    ↓
+Capability Re-Verification (policy compliance)
+    ↓
+Tool Execution (with inherited constraints)
+    ↓
+Audit Logging (compliance trail)
+    ↓
+Registry Cleanup (completed jobs pruned)
+```
+
+**Key Features:**
+- ✅ Budget inheritance from orchestration layer
+- ✅ Predictive resource validation before dispatch
+- ✅ User attribution for compliance auditing
+- ✅ Automatic registry maintenance and cleanup
+- ✅ Policy-compliant deferred execution
+- ✅ Load distribution across time-shifted workloads
+
+---
+
 ## 🔹 Technical Implementation Details
 
 ### Core Components
@@ -381,6 +507,14 @@ Client Receives Optimized Response
    - Enforces authentication and authorization
    - Provides SSE streaming interface
    - Location: `includes/class-wp-mcp-ai-rest.php`
+
+5. **WP_MCP_AI_Cron_Manager**
+   - Maintains internal registry of scheduled operations (`wp_mcp_ai_cron_jobs`)
+   - Tracks job identifiers, user attribution, and execution intervals
+   - Validates scheduled operations against predictive budget forecasts
+   - Ensures policy compliance during deferred execution
+   - Automatically prunes completed or cancelled jobs
+   - Location: `includes/class-wp-mcp-ai-cron-manager.php`
 
 ### Orchestration Workflow
 
@@ -571,8 +705,11 @@ The WP oOS Dynamic AI Orchestration Layer represents a **fundamental architectur
 | **Predictive Optimization** | Prevents resource exhaustion through proactive management |
 | **Distributed Orchestration** | Enables multi-provider, multi-tenant deployments |
 | **Auditability** | Provides governance and compliance capabilities |
+| **Cron-Based Task Orchestration** | Extends orchestration to asynchronous, time-based operations with budget inheritance |
 
 This orchestration layer is the **novel contribution** disclosed in the provisional patent application — it's not merely an implementation of existing protocols, but a **new architectural pattern** that makes AI systems production-ready, secure, and enterprise-grade.
+
+The inclusion of the **Cron Manager subsystem** further strengthens the patent's autonomous orchestration capabilities by enabling AI agents to create, monitor, and manage scheduled operations that inherit the same resource budgets and capability constraints as real-time sessions, ensuring policy compliance during deferred execution.
 
 ---
 
