@@ -219,4 +219,110 @@ class Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'temperature_2m', $result['hourly'] );
 		$this->assertSame( array( 5.3, 4.9 ), $result['hourly']['temperature_2m'] );
 	}
+
+	/**
+	 * Test that daily-only variables like precipitation_sum are rejected with a helpful error message.
+	 */
+	public function test_execute_rejects_daily_only_variables_as_hourly(): void {
+		$tool = new WP_MCP_AI_Tool_Get_Open_Meteo_Forecast();
+
+		$result = $tool->execute(
+			array(
+				'latitude'  => 25.76,  // Miami coordinates.
+				'longitude' => -80.19,
+				'hourly'    => 'precipitation_sum',
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_hourly_variable', $result->get_error_code() );
+
+		$error_message = $result->get_error_message();
+		$this->assertStringContainsString( 'precipitation_sum', $error_message );
+		$this->assertStringContainsString( 'only available for daily forecasts', $error_message );
+		$this->assertStringContainsString( 'use "precipitation" instead', $error_message );
+	}
+
+	/**
+	 * Test that multiple daily-only variables are all reported in the error message.
+	 */
+	public function test_execute_rejects_multiple_daily_only_variables(): void {
+		$tool = new WP_MCP_AI_Tool_Get_Open_Meteo_Forecast();
+
+		$result = $tool->execute(
+			array(
+				'latitude'  => 25.76,
+				'longitude' => -80.19,
+				'hourly'    => array( 'temperature_2m', 'precipitation_sum', 'rain_sum', 'temperature_2m_max' ),
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_invalid_hourly_variable', $result->get_error_code() );
+
+		$error_message = $result->get_error_message();
+		$this->assertStringContainsString( 'precipitation_sum', $error_message );
+		$this->assertStringContainsString( 'rain_sum', $error_message );
+		$this->assertStringContainsString( 'temperature_2m_max', $error_message );
+	}
+
+	/**
+	 * Test that valid hourly variables like precipitation (not precipitation_sum) work correctly.
+	 */
+	public function test_execute_accepts_valid_hourly_precipitation_variable(): void {
+		$tool = new WP_MCP_AI_Tool_Get_Open_Meteo_Forecast();
+
+		$mock_body = wp_json_encode(
+			array(
+				'latitude'              => 25.76,
+				'longitude'             => -80.19,
+				'generationtime_ms'     => 0.5,
+				'utc_offset_seconds'    => 0,
+				'timezone'              => 'UTC',
+				'timezone_abbreviation' => 'UTC',
+				'elevation'             => 5.0,
+				'hourly_units'          => array(
+					'time'          => 'iso8601',
+					'precipitation' => 'mm',
+				),
+				'hourly'                => array(
+					'time'          => array( '2023-11-05T00:00', '2023-11-05T01:00' ),
+					'precipitation' => array( 0.0, 0.5 ),
+				),
+			)
+		);
+
+		$http_interceptor = function ( $preempt, $args, $url ) use ( $mock_body ) {
+			return array(
+				'headers'  => array(),
+				'body'     => $mock_body,
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_interceptor, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'latitude'  => 25.76,
+				'longitude' => -80.19,
+				'hourly'    => 'precipitation',  // Valid hourly variable.
+			),
+			array( 'user_id' => $this->user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_interceptor, 10 );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'latitude', $result );
+		$this->assertSame( 25.76, $result['latitude'] );
+		$this->assertArrayHasKey( 'hourly', $result );
+		$this->assertArrayHasKey( 'precipitation', $result['hourly'] );
+		$this->assertSame( array( 0.0, 0.5 ), $result['hourly']['precipitation'] );
+	}
 }
