@@ -6,14 +6,14 @@
  * Version: 1.0.0
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
- * License: GPLv2 or later
+ * License: GPLv3 or later
  * Text Domain: wp-mcp-ai
  * Network: true
  *
  * @package WP_MCP_AI
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
- * This plugin is licensed under the GNU General Public License v2 or later.
+ * This plugin is licensed under the GNU General Public License v3 or later.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

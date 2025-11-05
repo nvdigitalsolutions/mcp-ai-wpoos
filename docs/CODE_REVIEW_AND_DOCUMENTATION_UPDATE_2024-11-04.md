@@ -536,7 +536,7 @@ The NV Digital Solutions team has built a robust, secure, and well-documented Wo
 
 **Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai  
 **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)  
-**License:** GPLv2 or later
+**License:** GPLv3 or later
 
 **Documentation Issues:** Create GitHub issue with `documentation` label  
 **Security Issues:** Follow [SECURITY.md](../SECURITY.md) guidelines  

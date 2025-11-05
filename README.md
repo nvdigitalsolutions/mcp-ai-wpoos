@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0 (Beta)
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wp-oos)**
-**License:** GPLv2 or later
+**License:** GPLv3 or later
 **Requires:** WordPress 6.0+, PHP 7.4+
 
 ## 📑 Table of Contents
@@ -136,7 +136,7 @@ The core plugin ships with a centrally registered tool catalogue that lets assis
 - **Marketing & analytics insights** – Combine measurement tools including `google_analytics_report`, `get_google_business_insights`, `get_facebook_instagram_insights`, `get_linkedin_insights`, and `get_tiktok_insights` to guide campaigns and reporting.
 - **Publishing & outreach automations** – Trigger distribution via `post_facebook_instagram`, `post_google_business_update`, `post_linkedin_update`, `post_tiktok_video`, `send_group_email`, `send_mailjet_email`, `send_telegram_message`, `send_whatsapp_message`, and `schedule_notify_sms` once plans are ready.
 - **Integrations & scheduling** – Connect external systems with `create_google_calendar_event`, `search_gmail`, `list_jetengine_rest_routes`, `invoke_jetengine_route`, and `run_openai_external_action` as part of larger automations.
-- **Operations & diagnostics** – Close the loop with `create_cron_job`, `check_wp_cli`, `purge_cloudflare_cache`, `get_site_summary`, `get_site_health`, `get_system_logs`, `get_update_status`, and OpenAI usage/log review helpers for monitoring and maintenance.
+- **Operations & diagnostics** – Close the loop with `create_cron_job`, `list_cron_jobs`, `get_cron_job`, `delete_cron_job`, `check_wp_cli`, `purge_cloudflare_cache`, `get_site_summary`, `get_site_health`, `get_system_logs`, `get_update_status`, and OpenAI usage/log review helpers for monitoring and maintenance.
 
 ---
 
@@ -227,6 +227,9 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Tool | Slug | Summary |
 | --- | --- | --- |
 | Create Cron Job | `create_cron_job` | Schedules one-off or recurring WP-Cron events with duplicate detection and sanitised hooks/arguments.【F:includes/tools/class-wp-mcp-ai-tool-create-cron-job.php†L16-L168】|
+| List Cron Jobs | `list_cron_jobs` | Lists all scheduled WordPress cron jobs with details about schedule, next run time, and creator.【F:includes/tools/class-wp-mcp-ai-tool-list-cron-jobs.php†L17-L141】|
+| Get Cron Job | `get_cron_job` | Retrieves detailed information about a specific WordPress cron job by its job ID.【F:includes/tools/class-wp-mcp-ai-tool-get-cron-job.php†L17-L145】|
+| Delete Cron Job | `delete_cron_job` | Deletes a scheduled WordPress cron job and removes it from both the plugin tracking and WP-Cron.【F:includes/tools/class-wp-mcp-ai-tool-delete-cron-job.php†L17-L90】|
 | Check WP-CLI Status | `check_wp_cli` | Scans for the WordPress CLI binary, returning detected paths, version output, and environment warnings.【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】|
 | Purge Cloudflare Cache | `purge_cloudflare_cache` | Sends targeted or full-zone invalidations to Cloudflare with configurable timeouts and admin-only access controls.【F:includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php†L17-L292】|
 | Get Site Summary | `get_site_summary` | Provides high-level site metadata, content counts, and admin contact details for context-aware assistants.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】|
@@ -266,11 +269,11 @@ The chat interface automatically persists conversation history to the browser's 
 
 #### Server-Side Chat Transcript Storage (Requires JetEngine)
 
-⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/) (not included with WP oOS)
+⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) (not included with WP oOS)
 
 Without JetEngine, chat conversations are **only stored in browser localStorage** (client-side, 24-hour retention). To enable permanent server-side chat transcript archiving:
 
-1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/) plugin (third-party, paid plugin from Crocoblock)
+1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) plugin (third-party, paid plugin from Crocoblock)
 2. Enable the **Custom Content Types** module in JetEngine settings
 3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent storage
 
@@ -302,11 +305,11 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 ### Optional: JetEngine Integration
 
-⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/) is a paid plugin from Crocoblock
+⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) is a paid plugin from Crocoblock
 
 **JetEngine is completely optional** - WP oOS works perfectly without it. However, if you want server-side chat transcript storage:
 
-1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/) separately
+1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) separately
 2. Enable the **Custom Content Types** module in JetEngine settings
 3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent chat storage
 
@@ -345,7 +348,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 
 **✅ Still Works:** All core features, MCP server, 35+ base tools, AI conversations
 
-[Get JetEngine →](https://crocoblock.com/plugins/jetengine/)
+[Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
 ---
 
@@ -1209,13 +1212,13 @@ For security issues, please review our [Security Policy](SECURITY.md) and report
 
 - **GitHub Repository:** https://github.com/nvdigitalsolutions/wp-mcp-ai
 - **Maintained by:** [NV Digital Solutions](https://nvdigitalsolutions.com/)
-- **License:** GPLv2 or later
+- **License:** GPLv3 or later
 
 ---
 
 ## 📄 License
 
-This plugin is licensed under the GNU General Public License v2.0 or later.
+This plugin is licensed under the GNU General Public License v3.0 or later.
 
 See [LICENSE](LICENSE) for full text.
 
