@@ -52,12 +52,30 @@ This resource management system implements the following method and system claim
 
 **A non-transitory computer-readable medium** storing instructions that, when executed by a web server processor, cause the system to perform the method described above:
 
-- PHP source files: `includes/class-resource-manager.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/class-wp-mcp-ai-tool-registry.php`, `includes/class-wp-mcp-ai-token-budget-manager.php`
+- PHP source files: `includes/class-resource-manager.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/class-wp-mcp-ai-tool-registry.php`, `includes/class-wp-mcp-ai-token-budget-manager.php`, `includes/class-wp-mcp-ai-cron-manager.php`
 - Configuration stored in WordPress database tables
 - Distributed as installable WordPress plugin package
 
-3. **Scheduling Tool Execution**: Tool execution is scheduled based on registry state (tool availability, dependencies) and policy constraints (assistant configuration, user permissions)
-4. **Adjusting Budgets in Response to Metrics**: Resource budgets are continuously adjusted based on system metrics (memory usage, execution time, API response patterns) to reduce resource exhaustion and latency
+### Additional Claims - Cron-Based Task Orchestration Extension
+
+**The system of claim 1, further comprising:**
+
+**A time-based scheduling subsystem** configured to execute deferred or recurring operations created by authorized agents, wherein:
+- Said operations inherit the same resource budgets and capability constraints as real-time sessions
+- Each scheduled operation is validated against predictive budget forecasts before dispatch to prevent resource contention
+- The scheduling subsystem maintains an internal registry (`wp_mcp_ai_cron_jobs`) of active tasks with:
+  - Unique job identifiers for tracking and management
+  - User attribution (created_by) for compliance auditing
+  - Creation timestamps and execution intervals
+  - Inherited budget constraints from orchestration layer
+- Scheduled operations are subject to the same capability-based access controls as real-time operations
+- Automatic cleanup of completed or cancelled jobs from the registry
+
+**The method of claim 1** wherein:
+- Scheduled operations are validated against predictive budget forecasts before dispatch to prevent resource contention
+- Each deferred operation inherits token and memory budgets from the orchestration layer's resource manager
+- User attribution is maintained throughout the lifecycle of scheduled operations for compliance auditing
+- Policy constraints are re-verified at execution time to ensure continued authorization
 
 ## Orchestration Layer Features
 
@@ -125,6 +143,106 @@ When a tool execution request arrives:
 
 This registry-based approach ensures tool execution is scheduled according to current system state and policy constraints rather than unconditional processing.
 
+## Cron-Based Task Orchestration Extension
+
+The orchestration layer further integrates with a **time-based scheduling subsystem** ("Cron Manager") that allows AI agents to autonomously create, monitor, and delete scheduled background operations. Each scheduled operation inherits the same budget and capability constraints defined by the orchestration layer, ensuring policy compliance during deferred execution.
+
+### Internal Registry Management
+
+The Cron Manager maintains an internal registry (`wp_mcp_ai_cron_jobs`) of active tasks stored in the WordPress options table. Each registered job contains:
+
+1. **Unique Job Identifier**: MD5 hash of hook name and arguments for consistent identification
+2. **User Attribution**: `created_by` field tracking which user scheduled the operation for compliance auditing
+3. **Creation Timestamp**: Unix timestamp of when the job was registered (`created_at`)
+4. **Execution Schedule**: Recurrence pattern (`single`, `hourly`, `daily`, etc.) or one-time execution
+5. **First Execution Time**: Initial timestamp when the job should first execute (`first_timestamp`)
+6. **Hook and Arguments**: WordPress cron hook name and normalized argument array
+
+### Budget Inheritance and Validation
+
+Scheduled operations inherit resource budgets from the orchestration layer:
+
+1. **Pre-Scheduling Validation**: Before creating a scheduled operation, the system validates against current resource budgets through `WP_MCP_AI_Resource_Manager::get_max_tokens()`
+2. **Predictive Budget Forecasts**: Scheduled events are evaluated against system resource budgets prior to dispatch, allowing predictive load distribution
+3. **Execution-Time Budget Application**: When a scheduled operation executes, it receives the same dynamically-allocated token and memory budgets as real-time requests
+4. **Capability Re-Verification**: At execution time, capability constraints are re-checked to ensure continued authorization
+
+### Compliance Auditing Across Asynchronous Workloads
+
+The Cron Manager enables comprehensive compliance auditing for deferred operations:
+
+- **User Accountability**: Every scheduled operation is attributed to the user who created it (`created_by` field)
+- **Temporal Tracking**: Creation timestamps and execution intervals are logged for forensic analysis
+- **Policy Enforcement**: Scheduled operations require `manage_options` capability, limiting scheduling to administrators
+- **Audit Trail**: All scheduled operations are visible through cron management tools (`list_cron_jobs`, `get_cron_job`)
+- **Automatic Cleanup**: The registry automatically prunes entries for jobs that are no longer scheduled, maintaining data hygiene
+
+### Implementation Architecture
+
+```php
+// Cron Manager implementation
+class WP_MCP_AI_Cron_Manager {
+    const OPTION_NAME = 'wp_mcp_ai_cron_jobs';
+    
+    // Record job with user attribution
+    public static function record_job($hook, $args, $schedule, $timestamp, $user_id) {
+        $job_id = self::generate_job_id($hook, $args);
+        
+        $jobs[$job_id] = array(
+            'job_id'          => $job_id,
+            'hook'            => $hook,
+            'args'            => self::normalise_args($args),
+            'schedule'        => $schedule,
+            'first_timestamp' => $timestamp,
+            'created_at'      => time(),
+            'created_by'      => $user_id,  // User attribution
+        );
+        
+        self::save_jobs($jobs);
+        return $job_id;
+    }
+    
+    // Automatic cleanup of completed jobs
+    public static function maybe_prune_jobs() {
+        $jobs = self::load_jobs();
+        $changed = false;
+        
+        foreach ($jobs as $job_id => $job) {
+            $event = wp_get_scheduled_event($job['hook'], $job['args']);
+            if (!$event) {
+                unset($jobs[$job_id]);  // Remove if no longer scheduled
+                $changed = true;
+            }
+        }
+        
+        if ($changed) {
+            self::save_jobs($jobs);
+        }
+    }
+}
+```
+
+### Integration with Tool Registry
+
+Cron management tools are integrated into the orchestration layer through the tool registry:
+
+- **create_cron_job**: Creates scheduled operations with capability checks and budget validation
+- **list_cron_jobs**: Lists all scheduled operations with user attribution and execution details
+- **get_cron_job**: Retrieves detailed information about a specific scheduled operation
+- **delete_cron_job**: Removes scheduled operations from both WordPress scheduler and internal registry
+
+All cron tools require `manage_options` capability, ensuring only administrators can manage scheduled operations.
+
+### Predictive Load Distribution
+
+The Cron Manager enables predictive load distribution across asynchronous workloads:
+
+1. **Temporal Spreading**: Operations can be scheduled during off-peak hours to reduce real-time resource contention
+2. **Budget Forecasting**: Before scheduling, the system can predict resource requirements based on operation type
+3. **Resource Reservation**: Scheduled operations can be counted against future resource budgets for capacity planning
+4. **Execution Throttling**: Multiple scheduled operations executing simultaneously respect the same resource budgets as real-time operations
+
+This predictive approach transforms the orchestration layer from reactive resource management to proactive capacity planning.
 
 ## System Metrics Monitoring and Budget Adjustment
 
