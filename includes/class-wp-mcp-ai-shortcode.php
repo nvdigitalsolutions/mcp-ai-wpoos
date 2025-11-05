@@ -94,6 +94,7 @@ class WP_MCP_AI_Shortcode {
 				'strings'             => array(
 					'placeholder'               => __( 'Ask something…', 'wp-mcp-ai' ),
 					'send'                      => __( 'Send', 'wp-mcp-ai' ),
+					'bundlingMessages'          => __( 'Preparing to send…', 'wp-mcp-ai' ),
 					'sending'                   => __( 'Sending message…', 'wp-mcp-ai' ),
 					'waiting'                   => __( 'Waiting for the assistant…', 'wp-mcp-ai' ),
 					'error'                     => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
