@@ -5255,11 +5255,10 @@
         }
 
         if (hasToolCalls) {
-            // Tool calls in chat responses are informational only.
-            // The /tools endpoint is reserved for external MCP clients.
-            // For the chat UI, tools should be handled server-side or not at all.
+            // Tools are now executed server-side automatically in the agentic loop.
+            // The frontend just displays the response which includes tool results.
             if (window.console && console.log) {
-                console.log('[WP oOS] Assistant included tool calls in response:', message.tool_calls);
+                console.log('[WP oOS] Server executed tools:', message.tool_calls);
             }
         }
 
