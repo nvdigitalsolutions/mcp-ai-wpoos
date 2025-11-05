@@ -5254,11 +5254,23 @@
             state.conversation.push(assistantMessage);
         }
 
+        // Add tool result messages to conversation if included in response.
+        if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+            data.tool_results.forEach(function (toolResult) {
+                if (toolResult && toolResult.role === 'tool') {
+                    state.conversation.push(toolResult);
+                }
+            });
+        }
+
         if (hasToolCalls) {
             // Tools are now executed server-side automatically in the agentic loop.
             // The frontend just displays the response which includes tool results.
             if (window.console && console.log) {
                 console.log('[WP oOS] Server executed tools:', message.tool_calls);
+                if (data && data.tool_results) {
+                    console.log('[WP oOS] Tool results:', data.tool_results);
+                }
             }
         }
 
