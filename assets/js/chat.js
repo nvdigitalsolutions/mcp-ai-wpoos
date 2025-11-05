@@ -3734,6 +3734,148 @@
         };
     }
 
+    /**
+     * Extract displayable content from generic tool responses that don't have downloadable assets.
+     * Looks for common fields like message, text, links, IDs, and status information.
+     *
+     * @param {Object} result Tool result object
+     * @returns {Object|null} Normalized response with text and/or attachments, or null if nothing to extract
+     */
+    function extractGenericToolResponse(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        let text = '';
+        const links = [];
+
+        // Extract primary message/text
+        if (typeof result.message === 'string' && result.message.trim()) {
+            text = result.message.trim();
+        } else if (typeof result.text === 'string' && result.text.trim()) {
+            text = result.text.trim();
+        } else if (typeof result.summary === 'string' && result.summary.trim()) {
+            text = result.summary.trim();
+        } else if (typeof result.title === 'string' && result.title.trim()) {
+            text = result.title.trim();
+        } else if (Array.isArray(result.notices) && result.notices.length > 0) {
+            // Some tools return 'notices' array with messages
+            const firstNotice = result.notices.find(function(notice) {
+                return typeof notice === 'string' && notice.trim().length > 0;
+            });
+            if (firstNotice) {
+                text = firstNotice.trim();
+                if (result.notices.length > 1) {
+                    text += ' (+' + (result.notices.length - 1) + ' more)';
+                }
+            }
+        } else if (Array.isArray(result.messages) && result.messages.length > 0) {
+            // Some tools return 'messages' array
+            const firstMessage = result.messages.find(function(msg) {
+                return typeof msg === 'string' && msg.trim().length > 0;
+            });
+            if (firstMessage) {
+                text = firstMessage.trim();
+                if (result.messages.length > 1) {
+                    text += ' (+' + (result.messages.length - 1) + ' more)';
+                }
+            }
+        }
+
+        // Extract actionable links (permalink, edit_link, link, etc.)
+        if (typeof result.permalink === 'string' && result.permalink.trim()) {
+            links.push({
+                url: result.permalink.trim(),
+                label: 'View',
+                type: 'permalink'
+            });
+        }
+
+        if (typeof result.edit_link === 'string' && result.edit_link.trim()) {
+            links.push({
+                url: result.edit_link.trim(),
+                label: 'Edit',
+                type: 'edit_link'
+            });
+        }
+
+        if (typeof result.edit_url === 'string' && result.edit_url.trim()) {
+            links.push({
+                url: result.edit_url.trim(),
+                label: 'Edit',
+                type: 'edit_url'
+            });
+        }
+
+        if (typeof result.link === 'string' && result.link.trim()) {
+            links.push({
+                url: result.link.trim(),
+                label: 'Open Link',
+                type: 'link'
+            });
+        }
+
+        if (typeof result.htmlLink === 'string' && result.htmlLink.trim()) {
+            links.push({
+                url: result.htmlLink.trim(),
+                label: 'View',
+                type: 'htmlLink'
+            });
+        }
+
+        // Extract identifiers and add to text if we have a message
+        const identifiers = [];
+        if (typeof result.ID === 'number' || typeof result.ID === 'string') {
+            identifiers.push('ID: ' + result.ID);
+        }
+        if (typeof result.post_id === 'number' || typeof result.post_id === 'string') {
+            identifiers.push('Post ID: ' + result.post_id);
+        }
+        if (typeof result.attachment_id === 'number' || typeof result.attachment_id === 'string') {
+            identifiers.push('Attachment ID: ' + result.attachment_id);
+        }
+
+        // Append identifiers to text if available
+        if (identifiers.length > 0) {
+            if (text) {
+                text += ' (' + identifiers.join(', ') + ')';
+            } else {
+                text = identifiers.join(', ');
+            }
+        }
+
+        // Extract status information if we don't have text yet
+        if (!text) {
+            if (result.sent === true || result.success === true || result.ok === true) {
+                text = 'Operation completed successfully.';
+            } else if (result.created === true) {
+                text = 'Resource created successfully.';
+            } else if (result.updated === true) {
+                text = 'Resource updated successfully.';
+            }
+        }
+
+        // If we still don't have any extractable content, return null
+        if (!text && links.length === 0) {
+            return null;
+        }
+
+        // Format links as attachments-style for consistent display
+        const attachments = links.map(function(link) {
+            return {
+                url: link.url,
+                label: link.label,
+                downloadName: '',
+                meta: link.type
+            };
+        });
+
+        return {
+            text: text,
+            attachments: attachments.length > 0 ? attachments : []
+        };
+    }
+
     function normaliseToolResultForDisplay(toolName, result) {
         if (!result || typeof result !== 'object') {
             return null;
@@ -3763,8 +3905,9 @@
             }
         }
 
+        // If no URL found, try generic extraction for tools that return structured data
         if (!url) {
-            return null;
+            return extractGenericToolResponse(result);
         }
 
         const attachments = [];
