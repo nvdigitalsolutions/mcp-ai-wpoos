@@ -2,7 +2,7 @@
     "name": "wp-mcp-ai/wp-mcp-ai",
     "description": "WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
-    "license": "GPL-2.0-or-later",
+    "license": "GPL-3.0-or-later",
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",

@@ -310,7 +310,7 @@ When you find improvements:
 
 ## 📄 License
 
-All documentation is licensed under GPL-2.0-or-later to match the plugin license.
+All documentation is licensed under GPL-3.0-or-later to match the plugin license.
 
 ---
 

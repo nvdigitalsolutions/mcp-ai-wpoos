@@ -490,4 +490,4 @@ Settings → WP oOS → Chat Theme
 **Need more detail?** See [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) for complete documentation map.
 
 **Maintained by:** NV Digital Solutions  
-**License:** GPLv2 or later
+**License:** GPLv3 or later
