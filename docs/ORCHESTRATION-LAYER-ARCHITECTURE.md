@@ -85,7 +85,7 @@ Unlike static token limits (which simply cut off streams), this layer *balances 
 ### 2. Capability-Based Tool Gating
 
 **Implementation:**
-- Implements a **central registry** (`WP_MCP_AI_Tool_Registry`) with 65+ built-in tools
+- Implements a **central registry** (`WP_MCP_AI_Tool_Registry`) with extensive built-in tools
 - **Policy engine** authorizes tool calls by user role/context via WordPress capabilities
 - Per-tool permission requirements (e.g., `manage_options` for admin tools)
 - Per-assistant tool configuration restricts available capabilities
@@ -371,7 +371,7 @@ Client Receives Optimized Response
    - Location: `includes/class-wp-mcp-ai-token-budget-manager.php`
 
 3. **WP_MCP_AI_Tool_Registry**
-   - Maintains central tool catalog (65+ tools)
+   - Maintains central tool catalog with extensive built-in tools
    - Enforces tool-specific capability requirements
    - Schedules execution based on dependencies
    - Location: `includes/class-wp-mcp-ai-tool-registry.php`
@@ -552,9 +552,11 @@ The orchestration layer architecture enables future innovations:
 ## 🔹 Related Documentation
 
 - [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) - Computer-implemented resource management details
-- [tool-reference.md](tool-reference.md) - Complete catalog of 65+ orchestrated tools
+- [tool-reference.md](tool-reference.md) - Complete catalog of orchestrated tools
 - [mcp-server-authentication.md](mcp-server-authentication.md) - Authentication implementation
 - [rest-api.md](rest-api.md) - REST API and SSE endpoint documentation
+- [BEST_PRACTICES.md](BEST_PRACTICES.md) - Best practices for using WP oOS
+- [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) - Complete documentation index
 
 ---
 
