@@ -146,13 +146,38 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( 200 !== (int) $status_code ) {
+			$body         = wp_remote_retrieve_body( $response );
+			$error_data   = json_decode( $body, true );
+			$error_detail = '';
+
+			// Try to extract error details from the API response.
+			if ( is_array( $error_data ) ) {
+				if ( ! empty( $error_data['reason'] ) ) {
+					$error_detail = sanitize_text_field( $error_data['reason'] );
+				} elseif ( ! empty( $error_data['message'] ) ) {
+					$error_detail = sanitize_text_field( $error_data['message'] );
+				} elseif ( ! empty( $error_data['error'] ) ) {
+					$error_detail = sanitize_text_field( $error_data['error'] );
+				}
+			}
+
+			$error_message = sprintf(
+				/* translators: %d: HTTP status code */
+				__( 'The weather service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+				(int) $status_code
+			);
+
+			if ( ! empty( $error_detail ) ) {
+				$error_message .= ' ' . sprintf(
+					/* translators: %s: Error detail from API */
+					__( 'Error: %s', 'wp-mcp-ai' ),
+					$error_detail
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_forecast_http_error',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'The weather service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
-					(int) $status_code
-				)
+				$error_message
 			);
 		}
 
