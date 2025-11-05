@@ -100,6 +100,7 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 	public function test_workload_tier_filter() {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		add_filter( 'wp_mcp_ai_workload_tier', function ( $tier, $memory_limit ) {
 			return 'high';
 		}, 10, 2 );
@@ -123,6 +124,7 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 	public function test_max_tokens_filter() {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		add_filter( 'wp_mcp_ai_resource_max_tokens', function ( $max_tokens, $tier ) {
 			return 5000;
 		}, 10, 2 );
@@ -140,6 +142,7 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 	public function test_request_timeout_filter() {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		add_filter( 'wp_mcp_ai_resource_request_timeout', function ( $timeout, $tier, $max_execution_time ) {
 			return 90;
 		}, 10, 3 );
