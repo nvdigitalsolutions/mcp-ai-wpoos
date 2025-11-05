@@ -55,23 +55,58 @@ class WP_MCP_AI_Model_Selector {
 	public static function select_model( array $messages, array $options = array(), $base_model = '' ) {
 		// If a specific model is already set and it's not a routing placeholder, use it.
 		if ( ! empty( $options['model'] ) && ! self::is_routing_placeholder( $options['model'] ) ) {
-			return sanitize_text_field( $options['model'] );
+			$model = sanitize_text_field( $options['model'] );
+			
+			// Check if the selected model can handle the token requirements.
+			$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
+			if ( $fallback !== $model ) {
+				return $fallback;
+			}
+			
+			return $model;
 		}
 
 		// If base_model is provided and not a routing placeholder, use it.
 		if ( ! empty( $base_model ) && ! self::is_routing_placeholder( $base_model ) ) {
-			return sanitize_text_field( $base_model );
+			$model = sanitize_text_field( $base_model );
+			
+			// Check if the base model can handle the token requirements.
+			$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
+			if ( $fallback !== $model ) {
+				return $fallback;
+			}
+			
+			return $model;
 		}
 
 		// Check if auto-routing is disabled.
 		if ( isset( $options['disable_auto_routing'] ) && $options['disable_auto_routing'] ) {
-			return self::get_default_light_model();
+			$model    = self::get_default_light_model();
+			$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
+			return $fallback !== $model ? $fallback : $model;
 		}
 
 		// Determine complexity based on various factors.
 		$is_complex = self::is_complex_task( $messages, $options );
 
 		if ( $is_complex ) {
+			$model = 'gpt-4o';
+			
+			// Check if gpt-4o can handle the token requirements.
+			$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
+			if ( $fallback !== $model ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_routing_fallback',
+					'Routing to alternative model due to TPM constraints.',
+					array(
+						'original_model' => $model,
+						'fallback_model' => $fallback,
+						'reason'         => 'tpm_limit_exceeded',
+					)
+				);
+				return $fallback;
+			}
+			
 			WP_MCP_AI_Logger::log_event(
 				'model_routing_complex',
 				'Routing to gpt-4o for complex/long-form task.',
@@ -79,7 +114,23 @@ class WP_MCP_AI_Model_Selector {
 					'reason' => self::get_complexity_reason( $messages, $options ),
 				)
 			);
-			return 'gpt-4o';
+			return $model;
+		}
+
+		$model    = self::get_default_light_model();
+		$fallback = self::check_tpm_and_suggest_fallback( $messages, $model, $options );
+		
+		if ( $fallback !== $model ) {
+			WP_MCP_AI_Logger::log_event(
+				'model_routing_fallback',
+				'Routing to alternative model due to TPM constraints.',
+				array(
+					'original_model' => $model,
+					'fallback_model' => $fallback,
+					'reason'         => 'tpm_limit_exceeded',
+				)
+			);
+			return $fallback;
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -88,7 +139,99 @@ class WP_MCP_AI_Model_Selector {
 			array()
 		);
 
-		return self::get_default_light_model();
+		return $model;
+	}
+
+	/**
+	 * Check if a model can handle the token requirements and suggest a fallback if needed.
+	 *
+	 * @param array  $messages Messages array.
+	 * @param string $model    Model identifier.
+	 * @param array  $options  Request options.
+	 *
+	 * @return string Model identifier (original or fallback).
+	 */
+	protected static function check_tpm_and_suggest_fallback( array $messages, $model, array $options ) {
+		// Get the TPM limit for the model.
+		$tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+		
+		// If no TPM limit is configured, return the original model (e.g., local models).
+		if ( null === $tpm_limit || 0 === $tpm_limit ) {
+			return $model;
+		}
+		
+		// Calculate token budget.
+		$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+		$budget            = WP_MCP_AI_Token_Budget_Manager::calculate_budget( $model, $messages, $max_output_tokens );
+		$total_tokens      = $budget['used'] + $budget['reserved'];
+		
+		// If within limits, return the original model.
+		if ( $total_tokens <= $tpm_limit ) {
+			return $model;
+		}
+		
+		// Token requirement exceeds TPM limit - suggest a fallback.
+		WP_MCP_AI_Logger::log_event(
+			'model_tpm_exceeded',
+			'Model TPM limit would be exceeded. Checking for fallback options.',
+			array(
+				'model'            => $model,
+				'tpm_limit'        => $tpm_limit,
+				'required_tokens'  => $total_tokens,
+				'input_tokens'     => $budget['used'],
+				'reserved_output'  => $budget['reserved'],
+			)
+		);
+		
+		// Determine the provider and suggest an appropriate fallback.
+		$model_lower = strtolower( $model );
+		
+		// OpenAI models - try gpt-4o if currently on gpt-4o-mini, or Gemini for very large requests.
+		if ( false !== strpos( $model_lower, 'gpt' ) || false !== strpos( $model_lower, 'o1' ) ) {
+			// If on gpt-4o-mini and request is too large, try gpt-4o.
+			if ( false !== strpos( $model_lower, 'mini' ) && $total_tokens <= 30000 ) {
+				return 'gpt-4o';
+			}
+			
+			// For very large requests (> 30k tokens), fallback to Gemini which has 1M TPM.
+			if ( $total_tokens > 30000 ) {
+				return 'gemini-2.0-flash';
+			}
+			
+			// Otherwise, fallback to gpt-4o.
+			return 'gpt-4o';
+		}
+		
+		// Gemini models already have high TPM limits (1M), unlikely to hit this.
+		if ( false !== strpos( $model_lower, 'gemini' ) ) {
+			// Fallback to gemini-1.5-pro for very large requests.
+			if ( $total_tokens > 1000000 ) {
+				// Even Gemini can't handle this - log error but return flash.
+				WP_MCP_AI_Logger::log_error(
+					'Request too large even for Gemini.',
+					array(
+						'required_tokens' => $total_tokens,
+						'tpm_limit'       => 1000000,
+					)
+				);
+			}
+			
+			return 'gemini-2.0-flash';
+		}
+		
+		// Claude models - try higher tier or fallback to Gemini.
+		if ( false !== strpos( $model_lower, 'claude' ) ) {
+			// If on claude-3-haiku or claude-3.5-sonnet and request is too large, try Gemini.
+			if ( $total_tokens > 50000 ) {
+				return 'gemini-2.0-flash';
+			}
+			
+			// Otherwise, try claude-3-haiku.
+			return 'claude-3-haiku';
+		}
+		
+		// Default fallback for unknown models - use Gemini which has high limits.
+		return 'gemini-2.0-flash';
 	}
 
 	/**
