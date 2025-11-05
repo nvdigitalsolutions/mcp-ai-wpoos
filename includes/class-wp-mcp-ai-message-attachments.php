@@ -1354,5 +1354,18 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			return '';
 		}
+
+		/**
+		 * Check if a MIME type corresponds to an image file.
+		 *
+		 * @param string $mime_type MIME type to check.
+		 * @return bool True if the MIME type is an image, false otherwise.
+		 */
+		public static function is_image_mime_type( $mime_type ) {
+			$mime_type   = strtolower( (string) $mime_type );
+			$image_mimes = self::get_allowed_mime_types( 'image' );
+
+			return in_array( $mime_type, $image_mimes, true );
+		}
 	}
 }
