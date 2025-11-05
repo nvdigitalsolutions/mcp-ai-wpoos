@@ -182,6 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'allowed_file_mimes'                => array(),
 				'rest_enable_assistant_create'      => false,
 				'rest_enable_assistant_delete'      => false,
+				'sse_enable_post_method'            => false,
 			);
 		}
 
@@ -1498,6 +1499,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_mcp_ai_authentication_section'
 			);
 
+			add_settings_field(
+				'sse_enable_post_method',
+				__( 'Enable POST Method on SSE Endpoint', 'wp-mcp-ai' ),
+				array( $this, 'render_sse_enable_post_method_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_authentication_section'
+			);
+
 			add_settings_section(
 				'wp_mcp_ai_assistant_section',
 				__( 'Assistant Defaults', 'wp-mcp-ai' ),
@@ -2412,8 +2421,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Render the description for the chat colors section.
 		 */
 		public function render_chat_colors_section_description() {
-			echo '<p>' . esc_html__( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'wp-mcp-ai' ) . '</p>';
-			echo '<p>' . esc_html__( 'New controls cover the transcript toggle, saved reply shortcuts, and the copy transcript button so every surface can follow your brand.', 'wp-mcp-ai' ) . '</p>';
+			?>
+		<details class="wp-mcp-ai-collapsible-section">
+			<summary style="cursor: pointer; font-weight: 600; padding: 10px 0; list-style: none;"><?php esc_html_e( '▸ Click to expand/collapse chat appearance settings', 'wp-mcp-ai' ); ?></summary>
+			<div style="padding: 10px 0;">
+				<p><?php esc_html_e( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'New controls cover the transcript toggle, saved reply shortcuts, and the copy transcript button so every surface can follow your brand.', 'wp-mcp-ai' ); ?></p>
+			</div>
+			<?php
 		}
 
 		/**
@@ -2472,6 +2487,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			echo '</div>';
+			echo '</details>'; // Close the collapsible section opened in render_chat_colors_section_description
 		}
 
 		/**
@@ -3889,6 +3905,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php esc_html_e( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'wp-mcp-ai' ); ?>
 		</label>
 		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the SSE enable POST method field.
+		 */
+		public function render_sse_enable_post_method_field() {
+			$settings = self::get_settings();
+			?>
+		<label for="wp-mcp-ai-sse-enable-post-method">
+			<input id="wp-mcp-ai-sse-enable-post-method" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[sse_enable_post_method]" value="1" <?php checked( $settings['sse_enable_post_method'] ); ?> />
+			<?php esc_html_e( 'Allow POST requests to /wp-json/mcp-ai/v1/sse endpoint', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'SSE (Server-Sent Events) standard only uses GET. Enable POST only if you have LM Studio or client bugs requiring it. Leave disabled for standard SSE compliance.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 

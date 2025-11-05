@@ -436,6 +436,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'/tools',
 				array(
 					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_tools_list' ),
+						'args'                => array(
+							'assistant_id' => array(
+								'type'     => 'integer',
+								'required' => false,
+							),
+						),
+					),
+					array(
 						'methods'             => WP_REST_Server::CREATABLE,
 						'permission_callback' => array( $this, 'permissions_check' ),
 						'callback'            => array( $this, 'handle_tool_request' ),
@@ -490,16 +501,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// SSE endpoint - GET is standard, POST is optional for LM Studio compatibility.
+			$sse_handlers = array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
+				),
+			);
+
+			// Add POST support if enabled in settings (non-standard, for LM Studio bugs).
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['sse_enable_post_method'] ) ) {
+				$sse_handlers[] = array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
+				);
+			}
+
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/sse',
-				array(
-					array(
-						'methods'             => WP_REST_Server::READABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
-						'callback'            => array( $this, 'handle_sse_handshake' ),
-					),
-				),
+				$sse_handlers,
 				true
 			);
 
@@ -2596,6 +2620,64 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return null;
+		}
+
+		/**
+		 * Handle GET requests to list available tools for an assistant.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_tools_list( WP_REST_Request $request ) {
+			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
+
+			if ( is_wp_error( $scoped_id ) ) {
+				return $scoped_id;
+			}
+
+			$assistant_id = $scoped_id;
+
+			if ( ! $assistant_id ) {
+				// Return all tools if no assistant specified.
+				$tools = $this->registry->get_tools();
+			} else {
+				// Get tools allowed for this assistant.
+				$assistant_post = $this->validate_assistant_access( $assistant_id );
+
+				if ( is_wp_error( $assistant_post ) ) {
+					return $assistant_post;
+				}
+
+				$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+				$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+
+				$tools = array();
+				foreach ( $allowed_tools as $tool_slug ) {
+					$tool = $this->registry->get_tool( $tool_slug );
+					if ( $tool ) {
+						$tools[] = $tool;
+					}
+				}
+			}
+
+			// Convert tools to a simple array format.
+			$tools_list = array();
+			foreach ( $tools as $tool ) {
+				$schema = $tool->get_json_schema();
+
+				$tools_list[] = array(
+					'name'        => $tool->get_slug(),
+					'description' => $tool->get_description(),
+					'inputSchema' => $schema,
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'tools' => $tools_list,
+				)
+			);
 		}
 
 		/**
