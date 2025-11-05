@@ -28,6 +28,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const MEMORY_MAX_TOTAL_BYTES      = 1048576; // ~1MB aggregate streaming budget across attachments.
 		const CHAT_MAX_REQUEST_TOKENS     = 480000;  // Fallback ceiling when no model-specific limit is available.
 		const CHAT_APPROX_CHARS_PER_TOKEN = 4;     // Rough heuristic used when trimming oversized chats.
+		const TPM_SAFETY_MARGIN           = 0.8;   // Use 80% of TPM limit as target when truncating messages.
+		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -2136,7 +2138,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					if ( ! $switched_model ) {
 						// Attempt to truncate messages to fit within the limit.
 						$tpm_limit      = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
-						$target_tokens  = $tpm_limit ? (int) ( $tpm_limit * 0.8 ) : 100000; // Use 80% of limit as target.
+						$target_tokens  = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
 						$messages       = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
 
 						// Re-validate after truncation.
