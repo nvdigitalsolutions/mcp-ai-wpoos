@@ -501,16 +501,29 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// SSE endpoint - GET is standard, POST is optional for LM Studio compatibility.
+			$sse_handlers = array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
+				),
+			);
+
+			// Add POST support if enabled in settings (non-standard, for LM Studio bugs).
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['sse_enable_post_method'] ) ) {
+				$sse_handlers[] = array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_sse_handshake' ),
+				);
+			}
+
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/sse',
-				array(
-					array(
-						'methods'             => WP_REST_Server::READABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
-						'callback'            => array( $this, 'handle_sse_handshake' ),
-					),
-				),
+				$sse_handlers,
 				true
 			);
 

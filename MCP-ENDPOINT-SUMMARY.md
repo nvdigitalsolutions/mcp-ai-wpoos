@@ -43,6 +43,7 @@ The existing `/sse` endpoint now includes modern features:
 - ✅ Event IDs for state tracking
 - ✅ Modern headers (Cache-Control, Connection, CORS)
 - ✅ HTTP/2 ready
+- ✅ Supports both GET and POST methods (POST added for LM Studio compatibility)
 
 ## Use Cases
 
@@ -52,8 +53,8 @@ The existing `/sse` endpoint now includes modern features:
 | List available tools | `/tools` | GET |
 | Query tools via MCP protocol | `/mcp` | POST |
 | Initialize MCP connection | `/mcp` | POST |
-| Real-time event streaming | `/sse` | GET |
-| Server-to-client notifications | `/sse` | GET |
+| Real-time event streaming | `/sse` | GET, POST |
+| Server-to-client notifications | `/sse` | GET, POST |
 | List assistants | `/assistants` | GET |
 | Download files | `/files/{id}/download` | GET |
 
