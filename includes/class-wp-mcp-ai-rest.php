@@ -1990,6 +1990,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, $request );
 
+			// Agentic loop: automatically execute tools server-side when LLM requests them.
+			$max_iterations = 5; // Prevent infinite loops.
+			$iteration      = 0;
+
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -2017,6 +2021,80 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				WP_MCP_AI_Logger::log_error( $log_message, $context );
 				return $response;
+			}
+
+			// Agentic loop: execute tools until LLM stops requesting them.
+			while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
+				$tool_calls = $this->extract_tool_calls_from_response( $response );
+
+				if ( empty( $tool_calls ) ) {
+					break; // No more tools to execute, final response ready.
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'agentic_tool_execution',
+					'Executing tools automatically in chat',
+					array(
+						'iteration'    => $iteration,
+						'tool_count'   => count( $tool_calls ),
+						'assistant_id' => $assistant_id,
+					)
+				);
+
+				// Execute each tool and collect results.
+				foreach ( $tool_calls as $tool_call ) {
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
+
+					// Append tool result to conversation.
+					$tool_message = array(
+						'role'    => 'tool',
+						'content' => is_string( $tool_result ) ? $tool_result : wp_json_encode( $tool_result ),
+					);
+
+					if ( isset( $tool_call['id'] ) ) {
+						$tool_message['tool_call_id'] = $tool_call['id'];
+					}
+
+					if ( isset( $tool_call['function']['name'] ) ) {
+						$tool_message['name'] = $tool_call['function']['name'];
+					}
+
+					$messages[] = $tool_message;
+				}
+
+				// Call LLM again with tool results.
+				$response = $this->client->create_chat_completion( $messages, $options );
+
+				if ( ! is_wp_error( $response ) ) {
+					$response = $this->maybe_convert_failed_chat_response( $response );
+				}
+
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Agentic tool execution loop failed',
+						array(
+							'assistant_id' => $assistant_id,
+							'user_id'      => $user_id,
+							'iteration'    => $iteration,
+							'error_code'   => $response->get_error_code(),
+							'error'        => $response->get_error_message(),
+						)
+					);
+					return $response;
+				}
+
+				++$iteration;
+			}
+
+			if ( $iteration >= $max_iterations ) {
+				WP_MCP_AI_Logger::log_event(
+					'agentic_loop_limit',
+					'Reached maximum tool execution iterations',
+					array(
+						'assistant_id' => $assistant_id,
+						'iterations'   => $iteration,
+					)
+				);
 			}
 
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
@@ -6334,6 +6412,122 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function mb_substr( $string, $start, $length ) {
 			return function_exists( 'mb_substr' ) ? mb_substr( $string, $start, $length ) : substr( $string, $start, $length );
+		}
+
+		/**
+		 * Extract tool calls from an LLM response.
+		 *
+		 * @param array $response LLM response array.
+		 * @return array Array of tool call objects.
+		 */
+		protected function extract_tool_calls_from_response( $response ) {
+			if ( ! is_array( $response ) ) {
+				return array();
+			}
+
+			// Check for tool_calls in the response.
+			if ( isset( $response['tool_calls'] ) && is_array( $response['tool_calls'] ) ) {
+				return $response['tool_calls'];
+			}
+
+			// Check for tool_calls in choices array (OpenAI format).
+			if ( isset( $response['choices'] ) && is_array( $response['choices'] ) ) {
+				foreach ( $response['choices'] as $choice ) {
+					if ( isset( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] ) ) {
+						return $choice['message']['tool_calls'];
+					}
+				}
+			}
+
+			return array();
+		}
+
+		/**
+		 * Execute a single tool call internally during the agentic loop.
+		 *
+		 * @param array            $tool_call        Tool call object from LLM.
+		 * @param int              $assistant_id     Assistant ID.
+		 * @param array            $assistant_config Assistant configuration.
+		 * @param int              $user_id          User ID.
+		 * @param WP_REST_Request  $request          Original REST request.
+		 * @return mixed Tool execution result.
+		 */
+		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request ) {
+			if ( ! isset( $tool_call['function']['name'] ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'wp-mcp-ai' ) );
+			}
+
+			$tool_name = $tool_call['function']['name'];
+			$arguments = array();
+
+			if ( isset( $tool_call['function']['arguments'] ) ) {
+				if ( is_string( $tool_call['function']['arguments'] ) ) {
+					$decoded = json_decode( $tool_call['function']['arguments'], true );
+					if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
+						$arguments = $decoded;
+					}
+				} elseif ( is_array( $tool_call['function']['arguments'] ) ) {
+					$arguments = $tool_call['function']['arguments'];
+				}
+			}
+
+			$allowed_tools = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+			$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+
+			// Check for document prompt tool special case.
+			if ( $this->candidates_include_slug( $tool_candidates, self::DOCUMENT_PROMPT_TOOL_SLUG ) && ! in_array( self::DOCUMENT_PROMPT_TOOL_SLUG, $allowed_tools, true ) ) {
+				if ( $this->tool_arguments_include_document_payload( $arguments ) ) {
+					$assistant_config = $this->ensure_tool_in_config( $assistant_config, self::DOCUMENT_PROMPT_TOOL_SLUG );
+					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+				}
+			}
+
+			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+
+			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+				return new WP_Error( 'wp_mcp_ai_tool_forbidden', sprintf( __( 'Tool "%s" is not allowed for this assistant.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 403 ) );
+			}
+
+			$tool = $this->registry->get_tool( $tool_slug );
+			if ( ! $tool ) {
+				return new WP_Error( 'wp_mcp_ai_tool_missing', sprintf( __( 'Tool "%s" is not registered.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 404 ) );
+			}
+
+			$context = array(
+				'user_id'          => $user_id,
+				'assistant_id'     => $assistant_id,
+				'request'          => $request,
+				'assistant_config' => $assistant_config,
+				'agentic_loop'     => true,
+			);
+
+			// Special handling for run_openai_external_action tool.
+			if ( 'run_openai_external_action' === $tool_slug ) {
+				if ( empty( $arguments['action_type'] ) && ! empty( $assistant_config['external_action_type'] ) ) {
+					$arguments['action_type'] = $assistant_config['external_action_type'];
+				}
+
+				if ( empty( $arguments['identifier'] ) && ! empty( $assistant_config['external_action_identifier'] ) ) {
+					$arguments['identifier'] = $assistant_config['external_action_identifier'];
+				}
+			}
+
+			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+
+			$result = $tool->execute( $arguments, $context );
+
+			if ( is_wp_error( $result ) ) {
+				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+				return $result->get_error_message();
+			}
+
+			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
+
+			WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+
+			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+
+			return $result;
 		}
 	}
 }
