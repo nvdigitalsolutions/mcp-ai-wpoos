@@ -2338,6 +2338,13 @@
         state.pendingAttachments = [];
         state.validationNotice = '';
 
+        // Clear message bundling state when loading history
+        if (state.messageBundleTimer) {
+            clearTimeout(state.messageBundleTimer);
+            state.messageBundleTimer = null;
+        }
+        state.pendingMessageBundle = [];
+
         renderPendingAttachments(state);
         updateAttachButtonState(state);
 
