@@ -2288,7 +2288,6 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			// Check for file references in message content
 			$has_file_reference = false;
-			$has_image_only     = false;
 
 			foreach ( $messages as $message ) {
 				if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
@@ -2307,31 +2306,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$has_file_reference = true;
 					}
 
-					// Check for input_image type (images can use Chat Completions)
-					if ( 'input_image' === $type ) {
-						$has_image_only = true;
-					}
-
 					// Check for file_id in various locations
-					if ( isset( $segment['file_id'] ) ) {
-						// If type is input_image, it's an image, otherwise treat as file
-						if ( 'input_image' === $type ) {
-							$has_image_only = true;
-						} else {
-							$has_file_reference = true;
-						}
+					// Only count as file reference if it's not an input_image type
+					if ( isset( $segment['file_id'] ) && 'input_image' !== $type ) {
+						$has_file_reference = true;
 					}
 
-					if ( isset( $segment['image']['file_id'] ) || isset( $segment['image_file']['file_id'] ) ) {
-						$has_image_only = true;
-					}
+					// Image-related file references don't require Responses API
+					// Skip checking isset for image/image_file as those are handled by type check above
 
-					if ( strpos( $type, 'input_' ) === 0 && ( isset( $segment['file_id'] ) || isset( $segment['image'] ) || isset( $segment['image_file'] ) ) ) {
-						if ( 'input_image' === $type ) {
-							$has_image_only = true;
-						} elseif ( 'input_file' === $type ) {
-							$has_file_reference = true;
-						}
+					if ( strpos( $type, 'input_' ) === 0 && 'input_file' === $type && isset( $segment['file_id'] ) ) {
+						$has_file_reference = true;
 					}
 				}
 			}
@@ -3041,20 +3026,38 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 						// If we can get a URL for the image, use image_url format
 						if ( $attachment_id > 0 ) {
-							$image_url = wp_get_attachment_url( $attachment_id );
-							if ( $image_url ) {
-								$converted_segment = array(
-									'type'      => 'image_url',
-									'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
-								);
+							// Verify attachment exists and get its post status
+							$attachment_post = get_post( $attachment_id );
+							$can_use_url     = false;
 
-								// Preserve detail level if present
-								if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
-									$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
+							if ( $attachment_post && 'attachment' === $attachment_post->post_type ) {
+								$public_statuses = get_post_stati( array( 'public' => true ) );
+								if ( ! is_array( $public_statuses ) ) {
+									$public_statuses = array( 'publish' );
 								}
 
-								$converted_segments[] = $converted_segment;
-								continue;
+								// Check if attachment or its parent is publicly accessible
+								if ( in_array( $attachment_post->post_status, $public_statuses, true ) || 'inherit' === $attachment_post->post_status ) {
+									$can_use_url = true;
+								}
+							}
+
+							if ( $can_use_url ) {
+								$image_url = wp_get_attachment_url( $attachment_id );
+								if ( $image_url ) {
+									$converted_segment = array(
+										'type'      => 'image_url',
+										'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
+									);
+
+									// Preserve detail level if present
+									if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
+										$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
+									}
+
+									$converted_segments[] = $converted_segment;
+									continue;
+								}
 							}
 						}
 					}
