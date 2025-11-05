@@ -1662,7 +1662,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
-			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) ) {
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
 				$max_tokens = $resource_mgr->get_max_tokens();
 
 				/**
@@ -1674,12 +1674,26 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$max_tokens = apply_filters( 'wp_mcp_ai_openai_max_tokens', $max_tokens, $options );
 
 				if ( $max_tokens > 0 ) {
-					$payload['max_completion_tokens'] = $max_tokens;
+					// Use max_output_tokens for Responses API, max_completion_tokens for Chat Completions.
+					if ( $should_use_responses_api ) {
+						$payload['max_output_tokens'] = $max_tokens;
+					} else {
+						$payload['max_completion_tokens'] = $max_tokens;
+					}
 				}
 			} elseif ( isset( $options['max_tokens'] ) ) {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['max_output_tokens'] ) ) {
+				// Responses API uses max_output_tokens.
+				$payload['max_output_tokens'] = absint( $options['max_output_tokens'] );
 			} elseif ( isset( $options['max_completion_tokens'] ) ) {
-				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
+				// Chat Completions API uses max_completion_tokens.
+				// When using Responses API, convert to max_output_tokens.
+				if ( $should_use_responses_api ) {
+					$payload['max_output_tokens'] = absint( $options['max_completion_tokens'] );
+				} else {
+					$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
+				}
 			}
 
 			$request_headers = array(
