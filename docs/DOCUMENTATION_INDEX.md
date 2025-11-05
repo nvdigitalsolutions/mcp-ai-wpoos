@@ -1,11 +1,11 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 5, 2024  
+**Last Updated:** November 6, 2025  
 **Plugin Version:** 1.0.0
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 40 files (36 in docs/ folder, 4 key files in root)
+**Total Documentation:** 50+ files (45+ in docs/ folder, 5+ key files in root)
 
 ---
 
@@ -93,6 +93,25 @@ This document provides a comprehensive index of all documentation available for 
 | [chat-history-persistence.md](chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
 
+### Performance & Optimization
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
+| [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
+| [job-notification-system.md](job-notification-system.md) | Real-time async job notifications | Developers |
+| [chat-performance-optimizations.md](chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
+| [tpm-limit-validation.md](tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
+| [tool-llm-sanitization.md](tool-llm-sanitization.md) | Tool output sanitization | Developers |
+
+### MCP Protocol
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [mcp-endpoint.md](mcp-endpoint.md) | MCP JSON-RPC 2.0 endpoint documentation | Developers |
+| [MCP-AND-SSE.md](MCP-AND-SSE.md) | MCP and SSE protocol details | Developers |
+| [ENABLE-SSE-STREAMING.md](ENABLE-SSE-STREAMING.md) | SSE streaming setup guide | Admins |
+
 ### Troubleshooting & Support
 
 | Document | Description | Audience |
@@ -126,9 +145,9 @@ This document provides a comprehensive index of all documentation available for 
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 40 (36 in docs/, 4 in root)
-- **Total Documentation Size:** ~350KB
-- **Main README Size:** 1,027 lines
+- **Total Documentation Files:** 50+ (45+ in docs/, 5+ in root)
+- **Total Documentation Size:** ~400KB+
+- **Main README Size:** 1,400+ lines
 - **Average Doc Size:** ~8.8KB
 
 ### Categories
@@ -137,6 +156,8 @@ This document provides a comprehensive index of all documentation available for 
 - **Integration Guides:** 4 documents
 - **Security & Auth:** 4 documents
 - **API & Tools:** 4 documents
+- **Performance & Optimization:** 6 documents
+- **MCP Protocol:** 3 documents
 - **Development:** 6 documents
 - **Troubleshooting:** 3 documents
 - **Technical Details:** 2 documents
