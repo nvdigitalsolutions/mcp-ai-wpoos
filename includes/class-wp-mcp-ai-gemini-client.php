@@ -534,10 +534,38 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
+			if ( ! isset( $payload['generationConfig'] ) ) {
+				$payload['generationConfig'] = array();
+			}
+
 			if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
-				$payload['generationConfig'] = array(
-					'temperature' => (float) $options['temperature'],
-				);
+				$payload['generationConfig']['temperature'] = (float) $options['temperature'];
+			}
+
+			// Apply resource-aware max_output_tokens if not explicitly set.
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_output_tokens'] ) ) {
+				$resource_mgr      = WP_MCP_AI_Resource_Manager::instance();
+				$max_output_tokens = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum output tokens for Gemini requests.
+				 *
+				 * @param int   $max_output_tokens The maximum output tokens to use.
+				 * @param array $options           Request options.
+				 */
+				$max_output_tokens = apply_filters( 'wp_mcp_ai_gemini_max_output_tokens', $max_output_tokens, $options );
+
+				if ( $max_output_tokens > 0 ) {
+					$payload['generationConfig']['maxOutputTokens'] = $max_output_tokens;
+				}
+			} elseif ( isset( $options['max_tokens'] ) ) {
+				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['max_output_tokens'] ) ) {
+				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
+			}
+
+			if ( empty( $payload['generationConfig'] ) ) {
+				unset( $payload['generationConfig'] );
 			}
 
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
@@ -1265,9 +1293,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return int
 		 */
 		protected function resolve_timeout( array $options ) {
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 
-			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
 
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );

@@ -137,6 +137,7 @@ if ( ! @ob_start() ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
@@ -286,6 +287,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $admin_cron_manager;
 
 		/**
+		 * Resource manager instance.
+		 *
+		 * @var WP_MCP_AI_Resource_Manager
+		 */
+		public $resource_manager;
+
+		/**
 		 * Output buffer level when starting Elementor AJAX buffering.
 		 *
 		 * @var int|null
@@ -324,6 +332,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
 			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
 
+			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
 			$this->admin_settings     = new WP_MCP_AI_Admin_Settings();
 			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
@@ -335,6 +344,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
+			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
 			$GLOBALS['wp_mcp_ai_admin_settings']     = $this->admin_settings;
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;

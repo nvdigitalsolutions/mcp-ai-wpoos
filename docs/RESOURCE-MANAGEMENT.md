@@ -1,0 +1,301 @@
+# Dynamic AI Resource Management
+
+## Overview
+
+The WP MCP AI plugin now includes intelligent resource management to prevent server overloads and ensure stable operation across different hosting environments. The system automatically detects available server resources and adjusts AI operation parameters accordingly.
+
+## Features
+
+### Automatic Server Resource Detection
+
+The `WP_MCP_AI_Resource_Manager` class automatically detects:
+
+- **PHP Memory Limit** - Converted to bytes for consistent handling
+- **Max Execution Time** - Used to ensure API timeouts don't exceed PHP limits
+
+### Workload Tiers
+
+Based on the detected memory limit, the system determines a workload tier:
+
+| Tier | Memory Limit | Max Tokens (default) | Request Timeout (default) |
+|------|--------------|---------------------|---------------------------|
+| **Low** | < 128M | 1,000 | 30s |
+| **Medium** | 128M - 512M | 4,000 | 60s |
+| **High** | ≥ 512M | 16,000 | 120s |
+
+### Intelligent Parameter Selection
+
+The Resource Manager provides recommended operational parameters that are automatically applied to AI API calls:
+
+- **Max Tokens**: Limits response size based on available memory
+- **Request Timeout**: Ensures requests complete before PHP execution time limit
+
+## Integration with AI Clients
+
+The Resource Manager is integrated with all supported AI providers:
+
+### OpenAI Client
+- Uses `max_completion_tokens` parameter
+- Falls back to `max_tokens` if explicitly provided
+
+### Gemini Client
+- Uses `maxOutputTokens` in `generationConfig`
+- Supports both `max_tokens` and `max_output_tokens` options
+
+### Ollama Client
+- Uses `num_predict` in options
+- Supports both `max_tokens` and `num_predict` options
+
+### LM Studio Client
+- Uses `max_tokens` parameter
+- Compatible with OpenAI API format
+
+## Usage
+
+### Automatic Application
+
+Resource limits are automatically applied when making AI requests. No code changes are required.
+
+```php
+// The Resource Manager automatically provides appropriate limits
+$response = $router->create_chat_completion( $messages, $options );
+```
+
+### Explicit Override
+
+You can override resource limits by specifying values in the options array:
+
+```php
+$options = [
+    'max_tokens' => 8000,  // Override automatic limit
+    'timeout'    => 90,    // Override automatic timeout
+];
+
+$response = $router->create_chat_completion( $messages, $options );
+```
+
+### Accessing the Resource Manager
+
+```php
+// Get the singleton instance
+$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+
+// Check current tier
+$tier = $resource_mgr->get_workload_tier(); // 'low', 'medium', or 'high'
+
+// Get recommended values
+$max_tokens = $resource_mgr->get_max_tokens();
+$timeout    = $resource_mgr->get_request_timeout();
+
+// Check if operation is feasible
+$result = $resource_mgr->can_handle_operation([
+    'max_tokens' => 8000
+]);
+
+if ( is_wp_error( $result ) ) {
+    // Handle insufficient resources
+    $error_message = $result->get_error_message();
+}
+```
+
+## Customization via Filters
+
+### Workload Tier
+
+Override the automatically detected workload tier:
+
+```php
+add_filter( 'wp_mcp_ai_workload_tier', function( $tier, $memory_limit ) {
+    // Force high tier for powerful servers
+    if ( $memory_limit > 1024 * 1024 * 1024 ) { // > 1GB
+        return 'high';
+    }
+    return $tier;
+}, 10, 2 );
+```
+
+### Global Max Tokens
+
+Adjust the default max tokens for all providers:
+
+```php
+add_filter( 'wp_mcp_ai_resource_max_tokens', function( $max_tokens, $tier ) {
+    // Increase limits for all tiers
+    $limits = [
+        'low'    => 2000,
+        'medium' => 8000,
+        'high'   => 32000,
+    ];
+    return isset( $limits[ $tier ] ) ? $limits[ $tier ] : $max_tokens;
+}, 10, 2 );
+```
+
+### Global Request Timeout
+
+Adjust the default request timeout:
+
+```php
+add_filter( 'wp_mcp_ai_resource_request_timeout', function( $timeout, $tier, $max_execution_time ) {
+    // Use custom timeout values
+    $timeouts = [
+        'low'    => 20,
+        'medium' => 45,
+        'high'   => 90,
+    ];
+    return isset( $timeouts[ $tier ] ) ? $timeouts[ $tier ] : $timeout;
+}, 10, 3 );
+```
+
+### Provider-Specific Filters
+
+Customize limits for specific AI providers:
+
+```php
+// OpenAI
+add_filter( 'wp_mcp_ai_openai_max_tokens', function( $max_tokens, $options ) {
+    return 10000; // Custom limit for OpenAI
+}, 10, 2 );
+
+// Gemini
+add_filter( 'wp_mcp_ai_gemini_max_output_tokens', function( $max_output_tokens, $options ) {
+    return 12000; // Custom limit for Gemini
+}, 10, 2 );
+
+// Ollama
+add_filter( 'wp_mcp_ai_ollama_num_predict', function( $num_predict, $options ) {
+    return 8000; // Custom limit for Ollama
+}, 10, 2 );
+
+// LM Studio
+add_filter( 'wp_mcp_ai_lm_studio_max_tokens', function( $max_tokens, $options ) {
+    return 15000; // Custom limit for LM Studio
+}, 10, 2 );
+```
+
+## Backward Compatibility
+
+The Resource Manager maintains full backward compatibility:
+
+1. **Existing Settings Honored**: If `request_timeout` is configured in plugin settings, it takes precedence
+2. **Explicit Options Respected**: Parameters passed in the `$options` array always override automatic values
+3. **No Breaking Changes**: The system only provides defaults when values are not explicitly set
+
+## Error Handling
+
+When server resources are insufficient for a requested operation, the system returns a descriptive error:
+
+```php
+$result = $resource_mgr->can_handle_operation([
+    'max_tokens' => 50000
+]);
+
+if ( is_wp_error( $result ) ) {
+    // Error code: 'wp_mcp_ai_insufficient_resources'
+    // Error data includes: tier, max_tokens, requested_tokens
+    $data = $result->get_error_data();
+    
+    error_log( sprintf(
+        'Operation requires %d tokens but server (tier: %s) supports max %d tokens',
+        $data['requested_tokens'],
+        $data['tier'],
+        $data['max_tokens']
+    ));
+}
+```
+
+## Best Practices
+
+1. **Let Automatic Limits Work**: In most cases, the automatic limits are appropriate. Only override when you have a specific need.
+
+2. **Monitor Resource Usage**: If you frequently encounter resource limit errors, consider upgrading your hosting or adjusting limits via filters.
+
+3. **Test Custom Limits**: When using filters to adjust limits, test thoroughly to ensure your server can handle the increased load.
+
+4. **Use can_handle_operation**: Before initiating complex operations, check if resources are sufficient:
+   ```php
+   if ( is_wp_error( $resource_mgr->can_handle_operation( $requirements ) ) ) {
+       // Show user-friendly error or queue operation
+   }
+   ```
+
+5. **Consider Context**: Different operations may need different limits. Use provider-specific filters to fine-tune behavior.
+
+## Technical Details
+
+### Memory Limit Detection
+
+The system uses `ini_get('memory_limit')` to detect the PHP memory limit and converts it to bytes:
+
+- Supports K, M, and G suffixes
+- Handles unlimited (-1) by defaulting to 512MB
+- Caches the result for performance
+
+### Execution Time Considerations
+
+Request timeouts are automatically adjusted to be less than `max_execution_time`:
+
+```php
+$timeout = min( $base_timeout, max_execution_time - 5 );
+```
+
+This ensures API requests complete before PHP times out, preventing incomplete operations.
+
+### Singleton Pattern
+
+The Resource Manager uses a singleton pattern to ensure consistent resource detection across the plugin:
+
+```php
+$manager = WP_MCP_AI_Resource_Manager::instance();
+```
+
+## Testing
+
+Unit tests are provided in `tests/test-resource-manager.php`:
+
+```bash
+vendor/bin/phpunit tests/test-resource-manager.php
+```
+
+Tests cover:
+- Memory limit detection
+- Execution time detection  
+- Workload tier calculation
+- Max tokens recommendations
+- Timeout recommendations
+- Operation feasibility checks
+- Filter functionality
+
+## Troubleshooting
+
+### Issue: Responses are truncated
+**Solution**: Your server may be on a low tier. Check with:
+```php
+$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+error_log( 'Tier: ' . $resource_mgr->get_workload_tier() );
+error_log( 'Max tokens: ' . $resource_mgr->get_max_tokens() );
+```
+
+### Issue: Requests timeout frequently
+**Solution**: Check your execution time limit:
+```php
+error_log( 'Max execution time: ' . ini_get('max_execution_time') );
+error_log( 'Recommended timeout: ' . $resource_mgr->get_request_timeout() );
+```
+
+### Issue: Want to disable automatic limits
+**Solution**: Use filters to return high values or always pass explicit options:
+```php
+add_filter( 'wp_mcp_ai_resource_max_tokens', function() {
+    return 999999; // Effectively unlimited
+}, 10 );
+```
+
+## Future Enhancements
+
+Potential future improvements to the resource management system:
+
+1. **Dynamic Adjustment**: Monitor actual resource usage and adjust limits in real-time
+2. **Operation Queuing**: Automatically queue operations that exceed current capacity
+3. **Multi-tier Caching**: Cache responses based on resource tier
+4. **Resource Pooling**: Share resources across multiple concurrent requests
+5. **Admin UI**: Provide settings page for manual tier override and monitoring

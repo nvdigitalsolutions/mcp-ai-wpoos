@@ -1550,11 +1550,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				);
 			}
 
-			$settings    = WP_MCP_AI_Admin_Settings::get_settings();
-			$model       = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
-			$timeout     = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : absint( $settings['request_timeout'] );
-			$timeout     = max( 5, $timeout );
-			$attachments = $this->extract_attachments_from_options( $options );
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$model           = ! empty( $options['model'] ) ? $options['model'] : $settings['default_model'];
+			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
+			$default_timeout = ! empty( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout         = ! empty( $options['timeout'] ) ? absint( $options['timeout'] ) : $default_timeout;
+			$timeout         = max( 5, $timeout );
+			$attachments     = $this->extract_attachments_from_options( $options );
 			$payload     = array(
 				'model' => $model,
 			);
@@ -1657,6 +1659,27 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( ! empty( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				$payload['response_format'] = $options['response_format'];
+			}
+
+			// Apply resource-aware max_tokens if not explicitly set.
+			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['max_completion_tokens'] ) ) {
+				$max_tokens = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum tokens for OpenAI requests.
+				 *
+				 * @param int   $max_tokens The maximum tokens to use.
+				 * @param array $options    Request options.
+				 */
+				$max_tokens = apply_filters( 'wp_mcp_ai_openai_max_tokens', $max_tokens, $options );
+
+				if ( $max_tokens > 0 ) {
+					$payload['max_completion_tokens'] = $max_tokens;
+				}
+			} elseif ( isset( $options['max_tokens'] ) ) {
+				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			} elseif ( isset( $options['max_completion_tokens'] ) ) {
+				$payload['max_completion_tokens'] = absint( $options['max_completion_tokens'] );
 			}
 
 			$request_headers = array(
