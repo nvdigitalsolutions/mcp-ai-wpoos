@@ -2,6 +2,65 @@
 
 WP oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
+## Autonomous automation capabilities for AI agents
+
+### Cron Management: From reactive to proactive AI
+
+The **Cron Management Suite** (`create_cron_job`, `list_cron_jobs`, `get_cron_job`, `delete_cron_job`) fundamentally transforms how AI assistants interact with WordPress by enabling autonomous task scheduling and background automation. Instead of only responding to user requests in real-time, agents can now:
+
+**Schedule future actions independently**
+- Agents can plan multi-step workflows that execute over hours or days
+- Content publishing can be scheduled for optimal engagement times discovered through analytics
+- Maintenance tasks can be automated to run during off-peak hours
+- Recurring operations (daily reports, weekly cleanups, periodic syncs) can be established once and run indefinitely
+
+**Monitor and manage scheduled automation**
+- Agents maintain visibility into all scheduled background tasks through `list_cron_jobs`
+- Detailed inspection of individual jobs via `get_cron_job` enables troubleshooting and verification
+- Stale or unnecessary automation can be identified and removed with `delete_cron_job`
+- Full audit trails (creator, creation time, next run time) support accountability and debugging
+
+**Coordinate complex workflows**
+- Agents can chain operations: schedule a post to publish at 9 AM, then schedule cache invalidation for 9:05 AM
+- Background data processing can be scheduled to avoid interrupting user-facing operations
+- Integration with external systems can be coordinated through scheduled API calls
+- Recurring business processes (invoicing, reporting, backups) can be fully automated
+
+**Technical safeguards**
+All cron operations require `manage_options` capability, ensuring only authorized administrators can delegate scheduling authority to agents. The cron manager (`WP_MCP_AI_Cron_Manager`) maintains a dedicated tracking database separate from WordPress's native cron array, providing:
+- Unique job IDs for reliable management across recurring schedules
+- Automatic pruning of completed single-run jobs
+- Normalized argument handling to prevent duplicate scheduling
+- User attribution for accountability and audit trails
+
+### Cache management: Multi-layer invalidation orchestration
+
+The cache management tools (`purge_cache`, `purge_cloudflare_cache`, `purge_varnish_cache`) enable agents to coordinate content freshness across distributed caching layers:
+
+**Intelligent cache invalidation**
+- `purge_cache` master orchestrator detects active caching layers and executes purges in the correct sequence
+- Cloudflare CDN edge caches can be cleared globally or for specific URLs/tags
+- Varnish reverse proxy caches can be purged for immediate server-side updates
+- WordPress object and page caches are automatically cleared when configured
+
+**Integration with content workflows**
+Agents can chain cache purging with content operations:
+1. Agent updates a high-traffic page via `save_post`
+2. Agent immediately calls `purge_cache` to ensure changes are visible
+3. Agent schedules a follow-up cache warming task via `create_cron_job` for 5 minutes later
+
+This is particularly powerful for publishing workflows where content updates must be immediately visible across global CDN edge nodes and server-side caching layers.
+
+### Authentication tooling: Enabling headless integrations
+
+**Generate Simple JWT Token** (`generate_simple_jwt_token`) empowers agents to facilitate headless WordPress integrations by generating bearer tokens on behalf of authenticated users. Agents can:
+- Help users configure mobile apps or SPAs with time-limited authentication tokens
+- Generate API credentials for third-party integrations without exposing passwords
+- Facilitate testing and debugging of headless WordPress APIs
+- Support multi-device authentication workflows where users need tokens for different contexts
+
+The tool validates Simple JWT Login configuration (plugin active, authentication enabled, valid keys) before generating tokens, ensuring secure token issuance.
+
 ## Content ingestion and retrieval
 
 - **Submit Document Prompt** (`submit_document_prompt`) uploads one or more WordPress attachments or existing OpenAI file IDs alongside a follow-up instruction so models can reason over the supplied files. The tool validates that a prompt and at least one document were provided before assembling multimodal segments for the Responses API.【F:includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php†L20-L214】
@@ -24,6 +83,7 @@ WP oOS registers a suite of default tools through the central registry so every 
 
 - **Generate OpenAI Image** (`generate_openai_image`) calls the Images API with configurable defaults (model, size, quality, response format), saves the binary to the Media Library, and lets assistants override prompt, size, quality, timeout, and filename options per request. GPT-Image-1 now forwards the configured response format so assistants can request hosted URLs instead of base64 payloads without extra filters.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L1177】【F:includes/class-wp-mcp-ai-openai-client.php†L16-L33】
 - **Generate Gemini Image** (`generate_gemini_image`) renders images with Google’s Gemini multimodal endpoint, supporting aspect-ratio and MIME controls plus optional timeout overrides before saving the attachment to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】
+- **Generate Perfume Lifestyle Image** (`generate_perfume_lifestyle_image`) workflow tool that validates perfume product and person reference images before generating a combined lifestyle scene. The tool performs multi-step validation: first analyzing the product image to confirm it contains a perfume bottle, then checking the person image for safety and appropriateness, before finally composing a marketing-ready lifestyle render. Returns detailed validation results and the final Media Library attachment ID. Requires both `attachment_id` parameters (product and person images) and an optional scene description.【F:includes/tools/class-wp-mcp-ai-tool-generate-perfume-lifestyle-image.php†L17-L300】
 - **Generate OpenAI Speech** (`generate_openai_speech`) converts supplied text into audio, honouring the default speech model, voice, and format configured in the settings screen while allowing overrides and enforcing authenticated access.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L983-L1110】
 - **Transcribe OpenAI Audio** (`transcribe_openai_audio`) accepts uploaded audio attachments up to 25 MB, forwards them to OpenAI for transcription or translation, and returns structured responses with language, duration, and segment data.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】
 
@@ -80,6 +140,8 @@ WP oOS registers a suite of default tools through the central registry so every 
   - Enables assistants to cancel outdated or unnecessary automation tasks on behalf of operators.
 - **Check WP-CLI Status** (`check_wp_cli`) scans common install locations and the current PATH for a `wp` binary or `wp-cli.phar`, returning the resolved path, binary type, captured `wp --version` output, and any environment warnings so administrators can confirm the CLI is reachable from the web server.【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】
 - **Purge Cloudflare Cache** (`purge_cloudflare_cache`) submits cache purge jobs for a configured Cloudflare zone, supporting targeted URL, host, or tag purges as well as full-zone invalidations while enforcing administrator-only access and configurable request timeouts.【F:includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php†L17-L292】
+- **Purge Varnish Cache** (`purge_varnish_cache`) purges the local Varnish cache with support for full-cache bans and specific URL purges. Requires `manage_options` capability and can target specific Varnish hosts or use the default localhost configuration. The tool validates Varnish connectivity and reports detailed success/failure status including which URLs were purged.【F:includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php†L17-L200】
+- **Purge Cache** (`purge_cache`) master cache purge orchestrator that coordinates multi-layer cache clearing (Cloudflare, Varnish, object cache, page cache) in the correct order to ensure content updates are properly reflected. Automatically detects which caching layers are configured and executes purges sequentially, reporting results for each layer. Agents can use this to perform comprehensive cache invalidation with a single tool call.【F:includes/tools/class-wp-mcp-ai-tool-purge-cache.php†L17-L200】
 - **Send Group Email** (`send_group_email`) parses structured or free-form instructions to assemble subject lines, bodies, and recipient lists while enforcing capability and recipient limits from the admin settings.【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L16-L234】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L818-L954】
 - **Send Mailjet Email** (`send_mailjet_email`) delivers transactional mail through Mailjet, honouring capability filters, configured sender defaults, and optional CC/BCC or reply-to overrides. Requests are logged, sanitised, and return Mailjet status payloads so assistants can confirm delivery or surface actionable error details.【F:includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php†L19-L405】
 - **Send Telegram Message** (`send_telegram_message`) posts formatted updates to Telegram chats or channels using bot credentials, honours capability filters, strips unsafe markup, and records request/response metadata for operational visibility.【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L16-L232】【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L234-L314】
@@ -93,5 +155,6 @@ WP oOS registers a suite of default tools through the central registry so every 
 - **Probe Remote MCP REST** (`probe_remote_mcp`) wraps the CLI remote tester, exercising `/assistants` and `/chat` on external MCP deployments while forwarding bearer, guest, or nonce credentials for side-by-side troubleshooting from the live site.【F:includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php†L12-L164】【F:includes/class-wp-mcp-ai-cli-command.php†L137-L280】
 - **Open OpenAI Logs** (`open_openai_logs`) and **Open OpenAI Usage** (`open_openai_usage`) surface dashboard links so administrators can audit provider activity without leaving the assistant interface.【F:includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php†L12-L66】【F:includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php†L12-L66】
 - **Create WPCode Snippet** (`create_wpcode_snippet`) provisions or updates WPCode-managed snippets, validating code types, auto-insert locations, and capabilities before calling the WPCode API. The response returns activation status, the resolved location label, and the shortcode that operators can embed in content.【F:includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php†L15-L224】
+- **Generate Simple JWT Token** (`generate_simple_jwt_token`) generates a Simple JWT Login bearer token for the current user, enabling authenticated API access across sessions. Requires the Simple JWT Login plugin to be active with authentication enabled and valid JWT keys configured. The tool validates JWT configuration before token generation and returns a time-limited bearer token that can be used for headless WordPress integrations. Agents can help users obtain authentication tokens for mobile apps, SPAs, or third-party integrations without exposing credentials.【F:includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php†L15-L200】
 
 Each tool automatically inherits the assistant context and authentication details passed through the REST layer, allowing developers to compose complex workflows or replace default behaviour via the documented filters and actions.【F:includes/class-wp-mcp-ai-rest.php†L236-L360】【F:includes/class-wp-mcp-ai-rest.php†L1124-L1198】
