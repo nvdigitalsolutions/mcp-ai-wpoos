@@ -56,9 +56,9 @@ This resource management system implements the following method and system claim
 - Configuration stored in WordPress database tables
 - Distributed as installable WordPress plugin package
 
-### Dependent Claims - Cron-Based Task Orchestration Extension
+### Additional Claims - Cron-Based Task Orchestration Extension
 
-**The system of claim 1** further comprising:
+**The system of claim 1, further comprising:**
 
 **A time-based scheduling subsystem** configured to execute deferred or recurring operations created by authorized agents, wherein:
 - Said operations inherit the same resource budgets and capability constraints as real-time sessions

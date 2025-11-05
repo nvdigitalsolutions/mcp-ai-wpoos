@@ -302,10 +302,14 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
         $resource_mgr = WP_MCP_AI_Resource_Manager::instance();
         $max_tokens = $resource_mgr->get_max_tokens();
         
+        // Normalize args for consistent handling
+        $args = WP_MCP_AI_Cron_Manager::normalise_args($params['args']);
+        
         // Schedule with inherited constraints
+        // Budget constraints ($max_tokens) are inherited at execution time
         wp_schedule_event($timestamp, $schedule, $hook, $args);
         
-        // Record in registry with user attribution
+        // Record in registry with user attribution and budget reference
         WP_MCP_AI_Cron_Manager::record_job(
             $hook, 
             $args, 
@@ -350,7 +354,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 | **Multi-tenancy** | Not addressed | Per-assistant and per-user resource isolation |
 | **Predictive Optimization** | Not available | Historical usage patterns inform resource allocation |
 | **Policy Enforcement** | Assumed external | Integrated at orchestration layer |
-| **Time-Based Scheduling** | Not available | Cron Manager with budget inheritance and compliance auditing |
+| **Time-Based Scheduling** | Manual configuration, no orchestration integration | Cron Manager with budget inheritance and compliance auditing |
 
 ---
 
