@@ -280,7 +280,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 		if ( ! empty( $invalid_vars ) ) {
 			$invalid_list = implode( ', ', $invalid_vars );
-			
+
 			return new WP_Error(
 				'wp_mcp_ai_invalid_hourly_variable',
 				sprintf(
