@@ -12,11 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	const DEFAULT_MODEL           = 'gpt-image-1';
 	const DEFAULT_SIZE            = '1024x1024';
 	const DEFAULT_QUALITY         = 'standard';
@@ -640,5 +641,55 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Sanitize image generation results for LLM consumption.
+	 *
+	 * Image generation returns base64-encoded image data that can be 100KB+.
+	 * The LLM doesn't need this binary data - it only needs metadata to reference
+	 * the generated image (attachment_id, url, file_name, etc.).
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result with only metadata.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip base64 content.
+		if ( isset( $result['content'] ) && is_array( $result['content'] ) ) {
+			unset( $result['content']['data'] );
+			unset( $result['content']['data_url'] );
+
+			if ( empty( $result['content'] ) ) {
+				unset( $result['content'] );
+			}
+		}
+
+		// Keep only essential metadata.
+		$keep_fields = array(
+			'attachment_id',
+			'url',
+			'file_name',
+			'mime_type',
+			'bytes',
+			'format',
+			'size',
+			'quality',
+			'model',
+			'prompt',
+			'revised_prompt',
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }

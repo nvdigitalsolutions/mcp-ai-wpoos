@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -2078,7 +2079,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result_messages[] = $full_tool_message;
 
 					// Create a sanitized version for the LLM (strip large content fields).
-					$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result );
+					$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
 
 					$tool_message = array(
 						'role'    => 'tool',
@@ -6601,68 +6602,144 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Sanitize tool result for LLM consumption by removing large content fields.
+		 * Sanitize tool result for LLM consumption in agentic workflow.
 		 *
-		 * Image generation tools return results with base64-encoded image data in a
-		 * 'content' field. This data can be extremely large (100KB+) and should not
-		 * be sent back to the LLM in subsequent chat requests, as it causes token
-		 * limit errors and provides no value to the LLM.
+		 * This method implements a two-tier sanitization strategy:
+		 * 1. Check if the tool implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface
+		 *    and use its custom sanitization rules
+		 * 2. Fall back to generic sanitization for tools without custom rules
 		 *
-		 * @param mixed $result Tool execution result.
+		 * This approach keeps sanitization logic maintainable and allows each tool
+		 * to define what data is necessary vs. unnecessary for LLM context.
+		 *
+		 * The full, unsanitized result is always preserved in tool_results[] for
+		 * frontend display.
+		 *
+		 * @param mixed  $result           Tool execution result.
+		 * @param string $tool_name        Tool name from function call.
+		 * @param array  $assistant_config Assistant configuration.
 		 * @return mixed Sanitized result safe for LLM consumption.
 		 */
-		protected function sanitize_tool_result_for_llm( $result ) {
+		protected function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array() ) {
+			if ( ! is_array( $result ) ) {
+				return $result;
+			}
+
+			// Try to get the tool instance to check if it implements custom sanitization.
+			if ( '' !== $tool_name ) {
+				$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+				$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+				$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+
+				if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+					$tool = $this->registry->get_tool( $tool_slug );
+
+					// Check if tool implements custom LLM sanitization.
+					if ( $tool && $tool instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
+						return $tool->sanitize_for_llm( $result );
+					}
+				}
+			}
+
+			// Fall back to generic sanitization.
+			return $this->generic_sanitize_for_llm( $result );
+		}
+
+		/**
+		 * Generic sanitization for tools that don't implement custom rules.
+		 *
+		 * @param mixed $result Tool execution result.
+		 * @return mixed Sanitized result.
+		 */
+		protected function generic_sanitize_for_llm( $result ) {
 			if ( ! is_array( $result ) ) {
 				return $result;
 			}
 
 			$sanitized = $result;
 
-			// Strip large base64 content from image generation tools.
+			// Strip duplicate raw API responses.
+			unset( $sanitized['raw'] );
+
+			// Strip verbose metadata.
+			if ( isset( $sanitized['metadata'] ) && is_array( $sanitized['metadata'] ) ) {
+				$sanitized['metadata'] = $this->sanitize_metadata_for_llm( $sanitized['metadata'] );
+				if ( empty( $sanitized['metadata'] ) ) {
+					unset( $sanitized['metadata'] );
+				}
+			}
+
+			// Strip base64 content from image generation tools.
 			if ( isset( $sanitized['content'] ) && is_array( $sanitized['content'] ) ) {
-				$content = $sanitized['content'];
-
-				// Check if this is a base64-encoded image payload.
-				if ( isset( $content['encoding'] ) && 'base64' === $content['encoding'] && isset( $content['data'] ) ) {
-					// Remove the large base64 data field.
-					unset( $sanitized['content']['data'] );
-					unset( $sanitized['content']['data_url'] );
-
-					// If content array is now empty, remove it entirely.
-					if ( count( $sanitized['content'] ) === 0 ) {
-						unset( $sanitized['content'] );
-					}
+				$sanitized['content'] = $this->sanitize_content_for_llm( $sanitized['content'] );
+				if ( empty( $sanitized['content'] ) ) {
+					unset( $sanitized['content'] );
 				}
 			}
 
-			// Keep essential metadata for LLM context.
-			$metadata_to_keep = array(
-				'attachment_id',
-				'url',
-				'download_url',
-				'file_name',
-				'mime_type',
-				'bytes',
-				'title',
-				'model',
-				'size',
-				'quality',
-				'aspect_ratio',
-				'format',
-				'prompt',
-				'revised_prompt',
-				'created',
-			);
-
-			$llm_result = array();
-			foreach ( $metadata_to_keep as $key ) {
-				if ( isset( $sanitized[ $key ] ) ) {
-					$llm_result[ $key ] = $sanitized[ $key ];
+			// Recursively sanitize nested result arrays.
+			foreach ( array( 'results', 'items', 'pages' ) as $key ) {
+				if ( isset( $sanitized[ $key ] ) && is_array( $sanitized[ $key ] ) ) {
+					$sanitized[ $key ] = array_map(
+						function ( $item ) {
+							return is_array( $item ) ? $this->generic_sanitize_for_llm( $item ) : $item;
+						},
+						$sanitized[ $key ]
+					);
 				}
 			}
 
-			// If we have extracted metadata, use it; otherwise return the sanitized result.
-			return ! empty( $llm_result ) ? $llm_result : $sanitized;
+			return $sanitized;
+		}
+
+		/**
+		 * Sanitize metadata fields by removing verbose data.
+		 *
+		 * @param array $metadata Metadata array.
+		 * @return array Cleaned metadata.
+		 */
+		protected function sanitize_metadata_for_llm( array $metadata ) {
+			// Remove verbose fields.
+			$fields_to_remove = array( 'headers', 'raw', 'response', 'request', 'retrieved_at', 'fetched_at', 'user_agent' );
+
+			foreach ( $fields_to_remove as $key ) {
+				unset( $metadata[ $key ] );
+			}
+
+			// Recursively clean nested metadata.
+			foreach ( $metadata as $key => $value ) {
+				if ( is_array( $value ) ) {
+					$metadata[ $key ] = $this->sanitize_metadata_for_llm( $value );
+				}
+			}
+
+			return $metadata;
+		}
+
+		/**
+		 * Sanitize content arrays by removing base64 data.
+		 *
+		 * @param array $content Content array.
+		 * @return array Cleaned content.
+		 */
+		protected function sanitize_content_for_llm( array $content ) {
+			// Remove base64-encoded data.
+			if ( isset( $content['encoding'] ) && 'base64' === $content['encoding'] ) {
+				unset( $content['data'] );
+				unset( $content['data_url'] );
+			}
+
+			// Keep only essential metadata.
+			$keep_keys = array( 'type', 'mime_type', 'encoding', 'size', 'url', 'title', 'format' );
+			$cleaned   = array();
+
+			foreach ( $keep_keys as $key ) {
+				if ( isset( $content[ $key ] ) ) {
+					$cleaned[ $key ] = $content[ $key ];
+				}
+			}
+
+			return $cleaned;
 		}
 	}
 }
