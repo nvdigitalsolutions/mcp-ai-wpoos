@@ -1582,6 +1582,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
+				// When using Chat Completions API with image attachments, convert to image_url format
+				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
+					$attachment_lookup = $this->index_attachments_by_id( $attachments );
+					$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
+				}
 				$payload['messages'] = $chat_messages;
 			}
 
@@ -2270,9 +2275,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return false;
 			}
 
+			// Check if attachments are present in options
 			if ( ! empty( $options['attachments'] ) && is_array( $options['attachments'] ) ) {
+				// If all attachments are images, use Chat Completions API with image_url
+				// This allows tool calling to work with images
+				if ( $this->are_all_attachments_images( $options['attachments'] ) ) {
+					return false;
+				}
+				// Otherwise, use Responses API for non-image documents
 				return true;
 			}
+
+			// Check for file references in message content
+			$has_file_reference = false;
 
 			foreach ( $messages as $message ) {
 				if ( empty( $message['content'] ) || ! is_array( $message['content'] ) ) {
@@ -2286,25 +2301,28 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
-					if ( isset( $segment['file_id'] ) ) {
-						return true;
-					}
-
-					if ( isset( $segment['image']['file_id'] ) || isset( $segment['image_file']['file_id'] ) ) {
-						return true;
-					}
-
-					if ( strpos( $type, 'input_' ) === 0 && ( isset( $segment['file_id'] ) || isset( $segment['image'] ) || isset( $segment['image_file'] ) ) ) {
-						return true;
-					}
-
+					// Check for input_file type (non-image documents)
 					if ( 'input_file' === $type ) {
-						return true;
+						$has_file_reference = true;
+					}
+
+					// Check for file_id in various locations
+					// Only count as file reference if it's not an input_image type
+					if ( isset( $segment['file_id'] ) && 'input_image' !== $type ) {
+						$has_file_reference = true;
+					}
+
+					// Image-related file references don't require Responses API
+					// Skip checking isset for image/image_file as those are handled by type check above
+
+					if ( strpos( $type, 'input_' ) === 0 && 'input_file' === $type && isset( $segment['file_id'] ) ) {
+						$has_file_reference = true;
 					}
 				}
 			}
 
-			return false;
+			// Only use Responses API if there are non-image file references
+			return $has_file_reference;
 		}
 
 		/**
@@ -2921,6 +2939,138 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Check if all attachments in the provided array are images.
+		 *
+		 * @param array $attachments Array of attachment payloads.
+		 * @return bool True if all attachments are images, false otherwise.
+		 */
+		protected function are_all_attachments_images( array $attachments ) {
+			if ( empty( $attachments ) ) {
+				return false;
+			}
+
+			foreach ( $attachments as $attachment ) {
+				if ( ! is_array( $attachment ) ) {
+					continue;
+				}
+
+				$mime_type = '';
+
+				// Check for mime_type in the attachment metadata
+				if ( isset( $attachment['mime_type'] ) && '' !== $attachment['mime_type'] ) {
+					$mime_type = $attachment['mime_type'];
+				} elseif ( isset( $attachment['metadata']['mime_type'] ) && '' !== $attachment['metadata']['mime_type'] ) {
+					$mime_type = $attachment['metadata']['mime_type'];
+				} elseif ( isset( $attachment['attachment_id'] ) ) {
+					// Try to get mime type from WordPress attachment
+					$mime_type = get_post_mime_type( absint( $attachment['attachment_id'] ) );
+				} elseif ( isset( $attachment['id'] ) && is_numeric( $attachment['id'] ) ) {
+					// Try to get mime type from WordPress attachment using id field
+					$mime_type = get_post_mime_type( absint( $attachment['id'] ) );
+				}
+
+				if ( '' === $mime_type ) {
+					// If we can't determine mime type, assume it's not an image (safer default)
+					return false;
+				}
+
+				if ( ! WP_MCP_AI_Message_Attachments::is_image_mime_type( $mime_type ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Convert image file segments to image_url format for Chat Completions API.
+		 *
+		 * This allows images to work with tool calling by using the Chat Completions API
+		 * with image_url content type instead of the Responses API.
+		 *
+		 * @param array $messages          Array of chat messages.
+		 * @param array $attachment_lookup Indexed attachments by file_id.
+		 * @return array Modified messages with image_url format for images.
+		 */
+		protected function convert_image_files_to_image_url( array $messages, array $attachment_lookup ) {
+			$converted = array();
+
+			foreach ( $messages as $message ) {
+				if ( ! isset( $message['content'] ) || ! is_array( $message['content'] ) ) {
+					$converted[] = $message;
+					continue;
+				}
+
+				$converted_segments = array();
+
+				foreach ( $message['content'] as $segment ) {
+					if ( ! is_array( $segment ) ) {
+						$converted_segments[] = $segment;
+						continue;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
+
+					// Convert input_image segments with file_id to image_url format
+					if ( 'input_image' === $type && isset( $segment['file_id'] ) ) {
+						$file_id = (string) $segment['file_id'];
+
+						// Try to get the attachment data
+						$attachment_id = 0;
+						if ( isset( $attachment_lookup[ $file_id ] ) && isset( $attachment_lookup[ $file_id ]['attachment_id'] ) ) {
+							$attachment_id = absint( $attachment_lookup[ $file_id ]['attachment_id'] );
+						}
+
+						// If we can get a URL for the image, use image_url format
+						if ( $attachment_id > 0 ) {
+							// Verify attachment exists and get its post status
+							$attachment_post = get_post( $attachment_id );
+							$can_use_url     = false;
+
+							if ( $attachment_post && 'attachment' === $attachment_post->post_type ) {
+								$public_statuses = get_post_stati( array( 'public' => true ) );
+								if ( ! is_array( $public_statuses ) ) {
+									$public_statuses = array( 'publish' );
+								}
+
+								// Check if attachment or its parent is publicly accessible
+								if ( in_array( $attachment_post->post_status, $public_statuses, true ) || 'inherit' === $attachment_post->post_status ) {
+									$can_use_url = true;
+								}
+							}
+
+							if ( $can_use_url ) {
+								$image_url = wp_get_attachment_url( $attachment_id );
+								if ( $image_url ) {
+									$converted_segment = array(
+										'type'      => 'image_url',
+										'image_url' => array( 'url' => esc_url_raw( $image_url ) ),
+									);
+
+									// Preserve detail level if present
+									if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
+										$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
+									}
+
+									$converted_segments[] = $converted_segment;
+									continue;
+								}
+							}
+						}
+					}
+
+					// Keep all other segments as-is
+					$converted_segments[] = $segment;
+				}
+
+				$message['content'] = $converted_segments;
+				$converted[]        = $message;
+			}
+
+			return $converted;
 		}
 	}
 }
