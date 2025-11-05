@@ -243,4 +243,109 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 			'status' => 'good',
 		);
 	}
+
+	/**
+	 * Test that exceptions thrown by Site Health tests are handled gracefully.
+	 */
+	public function test_execute_handles_test_exceptions_gracefully() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+		$logged_errors = array();
+
+		// Capture error log events.
+		add_filter(
+			'wp_mcp_ai_log_entry',
+			function ( $entry ) use ( &$logged_errors ) {
+				if ( isset( $entry['type'] ) && 'error' === $entry['type'] ) {
+					$logged_errors[] = $entry;
+				}
+				return $entry;
+			}
+		);
+
+		add_filter( 'site_status_tests', array( $this, 'filter_site_status_tests_with_exception' ) );
+
+		try {
+			$result = $tool->execute( array(), array( 'user_id' => $admin_id ) );
+		} finally {
+			remove_filter( 'site_status_tests', array( $this, 'filter_site_status_tests_with_exception' ) );
+			remove_all_filters( 'wp_mcp_ai_log_entry' );
+		}
+
+		// Tool should still return a result, not throw a 500 error.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'summary', $result );
+		$this->assertArrayHasKey( 'tests', $result );
+
+		// The good test should still pass.
+		$this->assertSame( 1, $result['summary']['pass'] );
+
+		// The critical and warning tests should not appear since they threw exceptions.
+		$this->assertSame( 0, $result['summary']['critical'] );
+		$this->assertSame( 0, $result['summary']['warning'] );
+
+		// Verify errors were logged.
+		$this->assertNotEmpty( $logged_errors, 'Exceptions should be logged as errors' );
+
+		// Verify that errors were logged with proper structure.
+		$error_count = 0;
+		foreach ( $logged_errors as $error ) {
+			if ( isset( $error['message'] ) && false !== strpos( $error['message'], 'Site Health test callback threw error' ) ) {
+				++$error_count;
+				$this->assertArrayHasKey( 'context', $error, 'Error should have context array' );
+				$this->assertArrayHasKey( 'error_message', $error['context'], 'Context should include error_message' );
+				$this->assertArrayHasKey( 'error_file', $error['context'], 'Context should include error_file' );
+				$this->assertArrayHasKey( 'error_line', $error['context'], 'Context should include error_line' );
+				$this->assertArrayHasKey( 'callback', $error['context'], 'Context should include callback name' );
+				$this->assertNotEmpty( $error['context']['error_message'], 'Error message should not be empty' );
+			}
+		}
+
+		$this->assertGreaterThan( 0, $error_count, 'At least one error should be logged' );
+	}
+
+	/**
+	 * Provide Site Health tests where some throw exceptions.
+	 *
+	 * @return array
+	 */
+	public function filter_site_status_tests_with_exception() {
+		return array(
+			'direct' => array(
+				'throws_exception' => array(
+					'label' => 'Test that throws exception',
+					'test'  => array( $this, 'run_test_that_throws_exception' ),
+				),
+				'throws_error'     => array(
+					'label' => 'Test that throws error',
+					'test'  => array( $this, 'run_test_that_throws_error' ),
+				),
+				'custom_good'      => array(
+					'label' => 'HTTPS test',
+					'test'  => array( $this, 'run_custom_good_test' ),
+				),
+			),
+			'async'  => array(),
+		);
+	}
+
+	/**
+	 * Simulate a test that throws an exception.
+	 *
+	 * @throws Exception Always throws.
+	 */
+	public function run_test_that_throws_exception() {
+		throw new Exception( 'Test exception from Site Health' );
+	}
+
+	/**
+	 * Simulate a test that throws an error (PHP 7+).
+	 *
+	 * @throws Error Always throws.
+	 */
+	public function run_test_that_throws_error() {
+		throw new Error( 'Test error from Site Health' );
+	}
 }
