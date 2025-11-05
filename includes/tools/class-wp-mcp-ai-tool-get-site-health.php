@@ -327,29 +327,33 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			$result = apply_filters( 'site_status_test_result', $result );
 
 			return is_array( $result ) ? $result : null;
-		} catch ( Exception $e ) {
-			WP_MCP_AI_Logger::log_error(
-				'Site Health test callback threw exception.',
-				array(
-					'error_message' => $e->getMessage(),
-					'error_file'    => $e->getFile(),
-					'error_line'    => $e->getLine(),
-					'callback'      => is_array( $callback ) && count( $callback ) === 2 ? get_class( $callback[0] ) . '::' . $callback[1] : 'unknown',
-				)
-			);
-			return null;
 		} catch ( Throwable $e ) {
-			WP_MCP_AI_Logger::log_error(
-				'Site Health test callback threw error.',
-				array(
-					'error_message' => $e->getMessage(),
-					'error_file'    => $e->getFile(),
-					'error_line'    => $e->getLine(),
-					'callback'      => is_array( $callback ) && count( $callback ) === 2 ? get_class( $callback[0] ) . '::' . $callback[1] : 'unknown',
-				)
-			);
+			$this->log_site_health_callback_error( $e, $callback );
 			return null;
 		}
+	}
+
+	/**
+	 * Log an error from a Site Health test callback.
+	 *
+	 * @param Throwable $error    The exception or error that was thrown.
+	 * @param callable  $callback The callback that threw the error.
+	 */
+	private function log_site_health_callback_error( Throwable $error, $callback ) {
+		$callback_name = 'unknown';
+		if ( is_array( $callback ) && count( $callback ) === 2 ) {
+			$callback_name = get_class( $callback[0] ) . '::' . $callback[1];
+		}
+
+		WP_MCP_AI_Logger::log_error(
+			'Site Health test callback threw error.',
+			array(
+				'error_message' => $error->getMessage(),
+				'error_file'    => $error->getFile(),
+				'error_line'    => $error->getLine(),
+				'callback'      => $callback_name,
+			)
+		);
 	}
 
 	/**

@@ -289,19 +289,21 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 		// Verify errors were logged.
 		$this->assertNotEmpty( $logged_errors, 'Exceptions should be logged as errors' );
 
-		// Check that the exception message was logged.
-		$exception_logged = false;
+		// Check that errors were logged with the correct message.
+		$error_logged = false;
 		foreach ( $logged_errors as $error ) {
-			if ( isset( $error['message'] ) && strpos( $error['message'], 'Site Health test callback threw exception' ) !== false ) {
-				$exception_logged = true;
+			if ( isset( $error['message'] ) && strpos( $error['message'], 'Site Health test callback threw error' ) !== false ) {
+				$error_logged = true;
 				$this->assertArrayHasKey( 'context', $error );
 				$this->assertArrayHasKey( 'error_message', $error['context'] );
-				$this->assertStringContainsString( 'Test exception', $error['context']['error_message'] );
-				break;
+				// Check for either exception or error message.
+				$has_test_error = strpos( $error['context']['error_message'], 'Test exception' ) !== false ||
+				                  strpos( $error['context']['error_message'], 'Test error' ) !== false;
+				$this->assertTrue( $has_test_error, 'Error message should contain test exception or error text' );
 			}
 		}
 
-		$this->assertTrue( $exception_logged, 'Exception should be logged with proper context' );
+		$this->assertTrue( $error_logged, 'Errors should be logged with proper context' );
 	}
 
 	/**
