@@ -9,10 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
+
 /**
  * Provides an integration with the Crawl4AI REST API.
  */
-class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	const DEFAULT_WAIT_TIMEOUT  = 120;
 	const DEFAULT_POLL_INTERVAL = 3;
 
@@ -1716,5 +1718,75 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $message;
+	}
+
+	/**
+	 * Sanitize crawl4ai results for LLM consumption.
+	 *
+	 * The crawl4ai tool already truncates content fields (markdown, text, html)
+	 * within token limits. However, it includes a 'raw' field that duplicates
+	 * the full untruncated results, which wastes context.
+	 *
+	 * This method strips:
+	 * - 'raw' field (duplicate of truncated results)
+	 * - Verbose metadata (headers, user_agent, timestamps)
+	 *
+	 * Keeps:
+	 * - 'markdown', 'text', 'html' (already truncated, LLM needs this to work with)
+	 * - 'url', 'status_code', 'status' (essential metadata)
+	 * - 'task_id' (for status tracking)
+	 *
+	 * @param mixed $result Tool execution result.
+	 * @return mixed Sanitized result.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		$sanitized = $result;
+
+		// Remove duplicate raw data.
+		unset( $sanitized['raw'] );
+
+		// Clean metadata.
+		if ( isset( $sanitized['metadata'] ) && is_array( $sanitized['metadata'] ) ) {
+			unset( $sanitized['metadata']['headers'] );
+			unset( $sanitized['metadata']['user_agent'] );
+			unset( $sanitized['metadata']['retrieved_at'] );
+			unset( $sanitized['metadata']['fetched_at'] );
+
+			if ( empty( $sanitized['metadata'] ) ) {
+				unset( $sanitized['metadata'] );
+			}
+		}
+
+		// Recursively clean results array.
+		if ( isset( $sanitized['results'] ) && is_array( $sanitized['results'] ) ) {
+			$sanitized['results'] = array_map(
+				function ( $item ) {
+					if ( ! is_array( $item ) ) {
+						return $item;
+					}
+
+					// Clean individual result metadata.
+					if ( isset( $item['metadata'] ) && is_array( $item['metadata'] ) ) {
+						unset( $item['metadata']['headers'] );
+						unset( $item['metadata']['user_agent'] );
+						unset( $item['metadata']['retrieved_at'] );
+						unset( $item['metadata']['fetched_at'] );
+
+						if ( empty( $item['metadata'] ) ) {
+							unset( $item['metadata'] );
+						}
+					}
+
+					return $item;
+				},
+				$sanitized['results']
+			);
+		}
+
+		return $sanitized;
 	}
 }
