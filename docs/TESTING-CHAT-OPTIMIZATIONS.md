@@ -142,7 +142,54 @@ define('WP_MCP_AI_DISABLE_CACHE', true);
 2. Repeat the test
 3. **Expected:** May see individual appendChild operations instead of batched
 
-## Test 5: localStorage Debouncing
+## Test 5: Message Bundling
+
+### Rapid Message Test (Optimizations Enabled)
+
+1. **Open the chat interface** (shortcode or widget)
+2. **Open DevTools** → **Network** tab
+3. **Filter by:** XHR or Fetch requests
+4. **Type and send 3 messages rapidly** (within 1-2 seconds):
+   - Message 1: "Hello"
+   - Message 2: "How are you?"
+   - Message 3: "What can you do?"
+5. **Expected behavior:**
+   - All 3 messages appear in the UI immediately
+   - Status shows "Preparing to send…" briefly
+   - Only 1 API request is sent after 800ms delay
+   - The request contains all 3 user messages in the conversation
+
+### Single Message Test (Baseline)
+
+1. **Type and send one message:** "Test message"
+2. **Wait 2 seconds**
+3. **Expected:**
+   - Message appears in UI
+   - Status shows "Preparing to send…" for 800ms
+   - Then API request is sent
+   - Response is displayed normally
+
+### Debug Mode (No Bundling)
+
+1. **Enable debug mode:**
+   ```javascript
+   window.wpMcpAiChatDebugMode = true;
+   ```
+2. **Refresh the page**
+3. **Send 3 messages rapidly** (same as above)
+4. **Expected:**
+   - Status shows "Sending…" immediately (not "Preparing to send…")
+   - 3 separate API requests are made
+   - Each message is sent as soon as it's submitted
+
+### Visual Feedback Verification
+
+1. **Without debug mode**, send a message
+2. **Look for status text:** Should show "Preparing to send…"
+3. **After 800ms:** Status changes to "Sending…"
+4. **Expected:** Clear visual distinction between bundling and sending states
+
+## Test 6: localStorage Debouncing
 
 ### Rapid Message Test
 
@@ -164,7 +211,7 @@ Repeat for both:
 
 **Expected:** Both should behave identically
 
-## Test 6: Cross-Browser Testing
+## Test 7: Cross-Browser Testing
 
 Test on multiple browsers:
 
@@ -182,7 +229,7 @@ Test on multiple browsers:
 
 **Expected:** Consistent behavior across all browsers
 
-## Test 7: Mobile Responsiveness
+## Test 8: Mobile Responsiveness
 
 ### Mobile Test (Real Device or DevTools Emulation)
 
@@ -194,7 +241,7 @@ Test on multiple browsers:
 5. Test chat functionality
 6. **Expected:** Same behavior as shortcode
 
-## Test 8: Performance Comparison
+## Test 9: Performance Comparison
 
 ### Measure Load Time
 
@@ -224,7 +271,7 @@ Run the same tests with:
 - Faster DOM rendering for multi-attachment messages
 - Lower overall interaction time
 
-## Test 9: Error Handling
+## Test 10: Error Handling
 
 ### Test with Network Issues
 
@@ -251,7 +298,7 @@ Run the same tests with:
 3. Try to send a chat message
 4. **Expected:** Should fail gracefully (no crashes)
 
-## Test 10: Compatibility Testing
+## Test 11: Compatibility Testing
 
 ### With Other Plugins
 
@@ -277,6 +324,7 @@ Test on:
 
 - [ ] Optimizations active by default
 - [ ] Debug mode disables optimizations
+- [ ] Message bundling groups rapid inputs (800ms window)
 - [ ] localStorage saves are debounced
 - [ ] DOM operations are batched
 - [ ] PHP cache reduces queries
@@ -288,6 +336,7 @@ Test on:
 
 - [ ] Optimizations active by default
 - [ ] Debug mode disables optimizations
+- [ ] Message bundling works identically to shortcode
 - [ ] Behavior identical to shortcode
 - [ ] No Elementor conflicts
 - [ ] Works in preview and live mode

@@ -38,6 +38,9 @@
     const storageSaveTimers = {};
     const STORAGE_SAVE_DEBOUNCE_MS = 300;
 
+    // Message bundling to group rapid user inputs
+    const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
+
     function saveConversationToStorage(state) {
         if (!state || !state.config || !state.config.assistantId) {
             return;
@@ -1621,6 +1624,13 @@
         state.pendingAttachments = [];
         renderPendingAttachments(state);
         updateAttachButtonState(state);
+
+        // Clear message bundling state
+        if (state.messageBundleTimer) {
+            clearTimeout(state.messageBundleTimer);
+            state.messageBundleTimer = null;
+        }
+        state.pendingMessageBundle = [];
 
         // Clear status message
         setStatus(state.container, '');
@@ -4606,6 +4616,8 @@
                 recordedChunks: [],
                 mediaRecorder: null,
                 recordingShouldProcess: false,
+                pendingMessageBundle: [], // Queue for bundling rapid user inputs
+                messageBundleTimer: null, // Timer for message bundling delay
             };
 
             initialiseExistingSpeechButtons(state);
@@ -4892,12 +4904,69 @@
         renderPendingAttachments(state);
         updateAttachButtonState(state);
 
-        sendChat(state, {
-            previousConversationLength: previousConversationLength,
-            pendingAttachments: pending,
-            messageElement: userMessageElement,
-            inputValue: inputValue,
-        });
+        // Use message bundling if optimizations are enabled
+        if (OPTIMIZATIONS_ENABLED) {
+            queueMessageForBundling(state, {
+                previousConversationLength: previousConversationLength,
+                pendingAttachments: pending,
+                messageElement: userMessageElement,
+                inputValue: inputValue,
+            });
+        } else {
+            // In debug mode, send immediately without bundling
+            sendChat(state, {
+                previousConversationLength: previousConversationLength,
+                pendingAttachments: pending,
+                messageElement: userMessageElement,
+                inputValue: inputValue,
+            });
+        }
+    }
+
+    /**
+     * Queue a message for bundling with other rapid inputs.
+     * If another message arrives within MESSAGE_BUNDLE_DELAY_MS, they will be sent together.
+     */
+    function queueMessageForBundling(state, submissionContext) {
+        // Clear any existing timer
+        if (state.messageBundleTimer) {
+            clearTimeout(state.messageBundleTimer);
+            state.messageBundleTimer = null;
+        }
+
+        // Add this submission to the bundle queue
+        state.pendingMessageBundle.push(submissionContext);
+
+        // Set visual indicator that messages are being bundled
+        setStatus(state.container, getString('bundlingMessages', 'Preparing to send…'));
+
+        // Set timer to send all bundled messages
+        state.messageBundleTimer = setTimeout(function() {
+            sendBundledMessages(state);
+        }, MESSAGE_BUNDLE_DELAY_MS);
+    }
+
+    /**
+     * Send all messages that have been bundled during the delay window.
+     */
+    function sendBundledMessages(state) {
+        // Clear the timer reference
+        state.messageBundleTimer = null;
+
+        // Get all bundled submissions
+        const bundledSubmissions = state.pendingMessageBundle.slice();
+        state.pendingMessageBundle = [];
+
+        if (bundledSubmissions.length === 0) {
+            return;
+        }
+
+        // For multiple rapid messages, we already added them to conversation
+        // during handleSubmit, so we just need to send the current conversation state.
+        // Use the first submission's context for restoration if needed.
+        const firstSubmission = bundledSubmissions[0];
+
+        sendChat(state, firstSubmission);
     }
 
     function sendChat(state, submissionContext) {
