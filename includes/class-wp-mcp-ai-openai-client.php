@@ -2585,17 +2585,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					unset( $segment['image'] );
 				}
 
-				if ( isset( $segment['image'] ) ) {
-					unset( $segment['image'] );
-				}
-
 				if ( isset( $segment['image_url'] ) ) {
 					unset( $segment['image_url'] );
 				}
 			} elseif ( isset( $segment['image_url']['url'] ) ) {
-				$segment['image_url'] = array( 'url' => esc_url_raw( (string) $segment['image_url']['url'] ) );
+				// For Responses API, image_url should be a string URL, not an object
+				// Preserve detail if present in the nested object before extracting URL
+				if ( isset( $segment['image_url']['detail'] ) && ! isset( $segment['detail'] ) ) {
+					$segment['detail'] = sanitize_key( $segment['image_url']['detail'] );
+				}
+				$segment['image_url'] = esc_url_raw( (string) $segment['image_url']['url'] );
 			} elseif ( isset( $segment['image_url'] ) && is_string( $segment['image_url'] ) ) {
-				$segment['image_url'] = array( 'url' => esc_url_raw( $segment['image_url'] ) );
+				$segment['image_url'] = esc_url_raw( $segment['image_url'] );
 			}
 
 			if ( isset( $segment['image'] ) && is_array( $segment['image'] ) ) {
