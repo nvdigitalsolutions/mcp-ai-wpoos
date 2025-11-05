@@ -266,11 +266,11 @@ The chat interface automatically persists conversation history to the browser's 
 
 #### Server-Side Chat Transcript Storage (Requires JetEngine)
 
-⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/) (not included with WP oOS)
+⚠️ **Third-Party Plugin Required:** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) (not included with WP oOS)
 
 Without JetEngine, chat conversations are **only stored in browser localStorage** (client-side, 24-hour retention). To enable permanent server-side chat transcript archiving:
 
-1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/) plugin (third-party, paid plugin from Crocoblock)
+1. Install and activate the [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) plugin (third-party, paid plugin from Crocoblock)
 2. Enable the **Custom Content Types** module in JetEngine settings
 3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent storage
 
@@ -302,11 +302,11 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 ### Optional: JetEngine Integration
 
-⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/) is a paid plugin from Crocoblock
+⚠️ **Third-Party Plugin (Not Included):** [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) is a paid plugin from Crocoblock
 
 **JetEngine is completely optional** - WP oOS works perfectly without it. However, if you want server-side chat transcript storage:
 
-1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/) separately
+1. Purchase and install [JetEngine](https://crocoblock.com/plugins/jetengine/?ref=16658) separately
 2. Enable the **Custom Content Types** module in JetEngine settings
 3. WP oOS will automatically provision the `ai_chat_transcripts` CCT for permanent chat storage
 
@@ -345,7 +345,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 
 **✅ Still Works:** All core features, MCP server, 35+ base tools, AI conversations
 
-[Get JetEngine →](https://crocoblock.com/plugins/jetengine/)
+[Get JetEngine →](https://crocoblock.com/plugins/jetengine/?ref=16658)
 
 ---
 
