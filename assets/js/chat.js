@@ -2850,10 +2850,20 @@
         const isImage = typeof attachment.isImage === 'boolean' ? attachment.isImage : typeof mime === 'string' && mime.indexOf('image/') === 0;
 
         if (isImage) {
-            return {
+            const segment = {
                 type: 'input_image',
                 attachment_id: id,
             };
+            
+            // Include URL and name for display purposes when restoring from localStorage
+            if (attachment.url) {
+                segment.url = attachment.url;
+            }
+            if (attachment.name) {
+                segment.name = attachment.name;
+            }
+            
+            return segment;
         }
 
         const segment = {
@@ -2864,6 +2874,11 @@
         const displayName = attachment.originalName || attachment.name || '';
         if (displayName) {
             segment.display_name = displayName;
+        }
+        
+        // Include URL for display purposes when restoring from localStorage
+        if (attachment.url) {
+            segment.url = attachment.url;
         }
 
         return segment;
@@ -4737,22 +4752,40 @@
 
             if (role === 'user') {
                 // Render user messages
-                const displayPayload = { text: '' };
+                const displayPayload = { text: '', attachments: [] };
 
                 if (typeof content === 'string') {
                     displayPayload.text = content;
                 } else if (Array.isArray(content)) {
-                    // Extract text from structured content and show placeholders for attachments
+                    // Extract text from structured content and build attachment links
                     const textParts = [];
                     content.forEach(function (segment) {
                         if (segment && segment.type === 'text' && segment.text) {
                             textParts.push(segment.text);
                         } else if (segment && segment.type === 'input_image') {
-                            // Show placeholder for image attachments
-                            textParts.push('[Image attachment]');
+                            // Build attachment link for image
+                            if (segment.url) {
+                                displayPayload.attachments.push({
+                                    url: segment.url,
+                                    label: segment.name || 'Image attachment',
+                                    downloadName: segment.name || '',
+                                    meta: '',
+                                });
+                            } else {
+                                textParts.push('[Image attachment]');
+                            }
                         } else if (segment && segment.type === 'input_file') {
-                            // Show placeholder for file attachments
-                            textParts.push('[File attachment]');
+                            // Build attachment link for file
+                            if (segment.url) {
+                                displayPayload.attachments.push({
+                                    url: segment.url,
+                                    label: segment.display_name || segment.name || 'File attachment',
+                                    downloadName: segment.display_name || segment.name || '',
+                                    meta: '',
+                                });
+                            } else {
+                                textParts.push('[File attachment]');
+                            }
                         }
                     });
                     displayPayload.text = textParts.join('\n');
