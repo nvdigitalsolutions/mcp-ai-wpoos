@@ -2097,6 +2097,80 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
+				// Validate token budget before next iteration to prevent TPM limit errors.
+				$model              = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+				$max_output_tokens  = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+				$tpm_validation     = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+				if ( is_wp_error( $tpm_validation ) ) {
+					// Check if we should switch to a higher-capacity model.
+					$settings                 = WP_MCP_AI_Admin_Settings::get_settings();
+					$fallback_model           = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
+					$auto_switch_enabled      = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
+					$switched_model           = false;
+
+					if ( $auto_switch_enabled && $fallback_model !== $model ) {
+						// Try the fallback model.
+						$fallback_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $fallback_model, $max_output_tokens );
+
+						if ( ! is_wp_error( $fallback_validation ) ) {
+							// Fallback model can handle the request.
+							$original_model   = $model;
+							$options['model'] = $fallback_model;
+							$model            = $fallback_model;
+							$switched_model   = true;
+
+							WP_MCP_AI_Logger::log_event(
+								'agentic_model_switched',
+								'Switched to higher-capacity model due to token limits',
+								array(
+									'iteration'      => $iteration,
+									'original_model' => $original_model,
+									'new_model'      => $fallback_model,
+									'assistant_id'   => $assistant_id,
+								)
+							);
+						}
+					}
+
+					if ( ! $switched_model ) {
+						// Attempt to truncate messages to fit within the limit.
+						$tpm_limit      = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+						$target_tokens  = $tpm_limit ? (int) ( $tpm_limit * 0.8 ) : 100000; // Use 80% of limit as target.
+						$messages       = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
+
+						// Re-validate after truncation.
+						$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+						if ( is_wp_error( $tpm_validation ) ) {
+							// Still too large after truncation, return error with context.
+							WP_MCP_AI_Logger::log_error(
+								'Agentic tool execution loop failed: Messages exceed TPM limit even after truncation',
+								array(
+									'assistant_id' => $assistant_id,
+									'user_id'      => $user_id,
+									'iteration'    => $iteration,
+									'error_code'   => $tpm_validation->get_error_code(),
+									'error'        => $tpm_validation->get_error_message(),
+									'model'        => $model,
+								)
+							);
+							return $tpm_validation;
+						}
+
+						WP_MCP_AI_Logger::log_event(
+							'agentic_messages_truncated',
+							'Messages truncated to fit within TPM limits during agentic loop',
+							array(
+								'iteration'     => $iteration,
+								'model'         => $model,
+								'target_tokens' => $target_tokens,
+								'assistant_id'  => $assistant_id,
+							)
+						);
+					}
+				}
+
 				// Call LLM again with tool results.
 				$response = $this->client->create_chat_completion( $messages, $options );
 

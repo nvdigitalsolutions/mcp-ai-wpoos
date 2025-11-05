@@ -1272,7 +1272,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			return $response;
 		}
 
-		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 450000, $response );
+		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 100000, $response );
 
 		if ( $limit_tokens <= 0 ) {
 			return $response;

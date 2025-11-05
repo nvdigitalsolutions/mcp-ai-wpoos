@@ -183,6 +183,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'rest_enable_assistant_create'      => false,
 				'rest_enable_assistant_delete'      => false,
 				'sse_enable_post_method'            => false,
+				'enable_high_token_model_switch'    => true,
+				'high_token_fallback_model'         => 'gemini-2.0-flash-exp',
 			);
 		}
 
@@ -1539,6 +1541,29 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_section(
+				'wp_mcp_ai_high_token_section',
+				__( 'High Token Tool Handling', 'wp-mcp-ai' ),
+				array( $this, 'render_high_token_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'enable_high_token_model_switch',
+				__( 'Auto-Switch to High-Capacity Model', 'wp-mcp-ai' ),
+				array( $this, 'render_enable_high_token_model_switch_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_high_token_section'
+			);
+
+			add_settings_field(
+				'high_token_fallback_model',
+				__( 'High-Capacity Fallback Model', 'wp-mcp-ai' ),
+				array( $this, 'render_high_token_fallback_model_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_high_token_section'
+			);
+
+			add_settings_section(
 				'wp_mcp_ai_attachments_section',
 				__( 'Attachments', 'wp-mcp-ai' ),
 				'__return_false',
@@ -2236,6 +2261,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['allowed_file_mimes'] ) ) {
 				$clean['allowed_file_mimes'] = $this->parse_mime_list( $settings['allowed_file_mimes'] );
+			}
+
+			// High token tool handling settings.
+			$clean['enable_high_token_model_switch'] = ! empty( $settings['enable_high_token_model_switch'] );
+
+			if ( isset( $settings['high_token_fallback_model'] ) ) {
+				$clean['high_token_fallback_model'] = sanitize_text_field( $settings['high_token_fallback_model'] );
 			}
 
 			return $clean;
@@ -4955,6 +4987,65 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'zone_info' => $zone_info,
 				)
 			);
+		}
+
+		/**
+		 * Render section description for high token tool handling.
+		 */
+		public function render_high_token_section_description() {
+			?>
+		<p><?php esc_html_e( 'Configure how the system handles tools that return large amounts of data (like web crawling). When token limits are exceeded, the system can automatically switch to models with higher capacity.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the auto-switch to high-capacity model checkbox field.
+		 */
+		public function render_enable_high_token_model_switch_field() {
+			$settings = self::get_settings();
+			$enabled  = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
+			?>
+		<label for="wp-mcp-ai-enable-high-token-model-switch">
+			<input id="wp-mcp-ai-enable-high-token-model-switch" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_high_token_model_switch]" value="1" <?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Automatically switch to a higher-capacity model when token limits are exceeded', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, the system will automatically switch to the fallback model (configured below) if the current model cannot handle the token volume from tool results. This prevents errors when using tools like web crawling that return large amounts of data.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the high-capacity fallback model field.
+		 */
+		public function render_high_token_fallback_model_field() {
+			$settings = self::get_settings();
+			$current  = isset( $settings['high_token_fallback_model'] ) ? sanitize_text_field( $settings['high_token_fallback_model'] ) : 'gemini-2.0-flash-exp';
+
+			$model_options = array(
+				'gemini-2.0-flash-exp' => __( 'Gemini 2.0 Flash (Experimental) - 1M tokens', 'wp-mcp-ai' ),
+				'gemini-1.5-flash'     => __( 'Gemini 1.5 Flash - 1M tokens', 'wp-mcp-ai' ),
+				'gemini-1.5-pro'       => __( 'Gemini 1.5 Pro - 2M tokens', 'wp-mcp-ai' ),
+				'gpt-4o'               => __( 'GPT-4o - 128k tokens', 'wp-mcp-ai' ),
+				'gpt-4-turbo'          => __( 'GPT-4 Turbo - 128k tokens', 'wp-mcp-ai' ),
+			);
+
+			/**
+			 * Filter available high-capacity fallback models.
+			 *
+			 * @param array $model_options Available model options with labels.
+			 */
+			$model_options = apply_filters( 'wp_mcp_ai_high_token_fallback_models', $model_options );
+			?>
+		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[high_token_fallback_model]" id="wp-mcp-ai-high-token-fallback-model" class="regular-text">
+			<?php
+			foreach ( $model_options as $value => $label ) {
+				?>
+				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
+				<?php
+			}
+			?>
+		</select>
+		<p class="description"><?php esc_html_e( 'The model to use when the current model cannot handle the token volume. Gemini models are recommended as they have very high token limits (1-2 million tokens).', 'wp-mcp-ai' ); ?></p>
+			<?php
 		}
 	}
 }
