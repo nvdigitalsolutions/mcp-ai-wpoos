@@ -136,7 +136,7 @@ The core plugin ships with a centrally registered tool catalogue that lets assis
 - **Marketing & analytics insights** – Combine measurement tools including `google_analytics_report`, `get_google_business_insights`, `get_facebook_instagram_insights`, `get_linkedin_insights`, and `get_tiktok_insights` to guide campaigns and reporting.
 - **Publishing & outreach automations** – Trigger distribution via `post_facebook_instagram`, `post_google_business_update`, `post_linkedin_update`, `post_tiktok_video`, `send_group_email`, `send_mailjet_email`, `send_telegram_message`, `send_whatsapp_message`, and `schedule_notify_sms` once plans are ready.
 - **Integrations & scheduling** – Connect external systems with `create_google_calendar_event`, `search_gmail`, `list_jetengine_rest_routes`, `invoke_jetengine_route`, and `run_openai_external_action` as part of larger automations.
-- **Operations & diagnostics** – Close the loop with `create_cron_job`, `list_cron_jobs`, `get_cron_job`, `delete_cron_job`, `check_wp_cli`, `purge_cloudflare_cache`, `get_site_summary`, `get_site_health`, `get_system_logs`, `get_update_status`, and OpenAI usage/log review helpers for monitoring and maintenance.
+- **Operations & diagnostics** – Close the loop with `create_cron_job`, `list_cron_jobs`, `get_cron_job`, `delete_cron_job`, `check_wp_cli`, `purge_cache`, `purge_cloudflare_cache`, `purge_varnish_cache`, `get_site_summary`, `get_site_health`, `get_system_logs`, `get_update_status`, `generate_simple_jwt_token`, and OpenAI usage/log review helpers for monitoring and maintenance.
 
 ---
 
@@ -167,6 +167,7 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | --- | --- | --- |
 | Generate OpenAI Image | `generate_openai_image` | Calls the OpenAI Images API with configurable defaults, saving the rendered asset to the Media Library with optional overrides.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】|
 | Generate Gemini Image | `generate_gemini_image` | Uses Gemini’s multimodal image endpoint to render creative, aspect-ratio-aware visuals that are persisted as WordPress attachments.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】|
+| Generate Perfume Lifestyle Image | `generate_perfume_lifestyle_image` | Validates a perfume product image and a person reference before generating a combined lifestyle scene using OpenAI's image generation capabilities.【F:includes/tools/class-wp-mcp-ai-tool-generate-perfume-lifestyle-image.php†L21-L764】|
 | Generate OpenAI Speech | `generate_openai_speech` | Converts text to audio via OpenAI’s text-to-speech models, honouring default voice/format selections and storing results in the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】|
 | Transcribe OpenAI Audio | `transcribe_openai_audio` | Sends uploaded audio to OpenAI’s transcription/translation endpoints and returns structured transcripts with language and duration metadata.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】|
 
@@ -232,6 +233,9 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Delete Cron Job | `delete_cron_job` | Deletes a scheduled WordPress cron job and removes it from both the plugin tracking and WP-Cron.【F:includes/tools/class-wp-mcp-ai-tool-delete-cron-job.php†L17-L90】|
 | Check WP-CLI Status | `check_wp_cli` | Scans for the WordPress CLI binary, returning detected paths, version output, and environment warnings.【F:includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php†L17-L309】|
 | Purge Cloudflare Cache | `purge_cloudflare_cache` | Sends targeted or full-zone invalidations to Cloudflare with configurable timeouts and admin-only access controls.【F:includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php†L17-L292】|
+| Purge Varnish Cache | `purge_varnish_cache` | Purges the local Varnish cache with support for full-cache bans and specific URL purges using HTTP PURGE requests.【F:includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php†L22-L300】|
+| Purge Cache | `purge_cache` | Master cache purge tool that coordinates multi-layer cache clearing across all configured systems (Cloudflare, Varnish, etc.) in the correct order.【F:includes/tools/class-wp-mcp-ai-tool-purge-cache.php†L22-L250】|
+| Generate Simple JWT Token | `generate_simple_jwt_token` | Generates a Simple JWT Login bearer token for the current user when the Simple JWT Login plugin is active and configured.【F:includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php†L15-L225】|
 | Get Site Summary | `get_site_summary` | Provides high-level site metadata, content counts, and admin contact details for context-aware assistants.【F:includes/tools/class-wp-mcp-ai-tool-get-site-summary.php†L12-L66】|
 | Get MCP Environment Status | `get_environment_status` | Summarises WordPress versions, MCP defaults, assistant counts, and dependency warnings for incident response.【F:includes/tools/class-wp-mcp-ai-tool-get-environment-status.php†L12-L178】|
 | Get Site Health Status | `get_site_health` | Runs WordPress Site Health diagnostics and returns grouped pass/warn/fail tests with remediation guidance.【F:includes/tools/class-wp-mcp-ai-tool-get-site-health.php†L12-L255】|
@@ -1094,6 +1098,73 @@ The project currently relies on manual verification. Run these checks after upda
 Document the results of each scenario when preparing releases to ensure optional integrations remain stable.
 
 ---
+
+## ⏰ Cron Manager & Task Automation
+
+WP oOS includes a comprehensive cron management system that enables AI assistants to schedule and manage automated WordPress tasks. This opens up powerful automation capabilities for agents to orchestrate time-based workflows.
+
+### What Cron Management Means for Agents
+
+The cron manager tools empower AI assistants to:
+
+- **Schedule future actions** – Create one-time or recurring tasks that execute at specific times without manual intervention
+- **Automate workflows** – Chain together automated tasks like content publishing, cache clearing, data backups, or API synchronization
+- **Manage task lifecycles** – List active jobs, inspect their configuration, and cancel outdated or unnecessary automations
+- **Track job history** – See who created each cron job and when it was scheduled for audit and compliance purposes
+- **Coordinate distributed operations** – Schedule tasks that need to run at specific times across different time zones or in coordination with external systems
+
+### Cron Manager Features
+
+**Four Core Tools:**
+
+1. **Create Cron Job** (`create_cron_job`) – Schedule new one-off or recurring WP-Cron events with full validation and duplicate detection
+2. **List Cron Jobs** (`list_cron_jobs`) – Retrieve all scheduled jobs with details about schedule type, next run time, and creator
+3. **Get Cron Job** (`get_cron_job`) – Fetch detailed information about a specific cron job by its unique ID
+4. **Delete Cron Job** (`delete_cron_job`) – Cancel and remove scheduled jobs from both the plugin's tracking and WP-Cron
+
+**Admin UI:**
+
+Administrators can manage all cron jobs created through WP oOS from **Tools → WP oOS Crons** in the WordPress admin. The interface displays:
+
+- Hook name and arguments for each scheduled job
+- Next run timestamp in ISO 8601 format
+- Schedule type (one-off or recurring interval)
+- User who created the job
+- Creation timestamp
+- One-click delete functionality
+
+### Security & Permissions
+
+All cron management tools require the `manage_options` capability, ensuring only administrators can schedule automated tasks. This prevents unauthorized users from creating potentially harmful cron jobs or gaining insight into scheduled automation workflows.
+
+The cron manager:
+- Validates and sanitizes all hook names to prevent arbitrary code execution
+- Normalizes arguments to prevent duplicate job registration
+- Records the user who created each job for accountability
+- Automatically prunes stale jobs that are no longer scheduled in WP-Cron
+
+### Integration with WP-Cron
+
+WP oOS cron management integrates seamlessly with WordPress's native WP-Cron system:
+
+- Jobs created through the plugin are registered with WordPress's standard `wp_schedule_single_event()` and `wp_schedule_event()` functions
+- Supports all built-in recurrence schedules (hourly, twicedaily, daily) plus any custom schedules registered by themes or plugins
+- Respects WordPress's cron execution model (triggered by site traffic or external systems)
+- Unscheduling works for both single and recurring events
+
+### Use Cases for AI-Driven Automation
+
+AI assistants can leverage cron management for scenarios like:
+
+- **Content scheduling** – Schedule posts to be published at optimal times
+- **Data synchronization** – Regularly sync content between WordPress and external APIs
+- **Maintenance tasks** – Schedule cache clearing, database optimization, or backup operations
+- **Notification workflows** – Send scheduled emails, SMS messages, or social media posts
+- **Monitoring & alerts** – Check site health or external APIs at regular intervals
+- **Seasonal campaigns** – Automatically activate/deactivate marketing campaigns on specific dates
+
+---
+
 
 ## 🧩 Hooks & Filters
 
