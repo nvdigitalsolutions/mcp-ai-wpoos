@@ -68,6 +68,21 @@ class WP_MCP_AI_Enhanced_OpenAI_Client {
 			$options['max_tokens'] = $this->calculate_max_output_tokens( $messages, $model );
 		}
 
+		// Validate TPM (Tokens Per Minute) limit before making the request.
+		$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+		$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+		if ( is_wp_error( $tpm_validation ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'TPM limit validation failed.',
+				array(
+					'model'      => $model,
+					'error'      => $tpm_validation->get_error_message(),
+					'error_data' => $tpm_validation->get_error_data(),
+				)
+			);
+			return $tpm_validation;
+		}
+
 		// Apply token budget optimization if requested.
 		if ( ! empty( $options['optimize_tokens'] ) ) {
 			$messages = $this->optimize_messages_for_budget( $messages, $model, $options );
