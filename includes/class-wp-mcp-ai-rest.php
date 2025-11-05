@@ -1994,6 +1994,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$max_iterations = 5; // Prevent infinite loops.
 			$iteration      = 0;
 
+			// Track original tool results for frontend display.
+			$tool_result_messages = array();
+
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -2053,18 +2056,41 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				foreach ( $tool_calls as $tool_call ) {
 					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
 
-					// Append tool result to conversation.
-					$tool_message = array(
+					// Extract tool call metadata for message construction.
+					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
+					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
+
+					// Create a full tool message with structured result for frontend.
+					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => is_string( $tool_result ) ? $tool_result : wp_json_encode( $tool_result ),
+						'content' => $tool_result,
 					);
 
-					if ( isset( $tool_call['id'] ) ) {
-						$tool_message['tool_call_id'] = $tool_call['id'];
+					if ( '' !== $tool_call_id ) {
+						$full_tool_message['tool_call_id'] = $tool_call_id;
 					}
 
-					if ( isset( $tool_call['function']['name'] ) ) {
-						$tool_message['name'] = $tool_call['function']['name'];
+					if ( '' !== $tool_name ) {
+						$full_tool_message['name'] = $tool_name;
+					}
+
+					// Store original tool result for frontend.
+					$tool_result_messages[] = $full_tool_message;
+
+					// Create a sanitized version for the LLM (strip large content fields).
+					$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result );
+
+					$tool_message = array(
+						'role'    => 'tool',
+						'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
+					);
+
+					if ( '' !== $tool_call_id ) {
+						$tool_message['tool_call_id'] = $tool_call_id;
+					}
+
+					if ( '' !== $tool_name ) {
+						$tool_message['name'] = $tool_name;
 					}
 
 					$messages[] = $tool_message;
@@ -2139,6 +2165,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include tool result messages in the response for frontend display.
+			if ( ! empty( $tool_result_messages ) ) {
+				$payload['tool_results'] = $tool_result_messages;
+			}
 
 			if ( $this->request_wants_event_stream( $request ) ) {
 				return $this->stream_event_stream_payload( $payload, 'message' );
@@ -6567,6 +6598,71 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
 
 			return $result;
+		}
+
+		/**
+		 * Sanitize tool result for LLM consumption by removing large content fields.
+		 *
+		 * Image generation tools return results with base64-encoded image data in a
+		 * 'content' field. This data can be extremely large (100KB+) and should not
+		 * be sent back to the LLM in subsequent chat requests, as it causes token
+		 * limit errors and provides no value to the LLM.
+		 *
+		 * @param mixed $result Tool execution result.
+		 * @return mixed Sanitized result safe for LLM consumption.
+		 */
+		protected function sanitize_tool_result_for_llm( $result ) {
+			if ( ! is_array( $result ) ) {
+				return $result;
+			}
+
+			$sanitized = $result;
+
+			// Strip large base64 content from image generation tools.
+			if ( isset( $sanitized['content'] ) && is_array( $sanitized['content'] ) ) {
+				$content = $sanitized['content'];
+
+				// Check if this is a base64-encoded image payload.
+				if ( isset( $content['encoding'] ) && 'base64' === $content['encoding'] && isset( $content['data'] ) ) {
+					// Remove the large base64 data field.
+					unset( $sanitized['content']['data'] );
+					unset( $sanitized['content']['data_url'] );
+
+					// If content array is now empty, remove it entirely.
+					if ( count( $sanitized['content'] ) === 0 ) {
+						unset( $sanitized['content'] );
+					}
+				}
+			}
+
+			// Keep essential metadata for LLM context.
+			$metadata_to_keep = array(
+				'attachment_id',
+				'url',
+				'download_url',
+				'file_name',
+				'mime_type',
+				'bytes',
+				'title',
+				'model',
+				'size',
+				'quality',
+				'aspect_ratio',
+				'format',
+				'prompt',
+				'revised_prompt',
+				'created',
+			);
+
+			$llm_result = array();
+			foreach ( $metadata_to_keep as $key ) {
+				if ( isset( $sanitized[ $key ] ) ) {
+					$llm_result[ $key ] = $sanitized[ $key ];
+				}
+			}
+
+			// If we have extracted metadata, use it; otherwise return the sanitized result.
+			return ! empty( $llm_result ) ? $llm_result : $sanitized;
 		}
 	}
 }

@@ -5254,11 +5254,65 @@
             state.conversation.push(assistantMessage);
         }
 
+        // Add tool result messages to conversation if included in response.
+        if (data && Array.isArray(data.tool_results) && data.tool_results.length > 0) {
+            data.tool_results.forEach(function (toolResult) {
+                if (toolResult && toolResult.role === 'tool') {
+                    state.conversation.push(toolResult);
+                }
+            });
+
+            // Render tool results as attachments in the assistant's message.
+            // This ensures images and other media files are displayed with links.
+            if (hasToolCalls && message.tool_calls) {
+                message.tool_calls.forEach(function (toolCall) {
+                    const toolCallId = toolCall.id || '';
+                    if (!toolCallId) {
+                        return;
+                    }
+
+                    // Find matching tool result.
+                    const matchingResult = data.tool_results.find(function (result) {
+                        return result.tool_call_id === toolCallId;
+                    });
+
+                    if (!matchingResult || !matchingResult.content) {
+                        return;
+                    }
+
+                    const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
+                    const normalized = normaliseToolResultForDisplay(toolName, matchingResult.content);
+
+                    if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+                        // Add attachments to the assistant display.
+                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                    }
+                });
+
+                // Re-render the assistant message if we added attachments.
+                if (assistantDisplay.attachments.length > 0 && hasDisplayContent) {
+                    const lastMessage = state.messagesEl.lastElementChild;
+                    if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
+                        lastMessage.parentNode.removeChild(lastMessage);
+                        appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                            speech: {
+                                state: state,
+                                text: assistantDisplay.text || '',
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
         if (hasToolCalls) {
             // Tools are now executed server-side automatically in the agentic loop.
             // The frontend just displays the response which includes tool results.
             if (window.console && console.log) {
                 console.log('[WP oOS] Server executed tools:', message.tool_calls);
+                if (data && data.tool_results) {
+                    console.log('[WP oOS] Tool results:', data.tool_results);
+                }
             }
         }
 
