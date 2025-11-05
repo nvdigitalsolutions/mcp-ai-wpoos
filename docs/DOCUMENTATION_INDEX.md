@@ -1,11 +1,11 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 4, 2024  
+**Last Updated:** November 5, 2024  
 **Plugin Version:** 1.0.0
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 39 files (35 in docs/ folder, 4 key files in root)
+**Total Documentation:** 40 files (36 in docs/ folder, 4 key files in root)
 
 ---
 
@@ -45,10 +45,11 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [assistant-storage-cpt-vs-cct.md](assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
-| [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [memory-limits.md](memory-limits.md) | Memory management and limits | Developers |
 
 ### Integration Guides
@@ -125,14 +126,14 @@ This document provides a comprehensive index of all documentation available for 
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 39 (35 in docs/, 4 in root)
-- **Total Documentation Size:** ~330KB
+- **Total Documentation Files:** 40 (36 in docs/, 4 in root)
+- **Total Documentation Size:** ~350KB
 - **Main README Size:** 1,027 lines
-- **Average Doc Size:** ~8.5KB
+- **Average Doc Size:** ~8.8KB
 
 ### Categories
 - **Setup & Installation:** 4 documents
-- **Architecture & Design:** 5 documents
+- **Architecture & Design:** 6 documents
 - **Integration Guides:** 4 documents
 - **Security & Auth:** 4 documents
 - **API & Tools:** 4 documents

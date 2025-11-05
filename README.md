@@ -64,6 +64,8 @@ It allows you to create and manage AI Assistants that can interact with users, a
 
 WP oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
 
+> **📖 For a detailed explanation of how WP oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
+
 ### Computer-Implemented Resource Management
 
 The system operates as a computer-implemented method executing on a processor with memory, performing:

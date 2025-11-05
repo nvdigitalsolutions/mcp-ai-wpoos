@@ -4,6 +4,8 @@
 
 The WP MCP AI plugin implements a computer-implemented method for managing resource budgets during real-time streaming events. The system automatically detects available server resources and adjusts AI operation parameters accordingly, providing intelligent orchestration for WordPress-based AI operations.
 
+> **📖 Related:** For a comprehensive explanation of how these resource management features differentiate WP oOS from standard SSE and MCP implementations, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md)
+
 ## Computer-Implemented Method Architecture
 
 This document describes a system comprising a processor and memory storing instructions that, when executed, implement a comprehensive resource management workflow. The implementation is embodied in non-transitory computer-readable media (PHP source files) distributed as part of the WP MCP AI plugin.
