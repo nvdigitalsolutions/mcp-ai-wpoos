@@ -59,6 +59,33 @@
 **WP oOS** is a modular AI framework for WordPress and JetEngine that connects your site’s data with OpenAI’s GPT models.
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
 
+## 🏗 System Architecture
+
+WP oOS implements a comprehensive orchestration layer for managing AI operations during real-time streaming events. The system architecture comprises:
+
+### Computer-Implemented Resource Management
+
+The system operates as a computer-implemented method executing on a processor with memory, performing:
+
+1. **Dynamic Resource Budget Allocation**: The orchestration layer dynamically allocates token and memory budgets to tool execution requests based on real-time system capacity and operation requirements. The `WP_MCP_AI_Resource_Manager` continuously monitors server resources (PHP memory limits, execution time constraints) and automatically adjusts operational parameters.
+
+2. **Capability-Based Access Control**: Tool execution endpoints enforce granular capability-based access controls. Each tool in the registry declares required WordPress capabilities, and the REST API controller validates user permissions before allowing execution. This ensures secure, policy-driven access to all operations.
+
+3. **Registry-State-Based Scheduling**: The `WP_MCP_AI_Tool_Registry` maintains tool availability state and schedules execution based on policy constraints. Tools are loaded conditionally based on dependency availability, and execution is scheduled according to assistant configuration and user permissions.
+
+4. **Metrics-Driven Budget Adjustment**: The system continuously monitors execution metrics (memory usage, API response times, token consumption) and adjusts resource budgets in response to prevent resource exhaustion and reduce latency. The `WP_MCP_AI_Token_Budget_Manager` implements safety margins and dynamic chunking to prevent API limit overruns.
+
+### System Components
+
+The system comprises a processor and memory storing instructions that:
+- Monitor real-time resource availability through PHP runtime introspection
+- Enforce capability checks at REST endpoint boundaries
+- Schedule tool execution through a centralized registry
+- Adjust token and memory budgets based on detected system metrics
+- Maintain operation logs for audit and optimization
+
+This architecture is embodied in non-transitory computer-readable media (PHP source files) that, when executed by a web server processor, cause the system to perform the complete resource management workflow. The implementation prioritizes stability, security, and efficient resource utilization across diverse hosting environments.
+
 
 ---
 
