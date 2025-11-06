@@ -372,7 +372,8 @@ class WP_MCP_AI_JetEngine_CCT {
 				__( 'Request Started', 'wp-mcp-ai' ),
 				'datetime-local',
 				array(
-					'description' => __( 'Timestamp for when the request processing began.', 'wp-mcp-ai' ),
+					'is_timestamp' => true,
+					'description'  => __( 'Timestamp for when the request processing began.', 'wp-mcp-ai' ),
 				)
 			),
 			self::build_field(
@@ -381,7 +382,8 @@ class WP_MCP_AI_JetEngine_CCT {
 				__( 'Response Completed', 'wp-mcp-ai' ),
 				'datetime-local',
 				array(
-					'description' => __( 'Timestamp for when the assistant finished responding.', 'wp-mcp-ai' ),
+					'is_timestamp' => true,
+					'description'  => __( 'Timestamp for when the assistant finished responding.', 'wp-mcp-ai' ),
 				)
 			),
 		);

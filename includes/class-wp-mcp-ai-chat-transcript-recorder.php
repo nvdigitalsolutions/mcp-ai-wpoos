@@ -229,12 +229,12 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		}
 
 		$started_at = self::format_timestamp_from_context( $context, 'request_started_at' );
-		if ( '' !== $started_at ) {
+		if ( 0 !== $started_at ) {
 			$record['request_started_at'] = $started_at;
 		}
 
 		$completed_at = self::format_timestamp_from_context( $context, 'response_completed_at' );
-		if ( '' !== $completed_at ) {
+		if ( 0 !== $completed_at ) {
 			$record['response_completed_at'] = $completed_at;
 		}
 
@@ -354,26 +354,26 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	}
 
 	/**
-	 * Format a timestamp stored in the context array into an ISO string.
+	 * Format a timestamp stored in the context array into a Unix timestamp.
+	 *
+	 * JetEngine datetime-local fields with is_timestamp=true expect Unix timestamps (integers).
 	 *
 	 * @param array  $context Context array containing timestamp data.
 	 * @param string $key     Array key that contains the timestamp.
-	 * @return string
+	 * @return int Unix timestamp, or 0 if invalid.
 	 */
 	protected static function format_timestamp_from_context( array $context, $key ) {
 		if ( empty( $context[ $key ] ) ) {
-			return '';
+			return 0;
 		}
 
 		$timestamp = (float) $context[ $key ];
 
 		if ( $timestamp <= 0 ) {
-			return '';
+			return 0;
 		}
 
-		$seconds = (int) floor( $timestamp );
-
-		return wp_date( 'Y-m-d\TH:i:s', $seconds );
+		return (int) floor( $timestamp );
 	}
 
 	/**
