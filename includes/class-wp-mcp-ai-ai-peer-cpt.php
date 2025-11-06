@@ -623,7 +623,8 @@ class WP_MCP_AI_AI_Peer_CPT {
 		} catch ( Throwable $e ) {
 			// Log error but don't block the save process.
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'WP_MCP_AI: Failed to sync peer to CCT: ' . $e->getMessage() );
+			// Only log the error type, not potentially sensitive details.
+			error_log( sprintf( 'WP_MCP_AI: Failed to sync peer %d to CCT: %s', $post_id, get_class( $e ) ) );
 		} finally {
 			// Always release the lock.
 			delete_transient( $lock_key );

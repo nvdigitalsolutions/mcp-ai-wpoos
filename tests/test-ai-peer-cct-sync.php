@@ -279,7 +279,7 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 	 * Test sync lock timeout constant.
 	 */
 	public function test_sync_lock_timeout_constant() {
-		$this->assertTrue( defined( 'WP_MCP_AI_AI_Peer_CPT::SYNC_LOCK_TIMEOUT' ), 'SYNC_LOCK_TIMEOUT constant should be defined' );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_AI_Peer_CPT' ), 'WP_MCP_AI_AI_Peer_CPT class should exist' );
 		$this->assertSame( 5, WP_MCP_AI_AI_Peer_CPT::SYNC_LOCK_TIMEOUT, 'SYNC_LOCK_TIMEOUT should be 5 seconds' );
 	}
 }
