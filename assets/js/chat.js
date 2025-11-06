@@ -5119,22 +5119,48 @@
 
                 return processSSEStream(state, response, updateStreamingMessage);
             })
-            .then(function (finalData) {
+            .then(function (streamResult) {
                 streamCompleted = true;
 
-                // Add accumulated content to conversation
-                // finalData.content contains the full streamed response
-                if (finalData && finalData.content) {
+                // Handle final message if available
+                if (streamResult && streamResult.finalData) {
+                    // Remove temporary streaming message
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                        streamingMessageElement = null;
+                    }
+
+                    // Process the final response data using standard handler
+                    return handleChatResponse(state, streamResult.finalData).then(function() {
+                        saveConversationToStorage(state);
+                        finalize();
+                        clearStatus(state.container);
+                        return streamResult;
+                    });
+                }
+
+                // Fallback: Add accumulated content to conversation if no final data
+                if (streamResult && streamResult.content) {
+                    // Update the streaming message with proper formatting
+                    if (streamingMessageElement) {
+                        const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
+                        if (bubble) {
+                            bubble.innerHTML = renderMarkdown(streamResult.content);
+                        }
+                        attachSpeechButton(bubble, state, streamResult.content);
+                        attachCopyButton(bubble, streamResult.content);
+                    }
+
                     state.conversation.push({
                         role: 'assistant',
-                        content: finalData.content
+                        content: streamResult.content
                     });
                 }
 
                 saveConversationToStorage(state);
                 finalize();
                 clearStatus(state.container);
-                return finalData;
+                return streamResult;
             })
             .catch(function (error) {
                 if (!streamCompleted) {
@@ -5170,34 +5196,55 @@
                 buffer = events.pop() || ''; // Keep incomplete event in buffer
 
                 for (let i = 0; i < events.length; i++) {
-                    const event = events[i];
-                    if (!event.trim()) {
+                    const eventBlock = events[i];
+                    if (!eventBlock.trim()) {
                         continue;
                     }
 
-                    // Parse SSE event (format: "data: {...}")
-                    if (event.startsWith('data: ')) {
-                        const dataStr = event.substring(6);
+                    // Parse SSE event block
+                    const lines = eventBlock.split('\n');
+                    let eventType = '';
+                    let eventData = '';
 
-                        // Handle [DONE] marker
-                        if (dataStr.trim() === '[DONE]') {
-                            return { content: fullContent };
+                    for (let j = 0; j < lines.length; j++) {
+                        const line = lines[j];
+                        if (line.startsWith('event: ')) {
+                            eventType = line.substring(7).trim();
+                        } else if (line.startsWith('data: ')) {
+                            eventData = line.substring(6);
                         }
+                    }
 
-                        try {
-                            const data = JSON.parse(dataStr);
+                    // Handle [DONE] marker
+                    if (eventData.trim() === '[DONE]') {
+                        return { content: fullContent };
+                    }
 
-                            // Extract content from OpenAI format streaming response
+                    try {
+                        const data = JSON.parse(eventData);
+
+                        // Handle different event types
+                        if (eventType === 'status') {
+                            handleStatusEvent(state, data);
+                        } else if (eventType === 'tool_execution') {
+                            handleToolExecutionEvent(state, data);
+                        } else if (eventType === 'error') {
+                            handleErrorEvent(state, data);
+                        } else if (eventType === 'message' || !eventType) {
+                            // Final message or OpenAI format streaming response
                             if (data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
                                 if (delta && delta.content) {
                                     fullContent += delta.content;
                                     updateCallback(fullContent);
                                 }
+                            } else if (data.data) {
+                                // Final response with complete data
+                                return { content: fullContent, finalData: data };
                             }
-                        } catch (parseError) {
-                            // Ignore malformed JSON chunks
                         }
+                    } catch (parseError) {
+                        // Ignore malformed JSON chunks
                     }
                 }
 
@@ -5207,6 +5254,83 @@
         }
 
         return readChunk();
+    }
+
+    function handleStatusEvent(state, data) {
+        if (!data || !state || !state.container) {
+            return;
+        }
+
+        const message = data.message || '';
+        const type = data.type || '';
+
+        if (type === 'thinking') {
+            setStatus(state.container, message);
+        } else if (type === 'model_switched' || type === 'messages_truncated') {
+            // Show brief notification
+            setStatus(state.container, message);
+            setTimeout(function() {
+                setStatus(state.container, getString('sending', 'Sending…'));
+            }, 2000);
+        }
+    }
+
+    function handleToolExecutionEvent(state, data) {
+        if (!data || !state || !state.messagesEl) {
+            return;
+        }
+
+        const type = data.type || '';
+
+        if (type === 'start') {
+            // Show that tools are being executed
+            const toolNames = (data.tools || []).join(', ');
+            const message = formatString(
+                getString('executingTools', 'Executing tools: %s'),
+                toolNames || getString('tools', 'tools')
+            );
+            setStatus(state.container, message);
+
+            // Optionally show tool execution in chat
+            appendMessage(state.messagesEl, 'system', {
+                text: '⚙️ ' + message
+            });
+        } else if (type === 'tool_start') {
+            const toolName = data.tool_name || 'tool';
+            setStatus(state.container, formatString(
+                getString('executingTool', 'Executing %s…'),
+                toolName
+            ));
+        } else if (type === 'tool_result') {
+            const toolName = data.tool_name || 'tool';
+            const result = data.result || {};
+            
+            // Show tool result in chat
+            let resultText = '';
+            if (typeof result === 'string') {
+                resultText = result;
+            } else if (result.summary) {
+                resultText = toolName + ': ' + result.summary;
+            } else {
+                resultText = toolName + ': ' + getString('completed', 'Completed');
+            }
+
+            appendMessage(state.messagesEl, 'tool', {
+                text: '✓ ' + resultText
+            });
+        }
+    }
+
+    function handleErrorEvent(state, data) {
+        if (!data || !state || !state.container) {
+            return;
+        }
+
+        const message = data.message || getString('error', 'Something went wrong.');
+        setStatus(state.container, message);
+        appendMessage(state.messagesEl, 'system', {
+            text: message
+        });
     }
 
     function restoreSubmissionState(state, submissionContext) {
