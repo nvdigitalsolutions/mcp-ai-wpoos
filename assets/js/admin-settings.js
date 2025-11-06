@@ -506,9 +506,12 @@ window.wpMcpAiSaveExpandedState = function() {
         if (expandedSections) {
             try {
                 const sections = JSON.parse(expandedSections);
+                // Cache jQuery selectors for better performance
+                const $allSections = $('.wp-mcp-ai-section');
+                const $allHeaders = $('.wp-mcp-ai-section__header');
                 // First, collapse all sections
-                $('.wp-mcp-ai-section').removeClass('wp-mcp-ai-section--expanded');
-                $('.wp-mcp-ai-section__header').attr('aria-expanded', 'false');
+                $allSections.removeClass('wp-mcp-ai-section--expanded');
+                $allHeaders.attr('aria-expanded', 'false');
                 // Then expand only the saved sections
                 sections.forEach(function(id) {
                     const $section = $('#' + id);
