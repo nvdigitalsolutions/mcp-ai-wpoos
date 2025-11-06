@@ -483,8 +483,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Verify section headers are present with the correct class.
 		$this->assertStringContainsString( 'wp-mcp-ai-section__header', $output, 'Section headers should have correct class' );
 
-		// Verify aria-expanded attribute is present.
-		$this->assertStringContainsString( 'aria-expanded="false"', $output, 'Section headers should have aria-expanded attribute' );
+		// Verify first section starts expanded (aria-expanded="true").
+		$this->assertStringContainsString( 'aria-expanded="true"', $output, 'First section should have aria-expanded="true"' );
+
+		// Verify other sections start collapsed (aria-expanded="false").
+		$this->assertStringContainsString( 'aria-expanded="false"', $output, 'Other sections should have aria-expanded="false"' );
+
+		// Verify first section has expanded class.
+		$this->assertStringContainsString( 'wp-mcp-ai-section--expanded', $output, 'First section should have expanded class' );
 
 		// Verify aria-controls attribute is present.
 		$this->assertStringContainsString( 'aria-controls=', $output, 'Section headers should have aria-controls attribute' );
