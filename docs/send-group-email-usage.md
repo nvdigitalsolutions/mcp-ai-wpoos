@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `send_group_email` tool enables AI assistants to send email campaigns to multiple recipients using WordPress's built-in mail system. It supports both structured (JSON) and plain text formats for defining email content, recipients, and headers.
+The `send_group_email` tool enables AI assistants to send email campaigns to multiple recipients using WordPress's built-in mail system. Email content can be provided directly in the chat or loaded from uploaded attachment files in JSON or plain text format.
 
 **Tool Slug:** `send_group_email`
 
@@ -10,15 +10,19 @@ The `send_group_email` tool enables AI assistants to send email campaigns to mul
 
 **Maximum Recipients:** 100 (default, configurable)
 
+**Email Definition Size Limit:** 1 MB per attachment file (configurable)
+
 ## Features
 
-- **Flexible Input Formats**: Accepts JSON or plain text email definitions
+- **Direct Chat Input**: Provide subject, message, and recipients directly in the conversation
+- **Flexible File Formats**: Support for JSON and plain text attachment files
 - **Multiple Attachment Support**: Combine multiple email definition files
 - **CC/BCC Support**: Full email header control including carbon copy fields
 - **Capability-Based Access Control**: Configurable permission requirements
 - **Recipient Limiting**: Prevent abuse with configurable maximum recipient counts
 - **Duplicate Detection**: Automatic deduplication of email addresses
 - **Custom Headers**: Support for additional custom email headers
+- **File Size Limits**: 1 MB default limit per attachment (prevents resource exhaustion)
 - **WordPress Integration**: Uses `wp_mail()` for reliable delivery
 - **Filter Hooks**: Extensible via WordPress filters and actions
 
@@ -75,15 +79,15 @@ add_filter( 'wp_mcp_ai_send_group_email_max_recipients', function( $max, $contex
   "properties": {
     "subject": {
       "type": "string",
-      "description": "Optional subject override for the email"
+      "description": "Email subject line. Can be provided directly or loaded from attachment"
     },
     "message": {
       "type": "string",
-      "description": "Optional message to prepend to the file contents"
+      "description": "Email message content. Can be provided directly or loaded from attachment"
     },
     "recipients": {
       "type": "array",
-      "description": "Optional list of recipients",
+      "description": "List of email recipients. Can be provided directly or loaded from attachment",
       "items": {
         "oneOf": [
           { "type": "string" },
@@ -100,11 +104,11 @@ add_filter( 'wp_mcp_ai_send_group_email_max_recipients', function( $max, $contex
     },
     "attachment_id": {
       "type": ["integer", "string"],
-      "description": "WordPress attachment ID describing the email payload"
+      "description": "Optional WordPress attachment ID containing email definition (JSON or plain text)"
     },
     "attachment_ids": {
       "type": "array",
-      "description": "List of WordPress attachment IDs describing email payloads",
+      "description": "Optional list of WordPress attachment IDs to combine",
       "items": {
         "type": ["integer", "string"]
       }
@@ -131,24 +135,98 @@ add_filter( 'wp_mcp_ai_send_group_email_max_recipients', function( $max, $contex
 
 ### Parameter Details
 
-#### Required Parameters
+#### Required Data
 
-At least one of these must be provided:
-- `attachment_id` - Single attachment ID containing email definition
-- `attachment_ids` - Array of attachment IDs to combine
+The tool requires the following information, which can come from **either** direct parameters **or** attachment files:
+- **Subject** - Email subject line
+- **Message** - Email body content
+- **Recipients** - At least one valid email address
+
+**Note:** You can provide all data directly in the chat without any attachments!
 
 #### Optional Parameters
 
-- `subject` - Email subject line (can also be defined in attachment)
-- `message` - Additional message content to prepend
-- `recipients` - Recipient list (can also be defined in attachment)
+- `attachment_id` / `attachment_ids` - Attachment files containing email definition
+- `subject` - Email subject (if not in attachment)
+- `message` - Message content (if not in attachment)
+- `recipients` - Recipient list (if not in attachment)
 - `from_email` - Custom sender email address
 - `from_name` - Custom sender name
 - `headers` - Array of additional email headers (e.g., `["Reply-To: support@example.com"]`)
 
+## Usage Methods
+
+### Method 1: Direct Chat Input (No Attachments)
+
+**Best for:** Simple emails with a few recipients provided directly in conversation.
+
+Users can provide all email information directly in the chat without uploading any files:
+
+```javascript
+{
+  "subject": "Meeting Reminder",
+  "message": "Don't forget our team meeting tomorrow at 10 AM!",
+  "recipients": [
+    "alice@example.com",
+    "bob@example.com",
+    "charlie@example.com"
+  ]
+}
+```
+
+**Pros:**
+- ✅ Fastest method - no file uploads needed
+- ✅ Perfect for small recipient lists
+- ✅ Great for quick, one-off emails
+- ✅ All data visible in conversation
+
+**Cons:**
+- ⚠️ Not ideal for large recipient lists (hits chat message size limits)
+- ⚠️ Less convenient for reusing recipient lists
+
+### Method 2: Attachment Files
+
+**Best for:** Large recipient lists, reusable templates, complex email structures with CC/BCC.
+
+Upload files containing email definitions in JSON or plain text format.
+
+**Attachment file size limit:** 1 MB per file (configurable via `wp_mcp_ai_email_definition_attachment_max_bytes` filter)
+
+**Supported file types:** `.json`, `.txt`, `.csv`, `.md` (content parsed as JSON or plain text)
+
+**Pros:**
+- ✅ Handle large recipient lists (up to 1 MB per file)
+- ✅ Reuse recipient lists across multiple emails
+- ✅ Support for CC and BCC fields
+- ✅ Combine multiple files for complex scenarios
+- ✅ Safe office/marketing document formats supported
+
+**Cons:**
+- ⚠️ Requires uploading files first
+- ⚠️ 1 MB file size limit per attachment (prevents resource exhaustion)
+
+### Method 3: Hybrid Approach
+
+**Best for:** Maximum flexibility - use attachments for recipients, provide subject/message in chat.
+
+Combine direct parameters with attachment files:
+
+```javascript
+{
+  "subject": "URGENT: Updated Information",
+  "message": "Please see the update below...",
+  "attachment_id": 123  // Contains just the recipient list
+}
+```
+
+**Pros:**
+- ✅ Most flexible approach
+- ✅ Override attachment data easily
+- ✅ Reuse recipient lists with custom messages
+
 ## Email Definition Formats
 
-### JSON Format
+### JSON Format (For Attachments)
 
 Upload a JSON file with the following structure:
 
@@ -213,7 +291,33 @@ charlie@example.com
 
 ## Usage Examples
 
-### Example 1: Basic Group Email
+### Example 1: Direct Chat Input (Simplest Method)
+
+**No files required!** Provide everything directly in the chat:
+
+```javascript
+const result = await assistant.callTool('send_group_email', {
+  subject: "Team Meeting Tomorrow",
+  message: "Don't forget about our team meeting tomorrow at 10 AM!\n\nSee you there!",
+  recipients: [
+    "alice@example.com",
+    "bob@example.com",
+    "charlie@example.com"
+  ],
+  from_name: "Project Manager"
+});
+
+// Result:
+// {
+//   "sent": true,
+//   "recipients": ["alice@example.com", "bob@example.com", "charlie@example.com"],
+//   "subject": "Team Meeting Tomorrow",
+//   "cc": [],
+//   "bcc": []
+// }
+```
+
+### Example 2: Basic Group Email with Attachment File
 
 ```javascript
 // 1. Create a JSON file with email definition
@@ -244,19 +348,28 @@ const result = await assistant.callTool('send_group_email', {
 // }
 ```
 
-### Example 2: Email with Custom Sender
+### Example 3: Email with Custom Sender (Direct Chat)
 
 ```javascript
 const result = await assistant.callTool('send_group_email', {
-  attachment_id: 123,
+  subject: "Newsletter",
+  message: "This week's updates...",
+  recipients: ["team@example.com"],
   from_email: "noreply@example.com",
   from_name: "AI Assistant"
 });
 ```
 
-### Example 3: Override Subject and Add Message
+### Example 4: Hybrid - Custom Message with Recipient File
+
+Use an attachment for the recipient list, but customize the subject and message in the chat:
 
 ```javascript
+// Attachment 123 contains:
+// {
+//   "recipients": ["user1@example.com", "user2@example.com", ... 100 more]
+// }
+
 const result = await assistant.callTool('send_group_email', {
   attachment_id: 123,
   subject: "URGENT: Updated Meeting Time",
@@ -538,9 +651,44 @@ add_action( 'wp_mcp_ai_send_group_email_after_send', function( $mail_args, $argu
 
 ### Attachment File Size
 
-- Default limit: 1 MB per attachment
+- **Default limit: 1 MB per attachment file**
+- Configurable via `wp_mcp_ai_email_definition_attachment_max_bytes` filter
+- Limits apply to email definition files (JSON/text files containing recipients/messages)
 - Large files increase memory usage and processing time
-- Use `wp_mcp_ai_email_definition_attachment_max_bytes` filter to adjust
+- **Purpose**: Prevents resource exhaustion and ensures responsive performance
+
+**Why 1 MB?**
+- Sufficient for ~10,000+ email addresses in plain text format
+- Prevents memory exhaustion on shared hosting
+- Ensures fast parsing and validation
+- Can hold complex JSON structures with extensive recipient data
+
+**When to increase the limit:**
+```php
+// Allow 2 MB attachment files
+add_filter( 'wp_mcp_ai_email_definition_attachment_max_bytes', function( $max_bytes ) {
+    return 2 * 1024 * 1024; // 2 MB
+}, 10, 1 );
+```
+
+**File size estimates:**
+- Plain text email list: ~50 bytes per email = 20,000 emails in 1 MB
+- JSON with names: ~100 bytes per entry = 10,000 recipients in 1 MB
+- Complex JSON with CC/BCC: Varies based on structure
+
+### Direct Chat Input vs Attachments
+
+**Direct Chat Input:**
+- ✅ No file size limits for the tool itself
+- ⚠️ Subject to chat message size limits (typically ~100KB)
+- ✅ Best for small recipient lists (under 50 addresses)
+- ✅ Fastest method - no upload/parsing overhead
+
+**Attachment Files:**
+- ✅ Handle large lists (1 MB = thousands of addresses)
+- ✅ Reusable across multiple campaigns
+- ⚠️ Requires file upload time
+- ⚠️ 1 MB limit per file (configurable)
 
 ### Recipient Count
 

@@ -447,4 +447,51 @@ class WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
 
 		return $attachment_id;
 	}
+
+	/**
+	 * Ensure emails can be sent without attachments using direct parameters.
+	 */
+	public function test_execute_sends_mail_without_attachment() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		$captured_mail = array();
+		add_filter(
+			'wp_mcp_ai_send_group_email_pre_send',
+			function ( $pre_send, $mail_args ) use ( &$captured_mail ) {
+				$captured_mail = $mail_args;
+				return true;
+			},
+			10,
+			2
+		);
+
+		$tool   = new WP_MCP_AI_Tool_Send_Group_Email();
+		$result = $tool->execute(
+			array(
+				'subject'    => 'Direct Email Test',
+				'message'    => 'This email was sent without any attachment file.',
+				'recipients' => array(
+					'user1@example.com',
+					'user2@example.com',
+					array(
+						'email' => 'user3@example.com',
+						'name'  => 'User Three',
+					),
+				),
+				'from_email' => 'sender@example.com',
+				'from_name'  => 'Test Sender',
+			),
+			array(
+				'user_id' => $admin_id,
+			)
+		);
+
+		$this->assertNotWPError( $result );
+		$this->assertTrue( $result['sent'] );
+		$this->assertSame( array( 'user1@example.com', 'user2@example.com', 'user3@example.com' ), $captured_mail['to'] );
+		$this->assertSame( 'Direct Email Test', $captured_mail['subject'] );
+		$this->assertSame( 'This email was sent without any attachment file.', $captured_mail['message'] );
+		$this->assertContains( 'From: Test Sender <sender@example.com>', $captured_mail['headers'] );
+	}
 }
