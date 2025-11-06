@@ -91,6 +91,7 @@ This document provides a comprehensive index of all documentation available for 
 |----------|-------------|----------|
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
+| [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |
 

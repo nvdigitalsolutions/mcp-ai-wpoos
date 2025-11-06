@@ -141,6 +141,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ### Language routing & knowledge management
 - 🔁 Route conversations through OpenAI or Gemini using a provider-aware language model router
+- 🎯 Enhanced Gemini API integration: list models dynamically, count tokens for budget management, create embeddings for RAG/semantic search, and streaming support for real-time responses【F:docs/gemini-api-enhancements.md†L1-L100】
 - 🧠 Assistant knowledge base management with Media Library files and optional vector store IDs
 - 🔎 Perform lightweight web searches (DuckDuckGo or Brave) without leaving the assistant conversation
 - 🌐 Crawl4AI job runner tool for large-scale content gathering workflows
