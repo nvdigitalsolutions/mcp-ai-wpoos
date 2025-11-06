@@ -491,18 +491,33 @@
         
         // Save expanded state to localStorage (after toggle completes)
         $(document).on('click', '.wp-mcp-ai-section__header', function() {
-            // Use setTimeout to ensure this runs after the toggle handler above
-            setTimeout(function() {
-                const expandedIds = [];
-                $('.wp-mcp-ai-section--expanded').each(function() {
-                    const id = $(this).attr('id');
-                    if (id) {
-                        expandedIds.push(id);
-                    }
+            // Use requestAnimationFrame to ensure this runs after the DOM has updated
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(function() {
+                    const expandedIds = [];
+                    $('.wp-mcp-ai-section--expanded').each(function() {
+                        const id = $(this).attr('id');
+                        if (id) {
+                            expandedIds.push(id);
+                        }
+                    });
+                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                    log('Saved expanded sections to localStorage:', expandedIds);
                 });
-                localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
-                log('Saved expanded sections to localStorage:', expandedIds);
-            }, 50);
+            } else {
+                // Fallback for older browsers
+                setTimeout(function() {
+                    const expandedIds = [];
+                    $('.wp-mcp-ai-section--expanded').each(function() {
+                        const id = $(this).attr('id');
+                        if (id) {
+                            expandedIds.push(id);
+                        }
+                    });
+                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                    log('Saved expanded sections to localStorage:', expandedIds);
+                }, 50);
+            }
         });
         
         log('Accordion initialized');
