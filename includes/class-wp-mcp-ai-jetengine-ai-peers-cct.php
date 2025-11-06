@@ -151,6 +151,9 @@ class WP_MCP_AI_JetEngine_AI_Peers_CCT {
 
 		$data->after_item_update( $item, true );
 
+		// Refresh JetEngine's internal cache of custom post types.
+		// The 'post_types' query forces JetEngine to reload the CCT definitions,
+		// ensuring the newly registered CCT is immediately available.
 		if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
 			$data->db->query_raw( 'post_types' );
 		}

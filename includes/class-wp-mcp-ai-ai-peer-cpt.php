@@ -620,11 +620,10 @@ class WP_MCP_AI_AI_Peer_CPT {
 					update_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id', $new_item_id );
 				}
 			}
-		} catch ( Exception $e ) {
+		} catch ( Throwable $e ) {
 			// Log error but don't block the save process.
-			if ( function_exists( 'error_log' ) ) {
-				error_log( 'WP_MCP_AI: Failed to sync peer to CCT: ' . $e->getMessage() );
-			}
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'WP_MCP_AI: Failed to sync peer to CCT: ' . $e->getMessage() );
 		} finally {
 			// Always release the lock.
 			delete_transient( $lock_key );
