@@ -173,7 +173,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context including user_id.
+	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
@@ -614,6 +618,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * Retrieve the configured Crawl4AI base URL.
 	 *
 	 * @param array $settings Plugin settings array.
+	 * @param array $context  Execution context including user_id.
 	 * @return string
 	 */
 	protected function get_base_url( array $settings, array $context = array() ) {
