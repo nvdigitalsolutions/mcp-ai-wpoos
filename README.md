@@ -1027,7 +1027,7 @@ The Federation & Discovery system provides three deployment modes:
 - **QPS Limit**: Queries per second (default: 5)
 - **Burst Capacity**: Simultaneous requests (default: 10)
 
-➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/federation-discovery.md)  
+➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/federation-discovery.md)
 ➡️ **Implementation Summary:** [FEDERATION-IMPLEMENTATION-SUMMARY.md](FEDERATION-IMPLEMENTATION-SUMMARY.md)
 
 ## 🕵️ Code Review
