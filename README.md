@@ -169,6 +169,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 📝 Full JSON-RPC 2.0 MCP endpoint (`/mcp`) for standards-compliant remote client communication
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/mcp-server-authentication.md†L22-L46】
+- 🌐 **Mesh networking** for distributed compute pooling across multiple WordPress sites, supporting both anonymous and authenticated users【F:docs/mesh-compute-pooling.md†L1-L100】【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
