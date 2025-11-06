@@ -170,6 +170,7 @@ npm run lint:js:fix
 - get_site_health - Health checks
 - get_system_logs - View logs
 - check_wp_cli - WP-CLI status
+- count_tokens - Estimate token counts
 ```
 
 ---
@@ -204,6 +205,51 @@ add_filter( 'wp_mcp_ai_chat_capability', function( $cap ) {
 4. Add Auth0 Scope
 5. Generate Auth0 token
 6. Test with token
+```
+
+---
+
+## 🧮 Token Counting & Budget Management
+
+### Using count_tokens Tool
+```javascript
+// Count tokens for text (automatic - tries tiktoken, falls back to heuristic)
+{
+  "text": "This is a message to count tokens for.",
+  "model": "gpt-4o-mini"
+}
+
+// Count tokens for messages array
+{
+  "messages": [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello, how are you?"}
+  ],
+  "model": "gpt-4o-mini",
+  "method": "tiktoken"  // Options: tiktoken, heuristic, auto (default)
+}
+
+// Response includes:
+// - estimated_tokens: Accurate token count
+// - counting_method: Which method was used (tiktoken or heuristic)
+// - model_info: Context limits, TPM/RPM limits, usage percentage
+// - budget_info: Safe limits, remaining tokens, recommendations
+```
+
+### Token Counting Methods
+| Method | Accuracy | Speed | Requirements |
+|--------|----------|-------|--------------|
+| `tiktoken` | Exact (uses OpenAI's BPE) | Fast | Composer install required |
+| `heuristic` | ~4 chars/token estimate | Very Fast | No dependencies |
+| `auto` (default) | Tries tiktoken, falls back | Fast | Works always |
+
+### Installation for Accurate Counting
+```bash
+# Install tiktoken-php library
+composer install
+
+# Verify installation
+composer show rahul900day/tiktoken-php
 ```
 
 ---
