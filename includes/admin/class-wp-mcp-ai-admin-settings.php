@@ -2691,8 +2691,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				return;
 			}
 
-		$is_first_section = true;
-
 			foreach ( $wp_settings_sections[ self::PAGE_SLUG ] as $section ) {
 				$section_id = $section['id'];
 				$metadata   = isset( $section_metadata[ $section_id ] ) ? $section_metadata[ $section_id ] : array();
@@ -2718,10 +2716,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$badge_class = 'configured';
 				}
 
-			// First section starts expanded.
-			$expanded_class = $is_first_section ? ' wp-mcp-ai-section--expanded' : '';
-			$aria_expanded  = $is_first_section ? 'true' : 'false';
-			$is_first_section = false;
+				// All sections start expanded by default.
+				$expanded_class = ' wp-mcp-ai-section--expanded';
+				$aria_expanded  = 'true';
 				?>
 				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?><?php echo esc_attr( $expanded_class ); ?>">
 					<?php /* translators: %s: section title */ ?>
