@@ -132,8 +132,20 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
-if ( ! @ob_start() ) {
-	ob_start(); // Fallback without error suppression.
+// Skip buffering during Elementor AJAX requests to avoid interfering with cache clearing and other operations.
+$is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+$is_elementor_ajax = false;
+if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
+	$request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+	$is_elementor_ajax = ( strpos( $request_action, 'elementor' ) === 0 );
+}
+
+if ( ! $is_elementor_ajax ) {
+	if ( ! @ob_start() ) {
+		ob_start(); // Fallback without error suppression.
+	}
 }
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
@@ -186,7 +198,10 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 }
 
 // Clean any output that may have been generated during includes.
-ob_end_clean();
+// Only clean the buffer if we started it (i.e., not during Elementor AJAX requests).
+if ( ! $is_elementor_ajax ) {
+	ob_end_clean();
+}
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
