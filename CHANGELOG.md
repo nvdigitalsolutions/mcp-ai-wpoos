@@ -7,6 +7,7 @@
 
 ## [Unreleased]
 ### Added
+- **Token Usage Management Dashboard**: Admin settings page now displays comprehensive token usage statistics with per-user and global views, breakdown by provider and model, and reset capabilities for administrators
 - **Job Notification System**: Real-time SSE streaming and webhook notifications for async operations
 - **Message Bundling**: Client-side 800ms message bundling to reduce API calls and server load
 - **Agentic Loop Token Management**: Three-tier intelligent handling (detection, auto-switching, truncation) for token overflow

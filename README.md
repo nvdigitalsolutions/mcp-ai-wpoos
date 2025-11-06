@@ -59,6 +59,7 @@
 ### Reference
 - [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
 - [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
+- [🧮 Usage Tracking](#-usage-tracking)
 - [🧾 Logging](#-logging)
 - [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
 - [✅ Manual QA Scenarios](#-manual-qa-scenarios)
@@ -649,6 +650,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Adjust the request timeout** under **Settings → WP oOS → Request Timeout** (minimum 5 s, default 30 s) to match your hosting environment.
 - [ ] **Select a default assistant** with **Settings → WP oOS → Default Assistant** so REST and shortcode requests have a fallback.
 - [ ] **Decide on logging** with **Settings → WP oOS → Enable Logging** when you need verbose diagnostics.
+- [ ] **Monitor token usage** in **Settings → WP oOS → Token Usage Statistics** to track API consumption across users, providers, and models for billing and budget management.
 - [ ] **Choose your uninstall behaviour** via **Settings → WP oOS → Remove Data on Uninstall** if this site should purge assistants and settings during cleanup.
 - [ ] **Configure Crawl4AI access** in **Settings → WP oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → WP oOS → Attachments** before enabling file uploads for end users.
@@ -792,6 +794,37 @@ Sites running Elementor automatically register a suite of MCP blocks so you can 
 ## 🧮 Usage Tracking
 
 The plugin records aggregate token usage per user, provider, and model whenever responses include usage metadata, simplifying internal reconciliation or billing workflows. Usage data is stored as user meta and automatically purged when accounts are deleted, and hooks are exposed for custom reporting pipelines.【F:includes/class-wp-mcp-ai-usage-tracker.php†L12-L119】
+
+### Token Usage Management Dashboard
+
+Administrators with `manage_options` capability can view comprehensive token usage statistics in **Settings → WP oOS**:
+
+**Global Statistics (All Users):**
+- Total requests across all users
+- Total tokens consumed (prompt + completion)
+- Prompt tokens used
+- Completion tokens generated
+- Cached tokens (for providers supporting prompt caching)
+- Reset all usage data button (with confirmation)
+
+**Individual User Statistics:**
+- Your personal token consumption
+- Per-user breakdown of requests and tokens
+- Reset personal usage data button
+
+**Detailed Breakdown:**
+- Usage by provider (OpenAI, Gemini, Ollama, LM Studio)
+- Usage by specific model (e.g., `gpt-4o-mini`, `gemini-2.0-flash`)
+- Request counts per provider/model combination
+- Last used timestamp for each model
+- Comprehensive table view with all metrics
+
+The usage tracking system automatically:
+- Records usage from all API responses that include usage metadata
+- Aggregates data by user, provider, and model
+- Updates in real-time as conversations occur
+- Supports the **Open OpenAI Usage** tool for quick access to provider dashboards
+- Provides AJAX-powered reset functionality for administrators
 
 ## 🧷 Attachment MIME Controls
 
