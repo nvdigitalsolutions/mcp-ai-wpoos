@@ -439,7 +439,6 @@
         $(document).on('click', '.wp-mcp-ai-section__header', function(e) {
             e.preventDefault();
             const $section = $(this).closest('.wp-mcp-ai-section');
-            const $content = $section.find('.wp-mcp-ai-section__content');
             const isExpanded = $section.hasClass('wp-mcp-ai-section--expanded');
             
             if (isExpanded) {
