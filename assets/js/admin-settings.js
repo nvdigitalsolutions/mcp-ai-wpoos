@@ -506,6 +506,13 @@ window.wpMcpAiSaveExpandedState = function() {
         if (expandedSections) {
             try {
                 const sections = JSON.parse(expandedSections);
+                // Cache jQuery selectors for better performance
+                const $allSections = $('.wp-mcp-ai-section');
+                const $allHeaders = $('.wp-mcp-ai-section__header');
+                // First, collapse all sections
+                $allSections.removeClass('wp-mcp-ai-section--expanded');
+                $allHeaders.attr('aria-expanded', 'false');
+                // Then expand only the saved sections
                 sections.forEach(function(id) {
                     const $section = $('#' + id);
                     $section.addClass('wp-mcp-ai-section--expanded');
@@ -516,6 +523,7 @@ window.wpMcpAiSaveExpandedState = function() {
                 log('Error parsing expanded sections:', e);
             }
         }
+        // If no localStorage, all sections remain expanded (default from PHP)
         
         // Save expanded state to localStorage (after toggle completes)
         $(document).on('click', '.wp-mcp-ai-section__header', function() {
