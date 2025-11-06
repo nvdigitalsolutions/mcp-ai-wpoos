@@ -1,6 +1,7 @@
 /**
- * Save expanded section state to localStorage
- * Used by expand/collapse all buttons
+ * Save expanded section state to localStorage.
+ * Called by the expand/collapse all buttons.
+ * Note: Individual section clicks use their own localStorage logic (line 520).
  */
 window.wpMcpAiSaveExpandedState = function() {
     const sections = document.querySelectorAll('.wp-mcp-ai-section--expanded');
