@@ -2435,6 +2435,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
 				<?php
 				settings_fields( self::SETTINGS_GROUP );
+				submit_button();
 				do_settings_sections( self::PAGE_SLUG );
 				submit_button();
 				?>
