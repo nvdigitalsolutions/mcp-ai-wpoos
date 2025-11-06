@@ -33,6 +33,7 @@
 - [⚡ Message Bundling](#-message-bundling)
 - [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
 - [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
+- [🌐 Mesh Compute Routing](#-mesh-compute-routing)
 
 ### Remote MCP Setup
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
@@ -624,12 +625,14 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Deployment Troubleshooting](docs/deployment-troubleshooting.md) - Common issues and solutions
 - [Multisite Support](docs/multisite-support.md) - WordPress multisite configuration
 - [Rate Limit Protection](docs/rate-limit-protection.md) - API rate limiting setup
+- [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
 ### Performance & Optimization
 - [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
 - [High Token Tool Handling](docs/high-token-tool-handling.md) - Agentic loop token management
 - [Job Notification System](docs/job-notification-system.md) - Real-time async job updates
 - [Chat Performance Optimizations](docs/chat-performance-optimizations.md) - Complete performance guide
+- [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
 
 ---
 
@@ -875,6 +878,40 @@ WP oOS includes several performance optimizations to enhance the chat experience
 - **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
 
 ➡️ See [docs/chat-performance-optimizations.md](docs/chat-performance-optimizations.md) for detailed performance tuning guide.
+
+## 🌐 Mesh Compute Routing
+
+WP oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
+
+1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
+2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, and Ollama on one site
+
+Both modes use the same AI-powered routing engine to optimize for cost, performance, and reliability.
+
+### Key Capabilities
+
+- **AI-Optimized Routing** - Analyzes prompt complexity and routes to optimal provider/site
+- **Cost Optimization** - Use GPT-4o-mini for simple queries, GPT-4o for complex tasks
+- **Automatic Failover** - Switch providers on rate limits or outages
+- **Compute Hubs** - Designate powerful servers for heavy workloads
+- **Rate Limit Management** - Auto-switch to alternative providers when limits hit
+- **Privacy Control** - Route sensitive data to local Ollama instances
+
+### Quick Start Examples
+
+**Single-Site Setup** (No mesh required):
+- Configure multiple AI providers (OpenAI + Gemini + Ollama)
+- Set assistant routing strategy to "AI Optimized"
+- Save 90% on costs by routing simple queries to cheaper models
+
+**Multi-Site Setup** (Distributed compute):
+- Enable mesh networking on all sites
+- Designate compute hubs with larger models
+- Automatic load balancing across peer sites
+- Cross-server compute pooling for Cloudways, SiteGround, etc.
+
+➡️ See [docs/mesh-routing-guide.md](docs/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
+➡️ See [docs/mesh-compute-pooling.md](docs/mesh-compute-pooling.md) for architecture and authentication details.
 
 ## 🕵️ Code Review
 
