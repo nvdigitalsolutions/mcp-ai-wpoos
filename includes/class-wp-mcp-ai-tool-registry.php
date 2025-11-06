@@ -229,6 +229,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'check_wp_cli'                     => 'operations',
 				'probe_chat'                       => 'operations',
 				'probe_remote_mcp'                 => 'operations',
+				'query_remote_site'                => 'operations',
 				'run_openai_external_action'       => 'automation',
 				'run_crawl4ai_job'                 => 'automation',
 				'create_google_calendar_event'     => 'automation',
@@ -329,7 +330,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		protected function load_default_tools() {
 			$is_base_version = $this->is_base_version();
 
-			// Tools that work with base WordPress (no third-party plugins or external APIs)
+			// Tools that work with base WordPress (no third-party plugins or external APIs).
 			$base_tools = array(
 				'WP_MCP_AI_Tool_Get_Recent_Posts'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php',
 				'WP_MCP_AI_Tool_Search_Content'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-content.php',
@@ -369,9 +370,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Import_Duty'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-import-duty.php',
 				'WP_MCP_AI_Tool_ReliefWeb_Reports'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php',
 				'WP_MCP_AI_Tool_Check_WP_CLI'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
+				'WP_MCP_AI_Tool_Query_Remote_Site'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
 			);
 
-			// Additional tools that require third-party plugins or external API credentials
+			// Additional tools that require third-party plugins or external API credentials.
 			$extended_tools = array(
 				'WP_MCP_AI_Tool_Search_Gmail'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
@@ -405,7 +407,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Vision_Object_Localization' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php',
 			);
 
-			// Combine tools based on version mode
+			// Combine tools based on version mode.
 			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools );
 
 			/**
