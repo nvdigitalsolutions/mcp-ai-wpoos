@@ -14,7 +14,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 	 * Provides a wrapper around Gemini's generateContent endpoint.
 	 */
 	class WP_MCP_AI_Gemini_Client {
-		const API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+		const API_ENDPOINT        = 'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent';
+		const API_STREAM_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent';
+		const API_LIST_MODELS     = 'https://generativelanguage.googleapis.com/v1beta/models';
+		const API_COUNT_TOKENS    = 'https://generativelanguage.googleapis.com/v1beta/models/%s:countTokens';
+		const API_EMBED_CONTENT   = 'https://generativelanguage.googleapis.com/v1beta/models/%s:embedContent';
 
 		/**
 		 * Retrieve the configured API key.
@@ -348,6 +352,545 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		}
 
 		/**
+		 * List available Gemini models dynamically.
+		 *
+		 * @param array $options Optional parameters (page_size, page_token).
+		 * @return array|WP_Error Array of models or WP_Error on failure.
+		 */
+		public function list_models( array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$url = self::API_LIST_MODELS;
+
+			$query_args = array( 'key' => rawurlencode( $api_key ) );
+
+			if ( isset( $options['page_size'] ) ) {
+				$query_args['pageSize'] = absint( $options['page_size'] );
+			}
+
+			if ( isset( $options['page_token'] ) ) {
+				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
+			}
+
+			$url = add_query_arg( $query_args, $url );
+
+			$request_args = array(
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event( 'gemini_list_models', 'Requesting available Gemini models.' );
+
+			$response = wp_remote_get( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini list models request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini list models response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for list models.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_list_models_response', 'Gemini models list retrieved successfully.' );
+
+			return $decoded;
+		}
+
+		/**
+		 * Count tokens for a given content payload.
+		 *
+		 * @param array $messages Message payload to count tokens for.
+		 * @param array $options  Additional options (model, timeout).
+		 * @return array|WP_Error Token count data or WP_Error on failure.
+		 */
+		public function count_tokens( array $messages, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_model',
+					__( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_model' => __( 'Choose a Gemini model in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$payload = $this->build_payload( $messages, $options );
+
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
+
+			$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
+			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event( 'gemini_count_tokens', 'Sending token count request to Gemini.' );
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini token count request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini token count response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for token count.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_count_tokens_response', 'Gemini token count completed.' );
+
+			return $decoded;
+		}
+
+		/**
+		 * Create text embeddings for RAG/semantic search.
+		 *
+		 * @param string $text    Text content to embed.
+		 * @param array  $options Additional options (model, task_type, timeout).
+		 * @return array|WP_Error Embedding data or WP_Error on failure.
+		 */
+		public function create_embedding( $text, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$text = sanitize_textarea_field( $text );
+
+			if ( '' === $text ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_text',
+					__( 'No text content was provided for embedding.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Default to text-embedding-004 model for embeddings.
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'text-embedding-004';
+
+			$payload = array(
+				'content' => array(
+					'parts' => array(
+						array(
+							'text' => $text,
+						),
+					),
+				),
+			);
+
+			// Optional task type for optimized embeddings.
+			if ( isset( $options['task_type'] ) && '' !== $options['task_type'] ) {
+				$task_type = sanitize_text_field( $options['task_type'] );
+				// Valid task types: RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING.
+				$allowed_task_types = array(
+					'RETRIEVAL_QUERY',
+					'RETRIEVAL_DOCUMENT',
+					'SEMANTIC_SIMILARITY',
+					'CLASSIFICATION',
+					'CLUSTERING',
+				);
+
+				if ( in_array( $task_type, $allowed_task_types, true ) ) {
+					$payload['taskType'] = $task_type;
+				}
+			}
+
+			// Optional title for RETRIEVAL_DOCUMENT task type.
+			if ( isset( $options['title'] ) && '' !== $options['title'] ) {
+				$payload['title'] = sanitize_text_field( $options['title'] );
+			}
+
+			/**
+			 * Allow third parties to filter the Gemini embedding payload prior to dispatch.
+			 *
+			 * @param array  $payload Prepared request payload.
+			 * @param array  $options Original method options.
+			 * @param string $text    Text content supplied by the caller.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_gemini_embedding_payload', $payload, $options, $text );
+
+			$endpoint = sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) );
+			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event( 'gemini_create_embedding', 'Sending embedding request to Gemini.', array( 'model' => $model ) );
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini embedding request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code    = wp_remote_retrieve_response_code( $response );
+			$body    = wp_remote_retrieve_body( $response );
+			$decoded = json_decode( $body, true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini embedding response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for embedding.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_embedding_response', 'Gemini embedding completed.', array( 'model' => $model ) );
+
+			return $decoded;
+		}
+
+		/**
+		 * Perform a streaming chat completion request against Gemini.
+		 *
+		 * @param array    $messages Message payload to send to Gemini.
+		 * @param array    $options  Additional options (model, temperature, tools, timeout).
+		 * @param callable $callback Callback function to process each chunk of streaming data.
+		 * @return array|WP_Error Final response summary or WP_Error on failure.
+		 */
+		public function stream_chat_completion( array $messages, array $options = array(), $callback = null ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_model',
+					__( 'No Gemini model has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_model' => __( 'Choose a Gemini model in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$payload = $this->build_payload( $messages, $options );
+
+			if ( is_wp_error( $payload ) ) {
+				return $payload;
+			}
+
+			$endpoint = sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) );
+			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = add_query_arg( 'alt', 'sse', $url );
+
+			$request_args = array(
+				'headers'  => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'     => wp_json_encode( $payload ),
+				'timeout'  => $this->resolve_timeout( $options ),
+				'stream'   => true,
+				'blocking' => true,
+			);
+
+			WP_MCP_AI_Logger::log_event( 'gemini_stream_request', 'Sending streaming request to Gemini.', array( 'payload' => $this->obfuscate_request_for_log( $payload ) ) );
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini streaming request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API streaming request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			if ( $code < 200 || $code >= 300 ) {
+				$decoded = json_decode( $body, true );
+				if ( JSON_ERROR_NONE !== json_last_error() ) {
+					$decoded = null;
+				}
+
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for streaming.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			// Process SSE stream response.
+			$accumulated = array(
+				'content'    => '',
+				'tool_calls' => array(),
+				'usage'      => array(),
+			);
+
+			$lines = explode( "\n", $body );
+
+			foreach ( $lines as $line ) {
+				$line = trim( $line );
+
+				if ( '' === $line || 'data: [DONE]' === $line ) {
+					continue;
+				}
+
+				if ( 0 === strpos( $line, 'data: ' ) ) {
+					$json_str = substr( $line, 6 );
+					$chunk    = json_decode( $json_str, true );
+
+					if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+						continue;
+					}
+
+					// Process chunk.
+					if ( isset( $chunk['candidates'] ) && is_array( $chunk['candidates'] ) ) {
+						foreach ( $chunk['candidates'] as $candidate ) {
+							if ( isset( $candidate['content']['parts'] ) && is_array( $candidate['content']['parts'] ) ) {
+								foreach ( $candidate['content']['parts'] as $part ) {
+									if ( isset( $part['text'] ) ) {
+										$accumulated['content'] .= $part['text'];
+
+										if ( is_callable( $callback ) ) {
+											call_user_func( $callback, $part['text'], 'text' );
+										}
+									}
+
+									if ( isset( $part['functionCall'] ) && is_array( $part['functionCall'] ) ) {
+										$accumulated['tool_calls'][] = $part['functionCall'];
+
+										if ( is_callable( $callback ) ) {
+											call_user_func( $callback, $part['functionCall'], 'function_call' );
+										}
+									}
+								}
+							}
+						}
+					}
+
+					// Accumulate usage metadata.
+					if ( isset( $chunk['usageMetadata'] ) && is_array( $chunk['usageMetadata'] ) ) {
+						$accumulated['usage'] = $chunk['usageMetadata'];
+					}
+				}
+			}
+
+			$normalized = array(
+				'choices'  => array(
+					array(
+						'index'   => 0,
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => array(
+								array(
+									'type' => 'text',
+									'text' => $accumulated['content'],
+								),
+							),
+						),
+					),
+				),
+				'provider' => 'gemini',
+				'model'    => $model,
+			);
+
+			if ( ! empty( $accumulated['tool_calls'] ) ) {
+				$normalized['choices'][0]['message']['tool_calls'] = $accumulated['tool_calls'];
+			}
+
+			if ( ! empty( $accumulated['usage'] ) ) {
+				$usage = array();
+
+				if ( isset( $accumulated['usage']['promptTokenCount'] ) ) {
+					$usage['prompt_tokens'] = (int) $accumulated['usage']['promptTokenCount'];
+				}
+
+				if ( isset( $accumulated['usage']['candidatesTokenCount'] ) ) {
+					$usage['completion_tokens'] = (int) $accumulated['usage']['candidatesTokenCount'];
+				}
+
+				if ( ! empty( $usage ) ) {
+					$normalized['usage'] = $usage;
+				}
+			}
+
+			WP_MCP_AI_Logger::log_event( 'gemini_stream_response', 'Gemini streaming request completed.' );
+
+			return $normalized;
+		}
+
+		/**
 		 * Resolve the model identifier for the request.
 		 *
 		 * @param array $options Request options.
@@ -643,7 +1186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					case 'input_file':
 						$label = __( '[File attachment]', 'wp-mcp-ai' );
 
-						// Prefer display_name, fallback to name, or use 'File'
+						// Prefer display_name, fallback to name, or use 'File'.
 						$name = 'File';
 						if ( isset( $segment['display_name'] ) && '' !== $segment['display_name'] ) {
 							$name = sanitize_text_field( $segment['display_name'] );
@@ -651,7 +1194,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							$name = sanitize_text_field( $segment['name'] );
 						}
 
-						// If URL is available, show it with the name
+						// If URL is available, show it with the name.
 						if ( isset( $segment['url'] ) && '' !== $segment['url'] ) {
 							$label = '[' . $name . ': ' . esc_url_raw( $segment['url'] ) . ']';
 						} else {
