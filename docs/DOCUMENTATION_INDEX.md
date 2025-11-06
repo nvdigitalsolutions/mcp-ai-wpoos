@@ -28,6 +28,7 @@ This document provides a comprehensive index of all documentation available for 
 2. [mcp-server-authentication.md](mcp-server-authentication.md) - Authentication setup
 3. [rate-limit-protection.md](rate-limit-protection.md) - Rate limiting configuration
 4. [multisite-support.md](multisite-support.md) - Multisite considerations
+5. [mesh-compute-pooling.md](mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ---
 
@@ -77,6 +78,12 @@ This document provides a comprehensive index of all documentation available for 
 | [authentication.md](authentication.md) | Authentication overview | Admins |
 | [rate-limit-protection.md](rate-limit-protection.md) | Rate limiting configuration | Admins |
 | [../SECURITY.md](../SECURITY.md) | Security policies and vulnerability reporting | Everyone |
+
+### Mesh Networking
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [mesh-compute-pooling.md](mesh-compute-pooling.md) | Mesh compute pooling for anonymous and authenticated users (22KB) | All Users |
 
 ### API & Tools Reference
 
