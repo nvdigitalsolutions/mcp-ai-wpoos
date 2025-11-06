@@ -5057,7 +5057,6 @@
         headers['Accept'] = 'text/event-stream';
 
         let streamingMessageElement = null;
-        let accumulatedContent = '';
         let streamCompleted = false;
 
         // Create a placeholder message element for streaming content
@@ -5086,7 +5085,8 @@
             const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
             if (bubble) {
                 // Update text content with accumulated response
-                accumulatedContent = content;
+                // Using textContent for progressive streaming (not innerHTML) to prevent XSS
+                // Content will be properly formatted when finalized
                 bubble.textContent = content;
             }
         }
@@ -5106,6 +5106,12 @@
                 const contentType = response.headers.get('content-type') || '';
                 if (!contentType.includes('text/event-stream')) {
                     // Fallback to non-streaming if SSE not supported
+                    // Clean up streaming message element if it was created
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                        streamingMessageElement = null;
+                    }
+                    
                     return response.json().then(function (data) {
                         return handleChatResponse(state, data);
                     });
@@ -5117,10 +5123,11 @@
                 streamCompleted = true;
 
                 // Add accumulated content to conversation
-                if (accumulatedContent) {
+                // finalData.content contains the full streamed response
+                if (finalData && finalData.content) {
                     state.conversation.push({
                         role: 'assistant',
-                        content: accumulatedContent
+                        content: finalData.content
                     });
                 }
 
