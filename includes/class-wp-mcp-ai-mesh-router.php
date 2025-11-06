@@ -48,6 +48,11 @@ class WP_MCP_AI_Mesh_Router {
 	const META_COMPUTE_HUB_CONFIG = '_wp_mcp_ai_compute_hub_config';
 
 	/**
+	 * Divisor for load estimation calculation.
+	 */
+	const LOAD_ESTIMATION_DIVISOR = 20;
+
+	/**
 	 * Get the optimal peer for a given request using AI-powered analysis.
 	 *
 	 * Analyzes:
@@ -150,7 +155,7 @@ class WP_MCP_AI_Mesh_Router {
 	 * @param array  $healthy_peers Available healthy peers.
 	 * @param string $prompt        The prompt being sent.
 	 * @param array  $hub_config    Compute hub configuration.
-	 * @param array  $context       Request context.
+	 * @param array  $context       Request context (reserved for future use: user preferences, geographic routing, time-based routing).
 	 * @return array Selected peer configuration.
 	 */
 	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
@@ -217,7 +222,7 @@ class WP_MCP_AI_Mesh_Router {
 	 * Round-robin peer selection.
 	 *
 	 * @param array $healthy_peers Available healthy peers.
-	 * @param array $hub_config    Compute hub configuration.
+	 * @param array $hub_config    Compute hub configuration (reserved for consistency with other routing methods).
 	 * @return array Selected peer configuration.
 	 */
 	protected static function select_peer_round_robin( $healthy_peers, $hub_config ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
@@ -377,7 +382,7 @@ class WP_MCP_AI_Mesh_Router {
 	 *
 	 * @param array  $peer    Peer configuration.
 	 * @param string $prompt  Prompt to send.
-	 * @param array  $context Request context.
+	 * @param array  $context Request context (reserved for future use: pass user identity, session data, or request metadata to peer).
 	 * @return array|WP_Error Response or error.
 	 */
 	protected static function execute_peer_query( $peer, $prompt, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
@@ -589,7 +594,7 @@ class WP_MCP_AI_Mesh_Router {
 		$peer_metrics['success_rate'] = ( $peer_metrics['success_count'] / $peer_metrics['total_requests'] ) * 100;
 
 		// Estimate current load based on recent requests.
-		$peer_metrics['current_load'] = $peer_metrics['total_requests'] % 20; // Simple load estimation.
+		$peer_metrics['current_load'] = $peer_metrics['total_requests'] % self::LOAD_ESTIMATION_DIVISOR;
 
 		// Determine status.
 		if ( $peer_metrics['success_rate'] < 50 ) {

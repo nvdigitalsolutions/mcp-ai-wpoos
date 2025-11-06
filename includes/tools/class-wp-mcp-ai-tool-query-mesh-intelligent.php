@@ -102,6 +102,10 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface 
 			);
 		}
 
+		// Get the actual routing strategy configured for this assistant.
+		$hub_config       = WP_MCP_AI_Mesh_Router::get_hub_config( $assistant_id );
+		$routing_strategy = isset( $hub_config['routing_strategy'] ) ? $hub_config['routing_strategy'] : 'ai_optimized';
+
 		// Use the mesh router for intelligent query with retry.
 		$result = WP_MCP_AI_Mesh_Router::query_with_retry( $assistant_id, $prompt, $context );
 
@@ -120,7 +124,7 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface 
 		return array(
 			'response' => $response_content,
 			'metadata' => array(
-				'routing_method' => 'ai_optimized',
+				'routing_method' => $routing_strategy,
 				'query_success'  => true,
 			),
 		);
