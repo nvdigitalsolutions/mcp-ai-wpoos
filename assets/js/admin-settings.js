@@ -438,15 +438,16 @@
         // Handle section header clicks
         $(document).on('click', '.wp-mcp-ai-section__header', function(e) {
             e.preventDefault();
-            const $section = $(this).closest('.wp-mcp-ai-section');
+            const $header = $(this);
+            const $section = $header.closest('.wp-mcp-ai-section');
             const isExpanded = $section.hasClass('wp-mcp-ai-section--expanded');
             
             if (isExpanded) {
                 $section.removeClass('wp-mcp-ai-section--expanded');
-                $section.attr('aria-expanded', 'false');
+                $header.attr('aria-expanded', 'false');
             } else {
                 $section.addClass('wp-mcp-ai-section--expanded');
-                $section.attr('aria-expanded', 'true');
+                $header.attr('aria-expanded', 'true');
             }
             
             log('Section toggled:', $section.find('.wp-mcp-ai-section__title').text());
@@ -455,14 +456,16 @@
         // Expand all button
         $(document).on('click', '.wp-mcp-ai-expand-all', function(e) {
             e.preventDefault();
-            $('.wp-mcp-ai-section').addClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'true');
+            $('.wp-mcp-ai-section').addClass('wp-mcp-ai-section--expanded');
+            $('.wp-mcp-ai-section__header').attr('aria-expanded', 'true');
             log('All sections expanded');
         });
         
         // Collapse all button
         $(document).on('click', '.wp-mcp-ai-collapse-all', function(e) {
             e.preventDefault();
-            $('.wp-mcp-ai-section').removeClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'false');
+            $('.wp-mcp-ai-section').removeClass('wp-mcp-ai-section--expanded');
+            $('.wp-mcp-ai-section__header').attr('aria-expanded', 'false');
             log('All sections collapsed');
         });
         
@@ -480,7 +483,9 @@
             try {
                 const sections = JSON.parse(expandedSections);
                 sections.forEach(function(id) {
-                    $('#' + id).addClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'true');
+                    const $section = $('#' + id);
+                    $section.addClass('wp-mcp-ai-section--expanded');
+                    $section.find('.wp-mcp-ai-section__header').attr('aria-expanded', 'true');
                 });
                 log('Restored expanded sections from localStorage:', sections);
             } catch (e) {
