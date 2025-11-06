@@ -1,3 +1,52 @@
+/**
+ * Global function to toggle accordion sections
+ * This is called by inline onclick handlers for direct expansion control
+ */
+window.wpMcpAiToggleSection = function(headerElement) {
+    // Validate that headerElement is a valid DOM element
+    if (!headerElement || !headerElement.nodeType || headerElement.nodeType !== 1) {
+        return;
+    }
+    
+    const section = headerElement.closest('.wp-mcp-ai-section');
+    if (!section) return;
+    
+    const isExpanded = section.classList.contains('wp-mcp-ai-section--expanded');
+    
+    if (isExpanded) {
+        section.classList.remove('wp-mcp-ai-section--expanded');
+        headerElement.setAttribute('aria-expanded', 'false');
+    } else {
+        section.classList.add('wp-mcp-ai-section--expanded');
+        headerElement.setAttribute('aria-expanded', 'true');
+    }
+    
+    // Save to localStorage
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function() {
+            wpMcpAiSaveExpandedState();
+        });
+    } else {
+        setTimeout(wpMcpAiSaveExpandedState, 50);
+    }
+};
+
+/**
+ * Save expanded section state to localStorage
+ */
+window.wpMcpAiSaveExpandedState = function() {
+    const sections = document.querySelectorAll('.wp-mcp-ai-section--expanded');
+    const expandedIds = Array.from(sections)
+        .map(function(section) { return section.getAttribute('id'); })
+        .filter(function(id) { return id; });
+    
+    try {
+        localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+    } catch (e) {
+        // Ignore localStorage errors
+    }
+};
+
 (function ($) {
     'use strict';
     
@@ -459,6 +508,9 @@
             $('.wp-mcp-ai-section').addClass('wp-mcp-ai-section--expanded');
             $('.wp-mcp-ai-section__header').attr('aria-expanded', 'true');
             log('All sections expanded');
+            if (typeof window.wpMcpAiSaveExpandedState === 'function') {
+                window.wpMcpAiSaveExpandedState();
+            }
         });
         
         // Collapse all button
@@ -467,6 +519,9 @@
             $('.wp-mcp-ai-section').removeClass('wp-mcp-ai-section--expanded');
             $('.wp-mcp-ai-section__header').attr('aria-expanded', 'false');
             log('All sections collapsed');
+            if (typeof window.wpMcpAiSaveExpandedState === 'function') {
+                window.wpMcpAiSaveExpandedState();
+            }
         });
         
         // Keyboard accessibility
