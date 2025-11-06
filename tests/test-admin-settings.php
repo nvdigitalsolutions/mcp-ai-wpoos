@@ -500,6 +500,192 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that token usage section renders without errors.
+	 */
+	public function test_render_token_usage_section_requires_manage_options() {
+		// Create a user without manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		ob_start();
+		$admin_settings->render_token_usage_section();
+		$output = ob_get_clean();
+
+		// Should not render anything for users without manage_options.
+		$this->assertEmpty( $output );
+	}
+
+	/**
+	 * Test that token usage section renders for admin users.
+	 */
+	public function test_render_token_usage_section_for_admin() {
+		// Create an admin user.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		ob_start();
+		$admin_settings->render_token_usage_section();
+		$output = ob_get_clean();
+
+		// Should render the section.
+		$this->assertStringContainsString( 'wp-mcp-ai-token-usage-section', $output );
+		$this->assertStringContainsString( 'Token Usage Statistics', $output );
+		$this->assertStringContainsString( 'All Users', $output );
+		$this->assertStringContainsString( 'Your Usage', $output );
+	}
+
+	/**
+	 * Test token usage calculation.
+	 */
+	public function test_calculate_usage_totals() {
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $admin_settings );
+		$method     = $reflection->getMethod( 'calculate_usage_totals' );
+		$method->setAccessible( true );
+
+		$usage = array(
+			'openai' => array(
+				'gpt-4o-mini' => array(
+					'requests'          => 10,
+					'prompt_tokens'     => 500,
+					'completion_tokens' => 300,
+					'total_tokens'      => 800,
+					'cached_tokens'     => 50,
+				),
+			),
+			'gemini' => array(
+				'gemini-1.5-flash' => array(
+					'requests'          => 5,
+					'prompt_tokens'     => 200,
+					'completion_tokens' => 150,
+					'total_tokens'      => 350,
+					'cached_tokens'     => 25,
+				),
+			),
+		);
+
+		$totals = $method->invoke( $admin_settings, $usage );
+
+		$this->assertSame( 15, $totals['requests'] );
+		$this->assertSame( 700, $totals['prompt_tokens'] );
+		$this->assertSame( 450, $totals['completion_tokens'] );
+		$this->assertSame( 1150, $totals['total_tokens'] );
+		$this->assertSame( 75, $totals['cached_tokens'] );
+	}
+
+	/**
+	 * Test reset user token usage AJAX handler.
+	 */
+	public function test_reset_user_token_usage_requires_capability() {
+		// Create a user without manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		// Store some usage data.
+		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, array( 'test' => 'data' ) );
+
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Suppress die() call.
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
+		try {
+			$admin_settings->handle_reset_user_token_usage();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Data should still be there.
+		$data = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
+		$this->assertNotEmpty( $data );
+	}
+
+	/**
+	 * Test reset all token usage AJAX handler.
+	 */
+	public function test_reset_all_token_usage_requires_capability() {
+		// Create a user without manage_options capability.
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		// Store some usage data.
+		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, array( 'test' => 'data' ) );
+
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Suppress die() call.
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
+		try {
+			$admin_settings->handle_reset_all_token_usage();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Data should still be there.
+		$data = get_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
+		$this->assertNotEmpty( $data );
+	}
+
+	/**
+	 * Test that reset all token usage clears usermeta cache.
+	 */
+	public function test_reset_all_token_usage_clears_cache() {
+		global $wpdb;
+
+		// Create admin user.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Create multiple users with usage data.
+		$user_id_1 = $this->factory->user->create();
+		$user_id_2 = $this->factory->user->create();
+
+		$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+		update_user_meta( $user_id_1, $meta_key, array( 'test' => 'data1' ) );
+		update_user_meta( $user_id_2, $meta_key, array( 'test' => 'data2' ) );
+
+		// Prime the cache.
+		get_user_meta( $user_id_1, $meta_key, true );
+		get_user_meta( $user_id_2, $meta_key, true );
+
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Set up nonce.
+		$_REQUEST['nonce'] = wp_create_nonce( 'wp-mcp-ai-settings' );
+		add_filter( 'wp_doing_ajax', '__return_true' );
+
+		// Reset all usage.
+		try {
+			$admin_settings->handle_reset_all_token_usage();
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Verify cache is cleared - get_user_meta should return false/empty.
+		$cached_data_1 = get_user_meta( $user_id_1, $meta_key, true );
+		$cached_data_2 = get_user_meta( $user_id_2, $meta_key, true );
+
+		$this->assertEmpty( $cached_data_1, 'User 1 cache should be cleared' );
+		$this->assertEmpty( $cached_data_2, 'User 2 cache should be cleared' );
+
+		// Verify database is also empty.
+		$db_count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				$meta_key
+			)
+		);
+		$this->assertEquals( 0, $db_count, 'All usage records should be deleted from database' );
+	}
+
+	/**
 	 * Capture buffered output generated by a settings field renderer.
 	 *
 	 * @param callable $callback Renderer callback.

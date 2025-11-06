@@ -42,6 +42,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this, 'safe_ajax_handler' ) );
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 				add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 			}
@@ -84,6 +86,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_ajax_wp_mcp_ai_fetch_lm_studio_models' => 'handle_fetch_lm_studio_models',
 				'wp_ajax_wp_mcp_ai_fetch_cloudways_data'   => 'handle_fetch_cloudways_data',
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
+				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
+				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 			);
 
 			$action         = current_action();
@@ -2440,7 +2444,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wpMcpAiAdmin',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'wp_mcp_ai_admin_nonce' ),
+					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 				)
 			);
 
@@ -2620,6 +2624,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			</div>
 
 			<?php $this->render_error_log_section(); ?>
+			
+			<?php $this->render_token_usage_section(); ?>
 			
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
@@ -5016,7 +5022,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to test Ollama connection.
 		 */
 		public function handle_test_ollama_connection() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5058,7 +5064,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to fetch Ollama models.
 		 */
 		public function handle_fetch_ollama_models() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5100,7 +5106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to test LM Studio connection.
 		 */
 		public function handle_test_lm_studio_connection() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5142,7 +5148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to fetch LM Studio models.
 		 */
 		public function handle_fetch_lm_studio_models() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5184,7 +5190,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to fetch Cloudways data (servers and applications).
 		 */
 		public function handle_fetch_cloudways_data() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5322,7 +5328,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Handle AJAX request to test Cloudflare connection.
 		 */
 		public function handle_test_cloudflare_connection() {
-			check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
@@ -5462,6 +5468,325 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		</select>
 		<p class="description"><?php esc_html_e( 'The model to use when the current model cannot handle the token volume. Gemini models are recommended as they have very high token limits (1-2 million tokens).', 'wp-mcp-ai' ); ?></p>
 			<?php
+		}
+
+		/**
+		 * Render the token usage management section.
+		 */
+		public function render_token_usage_section() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			$current_user_id = get_current_user_id();
+			$user_usage      = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $current_user_id );
+
+			// Calculate totals for current user.
+			$user_totals = $this->calculate_usage_totals( $user_usage );
+
+			// Get all users with usage data for admin view.
+			$all_users_usage = $this->get_all_users_usage();
+			$global_totals   = $this->calculate_usage_totals( $all_users_usage );
+
+			?>
+		<div class="wp-mcp-ai-token-usage-section">
+			<h2><?php esc_html_e( 'Token Usage Statistics', 'wp-mcp-ai' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Monitor API token consumption across all users and manage usage data.', 'wp-mcp-ai' ); ?></p>
+			
+			<!-- Global Statistics (Admin View) -->
+			<div class="wp-mcp-ai-token-usage-cards">
+				<div class="wp-mcp-ai-token-usage-card">
+					<h3><?php esc_html_e( 'All Users', 'wp-mcp-ai' ); ?></h3>
+					<div class="wp-mcp-ai-token-usage-stats">
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Total Requests:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $global_totals['requests'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Total Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $global_totals['total_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Prompt Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $global_totals['prompt_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Completion Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $global_totals['completion_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Cached Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $global_totals['cached_tokens'] ); ?></span>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-token-usage-actions">
+						<button type="button" id="wp-mcp-ai-reset-all-usage" class="button button-secondary" data-confirm="<?php esc_attr_e( 'Are you sure you want to reset token usage for ALL users? This action cannot be undone.', 'wp-mcp-ai' ); ?>">
+							<?php esc_html_e( 'Reset All Usage Data', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+				</div>
+
+				<div class="wp-mcp-ai-token-usage-card">
+					<h3><?php esc_html_e( 'Your Usage', 'wp-mcp-ai' ); ?></h3>
+					<div class="wp-mcp-ai-token-usage-stats">
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Total Requests:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $user_totals['requests'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Total Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $user_totals['total_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Prompt Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $user_totals['prompt_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Completion Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $user_totals['completion_tokens'] ); ?></span>
+						</div>
+						<div class="wp-mcp-ai-token-usage-stat">
+							<span class="wp-mcp-ai-token-usage-stat__label"><?php esc_html_e( 'Cached Tokens:', 'wp-mcp-ai' ); ?></span>
+							<span class="wp-mcp-ai-token-usage-stat__value"><?php echo number_format_i18n( $user_totals['cached_tokens'] ); ?></span>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-token-usage-actions">
+						<button type="button" id="wp-mcp-ai-reset-user-usage" class="button button-secondary" data-confirm="<?php esc_attr_e( 'Are you sure you want to reset your token usage data? This action cannot be undone.', 'wp-mcp-ai' ); ?>">
+							<?php esc_html_e( 'Reset My Usage Data', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Detailed Breakdown by Provider/Model -->
+			<?php if ( ! empty( $user_usage ) ) : ?>
+				<div class="wp-mcp-ai-token-usage-details">
+					<h3><?php esc_html_e( 'Usage by Provider & Model', 'wp-mcp-ai' ); ?></h3>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Last Used', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							foreach ( $user_usage as $provider => $models ) {
+								foreach ( $models as $model => $data ) {
+									$last_used = '';
+									if ( ! empty( $data['last_used_gmt'] ) ) {
+										$last_used = get_date_from_gmt(
+											$data['last_used_gmt'],
+											get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
+										);
+									}
+									?>
+									<tr>
+										<td><?php echo esc_html( ucfirst( $provider ) ); ?></td>
+										<td><code><?php echo esc_html( $model ); ?></code></td>
+										<td><?php echo number_format_i18n( $data['requests'] ); ?></td>
+										<td><?php echo number_format_i18n( $data['prompt_tokens'] ); ?></td>
+										<td><?php echo number_format_i18n( $data['completion_tokens'] ); ?></td>
+										<td><?php echo number_format_i18n( $data['total_tokens'] ); ?></td>
+										<td><?php echo number_format_i18n( $data['cached_tokens'] ); ?></td>
+										<td><?php echo esc_html( $last_used ); ?></td>
+									</tr>
+									<?php
+								}
+							}
+							?>
+						</tbody>
+					</table>
+				</div>
+			<?php endif; ?>
+		</div>
+			<?php
+		}
+
+		/**
+		 * Calculate total usage from a usage array.
+		 *
+		 * @param array $usage Usage array from WP_MCP_AI_Usage_Tracker.
+		 * @return array Totals array.
+		 */
+		private function calculate_usage_totals( $usage ) {
+			$totals = array(
+				'requests'          => 0,
+				'prompt_tokens'     => 0,
+				'completion_tokens' => 0,
+				'total_tokens'      => 0,
+				'cached_tokens'     => 0,
+			);
+
+			if ( ! is_array( $usage ) ) {
+				return $totals;
+			}
+
+			foreach ( $usage as $provider => $models ) {
+				if ( ! is_array( $models ) ) {
+					continue;
+				}
+
+				foreach ( $models as $model => $data ) {
+					if ( ! is_array( $data ) ) {
+						continue;
+					}
+
+					$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
+					$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+				}
+			}
+
+			return $totals;
+		}
+
+		/**
+		 * Get usage data for all users.
+		 *
+		 * @return array Aggregated usage data.
+		 */
+		private function get_all_users_usage() {
+			global $wpdb;
+
+			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+
+			// Get all user IDs with usage data.
+			$user_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+					$meta_key
+				)
+			);
+
+			$all_usage = array();
+
+			foreach ( $user_ids as $user_id ) {
+				$user_usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+				if ( empty( $user_usage ) ) {
+					continue;
+				}
+
+				// Merge usage data.
+				foreach ( $user_usage as $provider => $models ) {
+					if ( ! isset( $all_usage[ $provider ] ) ) {
+						$all_usage[ $provider ] = array();
+					}
+
+					foreach ( $models as $model => $data ) {
+						if ( ! isset( $all_usage[ $provider ][ $model ] ) ) {
+							$all_usage[ $provider ][ $model ] = array(
+								'requests'          => 0,
+								'prompt_tokens'     => 0,
+								'completion_tokens' => 0,
+								'total_tokens'      => 0,
+								'cached_tokens'     => 0,
+							);
+						}
+
+						$all_usage[ $provider ][ $model ]['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
+						$all_usage[ $provider ][ $model ]['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+						$all_usage[ $provider ][ $model ]['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+						$all_usage[ $provider ][ $model ]['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+						$all_usage[ $provider ][ $model ]['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+					}
+				}
+			}
+
+			return $all_usage;
+		}
+
+		/**
+		 * Handle AJAX request to reset current user's token usage.
+		 */
+		public function handle_reset_user_token_usage() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$user_id = get_current_user_id();
+
+			if ( ! $user_id ) {
+				wp_send_json_error( array( 'message' => __( 'Unable to determine current user.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			delete_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY );
+
+			wp_send_json_success( array( 'message' => __( 'Your token usage data has been reset.', 'wp-mcp-ai' ) ) );
+		}
+
+		/**
+		 * Handle AJAX request to reset all users' token usage.
+		 */
+		public function handle_reset_all_token_usage() {
+			global $wpdb;
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
+
+			// Get all user IDs with usage data before deleting.
+			$user_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+					$meta_key
+				)
+			);
+
+			// Delete all usage data.
+			$deleted = $wpdb->delete(
+				$wpdb->usermeta,
+				array( 'meta_key' => $meta_key ),
+				array( '%s' )
+			);
+
+			if ( false === $deleted ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to reset token usage data.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Clear usermeta cache for all affected users.
+			foreach ( $user_ids as $user_id ) {
+				clean_user_cache( $user_id );
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: %d: number of records deleted */
+						__( 'Token usage data has been reset for all users. %d records deleted.', 'wp-mcp-ai' ),
+						$deleted
+					),
+				)
+			);
 		}
 	}
 }
