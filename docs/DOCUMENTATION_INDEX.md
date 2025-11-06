@@ -109,6 +109,7 @@ This document provides a comprehensive index of all documentation available for 
 |----------|-------------|----------|
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
+| [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |
 | [job-notification-system.md](job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
