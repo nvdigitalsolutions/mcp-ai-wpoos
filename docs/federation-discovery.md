@@ -66,10 +66,29 @@ curl "https://yoursite.com/wp-json/ai-dir/v1/search?capability=transcribe_audio&
 ### Components
 
 1. **Well-Known Endpoints** - Publish this site's capabilities
-2. **AI Peer CPT** - Store registered peer information
+2. **AI Peer CPT** - Store registered peer information (with automatic CCT sync for JetEngine)
 3. **Directory REST API** - Peer registration and discovery
 4. **Peer Verifier** - Health checks and validation
 5. **Settings Manager** - Configuration interface
+
+### Storage Architecture
+
+**CPT-First with Optional CCT Sync:**
+
+- **Base Version:** Uses WordPress CPT (`ai_peer`) for peer storage
+- **Full Version with JetEngine:** Automatically syncs CPT data to JetEngine CCT (`ai_peers`)
+- **Benefit:** Faster queries for JetEngine users while maintaining base compatibility
+- **Pattern:** Same as AI Assistants (CPT → CCT automatic synchronization)
+
+```
+AI Peer CPT (Primary Storage)
+├── Post Type: ai_peer
+├── Meta fields: site_name, site_url, mcp_url, jwks_uri, etc.
+└── On save → Syncs to CCT (if JetEngine available)
+    ├── Creates/updates ai_peers CCT item
+    ├── Stores link via _wp_mcp_ai_peer_cct_item_id
+    └── On delete → Removes CCT item
+```
 
 ### Data Flow
 
@@ -83,6 +102,7 @@ Site B (Directory)
 ├── Ingests Site A's well-known doc
 ├── Verifies JWKS reachability
 ├── Stores peer data in CPT
+├── Auto-syncs to CCT (if JetEngine active)
 └── Provides search API
 
 Site C (Consumer)
@@ -473,14 +493,14 @@ The federation system uses a **web of trust** model:
 - **Peers:** Tested with 100+ peers
 - **Search:** Sub-100ms response time for 100 peers
 - **Health Checks:** ~1 second per peer (sequential)
-- **Storage:** CPT-based (can add CCT for JetEngine users)
+- **Storage:** CPT-based with automatic CCT sync for JetEngine users
 
 ### Optimization Tips
 
 1. **Enable object caching** - Speeds up peer queries
 2. **Use system cron** - More reliable than WP-Cron
 3. **Increase check interval** - Reduce server load (2-4 hours)
-4. **Add CCT sync** - For JetEngine users, faster queries
+4. **JetEngine CCT** - Automatically enabled for Full Version users, provides faster queries
 
 ---
 
@@ -495,7 +515,6 @@ The federation system uses a **web of trust** model:
 - **Price comparison** - Cost-based routing
 - **OpenAPI spec** - Auto-generate from tools
 - **Mesh integration** - Automatic peer selection in mesh router
-- **CCT sync** - Optional JetEngine integration for performance
 
 ---
 

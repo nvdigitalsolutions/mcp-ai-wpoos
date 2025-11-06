@@ -29,7 +29,7 @@
 - Meta fields: mcp_url, jwks_uri, capabilities, regions, data_tags, quotas, health status, latency
 - Admin UI with list table (health, capabilities, regions, latency columns)
 - Manual verification button
-- Future: Optional CCT sync for JetEngine users
+- ✅ **CCT sync for JetEngine users** (CPT-first with automatic synchronization)
 
 ✅ **Directory REST API (`ai-dir/v1`)**
 - `POST /peers/register` - Ingest peer's well-known doc
@@ -124,16 +124,16 @@ Max score: 100 points
 
 ### CPT vs CCT
 
-**Decision:** Use CPT as primary storage with optional CCT sync (future)
+**Decision:** Use CPT as primary storage with automatic CCT sync for JetEngine users
 
 **Rationale:**
 - ✅ Base version compatible (no JetEngine dependency)
 - ✅ Built-in WordPress admin UI
 - ✅ Standard WordPress APIs
-- ✅ Can add CCT sync later for performance boost
+- ✅ Optional CCT sync provides performance boost for JetEngine users
 - ✅ Follows existing plugin pattern (assistants use CPT + optional CCT)
 
-**Future:** Add CCT sync for JetEngine users (like assistants)
+**Implementation:** ✅ **Complete** - AI Peers now automatically sync to CCT when JetEngine is available
 
 ### Modular Settings
 
@@ -244,7 +244,7 @@ Max score: 100 points
 - Migration tools
 
 ⏳ **Performance**
-- CCT sync for JetEngine
+- ✅ **CCT sync for JetEngine** (Complete - automatic bidirectional awareness)
 - Edge caching via AI gateway
 - Global rate limiting
 - Price comparison routing
@@ -253,7 +253,7 @@ Max score: 100 points
 
 ## Files Changed
 
-### New Files (8)
+### Original Implementation Files (10)
 
 **Core Classes (6):**
 1. `includes/class-wp-mcp-ai-federation.php` - Main bootstrap
@@ -267,15 +267,24 @@ Max score: 100 points
 7. `tests/test-federation.php` - Test suite (12 tests)
 8. `docs/federation-discovery.md` - Comprehensive documentation
 
-### Modified Files (2)
-
+**Modified Files (2):**
 1. `wp-mcp-ai.php` - Bootstrap integration
 2. `includes/admin/class-wp-mcp-ai-admin-settings.php` - Default settings
 
+### CCT Sync Enhancement Files (3)
+
+**New Files (2):**
+1. `includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php` - AI Peers CCT registration (440 lines)
+2. `tests/test-ai-peer-cct-sync.php` - CCT sync test suite (11 tests)
+
+**Modified Files (1):**
+1. `includes/class-wp-mcp-ai-ai-peer-cpt.php` - Added sync methods (180 lines added)
+
 **Total Changes:**
-- ~2,500 lines of code
-- 8 new files
-- 2 modified files
+- Original: ~2,500 lines of code
+- CCT Enhancement: ~620 lines of code
+- Combined: ~3,120 lines of code
+- 11 total files (3 new for CCT sync)
 - 100% PHP lint passed
 - Code review: No issues
 - Security scan: No vulnerabilities
