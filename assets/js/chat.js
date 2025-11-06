@@ -6000,10 +6000,13 @@
                 if (list.items.length > 0) {
                     const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
                     if (listStack.length > 0) {
-                        // Nested list - append to parent's last item
+                        // Nested list - append to parent's last item before closing tag
+                        // This is safe because we control the HTML generation and </li> only appears
+                        // at the end of each list item string we create
                         const parent = listStack[listStack.length - 1];
                         if (parent.items.length > 0) {
-                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+                            const lastItemIndex = parent.items.length - 1;
+                            parent.items[lastItemIndex] = parent.items[lastItemIndex].replace('</li>', html + '</li>');
                         }
                     } else {
                         // Top-level list - add to HTML parts
@@ -6018,8 +6021,8 @@
             if (!match) {
                 return 0;
             }
-            // Count spaces and tabs (tabs count as 4 spaces)
-            const spaces = match[1].replace(/\t/g, '    ');
+            // Count spaces and tabs (1 tab = 2 spaces for indent calculation)
+            const spaces = match[1].replace(/\t/g, '  ');
             return Math.floor(spaces.length / 2); // 2 spaces = 1 indent level
         }
 
@@ -6046,21 +6049,24 @@
             // If we need a deeper list or different type, create new list
             if (listStack.length === 0 || listStack.length <= targetDepth) {
                 listStack.push({ type: listType, items: [] });
-            } else if (listStack[targetDepth] && listStack[targetDepth].type !== listType) {
-                // Different list type at this level - close and start new
-                const list = listStack.pop();
-                if (list.items.length > 0) {
-                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
-                    if (listStack.length > 0) {
-                        const parent = listStack[listStack.length - 1];
-                        if (parent.items.length > 0) {
-                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+            } else {
+                // Check if current list type matches; if not, close and start new
+                const currentList = listStack[listStack.length - 1];
+                if (currentList.type !== listType) {
+                    const list = listStack.pop();
+                    if (list.items.length > 0) {
+                        const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
+                        if (listStack.length > 0) {
+                            const parent = listStack[listStack.length - 1];
+                            if (parent.items.length > 0) {
+                                parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+                            }
+                        } else {
+                            htmlParts.push(html);
                         }
-                    } else {
-                        htmlParts.push(html);
                     }
+                    listStack.push({ type: listType, items: [] });
                 }
-                listStack.push({ type: listType, items: [] });
             }
 
             // Add item to current list
