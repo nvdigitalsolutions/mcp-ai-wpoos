@@ -488,16 +488,35 @@
             }
         }
         
-        // Save expanded state to localStorage
+        // Save expanded state to localStorage (after toggle completes)
         $(document).on('click', '.wp-mcp-ai-section__header', function() {
-            const expandedIds = [];
-            $('.wp-mcp-ai-section--expanded').each(function() {
-                const id = $(this).attr('id');
-                if (id) {
-                    expandedIds.push(id);
-                }
-            });
-            localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+            // Use requestAnimationFrame to ensure this runs after the DOM has updated
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(function() {
+                    const expandedIds = [];
+                    $('.wp-mcp-ai-section--expanded').each(function() {
+                        const id = $(this).attr('id');
+                        if (id) {
+                            expandedIds.push(id);
+                        }
+                    });
+                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                    log('Saved expanded sections to localStorage:', expandedIds);
+                });
+            } else {
+                // Fallback for older browsers
+                setTimeout(function() {
+                    const expandedIds = [];
+                    $('.wp-mcp-ai-section--expanded').each(function() {
+                        const id = $(this).attr('id');
+                        if (id) {
+                            expandedIds.push(id);
+                        }
+                    });
+                    localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+                    log('Saved expanded sections to localStorage:', expandedIds);
+                }, 50);
+            }
         });
         
         log('Accordion initialized');
@@ -506,14 +525,17 @@
     $(function () {
         log('DOM ready, initializing WP oOS admin handlers...');
         
-        // Check if wpMcpAiAdmin is defined
+        // Initialize accordion first - it doesn't require wpMcpAiAdmin
+        initAccordion();
+        
+        // Check if wpMcpAiAdmin is defined for AJAX features
         if (typeof wpMcpAiAdmin === 'undefined') {
-            console.error('[WP oOS] ERROR: wpMcpAiAdmin is not defined! Script may not be properly enqueued.');
+            console.warn('[WP oOS] WARNING: wpMcpAiAdmin is not defined! AJAX features will not be available, but accordion should work.');
+            log('All admin handlers initialized (accordion only - no AJAX)');
             return;
         }
         log('wpMcpAiAdmin loaded:', wpMcpAiAdmin);
         
-        initAccordion();
         initColorPickers();
         initOllamaHandlers();
         initLMStudioHandlers();
