@@ -115,12 +115,15 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	gap: 1rem;
 	padding: 1rem 1.25rem;
 	cursor: pointer;
 	user-select: none;
 	background: #f9fafb;
 	border-bottom: 1px solid transparent;
 	transition: all 0.15s ease;
+	position: relative;
+	z-index: 1;
 }
 
 .wp-mcp-ai-section__header:hover {
@@ -199,6 +202,9 @@
 	border-radius: 12px;
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
+	flex-shrink: 0;
+	margin-left: auto;
+	margin-right: 0.5rem;
 }
 
 .wp-mcp-ai-section__badge--configured {
@@ -225,6 +231,7 @@
 	border-radius: 4px;
 	transition: all 0.2s ease;
 	color: #64748b;
+	flex-shrink: 0;
 }
 
 .wp-mcp-ai-section__toggle:hover {
@@ -250,12 +257,16 @@
 .wp-mcp-ai-section__content {
 	max-height: 0;
 	overflow: hidden;
-	transition: max-height 0.3s ease-out;
+	opacity: 0;
+	visibility: hidden;
+	transition: max-height 0.3s ease-out, opacity 0.2s ease-out, visibility 0s 0.3s;
 }
 
 .wp-mcp-ai-section--expanded .wp-mcp-ai-section__content {
-	max-height: 5000px;
-	transition: max-height 0.5s ease-in;
+	max-height: 10000px;
+	opacity: 1;
+	visibility: visible;
+	transition: max-height 0.5s ease-in, opacity 0.3s ease-in 0.1s, visibility 0s 0s;
 }
 
 .wp-mcp-ai-section__body {
