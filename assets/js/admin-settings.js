@@ -3,6 +3,11 @@
  * This is called by inline onclick handlers for direct expansion control
  */
 window.wpMcpAiToggleSection = function(headerElement) {
+    // Validate that headerElement is a valid DOM element
+    if (!headerElement || !headerElement.nodeType || headerElement.nodeType !== 1) {
+        return;
+    }
+    
     const section = headerElement.closest('.wp-mcp-ai-section');
     if (!section) return;
     
@@ -30,14 +35,11 @@ window.wpMcpAiToggleSection = function(headerElement) {
  * Save expanded section state to localStorage
  */
 window.wpMcpAiSaveExpandedState = function() {
-    const expandedIds = [];
     const sections = document.querySelectorAll('.wp-mcp-ai-section--expanded');
-    sections.forEach(function(section) {
-        const id = section.getAttribute('id');
-        if (id) {
-            expandedIds.push(id);
-        }
-    });
+    const expandedIds = Array.from(sections)
+        .map(function(section) { return section.getAttribute('id'); })
+        .filter(function(id) { return id; });
+    
     try {
         localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
     } catch (e) {
