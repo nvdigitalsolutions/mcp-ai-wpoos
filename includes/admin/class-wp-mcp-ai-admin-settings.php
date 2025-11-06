@@ -2421,6 +2421,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			wp_enqueue_style( 'wp-color-picker' );
+			wp_enqueue_style(
+				'wp-mcp-ai-admin-settings',
+				WP_MCP_AI_URL . 'assets/css/admin-settings.css',
+				array(),
+				WP_MCP_AI_VERSION
+			);
 			wp_enqueue_script(
 				'wp-mcp-ai-admin-settings',
 				WP_MCP_AI_URL . 'assets/js/admin-settings.js',
@@ -2438,6 +2444,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				)
 			);
 
+			// Legacy inline styles removed - now using external CSS file
 			$inline_styles = '.wp-mcp-ai-chat-colors__group{margin-bottom:1.5rem;padding:1rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;}'
 			. '.wp-mcp-ai-chat-colors__group legend{font-weight:600;margin-bottom:0.5rem;}'
 			. '.wp-mcp-ai-chat-colors__field{margin-bottom:1rem;}'
@@ -2484,6 +2491,88 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Get metadata for section grouping and display.
+		 *
+		 * @return array
+		 */
+		private function get_section_metadata() {
+			return array(
+				'wp_mcp_ai_openai_section'         => array(
+					'icon'     => '🤖',
+					'title'    => __( 'OpenAI Configuration', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Configure OpenAI API and model settings', 'wp-mcp-ai' ),
+					'category' => 'ai',
+				),
+				'wp_mcp_ai_gemini_section'         => array(
+					'icon'     => '✨',
+					'title'    => __( 'Gemini Configuration', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Google Gemini model settings', 'wp-mcp-ai' ),
+					'category' => 'ai',
+				),
+				'wp_mcp_ai_ollama_section'         => array(
+					'icon'     => '🦙',
+					'title'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Connect to local Ollama instance', 'wp-mcp-ai' ),
+					'category' => 'ai',
+				),
+				'wp_mcp_ai_lm_studio_section'      => array(
+					'icon'     => '💻',
+					'title'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Connect to LM Studio server', 'wp-mcp-ai' ),
+					'category' => 'ai',
+				),
+				'wp_mcp_ai_authentication_section' => array(
+					'icon'     => '🔐',
+					'title'    => __( 'Authentication', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Auth0 and JWT login settings', 'wp-mcp-ai' ),
+					'category' => 'security',
+				),
+				'wp_mcp_ai_mesh_section'           => array(
+					'icon'     => '🌐',
+					'title'    => __( 'Mesh Network', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Multi-site mesh configuration', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+				'wp_mcp_ai_integrations_section'   => array(
+					'icon'     => '🔌',
+					'title'    => __( 'External Integrations', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Third-party service connectors', 'wp-mcp-ai' ),
+					'category' => 'integration',
+				),
+				'wp_mcp_ai_image_section'          => array(
+					'icon'     => '🖼️',
+					'title'    => __( 'Image Generation', 'wp-mcp-ai' ),
+					'subtitle' => __( 'OpenAI DALL-E settings', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+				'wp_mcp_ai_speech_section'         => array(
+					'icon'     => '🔊',
+					'title'    => __( 'Speech Synthesis', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Text-to-speech configuration', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+				'wp_mcp_ai_chat_colors_section'    => array(
+					'icon'     => '🎨',
+					'title'    => __( 'Chat Interface Colors', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Customize chat UI appearance', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+				'wp_mcp_ai_advanced_section'       => array(
+					'icon'     => '⚙️',
+					'title'    => __( 'Advanced Settings', 'wp-mcp-ai' ),
+					'subtitle' => __( 'File handling, memory, and REST API', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+				'wp_mcp_ai_high_token_section'     => array(
+					'icon'     => '📊',
+					'title'    => __( 'High Token Handling', 'wp-mcp-ai' ),
+					'subtitle' => __( 'Automatic model switching for large data', 'wp-mcp-ai' ),
+					'category' => 'advanced',
+				),
+			);
+		}
+
+		/**
 		 * Render the settings page contents.
 		 */
 		public function render_settings_page() {
@@ -2493,11 +2582,45 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			$settings           = self::get_settings();
 			$connector_statuses = $this->get_connector_statuses( $settings );
+			$section_metadata   = $this->get_section_metadata();
+
+			// Calculate dashboard stats.
+			$total_connectors = count( $connector_statuses );
+			$configured       = 0;
+			$incomplete       = 0;
+			foreach ( $connector_statuses as $connector ) {
+				if ( 'ready' === $connector['status'] ) {
+					++$configured;
+				} elseif ( 'partial' === $connector['status'] ) {
+					++$incomplete;
+				}
+			}
 			?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
+
+			<!-- Dashboard Overview -->
+			<div class="wp-mcp-ai-dashboard">
+				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--success">
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Configured', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $configured ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Connectors ready', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--warning">
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Incomplete', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $incomplete ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Needs attention', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--info">
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Total', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__value"><?php echo absint( $total_connectors ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Available connectors', 'wp-mcp-ai' ); ?></p>
+				</div>
+			</div>
+
 			<?php $this->render_error_log_section(); ?>
+			
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
@@ -2528,13 +2651,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					</ul>
 				</div>
 			<?php endif; ?>
+
 			<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
-				<?php
-				settings_fields( self::SETTINGS_GROUP );
-				submit_button();
-				do_settings_sections( self::PAGE_SLUG );
-				submit_button();
-				?>
+				<?php settings_fields( self::SETTINGS_GROUP ); ?>
+				<?php submit_button(); ?>
+
+				<!-- Accordion Controls -->
+				<div class="wp-mcp-ai-settings-controls">
+					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-expand-all"><?php esc_html_e( 'Expand All', 'wp-mcp-ai' ); ?></button>
+					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-collapse-all"><?php esc_html_e( 'Collapse All', 'wp-mcp-ai' ); ?></button>
+				</div>
+
+				<!-- Collapsible Settings Sections -->
+				<div class="wp-mcp-ai-settings-accordion">
+					<?php $this->render_collapsible_sections( $section_metadata ); ?>
+				</div>
+
+				<?php submit_button(); ?>
 			</form>
 				<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
 				<form id="wp-mcp-ai-prune-log-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: none;">
@@ -2544,6 +2677,83 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php endif; ?>
 		</div>
 			<?php
+		}
+
+		/**
+		 * Render collapsible sections with accordion markup.
+		 *
+		 * @param array $section_metadata Section metadata array.
+		 */
+		private function render_collapsible_sections( $section_metadata ) {
+			global $wp_settings_sections, $wp_settings_fields;
+
+			if ( ! isset( $wp_settings_sections[ self::PAGE_SLUG ] ) ) {
+				return;
+			}
+
+			foreach ( $wp_settings_sections[ self::PAGE_SLUG ] as $section ) {
+				$section_id = $section['id'];
+				$metadata   = isset( $section_metadata[ $section_id ] ) ? $section_metadata[ $section_id ] : array();
+				
+				// Default values.
+				$icon     = isset( $metadata['icon'] ) ? $metadata['icon'] : '⚙️';
+				$title    = isset( $metadata['title'] ) ? $metadata['title'] : $section['title'];
+				$subtitle = isset( $metadata['subtitle'] ) ? $metadata['subtitle'] : '';
+				$category = isset( $metadata['category'] ) ? $metadata['category'] : 'advanced';
+
+				// Check if section has fields.
+				$has_fields = isset( $wp_settings_fields[ self::PAGE_SLUG ][ $section_id ] );
+
+				if ( ! $has_fields ) {
+					continue;
+				}
+
+				// Determine badge based on section completion.
+				$badge       = '';
+				$badge_class = '';
+				if ( 'ai' === $category ) {
+					$badge       = __( 'AI', 'wp-mcp-ai' );
+					$badge_class = 'configured';
+				}
+				?>
+				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>" aria-expanded="false">
+					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
+						<div class="wp-mcp-ai-section__header-left">
+							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
+							<div class="wp-mcp-ai-section__title-wrapper">
+								<h2 class="wp-mcp-ai-section__title"><?php echo esc_html( $title ); ?></h2>
+								<?php if ( $subtitle ) : ?>
+									<p class="wp-mcp-ai-section__subtitle"><?php echo esc_html( $subtitle ); ?></p>
+								<?php endif; ?>
+							</div>
+						</div>
+						<?php if ( $badge ) : ?>
+							<span class="wp-mcp-ai-section__badge wp-mcp-ai-section__badge--<?php echo esc_attr( $badge_class ); ?>"><?php echo esc_html( $badge ); ?></span>
+						<?php endif; ?>
+						<div class="wp-mcp-ai-section__toggle">
+							<span class="wp-mcp-ai-section__toggle-icon"></span>
+						</div>
+					</div>
+					<div class="wp-mcp-ai-section__content">
+						<div class="wp-mcp-ai-section__body">
+							<?php
+							if ( $section['callback'] ) {
+								call_user_func( $section['callback'], $section );
+							}
+
+							if ( ! isset( $wp_settings_fields ) || ! isset( $wp_settings_fields[ self::PAGE_SLUG ] ) || ! isset( $wp_settings_fields[ self::PAGE_SLUG ][ $section_id ] ) ) {
+								continue;
+							}
+
+							echo '<table class="form-table" role="presentation">';
+							do_settings_fields( self::PAGE_SLUG, $section_id );
+							echo '</table>';
+							?>
+						</div>
+					</div>
+				</div>
+				<?php
+			}
 		}
 
 		/**

@@ -429,6 +429,81 @@
         });
     }
 
+    /**
+     * Initialize collapsible accordion sections
+     */
+    function initAccordion() {
+        log('Initializing accordion sections...');
+        
+        // Handle section header clicks
+        $(document).on('click', '.wp-mcp-ai-section__header', function(e) {
+            e.preventDefault();
+            const $section = $(this).closest('.wp-mcp-ai-section');
+            const $content = $section.find('.wp-mcp-ai-section__content');
+            const isExpanded = $section.hasClass('wp-mcp-ai-section--expanded');
+            
+            if (isExpanded) {
+                $section.removeClass('wp-mcp-ai-section--expanded');
+                $section.attr('aria-expanded', 'false');
+            } else {
+                $section.addClass('wp-mcp-ai-section--expanded');
+                $section.attr('aria-expanded', 'true');
+            }
+            
+            log('Section toggled:', $section.find('.wp-mcp-ai-section__title').text());
+        });
+        
+        // Expand all button
+        $(document).on('click', '.wp-mcp-ai-expand-all', function(e) {
+            e.preventDefault();
+            $('.wp-mcp-ai-section').addClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'true');
+            log('All sections expanded');
+        });
+        
+        // Collapse all button
+        $(document).on('click', '.wp-mcp-ai-collapse-all', function(e) {
+            e.preventDefault();
+            $('.wp-mcp-ai-section').removeClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'false');
+            log('All sections collapsed');
+        });
+        
+        // Keyboard accessibility
+        $(document).on('keydown', '.wp-mcp-ai-section__header', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                $(this).click();
+            }
+        });
+        
+        // Restore expanded state from localStorage
+        const expandedSections = localStorage.getItem('wp_mcp_ai_expanded_sections');
+        if (expandedSections) {
+            try {
+                const sections = JSON.parse(expandedSections);
+                sections.forEach(function(id) {
+                    $('#' + id).addClass('wp-mcp-ai-section--expanded').attr('aria-expanded', 'true');
+                });
+                log('Restored expanded sections from localStorage:', sections);
+            } catch (e) {
+                log('Error parsing expanded sections:', e);
+            }
+        }
+        
+        // Save expanded state to localStorage
+        $(document).on('click', '.wp-mcp-ai-section__header', function() {
+            const expandedIds = [];
+            $('.wp-mcp-ai-section--expanded').each(function() {
+                const id = $(this).attr('id');
+                if (id) {
+                    expandedIds.push(id);
+                }
+            });
+            localStorage.setItem('wp_mcp_ai_expanded_sections', JSON.stringify(expandedIds));
+        });
+        
+        log('Accordion initialized');
+    }
+
     $(function () {
         log('DOM ready, initializing WP oOS admin handlers...');
         
@@ -439,6 +514,7 @@
         }
         log('wpMcpAiAdmin loaded:', wpMcpAiAdmin);
         
+        initAccordion();
         initColorPickers();
         initOllamaHandlers();
         initLMStudioHandlers();
