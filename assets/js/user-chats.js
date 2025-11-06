@@ -341,6 +341,25 @@
 
             state.sessionButtons[buttonKey] = button;
             listItem.appendChild(button);
+            
+            // Add "Load into chat" button if target chat widget is available
+            if (state.config.targetChatWidget) {
+                const loadButton = document.createElement('button');
+                loadButton.type = 'button';
+                loadButton.className = 'wp-mcp-ai-user-chats__load-button';
+                loadButton.textContent = getString(state, 'loadIntoChat', 'Load into chat');
+                loadButton.setAttribute('aria-label', getString(state, 'loadIntoChatLabel', 'Load this conversation into the chat window'));
+                
+                (function attachLoadListener(instanceState, sessionData, loadButtonEl) {
+                    loadButtonEl.addEventListener('click', function (event) {
+                        event.stopPropagation();
+                        loadSessionIntoTargetChat(instanceState, sessionData);
+                    });
+                })(state, session, loadButton);
+                
+                listItem.appendChild(loadButton);
+            }
+            
             state.listEl.appendChild(listItem);
         }
     }
@@ -437,6 +456,87 @@
         state.listWrapper.hidden = true;
         state.conversationWrapper.hidden = false;
         setStatus(state, '');
+    }
+
+    function loadSessionIntoTargetChat(state, session) {
+        if (!session || !state.config.targetChatWidget) {
+            return;
+        }
+
+        // Check if the global API is available
+        if (typeof window.wpMcpAiLoadSession !== 'function') {
+            setStatus(state, getString(state, 'errorLoadingIntoChat', 'Unable to load into chat. Please refresh the page.'));
+            return;
+        }
+
+        const sessionKey = session.session_key || '';
+        
+        // If we already have the full session details with messages, use them directly
+        if (session.messages && Array.isArray(session.messages) && session.messages.length > 0) {
+            const success = window.wpMcpAiLoadSession({
+                sessionKey: sessionKey,
+                assistantId: session.assistant_id,
+                messages: session.messages,
+                target: state.config.targetChatWidget
+            });
+
+            if (success) {
+                setStatus(state, getString(state, 'loadedIntoChat', 'Conversation loaded into chat.'));
+            } else {
+                setStatus(state, getString(state, 'errorLoadingIntoChat', 'Unable to load into chat. Target widget not found.'));
+            }
+            return;
+        }
+
+        // Otherwise, fetch the full session details first
+        const url = buildRestUrl({
+            session_key: sessionKey,
+            user_id: state.config.userId
+        });
+
+        if (!url) {
+            setStatus(state, getString(state, 'errorLoadingIntoChat', 'Unable to load into chat.'));
+            return;
+        }
+
+        setStatus(state, getString(state, 'loadingIntoChat', 'Loading into chat…'));
+
+        fetch(url, {
+            credentials: 'same-origin',
+            headers: buildHeaders()
+        })
+            .then(function (response) {
+                return response.json().catch(function () {
+                    return {};
+                }).then(function (body) {
+                    if (!response.ok) {
+                        throw new Error(body && body.message ? body.message : 'Load failed');
+                    }
+                    return body;
+                });
+            })
+            .then(function (data) {
+                if (!data || !data.session || !data.session.messages) {
+                    throw new Error('Invalid session data');
+                }
+
+                const success = window.wpMcpAiLoadSession({
+                    sessionKey: sessionKey,
+                    assistantId: data.session.assistant_id,
+                    messages: data.session.messages,
+                    target: state.config.targetChatWidget
+                });
+
+                if (success) {
+                    setStatus(state, getString(state, 'loadedIntoChat', 'Conversation loaded into chat.'));
+                } else {
+                    setStatus(state, getString(state, 'errorLoadingIntoChat', 'Unable to load into chat. Target widget not found.'));
+                }
+            })
+            .catch(function (error) {
+                const message = error && error.message ? error.message : getString(state, 'errorLoadingIntoChat', 'Unable to load into chat.');
+                setStatus(state, message);
+            });
     }
 
     function showSessionList(state) {
@@ -609,13 +709,46 @@
         if (isNaN(maxSessions)) {
             maxSessions = 0;
         }
+        
+        // Get target chat widget configuration
+        let targetChatWidget = config.targetChatWidget || null;
+        
+        // Auto-detect: find first chat widget if no target specified
+        if (!targetChatWidget) {
+            const chatWidgets = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+            if (chatWidgets.length === 1) {
+                // If there's only one chat widget, use it as the target
+                targetChatWidget = chatWidgets[0];
+            } else if (chatWidgets.length > 1) {
+                // If there are multiple, try to find the closest one
+                let closestWidget = null;
+                let closestDistance = Infinity;
+                
+                for (let i = 0; i < chatWidgets.length; i++) {
+                    const widget = chatWidgets[i];
+                    // Calculate rough "distance" by comparing positions
+                    const containerRect = container.getBoundingClientRect();
+                    const widgetRect = widget.getBoundingClientRect();
+                    const distance = Math.abs(containerRect.top - widgetRect.top) + 
+                                   Math.abs(containerRect.left - widgetRect.left);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestWidget = widget;
+                    }
+                }
+                
+                targetChatWidget = closestWidget;
+            }
+        }
 
         const strings = mergeStrings(config.strings);
         const state = {
             container: container,
             config: {
                 userId: userId,
-                maxSessions: maxSessions
+                maxSessions: maxSessions,
+                targetChatWidget: targetChatWidget
             },
             strings: strings,
             roleLabels: strings.roleLabels || {},

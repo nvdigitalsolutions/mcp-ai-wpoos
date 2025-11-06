@@ -194,6 +194,16 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			)
 		);
 
+		$this->add_control(
+			'target_chat_widget',
+			array(
+				'label'       => __( 'Target Chat Widget', 'wp-mcp-ai' ),
+				'type'        => \Elementor\Controls_Manager::TEXT,
+				'description' => __( 'CSS selector for the target chat widget (e.g., #my-chat-widget). Leave empty to auto-detect the closest chat widget.', 'wp-mcp-ai' ),
+				'label_block' => true,
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->register_theme_style_controls(
@@ -236,6 +246,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$no_user_message       = isset( $settings['no_user_message'] ) ? $settings['no_user_message'] : '';
 		$empty_session_message = isset( $settings['empty_session_message'] ) ? $settings['empty_session_message'] : '';
 		$select_prompt_message = isset( $settings['select_prompt_message'] ) ? $settings['select_prompt_message'] : '';
+		$target_chat_widget    = isset( $settings['target_chat_widget'] ) ? $settings['target_chat_widget'] : '';
 
 		if ( 'specific' === $user_mode ) {
 			$user_id = absint( $user_id_setting );
@@ -280,13 +291,19 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		$this->enqueue_assets();
 
 		$config = array(
-			'userId'      => $user_id,
-			'maxSessions' => $max_sessions,
-			'strings'     => array(
-				'emptyList'     => $empty_message,
-				'emptySession'  => $empty_session_message,
-				'selectPrompt'  => $select_prompt_message,
-				'noUserMessage' => $no_user_message,
+			'userId'           => $user_id,
+			'maxSessions'      => $max_sessions,
+			'targetChatWidget' => $target_chat_widget,
+			'strings'          => array(
+				'emptyList'           => $empty_message,
+				'emptySession'        => $empty_session_message,
+				'selectPrompt'        => $select_prompt_message,
+				'noUserMessage'       => $no_user_message,
+				'loadIntoChat'        => __( 'Load into chat', 'wp-mcp-ai' ),
+				'loadIntoChatLabel'   => __( 'Load this conversation into the chat window', 'wp-mcp-ai' ),
+				'loadingIntoChat'     => __( 'Loading into chat…', 'wp-mcp-ai' ),
+				'loadedIntoChat'      => __( 'Conversation loaded into chat.', 'wp-mcp-ai' ),
+				'errorLoadingIntoChat' => __( 'Unable to load into chat.', 'wp-mcp-ai' ),
 			),
 		);
 
