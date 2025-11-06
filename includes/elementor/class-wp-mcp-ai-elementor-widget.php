@@ -103,6 +103,19 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'enable_streaming',
+			array(
+				'label'        => __( 'Enable SSE Streaming', 'wp-mcp-ai' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
+				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'return_value' => 'true',
+				'default'      => 'false',
+				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated.', 'wp-mcp-ai' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -1073,6 +1086,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$save_transcript = empty( $settings['save_transcript'] ) || 'true' === $settings['save_transcript'];
 		if ( ! $save_transcript ) {
 			$attributes['save_transcript'] = 'false';
+		}
+
+		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'true' === $settings['enable_streaming'];
+		if ( $enable_streaming ) {
+			$attributes['enable_streaming'] = 'true';
 		}
 
 		$shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
