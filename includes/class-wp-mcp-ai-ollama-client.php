@@ -249,9 +249,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 
 			if ( isset( $response['prompt_eval_count'] ) || isset( $response['eval_count'] ) ) {
+				$prompt_tokens     = isset( $response['prompt_eval_count'] ) ? (int) $response['prompt_eval_count'] : 0;
+				$completion_tokens = isset( $response['eval_count'] ) ? (int) $response['eval_count'] : 0;
+
 				$normalized['usage'] = array(
-					'prompt_tokens'     => isset( $response['prompt_eval_count'] ) ? (int) $response['prompt_eval_count'] : 0,
-					'completion_tokens' => isset( $response['eval_count'] ) ? (int) $response['eval_count'] : 0,
+					'prompt_tokens'     => $prompt_tokens,
+					'completion_tokens' => $completion_tokens,
+					'total_tokens'      => $prompt_tokens + $completion_tokens,
 				);
 			}
 

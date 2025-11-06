@@ -880,6 +880,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$usage['completion_tokens'] = (int) $accumulated['usage']['candidatesTokenCount'];
 				}
 
+				if ( isset( $accumulated['usage']['totalTokenCount'] ) ) {
+					$usage['total_tokens'] = (int) $accumulated['usage']['totalTokenCount'];
+				}
+
 				if ( ! empty( $usage ) ) {
 					$normalized['usage'] = $usage;
 				}
@@ -1940,6 +1944,10 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 				if ( isset( $response['usageMetadata']['candidatesTokenCount'] ) ) {
 					$usage['completion_tokens'] = (int) $response['usageMetadata']['candidatesTokenCount'];
+				}
+
+				if ( isset( $response['usageMetadata']['totalTokenCount'] ) ) {
+					$usage['total_tokens'] = (int) $response['usageMetadata']['totalTokenCount'];
 				}
 
 				if ( ! empty( $usage ) ) {
