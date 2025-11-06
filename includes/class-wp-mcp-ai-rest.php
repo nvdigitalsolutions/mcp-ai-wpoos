@@ -6196,7 +6196,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string
 		 */
 		protected function format_transcript_timestamp( $primary, $fallback = '' ) {
-			// Try primary value first (can be integer timestamp or string)
+			// Try primary value first (can be integer timestamp or string).
 			$timestamp = false;
 
 			if ( is_numeric( $primary ) && $primary > 0 ) {
@@ -6205,7 +6205,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$timestamp = strtotime( $primary );
 			}
 
-			// Try fallback if primary didn't work
+			// Try fallback if primary didn't work.
 			if ( false === $timestamp && is_string( $fallback ) && '' !== $fallback ) {
 				$timestamp = strtotime( $fallback );
 			}
