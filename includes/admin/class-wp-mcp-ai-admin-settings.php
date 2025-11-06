@@ -2654,7 +2654,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			<form action="<?php echo esc_url( admin_url( 'options.php' ) ); ?>" method="post">
 				<?php settings_fields( self::SETTINGS_GROUP ); ?>
-				<?php submit_button(); ?>
+				<?php submit_button( null, 'primary', 'submit', true, array( 'id' => 'submit-top' ) ); ?>
 
 				<!-- Accordion Controls -->
 				<div class="wp-mcp-ai-settings-controls">
@@ -2667,7 +2667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					<?php $this->render_collapsible_sections( $section_metadata ); ?>
 				</div>
 
-				<?php submit_button(); ?>
+				<?php submit_button( null, 'primary', 'submit', true, array( 'id' => 'submit-bottom' ) ); ?>
 			</form>
 				<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
 				<form id="wp-mcp-ai-prune-log-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: none;">
@@ -2694,7 +2694,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			foreach ( $wp_settings_sections[ self::PAGE_SLUG ] as $section ) {
 				$section_id = $section['id'];
 				$metadata   = isset( $section_metadata[ $section_id ] ) ? $section_metadata[ $section_id ] : array();
-				
+
 				// Default values.
 				$icon     = isset( $metadata['icon'] ) ? $metadata['icon'] : '⚙️';
 				$title    = isset( $metadata['title'] ) ? $metadata['title'] : $section['title'];
@@ -2717,6 +2717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				}
 				?>
 				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>" aria-expanded="false">
+					<?php /* translators: %s: section title */ ?>
 					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
 						<div class="wp-mcp-ai-section__header-left">
 							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
