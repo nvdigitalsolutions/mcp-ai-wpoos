@@ -2367,7 +2367,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			. '.wp-mcp-ai-connector-checklist__item--missing .wp-mcp-ai-connector-checklist__status{color:#b91c1c;}'
 			. '.wp-mcp-ai-connector-checklist__item--inactive{background:#f8fafc;border-color:#cbd5f5;}'
 			. '.wp-mcp-ai-connector-checklist__item--inactive .wp-mcp-ai-connector-checklist__status{color:#1e3a8a;}'
-			. '.wp-mcp-ai-error-log-section{margin-top:2rem;padding:1.25rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;box-shadow:0 1px 2px rgba(15,23,42,0.05);}'
+			. '.wp-mcp-ai-error-log-section{margin-bottom:2rem;padding:1.25rem;background:#fff;border:1px solid #dcdcde;border-radius:4px;box-shadow:0 1px 2px rgba(15,23,42,0.05);}'
 			. '.wp-mcp-ai-error-log-section h2{margin-top:0;margin-bottom:0.75rem;font-size:1.25rem;border-bottom:1px solid #e2e8f0;padding-bottom:0.5rem;}'
 			. '.wp-mcp-ai-log-preview{margin:1rem 0;padding:0;list-style:none;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;max-height:400px;overflow-y:auto;}'
 			. '.wp-mcp-ai-log-preview li{padding:0.75rem 1rem;border-bottom:1px solid #e2e8f0;font-family:monospace;font-size:0.875rem;}'
@@ -2401,6 +2401,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'WP oOS Settings', 'wp-mcp-ai' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
+			<?php $this->render_error_log_section(); ?>
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
@@ -2438,7 +2439,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				submit_button();
 				?>
 			</form>
-				<?php $this->render_error_log_section(); ?>
 				<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
 				<form id="wp-mcp-ai-prune-log-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display: none;">
 					<?php wp_nonce_field( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' ); ?>
