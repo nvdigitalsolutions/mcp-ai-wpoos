@@ -36,7 +36,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends an email using the WordPress mailer to the recipients defined in an uploaded file.', 'wp-mcp-ai' );
+		return __( 'Sends an email using the WordPress mailer to recipients. Email content (subject, message, recipients) can be provided directly as parameters or loaded from uploaded attachment files in JSON or plain text format.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -48,15 +48,15 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 			'properties'           => array(
 				'subject'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional subject override for the email.', 'wp-mcp-ai' ),
+					'description' => __( 'Email subject line. Can be provided here or in attachment file.', 'wp-mcp-ai' ),
 				),
 				'message'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional message to prepend to the file contents.', 'wp-mcp-ai' ),
+					'description' => __( 'Email message content. Can be provided here or in attachment file.', 'wp-mcp-ai' ),
 				),
 				'recipients'     => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of recipients. Each entry may be a string email address or object containing an email field.', 'wp-mcp-ai' ),
+					'description' => __( 'List of email recipients. Can be provided here or in attachment file. Each entry may be a string email address or object containing an email field.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'oneOf' => array(
 							array( 'type' => 'string' ),
@@ -74,11 +74,11 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 				),
 				'attachment_id'  => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'WordPress attachment ID describing the email payload.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional WordPress attachment ID containing email definition (JSON or plain text format).', 'wp-mcp-ai' ),
 				),
 				'attachment_ids' => array(
 					'type'        => 'array',
-					'description' => __( 'List of WordPress attachment IDs describing email payloads.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of WordPress attachment IDs to combine into one email.', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => array( 'integer', 'string' ),
 					),
@@ -138,9 +138,6 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
 		);
 
 		$attachment_ids = $this->gather_attachment_ids( $arguments );
-		if ( empty( $attachment_ids ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_attachment', __( 'An attachment describing the group email must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
-		}
 
 		foreach ( $attachment_ids as $attachment_id ) {
 			$parsed = $this->parse_email_definition_attachment( $attachment_id );
