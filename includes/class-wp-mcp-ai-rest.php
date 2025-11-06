@@ -6694,11 +6694,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
 			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
+				/* translators: %s: tool name */
 				return new WP_Error( 'wp_mcp_ai_tool_forbidden', sprintf( __( 'Tool "%s" is not allowed for this assistant.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 403 ) );
 			}
 
 			$tool = $this->registry->get_tool( $tool_slug );
 			if ( ! $tool ) {
+				/* translators: %s: tool name */
 				return new WP_Error( 'wp_mcp_ai_tool_missing', sprintf( __( 'Tool "%s" is not registered.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 404 ) );
 			}
 
