@@ -192,6 +192,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'enable_mesh'                       => false,
 				'mesh_inbound_api_key'              => '',
 				'mesh_peer_sites'                   => array(),
+				'enable_federation'                 => false,
+				'enable_federation_directory'       => false,
+				'federation_regions'                => 'global',
+				'federation_data_tags'              => '',
+				'federation_qps'                    => 5,
+				'federation_burst'                  => 10,
+				'federation_jwks_keys'              => array(),
+				'federation_price_hints'            => array(),
 			);
 		}
 

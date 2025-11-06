@@ -196,6 +196,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
+// Load federation system components.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-wellknown.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ai-peer-cpt.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
+
 // Load third-party plugin integrations only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
@@ -324,6 +332,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		public $resource_manager;
 
 		/**
+		 * Federation system instance.
+		 *
+		 * @var WP_MCP_AI_Federation
+		 */
+		public $federation;
+
+		/**
 		 * Output buffer level when starting Elementor AJAX buffering.
 		 *
 		 * @var int|null
@@ -368,6 +383,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
 			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
 			$this->shortcodes         = new WP_MCP_AI_Shortcodes();
+			$this->federation         = new WP_MCP_AI_Federation( $registry );
 
 			if ( is_admin() ) {
 				$this->admin_cron_manager = new WP_MCP_AI_Admin_Cron_Manager();
