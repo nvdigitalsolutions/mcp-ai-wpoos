@@ -2340,6 +2340,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 *
 	 * Streams tool execution status and results in real-time during the agentic loop.
 	 *
+	 * Note: This method uses exit after streaming is complete, which is necessary
+	 * for SSE to work properly. The exit ensures no additional output is sent
+	 * after the [DONE] marker.
+	 *
+	 * Note: While 8 parameters exceeds typical guidelines, this maintains consistency
+	 * with how the non-streaming handler is invoked and keeps all context together.
+	 * Grouping into objects would add unnecessary complexity for internal use.
+	 *
 	 * @param int              $assistant_id        Assistant post ID.
 	 * @param array            $messages            Chat messages array.
 	 * @param array            $options             Chat options.

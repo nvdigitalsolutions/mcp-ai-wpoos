@@ -5220,6 +5220,11 @@
                         return { content: fullContent };
                     }
 
+                    // Skip empty event data
+                    if (!eventData || !eventData.trim()) {
+                        continue;
+                    }
+
                     try {
                         const data = JSON.parse(eventData);
 
@@ -5287,7 +5292,7 @@
             const toolNames = (data.tools || []).join(', ');
             const message = formatString(
                 getString('executingTools', 'Executing tools: %s'),
-                toolNames || getString('tools', 'tools')
+                toolNames || getString('tools', 'multiple tools')
             );
             setStatus(state.container, message);
 
