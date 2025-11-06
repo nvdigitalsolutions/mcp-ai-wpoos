@@ -107,7 +107,7 @@ class WP_MCP_AI_Mesh_Router {
 			}
 
 			$health = self::get_peer_health( $peer_name, $health_metrics );
-			if ( $health['status'] !== 'down' ) {
+			if ( 'down' !== $health['status'] ) {
 				$healthy_peers[] = array_merge( $peer, array( 'health' => $health ) );
 			}
 		}
@@ -153,29 +153,29 @@ class WP_MCP_AI_Mesh_Router {
 	 * @param array  $context       Request context.
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) {
+	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		// Analyze prompt complexity.
 		$complexity_score = self::analyze_prompt_complexity( $prompt );
 
 		// Score each peer based on multiple factors.
 		$scored_peers = array();
 		foreach ( $healthy_peers as $peer ) {
-			$score = 0;
+			$score  = 0;
 			$health = $peer['health'];
 
 			// Factor 1: Response time (lower is better) - 30% weight.
-			$avg_response_time = isset( $health['avg_response_time'] ) ? $health['avg_response_time'] : 5.0;
+			$avg_response_time   = isset( $health['avg_response_time'] ) ? $health['avg_response_time'] : 5.0;
 			$response_time_score = max( 0, 100 - ( $avg_response_time * 10 ) );
-			$score += $response_time_score * 0.3;
+			$score              += $response_time_score * 0.3;
 
 			// Factor 2: Load (lower is better) - 25% weight.
 			$current_load = isset( $health['current_load'] ) ? $health['current_load'] : 0;
-			$load_score = max( 0, 100 - ( $current_load * 5 ) );
-			$score += $load_score * 0.25;
+			$load_score   = max( 0, 100 - ( $current_load * 5 ) );
+			$score       += $load_score * 0.25;
 
 			// Factor 3: Success rate - 25% weight.
 			$success_rate = isset( $health['success_rate'] ) ? $health['success_rate'] : 100;
-			$score += $success_rate * 0.25;
+			$score       += $success_rate * 0.25;
 
 			// Factor 4: Compute hub priority - 20% weight.
 			$is_compute_hub = self::is_compute_hub( $peer, $hub_config );
@@ -220,8 +220,8 @@ class WP_MCP_AI_Mesh_Router {
 	 * @param array $hub_config    Compute hub configuration.
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_round_robin( $healthy_peers, $hub_config ) {
-		$stats = get_option( self::ROUTING_STATS_OPTION, array() );
+	protected static function select_peer_round_robin( $healthy_peers, $hub_config ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		$stats      = get_option( self::ROUTING_STATS_OPTION, array() );
 		$last_index = isset( $stats['last_round_robin_index'] ) ? (int) $stats['last_round_robin_index'] : -1;
 
 		$next_index = ( $last_index + 1 ) % count( $healthy_peers );
@@ -251,15 +251,15 @@ class WP_MCP_AI_Mesh_Router {
 	 */
 	protected static function select_peer_least_loaded( $healthy_peers, $health_metrics ) {
 		$least_loaded = null;
-		$min_load = PHP_INT_MAX;
+		$min_load     = PHP_INT_MAX;
 
 		foreach ( $healthy_peers as $peer ) {
 			$peer_name = isset( $peer['name'] ) ? $peer['name'] : '';
-			$health = self::get_peer_health( $peer_name, $health_metrics );
-			$load = isset( $health['current_load'] ) ? $health['current_load'] : 0;
+			$health    = self::get_peer_health( $peer_name, $health_metrics );
+			$load      = isset( $health['current_load'] ) ? $health['current_load'] : 0;
 
 			if ( $load < $min_load ) {
-				$min_load = $load;
+				$min_load     = $load;
 				$least_loaded = $peer;
 			}
 		}
@@ -332,8 +332,8 @@ class WP_MCP_AI_Mesh_Router {
 		}
 
 		// Execute the query.
-		$start_time = microtime( true );
-		$result = self::execute_peer_query( $peer, $prompt, $context );
+		$start_time    = microtime( true );
+		$result        = self::execute_peer_query( $peer, $prompt, $context );
 		$response_time = microtime( true ) - $start_time;
 
 		// Update health metrics.
@@ -380,7 +380,7 @@ class WP_MCP_AI_Mesh_Router {
 	 * @param array  $context Request context.
 	 * @return array|WP_Error Response or error.
 	 */
-	protected static function execute_peer_query( $peer, $prompt, $context ) {
+	protected static function execute_peer_query( $peer, $prompt, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$peer_url = isset( $peer['url'] ) ? trim( $peer['url'] ) : '';
 		$peer_key = isset( $peer['api_key'] ) ? trim( $peer['api_key'] ) : '';
 
@@ -408,8 +408,8 @@ class WP_MCP_AI_Mesh_Router {
 		);
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
-		$timeout = max( 30, $timeout );
+		$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
+		$timeout  = max( 30, $timeout );
 
 		$response = wp_remote_post(
 			$endpoint_url,
@@ -465,27 +465,27 @@ class WP_MCP_AI_Mesh_Router {
 		$score = 5; // Base score.
 
 		$prompt_lower = strtolower( $prompt );
-		$word_count = str_word_count( $prompt );
+		$word_count   = str_word_count( $prompt );
 
 		// Length factor.
 		if ( $word_count > 100 ) {
 			$score += 2;
 		} elseif ( $word_count > 50 ) {
-			$score += 1;
+			++$score;
 		}
 
 		// Complex keywords.
 		$complex_keywords = array( 'analyze', 'detailed', 'comprehensive', 'in-depth', 'complex', 'research', 'explain thoroughly' );
 		foreach ( $complex_keywords as $keyword ) {
-			if ( strpos( $prompt_lower, $keyword ) !== false ) {
-				$score += 1;
+			if ( false !== strpos( $prompt_lower, $keyword ) ) {
+				++$score;
 				break;
 			}
 		}
 
 		// Multiple questions indicator.
 		if ( substr_count( $prompt, '?' ) > 1 ) {
-			$score += 1;
+			++$score;
 		}
 
 		return min( 10, max( 1, $score ) );
@@ -500,7 +500,7 @@ class WP_MCP_AI_Mesh_Router {
 	 */
 	protected static function is_compute_hub( $peer, $hub_config ) {
 		$compute_hubs = isset( $hub_config['compute_hubs'] ) ? $hub_config['compute_hubs'] : array();
-		$peer_name = isset( $peer['name'] ) ? $peer['name'] : '';
+		$peer_name    = isset( $peer['name'] ) ? $peer['name'] : '';
 
 		return in_array( $peer_name, $compute_hubs, true );
 	}
@@ -572,18 +572,18 @@ class WP_MCP_AI_Mesh_Router {
 		$peer_metrics = $metrics[ $peer_name ];
 
 		// Update response time (rolling average).
-		$total = $peer_metrics['total_requests'];
-		$current_avg = isset( $peer_metrics['avg_response_time'] ) ? $peer_metrics['avg_response_time'] : 0;
+		$total                             = $peer_metrics['total_requests'];
+		$current_avg                       = isset( $peer_metrics['avg_response_time'] ) ? $peer_metrics['avg_response_time'] : 0;
 		$peer_metrics['avg_response_time'] = ( ( $current_avg * $total ) + $response_time ) / ( $total + 1 );
 
 		// Update success/failure counts.
 		if ( $success ) {
-			$peer_metrics['success_count']++;
+			++$peer_metrics['success_count'];
 		} else {
-			$peer_metrics['failure_count']++;
+			++$peer_metrics['failure_count'];
 		}
 
-		$peer_metrics['total_requests']++;
+		++$peer_metrics['total_requests'];
 
 		// Calculate success rate.
 		$peer_metrics['success_rate'] = ( $peer_metrics['success_count'] / $peer_metrics['total_requests'] ) * 100;
