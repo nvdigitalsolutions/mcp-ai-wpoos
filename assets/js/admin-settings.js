@@ -1,38 +1,6 @@
 /**
- * Global function to toggle accordion sections
- * This is called by inline onclick handlers for direct expansion control
- */
-window.wpMcpAiToggleSection = function(headerElement) {
-    // Validate that headerElement is a valid DOM element
-    if (!headerElement || !headerElement.nodeType || headerElement.nodeType !== 1) {
-        return;
-    }
-    
-    const section = headerElement.closest('.wp-mcp-ai-section');
-    if (!section) return;
-    
-    const isExpanded = section.classList.contains('wp-mcp-ai-section--expanded');
-    
-    if (isExpanded) {
-        section.classList.remove('wp-mcp-ai-section--expanded');
-        headerElement.setAttribute('aria-expanded', 'false');
-    } else {
-        section.classList.add('wp-mcp-ai-section--expanded');
-        headerElement.setAttribute('aria-expanded', 'true');
-    }
-    
-    // Save to localStorage
-    if (window.requestAnimationFrame) {
-        window.requestAnimationFrame(function() {
-            wpMcpAiSaveExpandedState();
-        });
-    } else {
-        setTimeout(wpMcpAiSaveExpandedState, 50);
-    }
-};
-
-/**
  * Save expanded section state to localStorage
+ * Used by expand/collapse all buttons
  */
 window.wpMcpAiSaveExpandedState = function() {
     const sections = document.querySelectorAll('.wp-mcp-ai-section--expanded');

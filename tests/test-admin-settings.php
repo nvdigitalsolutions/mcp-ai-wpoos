@@ -472,7 +472,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	/**
 	 * Test that accordion section headers have onclick handlers for expansion.
 	 */
-	public function test_accordion_section_headers_have_onclick_handlers() {
+	public function test_accordion_section_headers_have_proper_attributes() {
 		$admin_settings = new WP_MCP_AI_Admin_Settings();
 
 		// Capture the output of the settings page.
@@ -480,8 +480,8 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$admin_settings->render_settings_page();
 		$output = ob_get_clean();
 
-		// Verify onclick handler is present.
-		$this->assertStringContainsString( 'onclick="wpMcpAiToggleSection(this)"', $output, 'Section headers should have onclick handlers' );
+		// Verify section headers are present with the correct class.
+		$this->assertStringContainsString( 'wp-mcp-ai-section__header', $output, 'Section headers should have correct class' );
 
 		// Verify aria-expanded attribute is present.
 		$this->assertStringContainsString( 'aria-expanded="false"', $output, 'Section headers should have aria-expanded attribute' );
