@@ -4506,6 +4506,64 @@
             });
     }
 
+    /**
+     * Public API: Load a session transcript into a chat widget
+     * 
+     * @param {Object} options - Configuration options
+     * @param {string} options.sessionKey - The session key to load
+     * @param {string} options.assistantId - The assistant ID for the session
+     * @param {Array} options.messages - Array of message objects with role and content
+     * @param {string|HTMLElement} options.target - CSS selector or element for the target chat widget
+     * @return {boolean} True if successful, false otherwise
+     */
+    function loadSessionIntoChat(options) {
+        if (!options || typeof options !== 'object') {
+            return false;
+        }
+
+        let targetElement = null;
+
+        // Find target element
+        if (typeof options.target === 'string') {
+            targetElement = document.querySelector(options.target);
+        } else if (options.target && options.target.nodeType === 1) {
+            targetElement = options.target;
+        }
+
+        if (!targetElement) {
+            if (console && console.warn) {
+                console.warn('[WP oOS] Could not find target chat widget');
+            }
+            return false;
+        }
+
+        // Get the state from the target element
+        const state = targetElement.__wpMcpAiChatState;
+        if (!state) {
+            if (console && console.warn) {
+                console.warn('[WP oOS] Target element is not a chat widget');
+            }
+            return false;
+        }
+
+        // Prepare session object
+        const session = {
+            session_key: options.sessionKey || '',
+            assistant_id: options.assistantId || state.config.assistantId,
+            messages: Array.isArray(options.messages) ? options.messages : []
+        };
+
+        // Load the session into the chat
+        loadHistorySessionIntoChat(state, session, null, state.messagesEl);
+        
+        return true;
+    }
+
+    // Expose public API globally
+    if (typeof window !== 'undefined') {
+        window.wpMcpAiLoadSession = loadSessionIntoChat;
+    }
+
     function init() {
         const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
@@ -4736,6 +4794,9 @@
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
 
+            // Store state globally for cross-widget communication
+            container.__wpMcpAiChatState = state;
+            
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
         });

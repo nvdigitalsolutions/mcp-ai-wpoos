@@ -44,6 +44,39 @@
     gap: 0.75rem;
 }
 
+.wp-mcp-ai-user-chats__session {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-user-chats__load-button {
+    align-self: flex-start;
+    border: 1px solid var(--wp-mcp-ai-user-chats-button-border);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(59, 130, 246, 0.08));
+    color: #4f46e5;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 160ms ease;
+    margin-left: 1rem;
+}
+
+.wp-mcp-ai-user-chats__load-button:hover,
+.wp-mcp-ai-user-chats__load-button:focus {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(59, 130, 246, 0.12));
+    border-color: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+.wp-mcp-ai-user-chats__load-button:active {
+    transform: translateY(0);
+}
+
 .wp-mcp-ai-user-chats__session-button {
     width: 100%;
     display: flex;

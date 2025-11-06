@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP oOS Cross-Widget Communication Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .widget {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .widget h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.25rem;
+        }
+        .chat-widget {
+            min-height: 400px;
+        }
+        .history-widget {
+            min-height: 400px;
+        }
+        .mock-chat {
+            border: 2px dashed #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            background: #f9fafb;
+        }
+        .mock-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .mock-message {
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .mock-message--user {
+            background: #dbeafe;
+            margin-left: auto;
+        }
+        .mock-message--assistant {
+            background: #dcfce7;
+        }
+        .session-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .session-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .session-button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .session-button:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        .session-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .session-meta {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        .load-button {
+            padding: 8px 16px;
+            border: 1px solid #667eea;
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            color: #667eea;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-left: 12px;
+            transition: all 0.2s;
+        }
+        .load-button:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.875rem;
+        }
+        .status--success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status--error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .info-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .info-box h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .info-box p {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 WP oOS Cross-Widget Communication Test</h1>
+        
+        <div class="info-box">
+            <h3>Testing Instructions</h3>
+            <p>
+                This page demonstrates the cross-widget communication feature. Click "Load into chat" 
+                buttons to see how sessions are loaded into the chat widget. The chat widget is 
+                identified by <code>id="main-chat"</code> and the history widget targets it using the 
+                <code>targetChatWidget</code> configuration.
+            </p>
+        </div>
+
+        <div class="grid">
+            <!-- User Chat History Widget (Left) -->
+            <div class="widget history-widget">
+                <h2>📜 User Chat History</h2>
+                <div class="session-list">
+                    <div class="session-item">
+                        <button class="session-button" onclick="viewSession(1)">
+                            <div class="session-title">Technical Support Session</div>
+                            <div class="session-meta">Last activity: 2 hours ago • 8 messages</div>
+                        </button>
+                        <button class="load-button" onclick="loadIntoChat(1)">Load into chat</button>
+                    </div>
+
+                    <div class="session-item">
+                        <button class="session-button" onclick="viewSession(2)">
+                            <div class="session-title">Sales Inquiry</div>
+                            <div class="session-meta">Last activity: 1 day ago • 5 messages</div>
+                        </button>
+                        <button class="load-button" onclick="loadIntoChat(2)">Load into chat</button>
+                    </div>
+
+                    <div class="session-item">
+                        <button class="session-button" onclick="viewSession(3)">
+                            <div class="session-title">Feature Request Discussion</div>
+                            <div class="session-meta">Last activity: 3 days ago • 12 messages</div>
+                        </button>
+                        <button class="load-button" onclick="loadIntoChat(3)">Load into chat</button>
+                    </div>
+                </div>
+                <div id="history-status"></div>
+            </div>
+
+            <!-- Main Chat Widget (Right) -->
+            <div class="widget chat-widget" id="main-chat">
+                <h2>💬 Main Chat Widget</h2>
+                <div class="mock-chat">
+                    <div class="mock-messages" id="chat-messages">
+                        <div class="mock-message mock-message--assistant">
+                            Hello! How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                <div id="chat-status"></div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>What's Happening?</h3>
+            <p>
+                When you click "Load into chat", the JavaScript simulates the 
+                <code>window.wpMcpAiLoadSession()</code> API call. In the actual WordPress plugin, 
+                this would:
+            </p>
+            <ul style="margin-top: 10px; padding-left: 20px; color: #6b7280;">
+                <li>Fetch the complete session data from the REST API</li>
+                <li>Find the target chat widget using the configured selector</li>
+                <li>Clear the current conversation in the chat widget</li>
+                <li>Load all historical messages in sequence</li>
+                <li>Update the session key for conversation continuation</li>
+                <li>Save the loaded conversation to localStorage</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Mock session data
+        const mockSessions = {
+            1: {
+                sessionKey: 'session-tech-support-123',
+                assistantId: 45,
+                messages: [
+                    { role: 'user', content: 'My website is showing a 500 error' },
+                    { role: 'assistant', content: 'Let me help you troubleshoot that. Can you tell me when this started?' },
+                    { role: 'user', content: 'About 2 hours ago after updating a plugin' },
+                    { role: 'assistant', content: 'Which plugin did you update? That will help narrow down the issue.' },
+                    { role: 'user', content: 'The WooCommerce plugin to version 8.3' },
+                    { role: 'assistant', content: 'Got it. Try deactivating WooCommerce temporarily to see if that resolves the error.' },
+                    { role: 'user', content: 'That fixed it! What should I do now?' },
+                    { role: 'assistant', content: 'Great! The issue is likely a compatibility conflict. Check for updates to your other plugins and theme.' }
+                ]
+            },
+            2: {
+                sessionKey: 'session-sales-inquiry-456',
+                assistantId: 45,
+                messages: [
+                    { role: 'user', content: 'What are your pricing plans?' },
+                    { role: 'assistant', content: 'We have three plans: Starter ($29/mo), Professional ($79/mo), and Enterprise (custom pricing).' },
+                    { role: 'user', content: 'What\'s included in the Professional plan?' },
+                    { role: 'assistant', content: 'The Professional plan includes unlimited sites, priority support, and advanced features.' },
+                    { role: 'user', content: 'Can I upgrade later if needed?' }
+                ]
+            },
+            3: {
+                sessionKey: 'session-feature-request-789',
+                assistantId: 45,
+                messages: [
+                    { role: 'user', content: 'Can you add support for custom post types?' },
+                    { role: 'assistant', content: 'That\'s a great suggestion! Custom post type support would be valuable.' },
+                    { role: 'user', content: 'Specifically for WooCommerce product variations' },
+                    { role: 'assistant', content: 'Interesting use case. Would you need read access, write access, or both?' },
+                    { role: 'user', content: 'Both would be ideal for our workflow' },
+                    { role: 'assistant', content: 'I\'ve noted this feature request. Our team will evaluate it for the next release.' },
+                    { role: 'user', content: 'When is the next release planned?' },
+                    { role: 'assistant', content: 'We\'re aiming for Q2 2025. You\'ll receive updates via email.' },
+                    { role: 'user', content: 'Perfect, thanks for considering it!' },
+                    { role: 'assistant', content: 'Thank you for the feedback! Is there anything else you\'d like to discuss?' },
+                    { role: 'user', content: 'No, that covers it for now' },
+                    { role: 'assistant', content: 'Great! Feel free to reach out if you have more questions.' }
+                ]
+            }
+        };
+
+        // Mock the wpMcpAiLoadSession API
+        window.wpMcpAiLoadSession = function(options) {
+            const target = typeof options.target === 'string' 
+                ? document.querySelector(options.target) 
+                : options.target;
+
+            if (!target) {
+                showStatus('chat-status', 'Target chat widget not found', 'error');
+                return false;
+            }
+
+            // Simulate loading messages
+            const messagesContainer = target.querySelector('#chat-messages');
+            if (!messagesContainer) {
+                showStatus('chat-status', 'Messages container not found', 'error');
+                return false;
+            }
+
+            // Clear existing messages
+            messagesContainer.innerHTML = '';
+
+            // Add loaded messages
+            options.messages.forEach(function(message) {
+                const messageEl = document.createElement('div');
+                messageEl.className = 'mock-message mock-message--' + message.role;
+                messageEl.textContent = message.content;
+                messagesContainer.appendChild(messageEl);
+            });
+
+            showStatus('chat-status', 
+                'Session loaded successfully! Session key: ' + options.sessionKey, 
+                'success'
+            );
+
+            return true;
+        };
+
+        function viewSession(sessionId) {
+            const session = mockSessions[sessionId];
+            if (!session) {
+                showStatus('history-status', 'Session not found', 'error');
+                return;
+            }
+
+            showStatus('history-status', 
+                'Session details: ' + session.messages.length + ' messages', 
+                'success'
+            );
+        }
+
+        function loadIntoChat(sessionId) {
+            const session = mockSessions[sessionId];
+            if (!session) {
+                showStatus('history-status', 'Session not found', 'error');
+                return;
+            }
+
+            showStatus('history-status', 'Loading into chat...', 'success');
+
+            // Simulate API call delay
+            setTimeout(function() {
+                const success = window.wpMcpAiLoadSession({
+                    sessionKey: session.sessionKey,
+                    assistantId: session.assistantId,
+                    messages: session.messages,
+                    target: '#main-chat'
+                });
+
+                if (success) {
+                    showStatus('history-status', 'Conversation loaded into chat!', 'success');
+                } else {
+                    showStatus('history-status', 'Failed to load into chat', 'error');
+                }
+            }, 500);
+        }
+
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            if (!statusEl) return;
+
+            statusEl.className = 'status status--' + type;
+            statusEl.textContent = message;
+
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                statusEl.textContent = '';
+                statusEl.className = 'status';
+            }, 5000);
+        }
+
+        // Add state storage simulation
+        document.getElementById('main-chat').__wpMcpAiChatState = {
+            conversation: [],
+            config: {
+                assistantId: 45,
+                sessionKey: ''
+            }
+        };
+    </script>
+</body>
+</html>
