@@ -5862,7 +5862,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
              FROM {$table}
              WHERE user_id = %d
              GROUP BY session_key
-             ORDER BY COALESCE(MAX(CASE WHEN response_completed_at <> '' THEN response_completed_at END), MAX(cct_created), MAX(request_started_at)) DESC, session_key ASC
+             ORDER BY COALESCE(MAX(CASE WHEN response_completed_at > 0 THEN response_completed_at END), MAX(cct_created), MAX(request_started_at)) DESC, session_key ASC
              LIMIT %d OFFSET %d",
 				$user_id,
 				$per_page,
@@ -6196,19 +6196,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string
 		 */
 		protected function format_transcript_timestamp( $primary, $fallback = '' ) {
-			$value = is_string( $primary ) && '' !== $primary ? $primary : '';
+			// Try primary value first (can be integer timestamp or string).
+			$timestamp = false;
 
-			if ( '' === $value && is_string( $fallback ) && '' !== $fallback ) {
-				$value = $fallback;
+			if ( is_numeric( $primary ) && $primary > 0 ) {
+				$timestamp = (int) $primary;
+			} elseif ( is_string( $primary ) && '' !== $primary ) {
+				$timestamp = strtotime( $primary );
 			}
 
-			if ( '' === $value ) {
-				return '';
+			// Try fallback if primary didn't work.
+			if ( false === $timestamp && is_string( $fallback ) && '' !== $fallback ) {
+				$timestamp = strtotime( $fallback );
 			}
 
-			$timestamp = strtotime( $value );
-
-			if ( false === $timestamp ) {
+			if ( false === $timestamp || $timestamp <= 0 ) {
 				return '';
 			}
 
