@@ -390,18 +390,17 @@ curl -X POST https://site-a.com/wp-json/mcp-ai/v1/chat \
 The `query_remote_site` tool requires **`manage_options`** capability:
 
 ```php
-// From includes/tools/class-wp-mcp-ai-tool-query-remote-site.php
-public function execute( array $arguments = array(), array $context = array() ) {
-    $user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+// Excerpt from WP_MCP_AI_Tool_Query_Remote_Site::execute()
+// Source: includes/tools/class-wp-mcp-ai-tool-query-remote-site.php
+$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-    if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-        return new WP_Error(
-            'wp_mcp_ai_forbidden',
-            __( 'You do not have permission to query remote sites.', 'wp-mcp-ai' )
-        );
-    }
-    // ...
+if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
+    return new WP_Error(
+        'wp_mcp_ai_forbidden',
+        __( 'You do not have permission to query remote sites.', 'wp-mcp-ai' )
+    );
 }
+// ... rest of implementation
 ```
 
 **This means:**
@@ -599,7 +598,7 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 
 ## Related Documentation
 
-- [MCP Server Authentication](mcp-server-authentication.md) - Complete authentication reference including Auth0, bearer tokens, and nonces
+- [MCP Server Authentication](mcp-server-authentication.md) - Authentication reference including Auth0, bearer tokens, and nonces
 - [Simple JWT Login Integration](authentication.md) - Optional JWT authentication integration
 - [Tool Reference](tool-reference.md) - All 65+ built-in tools including `query_remote_site`
 - [REST API Documentation](rest-api.md) - REST endpoint specifications
