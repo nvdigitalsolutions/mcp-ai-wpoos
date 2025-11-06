@@ -343,19 +343,19 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 
 		if ( ! self::$script_localized ) {
 			$localised_strings = array(
-				'loadingList'         => __( 'Loading chats…', 'wp-mcp-ai' ),
-				'loadingConversation' => __( 'Loading chat…', 'wp-mcp-ai' ),
-				'errorLoadingList'    => __( 'Unable to load chats right now.', 'wp-mcp-ai' ),
-				'errorLoadingSession' => __( 'Unable to load the selected chat.', 'wp-mcp-ai' ),
-				'back'                => __( 'Back to chats', 'wp-mcp-ai' ),
-	/* translators: %s: chat session identifier */
-				'sessionLabel'        => __( 'Chat session %s', 'wp-mcp-ai' ),
-				'assistantLabel'      => __( 'Assistant', 'wp-mcp-ai' ),
-				'startedLabel'        => __( 'Started', 'wp-mcp-ai' ),
-				'updatedLabel'        => __( 'Last activity', 'wp-mcp-ai' ),
-	/* translators: %d: number of messages */
-				'turnCountLabel'      => __( '%d messages', 'wp-mcp-ai' ),
-				'roleLabels'          => array(
+				'loadingList'                    => __( 'Loading chats…', 'wp-mcp-ai' ),
+				'loadingConversation'            => __( 'Loading chat…', 'wp-mcp-ai' ),
+				'errorLoadingList'               => __( 'Unable to load chats right now.', 'wp-mcp-ai' ),
+				'errorLoadingSession'            => __( 'Unable to load the selected chat.', 'wp-mcp-ai' ),
+				'back'                           => __( 'Back to chats', 'wp-mcp-ai' ),
+				/* translators: %s: chat session identifier */
+								'sessionLabel'   => __( 'Chat session %s', 'wp-mcp-ai' ),
+				'assistantLabel'                 => __( 'Assistant', 'wp-mcp-ai' ),
+				'startedLabel'                   => __( 'Started', 'wp-mcp-ai' ),
+				'updatedLabel'                   => __( 'Last activity', 'wp-mcp-ai' ),
+				/* translators: %d: number of messages */
+								'turnCountLabel' => __( '%d messages', 'wp-mcp-ai' ),
+				'roleLabels'                     => array(
 					'system'    => __( 'System', 'wp-mcp-ai' ),
 					'user'      => __( 'User', 'wp-mcp-ai' ),
 					'assistant' => __( 'Assistant', 'wp-mcp-ai' ),

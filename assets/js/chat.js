@@ -4364,6 +4364,13 @@
         bubble.textContent = message;
     }
 
+    /**
+     * Client-side async polling for Crawl4AI tasks.
+     * NOTE: Currently unused - system uses server-side WP-Cron polling instead (WP_MCP_AI_Crawler class).
+     * This implementation is kept for potential future use with client-side polling.
+     * See: includes/crawler/class-wp-mcp-ai-crawler.php
+     */
+    // eslint-disable-next-line no-unused-vars
     function waitForCrawl4aiTask(state, toolName, result) {
         if (!isCrawl4aiPendingResult(result)) {
             return Promise.resolve(result);

@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages SSE connections for streaming job status updates to clients.
  */
 class WP_MCP_AI_SSE_Stream {
-	const MAX_DURATION      = 300; // 5 minutes max connection time.
-	const POLL_INTERVAL     = 2;   // Poll every 2 seconds.
+	const MAX_DURATION       = 300; // 5 minutes max connection time.
+	const POLL_INTERVAL      = 2;   // Poll every 2 seconds.
 	const HEARTBEAT_INTERVAL = 15;  // Send heartbeat every 15 seconds.
 
 	/**
@@ -76,12 +76,15 @@ class WP_MCP_AI_SSE_Stream {
 		$terminal_states = array( 'completed', 'failed', 'cancelled' );
 
 		// Send initial connection message.
-		$stream .= self::format_sse_message( 'connected', array(
-			'job_id'        => $job_id,
-			'connected_at'  => current_time( 'c', true ),
-			'poll_interval' => $poll_interval,
-			'max_duration'  => $max_duration,
-		) );
+		$stream .= self::format_sse_message(
+			'connected',
+			array(
+				'job_id'        => $job_id,
+				'connected_at'  => current_time( 'c', true ),
+				'poll_interval' => $poll_interval,
+				'max_duration'  => $max_duration,
+			)
+		);
 
 		// Poll until max duration or terminal state.
 		while ( ( time() - $start_time ) < $max_duration ) {
@@ -89,15 +92,18 @@ class WP_MCP_AI_SSE_Stream {
 
 			// Send status update if changed.
 			if ( $status && $status !== $last_status ) {
-				$stream      .= self::format_sse_message( 'status', $status );
-				$last_status  = $status;
+				$stream     .= self::format_sse_message( 'status', $status );
+				$last_status = $status;
 
 				// Check if job is in terminal state.
 				if ( isset( $status['status'] ) && in_array( $status['status'], $terminal_states, true ) ) {
-					$stream .= self::format_sse_message( 'complete', array(
-						'job_id'       => $job_id,
-						'final_status' => $status['status'],
-					) );
+					$stream .= self::format_sse_message(
+						'complete',
+						array(
+							'job_id'       => $job_id,
+							'final_status' => $status['status'],
+						)
+					);
 					break;
 				}
 			}
@@ -115,10 +121,13 @@ class WP_MCP_AI_SSE_Stream {
 
 		// Send timeout if max duration reached.
 		if ( ( time() - $start_time ) >= $max_duration ) {
-			$stream .= self::format_sse_message( 'timeout', array(
-				'job_id'  => $job_id,
-				'message' => 'Maximum connection duration reached',
-			) );
+			$stream .= self::format_sse_message(
+				'timeout',
+				array(
+					'job_id'  => $job_id,
+					'message' => 'Maximum connection duration reached',
+				)
+			);
 		}
 
 		// Send closing message.

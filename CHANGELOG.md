@@ -7,7 +7,25 @@
 
 ## [Unreleased]
 ### Added
-- Automatic activation of JetEngine Data Stores module when JetEngine is installed and active.
+- **Job Notification System**: Real-time SSE streaming and webhook notifications for async operations
+- **Message Bundling**: Client-side 800ms message bundling to reduce API calls and server load
+- **Agentic Loop Token Management**: Three-tier intelligent handling (detection, auto-switching, truncation) for token overflow
+- **MCP JSON-RPC 2.0 Endpoint**: Standards-compliant `/mcp` endpoint for remote MCP client communication
+- **Async Crawl4AI Polling**: Server-side WP-Cron polling for long-running crawl jobs with job status tracking
+- **LM Studio Model Fetching**: Fixed data structure mismatch for "Fetch Models" feature
+- **CPT-CCT Synchronization**: Automatic bidirectional sync between WordPress CPT and JetEngine CCT for assistants
+- Automatic activation of JetEngine Data Stores module when JetEngine is installed and active
+
+### Changed
+- Chat interface now provides visual feedback for message bundling ("Preparing to send…", "Sending…")
+- Token overflow scenarios automatically switch to higher-capacity models (gpt-4o-mini → Gemini 2.0 Flash)
+- SSE endpoint modernized with automatic reconnection, event IDs, and HTTP/2 compatibility
+- Comprehensive documentation updates covering all new features
+
+### Fixed
+- JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
+- 164 PHP coding standard violations auto-fixed across 19 files
+- Tool registry validation ensuring correct slug-to-class mappings
 
 ## [1.0.0] – 2025-10-23
 ### Changed

@@ -100,19 +100,19 @@ class WP_MCP_AI_Shortcode {
 					'error'                     => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
 					'missingAssistant'          => __( 'Assistant configuration was not found.', 'wp-mcp-ai' ),
 					'notAuthorized'             => __( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ),
-	/* translators: %s: tool name being executed */
-					'toolExecuting'             => __( 'Running tool: %s', 'wp-mcp-ai' ),
+					/* translators: %s: tool name being executed */
+																'toolExecuting' => __( 'Running tool: %s', 'wp-mcp-ai' ),
 					'toolSuccess'               => __( 'Tool response ready.', 'wp-mcp-ai' ),
 					'toolError'                 => __( 'The tool request failed.', 'wp-mcp-ai' ),
 					'toolQueued'                => __( 'Crawl queued. Results will appear shortly.', 'wp-mcp-ai' ),
 					'toolPolling'               => __( 'Crawl in progress…', 'wp-mcp-ai' ),
 					'toolTimeout'               => __( 'Crawl timed out before completing.', 'wp-mcp-ai' ),
-	/* translators: %s: crawl failure error message */
-					'toolFailed'                => __( 'The crawl failed: %s', 'wp-mcp-ai' ),
+					/* translators: %s: crawl failure error message */
+																'toolFailed' => __( 'The crawl failed: %s', 'wp-mcp-ai' ),
 					'speechToolSuccess'         => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
 					'imageToolSuccess'          => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
-	/* translators: %s: task name */
-					'toolShortcutLabel'         => __( 'Insert task: %s', 'wp-mcp-ai' ),
+					/* translators: %s: task name */
+																'toolShortcutLabel' => __( 'Insert task: %s', 'wp-mcp-ai' ),
 					'emptyMessage'              => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
 					'attachFile'                => __( 'Attach file', 'wp-mcp-ai' ),
 					'transcribe'                => __( 'Transcribe', 'wp-mcp-ai' ),
@@ -122,19 +122,19 @@ class WP_MCP_AI_Shortcode {
 					'stopRecording'             => __( 'Stop recording', 'wp-mcp-ai' ),
 					'recordingError'            => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'wp-mcp-ai' ),
 					'transcriptionError'        => __( 'The transcription request failed. Please try again.', 'wp-mcp-ai' ),
-	/* translators: %s: file name */
-					'transcriptionSuccess'      => __( 'Inserted transcription from “%s”.', 'wp-mcp-ai' ),
+					/* translators: %s: file name */
+																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'wp-mcp-ai' ),
 					'transcriptionFileTooLarge' => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'wp-mcp-ai' ),
 					'transcribeChooseSource'    => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'wp-mcp-ai' ),
 					'attachmentsLabel'          => __( 'Attachments', 'wp-mcp-ai' ),
 					'removeAttachment'          => __( 'Remove', 'wp-mcp-ai' ),
-	/* translators: %s: file name being uploaded */
-					'uploadingFile'             => __( 'Uploading “%s”…', 'wp-mcp-ai' ),
+					/* translators: %s: file name being uploaded */
+																'uploadingFile' => __( 'Uploading “%s”…', 'wp-mcp-ai' ),
 					'uploadError'               => __( 'The file could not be uploaded. Please try again.', 'wp-mcp-ai' ),
 					'uploadInProgress'          => __( 'Please wait for uploads to finish before sending.', 'wp-mcp-ai' ),
 					'downloadAttachment'        => __( 'Download attachment', 'wp-mcp-ai' ),
-	/* translators: %s: file name with unsupported type */
-					'unsupportedFileType'       => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
+					/* translators: %s: file name with unsupported type */
+																'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'wp-mcp-ai' ),
 					'unsupportedMultipleFiles'  => __( 'Some selected files are not supported. Please try different files.', 'wp-mcp-ai' ),
 					'unsupportedFileLabel'      => __( 'This file', 'wp-mcp-ai' ),
 					'expandTranscript'          => __( 'Expand conversation', 'wp-mcp-ai' ),
@@ -146,11 +146,11 @@ class WP_MCP_AI_Shortcode {
 					'historyLoading'            => __( 'Loading conversations…', 'wp-mcp-ai' ),
 					'historyEmpty'              => __( 'No previous conversations yet.', 'wp-mcp-ai' ),
 					'historyError'              => __( 'Unable to load conversation history.', 'wp-mcp-ai' ),
-	/* translators: %d: number of messages in chat history */
-					'historyMessageCount'       => __( '%d messages', 'wp-mcp-ai' ),
+					/* translators: %d: number of messages in chat history */
+																'historyMessageCount' => __( '%d messages', 'wp-mcp-ai' ),
 					'historySingleMessage'      => __( '1 message', 'wp-mcp-ai' ),
-	/* translators: %s: conversation identifier */
-					'historyPreviewFallback'    => __( 'Conversation %s', 'wp-mcp-ai' ),
+					/* translators: %s: conversation identifier */
+																'historyPreviewFallback' => __( 'Conversation %s', 'wp-mcp-ai' ),
 					'historySessionLoading'     => __( 'Loading conversation…', 'wp-mcp-ai' ),
 					'historySessionError'       => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
 					'historyNoMessages'         => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),

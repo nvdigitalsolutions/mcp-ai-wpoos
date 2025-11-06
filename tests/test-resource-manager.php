@@ -29,7 +29,7 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 	 * Test that get_max_execution_time returns a positive integer.
 	 */
 	public function test_get_max_execution_time_returns_positive_integer() {
-		$manager              = WP_MCP_AI_Resource_Manager::instance();
+		$manager            = WP_MCP_AI_Resource_Manager::instance();
 		$max_execution_time = $manager->get_max_execution_time();
 
 		$this->assertIsInt( $max_execution_time );
@@ -101,9 +101,14 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		add_filter( 'wp_mcp_ai_workload_tier', function ( $tier, $memory_limit ) {
-			return 'high';
-		}, 10, 2 );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function ( $tier, $memory_limit ) {
+				return 'high';
+			},
+			10,
+			2
+		);
 
 		// Clear the cached tier to force recalculation.
 		$reflection = new ReflectionClass( $manager );
@@ -125,9 +130,14 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		add_filter( 'wp_mcp_ai_resource_max_tokens', function ( $max_tokens, $tier ) {
-			return 5000;
-		}, 10, 2 );
+		add_filter(
+			'wp_mcp_ai_resource_max_tokens',
+			function ( $max_tokens, $tier ) {
+				return 5000;
+			},
+			10,
+			2
+		);
 
 		$max_tokens = $manager->get_max_tokens();
 
@@ -143,9 +153,14 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		$manager = WP_MCP_AI_Resource_Manager::instance();
 
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		add_filter( 'wp_mcp_ai_resource_request_timeout', function ( $timeout, $tier, $max_execution_time ) {
-			return 90;
-		}, 10, 3 );
+		add_filter(
+			'wp_mcp_ai_resource_request_timeout',
+			function ( $timeout, $tier, $max_execution_time ) {
+				return 90;
+			},
+			10,
+			3
+		);
 
 		$timeout = $manager->get_request_timeout();
 

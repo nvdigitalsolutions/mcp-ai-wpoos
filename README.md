@@ -26,12 +26,19 @@
 - [🧠 Language Model Providers](#-language-model-providers-openai-gemini--ollama)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
+- [📡 Job Notification System](#-job-notification-system)
 - [🧊 Elementor Widgets](#-elementor-widgets)
+
+### Performance & Optimization
+- [⚡ Message Bundling](#-message-bundling)
+- [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
+- [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
 
 ### Remote MCP Setup
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
 - [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
+- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-20-endpoint)
 - [🔑 Assistant API Credentials](#-assistant-api-credentials)
 
 ### Assistant Management
@@ -158,6 +165,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🧷 Granular control over allowed attachment MIME types for chat uploads
 - 🔐 Secure REST API endpoints
 - 🛰 Assistant directory endpoint that advertises MCP tool/resource capabilities and negotiates Server-Sent Events handshakes for clients such as LM Studio or Claude Desktop.【F:includes/class-wp-mcp-ai-rest.php†L520-L666】【F:includes/class-wp-mcp-ai-rest.php†L1690-L1772】
+- 📝 Full JSON-RPC 2.0 MCP endpoint (`/mcp`) for standards-compliant remote client communication
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/mcp-server-authentication.md†L22-L46】
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
@@ -165,6 +173,13 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🧩 Developer hooks and filters for integrating custom behaviours
 - ⏱ Per-site request timeout control with sensible minimum enforcement
 - 🗑 Toggleable uninstall cleanup to purge stored assistants and settings automatically
+
+### Performance & reliability
+- ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/message-bundling-feature.md†L1-L80】
+- 🎯 Intelligent token overflow handling with automatic model switching (gpt-4o-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
+- 📡 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
+- 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
+- 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -598,11 +613,18 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Code Review Report](docs/CODE_REVIEW.md) - Comprehensive code quality analysis (20KB)
 - [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
+- [MCP JSON-RPC 2.0 Endpoint](docs/mcp-endpoint.md) - Model Context Protocol implementation
 
 ### For Administrators
 - [Deployment Troubleshooting](docs/deployment-troubleshooting.md) - Common issues and solutions
 - [Multisite Support](docs/multisite-support.md) - WordPress multisite configuration
 - [Rate Limit Protection](docs/rate-limit-protection.md) - API rate limiting setup
+
+### Performance & Optimization
+- [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
+- [High Token Tool Handling](docs/high-token-tool-handling.md) - Agentic loop token management
+- [Job Notification System](docs/job-notification-system.md) - Real-time async job updates
+- [Chat Performance Optimizations](docs/chat-performance-optimizations.md) - Complete performance guide
 
 ---
 
@@ -688,6 +710,59 @@ Configure remote endpoints or API keys under **Settings → WP oOS → Tools** t
 
 Supplying a Crawl4AI base URL (and optional API key) switches the tool back to proxying crawl jobs to the remote Crawl4AI REST API, preserving backwards compatibility with existing deployments.【F:includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php†L206-L339】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L248-L521】 Local environments can still feed a custom endpoint to the integration through the `WP_MCP_AI_CRAWL4AI_BASE_URL` or `CRAWL4AI_BASE_URL` environment variable when you want to test against a dedicated Crawl4AI service.【F:wp-mcp-ai.php†L54-L96】
 
+## 📡 Job Notification System
+
+WP oOS includes a general-purpose infrastructure for real-time notifications on async WordPress jobs, providing SSE streaming and webhook support for external integrations.【F:docs/job-notification-system.md†L1-L100】
+
+### Architecture
+
+```
+Async Job → WordPress Action → Job Notifier → [SSE | Webhooks]
+                                                 ↓       ↓
+                                            Frontend  External
+```
+
+### Automatic Crawl4AI Integration
+
+The system automatically hooks into Crawl4AI jobs via the `wp_mcp_ai_crawl4ai_job_completed` action, providing real-time status updates as crawls progress. No additional code is needed—Crawl4AI jobs automatically trigger notifications.【F:includes/crawler/class-wp-mcp-ai-crawler.php†L1-L214】
+
+### Frontend SSE Subscription
+
+JavaScript clients can subscribe to job status updates using Server-Sent Events:
+
+```javascript
+const jobId = 'crawl_abc123';
+const eventSource = new EventSource(
+    `/wp-json/mcp-ai/v1/jobs/${jobId}/stream?max_duration=300&poll_interval=2`
+);
+
+eventSource.addEventListener('status', (e) => {
+    const status = JSON.parse(e.data);
+    console.log('Job status:', status.status, status.progress);
+    updateProgressBar(status.progress);
+});
+
+eventSource.addEventListener('complete', (e) => {
+    const data = JSON.parse(e.data);
+    console.log('Job completed:', data.final_status);
+    eventSource.close();
+});
+```
+
+### Webhook Registration
+
+External systems can receive HTTP callbacks when jobs complete:
+
+```php
+WP_MCP_AI_Job_Notifier::register_webhook(
+    'crawl_abc123',
+    'https://example.com/webhook',
+    array( 'completed', 'failed' )
+);
+```
+
+➡️ See [docs/job-notification-system.md](docs/job-notification-system.md) for complete implementation details.
+
 ## 🧊 Elementor Widgets
 
 Sites running Elementor automatically register a suite of MCP blocks so you can assemble onboarding pages, operational dashboards, and standalone chat layouts without writing markup.【F:includes/class-wp-mcp-ai-elementor-integration.php†L12-L98】 The integration only boots when Elementor is present, so non-Elementor installs avoid any overhead.【F:includes/class-wp-mcp-ai-elementor-integration.php†L29-L46】
@@ -712,6 +787,89 @@ The plugin records aggregate token usage per user, provider, and model whenever 
 ## 🧷 Attachment MIME Controls
 
 Administrators can override the default image and file MIME allowlists used by the chat uploader. The settings screen accepts one MIME type per line, and the attachment helper merges the overrides with its defaults before enforcing them on upload and shortcode configuration.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L225-L669】【F:includes/class-wp-mcp-ai-message-attachments.php†L503-L559】 Leave the fields empty to fall back to the bundled safe defaults.
+
+## ⚡ Message Bundling
+
+WP oOS implements client-side message bundling to optimize API usage and reduce server load. When enabled, messages sent within an 800ms window are automatically grouped into a single API request, reducing costs and improving performance for users who send multiple messages in quick succession.【F:docs/message-bundling-feature.md†L1-L80】
+
+### How It Works
+
+1. User sends a message → Displayed immediately in the chat UI
+2. 800ms timer starts → System waits for additional messages
+3. More messages arrive → Timer resets with each new message
+4. Timer expires → All queued messages sent together in one request
+
+### Visual Feedback
+
+- **"Preparing to send…"** - Messages are being queued during the bundling window
+- **"Sending…"** - Bundled messages are being transmitted to the server
+
+### Benefits
+
+- **Reduced API costs** - Fewer requests mean lower costs for pay-per-request APIs
+- **Lower server load** - Fewer requests to process and respond to
+- **Better mobile experience** - Ideal for users who type in short bursts
+- **Backward compatible** - Server code unchanged, same payload format
+
+### Configuration
+
+Message bundling is enabled by default and requires no configuration. To disable for debugging:
+
+```javascript
+window.wpMcpAiChatDebugMode = true;
+```
+
+➡️ See [docs/message-bundling-feature.md](docs/message-bundling-feature.md) for configuration options and implementation details.
+
+## 🎯 Agentic Loop Token Management
+
+WP oOS includes intelligent handling for tools that return large responses, preventing token overflow errors during agentic loops (where the AI automatically calls multiple tools).【F:docs/high-token-tool-handling.md†L1-L80】
+
+### The Problem
+
+Tools like `run_crawl4ai_job` can return 100,000+ tokens of content. In agentic loops, each API call includes all previous messages, causing token counts to grow rapidly and exceed model limits (e.g., gpt-4o-mini's 200k TPM limit).
+
+### The Solution: Three-Tier Strategy
+
+#### Tier 1: Token Limit Detection
+- Estimates total tokens before each API call
+- Checks against model's TPM (Tokens Per Minute) limit
+- Prevents requests that would exceed limits
+
+#### Tier 2: Automatic Model Switching
+- When limits exceeded, auto-switches to fallback model
+- Default fallback: Gemini 2.0 Flash (1-2 million token capacity)
+- Preserves full context without data loss
+- Transparent to the user
+
+#### Tier 3: Message Truncation
+- If even fallback model can't handle tokens
+- Truncates older messages from conversation
+- Always preserves system prompts and recent context
+- Logs what was truncated for debugging
+
+### Configuration
+
+Automatic model switching is enabled by default. Configure fallback model under **Settings → WP oOS**:
+
+```php
+// Default fallback model
+'fallback_model' => 'gemini-2.0-flash-exp'
+```
+
+➡️ See [docs/high-token-tool-handling.md](docs/high-token-tool-handling.md) for complete technical details and examples.
+
+## 🔄 Chat Performance Optimizations
+
+WP oOS includes several performance optimizations to enhance the chat experience:
+
+- **Message bundling** - Reduces API calls by grouping rapid user inputs
+- **Token budget management** - Prevents API limit overruns with safety margins【F:docs/tpm-limit-validation.md†L1-L50】
+- **Chat history persistence** - LocalStorage (24h) + optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
+- **Automatic model switching** - Seamlessly handles token overflow scenarios
+- **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
+
+➡️ See [docs/chat-performance-optimizations.md](docs/chat-performance-optimizations.md) for detailed performance tuning guide.
 
 ## 🕵️ Code Review
 
@@ -831,6 +989,64 @@ All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/
 - **`POST /tools`** – Executes a specific registered tool outside of a chat turn. The endpoint enforces assistant tool allowlists, scopes credential-based requests to the issuing assistant, merges assistant defaults (such as external action identifiers), and returns the tool result with execution metadata.【F:includes/class-wp-mcp-ai-rest.php†L264-L322】【F:includes/class-wp-mcp-ai-rest.php†L1162-L1321】
 
 See [docs/rest-api.md](docs/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
+
+## 📝 MCP JSON-RPC 2.0 Endpoint
+
+WP oOS implements a dedicated `/mcp` endpoint that follows the Model Context Protocol specification using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
+
+### Endpoint URL
+
+```
+POST /wp-json/mcp-ai/v1/mcp
+```
+
+### JSON-RPC 2.0 Format
+
+All requests must use standard JSON-RPC 2.0 format:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "unique-request-id",
+  "method": "initialize",
+  "params": {}
+}
+```
+
+### Supported Methods
+
+- **`initialize`** - Initialize MCP connection and retrieve server capabilities
+- **`tools/list`** - List available tools for the authenticated assistant
+- **`tools/call`** - Execute a specific tool with parameters
+- **`resources/list`** - List available resources (knowledge files, etc.)
+- **`prompts/list`** - List available prompt shortcuts
+
+### Authentication
+
+The MCP endpoint uses the same authentication as other WP oOS endpoints:
+- WordPress Nonce (`X-WP-Nonce` header)
+- Bearer Tokens (`Authorization: Bearer <token>`)
+- Assistant Credentials (generated from assistant editor)
+- Auth0 JWT (for enterprise authentication)
+
+### Error Handling
+
+Standard JSON-RPC 2.0 error codes:
+- **-32700**: Parse error (invalid JSON)
+- **-32600**: Invalid Request (malformed JSON-RPC)
+- **-32601**: Method not found
+- **-32603**: Internal error
+
+### Use Cases
+
+| Scenario | Use Endpoint | Method |
+|----------|--------------|--------|
+| Remote MCP client connection | `/mcp` | POST |
+| Real-time streaming responses | `/sse` | GET |
+| Standard chat interface | `/chat` | POST |
+| Direct tool execution | `/tools` | POST |
+
+➡️ See [docs/mcp-endpoint.md](docs/mcp-endpoint.md) for complete method documentation and examples.
 
 ---
 
