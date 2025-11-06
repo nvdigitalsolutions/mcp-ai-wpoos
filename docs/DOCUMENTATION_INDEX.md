@@ -97,6 +97,7 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [CROSS-WIDGET-COMMUNICATION.md](CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
 | [chat-history-persistence.md](chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
 
