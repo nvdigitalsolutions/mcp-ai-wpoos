@@ -599,7 +599,8 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 
 ## Related Documentation
 
-- [Authentication Guide](authentication.md) - Complete authentication reference
+- [MCP Server Authentication](mcp-server-authentication.md) - Complete authentication reference including Auth0, bearer tokens, and nonces
+- [Simple JWT Login Integration](authentication.md) - Optional JWT authentication integration
 - [Tool Reference](tool-reference.md) - All 65+ built-in tools including `query_remote_site`
 - [REST API Documentation](rest-api.md) - REST endpoint specifications
 - [Orchestration Layer Architecture](ORCHESTRATION-LAYER-ARCHITECTURE.md) - Distributed orchestration design
