@@ -5753,6 +5753,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
 
+			// Get all user IDs with usage data before deleting.
+			$user_ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+					$meta_key
+				)
+			);
+
 			// Delete all usage data.
 			$deleted = $wpdb->delete(
 				$wpdb->usermeta,
@@ -5763,6 +5771,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			if ( false === $deleted ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to reset token usage data.', 'wp-mcp-ai' ) ) );
 				return;
+			}
+
+			// Clear usermeta cache for all affected users.
+			foreach ( $user_ids as $user_id ) {
+				clean_user_cache( $user_id );
 			}
 
 			wp_send_json_success(
