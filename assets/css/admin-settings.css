@@ -624,6 +624,116 @@
 	}
 }
 
+/* Token Usage Section */
+.wp-mcp-ai-token-usage-section {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 1.5rem;
+	margin: 2rem 0;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.wp-mcp-ai-token-usage-section h2 {
+	margin-top: 0;
+	margin-bottom: 0.5rem;
+	font-size: 1.5rem;
+	color: #0f172a;
+}
+
+.wp-mcp-ai-token-usage-section > .description {
+	margin-bottom: 1.5rem;
+	color: #64748b;
+}
+
+.wp-mcp-ai-token-usage-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+	gap: 1.5rem;
+	margin-bottom: 2rem;
+}
+
+.wp-mcp-ai-token-usage-card {
+	background: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	padding: 1.25rem;
+}
+
+.wp-mcp-ai-token-usage-card h3 {
+	margin: 0 0 1rem;
+	font-size: 1.125rem;
+	color: #0f172a;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-token-usage-stats {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-token-usage-stat {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-token-usage-stat:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-token-usage-stat__label {
+	font-weight: 500;
+	color: #64748b;
+}
+
+.wp-mcp-ai-token-usage-stat__value {
+	font-weight: 700;
+	color: #0f172a;
+	font-size: 1.125rem;
+}
+
+.wp-mcp-ai-token-usage-actions {
+	margin-top: 1rem;
+	padding-top: 1rem;
+	border-top: 1px solid #e5e7eb;
+}
+
+.wp-mcp-ai-token-usage-actions button {
+	width: 100%;
+}
+
+.wp-mcp-ai-token-usage-details {
+	margin-top: 2rem;
+}
+
+.wp-mcp-ai-token-usage-details h3 {
+	margin: 0 0 1rem;
+	font-size: 1.125rem;
+	color: #0f172a;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-token-usage-details table {
+	margin-top: 1rem;
+}
+
+.wp-mcp-ai-token-usage-details table th {
+	font-weight: 600;
+	text-align: left;
+}
+
+.wp-mcp-ai-token-usage-details table td code {
+	background: #f3f4f6;
+	padding: 0.25rem 0.5rem;
+	border-radius: 4px;
+	font-size: 0.875rem;
+}
+
 /* Smooth animations */
 @media (prefers-reduced-motion: no-preference) {
 	.wp-mcp-ai-section,

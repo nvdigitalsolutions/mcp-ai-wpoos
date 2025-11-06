@@ -578,7 +578,97 @@ window.wpMcpAiSaveExpandedState = function() {
         initLMStudioHandlers();
         initCloudwaysHandlers();
         initCloudflareHandlers();
+        initTokenUsageHandlers();
         
         log('All admin handlers initialized successfully');
     });
+    
+    /**
+     * Initialize token usage management handlers.
+     */
+    function initTokenUsageHandlers() {
+        log('Initializing token usage handlers...');
+        
+        // Reset user token usage
+        $('#wp-mcp-ai-reset-user-usage').on('click', function(e) {
+            e.preventDefault();
+            log('Reset user usage button clicked');
+            
+            const $btn = $(this);
+            const confirmMessage = $btn.data('confirm');
+            
+            if (!confirm(confirmMessage)) {
+                log('User cancelled reset operation');
+                return;
+            }
+            
+            $btn.prop('disabled', true).text('Resetting...');
+            
+            $.ajax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_reset_user_token_usage',
+                    nonce: wpMcpAiAdmin.nonce
+                },
+                success: function(response) {
+                    log('Reset user usage response:', response);
+                    if (response.success) {
+                        alert(response.data.message);
+                        location.reload();
+                    } else {
+                        alert(response.data.message || 'Failed to reset token usage.');
+                        $btn.prop('disabled', false).text('Reset My Usage Data');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    log('Reset user usage error:', error);
+                    alert('Error: ' + error);
+                    $btn.prop('disabled', false).text('Reset My Usage Data');
+                }
+            });
+        });
+        
+        // Reset all token usage
+        $('#wp-mcp-ai-reset-all-usage').on('click', function(e) {
+            e.preventDefault();
+            log('Reset all usage button clicked');
+            
+            const $btn = $(this);
+            const confirmMessage = $btn.data('confirm');
+            
+            if (!confirm(confirmMessage)) {
+                log('User cancelled reset operation');
+                return;
+            }
+            
+            $btn.prop('disabled', true).text('Resetting...');
+            
+            $.ajax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_reset_all_token_usage',
+                    nonce: wpMcpAiAdmin.nonce
+                },
+                success: function(response) {
+                    log('Reset all usage response:', response);
+                    if (response.success) {
+                        alert(response.data.message);
+                        location.reload();
+                    } else {
+                        alert(response.data.message || 'Failed to reset token usage.');
+                        $btn.prop('disabled', false).text('Reset All Usage Data');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    log('Reset all usage error:', error);
+                    alert('Error: ' + error);
+                    $btn.prop('disabled', false).text('Reset All Usage Data');
+                }
+            });
+        });
+        
+        log('Token usage handlers initialized');
+    }
 })(jQuery);
