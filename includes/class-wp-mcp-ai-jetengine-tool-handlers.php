@@ -475,9 +475,10 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	/**
 	 * Dispatch the request using wp_remote_request().
 	 *
-	 * @param string $route  Route relative to the JetEngine namespace.
-	 * @param string $method HTTP method.
-	 * @param array  $params Request parameters.
+	 * @param string $route   Route relative to the JetEngine namespace.
+	 * @param string $method  HTTP method.
+	 * @param array  $params  Request parameters.
+	 * @param array  $context Execution context including user_id.
 	 * @return array
 	 */
 	protected static function dispatch_remote( $route, $method, array $params, array $context = array() ) {
@@ -728,6 +729,8 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	 *
 	 * @param string $route_pattern Route pattern, optionally containing a sprintf placeholder.
 	 * @param string $item_id       Item identifier.
+	 * @param array  $path_params   Additional path parameters to substitute into the route.
+	 * @param bool   $requires_id   Whether the route requires an item ID.
 	 * @return string
 	 */
 	protected static function build_route( $route_pattern, $item_id, array $path_params, $requires_id ) {
