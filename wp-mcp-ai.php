@@ -133,14 +133,13 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
 // Skip buffering during Elementor AJAX requests to avoid interfering with cache clearing and other operations.
-$is_elementor_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+$is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-if ( $is_elementor_ajax && isset( $_REQUEST['action'] ) ) {
+$is_elementor_ajax = false;
+if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
 	$request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 	$is_elementor_ajax = ( strpos( $request_action, 'elementor' ) === 0 );
-} else {
-	$is_elementor_ajax = false;
 }
 
 if ( ! $is_elementor_ajax ) {

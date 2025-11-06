@@ -2,7 +2,7 @@
 
 ## Issue Summary
 
-The WP oOS plugin was interfering with Elementor's cache clearing function due to early global output buffering that wrapped all plugin initialization code.
+The WP MCP AI plugin was interfering with Elementor's cache clearing function due to early global output buffering that wrapped all plugin initialization code.
 
 ## Problem Description
 
