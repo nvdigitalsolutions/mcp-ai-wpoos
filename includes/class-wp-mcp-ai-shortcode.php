@@ -240,17 +240,19 @@ class WP_MCP_AI_Shortcode {
 	public function render_shortcode( $atts, $content = '', $tag = '' ) {
 		$atts = shortcode_atts(
 			array(
-				'assistant'       => '',
-				'allow_guests'    => 'false',
-				'save_transcript' => 'true',
+				'assistant'        => '',
+				'allow_guests'     => 'false',
+				'save_transcript'  => 'true',
+				'enable_streaming' => 'false',
 			),
 			$atts,
 			$tag
 		);
 
-		$assistant_id    = self::resolve_assistant_id( $atts['assistant'] );
-		$allow_guests    = wp_validate_boolean( $atts['allow_guests'] );
-		$save_transcript = wp_validate_boolean( $atts['save_transcript'] );
+		$assistant_id     = self::resolve_assistant_id( $atts['assistant'] );
+		$allow_guests     = wp_validate_boolean( $atts['allow_guests'] );
+		$save_transcript  = wp_validate_boolean( $atts['save_transcript'] );
+		$enable_streaming = wp_validate_boolean( $atts['enable_streaming'] );
 
 		if ( ! $assistant_id ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
@@ -323,6 +325,7 @@ class WP_MCP_AI_Shortcode {
 			'allowGuests'           => (bool) $allow_guests,
 			'canUploadAttachments'  => (bool) $can_upload_attachments,
 			'saveTranscript'        => (bool) $save_transcript,
+			'enableStreaming'       => (bool) $enable_streaming,
 			'sessionKey'            => $session_key,
 			'historyPerPage'        => 20,
 		);

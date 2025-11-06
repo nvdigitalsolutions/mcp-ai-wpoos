@@ -5008,6 +5008,17 @@
             disableForm(state, false);
         }
 
+        // Check if streaming is enabled
+        const enableStreaming = state.config.enableStreaming === true;
+
+        if (enableStreaming) {
+            // Add stream flag to payload
+            payload.stream = true;
+            
+            return sendChatStreaming(state, payload, submissionContext, finalize);
+        }
+
+        // Non-streaming request (original implementation)
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: buildJsonHeaders(state),
@@ -5039,6 +5050,163 @@
                 restoreSubmissionState(state, submissionContext);
                 finalize();
             });
+    }
+
+    function sendChatStreaming(state, payload, submissionContext, finalize) {
+        const headers = buildJsonHeaders(state);
+        headers['Accept'] = 'text/event-stream';
+
+        let streamingMessageElement = null;
+        let streamCompleted = false;
+
+        // Create a placeholder message element for streaming content
+        function createStreamingMessage() {
+            if (!streamingMessageElement) {
+                streamingMessageElement = appendMessage(state.messagesEl, 'assistant', {
+                    text: '',
+                    attachments: []
+                }, true, {
+                    speech: {
+                        state: state,
+                        text: '',
+                    },
+                });
+            }
+            return streamingMessageElement;
+        }
+
+        // Update the streaming message with new content
+        function updateStreamingMessage(content) {
+            if (!streamingMessageElement) {
+                createStreamingMessage();
+            }
+
+            // Find the bubble content element
+            const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
+            if (bubble) {
+                // Update text content with accumulated response
+                // Using textContent for progressive streaming (not innerHTML) to prevent XSS
+                // Content will be properly formatted when finalized
+                bubble.textContent = content;
+            }
+        }
+
+        return fetch(state.config.messagesEndpoint, {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw response;
+                }
+
+                // Check if response is actually SSE
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('text/event-stream')) {
+                    // Fallback to non-streaming if SSE not supported
+                    // Clean up streaming message element if it was created
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                        streamingMessageElement = null;
+                    }
+                    
+                    return response.json().then(function (data) {
+                        return handleChatResponse(state, data);
+                    });
+                }
+
+                return processSSEStream(state, response, updateStreamingMessage);
+            })
+            .then(function (finalData) {
+                streamCompleted = true;
+
+                // Add accumulated content to conversation
+                // finalData.content contains the full streamed response
+                if (finalData && finalData.content) {
+                    state.conversation.push({
+                        role: 'assistant',
+                        content: finalData.content
+                    });
+                }
+
+                saveConversationToStorage(state);
+                finalize();
+                clearStatus(state.container);
+                return finalData;
+            })
+            .catch(function (error) {
+                if (!streamCompleted) {
+                    handleError(state, error);
+                    restoreSubmissionState(state, submissionContext);
+                    
+                    // Remove the incomplete streaming message
+                    if (streamingMessageElement && streamingMessageElement.parentNode) {
+                        streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+                    }
+                }
+                finalize();
+                throw error;
+            });
+    }
+
+    function processSSEStream(state, response, updateCallback) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let fullContent = '';
+
+        function readChunk() {
+            return reader.read().then(function (result) {
+                if (result.done) {
+                    return { content: fullContent };
+                }
+
+                buffer += decoder.decode(result.value, { stream: true });
+
+                // Process complete SSE events (separated by \n\n)
+                const events = buffer.split('\n\n');
+                buffer = events.pop() || ''; // Keep incomplete event in buffer
+
+                for (let i = 0; i < events.length; i++) {
+                    const event = events[i];
+                    if (!event.trim()) {
+                        continue;
+                    }
+
+                    // Parse SSE event (format: "data: {...}")
+                    if (event.startsWith('data: ')) {
+                        const dataStr = event.substring(6);
+
+                        // Handle [DONE] marker
+                        if (dataStr.trim() === '[DONE]') {
+                            return { content: fullContent };
+                        }
+
+                        try {
+                            const data = JSON.parse(dataStr);
+
+                            // Extract content from OpenAI format streaming response
+                            if (data.choices && data.choices[0]) {
+                                const delta = data.choices[0].delta;
+                                if (delta && delta.content) {
+                                    fullContent += delta.content;
+                                    updateCallback(fullContent);
+                                }
+                            }
+                        } catch (parseError) {
+                            // Ignore malformed JSON chunks
+                        }
+                    }
+                }
+
+                // Continue reading
+                return readChunk();
+            });
+        }
+
+        return readChunk();
     }
 
     function restoreSubmissionState(state, submissionContext) {
@@ -5429,6 +5597,10 @@
 
         statusEl.textContent = message;
         statusEl.hidden = false;
+    }
+
+    function clearStatus(container) {
+        setStatus(container, '');
     }
 
     function appendMessage(listEl, role, payload, allowMarkdown, options) {
