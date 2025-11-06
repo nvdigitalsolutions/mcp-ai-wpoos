@@ -245,7 +245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						'lm_studio_model'        => __( 'Model', 'wp-mcp-ai' ),
 					),
 					'description'      => __( 'Connects to a local LM Studio server with OpenAI-compatible API for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:1234) and select a model from your LM Studio server.', 'wp-mcp-ai' ),
+					'usage'            => __( 'Enter the endpoint URL (e.g., http://127.0.0.1:1234) and select a model from your LM Studio server.', 'wp-mcp-ai' ),
 				),
 				'brave'            => array(
 					'label'            => __( 'Brave Search', 'wp-mcp-ai' ),
@@ -3224,9 +3224,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_lm_studio_endpoint_url_field() {
 			$settings = self::get_settings();
 			?>
-		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_endpoint_url]" value="<?php echo esc_attr( $settings['lm_studio_endpoint_url'] ); ?>" class="regular-text" placeholder="http://localhost:1234" />
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_endpoint_url]" value="<?php echo esc_attr( $settings['lm_studio_endpoint_url'] ); ?>" class="regular-text" placeholder="http://127.0.0.1:1234" />
 		<p class="description">
-			<?php esc_html_e( 'Enter the URL where your LM Studio server is running (e.g., http://localhost:1234).', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enter the URL where your LM Studio server is running (e.g., http://127.0.0.1:1234).', 'wp-mcp-ai' ); ?>
 			<button type="button" id="wp-mcp-ai-test-lm-studio-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
 			<span id="wp-mcp-ai-lm-studio-test-result" style="margin-left: 10px;"></span>
 		</p>
