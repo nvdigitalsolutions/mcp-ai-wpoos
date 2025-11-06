@@ -257,5 +257,104 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			return $normalized;
 		}
+
+		/**
+		 * Create a text completion request against Ollama.
+		 * This uses the /api/generate endpoint which is useful for
+		 * simple text completion tasks without the chat format overhead.
+		 *
+		 * @param string $prompt  The text prompt to complete.
+		 * @param array  $options Additional options (model, temperature, timeout).
+		 * @return array|WP_Error
+		 */
+		public function create_completion( $prompt, array $options = array() ) {
+			$endpoint_url = $this->get_endpoint_url();
+
+			if ( empty( $endpoint_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_ollama_endpoint',
+					__( 'No Ollama endpoint URL configured.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_ollama_model',
+					__( 'No Ollama model configured.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $prompt ) || ! is_string( $prompt ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_prompt',
+					__( 'No prompt was provided for the completion request.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$payload = array(
+				'model'  => $model,
+				'prompt' => wp_kses_post( (string) $prompt ),
+				'stream' => false,
+			);
+
+			// Add temperature if specified.
+			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+				$payload['options'] = array(
+					'temperature' => (float) $options['temperature'],
+				);
+			}
+
+			$url      = untrailingslashit( $endpoint_url ) . '/api/generate';
+			$response = wp_remote_post(
+				$url,
+				array(
+					'headers' => array( 'Content-Type' => 'application/json' ),
+					'body'    => wp_json_encode( $payload ),
+					'timeout' => $this->resolve_timeout( $options ),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'Ollama completion request failed.', 'wp-mcp-ai' ),
+					__( 'Ollama', 'wp-mcp-ai' )
+				);
+			}
+
+			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON response from Ollama.', 'wp-mcp-ai' ) );
+			}
+
+			// Ollama's generate endpoint returns: { "response": "text", "done": true, ... }
+			// Normalize to OpenAI-style format for consistency.
+			if ( isset( $decoded['response'] ) ) {
+				$normalized = array(
+					'id'      => 'ollama-gen-' . time(),
+					'object'  => 'text_completion',
+					'created' => time(),
+					'model'   => $model,
+					'choices' => array(
+						array(
+							'text'          => $decoded['response'],
+							'index'         => 0,
+							'finish_reason' => isset( $decoded['done'] ) && $decoded['done'] ? 'stop' : 'length',
+						),
+					),
+				);
+
+				return $normalized;
+			}
+
+			return $decoded;
+		}
 	}
 }

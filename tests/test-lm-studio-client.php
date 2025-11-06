@@ -333,4 +333,105 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertEquals( $test_endpoint, $this->client->get_endpoint_url() );
 		$this->assertEquals( $test_model, $this->client->get_model() );
 	}
+
+	/**
+	 * Test create_completion with no endpoint configured.
+	 */
+	public function test_create_completion_with_no_endpoint() {
+		$result = $this->client->create_completion( 'test prompt' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_lm_studio_endpoint', $result->get_error_code() );
+	}
+
+	/**
+	 * Test create_completion with no model configured.
+	 */
+	public function test_create_completion_with_no_model() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		$result = $this->client->create_completion( 'test prompt' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_lm_studio_model', $result->get_error_code() );
+	}
+
+	/**
+	 * Test create_completion with empty prompt.
+	 */
+	public function test_create_completion_with_empty_prompt() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$result = $this->client->create_completion( '' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_missing_prompt', $result->get_error_code() );
+	}
+
+	/**
+	 * Test create_completion with successful response.
+	 */
+	public function test_create_completion_success() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/completions' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'cmpl-123',
+								'object'  => 'text_completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'text'          => ' Paris',
+										'index'         => 0,
+										'logprobs'      => null,
+										'finish_reason' => 'stop',
+									),
+								),
+								'usage'   => array(
+									'prompt_tokens'     => 5,
+									'completion_tokens' => 2,
+									'total_tokens'      => 7,
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$result = $this->client->create_completion( 'The capital of France is' );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'id', $result );
+		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertEquals( 'test-model', $result['model'] );
+		$this->assertEquals( ' Paris', $result['choices'][0]['text'] );
+	}
 }

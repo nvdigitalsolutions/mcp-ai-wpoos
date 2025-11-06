@@ -60,25 +60,31 @@ Uses Google's native API:
    - Gemini uses Google's API format (entirely different structure)
    - They don't need OpenAI-compatible endpoints
 
-### 2. **LM Studio is OpenAI-compatible, but only partially**
+### 2. **LM Studio is OpenAI-compatible, but only for core features**
    - LM Studio implements OpenAI's **core** endpoints for compatibility
-   - It focuses on chat completions (the main use case)
-   - Advanced features like Responses API may not be implemented
+   - It focuses on chat and text completions (the main use cases)
+   - Advanced features like Responses API, audio, images are NOT supported
 
 ### 3. **The `/v1/responses` endpoint is OpenAI-specific**
    - This is a newer OpenAI API for handling document attachments
    - Most OpenAI-compatible servers (like LM Studio) don't implement it
    - It's only used when sending PDFs, DOCs, etc. (not images)
 
-### 4. **The `/v1/completions` endpoint is legacy**
-   - This is the old "text completion" API (not chat-based)
-   - Modern implementations use `/v1/chat/completions` instead
-   - The plugin doesn't use this endpoint for any provider
+### 4. **The `/v1/completions` endpoint is useful for simple tasks**
+   - This is the "text completion" API (fill-in-the-blank style)
+   - Simpler than chat completions for basic text generation
+   - **NOW IMPLEMENTED** in LM Studio client for broader compatibility
 
 ### 5. **The `/v1/embeddings` endpoint is for vector embeddings**
    - Used for semantic search, RAG systems, etc.
    - The plugin doesn't currently implement embedding functionality
    - If added in the future, it would need to be provider-specific
+
+### 6. **Audio and Image endpoints are provider-specific**
+   - **Speech synthesis** (`/v1/audio/speech`) - Only OpenAI supports this
+   - **Audio transcription** (`/v1/audio/transcriptions`) - Only OpenAI supports this
+   - **Image generation** (`/v1/images/generations`) - OpenAI and Gemini have separate implementations
+   - LM Studio focuses on text models and doesn't support these modalities
 
 ## Current Plugin Architecture
 
@@ -103,16 +109,47 @@ WP_MCP_AI_Language_Model_Router::create_chat_completion()
 
 ## Recommendations
 
-### For LM Studio:
-1. ✅ **Keep current implementation** - `/v1/models` and `/v1/chat/completions` are sufficient
-2. ❌ **Don't add `/v1/responses`** - LM Studio likely doesn't support it
-3. ❌ **Don't add `/v1/completions`** - Legacy endpoint, not needed
-4. ❌ **Don't add `/v1/embeddings`** - Not used by plugin currently
-5. ✅ **Update default endpoint** - Use `127.0.0.1:1234` for consistency
+### For LM Studio (IMPLEMENTED):
+1. ✅ **Implemented** - `/v1/models` (list available models)
+2. ✅ **Implemented** - `/v1/chat/completions` (chat interactions)
+3. ✅ **Implemented** - `/v1/completions` (simple text completions)
+4. ❌ **Skip** - `/v1/responses` (LM Studio doesn't support document attachments)
+5. ❌ **Skip** - `/v1/embeddings` (not used by plugin currently)
+6. ❌ **Skip** - `/v1/audio/*` (LM Studio doesn't support audio)
+7. ❌ **Skip** - `/v1/images/*` (LM Studio doesn't support image generation)
+8. ✅ **Updated** - Default endpoint to `127.0.0.1:1234` for consistency
+
+### Usage Examples:
+
+**Chat Completions** (Primary use case - multi-turn conversations):
+```php
+$lm_studio = new WP_MCP_AI_LM_Studio_Client();
+$response = $lm_studio->create_chat_completion(
+    array(
+        array( 'role' => 'user', 'content' => 'Hello!' ),
+    ),
+    array(
+        'model'       => 'llama-3-8b',
+        'temperature' => 0.7,
+    )
+);
+```
+
+**Text Completions** (NEW - simple fill-in-the-blank style):
+```php
+$lm_studio = new WP_MCP_AI_LM_Studio_Client();
+$response = $lm_studio->create_completion(
+    'The capital of France is',
+    array(
+        'model'      => 'llama-3-8b',
+        'max_tokens' => 10,
+    )
+);
+```
 
 ### For Future Enhancements:
 If document attachment support is needed for LM Studio:
-1. First check if LM Studio supports the Responses API
+1. First check if LM Studio supports the Responses API (unlikely)
 2. If not, implement document-to-text conversion before sending
 3. Or use image-only attachments (which work with Chat Completions)
 
@@ -126,11 +163,17 @@ If document attachment support is needed for LM Studio:
 
 ## Conclusion
 
-**The LM Studio client does NOT need the additional endpoints mentioned in the problem statement.**
+**The LM Studio client now implements all practical endpoints that LM Studio supports.**
 
-The current implementation is correct and sufficient for chat functionality. LM Studio is OpenAI-compatible for the core chat completion endpoint, but doesn't necessarily implement all of OpenAI's advanced features like:
+The implementation includes:
+- ✅ `/v1/models` - Model listing
+- ✅ `/v1/chat/completions` - Chat interactions (primary use case)  
+- ✅ `/v1/completions` - Simple text completions (NEW)
+
+These cover all the OpenAI-compatible text generation capabilities that LM Studio provides. LM Studio is OpenAI-compatible for core text completion features, but doesn't implement OpenAI's advanced modality features like:
 - Responses API (for document attachments)
-- Legacy completions endpoint
+- Audio synthesis and transcription
+- Image generation
 - Embeddings API
 
-Each provider has its own capabilities and API design, and the plugin correctly adapts to each one through the Language Model Router pattern.
+Each provider has its own capabilities and API design, and the plugin correctly adapts to each one through the Language Model Router pattern. The LM Studio implementation now provides complete coverage of its supported endpoints while remaining realistic about its limitations compared to cloud-based services like OpenAI.
