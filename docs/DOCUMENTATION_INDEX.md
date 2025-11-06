@@ -91,6 +91,7 @@ This document provides a comprehensive index of all documentation available for 
 |----------|-------------|----------|
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
+| [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |
 
 ### Chat Features
