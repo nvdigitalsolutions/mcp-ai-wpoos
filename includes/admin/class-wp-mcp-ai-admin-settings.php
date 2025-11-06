@@ -185,6 +185,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'sse_enable_post_method'            => false,
 				'enable_high_token_model_switch'    => true,
 				'high_token_fallback_model'         => 'gemini-2.0-flash-exp',
+				'enable_mesh'                       => false,
+				'mesh_inbound_api_key'              => '',
+				'mesh_peer_sites'                   => array(),
 			);
 		}
 
@@ -1915,6 +1918,83 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				self::PAGE_SLUG,
 				'wp_mcp_ai_maintenance_section'
 			);
+
+			add_settings_section(
+				'wp_mcp_ai_mesh_section',
+				__( 'Mesh Network', 'wp-mcp-ai' ),
+				array( $this, 'render_mesh_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'enable_mesh',
+				__( 'Enable Mesh Networking', 'wp-mcp-ai' ),
+				array( $this, 'render_enable_mesh_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_mesh_section'
+			);
+
+			add_settings_field(
+				'mesh_inbound_api_key',
+				__( 'Inbound API Key', 'wp-mcp-ai' ),
+				array( $this, 'render_mesh_inbound_api_key_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_mesh_section'
+			);
+
+			add_settings_field(
+				'mesh_peer_sites',
+				__( 'Peer Sites', 'wp-mcp-ai' ),
+				array( $this, 'render_mesh_peer_sites_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_mesh_section'
+			);
+		}
+
+		/**
+		 * Generate a secure mesh API key.
+		 *
+		 * @return string
+		 */
+		private function generate_mesh_api_key() {
+			return 'mesh_' . wp_generate_password( 40, false, false );
+		}
+
+		/**
+		 * Sanitize mesh peer sites array.
+		 *
+		 * @param array $peer_sites Array of peer site configurations.
+		 * @return array
+		 */
+		private function sanitize_mesh_peer_sites( $peer_sites ) {
+			if ( ! is_array( $peer_sites ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+
+			foreach ( $peer_sites as $peer ) {
+				if ( ! is_array( $peer ) ) {
+					continue;
+				}
+
+				$name    = isset( $peer['name'] ) ? trim( sanitize_text_field( $peer['name'] ) ) : '';
+				$url     = isset( $peer['url'] ) ? trim( esc_url_raw( $peer['url'] ) ) : '';
+				$api_key = isset( $peer['api_key'] ) ? trim( sanitize_text_field( $peer['api_key'] ) ) : '';
+
+				// Skip empty entries.
+				if ( '' === $name && '' === $url && '' === $api_key ) {
+					continue;
+				}
+
+				$sanitized[] = array(
+					'name'    => $name,
+					'url'     => $url,
+					'api_key' => $api_key,
+				);
+			}
+
+			return $sanitized;
 		}
 
 		/**
@@ -2268,6 +2348,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['high_token_fallback_model'] ) ) {
 				$clean['high_token_fallback_model'] = sanitize_text_field( $settings['high_token_fallback_model'] );
+			}
+
+			// Mesh networking settings.
+			$clean['enable_mesh'] = ! empty( $settings['enable_mesh'] );
+
+			if ( isset( $settings['mesh_inbound_api_key'] ) ) {
+				$clean['mesh_inbound_api_key'] = sanitize_text_field( $settings['mesh_inbound_api_key'] );
+			}
+
+			// Generate inbound API key if mesh is being enabled and no key exists - security improvement.
+			if ( $clean['enable_mesh'] && empty( $clean['mesh_inbound_api_key'] ) ) {
+				$clean['mesh_inbound_api_key'] = $this->generate_mesh_api_key();
+			}
+
+			if ( isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] ) ) {
+				$clean['mesh_peer_sites'] = $this->sanitize_mesh_peer_sites( $settings['mesh_peer_sites'] );
 			}
 
 			return $clean;
@@ -2732,6 +2828,110 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php esc_html_e( 'When uninstalling the plugin, remove assistants, settings, and other stored data.', 'wp-mcp-ai' ); ?>
 		</label>
 		<p class="description"><?php esc_html_e( 'Leave unchecked to preserve plugin data for future installations.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render mesh networking section description.
+		 */
+		public function render_mesh_section_description() {
+			?>
+		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running WP oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the enable mesh networking field.
+		 */
+		public function render_enable_mesh_field() {
+			$settings = self::get_settings();
+			?>
+		<label for="wp-mcp-ai-enable-mesh">
+			<input id="wp-mcp-ai-enable-mesh" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_mesh]" value="1" <?php checked( $settings['enable_mesh'] ); ?> />
+			<?php esc_html_e( 'Enable mesh networking for this site', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, this site can accept requests from peer sites and query other sites in the mesh network.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the mesh inbound API key field.
+		 */
+		public function render_mesh_inbound_api_key_field() {
+			$settings = self::get_settings();
+			$api_key  = $settings['mesh_inbound_api_key'];
+
+			if ( ! empty( $settings['enable_mesh'] ) && empty( $api_key ) ) {
+				$api_key = $this->generate_mesh_api_key();
+			}
+			?>
+		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mesh_inbound_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" readonly />
+		<p class="description"><?php esc_html_e( 'This is the API key that other sites must use to authenticate with this site. It is automatically generated when mesh networking is enabled.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the mesh peer sites field.
+		 */
+		public function render_mesh_peer_sites_field() {
+			$settings    = self::get_settings();
+			$peer_sites  = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] ) ? $settings['mesh_peer_sites'] : array();
+			$option_name = self::OPTION_NAME;
+			?>
+		<div id="wp-mcp-ai-mesh-peers">
+			<table class="widefat" style="margin-bottom: 15px;">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Name', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Site URL', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'API Key', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					if ( ! empty( $peer_sites ) ) {
+						foreach ( $peer_sites as $index => $peer ) {
+							$name    = isset( $peer['name'] ) ? $peer['name'] : '';
+							$url     = isset( $peer['url'] ) ? $peer['url'] : '';
+							$api_key = isset( $peer['api_key'] ) ? $peer['api_key'] : '';
+							?>
+					<tr class="wp-mcp-ai-mesh-peer-row">
+						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][name]" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" /></td>
+						<td><input type="url" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" class="regular-text" placeholder="https://example.com" /></td>
+						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" placeholder="mesh_..." /></td>
+						<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button></td>
+					</tr>
+							<?php
+						}
+					}
+					?>
+				</tbody>
+			</table>
+			<button type="button" class="button" id="wp-mcp-ai-add-peer"><?php esc_html_e( 'Add Peer Site', 'wp-mcp-ai' ); ?></button>
+		</div>
+		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'wp-mcp-ai' ); ?></p>
+		<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			var peerIndex = <?php echo count( $peer_sites ); ?>;
+			var optionName = '<?php echo esc_js( $option_name ); ?>';
+
+			$('#wp-mcp-ai-add-peer').on('click', function() {
+				var newRow = $('<tr class="wp-mcp-ai-mesh-peer-row">' +
+					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][name]" value="" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" /></td>' +
+					'<td><input type="url" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][url]" value="" class="regular-text" placeholder="https://example.com" /></td>' +
+					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][api_key]" value="" class="regular-text" placeholder="mesh_..." /></td>' +
+					'<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button></td>' +
+					'</tr>');
+				$('#wp-mcp-ai-mesh-peers tbody').append(newRow);
+				peerIndex++;
+			});
+
+			$(document).on('click', '.wp-mcp-ai-remove-peer', function() {
+				$(this).closest('tr').remove();
+			});
+		});
+		</script>
 			<?php
 		}
 

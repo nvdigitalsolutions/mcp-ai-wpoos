@@ -1127,6 +1127,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$requires_authenticated_user = ! empty( $capability ) && 'public' !== $capability;
 
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			if ( ! empty( $mesh_key ) ) {
+				$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+				if ( true === $mesh_validated ) {
+					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+					return true;
+				} elseif ( is_wp_error( $mesh_validated ) ) {
+					return $mesh_validated;
+				}
+			}
+
 			$bearer = $request->get_header( 'Authorization' );
 			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 				$token = trim( $matches[1] );
@@ -1289,6 +1302,55 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			 * @param WP_REST_Request  $request    Current REST request.
 			 */
 			do_action( 'wp_mcp_ai_authenticated_with_credential', $validated, $request );
+
+			return true;
+		}
+
+		/**
+		 * Validate a mesh network API key.
+		 *
+		 * @param string $key The mesh API key to validate.
+		 * @return true|WP_Error
+		 */
+		protected function validate_mesh_key( $key ) {
+			if ( empty( $key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_mesh_key',
+					__( 'Mesh API key is missing.', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Check if mesh networking is enabled.
+			if ( empty( $settings['enable_mesh'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_mesh_disabled',
+					__( 'Mesh networking is not enabled on this site.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			// Validate the key against the stored inbound API key.
+			$inbound_key = isset( $settings['mesh_inbound_api_key'] ) ? $settings['mesh_inbound_api_key'] : '';
+
+			if ( empty( $inbound_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_mesh_not_configured',
+					__( 'Mesh networking inbound API key is not configured.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// Use hash_equals to prevent timing attacks.
+			if ( ! hash_equals( $inbound_key, $key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_mesh_key',
+					__( 'Invalid mesh API key.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
 
 			return true;
 		}
