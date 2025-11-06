@@ -38,6 +38,7 @@
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
 - [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
+- [🌊 SSE Streaming Support](#-sse-streaming-support)
 - [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-20-endpoint)
 - [🔑 Assistant API Credentials](#-assistant-api-credentials)
 
@@ -177,7 +178,8 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 ### Performance & reliability
 - ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/message-bundling-feature.md†L1-L80】
 - 🎯 Intelligent token overflow handling with automatic model switching (gpt-4o-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
-- 📡 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
+- 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
+- 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 
@@ -900,6 +902,8 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 WP oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
+
 ### Quick Start
 
 1. **Generate an assistant credential** from any published assistant's **API Credentials** meta box
@@ -989,6 +993,136 @@ All front-end chat surfaces ultimately call the MCP REST namespace at `/wp-json/
 - **`POST /tools`** – Executes a specific registered tool outside of a chat turn. The endpoint enforces assistant tool allowlists, scopes credential-based requests to the issuing assistant, merges assistant defaults (such as external action identifiers), and returns the tool result with execution metadata.【F:includes/class-wp-mcp-ai-rest.php†L264-L322】【F:includes/class-wp-mcp-ai-rest.php†L1162-L1321】
 
 See [docs/rest-api.md](docs/rest-api.md) for payload examples, attachment handling rules, and troubleshooting tips when integrating custom clients.
+
+## 🌊 SSE Streaming Support
+
+WP oOS includes comprehensive Server-Sent Events (SSE) support for real-time streaming responses, enabling faster perceived response times and better user experience.
+
+### What is SSE?
+
+Server-Sent Events provide unidirectional server-to-client streaming over HTTP, allowing the server to push updates as they become available rather than waiting for the complete response.
+
+**Benefits:**
+- ⚡ **Faster perceived response time** - Users see content immediately as it's generated
+- 🔄 **Real-time updates** - Progressive loading for long-running operations
+- 📶 **Connection keep-alive** - Prevents timeouts during lengthy responses
+- 🎯 **Better UX** - ChatGPT-style typing effect for AI responses
+
+### SSE-Enabled Endpoints
+
+#### 1. Assistant Directory Streaming (`GET /assistants`)
+
+Stream the assistant directory for MCP clients expecting SSE handshakes:
+
+```bash
+curl -H "Accept: text/event-stream" \
+  https://your-site.com/wp-json/mcp-ai/v1/assistants
+```
+
+The endpoint emits a single `directory` event with all accessible assistants, then closes the connection.
+
+#### 2. Dedicated SSE Endpoint (`GET /sse`)
+
+Force SSE mode for MCP clients that specifically probe the `/sse` endpoint:
+
+```bash
+curl https://your-site.com/wp-json/mcp-ai/v1/sse
+```
+
+This mirrors the `/assistants` response but always uses SSE format, ensuring compatibility with LM Studio and Claude Desktop.
+
+#### 3. Job Status Streaming (`GET /jobs/{job_id}/stream`)
+
+Subscribe to real-time updates for async operations like Crawl4AI jobs:
+
+```javascript
+const eventSource = new EventSource(
+    `/wp-json/mcp-ai/v1/jobs/${jobId}/stream?max_duration=300&poll_interval=2`
+);
+
+eventSource.addEventListener('status', (e) => {
+    const status = JSON.parse(e.data);
+    console.log('Progress:', status.progress + '%');
+});
+
+eventSource.addEventListener('complete', (e) => {
+    console.log('Job finished:', e.data);
+    eventSource.close();
+});
+```
+
+### SSE Configuration
+
+#### Enable POST Method for SSE (LM Studio Compatibility)
+
+By default, SSE uses the standard GET method. For clients with SSE bugs (like LM Studio), enable POST support:
+
+1. Go to **Settings → WP oOS → Assistant Settings**
+2. Enable **"Enable POST Method on SSE Endpoint"**
+3. Save settings
+
+⚠️ **Note:** Standard SSE specification uses GET. Only enable POST if you experience client compatibility issues.
+
+### Modern SSE Features (2024-2025)
+
+The SSE implementation includes current best practices:
+- **Automatic reconnection** with `retry:` directive (3-second interval)
+- **Event IDs** for tracking reconnection state
+- **HTTP/2 compatibility** for multiplexing
+- **Proper CORS headers** for cross-origin requests
+- **Cache-Control directives** to prevent proxy buffering
+- **Heartbeat messages** to keep connections alive
+
+### Frontend Integration
+
+Enable SSE streaming in your JavaScript client:
+
+```javascript
+// Request streaming in chat
+const response = await fetch('/wp-json/mcp-ai/v1/chat', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'X-WP-Nonce': wpMcpAi.nonce
+    },
+    body: JSON.stringify({
+        assistant_id: 123,
+        messages: [{ role: 'user', content: 'Hello' }],
+        stream: true
+    })
+});
+
+// Process SSE stream
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let buffer = '';
+
+while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    const events = buffer.split('\n\n');
+    buffer = events.pop();
+    
+    for (const event of events) {
+        if (event.startsWith('data: ')) {
+            const data = JSON.parse(event.substring(6));
+            // Update UI with streaming chunk
+            updateChatUI(data);
+        }
+    }
+}
+```
+
+### Documentation
+
+For complete SSE implementation details, configuration options, and troubleshooting:
+- **[SSE Streaming Guide](docs/ENABLE-SSE-STREAMING.md)** - Complete implementation guide with code examples
+- **[MCP and SSE](docs/MCP-AND-SSE.md)** - Understanding SSE benefits for MCP protocol
+- **[Job Notification System](docs/job-notification-system.md)** - Real-time job status via SSE
+- **[REST API Reference](docs/rest-api.md)** - SSE endpoint specifications
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
