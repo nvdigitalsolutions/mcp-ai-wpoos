@@ -2716,9 +2716,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$badge_class = 'configured';
 				}
 				?>
-				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>" aria-expanded="false">
+				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>">
 					<?php /* translators: %s: section title */ ?>
-					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
+					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-expanded="false" aria-controls="<?php echo esc_attr( $section_id . '__content' ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
 						<div class="wp-mcp-ai-section__header-left">
 							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
 							<div class="wp-mcp-ai-section__title-wrapper">
@@ -2735,7 +2735,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 							<span class="wp-mcp-ai-section__toggle-icon"></span>
 						</div>
 					</div>
-					<div class="wp-mcp-ai-section__content">
+					<div id="<?php echo esc_attr( $section_id . '__content' ); ?>" class="wp-mcp-ai-section__content">
 						<div class="wp-mcp-ai-section__body">
 							<?php
 							if ( $section['callback'] ) {
