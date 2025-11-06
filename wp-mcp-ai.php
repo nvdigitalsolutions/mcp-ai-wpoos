@@ -137,8 +137,8 @@ $is_elementor_ajax = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
 if ( $is_elementor_ajax && isset( $_REQUEST['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
-	$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
-	$is_elementor_ajax = ( strpos( $action, 'elementor' ) === 0 );
+	$request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+	$is_elementor_ajax = ( strpos( $request_action, 'elementor' ) === 0 );
 } else {
 	$is_elementor_ajax = false;
 }

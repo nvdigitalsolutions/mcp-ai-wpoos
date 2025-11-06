@@ -211,24 +211,24 @@ class WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
 		$test_cases = array(
 			// Normal request: should buffer and clean.
 			array(
-				'is_ajax'           => false,
-				'action'            => null,
-				'should_buffer'     => true,
-				'description'       => 'Normal request',
+				'is_ajax'       => false,
+				'action'        => null,
+				'should_buffer' => true,
+				'description'   => 'Normal request',
 			),
 			// Elementor AJAX: should NOT buffer or clean.
 			array(
-				'is_ajax'           => true,
-				'action'            => 'elementor_clear_cache',
-				'should_buffer'     => false,
-				'description'       => 'Elementor AJAX request',
+				'is_ajax'       => true,
+				'action'        => 'elementor_clear_cache',
+				'should_buffer' => false,
+				'description'   => 'Elementor AJAX request',
 			),
 			// Non-Elementor AJAX: should buffer and clean.
 			array(
-				'is_ajax'           => true,
-				'action'            => 'wp_ajax_custom',
-				'should_buffer'     => true,
-				'description'       => 'Non-Elementor AJAX request',
+				'is_ajax'       => true,
+				'action'        => 'wp_ajax_custom',
+				'should_buffer' => true,
+				'description'   => 'Non-Elementor AJAX request',
 			),
 		);
 
