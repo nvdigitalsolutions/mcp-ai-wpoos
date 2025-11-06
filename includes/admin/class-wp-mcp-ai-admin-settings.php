@@ -2717,6 +2717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				}
 				?>
 				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>" aria-expanded="false">
+					<?php /* translators: %s: section title */ ?>
 					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
 						<div class="wp-mcp-ai-section__header-left">
 							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
