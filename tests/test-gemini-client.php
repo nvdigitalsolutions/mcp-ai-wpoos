@@ -1,6 +1,12 @@
 <?php
 /**
  * Tests for the Gemini client wrapper.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Test class for WP_MCP_AI_Gemini_Client.
  */
 class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 
@@ -611,5 +617,337 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Test list_models() requires API key.
+	 */
+	public function test_list_models_requires_api_key() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client   = new WP_MCP_AI_Gemini_Client();
+		$response = $client->list_models( array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_gemini_api_key', $response->get_error_code() );
+	}
+
+	/**
+	 * Test list_models() retrieves available models successfully.
+	 */
+	public function test_list_models_retrieves_models() {
+		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key'] = 'gsk-test';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models' => array(
+							array(
+								'name'        => 'models/gemini-1.5-flash',
+								'displayName' => 'Gemini 1.5 Flash',
+							),
+							array(
+								'name'        => 'models/gemini-1.5-pro',
+								'displayName' => 'Gemini 1.5 Pro',
+							),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$response = $client->list_models( array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'models', $response );
+		$this->assertCount( 2, $response['models'] );
+		$this->assertNotNull( $captured_request );
+		$this->assertStringContainsString( 'models', $captured_request['url'] );
+	}
+
+	/**
+	 * Test count_tokens() requires API key.
+	 */
+	public function test_count_tokens_requires_api_key() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client   = new WP_MCP_AI_Gemini_Client();
+		$response = $client->count_tokens( array(), array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_gemini_api_key', $response->get_error_code() );
+	}
+
+	/**
+	 * Test count_tokens() returns token count for messages.
+	 */
+	public function test_count_tokens_returns_token_count() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-1.5-flash';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'totalTokens' => 42,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello, how are you?',
+			),
+		);
+
+		$response = $client->count_tokens( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'totalTokens', $response );
+		$this->assertSame( 42, $response['totalTokens'] );
+		$this->assertNotNull( $captured_request );
+		$this->assertStringContainsString( 'countTokens', $captured_request['url'] );
+	}
+
+	/**
+	 * Test create_embedding() requires API key.
+	 */
+	public function test_create_embedding_requires_api_key() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client   = new WP_MCP_AI_Gemini_Client();
+		$response = $client->create_embedding( 'Test text', array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_gemini_api_key', $response->get_error_code() );
+	}
+
+	/**
+	 * Test create_embedding() requires text content.
+	 */
+	public function test_create_embedding_requires_text() {
+		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key'] = 'gsk-test';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client   = new WP_MCP_AI_Gemini_Client();
+		$response = $client->create_embedding( '', array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_text', $response->get_error_code() );
+	}
+
+	/**
+	 * Test create_embedding() returns embedding data.
+	 */
+	public function test_create_embedding_returns_embedding() {
+		$defaults                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key'] = 'gsk-test';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'embedding' => array(
+							'values' => array( 0.1, 0.2, 0.3, 0.4, 0.5 ),
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$response = $client->create_embedding(
+			'The quick brown fox jumps over the lazy dog',
+			array(
+				'model'     => 'text-embedding-004',
+				'task_type' => 'RETRIEVAL_DOCUMENT',
+			)
+		);
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'embedding', $response );
+		$this->assertArrayHasKey( 'values', $response['embedding'] );
+		$this->assertCount( 5, $response['embedding']['values'] );
+		$this->assertNotNull( $captured_request );
+		$this->assertStringContainsString( 'embedContent', $captured_request['url'] );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertArrayHasKey( 'content', $payload );
+		$this->assertArrayHasKey( 'taskType', $payload );
+		$this->assertSame( 'RETRIEVAL_DOCUMENT', $payload['taskType'] );
+	}
+
+	/**
+	 * Test stream_chat_completion() requires API key.
+	 */
+	public function test_stream_chat_completion_requires_api_key() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client   = new WP_MCP_AI_Gemini_Client();
+		$response = $client->stream_chat_completion( array(), array() );
+
+		$this->assertWPError( $response );
+		$this->assertSame( 'wp_mcp_ai_missing_gemini_api_key', $response->get_error_code() );
+	}
+
+	/**
+	 * Test stream_chat_completion() processes streaming response.
+	 */
+	public function test_stream_chat_completion_processes_stream() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-1.5-flash';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+		$callback_calls   = array();
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			// Simulate SSE stream response.
+			$sse_body  = 'data: ' . wp_json_encode(
+				array(
+					'candidates' => array(
+						array(
+							'content' => array(
+								'parts' => array(
+									array( 'text' => 'Hello, ' ),
+								),
+							),
+						),
+					),
+				)
+			) . "\n";
+			$sse_body .= 'data: ' . wp_json_encode(
+				array(
+					'candidates'    => array(
+						array(
+							'content' => array(
+								'parts' => array(
+									array( 'text' => 'how can I help you?' ),
+								),
+							),
+						),
+					),
+					'usageMetadata' => array(
+						'promptTokenCount'     => 10,
+						'candidatesTokenCount' => 20,
+					),
+				)
+			) . "\n";
+			$sse_body .= "data: [DONE]\n";
+
+			return array(
+				'headers'  => array(),
+				'body'     => $sse_body,
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$callback = function ( $chunk, $type ) use ( &$callback_calls ) {
+			$callback_calls[] = array(
+				'chunk' => $chunk,
+				'type'  => $type,
+			);
+		};
+
+		$response = $client->stream_chat_completion( $messages, array(), $callback );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertArrayHasKey( 'provider', $response );
+		$this->assertSame( 'gemini', $response['provider'] );
+		$this->assertNotEmpty( $callback_calls );
+		$this->assertSame( 'text', $callback_calls[0]['type'] );
+		$this->assertSame( 'Hello, ', $callback_calls[0]['chunk'] );
+		$this->assertArrayHasKey( 'usage', $response );
+		$this->assertSame( 10, $response['usage']['prompt_tokens'] );
+		$this->assertSame( 20, $response['usage']['completion_tokens'] );
+		$this->assertNotNull( $captured_request );
+		$this->assertStringContainsString( 'streamGenerateContent', $captured_request['url'] );
+		$this->assertStringContainsString( 'alt=sse', $captured_request['url'] );
 	}
 }

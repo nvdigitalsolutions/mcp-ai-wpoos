@@ -474,5 +474,152 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			return $response;
 		}
+
+		/**
+		 * Create a text completion request against LM Studio.
+		 * This uses the legacy completions endpoint which is useful for
+		 * simple text completion tasks without the chat format overhead.
+		 *
+		 * @param string $prompt  The text prompt to complete.
+		 * @param array  $options Additional options (model, temperature, max_tokens, timeout).
+		 * @return array|WP_Error
+		 */
+		public function create_completion( $prompt, array $options = array() ) {
+			$endpoint_url = $this->get_endpoint_url();
+
+			if ( empty( $endpoint_url ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_lm_studio_endpoint',
+					__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$model = $this->resolve_model( $options );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_lm_studio_model',
+					__( 'No LM Studio model has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			if ( empty( $prompt ) || ! is_string( $prompt ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_prompt',
+					__( 'No prompt was provided for the completion request.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'review_request_payload' => __( 'Provide a text prompt before calling the API.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$payload = array(
+				'model'  => $model,
+				'prompt' => wp_kses_post( (string) $prompt ),
+			);
+
+			// Add temperature if specified.
+			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+				$payload['temperature'] = (float) $options['temperature'];
+			}
+
+			// Apply resource-aware max_tokens if not explicitly set.
+			if ( ! isset( $options['max_tokens'] ) ) {
+				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+				$max_tokens   = $resource_mgr->get_max_tokens();
+
+				/**
+				 * Filter the maximum tokens for LM Studio completion requests.
+				 *
+				 * @param int   $max_tokens The maximum tokens to use.
+				 * @param array $options    Request options.
+				 */
+				$max_tokens = apply_filters( 'wp_mcp_ai_lm_studio_completion_max_tokens', $max_tokens, $options );
+
+				if ( $max_tokens > 0 ) {
+					$payload['max_tokens'] = $max_tokens;
+				}
+			} else {
+				$payload['max_tokens'] = absint( $options['max_tokens'] );
+			}
+
+			$url = untrailingslashit( $endpoint_url ) . '/v1/completions';
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode( $payload ),
+				'timeout' => $this->resolve_timeout( $options ),
+			);
+
+			WP_MCP_AI_Logger::log_event( 'lm_studio_completion_request', 'Sending completion request to LM Studio.', array( 'model' => $model ) );
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'LM Studio completion request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The LM Studio completion API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'LM Studio', 'wp-mcp-ai' )
+				);
+			}
+
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
+
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode LM Studio completion response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The LM Studio completion API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'LM Studio completion returned an error response.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			// LM Studio returns OpenAI-compatible format.
+			WP_MCP_AI_Logger::log_event( 'lm_studio_completion_response', 'LM Studio completion request completed.' );
+
+			return $decoded;
+		}
 	}
 }
