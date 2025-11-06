@@ -132,17 +132,30 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
-// Skip buffering during Elementor AJAX requests to avoid interfering with cache clearing and other operations.
+// Skip buffering during Elementor AJAX requests and editor page loads to avoid interfering with Elementor operations.
 $is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
 $is_elementor_ajax = false;
+$is_elementor_editor = false;
+
+// Check for Elementor AJAX requests.
 if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking action name, not processing data.
 	$request_action    = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 	$is_elementor_ajax = ( strpos( $request_action, 'elementor' ) === 0 );
 }
 
-if ( ! $is_elementor_ajax ) {
+// Check for Elementor editor page loads.
+// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
+if ( ! $is_ajax_request && isset( $_GET['action'] ) ) {
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
+	$get_action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+	$is_elementor_editor = ( 'elementor' === $get_action );
+}
+
+$skip_buffering = $is_elementor_ajax || $is_elementor_editor;
+
+if ( ! $skip_buffering ) {
 	if ( ! @ob_start() ) {
 		ob_start(); // Fallback without error suppression.
 	}
@@ -199,8 +212,8 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 }
 
 // Clean any output that may have been generated during includes.
-// Only clean the buffer if we started it (i.e., not during Elementor AJAX requests).
-if ( ! $is_elementor_ajax ) {
+// Only clean the buffer if we started it (i.e., not during Elementor AJAX requests or editor page loads).
+if ( ! $skip_buffering ) {
 	ob_end_clean();
 }
 
