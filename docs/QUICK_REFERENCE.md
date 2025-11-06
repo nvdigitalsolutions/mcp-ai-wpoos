@@ -1,7 +1,7 @@
 # WP oOS Quick Reference Guide
 
 **Version:** 1.0.0  
-**Last Updated:** November 4, 2024
+**Last Updated:** November 6, 2024
 
 This quick reference provides fast access to the most common tasks and commands for WP Open Operator System.
 
@@ -237,8 +237,29 @@ POST /tools
   "arguments": {}
 }
 
-# SSE stream
+# SSE stream (Server-Sent Events)
 GET /sse
+Accept: text/event-stream
+
+# SSE job status
+GET /jobs/{job_id}/stream?max_duration=300&poll_interval=2
+```
+
+### SSE Streaming Examples
+```javascript
+// Stream assistant directory
+const eventSource = new EventSource('/wp-json/mcp-ai/v1/sse');
+eventSource.addEventListener('directory', (e) => {
+  const data = JSON.parse(e.data);
+  console.log('Assistants:', data.assistants);
+});
+
+// Stream job status
+const jobStream = new EventSource(`/wp-json/mcp-ai/v1/jobs/${jobId}/stream`);
+jobStream.addEventListener('status', (e) => {
+  const status = JSON.parse(e.data);
+  console.log('Progress:', status.progress + '%');
+});
 ```
 
 ### Authentication Headers
