@@ -176,4 +176,106 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( $assistant_id, $model_totals['assistants'] );
 		$this->assertSame( 25, $model_totals['assistants'][ $assistant_id ]['cached_tokens'] );
 	}
+
+	public function test_gemini_usage_with_total_tokens_is_tracked() {
+		$user_id      = self::factory()->user->create();
+		$assistant_id = 30;
+
+		$options = array(
+			'provider' => 'gemini',
+			'model'    => 'gemini-1.5-flash',
+		);
+
+		// Simulating Gemini response with all three token fields.
+		$response = array(
+			'usage'    => array(
+				'prompt_tokens'     => 100,
+				'completion_tokens' => 50,
+				'total_tokens'      => 150,
+			),
+			'provider' => 'gemini',
+			'model'    => 'gemini-1.5-flash',
+		);
+
+		WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, $assistant_id, $options, $response );
+
+		$totals = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+		$this->assertArrayHasKey( 'gemini', $totals );
+		$this->assertArrayHasKey( 'gemini-1.5-flash', $totals['gemini'] );
+
+		$model_totals = $totals['gemini']['gemini-1.5-flash'];
+
+		$this->assertSame( 1, $model_totals['requests'] );
+		$this->assertSame( 100, $model_totals['prompt_tokens'] );
+		$this->assertSame( 50, $model_totals['completion_tokens'] );
+		$this->assertSame( 150, $model_totals['total_tokens'] );
+	}
+
+	public function test_ollama_usage_with_total_tokens_is_tracked() {
+		$user_id      = self::factory()->user->create();
+		$assistant_id = 31;
+
+		$options = array(
+			'provider' => 'ollama',
+			'model'    => 'llama3:latest',
+		);
+
+		// Simulating Ollama response with all three token fields.
+		$response = array(
+			'usage'    => array(
+				'prompt_tokens'     => 80,
+				'completion_tokens' => 40,
+				'total_tokens'      => 120,
+			),
+			'provider' => 'ollama',
+			'model'    => 'llama3:latest',
+		);
+
+		WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, $assistant_id, $options, $response );
+
+		$totals = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+		$this->assertArrayHasKey( 'ollama', $totals );
+		$this->assertArrayHasKey( 'llama3:latest', $totals['ollama'] );
+
+		$model_totals = $totals['ollama']['llama3:latest'];
+
+		$this->assertSame( 1, $model_totals['requests'] );
+		$this->assertSame( 80, $model_totals['prompt_tokens'] );
+		$this->assertSame( 40, $model_totals['completion_tokens'] );
+		$this->assertSame( 120, $model_totals['total_tokens'] );
+	}
+
+	public function test_gemini_usage_auto_calculates_total_tokens_if_missing() {
+		$user_id      = self::factory()->user->create();
+		$assistant_id = 32;
+
+		$options = array(
+			'provider' => 'gemini',
+			'model'    => 'gemini-2.0-flash',
+		);
+
+		// Test fallback: if total_tokens is missing, it should be calculated.
+		$response = array(
+			'usage'    => array(
+				'prompt_tokens'     => 60,
+				'completion_tokens' => 30,
+			),
+			'provider' => 'gemini',
+			'model'    => 'gemini-2.0-flash',
+		);
+
+		WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, $assistant_id, $options, $response );
+
+		$totals = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+		$this->assertArrayHasKey( 'gemini', $totals );
+		$this->assertArrayHasKey( 'gemini-2.0-flash', $totals['gemini'] );
+
+		$model_totals = $totals['gemini']['gemini-2.0-flash'];
+
+		// The usage tracker should auto-calculate total_tokens as sum of prompt + completion.
+		$this->assertSame( 90, $model_totals['total_tokens'] );
+	}
 }
