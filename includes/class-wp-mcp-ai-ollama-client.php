@@ -328,10 +328,26 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
-			$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+			$code = wp_remote_retrieve_response_code( $response );
+			$body = wp_remote_retrieve_body( $response );
+
+			$decoded = json_decode( $body, true );
 
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid JSON response from Ollama.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error'] ) ? $decoded['error'] : __( 'Unexpected response from Ollama.', 'wp-mcp-ai' );
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
 			}
 
 			// Ollama's generate endpoint returns: { "response": "text", "done": true, ... }
