@@ -18,6 +18,32 @@ if ( ! defined( 'ABSPATH' ) ) {
  * consider using OpenAI's tiktoken library on the client side.
  */
 class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
+
+	/**
+	 * Number of tokens added per message for formatting (im_start, role, im_end).
+	 */
+	const TOKENS_PER_MESSAGE_OVERHEAD = 3;
+
+	/**
+	 * Number of tokens for priming the assistant's reply.
+	 */
+	const ASSISTANT_REPLY_PRIMING_TOKENS = 3;
+
+	/**
+	 * Message formatting overhead tokens for heuristic method.
+	 */
+	const HEURISTIC_MESSAGE_OVERHEAD_TOKENS = 4;
+
+	/**
+	 * Default safety margin percentage (10%).
+	 */
+	const DEFAULT_SAFETY_MARGIN = 0.1;
+
+	/**
+	 * Tiktoken fully qualified class name.
+	 */
+	const TIKTOKEN_CLASS = 'Rahul900day\\Tiktoken\\Tiktoken';
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -118,7 +144,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 		}
 
 		// Load the token budget manager.
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'class-wp-mcp-ai-token-budget-manager.php';
+		require_once plugin_dir_path( __DIR__ ) . 'class-wp-mcp-ai-token-budget-manager.php';
 
 		// Determine counting method.
 		$method = isset( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'auto';
@@ -199,8 +225,8 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 					// Estimate tokens for this message.
 					$estimated_tokens += WP_MCP_AI_Token_Budget_Manager::estimate_tokens( $role );
 					$estimated_tokens += WP_MCP_AI_Token_Budget_Manager::estimate_tokens( $content );
-					// Add 4 tokens for message formatting overhead.
-					$estimated_tokens += 4;
+					// Add message formatting overhead.
+					$estimated_tokens += self::HEURISTIC_MESSAGE_OVERHEAD_TOKENS;
 				}
 
 				$details = array(
@@ -233,14 +259,14 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 			);
 
 			// Add budget recommendations.
-			$safety_margin           = 0.1; // 10% safety margin.
+			$safety_margin           = self::DEFAULT_SAFETY_MARGIN;
 			$safe_limit              = (int) ( $model_limit * ( 1 - $safety_margin ) );
 			$remaining_tokens        = max( 0, $safe_limit - $estimated_tokens );
 			$response['budget_info'] = array(
-				'safe_limit_tokens'      => $safe_limit,
-				'remaining_tokens'       => $remaining_tokens,
-				'exceeds_safe_limit'     => $estimated_tokens > $safe_limit,
-				'recommendation'         => $estimated_tokens > $safe_limit
+				'safe_limit_tokens'  => $safe_limit,
+				'remaining_tokens'   => $remaining_tokens,
+				'exceeds_safe_limit' => $estimated_tokens > $safe_limit,
+				'recommendation'     => $estimated_tokens > $safe_limit
 					? __( 'Token count exceeds safe limit. Consider truncating messages or switching to a model with a larger context window.', 'wp-mcp-ai' )
 					: __( 'Token count is within safe limits.', 'wp-mcp-ai' ),
 			);
@@ -271,7 +297,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 	 */
 	protected function count_tokens_with_tiktoken( $input, array $arguments = array() ) {
 		// Check if tiktoken-php is available.
-		if ( ! class_exists( 'Rahul900day\\Tiktoken\\Tiktoken' ) ) {
+		if ( ! class_exists( self::TIKTOKEN_CLASS ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_tiktoken_unavailable',
 				__( 'The tiktoken-php library is not installed. Run "composer install" to enable accurate token counting.', 'wp-mcp-ai' )
@@ -294,17 +320,17 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 				);
 			} elseif ( is_array( $input ) ) {
 				// Message array counting - need to account for message formatting.
-				$total_tokens   = 0;
-				$message_count  = 0;
-				$tokens_per_msg = 3; // Every message follows <im_start>{role/name}\n{content}<im_end>\n.
+				$total_tokens  = 0;
+				$message_count = 0;
 
 				foreach ( $input as $message ) {
 					if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
 						continue;
 					}
 
-					$message_count++;
-					$total_tokens += $tokens_per_msg;
+					++$message_count;
+					// Add overhead for message formatting.
+					$total_tokens += self::TOKENS_PER_MESSAGE_OVERHEAD;
 
 					// Count role tokens.
 					if ( isset( $message['role'] ) ) {
@@ -322,12 +348,12 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 					if ( isset( $message['name'] ) ) {
 						$name_tokens   = $encoder->encode( $message['name'] );
 						$total_tokens += count( $name_tokens );
-						$total_tokens -= 1; // Role is omitted if name is present.
+						--$total_tokens; // Role is omitted if name is present.
 					}
 				}
 
-				// Add 3 tokens for priming the assistant's reply.
-				$total_tokens += 3;
+				// Add tokens for priming the assistant's reply.
+				$total_tokens += self::ASSISTANT_REPLY_PRIMING_TOKENS;
 
 				return array(
 					'token_count'   => $total_tokens,
