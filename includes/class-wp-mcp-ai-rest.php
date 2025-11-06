@@ -6198,7 +6198,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected function format_transcript_timestamp( $primary, $fallback = '' ) {
 			// Try primary value first (can be integer timestamp or string)
 			$timestamp = false;
-			
+
 			if ( is_numeric( $primary ) && $primary > 0 ) {
 				$timestamp = (int) $primary;
 			} elseif ( is_string( $primary ) && '' !== $primary ) {
