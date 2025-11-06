@@ -2691,6 +2691,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				return;
 			}
 
+		$is_first_section = true;
+
 			foreach ( $wp_settings_sections[ self::PAGE_SLUG ] as $section ) {
 				$section_id = $section['id'];
 				$metadata   = isset( $section_metadata[ $section_id ] ) ? $section_metadata[ $section_id ] : array();
@@ -2715,10 +2717,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$badge       = __( 'AI', 'wp-mcp-ai' );
 					$badge_class = 'configured';
 				}
+
+			// First section starts expanded.
+			$expanded_class = $is_first_section ? ' wp-mcp-ai-section--expanded' : '';
+			$aria_expanded  = $is_first_section ? 'true' : 'false';
+			$is_first_section = false;
 				?>
-				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?>">
+				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?><?php echo esc_attr( $expanded_class ); ?>">
 					<?php /* translators: %s: section title */ ?>
-					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-expanded="false" aria-controls="<?php echo esc_attr( $section_id . '__content' ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
+					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-expanded="<?php echo esc_attr( $aria_expanded ); ?>" aria-controls="<?php echo esc_attr( $section_id . '__content' ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
 						<div class="wp-mcp-ai-section__header-left">
 							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
 							<div class="wp-mcp-ai-section__title-wrapper">
