@@ -5984,8 +5984,7 @@
         const lines = processed.split('\n');
         const htmlParts = [];
         let paragraphLines = [];
-        let listType = '';
-        let listItems = [];
+        const listStack = []; // Stack to handle nested lists: [{type: 'ul', items: []}]
 
         function flushParagraph() {
             if (!paragraphLines.length) {
@@ -5995,16 +5994,78 @@
             paragraphLines = [];
         }
 
-        function flushList() {
-            if (!listType || !listItems.length) {
-                listType = '';
-                listItems = [];
-                return;
+        function flushAllLists() {
+            while (listStack.length > 0) {
+                const list = listStack.pop();
+                if (list.items.length > 0) {
+                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
+                    if (listStack.length > 0) {
+                        // Nested list - append to parent's last item
+                        const parent = listStack[listStack.length - 1];
+                        if (parent.items.length > 0) {
+                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+                        }
+                    } else {
+                        // Top-level list - add to HTML parts
+                        htmlParts.push(html);
+                    }
+                }
+            }
+        }
+
+        function getIndentLevel(line) {
+            const match = line.match(/^(\s*)/);
+            if (!match) {
+                return 0;
+            }
+            // Count spaces and tabs (tabs count as 4 spaces)
+            const spaces = match[1].replace(/\t/g, '    ');
+            return Math.floor(spaces.length / 2); // 2 spaces = 1 indent level
+        }
+
+        function processListItem(indent, listType, itemText) {
+            flushParagraph();
+
+            // Determine target depth based on indentation
+            const targetDepth = indent;
+
+            // Close lists deeper than target
+            while (listStack.length > targetDepth + 1) {
+                const list = listStack.pop();
+                if (list.items.length > 0) {
+                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
+                    if (listStack.length > 0) {
+                        const parent = listStack[listStack.length - 1];
+                        if (parent.items.length > 0) {
+                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+                        }
+                    }
+                }
             }
 
-            htmlParts.push('<' + listType + '>' + listItems.join('') + '</' + listType + '>');
-            listType = '';
-            listItems = [];
+            // If we need a deeper list or different type, create new list
+            if (listStack.length === 0 || listStack.length <= targetDepth) {
+                listStack.push({ type: listType, items: [] });
+            } else if (listStack[targetDepth] && listStack[targetDepth].type !== listType) {
+                // Different list type at this level - close and start new
+                const list = listStack.pop();
+                if (list.items.length > 0) {
+                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
+                    if (listStack.length > 0) {
+                        const parent = listStack[listStack.length - 1];
+                        if (parent.items.length > 0) {
+                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
+                        }
+                    } else {
+                        htmlParts.push(html);
+                    }
+                }
+                listStack.push({ type: listType, items: [] });
+            }
+
+            // Add item to current list
+            const currentList = listStack[listStack.length - 1];
+            currentList.items.push('<li>' + formatInline(itemText) + '</li>');
         }
 
         lines.forEach(function (line) {
@@ -6012,20 +6073,20 @@
 
             if (!trimmed) {
                 flushParagraph();
-                flushList();
+                flushAllLists();
                 return;
             }
 
             if (codePlaceholderMap[trimmed]) {
                 flushParagraph();
-                flushList();
+                flushAllLists();
                 htmlParts.push(trimmed);
                 return;
             }
 
             if (trimmed.indexOf('&gt;') === 0) {
                 flushParagraph();
-                flushList();
+                flushAllLists();
                 htmlParts.push('<blockquote><p>' + formatInline(trimmed.replace(/^&gt;\s*/, '')) + '</p></blockquote>');
                 return;
             }
@@ -6033,46 +6094,37 @@
             const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
             if (headingMatch) {
                 flushParagraph();
-                flushList();
+                flushAllLists();
                 const level = headingMatch[1].length;
                 const headingText = formatInline(headingMatch[2]);
                 htmlParts.push('<h' + level + '>' + headingText + '</h' + level + '>');
                 return;
             }
 
+            // Check for list items (with indentation support)
+            const indent = getIndentLevel(line);
             const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
             if (orderedMatch) {
-                const orderedText = formatInline(orderedMatch[2]);
-                if (listType !== 'ol') {
-                    flushParagraph();
-                    flushList();
-                    listType = 'ol';
-                }
-                listItems.push('<li>' + orderedText + '</li>');
+                processListItem(indent, 'ol', orderedMatch[2]);
                 return;
             }
 
             const bulletMatch = trimmed.match(/^[-*+]\s+(.*)$/);
             if (bulletMatch) {
-                const bulletText = formatInline(bulletMatch[1]);
-                if (listType !== 'ul') {
-                    flushParagraph();
-                    flushList();
-                    listType = 'ul';
-                }
-                listItems.push('<li>' + bulletText + '</li>');
+                processListItem(indent, 'ul', bulletMatch[1]);
                 return;
             }
 
-            if (listType) {
-                flushList();
+            // Not a list item
+            if (listStack.length > 0) {
+                flushAllLists();
             }
 
             paragraphLines.push(formatInline(line));
         });
 
         flushParagraph();
-        flushList();
+        flushAllLists();
 
         let html = htmlParts.join('');
 
