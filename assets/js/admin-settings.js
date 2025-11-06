@@ -595,6 +595,7 @@ window.wpMcpAiSaveExpandedState = function() {
             log('Reset user usage button clicked');
             
             const $btn = $(this);
+            const originalText = $btn.text();
             const confirmMessage = $btn.data('confirm');
             
             if (!confirm(confirmMessage)) {
@@ -618,13 +619,13 @@ window.wpMcpAiSaveExpandedState = function() {
                         location.reload();
                     } else {
                         alert(response.data.message || 'Failed to reset token usage.');
-                        $btn.prop('disabled', false).text('Reset My Usage Data');
+                        $btn.prop('disabled', false).text(originalText);
                     }
                 },
                 error: function(xhr, status, error) {
                     log('Reset user usage error:', error);
                     alert('Error: ' + error);
-                    $btn.prop('disabled', false).text('Reset My Usage Data');
+                    $btn.prop('disabled', false).text(originalText);
                 }
             });
         });
@@ -635,6 +636,7 @@ window.wpMcpAiSaveExpandedState = function() {
             log('Reset all usage button clicked');
             
             const $btn = $(this);
+            const originalText = $btn.text();
             const confirmMessage = $btn.data('confirm');
             
             if (!confirm(confirmMessage)) {
@@ -658,13 +660,13 @@ window.wpMcpAiSaveExpandedState = function() {
                         location.reload();
                     } else {
                         alert(response.data.message || 'Failed to reset token usage.');
-                        $btn.prop('disabled', false).text('Reset All Usage Data');
+                        $btn.prop('disabled', false).text(originalText);
                     }
                 },
                 error: function(xhr, status, error) {
                     log('Reset all usage error:', error);
                     alert('Error: ' + error);
-                    $btn.prop('disabled', false).text('Reset All Usage Data');
+                    $btn.prop('disabled', false).text(originalText);
                 }
             });
         });
