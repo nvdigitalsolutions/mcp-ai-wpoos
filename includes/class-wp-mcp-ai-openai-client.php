@@ -3091,6 +3091,22 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$converted_segments[] = $segment;
 				}
 
+				// Handle messages that have no content after filtering
+				if ( empty( $converted_segments ) ) {
+					// Add a fallback text segment to preserve the message in chat UI
+					// This prevents empty content errors and maintains conversation continuity
+					$converted_segments[] = array(
+						'type' => 'text',
+						'text' => '[Image could not be loaded]',
+					);
+					WP_MCP_AI_Logger::log_error(
+						'Replaced empty message content with fallback text after input_image conversion for Chat Completions API.',
+						array(
+							'role' => isset( $message['role'] ) ? $message['role'] : 'unknown',
+						)
+					);
+				}
+
 				$message['content'] = $converted_segments;
 				$converted[]        = $message;
 			}
