@@ -54,8 +54,15 @@ The base version includes tools that work with a standard WordPress installation
 - `get_environment_status` - MCP environment status
 - `get_system_logs` - System log retrieval
 - `get_update_status` - WordPress/plugin update status
-- `create_cron_job` - Schedule WP-Cron jobs
+- `check_site_security` - Security vulnerability scanner
 - `check_wp_cli` - Check WP-CLI availability
+- `count_tokens` - Token counting utility
+- `create_cron_job` - Schedule WP-Cron jobs
+- `list_cron_jobs` - List scheduled cron jobs
+- `get_cron_job` - Get specific cron job details
+- `delete_cron_job` - Delete scheduled cron jobs
+- `query_remote_site` - Query remote WordPress sites in mesh network
+- `query_mesh_intelligent` - Intelligent mesh routing with AI-powered peer selection
 - `probe_chat` - Test assistant chat endpoints
 - `probe_remote_mcp` - Test remote MCP connections
 - `open_openai_usage` - OpenAI usage dashboard links
