@@ -1,7 +1,8 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 6, 2025  
-**Plugin Version:** 1.0.0
+**Last Updated:** November 7, 2025  
+**Plugin Version:** 1.0.0  
+**MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
@@ -119,8 +120,10 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [mcp-endpoint.md](mcp-endpoint.md) | MCP JSON-RPC 2.0 endpoint documentation | Developers |
-| [MCP-AND-SSE.md](MCP-AND-SSE.md) | MCP and SSE protocol details | Developers |
+| [mcp-endpoint.md](mcp-endpoint.md) | MCP JSON-RPC 2.0 endpoint documentation (2024-11-05 spec) | Developers |
+| [MCP-AND-SSE.md](MCP-AND-SSE.md) | MCP and SSE protocol details (updated for 2024-11-05) | Developers |
+| [mcp-server-authentication.md](mcp-server-authentication.md) | Authentication methods with OAuth 2.1 enhancements (13KB) | Admins/Devs |
+| [mcp-client-configurations.md](mcp-client-configurations.md) | Client configuration guide for MCP 2024-11-05 | Admins |
 | [ENABLE-SSE-STREAMING.md](ENABLE-SSE-STREAMING.md) | SSE streaming setup guide | Admins |
 
 ### Troubleshooting & Support
