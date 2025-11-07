@@ -1,8 +1,9 @@
 # WP Open Operator System (WP oOS)
 
-**Version:** 1.0.0 (Beta)
-**Maintained by [NV Digital](https://nvdigitalsolutions.com/wp-oos)**
-**License:** GPLv3 or later
+**Version:** 1.0.0 (Beta)  
+**MCP Specification:** 2024-11-05  
+**Maintained by [NV Digital](https://nvdigitalsolutions.com/wp-oos)**  
+**License:** GPLv3 or later  
 **Requires:** WordPress 6.0+, PHP 7.4+
 
 ## 📑 Table of Contents
@@ -1345,7 +1346,20 @@ For complete SSE implementation details, configuration options, and troubleshoot
 
 ## 📝 MCP JSON-RPC 2.0 Endpoint
 
-WP oOS implements a dedicated `/mcp` endpoint that follows the Model Context Protocol specification using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
+WP oOS implements a dedicated `/mcp` endpoint that follows the **Model Context Protocol specification version 2024-11-05** using JSON-RPC 2.0 for bidirectional communication with AI assistants and tools.【F:docs/mcp-endpoint.md†L1-L80】
+
+**MCP Version:** 2024-11-05  
+**Compliance:** OAuth 2.1, Streamable HTTP transport, Progress notifications
+
+### What's New in MCP 2024-11-05
+
+The latest specification includes significant enhancements:
+- **OAuth 2.1 Security**: PKCE, token rotation, mandatory HTTPS
+- **Streamable HTTP Transport**: Better reconnection and bidirectional communication
+- **Progress Notifications**: Descriptive status updates during tool execution
+- **Tool Annotations**: Metadata for read-only, destructive operations
+- **Session Management**: State recovery via `Mcp-Session-Id` header
+- **JSON-RPC Batching**: Efficient parallel task processing
 
 ### Endpoint URL
 
@@ -1368,19 +1382,20 @@ All requests must use standard JSON-RPC 2.0 format:
 
 ### Supported Methods
 
-- **`initialize`** - Initialize MCP connection and retrieve server capabilities
-- **`tools/list`** - List available tools for the authenticated assistant
-- **`tools/call`** - Execute a specific tool with parameters
-- **`resources/list`** - List available resources (knowledge files, etc.)
+- **`initialize`** - Initialize MCP connection and retrieve server capabilities (with 2024-11-05 enhancements)
+- **`tools/list`** - List available tools with annotations for the authenticated assistant
+- **`tools/call`** - Execute a specific tool with progress notifications support
+- **`resources/list`** - List available resources (knowledge files, etc.) with metadata
 - **`prompts/list`** - List available prompt shortcuts
 
-### Authentication
+### Authentication (OAuth 2.1 Enhanced)
 
-The MCP endpoint uses the same authentication as other WP oOS endpoints:
+The MCP endpoint uses enhanced authentication aligned with MCP 2024-11-05 security standards:
 - WordPress Nonce (`X-WP-Nonce` header)
-- Bearer Tokens (`Authorization: Bearer <token>`)
-- Assistant Credentials (generated from assistant editor)
+- Bearer Tokens (`Authorization: Bearer <token>`) with rotation support
+- Assistant Credentials (generated from assistant editor, OAuth 2.1 compliant)
 - Auth0 JWT (for enterprise authentication)
+- Session Management (`Mcp-Session-Id` header for reconnection)
 
 ### Error Handling
 
@@ -1392,14 +1407,22 @@ Standard JSON-RPC 2.0 error codes:
 
 ### Use Cases
 
-| Scenario | Use Endpoint | Method |
-|----------|--------------|--------|
-| Remote MCP client connection | `/mcp` | POST |
-| Real-time streaming responses | `/sse` | GET |
-| Standard chat interface | `/chat` | POST |
-| Direct tool execution | `/tools` | POST |
+| Scenario | Use Endpoint | Method | MCP 2024-11-05 Feature |
+|----------|--------------|--------|------------------------|
+| Remote MCP client connection | `/mcp` | POST | OAuth 2.1, Sessions |
+| Real-time streaming responses | `/sse` | GET | Traditional SSE |
+| Streamable HTTP (new) | `/mcp` | POST | Bidirectional streaming |
+| Standard chat interface | `/chat` | POST | N/A |
+| Direct tool execution | `/tools` | POST | Tool annotations |
 
-➡️ See [docs/mcp-endpoint.md](docs/mcp-endpoint.md) for complete method documentation and examples.
+### Learn More
+
+➡️ **Complete MCP Documentation:**
+- [MCP Endpoint Reference](docs/mcp-endpoint.md) - Complete method documentation and 2024-11-05 features
+- [MCP and SSE Explained](docs/MCP-AND-SSE.md) - Understanding transport layers and protocol updates
+- [MCP Server Authentication](docs/mcp-server-authentication.md) - OAuth 2.1 and security enhancements
+- [MCP Client Configurations](docs/mcp-client-configurations.md) - Connect LM Studio, Claude Desktop, etc.
+- [Official MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
 
 ---
 

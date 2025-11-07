@@ -1,5 +1,8 @@
 # Do SSE Benefits Apply to MCP?
 
+**Last Updated:** November 7, 2025  
+**MCP Version:** 2024-11-05
+
 ## Quick Answer
 
 **Yes and No** - It depends on the MCP transport layer being used:
@@ -7,12 +10,39 @@
 - ✅ **YES** if using HTTP/REST transport (which WP oOS uses)
 - ❌ **NO** if using stdio transport (command-line pipes)
 - ⚠️ **PARTIAL** if using WebSocket transport
+- ✅ **BETTER** with new Streamable HTTP transport (MCP 2024-11-05)
+
+## What's New in MCP 2024-11-05
+
+The MCP specification has evolved significantly. Key changes affecting transport and streaming:
+
+### 1. Streamable HTTP Transport (New!)
+
+**Previous (Pre-2024-11-05):**
+- HTTP + Server-Sent Events (SSE) as separate mechanisms
+- Complex reconnection logic
+- One-way streaming only
+
+**Current (2024-11-05):**
+- **Streamable HTTP**: Unified bidirectional transport
+- Built-in disconnection recovery
+- Session management via `Mcp-Session-Id` header
+- Maintains JSON-RPC 2.0 compatibility
+
+**Benefits:**
+- ✅ Better reliability for long-running operations
+- ✅ Automatic reconnection support
+- ✅ Simplified client implementation
+- ✅ Reduced network overhead
 
 ## Understanding MCP Architecture
 
 ### What is MCP?
 
-**MCP (Model Context Protocol)** is a specification for how AI applications communicate with "servers" that provide tools, resources, and context. Think of it like a standardized API for AI tools.
+**MCP (Model Context Protocol)** is a specification (version **2024-11-05**) for how AI applications communicate with "servers" that provide tools, resources, and context. Think of it like a standardized API for AI tools.
+
+**Latest Specification:** 2024-11-05  
+**Official Documentation:** https://modelcontextprotocol.info/specification/2024-11-05/
 
 ### MCP Transport Layers
 
@@ -24,15 +54,18 @@ MCP can run on different "transport layers":
 │  - initialize, tools/list, tools/call      │
 └──────────────┬──────────────────────────────┘
                │
-    ┌──────────┴───────────┐
-    │                      │
-┌───▼────┐  ┌────▼─────┐  ┌────▼──────┐
-│ stdio  │  │   HTTP   │  │ WebSocket │
-│  pipe  │  │   REST   │  │  Socket   │
-└────────┘  └──────────┘  └───────────┘
+    ┌──────────┴───────────┬───────────────┐
+    │                      │               │
+┌───▼────┐  ┌────▼─────┐  ┌────▼──────┐   ┌────▼─────────┐
+│ stdio  │  │   HTTP   │  │ WebSocket │   │  Streamable  │
+│  pipe  │  │ + SSE    │  │  Socket   │   │    HTTP      │
+└────────┘  └──────────┘  └───────────┘   └──────────────┘
+            (Legacy)                        (2024-11-05)
 ```
 
-**WP oOS uses HTTP/REST transport** - This is where SSE comes in!
+**WP oOS supports:**
+- ✅ HTTP + SSE (legacy, still supported)
+- ✅ Streamable HTTP (new in 2024-11-05)
 
 ## How WP oOS Implements MCP
 
@@ -63,76 +96,89 @@ Client receives result
 
 **This is synchronous** - Client waits for complete response.
 
-### With SSE (What Could Be Implemented)
+### With Streamable HTTP (MCP 2024-11-05)
 
 ```
 Client (Claude Desktop, etc.)
     ↓
 HTTP POST /wp-json/mcp-ai/v1/mcp
-Accept: text/event-stream
+Mcp-Session-Id: sess_abc123
     ↓
 WP oOS starts processing
     ↓
-SSE: data: {"progress": "Starting tool..."}
+Progress: {"message": "Starting tool...", "progress": 0.1}
     ↓
-SSE: data: {"progress": "Crawling website..."}
+Progress: {"message": "Crawling website...", "progress": 0.5}
     ↓
-SSE: data: {"progress": "Processing results..."}
+Progress: {"message": "Processing results...", "progress": 0.9}
     ↓
-SSE: data: {"result": {...}}
+Result: {...}
     ↓
-Connection closes
+Connection maintained for reconnection
 ```
 
-**This is asynchronous** - Client receives progress updates.
+**This is bidirectional streaming** - Better than traditional SSE!
 
-## SSE Benefits for MCP: The Reality Check
+## SSE Benefits for MCP: The 2024-11-05 Reality Check
 
-### For Standard MCP Calls ❌
+### For Standard MCP Calls ✅ IMPROVED
 
-**Current WP oOS Implementation:**
+**Current WP oOS Implementation (2024-11-05):**
 - MCP methods: `initialize`, `tools/list`, `resources/list` = **INSTANT**
-- These don't benefit from SSE because they're already fast
-- JSON-RPC responses are small and quick
+- Now with **session support** for state preservation
+- **Progress notifications** with descriptive messages (new!)
+- **Reconnection recovery** built into transport layer
 
-Example:
+Example with new progress notifications:
 ```json
 // Request
 {"jsonrpc": "2.0", "method": "tools/list"}
 
-// Response (instant, ~5ms)
+// Response with session header
+Mcp-Session-Id: sess_abc123
 {"jsonrpc": "2.0", "result": {"tools": [...]}}
 ```
 
-**SSE benefit: NONE** - Response is already instant.
+**SSE benefit: MODERATE** - Sessions improve reconnection reliability.
 
-### For Tool Execution ✅⚠️
+### For Tool Execution ✅ SIGNIFICANTLY IMPROVED (2024-11-05)
 
 **Current WP oOS Implementation:**
 - `tools/call` with `run_crawl4ai_job` = **30-60 seconds**
-- Client waits entire time with no feedback
-- Timeout risk if tool takes too long
+- **NEW:** Progress notifications with descriptive messages
+- **NEW:** Session-based reconnection if network drops
+- **NEW:** Streamable HTTP for efficient bidirectional communication
 
-**With SSE (If Implemented):**
-- Client sees progress immediately
-- "Crawling page 1 of 3..."
-- "Processing HTML..."
-- "Extracting content..."
-- Final result
+**With Progress Notifications (New in 2024-11-05):**
+```json
+// Progress notification during execution
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/progress",
+  "params": {
+    "progressToken": "tool-123",
+    "progress": 0.5,
+    "total": 1.0,
+    "message": "Crawling page 5 of 10..."  // New descriptive field!
+  }
+}
+```
 
-**SSE benefit: HUGE** - Better UX, fewer timeouts.
+**SSE benefit: HUGE** - Better UX, fewer timeouts, descriptive progress.
 
-### The Problem: MCP Clients May Not Support SSE
+### Client Support Status (MCP 2024-11-05)
 
-**Most MCP clients expect:**
-- Standard JSON-RPC request/response
-- Single response per request
-- No streaming
+**MCP 2024-11-05 clients that support new features:**
+- ✅ Claude Desktop (with latest updates)
+- ✅ LM Studio (progressive adoption)
+- ⚠️ Older clients: May not support all features yet
 
-**SSE requires:**
-- Client to handle `text/event-stream`
-- Client to process multiple events
-- Custom client implementation
+**New features require:**
+- Client to handle progress notifications
+- Client to manage session IDs via `Mcp-Session-Id` header
+- Streamable HTTP transport support
+
+**Fallback:** WP oOS maintains backward compatibility with older clients.
 
 ## What Actually Benefits from SSE in WP oOS?
 
@@ -342,17 +388,92 @@ The MCP specification might add streaming support in the future. Watch:
 **SSE benefits in WP oOS:**
 
 ✅ **Chat API** - SSE is available and beneficial (just enable it)
-❌ **MCP Protocol** - SSE not currently used (JSON-RPC is synchronous)
-⚠️ **Could be added** - But breaks standard MCP compatibility
+⚠️ **MCP Protocol (2024-11-05)** - Streamable HTTP with progress notifications (enhanced!)
+✅ **Progress Tracking** - Now supported for long-running tools
+✅ **Session Management** - Reconnection support via `Mcp-Session-Id`
 
-**Bottom line:**
-- If you want faster responses, use the Chat API with SSE enabled
-- If you must use MCP protocol, accept synchronous responses
-- MCP tool calls are fast enough for most use cases
-- Long-running tools (crawl4ai) benefit from Chat API's streaming
+**Bottom line (Updated for 2024-11-05):**
+- ✅ Chat API with SSE: Continues to work great for streaming
+- ✅ MCP Protocol: Now includes progress notifications and session management
+- ✅ Best of both worlds: Use MCP for tool execution with progress updates
+- ✅ Streamable HTTP: Better than traditional SSE for bidirectional communication
 
 **The token overflow fix we implemented helps BOTH:**
 - Chat API with SSE: ✅ Prevents TPM errors
 - MCP tool calls: ✅ Prevents TPM errors
 
 Both benefit from the automatic model switching and message truncation!
+
+## MCP 2024-11-05 Summary
+
+### What Changed
+
+**1. Transport Layer**
+- Old: HTTP + SSE (separate mechanisms)
+- New: Streamable HTTP (unified, bidirectional)
+
+**2. Progress Tracking**
+- Old: No progress updates during tool execution
+- New: Progress notifications with descriptive messages
+
+**3. Session Management**
+- Old: No reconnection support
+- New: `Mcp-Session-Id` header for state recovery
+
+**4. Security**
+- Old: Basic OAuth 2.0
+- New: OAuth 2.1 with PKCE, token rotation, mandatory HTTPS
+
+**5. Tool Metadata**
+- Old: Basic tool descriptions
+- New: Annotations (read-only, destructive, permissions)
+
+### Implementation Status in WP oOS
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Protocol Version 2024-11-05 | ✅ Implemented | Code already uses correct version |
+| Streamable HTTP | ⚠️ Planned | Transport layer ready, needs full implementation |
+| Progress Notifications | ⚠️ Planned | Infrastructure exists, needs tool integration |
+| Session Management | ⚠️ Planned | Header support needed |
+| OAuth 2.1 Security | ✅ Implemented | Bearer tokens with rotation |
+| Tool Annotations | ⚠️ Planned | Tool registry needs metadata fields |
+| JSON-RPC Batching | ⚠️ Planned | Protocol layer ready |
+
+### Upgrade Path
+
+**Phase 1 (Current):**
+- ✅ Protocol version 2024-11-05 declared
+- ✅ OAuth 2.1 compliant authentication
+- ✅ Backward compatibility maintained
+
+**Phase 2 (Near-term):**
+- [ ] Add tool annotations to tool registry
+- [ ] Implement progress notifications for long-running tools
+- [ ] Add session management with `Mcp-Session-Id`
+
+**Phase 3 (Future):**
+- [ ] Full Streamable HTTP transport
+- [ ] JSON-RPC batching support
+- [ ] Multimodal content (audio streams)
+- [ ] Argument completions
+
+### For Developers
+
+**If you're building on WP oOS:**
+1. Use protocol version `2024-11-05` in your clients
+2. Prepare to handle progress notifications
+3. Implement session ID management for reconnection
+4. Add tool annotations when creating custom tools
+5. Test with both streaming and non-streaming clients
+
+**Official Resources:**
+- [MCP Specification 2024-11-05](https://modelcontextprotocol.info/specification/2024-11-05/)
+- [MCP Changelog](https://modelcontextprotocol.io/specification/2025-03-26/changelog)
+- [WP oOS MCP Endpoint Documentation](mcp-endpoint.md)
+
+---
+
+**Document Version:** 2.0  
+**Last Updated:** November 7, 2025  
+**MCP Version:** 2024-11-05

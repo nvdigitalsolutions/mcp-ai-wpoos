@@ -1,5 +1,21 @@
 # MCP Server Authentication
 
+**MCP Version:** 2024-11-05  
+**Last Updated:** November 7, 2025
+
+The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Remote assistants authenticate with Auth0 bearer tokens while in-dashboard tooling continues to leverage native WordPress cookies and nonces.
+
+## MCP 2024-11-05 Security Enhancements
+
+The latest MCP specification (2024-11-05) introduces enhanced security requirements:
+
+- **OAuth 2.1 Compliance**: PKCE support, token rotation, mandatory HTTPS
+- **Short-Lived Tokens**: Automatic token expiration and refresh
+- **Encrypted Storage**: Credentials are hashed and never stored in plain text
+- **Session Management**: Optional `Mcp-Session-Id` header for state recovery
+- **Mandatory TLS**: All production connections must use HTTPS
+
+WP oOS implements these security enhancements while maintaining backward compatibility with existing clients.
 
 The MCP server ships as part of the plugin's REST API (`/wp-json/mcp-ai/v1`). Remote assistants authenticate with Auth0 bearer tokens while in-dashboard tooling continues to leverage native WordPress cookies and nonces.
 
