@@ -21,6 +21,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 			add_action( 'admin_post_wp_mcp_ai_clear_shutdown', array( __CLASS__, 'handle_clear_shutdown' ) );
 			add_action( 'admin_post_wp_mcp_ai_clear_violations', array( __CLASS__, 'handle_clear_violations' ) );
+			add_action( 'admin_post_wp_mcp_ai_verify_root_key', array( __CLASS__, 'handle_verify_root_key' ) );
 			add_filter( 'wp_mcp_ai_admin_settings_sanitize', array( __CLASS__, 'sanitize_monitor_settings' ), 10, 2 );
 		}
 
@@ -104,6 +105,63 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 					array(
 						'page'    => 'wp-mcp-ai-settings',
 						'cleared' => 'violations',
+					),
+					admin_url( 'options-general.php' )
+				)
+			);
+			exit;
+		}
+
+		/**
+		 * Handle root security key verification request.
+		 */
+		public static function handle_verify_root_key() {
+			check_admin_referer( 'wp_mcp_ai_verify_root_key', 'wp_mcp_ai_verify_root_key_nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) );
+			}
+
+			$security_key = WP_MCP_AI_Root_Security_Key::get_instance();
+
+			// Get the provided key from POST.
+			$provided_key = isset( $_POST['wp_mcp_ai_root_key'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_root_key'] ) ) : '';
+
+			if ( empty( $provided_key ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'page'      => 'wp-mcp-ai-settings',
+							'root_key'  => 'empty',
+						),
+						admin_url( 'options-general.php' )
+					)
+				);
+				exit;
+			}
+
+			// Attempt to disable key requirement.
+			$result = $security_key->disable_key_requirement( $provided_key );
+
+			if ( is_wp_error( $result ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'page'      => 'wp-mcp-ai-settings',
+							'root_key'  => 'invalid',
+							'error'     => urlencode( $result->get_error_message() ),
+						),
+						admin_url( 'options-general.php' )
+					)
+				);
+				exit;
+			}
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'      => 'wp-mcp-ai-settings',
+						'root_key'  => 'verified',
 					),
 					admin_url( 'options-general.php' )
 				)
