@@ -324,13 +324,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_assistants_index' ),
 						'args'                => array(
 							'search'  => array(
-								'type'     => 'string',
-								'required' => false,
+								'description'       => __( 'Search term to filter assistants by title or content.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'include' => array(
-								'type'     => 'array',
-								'required' => false,
-								'items'    => array(
+								'description' => __( 'Limit results to specific assistant IDs.', 'wp-mcp-ai' ),
+								'type'        => 'array',
+								'required'    => false,
+								'items'       => array(
 									'type' => 'integer',
 								),
 							),
@@ -355,20 +358,65 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_chat_request' ),
 						'args'                => array(
 							'assistant_id' => array(
-								'type'     => 'integer',
-								'required' => false,
+								'description'       => __( 'ID of the assistant to use for this chat. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
 							),
 							'messages'     => array(
-								'type'     => 'array',
-								'required' => true,
+								'description' => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
+								'type'        => 'array',
+								'required'    => true,
+								'items'       => array(
+									'type'       => 'object',
+									'properties' => array(
+										'role'    => array(
+											'type' => 'string',
+											'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+										),
+										'content' => array(
+											'type' => array( 'string', 'array' ),
+										),
+									),
+								),
 							),
 							'attachments'  => array(
-								'type'     => 'array',
-								'required' => false,
+								'description' => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
+								'type'        => 'array',
+								'required'    => false,
+								'items'       => array(
+									'type'       => 'object',
+									'properties' => array(
+										'file_id' => array(
+											'type' => 'integer',
+										),
+										'url'     => array(
+											'type'   => 'string',
+											'format' => 'uri',
+										),
+									),
+								),
 							),
 							'options'      => array(
-								'type'     => 'object',
-								'required' => false,
+								'description' => __( 'Optional request options to override assistant defaults.', 'wp-mcp-ai' ),
+								'type'        => 'object',
+								'required'    => false,
+								'properties'  => array(
+									'model'           => array(
+										'type' => 'string',
+									),
+									'temperature'     => array(
+										'type'    => 'number',
+										'minimum' => 0,
+										'maximum' => 2,
+									),
+									'stream'          => array(
+										'type' => 'boolean',
+									),
+									'response_format' => array(
+										'type' => 'object',
+									),
+								),
 							),
 						),
 					),
@@ -376,6 +424,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'methods'             => WP_REST_Server::READABLE,
 						'permission_callback' => array( $this, 'permissions_check' ),
 						'callback'            => array( $this, 'handle_chat_request' ),
+						'args'                => array(
+							'assistant_id' => array(
+								'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+						),
 					),
 				),
 				true
@@ -391,23 +447,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_chat_transcripts' ),
 						'args'                => array(
 							'user_id'     => array(
-								'type'     => 'integer',
-								'required' => false,
+								'description'       => __( 'User ID to retrieve transcripts for. Defaults to current user.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
 							),
 							'session_key' => array(
-								'type'     => 'string',
-								'required' => false,
+								'description'       => __( 'Optional session key to retrieve a specific transcript.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'per_page'    => array(
-								'type'     => 'integer',
-								'required' => false,
-								'minimum'  => 1,
-								'maximum'  => 100,
+								'description'       => __( 'Number of transcripts to return per page.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'default'           => 20,
+								'minimum'           => 1,
+								'maximum'           => 100,
+								'sanitize_callback' => 'absint',
 							),
 							'page'        => array(
-								'type'     => 'integer',
-								'required' => false,
-								'minimum'  => 1,
+								'description'       => __( 'Page number for paginated results.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'default'           => 1,
+								'minimum'           => 1,
+								'sanitize_callback' => 'absint',
 							),
 						),
 					),
@@ -425,8 +491,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_chat_transcript_delete' ),
 						'args'                => array(
 							'session_key' => array(
-								'type'     => 'string',
-								'required' => true,
+								'description'       => __( 'Session key of the transcript to delete.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 						),
 					),
@@ -444,8 +512,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_tools_list' ),
 						'args'                => array(
 							'assistant_id' => array(
-								'type'     => 'integer',
-								'required' => false,
+								'description'       => __( 'ID of the assistant to list tools for. Returns all tools if omitted.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
 							),
 						),
 					),
@@ -455,16 +525,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_tool_request' ),
 						'args'                => array(
 							'assistant_id' => array(
-								'type'     => 'integer',
-								'required' => false,
+								'description'       => __( 'ID of the assistant context for tool execution.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
 							),
 							'tool'         => array(
-								'type'     => 'string',
-								'required' => true,
+								'description'       => __( 'Slug of the tool to execute.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_key',
 							),
 							'arguments'    => array(
-								'type'     => 'object',
-								'required' => false,
+								'description' => __( 'Arguments to pass to the tool execution.', 'wp-mcp-ai' ),
+								'type'        => 'object',
+								'required'    => false,
+								'default'     => array(),
 							),
 						),
 					),
@@ -482,21 +558,30 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_file_download' ),
 						'args'                => array(
 							'assistant_id'  => array(
-								'type'     => 'integer',
-								'required' => false,
+								'description'       => __( 'ID of the assistant context for file access.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
 							),
 							'file_id'       => array(
-								'type'     => 'string',
-								'required' => true,
+								'description'       => __( 'ID or identifier of the file to download.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'download_name' => array(
-								'type'     => 'string',
-								'required' => false,
+								'description'       => __( 'Optional custom filename for the download.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'sanitize_callback' => 'sanitize_file_name',
 							),
 							'disposition'   => array(
-								'type'     => 'string',
-								'required' => false,
-								'enum'     => array( 'attachment', 'inline' ),
+								'description'       => __( 'Content-Disposition header value (attachment or inline).', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'default'           => 'attachment',
+								'enum'              => array( 'attachment', 'inline' ),
+								'sanitize_callback' => 'sanitize_key',
 							),
 						),
 					),
@@ -510,6 +595,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'methods'             => WP_REST_Server::READABLE,
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'callback'            => array( $this, 'handle_sse_handshake' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
 				),
 			);
 
@@ -520,6 +613,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'permission_callback' => array( $this, 'permissions_check' ),
 					'callback'            => array( $this, 'handle_sse_handshake' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
 				);
 			}
 
@@ -538,7 +639,37 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'methods'             => WP_REST_Server::CREATABLE,
 						'permission_callback' => array( $this, 'permissions_check' ),
 						'callback'            => array( $this, 'handle_mcp_request' ),
-						'args'                => array(),
+						'args'                => array(
+							'jsonrpc' => array(
+								'description' => __( 'JSON-RPC version. Must be "2.0".', 'wp-mcp-ai' ),
+								'type'        => 'string',
+								'required'    => true,
+								'enum'        => array( '2.0' ),
+							),
+							'id'      => array(
+								'description' => __( 'Request identifier. Omit for notifications.', 'wp-mcp-ai' ),
+								'type'        => array( 'string', 'integer', 'null' ),
+								'required'    => false,
+							),
+							'method'  => array(
+								'description' => __( 'MCP method name to invoke.', 'wp-mcp-ai' ),
+								'type'        => 'string',
+								'required'    => true,
+								'enum'        => array(
+									'initialize',
+									'tools/list',
+									'tools/call',
+									'resources/list',
+									'prompts/list',
+								),
+							),
+							'params'  => array(
+								'description' => __( 'Method parameters object.', 'wp-mcp-ai' ),
+								'type'        => 'object',
+								'required'    => false,
+								'default'     => array(),
+							),
+						),
 					),
 					array(
 						'methods'             => 'OPTIONS',
