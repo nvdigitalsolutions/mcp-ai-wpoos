@@ -455,6 +455,117 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						),
 					),
 				),
+			true
+			);
+
+			// Register /chat-client endpoint for browser-based chat UI (relaxed iteration limits).
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/chat-client',
+				array(
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_chat_client_request' ),
+						'args'                => array(
+							'assistant_id' => array(
+								'description'       => __( 'ID of the assistant to use for this chat. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+							'messages'     => array(
+								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
+								'type'              => 'array',
+								'required'          => true,
+								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'items'             => array(
+									'type'       => 'object',
+									'properties' => array(
+										'role'    => array(
+											'type' => 'string',
+											'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+										),
+										'content' => array(
+											'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+											'oneOf'       => array(
+												array( 'type' => 'string' ),
+												array(
+													'type'  => 'array',
+													'items' => array(
+														'type' => 'object',
+													),
+												),
+											),
+										),
+									),
+								),
+							),
+							'attachments'  => array(
+								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
+								'type'              => 'array',
+								'required'          => false,
+								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'items'             => array(
+									'type'       => 'object',
+									'properties' => array(
+										'file_id' => array(
+											'type' => 'integer',
+										),
+										'url'     => array(
+											'type'   => 'string',
+											'format' => 'uri',
+										),
+									),
+								),
+							),
+							'options'      => array(
+								'description' => __( 'Optional request options to override assistant defaults.', 'wp-mcp-ai' ),
+								'type'        => 'object',
+								'required'    => false,
+								'properties'  => array(
+									'model'           => array(
+										'type' => 'string',
+									),
+									'temperature'     => array(
+										'type'    => 'number',
+										'minimum' => 0,
+										'maximum' => 2,
+									),
+									'stream'          => array(
+										'type' => 'boolean',
+									),
+									'response_format' => array(
+										'description' => __( 'Response format configuration (e.g., for JSON mode).', 'wp-mcp-ai' ),
+										'type'        => 'object',
+										'properties'  => array(
+											'type'        => array(
+												'type' => 'string',
+												'enum' => array( 'text', 'json_object', 'json_schema' ),
+											),
+											'json_schema' => array(
+												'type' => 'object',
+											),
+										),
+									),
+								),
+							),
+						),
+					),
+					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_chat_client_request' ),
+						'args'                => array(
+							'assistant_id' => array(
+								'description'       => __( 'ID of the assistant to use for SSE handshake.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+						),
+					),
+				),
 				true
 			);
 
@@ -2513,7 +2624,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$wants_streaming = $this->request_wants_event_stream( $request );
 
 			// Agentic loop: automatically execute tools server-side when LLM requests them.
-			$max_iterations = 5; // Prevent infinite loops.
+			// Default limit prevents infinite loops. /chat-client endpoint applies higher limit via filter.
+			$max_iterations = 5;
+			$max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $max_iterations, $assistant_config );
+			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
 
 			// Track original tool results for frontend display.
@@ -2785,19 +2899,60 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $this->stream_event_stream_payload( $payload, 'message' );
 			}
 
-			return rest_ensure_response( $payload );
+				return rest_ensure_response( $payload );
+		}
+
+		/**
+		 * Handle chat request from browser-based UI clients.
+		 *
+		 * This endpoint is specifically designed for browser chat interfaces
+		 * and applies relaxed iteration limits compared to the MCP protocol endpoint.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_chat_client_request( WP_REST_Request $request ) {
+			// Set higher max_iterations for browser chat UI (allows more complex multi-tool workflows).
+			add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_chat_client_max_iterations' ), 10, 2 );
+
+			// Delegate to the standard chat handler.
+			$response = $this->handle_chat_request( $request );
+
+			// Remove filter to avoid affecting other requests.
+			remove_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_chat_client_max_iterations' ), 10 );
+
+			return $response;
+		}
+
+		/**
+		 * Get maximum agentic loop iterations for chat client requests.
+		 *
+		 * Browser-based chat UI gets higher limits than MCP protocol clients.
+		 *
+		 * @param int   $default_max      Default max iterations.
+		 * @param array $assistant_config Assistant configuration.
+		 * @return int
+		 */
+		public function get_chat_client_max_iterations( $default_max, $assistant_config = array() ) {
+			// Allow per-assistant override.
+			if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
+				return absint( $assistant_config['max_agentic_iterations'] );
+			}
+
+			// Chat client default: 15 iterations (vs 5 for MCP protocol).
+			return 15;
 		}
 
 
-	/**
-	 * Handle chat request with SSE streaming support for agentic loop.
-	 *
-	 * Streams tool execution status and results in real-time during the agentic loop.
-	 *
-	 * Note: This method uses exit after streaming is complete, which is necessary
-	 * for SSE to work properly. The exit ensures no additional output is sent
-	 * after the [DONE] marker.
-	 *
+		/**
+		 * Handle chat request with SSE streaming support for agentic loop.
+		*
+		* Streams tool execution status and results in real-time during the agentic loop.
+		*
+		* Note: This method uses exit after streaming is complete, which is necessary
+		* for SSE to work properly. The exit ensures no additional output is sent
+		* after the [DONE] marker.
+		*
 	 * Note: While 8 parameters exceeds typical guidelines, this maintains consistency
 	 * with how the non-streaming handler is invoked and keeps all context together.
 	 * Grouping into objects would add unnecessary complexity for internal use.
