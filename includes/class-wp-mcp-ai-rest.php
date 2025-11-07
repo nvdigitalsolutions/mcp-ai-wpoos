@@ -375,7 +375,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 											'enum' => array( 'system', 'user', 'assistant', 'tool' ),
 										),
 										'content' => array(
-											'type' => array( 'string', 'array' ),
+											'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+											'oneOf'       => array(
+												array( 'type' => 'string' ),
+												array(
+													'type'  => 'array',
+													'items' => array(
+														'type' => 'object',
+													),
+												),
+											),
 										),
 									),
 								),
@@ -414,7 +423,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 										'type' => 'boolean',
 									),
 									'response_format' => array(
-										'type' => 'object',
+										'description' => __( 'Response format configuration (e.g., for JSON mode).', 'wp-mcp-ai' ),
+										'type'        => 'object',
+										'properties'  => array(
+											'type'        => array(
+												'type' => 'string',
+												'enum' => array( 'text', 'json_object', 'json_schema' ),
+											),
+											'json_schema' => array(
+												'type' => 'object',
+											),
+										),
 									),
 								),
 							),
@@ -648,7 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							),
 							'id'      => array(
 								'description' => __( 'Request identifier. Omit for notifications.', 'wp-mcp-ai' ),
-								'type'        => array( 'string', 'integer', 'null' ),
+								'type'        => array( 'string', 'integer' ),
 								'required'    => false,
 							),
 							'method'  => array(
