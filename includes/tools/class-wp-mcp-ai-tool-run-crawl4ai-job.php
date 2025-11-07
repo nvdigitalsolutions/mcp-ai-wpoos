@@ -1277,7 +1277,9 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			return $response;
 		}
 
-		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 30000, $response );
+		// Increase default token limit to 100000 for crawl4ai to handle larger web scraping jobs.
+		// This tool specifically needs high token capacity due to the nature of web content.
+		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 100000, $response );
 
 		if ( $limit_tokens <= 0 ) {
 			return $response;
@@ -1339,6 +1341,17 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $truncated ) {
 			return $response;
 		}
+
+		// Log truncation for debugging high-token scenarios.
+		WP_MCP_AI_Logger::log_event(
+			'crawl4ai_result_truncated',
+			'Crawl4AI results truncated to fit token limits.',
+			array(
+				'token_limit'         => $limit_tokens,
+				'original_char_count' => $total_chars,
+				'max_chars'           => $max_chars,
+			)
+		);
 
 		if ( ! isset( $response['metadata'] ) || ! is_array( $response['metadata'] ) ) {
 			$response['metadata'] = array();
@@ -1591,30 +1604,45 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		$request_args = $this->build_local_request_args( $settings, $context, $arguments );
 
 		foreach ( $urls as $url ) {
-			$response = wp_remote_get(
-				$url,
-				array_merge(
-					$request_args,
-					array(
-						'timeout' => $timeout,
+			// Wrap in try-catch to handle any unexpected errors during crawling.
+			try {
+				$response = wp_remote_get(
+					$url,
+					array_merge(
+						$request_args,
+						array(
+							'timeout' => $timeout,
+						)
 					)
-				)
-			);
+				);
 
-			if ( is_wp_error( $response ) ) {
-				$errors[ $url ] = $response->get_error_message();
+				if ( is_wp_error( $response ) ) {
+					$errors[ $url ] = $response->get_error_message();
+					WP_MCP_AI_Logger::log_error(
+						'Crawl4AI local crawl failed.',
+						array(
+							'url'   => $url,
+							'error' => $response->get_error_message(),
+						)
+					);
+					continue;
+				}
+
+				$result    = $this->build_local_result( $url, $response, $payload, $settings, $context );
+				$results[] = apply_filters( 'wp_mcp_ai_crawl4ai_local_result', $result, $response, $url, $settings, $context, $arguments );
+			} catch ( Exception $e ) {
+				// Handle any unexpected errors gracefully.
+				$errors[ $url ] = $e->getMessage();
 				WP_MCP_AI_Logger::log_error(
-					'Crawl4AI local crawl failed.',
+					'Crawl4AI local crawl exception.',
 					array(
-						'url'   => $url,
-						'error' => $response->get_error_message(),
+						'url'       => $url,
+						'exception' => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
 					)
 				);
 				continue;
 			}
-
-			$result    = $this->build_local_result( $url, $response, $payload, $settings, $context );
-			$results[] = apply_filters( 'wp_mcp_ai_crawl4ai_local_result', $result, $response, $url, $settings, $context, $arguments );
 		}
 
 		if ( empty( $results ) ) {

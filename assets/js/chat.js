@@ -3673,8 +3673,31 @@
             return null;
         }
 
-        // Extract results array
-        const results = Array.isArray(result.results) ? result.results : [];
+        // Handle string results (JSON string responses) - parse them first
+        if (typeof result === 'string') {
+            try {
+                result = JSON.parse(result);
+            } catch (e) {
+                // Not valid JSON, return as text
+                return {
+                    text: result,
+                    attachments: []
+                };
+            }
+        }
+
+        // Extract results array - handle nested structures
+        let results = [];
+        if (Array.isArray(result.results)) {
+            results = result.results;
+        } else if (result.raw && Array.isArray(result.raw.results)) {
+            // Check raw field for results
+            results = result.raw.results;
+        } else if (Array.isArray(result)) {
+            // Handle case where result itself is the array
+            results = result;
+        }
+
         if (!results.length) {
             // No results yet, show status message
             const status = result.status || 'unknown';
@@ -3683,6 +3706,12 @@
             if (taskId) {
                 text += ' (Task ID: ' + taskId + ')';
             }
+            
+            // Include error information if present
+            if (result.metadata && result.metadata.error) {
+                text += '\nError: ' + result.metadata.error;
+            }
+            
             return {
                 text: text,
                 attachments: []
@@ -3759,6 +3788,12 @@
             if (metadata.fetched_at || metadata.queued_at) {
                 const timestamp = metadata.fetched_at || metadata.queued_at;
                 metaParts.push('Timestamp: ' + timestamp);
+            }
+
+            // Add truncation notice if content was truncated
+            if (metadata.truncated === true) {
+                const tokenLimit = metadata.approximate_token_limit || 'unknown';
+                metaParts.push('⚠️ Content truncated (token limit: ' + tokenLimit + ')');
             }
 
             if (metaParts.length > 0) {
