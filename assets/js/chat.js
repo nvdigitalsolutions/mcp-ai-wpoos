@@ -2455,7 +2455,10 @@
                 loadHistorySessionIntoChat(state, sessionData, item, chatWindow);
                 return;
             } catch (error) {
-                // If parsing fails, proceed to fetch fresh data
+                // JSON parse failed - dataset may be corrupted, proceed to fetch fresh data
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Failed to parse cached session data:', error);
+                }
             }
         }
 
@@ -2480,7 +2483,11 @@
                 try {
                     details.dataset.sessionData = JSON.stringify(data);
                 } catch (error) {
-                    // Ignore stringify errors
+                    // Session data cannot be stringified (e.g., circular reference)
+                    // This is not critical - we still have the memory cache
+                    if (window.console && console.warn) {
+                        console.warn('[WP oOS] Failed to cache session data in DOM:', error);
+                    }
                 }
             })
             .catch(function (error) {
