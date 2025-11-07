@@ -61,6 +61,8 @@ The base version includes tools that work with a standard WordPress installation
 - `list_cron_jobs` - List scheduled cron jobs
 - `get_cron_job` - Get specific cron job details
 - `delete_cron_job` - Delete scheduled cron jobs
+- `query_remote_site` - Query remote WordPress sites in mesh network
+- `query_mesh_intelligent` - Intelligent mesh routing with AI-powered peer selection
 - `probe_chat` - Test assistant chat endpoints
 - `probe_remote_mcp` - Test remote MCP connections
 - `open_openai_usage` - OpenAI usage dashboard links
@@ -139,10 +141,6 @@ The following tools require third-party plugins or external services and are NOT
 #### Google Cloud Vision
 - `vision_product_search`
 - `vision_object_localization`
-
-#### Mesh Networking
-- `query_remote_site`
-- `query_mesh_intelligent`
 
 ### Excluded Integrations
 
