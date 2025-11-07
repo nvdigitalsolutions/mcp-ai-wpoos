@@ -103,7 +103,19 @@ INIT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MCP_ENDPOINT}" \
         "version": "1.0"
       }
     }
-  }')
+  }' 2>&1)
+
+CURL_EXIT_CODE=$?
+
+if [ $CURL_EXIT_CODE -ne 0 ]; then
+    echo -e "   ${RED}✗${NC} curl command failed (exit code: ${CURL_EXIT_CODE})"
+    echo "   Possible causes:"
+    echo "   - Network connectivity issues"
+    echo "   - DNS resolution failure"
+    echo "   - Invalid URL"
+    echo "   - SSL certificate issues"
+    exit 1
+fi
 
 HTTP_CODE=$(echo "$INIT_RESPONSE" | tail -n1)
 RESPONSE_BODY=$(echo "$INIT_RESPONSE" | sed '$d')
@@ -123,7 +135,12 @@ if [ "$HTTP_CODE" -eq 200 ]; then
         if [ "$VERBOSE" = true ]; then
             echo ""
             echo "Response:"
-            echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE_BODY"
+            if echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null; then
+                :
+            else
+                echo -e "   ${YELLOW}⚠${NC}  Warning: Response is not valid JSON, showing raw output:"
+                echo "$RESPONSE_BODY"
+            fi
         fi
     else
         echo -e "   ${YELLOW}⚠${NC}  Server info missing"
@@ -153,33 +170,46 @@ TOOLS_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MCP_ENDPOINT}" \
     "id": 2,
     "method": "tools/list",
     "params": {}
-  }')
+  }' 2>&1)
 
-HTTP_CODE=$(echo "$TOOLS_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$TOOLS_RESPONSE" | sed '$d')
+CURL_EXIT_CODE=$?
 
-if [ "$HTTP_CODE" -eq 200 ]; then
-    echo -e "   ${GREEN}✓${NC} HTTP Status: 200 OK"
-    
-    if echo "$RESPONSE_BODY" | grep -q '"tools"'; then
-        TOOL_COUNT=$(echo "$RESPONSE_BODY" | grep -o '"name"' | wc -l)
-        echo -e "   ${GREEN}✓${NC} Found ${TOOL_COUNT} tool(s)"
+if [ $CURL_EXIT_CODE -ne 0 ]; then
+    echo -e "   ${RED}✗${NC} curl command failed (exit code: ${CURL_EXIT_CODE})"
+    echo ""
+    # Continue to next test
+else
+    HTTP_CODE=$(echo "$TOOLS_RESPONSE" | tail -n1)
+    RESPONSE_BODY=$(echo "$TOOLS_RESPONSE" | sed '$d')
+
+    if [ "$HTTP_CODE" -eq 200 ]; then
+        echo -e "   ${GREEN}✓${NC} HTTP Status: 200 OK"
+        
+        if echo "$RESPONSE_BODY" | grep -q '"tools"'; then
+            TOOL_COUNT=$(echo "$RESPONSE_BODY" | grep -o '"name"' | wc -l)
+            echo -e "   ${GREEN}✓${NC} Found ${TOOL_COUNT} tool(s)"
+            
+            if [ "$VERBOSE" = true ]; then
+                echo ""
+                echo "Response:"
+                if echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null; then
+                    :
+                else
+                    echo -e "   ${YELLOW}⚠${NC}  Warning: Response is not valid JSON, showing raw output:"
+                    echo "$RESPONSE_BODY"
+                fi
+            fi
+        else
+            echo -e "   ${YELLOW}⚠${NC}  No tools found or invalid response"
+        fi
+    else
+        echo -e "   ${RED}✗${NC} HTTP Status: ${HTTP_CODE}"
         
         if [ "$VERBOSE" = true ]; then
             echo ""
             echo "Response:"
-            echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE_BODY"
+            echo "$RESPONSE_BODY"
         fi
-    else
-        echo -e "   ${YELLOW}⚠${NC}  No tools found or invalid response"
-    fi
-else
-    echo -e "   ${RED}✗${NC} HTTP Status: ${HTTP_CODE}"
-    
-    if [ "$VERBOSE" = true ]; then
-        echo ""
-        echo "Response:"
-        echo "$RESPONSE_BODY"
     fi
 fi
 
@@ -198,33 +228,46 @@ PROMPTS_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "${MCP_ENDPOINT}" \
     "id": 3,
     "method": "prompts/list",
     "params": {}
-  }')
+  }' 2>&1)
 
-HTTP_CODE=$(echo "$PROMPTS_RESPONSE" | tail -n1)
-RESPONSE_BODY=$(echo "$PROMPTS_RESPONSE" | sed '$d')
+CURL_EXIT_CODE=$?
 
-if [ "$HTTP_CODE" -eq 200 ]; then
-    echo -e "   ${GREEN}✓${NC} HTTP Status: 200 OK"
-    
-    if echo "$RESPONSE_BODY" | grep -q '"prompts"'; then
-        PROMPT_COUNT=$(echo "$RESPONSE_BODY" | grep -o '"name"' | wc -l)
-        echo -e "   ${GREEN}✓${NC} Found ${PROMPT_COUNT} prompt(s)"
+if [ $CURL_EXIT_CODE -ne 0 ]; then
+    echo -e "   ${RED}✗${NC} curl command failed (exit code: ${CURL_EXIT_CODE})"
+    echo ""
+    # Continue to summary
+else
+    HTTP_CODE=$(echo "$PROMPTS_RESPONSE" | tail -n1)
+    RESPONSE_BODY=$(echo "$PROMPTS_RESPONSE" | sed '$d')
+
+    if [ "$HTTP_CODE" -eq 200 ]; then
+        echo -e "   ${GREEN}✓${NC} HTTP Status: 200 OK"
+        
+        if echo "$RESPONSE_BODY" | grep -q '"prompts"'; then
+            PROMPT_COUNT=$(echo "$RESPONSE_BODY" | grep -o '"name"' | wc -l)
+            echo -e "   ${GREEN}✓${NC} Found ${PROMPT_COUNT} prompt(s)"
+            
+            if [ "$VERBOSE" = true ]; then
+                echo ""
+                echo "Response:"
+                if echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null; then
+                    :
+                else
+                    echo -e "   ${YELLOW}⚠${NC}  Warning: Response is not valid JSON, showing raw output:"
+                    echo "$RESPONSE_BODY"
+                fi
+            fi
+        else
+            echo -e "   ${YELLOW}⚠${NC}  No prompts found or invalid response"
+        fi
+    else
+        echo -e "   ${RED}✗${NC} HTTP Status: ${HTTP_CODE}"
         
         if [ "$VERBOSE" = true ]; then
             echo ""
             echo "Response:"
-            echo "$RESPONSE_BODY" | python3 -m json.tool 2>/dev/null || echo "$RESPONSE_BODY"
+            echo "$RESPONSE_BODY"
         fi
-    else
-        echo -e "   ${YELLOW}⚠${NC}  No prompts found or invalid response"
-    fi
-else
-    echo -e "   ${RED}✗${NC} HTTP Status: ${HTTP_CODE}"
-    
-    if [ "$VERBOSE" = true ]; then
-        echo ""
-        echo "Response:"
-        echo "$RESPONSE_BODY"
     fi
 fi
 
