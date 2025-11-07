@@ -348,4 +348,103 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	public function run_test_that_throws_error() {
 		throw new Error( 'Test error from Site Health' );
 	}
+
+	/**
+	 * Test that the tool gracefully handles undefined function errors that may occur
+	 * when WordPress admin dependencies are not fully loaded.
+	 */
+	public function test_execute_handles_undefined_function_errors() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+
+		$tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+		$logged_errors = array();
+
+		// Capture error log events.
+		add_filter(
+			'wp_mcp_ai_log_entry',
+			function ( $entry ) use ( &$logged_errors ) {
+				if ( isset( $entry['type'] ) && 'error' === $entry['type'] ) {
+					$logged_errors[] = $entry;
+				}
+				return $entry;
+			}
+		);
+
+		add_filter( 'site_status_tests', array( $this, 'filter_site_status_tests_with_undefined_function' ) );
+
+		try {
+			$result = $tool->execute( array(), array( 'user_id' => $admin_id ) );
+		} finally {
+			remove_filter( 'site_status_tests', array( $this, 'filter_site_status_tests_with_undefined_function' ) );
+			remove_all_filters( 'wp_mcp_ai_log_entry' );
+		}
+
+		// Tool should still return a result, not throw a fatal error.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'summary', $result );
+		$this->assertArrayHasKey( 'tests', $result );
+
+		// The good test should still pass.
+		$this->assertSame( 1, $result['summary']['pass'] );
+
+		// The test that calls undefined function should not appear since it threw an error.
+		$this->assertSame( 0, $result['summary']['critical'] );
+
+		// Verify error was logged.
+		$this->assertNotEmpty( $logged_errors, 'Undefined function errors should be logged' );
+
+		// Verify that the error was logged with proper structure.
+		$found_undefined_function_error = false;
+		foreach ( $logged_errors as $error ) {
+			if ( isset( $error['message'] ) && false !== strpos( $error['message'], 'Site Health test callback threw error' ) ) {
+				$this->assertArrayHasKey( 'context', $error, 'Error should have context array' );
+				$this->assertArrayHasKey( 'error_message', $error['context'], 'Context should include error_message' );
+				$this->assertArrayHasKey( 'callback', $error['context'], 'Context should include callback name' );
+				// Check case-insensitively for "undefined function" in the error message.
+				if ( false !== stripos( $error['context']['error_message'], 'undefined function' ) ) {
+					$found_undefined_function_error = true;
+				}
+			}
+		}
+
+		$this->assertTrue( $found_undefined_function_error, 'Should log undefined function error specifically' );
+	}
+
+	/**
+	 * Provide Site Health tests where one simulates calling an undefined function.
+	 *
+	 * @return array
+	 */
+	public function filter_site_status_tests_with_undefined_function() {
+		return array(
+			'direct' => array(
+				'undefined_function' => array(
+					'label' => 'Test that calls undefined function',
+					'test'  => array( $this, 'run_test_with_undefined_function' ),
+				),
+				'custom_good'        => array(
+					'label' => 'HTTPS test',
+					'test'  => array( $this, 'run_custom_good_test' ),
+				),
+			),
+			'async'  => array(),
+		);
+	}
+
+	/**
+	 * Simulate a test that calls an undefined function.
+	 *
+	 * This simulates the scenario where WordPress admin includes are not loaded
+	 * and functions like wp_check_php_version() are unavailable.
+	 *
+	 * @throws Error Throws Error when an undefined function is called.
+	 */
+	public function run_test_with_undefined_function() {
+		// Simulate calling a function that doesn't exist.
+		// This will throw an Error in PHP 7+ with message "Call to undefined function...".
+		// We use eval to dynamically call a non-existent function name.
+		$undefined_function_name = 'wp_mcp_ai_test_undefined_function_' . uniqid();
+		eval( $undefined_function_name . '();' );
+	}
 }
