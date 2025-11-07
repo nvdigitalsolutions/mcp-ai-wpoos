@@ -157,6 +157,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'enable_auth0_github_bridge'        => false,
 				'auth0_management_client_id'        => '',
 				'auth0_management_client_secret'    => '',
+				'enable_wordpress_gravatar_bridge'  => false,
+				'wordpress_gravatar_userinfo_endpoint' => '',
 				'enable_simple_jwt_login'           => false,
 				'delete_on_uninstall'               => false,
 				'crawl4ai_base_url'                 => '',
@@ -1511,6 +1513,22 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'enable_wordpress_gravatar_bridge',
+				__( 'Enable WordPress.com/Gravatar bridge', 'wp-mcp-ai' ),
+				array( $this, 'render_wordpress_gravatar_bridge_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_authentication_section'
+			);
+
+			add_settings_field(
+				'wordpress_gravatar_userinfo_endpoint',
+				__( 'WordPress.com Userinfo Endpoint', 'wp-mcp-ai' ),
+				array( $this, 'render_wordpress_gravatar_userinfo_endpoint_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_authentication_section'
+			);
+
+			add_settings_field(
 				'enable_simple_jwt_login',
 				__( 'Enable Simple JWT Login tokens', 'wp-mcp-ai' ),
 				array( $this, 'render_simple_jwt_login_field' ),
@@ -2209,6 +2227,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['auth0_management_client_secret'] ) ) {
 				$clean['auth0_management_client_secret'] = trim( sanitize_text_field( $settings['auth0_management_client_secret'] ) );
+			}
+
+			$clean['enable_wordpress_gravatar_bridge'] = ! empty( $settings['enable_wordpress_gravatar_bridge'] );
+
+			if ( isset( $settings['wordpress_gravatar_userinfo_endpoint'] ) ) {
+				$clean['wordpress_gravatar_userinfo_endpoint'] = trim( esc_url_raw( $settings['wordpress_gravatar_userinfo_endpoint'] ) );
 			}
 
 			$clean['enable_simple_jwt_login'] = $this->is_simple_jwt_login_available() && ! empty( $settings['enable_simple_jwt_login'] );
@@ -2934,6 +2958,36 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_secret]" value="<?php echo esc_attr( $settings['auth0_management_client_secret'] ); ?>" class="regular-text" autocomplete="new-password" />
 		<p class="description"><?php esc_html_e( 'Secret for the Auth0 Management API application. Required when the GitHub profile lacks email or username claims.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the WordPress.com/Gravatar bridge toggle.
+		 */
+		public function render_wordpress_gravatar_bridge_field() {
+			$settings = self::get_settings();
+			$enabled  = ! empty( $settings['enable_wordpress_gravatar_bridge'] );
+			$field_id = 'wp-mcp-ai-enable-wordpress-gravatar-bridge';
+
+			printf(
+				'<label for="%1$s"><input id="%1$s" type="checkbox" name="%2$s[enable_wordpress_gravatar_bridge]" value="1" %3$s /> %4$s</label>',
+				esc_attr( $field_id ),
+				esc_attr( self::OPTION_NAME ),
+				checked( $enabled, true, false ),
+				esc_html__( 'Resolve WordPress.com/Gravatar identities into WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' )
+			);
+
+			echo '<p class="description">' . esc_html__( 'Enable this to automatically map WordPress.com and Gravatar OAuth tokens to WordPress users. Optionally configure the userinfo endpoint below.', 'wp-mcp-ai' ) . '</p>';
+		}
+
+		/**
+		 * Render the WordPress.com userinfo endpoint field.
+		 */
+		public function render_wordpress_gravatar_userinfo_endpoint_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[wordpress_gravatar_userinfo_endpoint]" value="<?php echo esc_attr( $settings['wordpress_gravatar_userinfo_endpoint'] ); ?>" class="regular-text" placeholder="https://public-api.wordpress.com/oauth2/userinfo" autocomplete="off" />
+		<p class="description"><?php esc_html_e( 'Optional: Override the default WordPress.com userinfo endpoint for profile enrichment. Leave blank to use the default.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 

@@ -338,6 +338,48 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure defaults include the WordPress/Gravatar bridge configuration keys.
+	 */
+	public function test_default_settings_include_wordpress_gravatar_bridge_configuration() {
+		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
+
+		$this->assertArrayHasKey( 'enable_wordpress_gravatar_bridge', $defaults );
+		$this->assertFalse( $defaults['enable_wordpress_gravatar_bridge'] );
+		$this->assertArrayHasKey( 'wordpress_gravatar_userinfo_endpoint', $defaults );
+		$this->assertSame( '', $defaults['wordpress_gravatar_userinfo_endpoint'] );
+	}
+
+	/**
+	 * Ensure sanitize_settings sanitizes WordPress/Gravatar bridge toggle.
+	 */
+	public function test_sanitize_settings_sanitizes_wordpress_gravatar_bridge_toggle() {
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		$sanitized = $admin_settings->sanitize_settings(
+			array(
+				'enable_wordpress_gravatar_bridge' => '1',
+			)
+		);
+
+		$this->assertTrue( $sanitized['enable_wordpress_gravatar_bridge'] );
+	}
+
+	/**
+	 * Ensure sanitize_settings properly sanitizes WordPress/Gravatar userinfo endpoint.
+	 */
+	public function test_sanitize_settings_sanitizes_wordpress_gravatar_userinfo_endpoint() {
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		$sanitized = $admin_settings->sanitize_settings(
+			array(
+				'wordpress_gravatar_userinfo_endpoint' => '  https://public-api.wordpress.com/oauth2/userinfo  ',
+			)
+		);
+
+		$this->assertSame( 'https://public-api.wordpress.com/oauth2/userinfo', $sanitized['wordpress_gravatar_userinfo_endpoint'] );
+	}
+
+	/**
 	 * Ensure sanitize_settings properly sanitizes Cloudways email.
 	 */
 	public function test_sanitize_settings_sanitizes_cloudways_email() {
