@@ -2692,7 +2692,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 * @return string|array Sanitized result.
 	 */
 	protected function sanitize_tool_result_for_display( $result, $tool_name ) {
-		// For display, we want a summarized version.
+		// Special handling for crawl4ai - return full result structure for proper UI display.
+		if ( 'run_crawl4ai_job' === $tool_name ) {
+			// Return the complete crawl4ai result for proper frontend rendering.
+			// The frontend has specialized handling in normaliseCrawl4aiResult().
+			return $result;
+		}
+
+		// For display, we want a summarized version for other tools.
 		if ( is_string( $result ) ) {
 			// Limit string length for display.
 			if ( strlen( $result ) > 500 ) {
