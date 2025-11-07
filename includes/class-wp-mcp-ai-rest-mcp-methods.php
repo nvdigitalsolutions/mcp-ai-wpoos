@@ -297,7 +297,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		// Extract progress token from _meta if provided.
 		$progress_token = null;
-		if ( isset( $params['_meta']['progressToken'] ) ) {
+		if ( isset( $params['_meta'] ) && isset( $params['_meta']['progressToken'] ) ) {
 			$progress_token = sanitize_text_field( $params['_meta']['progressToken'] );
 		}
 
@@ -669,6 +669,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 *
 	 * This is a utility function that tools can call to emit progress updates
 	 * when a progressToken was provided in the request metadata.
+	 *
+	 * This method is intentionally static to allow tools to call it without
+	 * needing access to the REST controller instance. Tools can call it as:
+	 * WP_MCP_AI_REST::send_progress_notification( $token, $progress, $total, $message );
 	 *
 	 * Note: In the current HTTP/REST implementation, progress notifications
 	 * cannot be sent mid-request. This function stores progress for potential
