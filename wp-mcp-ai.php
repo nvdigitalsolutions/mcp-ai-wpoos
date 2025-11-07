@@ -184,6 +184,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.ph
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
@@ -405,6 +406,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			WP_MCP_AI_Crawler::init();
 
 			WP_MCP_AI_Usage_Tracker::init();
+			WP_MCP_AI_Tool_Token_Limits::init();
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
 				WP_MCP_AI_Elementor_Integration::maybe_init();

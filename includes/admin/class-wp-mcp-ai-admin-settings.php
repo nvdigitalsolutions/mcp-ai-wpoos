@@ -2606,6 +2606,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			
 			<?php $this->render_token_usage_section(); ?>
 			
+			<?php $this->render_tool_token_limits_section(); ?>
+			
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
 					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
