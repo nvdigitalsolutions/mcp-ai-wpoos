@@ -1,0 +1,14 @@
+{
+  "actions": [
+    {
+      "type": "mcp",
+      "name": "WordPress Tools",
+      "description": "Access WordPress site tools via MCP",
+      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
+      "auth": {
+        "type": "bearer",
+        "token": "cred_xxxxx.SECRET"
+      }
+    }
+  ]
+}

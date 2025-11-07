@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "id": "wordpress-mcp",
+      "name": "WordPress Site (MCP without SSE)",
+      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
+      "auth": {
+        "type": "bearer",
+        "token": "cred_xxxxx.SECRET"
+      },
+      "timeout": 30000,
+      "description": "Uses JSON-RPC 2.0 protocol via /mcp endpoint. No SSE streaming required."
+    }
+  ]
+}

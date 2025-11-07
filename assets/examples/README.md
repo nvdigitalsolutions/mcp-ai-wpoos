@@ -2,6 +2,25 @@
 
 This directory contains example configuration files for connecting various MCP clients to your WordPress WP oOS server.
 
+## Important: Two Connection Methods
+
+WordPress WP oOS supports **TWO ways** to connect MCP clients:
+
+### Method 1: JSON-RPC 2.0 (Recommended - No SSE Required)
+**Endpoint:** `/wp-json/mcp-ai/v1/mcp`
+- Uses standard JSON-RPC 2.0 protocol
+- **Does NOT require SSE streaming**
+- Works with all MCP clients
+- Best for: LM Studio, Claude Desktop, Cursor, Continue.dev
+
+### Method 2: SSE Streaming (Optional)
+**Endpoint:** `/wp-json/mcp-ai/v1/sse` or `/wp-json/mcp-ai/v1/assistants`
+- Uses Server-Sent Events for real-time updates
+- Requires `text/event-stream` support
+- Best for: Real-time streaming scenarios
+
+**If you're getting SSE errors with LM Studio, use Method 1 (JSON-RPC) instead!**
+
 ## Configuration Files
 
 ### Claude Desktop
@@ -18,10 +37,44 @@ This directory contains example configuration files for connecting various MCP c
 
 ### LM Studio
 
-**`lmstudio-config.json`** - LM Studio server configuration
-- Configuration for LM Studio's MCP server integration
+**`lmstudio-config.json`** - LM Studio with SSE (original)
+- Configuration for LM Studio's MCP server integration with SSE
 - Includes authentication, SSE, and timeout settings
-- Compatible with LM Studio's JSON config format
+- **May cause SSE content-type errors**
+
+**`lmstudio-mcp-without-sse.json`** - ⭐ **RECOMMENDED for LM Studio**
+- Uses JSON-RPC 2.0 protocol via `/mcp` endpoint
+- **No SSE streaming required** - Fixes the "Invalid content type" error
+- Simpler configuration, better compatibility
+
+**`lmstudio-assistants-endpoint.json`** - Alternative approach
+- Uses `/assistants` endpoint for directory discovery
+- SSE is optional
+- Good for browsing available assistants first
+
+### Cursor IDE
+
+**`cursor-config.json`** - Cursor MCP integration
+- Configuration for Cursor IDE's MCP support
+- Uses HTTP transport with MCP server adapter
+
+### Continue.dev
+
+**`continue-config.json`** - Continue.dev extension
+- Configuration for Continue.dev VS Code extension
+- SSE transport for real-time updates
+
+### Cline
+
+**`cline-config.json`** - Cline AI assistant
+- Configuration for Cline MCP integration
+- Simple bearer token authentication
+
+### OpenAI/ChatGPT
+
+**`openai-gpt-config.json`** - OpenAI custom actions
+- Configuration for ChatGPT custom actions/plugins
+- Bearer token authentication for MCP access
 
 ## Usage Instructions
 
@@ -40,12 +93,52 @@ This directory contains example configuration files for connecting various MCP c
 
 ### For LM Studio
 
-1. In LM Studio, navigate to **Settings** → **MCP Servers** or **Extensions**
-2. Click **Add MCP Server** or **Import Configuration**
-3. Either:
-   - Fill in the form fields with values from the example
-   - Import the JSON directly if your version supports it
+**If you're getting "Invalid content type" SSE errors, use the JSON-RPC configuration:**
+
+1. Use `lmstudio-mcp-without-sse.json` (recommended)
+2. In LM Studio, navigate to **Settings** → **MCP Servers**
+3. Add a new server with:
+   - **URL**: `https://your-site.com/wp-json/mcp-ai/v1/mcp`
+   - **Auth Type**: Bearer Token
+   - **Token**: `cred_xxxxx.SECRET`
+   - **No SSE configuration needed**
 4. Test the connection
+
+**Alternative configurations:**
+- `lmstudio-config.json` - Original with SSE (may have compatibility issues)
+- `lmstudio-assistants-endpoint.json` - Uses assistants directory
+
+### For Cursor IDE
+
+1. Open Cursor settings (Cmd/Ctrl + ,)
+2. Go to **Extensions** → **MCP**
+3. Add configuration from `cursor-config.json`
+4. Replace `your-site.com` and `cred_xxxxx.SECRET`
+5. Restart Cursor
+
+### For Continue.dev
+
+1. Install Continue.dev extension in VS Code
+2. Open Continue settings (`.continue/config.json`)
+3. Add the MCP server configuration from `continue-config.json`
+4. Replace placeholder values
+5. Reload VS Code window
+
+### For Cline
+
+1. Open Cline extension settings
+2. Navigate to **MCP Servers**
+3. Add configuration from `cline-config.json`
+4. Update URL and token
+5. Save and test connection
+
+### For OpenAI/ChatGPT
+
+1. Go to OpenAI platform settings
+2. Navigate to **Actions** or **Custom GPTs**
+3. Add new action using configuration from `openai-gpt-config.json`
+4. Configure authentication with bearer token
+5. Test the action
 
 ## Generating Credentials
 
@@ -69,6 +162,45 @@ For detailed setup instructions, troubleshooting, and advanced configurations:
 
 After configuring your client, verify the connection:
 
+### Method 1: Test JSON-RPC Endpoint (Recommended)
+
+```bash
+# Test the /mcp endpoint (no SSE required)
+curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer cred_xxxxx.SECRET" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {
+        "name": "Test Client",
+        "version": "1.0"
+      }
+    }
+  }'
+```
+
+Expected response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {...},
+    "serverInfo": {
+      "name": "WP oOS",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
+### Method 2: Test Assistants Endpoint
+
 ```bash
 # Using the test script
 ./bin/test-remote-connection.sh \
@@ -78,7 +210,53 @@ After configuring your client, verify the connection:
 # Using WP-CLI
 wp mcp-ai remote https://your-site.com/wp-json/mcp-ai/v1 \
   --token=cred_xxxxx.SECRET
+
+# Using curl
+curl -H "Authorization: Bearer cred_xxxxx.SECRET" \
+  https://your-site.com/wp-json/mcp-ai/v1/assistants
 ```
+
+## Troubleshooting
+
+### LM Studio: "Invalid content type, expected text/event-stream"
+
+**Problem:** LM Studio is trying to use SSE but the server response has wrong content-type.
+
+**Solution:** 
+1. Use `lmstudio-mcp-without-sse.json` configuration instead
+2. Point to `/mcp` endpoint: `https://your-site.com/wp-json/mcp-ai/v1/mcp`
+3. Remove SSE configuration entirely
+4. This uses JSON-RPC 2.0 protocol which doesn't require SSE
+
+### Connection Refused / Timeout
+
+**Problem:** Client cannot reach the MCP server
+
+**Solutions:**
+1. Verify your WordPress site is accessible via HTTPS
+2. Check that REST API is enabled (visit `/wp-json` in browser)
+3. Ensure no firewall or security plugin is blocking `/wp-json/mcp-ai/v1`
+4. Try accessing the URL directly in a browser first
+
+### Invalid Token / 401 Unauthorized
+
+**Problem:** Authentication fails with credential error
+
+**Solutions:**
+1. Verify you copied the complete token including `cred_` prefix
+2. Check the credential hasn't been revoked in WordPress admin
+3. Generate a new credential if unsure
+4. Ensure no extra spaces or line breaks in the token
+
+### Method Not Found
+
+**Problem:** MCP client sends a request but method is not recognized
+
+**Solutions:**
+1. Verify you're using the correct endpoint (`/mcp` for JSON-RPC)
+2. Check the method name matches MCP specification
+3. Update to latest version of WP oOS plugin
+4. Review [MCP Endpoint Documentation](../../docs/mcp-endpoint.md)
 
 ## Security Notes
 
