@@ -5055,16 +5055,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$test_settings                        = $original_settings;
 			$test_settings['ollama_endpoint_url'] = $endpoint_url;
 
-			// Create a temporary Ollama client instance.
-			$ollama_client = new WP_MCP_AI_Ollama_Client();
-
 			// Update settings temporarily.
 			update_option( self::OPTION_NAME, $test_settings );
+			// Clear the settings cache to ensure the client reads the updated settings.
+			self::$settings_cache = null;
+
+			// Create a temporary Ollama client instance.
+			$ollama_client = new WP_MCP_AI_Ollama_Client();
 
 			$result = $ollama_client->test_connection();
 
 			// Restore original settings.
 			update_option( self::OPTION_NAME, $original_settings );
+			// Clear the settings cache again to ensure subsequent calls read the restored settings.
+			self::$settings_cache = null;
 
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -5097,16 +5101,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$test_settings                        = $original_settings;
 			$test_settings['ollama_endpoint_url'] = $endpoint_url;
 
-			// Create a temporary Ollama client instance.
-			$ollama_client = new WP_MCP_AI_Ollama_Client();
-
 			// Update settings temporarily.
 			update_option( self::OPTION_NAME, $test_settings );
+			// Clear the settings cache to ensure the client reads the updated settings.
+			self::$settings_cache = null;
+
+			// Create a temporary Ollama client instance.
+			$ollama_client = new WP_MCP_AI_Ollama_Client();
 
 			$models = $ollama_client->list_models();
 
 			// Restore original settings.
 			update_option( self::OPTION_NAME, $original_settings );
+			// Clear the settings cache again to ensure subsequent calls read the restored settings.
+			self::$settings_cache = null;
 
 			if ( is_wp_error( $models ) ) {
 				wp_send_json_error( array( 'message' => $models->get_error_message() ) );
@@ -5139,16 +5147,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$test_settings                           = $original_settings;
 			$test_settings['lm_studio_endpoint_url'] = $endpoint_url;
 
-			// Create a temporary LM Studio client instance.
-			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
-
 			// Update settings temporarily.
 			update_option( self::OPTION_NAME, $test_settings );
+			// Clear the settings cache to ensure the client reads the updated settings.
+			self::$settings_cache = null;
+
+			// Create a temporary LM Studio client instance.
+			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
 
 			$result = $lm_studio_client->test_connection();
 
 			// Restore original settings.
 			update_option( self::OPTION_NAME, $original_settings );
+			// Clear the settings cache again to ensure subsequent calls read the restored settings.
+			self::$settings_cache = null;
 
 			if ( is_wp_error( $result ) ) {
 				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -5181,16 +5193,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$test_settings                           = $original_settings;
 			$test_settings['lm_studio_endpoint_url'] = $endpoint_url;
 
-			// Create a temporary LM Studio client instance.
-			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
-
 			// Update settings temporarily.
 			update_option( self::OPTION_NAME, $test_settings );
+			// Clear the settings cache to ensure the client reads the updated settings.
+			self::$settings_cache = null;
+
+			// Create a temporary LM Studio client instance.
+			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
 
 			$models = $lm_studio_client->list_models();
 
 			// Restore original settings.
 			update_option( self::OPTION_NAME, $original_settings );
+			// Clear the settings cache again to ensure subsequent calls read the restored settings.
+			self::$settings_cache = null;
 
 			if ( is_wp_error( $models ) ) {
 				wp_send_json_error( array( 'message' => $models->get_error_message() ) );
