@@ -970,6 +970,7 @@
     color: var(--wp-mcp-ai-color-shortcut-text, rgba(15, 23, 42, 0.75));
 }
 
+/* Accordion-related styles - no longer used as history sessions load directly into main chat
 .wp-mcp-ai-chat__history-session-icon {
     flex: 0 0 auto;
     display: inline-flex;
@@ -1045,6 +1046,7 @@
         grid-template-columns: 1fr;
     }
 }
+*/
 
 /* Elementor editor preview notice */
 .wp-mcp-ai-chat__editor-notice {
