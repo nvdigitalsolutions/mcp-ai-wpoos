@@ -437,12 +437,12 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	 * This simulates the scenario where WordPress admin includes are not loaded
 	 * and functions like wp_check_php_version() are unavailable.
 	 *
-	 * @throws Error Always throws due to undefined function call.
+	 * @throws Error Throws Error when call_user_func() attempts to call a non-existent function.
 	 */
 	public function run_test_with_undefined_function() {
 		// Simulate calling a function that doesn't exist.
-		// This will throw an Error in PHP 7+.
-		$undefined_function_name = 'wp_mcp_ai_test_undefined_function_' . wp_generate_password( 10, false );
+		// This will throw an Error in PHP 7+ when call_user_func() is invoked.
+		$undefined_function_name = 'wp_mcp_ai_test_undefined_function_' . uniqid();
 		call_user_func( $undefined_function_name );
 	}
 }
