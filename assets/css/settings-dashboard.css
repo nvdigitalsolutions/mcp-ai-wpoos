@@ -1,0 +1,212 @@
+/**
+ * WP oOS Settings Dashboard Styles
+ *
+ * Modern, tabbed settings interface styling.
+ */
+
+.wp-mcp-ai-settings-dashboard {
+	max-width: 1200px;
+}
+
+/* Tab Navigation */
+.wp-mcp-ai-settings-dashboard .nav-tab-wrapper {
+	margin-bottom: 20px;
+	border-bottom: 1px solid #ccd0d4;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	margin: 0;
+	border: 1px solid transparent;
+	border-bottom: none;
+	background: transparent;
+	font-size: 14px;
+	line-height: 1.4;
+	transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab:hover {
+	background-color: #f6f7f7;
+	color: #0073aa;
+}
+
+.wp-mcp-ai-settings-dashboard .nav-tab-active {
+	background-color: #fff;
+	border-color: #ccd0d4;
+	color: #0073aa;
+	font-weight: 600;
+	margin-bottom: -1px;
+}
+
+/* Tab Content */
+.wp-mcp-ai-settings-dashboard .tab-content {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-top: none;
+	margin-top: -1px;
+}
+
+/* Settings Sections */
+.wp-mcp-ai-settings-dashboard .settings-section {
+	margin-bottom: 30px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #e5e5e5;
+}
+
+.wp-mcp-ai-settings-dashboard .settings-section:last-child {
+	border-bottom: none;
+}
+
+.wp-mcp-ai-settings-dashboard .settings-section h2 {
+	margin-top: 0;
+	font-size: 20px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-settings-dashboard .section-description {
+	margin-top: 0;
+	margin-bottom: 15px;
+	color: #646970;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+/* Form Fields */
+.wp-mcp-ai-settings-dashboard .form-table {
+	margin-top: 0;
+}
+
+.wp-mcp-ai-settings-dashboard .form-table th {
+	padding: 15px 10px 15px 0;
+	vertical-align: top;
+	width: 200px;
+}
+
+.wp-mcp-ai-settings-dashboard .form-table td {
+	padding: 15px 10px;
+}
+
+.wp-mcp-ai-settings-dashboard .form-table .description {
+	margin-top: 5px;
+	color: #646970;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-settings-dashboard .required {
+	color: #d63638;
+	font-weight: 700;
+}
+
+/* Input Fields */
+.wp-mcp-ai-settings-dashboard input[type="text"],
+.wp-mcp-ai-settings-dashboard input[type="password"],
+.wp-mcp-ai-settings-dashboard input[type="email"],
+.wp-mcp-ai-settings-dashboard input[type="url"],
+.wp-mcp-ai-settings-dashboard input[type="number"],
+.wp-mcp-ai-settings-dashboard select,
+.wp-mcp-ai-settings-dashboard textarea {
+	border-color: #8c8f94;
+}
+
+.wp-mcp-ai-settings-dashboard input[type="text"]:focus,
+.wp-mcp-ai-settings-dashboard input[type="password"]:focus,
+.wp-mcp-ai-settings-dashboard input[type="email"]:focus,
+.wp-mcp-ai-settings-dashboard input[type="url"]:focus,
+.wp-mcp-ai-settings-dashboard input[type="number"]:focus,
+.wp-mcp-ai-settings-dashboard select:focus,
+.wp-mcp-ai-settings-dashboard textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Submit Button */
+.wp-mcp-ai-settings-dashboard .submit {
+	padding: 0;
+	margin-top: 20px;
+}
+
+/* Notices */
+.wp-mcp-ai-settings-dashboard .notice {
+	margin: 15px 0;
+}
+
+/* Loading State */
+.wp-mcp-ai-settings-dashboard .loading {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-settings-dashboard .nav-tab {
+		padding: 10px 12px;
+		font-size: 13px;
+	}
+
+	.wp-mcp-ai-settings-dashboard .nav-tab .dashicons {
+		width: 16px;
+		height: 16px;
+		font-size: 16px;
+	}
+
+	.wp-mcp-ai-settings-dashboard .form-table th,
+	.wp-mcp-ai-settings-dashboard .form-table td {
+		display: block;
+		width: 100%;
+		padding: 10px 0;
+	}
+
+	.wp-mcp-ai-settings-dashboard .form-table th {
+		padding-bottom: 5px;
+	}
+}
+
+/* Accessibility */
+.wp-mcp-ai-settings-dashboard .nav-tab:focus {
+	box-shadow: 0 0 0 2px #2271b1;
+	outline: 2px solid transparent;
+}
+
+/* Help Text */
+.wp-mcp-ai-settings-dashboard .help-text {
+	display: inline-block;
+	margin-left: 5px;
+	color: #646970;
+	text-decoration: none;
+}
+
+.wp-mcp-ai-settings-dashboard .help-text:hover {
+	color: #2271b1;
+}
+
+/* Status Indicators */
+.wp-mcp-ai-settings-dashboard .status-indicator {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 5px;
+}
+
+.wp-mcp-ai-settings-dashboard .status-indicator.status-active {
+	background-color: #00a32a;
+}
+
+.wp-mcp-ai-settings-dashboard .status-indicator.status-inactive {
+	background-color: #dba617;
+}
+
+.wp-mcp-ai-settings-dashboard .status-indicator.status-error {
+	background-color: #d63638;
+}
