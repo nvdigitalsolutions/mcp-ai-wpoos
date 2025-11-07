@@ -4,6 +4,14 @@
 
 This guide provides comprehensive configuration examples for connecting various MCP (Model Context Protocol) clients to WordPress WP oOS.
 
+## ⚠️ Getting 404 Errors?
+
+If you're seeing `SSE error: Non-200 status code (404)` or similar errors, see the comprehensive **[404 Troubleshooting Guide](lmstudio-404-troubleshooting.md)** which covers:
+- REST API activation
+- Permalink configuration
+- Security plugin issues
+- LM Studio-specific fixes
+
 ## Two Connection Methods
 
 WordPress WP oOS supports **two distinct methods** for MCP connectivity:
@@ -280,6 +288,32 @@ All configurations require a bearer token credential generated from WordPress:
 - **Scope:** Tied to specific assistant
 - **Revocation:** Can be revoked in WordPress admin
 - **Multiple:** Generate separate credentials for different clients
+
+### WordPress Settings - What You Need
+
+#### ✅ Required: None (MCP works by default)
+
+The MCP endpoints work out of the box once you:
+- Have the plugin active
+- Have at least one published assistant
+- Have generated an API credential
+
+#### ❌ NOT Required: "Enable REST Assistant Creation"
+
+**This setting is ONLY for creating new assistants via API.**
+
+The setting "Enable REST Assistant Creation" controls:
+- POST requests to `/assistants` (creating assistants remotely)
+- Only needed if you want API clients to create assistants
+
+**For normal MCP use (connecting LM Studio, Claude, etc.), this setting can be OFF.**
+
+MCP clients can still:
+- ✅ List assistants (GET `/assistants`)
+- ✅ Send chat messages (POST `/chat`)
+- ✅ Execute tools (POST `/tools`)
+- ✅ Use JSON-RPC (POST `/mcp`)
+- ✅ Stream via SSE (GET `/sse`)
 
 ---
 
