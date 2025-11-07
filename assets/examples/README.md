@@ -235,8 +235,15 @@ This error was caused by critical bugs that have been fixed in the latest versio
 1. ✅ **Fatal PHP Error**: MCP code was calling non-existent `get_json_schema()` method
 2. ✅ **CORS Blocking**: OpenAI servers were blocked by missing CORS headers
 3. ✅ **Missing Fields**: Added required `instructions` and proper initialization
+4. ✅ **Tool Polling**: Tools are now automatically included in the `initialize` response for immediate discovery
 
 **Solution**: Update to the latest version of WP oOS plugin
+
+**What Changed**:
+- The `initialize` method now includes tool definitions by default
+- This allows OpenAI Agent Builder and similar clients to immediately discover available tools
+- The `tools/list` method remains available for clients that prefer explicit calls
+- Developers can disable this behavior using the `wp_mcp_ai_initialize_include_tools` filter (see `assets/examples/filter-initialize-tools.php`)
 
 **If still having issues after updating**:
 
@@ -254,28 +261,58 @@ This error was caused by critical bugs that have been fixed in the latest versio
      -d '{
        "jsonrpc": "2.0",
        "id": 1,
-       "method": "initialize"
+       "method": "initialize",
+       "params": {
+         "assistant_id": YOUR_ASSISTANT_ID
+       }
      }'
    ```
-   Should return initialization response with tools capability.
+   Should return initialization response with tools array included.
 
-3. **Check for security plugins blocking REST API**:
+3. **Verify tools are returned in initialize response**:
+   The response should include a `tools` array with tool definitions:
+   ```json
+   {
+     "jsonrpc": "2.0",
+     "id": 1,
+     "result": {
+       "protocolVersion": "2024-11-05",
+       "capabilities": {...},
+       "serverInfo": {...},
+       "instructions": "...",
+       "tools": [
+         {
+           "name": "search_content",
+           "description": "Search WordPress content",
+           "inputSchema": {...}
+         }
+       ]
+     }
+   }
+   ```
+
+4. **Check for security plugins blocking REST API**:
    - Wordfence: Whitelist `/wp-json/mcp-ai/` in firewall
    - Sucuri: Allow REST API access
    - iThemes Security: Disable REST API restrictions for `/mcp-ai/`
 
-4. **Verify CORS headers** (use browser dev tools):
+5. **Verify CORS headers** (use browser dev tools):
    - Should see `Access-Control-Allow-Origin: *`
    - Should see `Access-Control-Allow-Methods: GET, POST, OPTIONS`
 
-5. **Check credential is valid**:
+6. **Check credential is valid**:
    - Go to WordPress Admin → AI Assistants
    - Verify credential hasn't been revoked
    - Generate a new one if needed
 
-6. **Ensure HTTPS is enabled**:
+7. **Ensure HTTPS is enabled**:
    - OpenAI requires HTTPS connections
    - Test with `https://` not `http://`
+
+8. **Ensure assistant has tools configured**:
+   - Edit your assistant in WordPress admin
+   - Verify tools are enabled in the assistant configuration
+   - At least one tool must be selected for the assistant
 
 ### LM Studio: "Invalid content type, expected text/event-stream"
 
