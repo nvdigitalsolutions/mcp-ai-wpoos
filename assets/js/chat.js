@@ -5442,16 +5442,26 @@
             
             // Show tool result in chat
             let resultText = '';
+            let isError = false;
+            
             if (typeof result === 'string') {
                 resultText = result;
+                // Check if the result looks like an error message
+                isError = resultText.toLowerCase().indexOf('error') !== -1 || 
+                          resultText.toLowerCase().indexOf('invalid') !== -1 ||
+                          resultText.toLowerCase().indexOf('failed') !== -1;
             } else if (result.summary) {
                 resultText = toolName + ': ' + result.summary;
             } else {
                 resultText = toolName + ': ' + getString('completed', 'Completed');
             }
 
-            appendMessage(state.messagesEl, 'tool', {
-                text: '✓ ' + resultText
+            // Use different prefix for errors vs success
+            const prefix = isError ? '⚠️ ' : '✓ ';
+            const messageType = isError ? 'system' : 'tool';
+            
+            appendMessage(state.messagesEl, messageType, {
+                text: prefix + resultText
             });
         }
     }
