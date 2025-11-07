@@ -276,6 +276,16 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
 	new WP_MCP_AI_Auth0_Setup();
+
+	// Load new modular settings dashboard system.
+	// Set WP_MCP_AI_USE_NEW_DASHBOARD to false in wp-config.php to use legacy settings.
+	if ( ! defined( 'WP_MCP_AI_USE_NEW_DASHBOARD' ) ) {
+		define( 'WP_MCP_AI_USE_NEW_DASHBOARD', true );
+	}
+
+	if ( WP_MCP_AI_USE_NEW_DASHBOARD ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+	}
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
