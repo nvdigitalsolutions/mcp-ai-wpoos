@@ -272,7 +272,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 												'type'     => 'function',
 												'function' => array(
 													'name'      => 'get_open_meteo_forecast',
-													// Already an array (not JSON string).
+													// Arguments provided as array instead of JSON string.
 													'arguments' => array(
 														'latitude'  => 48.8566,
 														'longitude' => 2.3522,

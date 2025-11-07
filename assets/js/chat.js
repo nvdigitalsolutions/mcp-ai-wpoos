@@ -5446,10 +5446,15 @@
             
             if (typeof result === 'string') {
                 resultText = result;
-                // Check if the result looks like an error message
-                isError = resultText.toLowerCase().indexOf('error') !== -1 || 
-                          resultText.toLowerCase().indexOf('invalid') !== -1 ||
-                          resultText.toLowerCase().indexOf('failed') !== -1;
+                // Check if the result looks like an error message.
+                // Error strings from execute_tool_call_internal() contain these keywords.
+                // This is a pragmatic approach that works without changing the backend response structure.
+                const lowerResult = resultText.toLowerCase();
+                isError = lowerResult.indexOf('error') !== -1 || 
+                          lowerResult.indexOf('invalid') !== -1 ||
+                          lowerResult.indexOf('failed') !== -1 ||
+                          lowerResult.indexOf('forbidden') !== -1 ||
+                          lowerResult.indexOf('missing') !== -1;
             } else if (result.summary) {
                 resultText = toolName + ': ' + result.summary;
             } else {
