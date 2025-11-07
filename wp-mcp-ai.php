@@ -221,6 +221,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-auth0-github.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php';
 }
 
 // Clean any output that may have been generated during includes.
@@ -260,6 +261,9 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	}
 	if ( class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 		WP_MCP_AI_Integration_Auth0_Github::init();
+	}
+	if ( class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
+		WP_MCP_AI_Integration_WordPress_Gravatar::init();
 	}
 }
 
