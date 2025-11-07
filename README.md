@@ -68,8 +68,32 @@
 ---
 
 ## 🧩 Overview
-**WP oOS** is a modular AI framework for WordPress and JetEngine that connects your site’s data with OpenAI’s GPT models.
+
+**WP oOS** is a modular AI framework for WordPress and JetEngine that connects your site's data with OpenAI's GPT models.
 It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+### 🎯 Mission: Modernizing Small to Medium Business Websites
+
+**WP oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're helping to **peel back decades of API wrappers with the help of AI**, providing:
+
+- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, and Ollama without custom development
+- **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
+- **Enterprise-Grade Features** - Access to capabilities typically requiring expensive custom development
+- **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
+- **Zero Technical Debt** - Modern codebase following WordPress standards, ready for current technology stacks
+
+### 🛡️ Active Security Monitoring
+
+**WP oOS actively prevents and monitors against nefarious behavior**. The plugin includes:
+
+- **Nefarious Usage Monitor** - Real-time detection of suspicious patterns and automatic emergency shutdown capabilities【F:includes/class-wp-mcp-ai-nefarious-usage-monitor.php†L1-L676】
+- **Root Security Key** - Optional emergency authentication layer to prevent unauthorized reactivation after security incidents【F:docs/root-security-key.md†L1-L511】
+- **Granular Capability Controls** - Every tool and API endpoint enforces WordPress capabilities to prevent unauthorized access
+- **Rate Limiting** - Built-in protection against abuse with configurable limits per user, model, and time period
+- **Comprehensive Audit Logging** - Track all API calls, tool executions, and security events for compliance and forensic analysis
+- **Input Sanitization & Output Escaping** - All user input sanitized, all output escaped following WordPress security best practices
+
+**This is not a tool for circumventing security or promoting bad practices.** Every feature is designed with security, transparency, and responsible AI usage as core principles. The plugin actively works to stop and prevent misuse before it happens.
 
 ## 🏗 System Architecture
 
