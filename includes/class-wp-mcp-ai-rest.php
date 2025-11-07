@@ -364,10 +364,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'sanitize_callback' => 'absint',
 							),
 							'messages'     => array(
-								'description' => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
-								'type'        => 'array',
-								'required'    => true,
-								'items'       => array(
+								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
+								'type'              => 'array',
+								'required'          => true,
+								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
 										'role'    => array(
@@ -390,10 +391,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								),
 							),
 							'attachments'  => array(
-								'description' => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
-								'type'        => 'array',
-								'required'    => false,
-								'items'       => array(
+								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
+								'type'              => 'array',
+								'required'          => false,
+								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
 										'file_id' => array(
@@ -688,10 +690,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'params'  => array(
-								'description' => __( 'Method parameters object.', 'wp-mcp-ai' ),
-								'type'        => 'object',
-								'required'    => false,
-								'default'     => array(),
+								'description'       => __( 'Method parameters object.', 'wp-mcp-ai' ),
+								'type'              => 'object',
+								'required'          => false,
+								'default'           => array(),
+								'validate_callback' => array( $this, 'validate_mcp_params' ),
 							),
 						),
 					),
@@ -703,6 +706,297 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+		}
+
+		/**
+		 * Validate messages array structure for chat endpoint.
+		 *
+		 * @param mixed           $value   The messages array to validate.
+		 * @param WP_REST_Request $request The request object.
+		 * @param string          $param   The parameter name.
+		 * @return bool|WP_Error True if valid, WP_Error if invalid.
+		 */
+		public function validate_messages_array( $value, $request, $param ) {
+			if ( ! is_array( $value ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					sprintf(
+						/* translators: %s: parameter name */
+						__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
+						$param
+					),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $value ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'The "messages" array cannot be empty. At least one message is required.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'provide_messages' => __( 'Include at least one message object with "role" and "content" properties.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			foreach ( $value as $index => $message ) {
+				if ( ! is_array( $message ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: message index */
+							__( 'Message at index %d must be an object/array.', 'wp-mcp-ai' ),
+							$index
+						),
+						array( 'status' => 400 )
+					);
+				}
+
+				// Validate role field.
+				if ( ! isset( $message['role'] ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: message index */
+							__( 'Message at index %d is missing required "role" property.', 'wp-mcp-ai' ),
+							$index
+						),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'add_role' => __( 'Each message must include a "role" property with one of: "system", "user", "assistant", or "tool".', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
+
+				$role = $message['role'];
+				$valid_roles = array( 'system', 'user', 'assistant', 'tool' );
+
+				if ( ! in_array( $role, $valid_roles, true ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: 1: message index, 2: invalid role, 3: valid roles list */
+							__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'wp-mcp-ai' ),
+							$index,
+							$role,
+							implode( ', ', $valid_roles )
+						),
+						array( 'status' => 400 )
+					);
+				}
+
+				// Validate content field (required for most roles).
+				if ( ! isset( $message['content'] ) && 'assistant' !== $role ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: message index */
+							__( 'Message at index %d is missing required "content" property.', 'wp-mcp-ai' ),
+							$index
+						),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'add_content' => __( 'Each message must include a "content" property (string or array of content parts).', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
+
+				// Validate tool_call_id for tool messages.
+				if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: message index */
+							__( 'Tool message at index %d is missing required "tool_call_id" property.', 'wp-mcp-ai' ),
+							$index
+						),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate attachments array structure for chat endpoint.
+		 *
+		 * @param mixed           $value   The attachments array to validate.
+		 * @param WP_REST_Request $request The request object.
+		 * @param string          $param   The parameter name.
+		 * @return bool|WP_Error True if valid, WP_Error if invalid.
+		 */
+		public function validate_attachments_array( $value, $request, $param ) {
+			if ( ! is_array( $value ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					sprintf(
+						/* translators: %s: parameter name */
+						__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
+						$param
+					),
+					array( 'status' => 400 )
+				);
+			}
+
+			foreach ( $value as $index => $attachment ) {
+				if ( ! is_array( $attachment ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: attachment index */
+							__( 'Attachment at index %d must be an object/array.', 'wp-mcp-ai' ),
+							$index
+						),
+						array( 'status' => 400 )
+					);
+				}
+
+				// Each attachment must have either file_id or url.
+				$has_file_id = isset( $attachment['file_id'] ) && is_numeric( $attachment['file_id'] );
+				$has_url     = isset( $attachment['url'] ) && is_string( $attachment['url'] );
+
+				if ( ! $has_file_id && ! $has_url ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: attachment index */
+							__( 'Attachment at index %d must include either "file_id" (integer) or "url" (string).', 'wp-mcp-ai' ),
+							$index
+						),
+						array(
+							'status'  => 400,
+							'actions' => array(
+								'provide_file_reference' => __( 'Each attachment must specify either a WordPress attachment ID via "file_id" or an external URL via "url".', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
+
+				// Validate file_id if provided.
+				if ( $has_file_id ) {
+					$file_id = absint( $attachment['file_id'] );
+					if ( $file_id <= 0 ) {
+						return new WP_Error(
+							'rest_invalid_param',
+							sprintf(
+								/* translators: %d: attachment index */
+								__( 'Attachment at index %d has invalid "file_id". Must be a positive integer.', 'wp-mcp-ai' ),
+								$index
+							),
+							array( 'status' => 400 )
+						);
+					}
+				}
+
+				// Validate url if provided.
+				if ( $has_url && ! filter_var( $attachment['url'], FILTER_VALIDATE_URL ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						sprintf(
+							/* translators: %d: attachment index */
+							__( 'Attachment at index %d has invalid "url". Must be a valid URL.', 'wp-mcp-ai' ),
+							$index
+						),
+						array( 'status' => 400 )
+					);
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate MCP JSON-RPC request structure.
+		 *
+		 * @param mixed           $value   The request body to validate.
+		 * @param WP_REST_Request $request The request object.
+		 * @param string          $param   The parameter name.
+		 * @return bool|WP_Error True if valid, WP_Error if invalid.
+		 */
+		public function validate_mcp_params( $value, $request, $param ) {
+			// This validates the params object for MCP requests.
+			// The structure depends on the method, so we validate based on that.
+			$method = $request->get_param( 'method' );
+
+			if ( ! $method ) {
+				// Method will be validated by the endpoint args, so we just check if params is an object/array.
+				if ( null !== $value && ! is_array( $value ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						__( 'The "params" parameter must be an object/array or null.', 'wp-mcp-ai' ),
+						array( 'status' => 400 )
+					);
+				}
+				return true;
+			}
+
+			// Validate params structure based on method.
+			switch ( $method ) {
+				case 'tools/call':
+					if ( ! is_array( $value ) ) {
+						return new WP_Error(
+							'rest_invalid_param',
+							__( 'The "params" parameter must be an object for tools/call method.', 'wp-mcp-ai' ),
+							array( 'status' => 400 )
+						);
+					}
+
+					if ( ! isset( $value['name'] ) || ! is_string( $value['name'] ) ) {
+						return new WP_Error(
+							'rest_invalid_param',
+							__( 'MCP tools/call requires a "name" parameter (string) specifying the tool to call.', 'wp-mcp-ai' ),
+							array(
+								'status'  => 400,
+								'actions' => array(
+									'provide_tool_name' => __( 'Include "params": {"name": "tool_slug", "arguments": {...}} in your request.', 'wp-mcp-ai' ),
+								),
+							)
+						);
+					}
+
+					// Arguments is optional but must be an object if provided.
+					if ( isset( $value['arguments'] ) && ! is_array( $value['arguments'] ) ) {
+						return new WP_Error(
+							'rest_invalid_param',
+							__( 'The "arguments" parameter in tools/call must be an object.', 'wp-mcp-ai' ),
+							array( 'status' => 400 )
+						);
+					}
+					break;
+
+				case 'initialize':
+				case 'tools/list':
+				case 'resources/list':
+				case 'prompts/list':
+					// These methods accept optional params.
+					if ( null !== $value && ! is_array( $value ) ) {
+						return new WP_Error(
+							'rest_invalid_param',
+							sprintf(
+								/* translators: %s: method name */
+								__( 'The "params" parameter for %s method must be an object or null.', 'wp-mcp-ai' ),
+								$method
+							),
+							array( 'status' => 400 )
+						);
+					}
+					break;
+			}
+
+			return true;
 		}
 
 		/**
