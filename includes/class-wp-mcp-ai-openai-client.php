@@ -3024,12 +3024,42 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
-					// Convert input_image segments with file_id to image_url format
+					// Convert input_image segments to image_url format for Chat Completions API
 					if ( 'input_image' === $type ) {
+						// Check if the segment already has an image_url (from external URLs)
+						if ( isset( $segment['image_url'] ) ) {
+							// Extract URL from image_url structure
+							$image_url = '';
+							if ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
+								$image_url = esc_url_raw( (string) $segment['image_url']['url'] );
+							} elseif ( is_string( $segment['image_url'] ) ) {
+								$image_url = esc_url_raw( $segment['image_url'] );
+							}
+
+							if ( '' !== $image_url ) {
+								// Convert to image_url type with proper structure
+								$converted_segment = array(
+									'type'      => 'image_url',
+									'image_url' => array( 'url' => $image_url ),
+								);
+
+								// Preserve detail level if present
+								if ( isset( $segment['detail'] ) && '' !== $segment['detail'] ) {
+									$converted_segment['image_url']['detail'] = sanitize_key( $segment['detail'] );
+								} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['detail'] ) ) {
+									$converted_segment['image_url']['detail'] = sanitize_key( $segment['image_url']['detail'] );
+								}
+
+								$converted_segments[] = $converted_segment;
+								continue;
+							}
+						}
+
+						// Handle input_image segments with file_id
 						if ( ! isset( $segment['file_id'] ) ) {
-							// input_image without file_id cannot be converted - skip it
+							// input_image without file_id or image_url cannot be converted - skip it
 							WP_MCP_AI_Logger::log_error(
-								'Skipping input_image segment without file_id for Chat Completions API.',
+								'Skipping input_image segment without file_id or image_url for Chat Completions API.',
 								array(
 									'segment' => $segment,
 								)

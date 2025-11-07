@@ -350,9 +350,122 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that input_image segments without file_id are removed.
+	 * Test that input_image segments without file_id but with image_url are converted.
 	 */
-	public function test_convert_image_files_to_image_url_removes_input_image_without_file_id() {
+	public function test_convert_image_files_to_image_url_converts_input_image_with_image_url() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'      => 'input_image',
+						'image_url' => array(
+							'url' => 'https://example.com/image.jpg',
+						),
+						'detail'    => 'high',
+					),
+				),
+			),
+		);
+
+		$attachment_lookup = array();
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'image_url', $segment['type'] );
+		$this->assertArrayHasKey( 'image_url', $segment );
+		$this->assertArrayHasKey( 'url', $segment['image_url'] );
+		$this->assertSame( 'https://example.com/image.jpg', $segment['image_url']['url'] );
+		$this->assertSame( 'high', $segment['image_url']['detail'] );
+	}
+
+	/**
+	 * Test that input_image segments with string image_url are converted.
+	 */
+	public function test_convert_image_files_to_image_url_converts_input_image_with_string_image_url() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'      => 'input_image',
+						'image_url' => 'https://example.com/image.png',
+					),
+				),
+			),
+		);
+
+		$attachment_lookup = array();
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'image_url', $segment['type'] );
+		$this->assertArrayHasKey( 'image_url', $segment );
+		$this->assertArrayHasKey( 'url', $segment['image_url'] );
+		$this->assertSame( 'https://example.com/image.png', $segment['image_url']['url'] );
+	}
+
+	/**
+	 * Test that input_image segments with image_url containing detail are properly converted.
+	 */
+	public function test_convert_image_files_to_image_url_preserves_detail_from_nested_image_url() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'      => 'input_image',
+						'image_url' => array(
+							'url'    => 'https://example.com/detailed-image.jpg',
+							'detail' => 'low',
+						),
+					),
+				),
+			),
+		);
+
+		$attachment_lookup = array();
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		$segment = $converted[0]['content'][0];
+		$this->assertSame( 'image_url', $segment['type'] );
+		$this->assertArrayHasKey( 'image_url', $segment );
+		$this->assertArrayHasKey( 'url', $segment['image_url'] );
+		$this->assertSame( 'https://example.com/detailed-image.jpg', $segment['image_url']['url'] );
+		$this->assertSame( 'low', $segment['image_url']['detail'] );
+	}
+
+	/**
+	 * Test that input_image segments without file_id and without image_url are removed.
+	 */
+	public function test_convert_image_files_to_image_url_removes_input_image_without_file_id_or_image_url() {
 		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
 
 		$messages = array(
