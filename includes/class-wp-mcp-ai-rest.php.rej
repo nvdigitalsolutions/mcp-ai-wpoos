@@ -1,0 +1,10 @@
+--- class-wp-mcp-ai-rest.php
++++ class-wp-mcp-ai-rest.php
+@@ -82,6 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
+ add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
+ add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
+ add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
++add_filter( 'rest_post_dispatch', array( $this, 'ensure_error_response_format' ), 20, 3 );
+ add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
+ }
+ 

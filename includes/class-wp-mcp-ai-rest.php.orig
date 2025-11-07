@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
-		add_filter( 'rest_post_dispatch', array( $this, 'ensure_error_response_format' ), 20, 3 );
+	\t\tadd_filter( 'rest_post_dispatch', array( $this, 'ensure_error_response_format' ), 20, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
 		}
 
@@ -225,69 +225,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			return $response;
 		}
-
-	/**
-	 * Ensure all error responses are properly formatted as JSON with correct Content-Type.
-	 *
-	 * This filter catches validation errors and other error responses that might not be
-	 * properly formatted, ensuring that clients always receive a valid JSON response
-	 * even when errors occur during parameter validation or other pre-handler checks.
-	 *
-	 * @param WP_REST_Response $response Response object.
-	 * @param WP_REST_Server   $server   REST server instance.
-	 * @param WP_REST_Request  $request  Original request object.
-	 * @return WP_REST_Response
-	 */
-	public function ensure_error_response_format( $response, $server, $request ) {
-		// Only process our endpoints.
-		if ( ! $request instanceof WP_REST_Request ) {
-			return $response;
-		}
-
-		$route = $request->get_route();
-		if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
-			return $response;
-		}
-
-		// Only process error responses (4xx, 5xx).
-		if ( ! $response instanceof WP_REST_Response ) {
-			return $response;
-		}
-
-		$status = $response->get_status();
-		if ( $status < 400 ) {
-			return $response;
-		}
-
-		// Ensure the response has proper structure.
-		$data = $response->get_data();
-
-		// If data is not an array or is empty, create a proper error structure.
-		if ( ! is_array( $data ) || empty( $data ) ) {
-			$data = array(
-				'code'    => 'rest_invalid_request',
-				'message' => __( 'Invalid request. Please check your parameters and try again.', 'wp-mcp-ai' ),
-				'data'    => array( 'status' => $status ),
-			);
-			$response->set_data( $data );
-		}
-
-		// Ensure the response has a code and message.
-		if ( ! isset( $data['code'] ) ) {
-			$data['code'] = 'rest_error';
-			$response->set_data( $data );
-		}
-
-		if ( ! isset( $data['message'] ) || '' === trim( $data['message'] ) ) {
-			$data['message'] = __( 'An error occurred while processing your request.', 'wp-mcp-ai' );
-			$response->set_data( $data );
-		}
-
-		// Ensure Content-Type is set to application/json for error responses.
-		$response->header( 'Content-Type', 'application/json; charset=UTF-8' );
-
-		return $response;
-	}
 
 		/**
 		 * Reset the stored authentication context for the current request.
