@@ -220,6 +220,9 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 		};
 
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/update.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
