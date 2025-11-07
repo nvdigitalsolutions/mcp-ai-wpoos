@@ -459,7 +459,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			$email        = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
 			$display_name = isset( $data['name'] ) ? wp_strip_all_tags( $data['name'] ) : '';
 			$username     = '';
-			
+
 			// Try various username field aliases.
 			$aliases = array( 'username', 'preferred_username', 'nickname', 'login' );
 			foreach ( $aliases as $alias ) {
