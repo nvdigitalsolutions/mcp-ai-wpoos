@@ -390,7 +390,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					// Unknown type - could be valid for future MCP versions.
 					// Allow it but log for monitoring (if logger is available).
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-						WP_MCP_AI_Logger::log_info(
+						WP_MCP_AI_Logger::log_event(
+							'mcp_unknown_content_type',
 							'Unknown MCP content type encountered',
 							array( 'type' => $type )
 						);
