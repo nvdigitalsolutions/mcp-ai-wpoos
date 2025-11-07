@@ -455,7 +455,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						),
 					),
 				),
-					true
+			true
 			);
 
 			// Register /chat-client endpoint for browser-based chat UI (relaxed iteration limits).
@@ -469,7 +469,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_chat_client_request' ),
 						'args'                => array(
 							'assistant_id' => array(
-								'description'       => __( 'ID of the assistant to use for this browser chat session. Defaults to the site default assistant.', 'wp-mcp-ai' ),
+								'description'       => __( 'ID of the assistant to use for this chat. Defaults to the site default assistant.', 'wp-mcp-ai' ),
 								'type'              => 'integer',
 								'required'          => false,
 								'sanitize_callback' => 'absint',
@@ -2946,13 +2946,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 		/**
 		 * Handle chat request with SSE streaming support for agentic loop.
-	 *
-	 * Streams tool execution status and results in real-time during the agentic loop.
-	 *
-	 * Note: This method uses exit after streaming is complete, which is necessary
-	 * for SSE to work properly. The exit ensures no additional output is sent
-	 * after the [DONE] marker.
-	 *
+		*
+		* Streams tool execution status and results in real-time during the agentic loop.
+		*
+		* Note: This method uses exit after streaming is complete, which is necessary
+		* for SSE to work properly. The exit ensures no additional output is sent
+		* after the [DONE] marker.
+		*
 	 * Note: While 8 parameters exceeds typical guidelines, this maintains consistency
 	 * with how the non-streaming handler is invoked and keeps all context together.
 	 * Grouping into objects would add unnecessary complexity for internal use.
