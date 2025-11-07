@@ -30,9 +30,13 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-a
 
 /**
  * Initialize the settings dashboard system.
+ *
+ * Note: This is the NEW modular settings dashboard. The legacy monolithic
+ * settings page (class-wp-mcp-ai-admin-settings.php) continues to function
+ * alongside this new system during the transition period.
  */
 function wp_mcp_ai_init_settings_dashboard() {
-	// Register all sections.
+	// Register all sections with the registry.
 	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
 	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
 	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
@@ -41,7 +45,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
 	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );
 
-	// Initialize dashboard.
+	// Initialize the dashboard controller.
+	// This creates the new Settings > WP oOS menu item.
 	new WP_MCP_AI_Settings_Dashboard();
 }
 
