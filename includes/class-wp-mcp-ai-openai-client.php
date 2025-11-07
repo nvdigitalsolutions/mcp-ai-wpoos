@@ -1582,11 +1582,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
-				// When using Chat Completions API with image attachments, convert to image_url format
+				// When using Chat Completions API, convert input_image segments to image_url format
+				// This is necessary because Chat Completions API doesn't support input_image type
 				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
-					$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				}
+				// Always run conversion to handle input_image segments from conversation history
+				$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 
@@ -3016,7 +3018,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
 					// Convert input_image segments with file_id to image_url format
-					if ( 'input_image' === $type && isset( $segment['file_id'] ) ) {
+					if ( 'input_image' === $type ) {
+						if ( ! isset( $segment['file_id'] ) ) {
+							// input_image without file_id cannot be converted - skip it
+							WP_MCP_AI_Logger::log_error(
+								'Skipping input_image segment without file_id for Chat Completions API.',
+								array(
+									'segment' => $segment,
+								)
+							);
+							continue;
+						}
+
 						$file_id = (string) $segment['file_id'];
 
 						// Try to get the attachment data
@@ -3061,10 +3074,37 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								}
 							}
 						}
+
+						// If we reach here, the input_image could not be converted to image_url.
+						// Skip it since Chat Completions API doesn't support input_image type.
+						WP_MCP_AI_Logger::log_error(
+							'Skipping input_image segment that could not be converted to image_url for Chat Completions API.',
+							array(
+								'file_id'       => $file_id,
+								'attachment_id' => $attachment_id,
+							)
+						);
+						continue;
 					}
 
 					// Keep all other segments as-is
 					$converted_segments[] = $segment;
+				}
+
+				// Handle messages that have no content after filtering
+				if ( empty( $converted_segments ) ) {
+					// Add a fallback text segment to preserve the message in chat UI
+					// This prevents empty content errors and maintains conversation continuity
+					$converted_segments[] = array(
+						'type' => 'text',
+						'text' => '[Image could not be loaded]',
+					);
+					WP_MCP_AI_Logger::log_error(
+						'Replaced empty message content with fallback text after input_image conversion for Chat Completions API.',
+						array(
+							'role' => isset( $message['role'] ) ? $message['role'] : 'unknown',
+						)
+					);
 				}
 
 				$message['content'] = $converted_segments;
