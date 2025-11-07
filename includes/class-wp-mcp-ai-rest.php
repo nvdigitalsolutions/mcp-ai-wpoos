@@ -660,27 +660,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_mcp_request' ),
 						'args'                => array(
 							'jsonrpc' => array(
-								'description' => __( 'JSON-RPC version. Must be "2.0".', 'wp-mcp-ai' ),
-								'type'        => 'string',
-								'required'    => true,
-								'enum'        => array( '2.0' ),
+								'description'       => __( 'JSON-RPC version. Must be "2.0".', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'enum'              => array( '2.0' ),
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'id'      => array(
 								'description' => __( 'Request identifier. Omit for notifications.', 'wp-mcp-ai' ),
-								'type'        => array( 'string', 'integer' ),
+								'oneOf'       => array(
+									array( 'type' => 'string' ),
+									array( 'type' => 'integer' ),
+								),
 								'required'    => false,
 							),
 							'method'  => array(
-								'description' => __( 'MCP method name to invoke.', 'wp-mcp-ai' ),
-								'type'        => 'string',
-								'required'    => true,
-								'enum'        => array(
+								'description'       => __( 'MCP method name to invoke.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'enum'              => array(
 									'initialize',
 									'tools/list',
 									'tools/call',
 									'resources/list',
 									'prompts/list',
 								),
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 							'params'  => array(
 								'description' => __( 'Method parameters object.', 'wp-mcp-ai' ),
