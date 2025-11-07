@@ -865,7 +865,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Each attachment must have either file_id or url.
-				$has_file_id = isset( $attachment['file_id'] ) && is_numeric( $attachment['file_id'] );
+				$has_file_id = isset( $attachment['file_id'] ) && is_numeric( $attachment['file_id'] ) && absint( $attachment['file_id'] ) > 0;
 				$has_url     = isset( $attachment['url'] ) && is_string( $attachment['url'] );
 
 				if ( ! $has_file_id && ! $has_url ) {
@@ -885,8 +885,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					);
 				}
 
-				// Validate file_id if provided.
-				if ( $has_file_id ) {
+				// Validate file_id if provided (additional check for clarity).
+				if ( isset( $attachment['file_id'] ) ) {
 					$file_id = absint( $attachment['file_id'] );
 					if ( $file_id <= 0 ) {
 						return new WP_Error(

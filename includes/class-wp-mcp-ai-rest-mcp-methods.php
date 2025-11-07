@@ -334,10 +334,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		$tool_name = sanitize_text_field( $params['name'] );
-		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
-
+		
 		// Validate arguments is an object/array if provided.
-		if ( isset( $params['arguments'] ) && ! is_array( $arguments ) ) {
+		if ( isset( $params['arguments'] ) && ! is_array( $params['arguments'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_params',
 				__( 'The "arguments" parameter must be an object/array.', 'wp-mcp-ai' ),
@@ -349,6 +348,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				)
 			);
 		}
+		
+		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
 
 		// Use existing tool execution infrastructure.
 		$request->set_param( 'tool', $tool_name );
