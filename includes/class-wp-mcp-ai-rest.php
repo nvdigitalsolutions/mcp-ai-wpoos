@@ -7611,9 +7611,47 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( isset( $tool_call['function']['arguments'] ) ) {
 				if ( is_string( $tool_call['function']['arguments'] ) ) {
-					$decoded = json_decode( $tool_call['function']['arguments'], true );
-					if ( JSON_ERROR_NONE === json_last_error() && is_array( $decoded ) ) {
-						$arguments = $decoded;
+					$arguments_string = trim( $tool_call['function']['arguments'] );
+					
+					// Empty string is valid - means no arguments.
+					if ( '' === $arguments_string ) {
+						$arguments = array();
+					} else {
+						$decoded = json_decode( $arguments_string, true );
+						if ( JSON_ERROR_NONE === json_last_error() ) {
+							if ( is_array( $decoded ) ) {
+								$arguments = $decoded;
+							} else {
+								// JSON decoded successfully but result is not an array.
+								WP_MCP_AI_Logger::log_error(
+									'Tool call arguments JSON decoded to non-array',
+									array(
+										'tool_name'     => $tool_name,
+										'arguments'     => $arguments_string,
+										'decoded_type'  => gettype( $decoded ),
+										'assistant_id'  => $assistant_id,
+										'agentic_loop'  => true,
+									)
+								);
+								/* translators: %s: tool name */
+								return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments', sprintf( __( 'Tool "%s" has invalid arguments: expected JSON object.', 'wp-mcp-ai' ), $tool_name ) );
+							}
+						} else {
+							// JSON decode failed.
+							$json_error = json_last_error_msg();
+							WP_MCP_AI_Logger::log_error(
+								'Tool call arguments JSON decode failed',
+								array(
+									'tool_name'     => $tool_name,
+									'arguments'     => $arguments_string,
+									'json_error'    => $json_error,
+									'assistant_id'  => $assistant_id,
+									'agentic_loop'  => true,
+								)
+							);
+							/* translators: 1: tool name, 2: JSON error message */
+							return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments_json', sprintf( __( 'Tool "%1$s" has invalid JSON arguments: %2$s', 'wp-mcp-ai' ), $tool_name, $json_error ) );
+						}
 					}
 				} elseif ( is_array( $tool_call['function']['arguments'] ) ) {
 					$arguments = $tool_call['function']['arguments'];
