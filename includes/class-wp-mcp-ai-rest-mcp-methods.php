@@ -313,7 +313,15 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				// If even basic encoding fails, return an error message.
 				if ( false === $text_content ) {
 					$text_content = '[Error: Unable to encode tool result]';
-					WP_MCP_AI_Logger::log_error( 'Failed to JSON encode tool result', array( 'result' => $tool_result ) );
+					// Log error with metadata only (not actual content to avoid exposing sensitive data).
+					WP_MCP_AI_Logger::log_error(
+						'Failed to JSON encode tool result',
+						array(
+							'type' => gettype( $tool_result ),
+							'is_array' => is_array( $tool_result ),
+							'is_object' => is_object( $tool_result ),
+						)
+					);
 				}
 			}
 		} else {
