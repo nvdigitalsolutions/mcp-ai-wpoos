@@ -140,6 +140,7 @@ class WP_MCP_AI_Shortcode {
 					'expandTranscript'          => __( 'Expand conversation', 'wp-mcp-ai' ),
 					'collapseTranscript'        => __( 'Collapse conversation', 'wp-mcp-ai' ),
 					'newConversation'           => __( 'Start new conversation', 'wp-mcp-ai' ),
+					'loadConversation'          => __( 'Load conversation', 'wp-mcp-ai' ),
 					'jsonResponse'              => __( 'JSON response', 'wp-mcp-ai' ),
 					'historyToggleShow'         => __( 'Show previous conversations', 'wp-mcp-ai' ),
 					'historyToggleHide'         => __( 'Hide previous conversations', 'wp-mcp-ai' ),
