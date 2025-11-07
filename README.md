@@ -34,6 +34,7 @@
 - [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
 - [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
 - [🌐 Mesh Compute Routing](#-mesh-compute-routing)
+- [🔗 Federation & Discovery System](#-federation--discovery-system)
 
 ### Remote MCP Setup
 - [🔒 MCP Server Authentication](#-mcp-server-authentication)
@@ -173,6 +174,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🔑 Configurable API credentials and defaults for OpenAI and Gemini
 - 🤖 ChatGPT’s connector beta currently requires an Auth0 tenant; the plugin’s assistant credentials are compatible with LM Studio, Claude, and other MCP clients that support bearer headers directly.【F:docs/mcp-server-authentication.md†L22-L46】
 - 🌐 **Mesh networking** for distributed compute pooling across multiple WordPress sites. Server-to-server architecture enables anonymous and authenticated users to benefit from shared AI resources, budget pooling, and workload distribution across 100+ trusted peer sites. Backend assistants coordinate mesh operations via secure inter-site keys while maintaining user attribution and audit trails for compliance.【F:docs/mesh-compute-pooling.md†L1-L615】【F:includes/tools/class-wp-mcp-ai-tool-query-remote-site.php†L1-L237】
+- 🔗 **Federation & Discovery** - Decentralized AI capability network allowing WordPress sites to publish their capabilities via well-known endpoints (`/.well-known/ai-peer`) and discover peer sites through directory services. Supports peer registration, health verification, search & ranking by capability/region/policy, and automatic cron-based health monitoring. Enable federation to join the network or run your own directory service for private peer discovery.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - 🧾 Optional logging of chat interactions, tool executions, and API errors
 - 🧮 Built-in per-user usage tracking for provider/model billing summaries
 - 🧩 Developer hooks and filters for integrating custom behaviours
@@ -186,6 +188,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
+- ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -628,6 +631,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Multisite Support](docs/multisite-support.md) - WordPress multisite configuration
 - [Rate Limit Protection](docs/rate-limit-protection.md) - API rate limiting setup
 - [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+- [Federation & Discovery](docs/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
 - [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
@@ -657,6 +661,7 @@ Complete these after installation to unlock every integration point:
 - [ ] **Review Send Group Email permissions** in **Settings → WP oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
 - [ ] **Connect QuickBooks Online** under **Settings → WP oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → WP oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
+- [ ] **Enable Federation & Discovery** (Optional) in **Settings → WP oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 
 ## 🧠 Language Model Providers (OpenAI, Gemini & Ollama)
 
@@ -946,6 +951,84 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 
 ➡️ See [docs/mesh-routing-guide.md](docs/mesh-routing-guide.md) for complete setup guide, routing strategies, and use cases.
 ➡️ See [docs/mesh-compute-pooling.md](docs/mesh-compute-pooling.md) for architecture and authentication details.
+
+## 🔗 Federation & Discovery System
+
+WP oOS includes a **decentralized AI capability network** that allows WordPress sites to publish their capabilities and discover peer sites. Think of it as "npm for AI tools" — sites can advertise what they offer and find complementary capabilities from trusted peers.
+
+### Overview
+
+The Federation & Discovery system provides three deployment modes:
+
+1. **Publisher Mode**: Publish your site's capabilities via `/.well-known/ai-peer`
+2. **Directory Mode**: Run a discovery service for peer registration and search
+3. **Consumer Mode**: Query directories to find and use peer capabilities
+
+### Quick Start
+
+**Enable Federation (Publisher Mode):**
+1. Navigate to **Settings → WP oOS → Federation & Discovery**
+2. Check **Enable federation**
+3. Configure regions (e.g., `us, eu, ap`) and data tags (e.g., `no_pii, gdpr_ok`)
+4. Your capabilities are now published at `https://yoursite.com/.well-known/ai-peer`
+
+**Enable Directory Service (Optional):**
+1. In the same settings section, check **Enable directory service**
+2. Your directory API is now available at `https://yoursite.com/wp-json/ai-dir/v1`
+3. Automatic hourly health checks verify registered peers
+
+### Key Features
+
+- 📡 **Well-Known Endpoints** - Standards-based capability publishing
+- 🔍 **Peer Discovery** - Search by capability, region, and data policy
+- ✅ **Health Monitoring** - Automatic cron-based peer verification
+- 🏆 **Smart Ranking** - Scores peers by region, latency, and policy match
+- 🔐 **JWKS Verification** - Built-in security with public key discovery
+- ⚙️ **Conditional Loading** - Zero overhead when disabled
+
+### API Endpoints
+
+**Directory REST API (`/wp-json/ai-dir/v1`):**
+- `POST /peers/register` - Register a new peer
+- `GET /peers` - List all peers with health status
+- `GET /peers/{id}` - Get peer details
+- `GET /search` - Search peers by capability/region/policy
+- `POST /reverify/{id}` - Manually trigger health check
+- `POST /report/{id}` - Report peer issues
+
+**Well-Known Endpoints:**
+- `GET /.well-known/ai-peer` - Your site's capability manifest
+- `GET /.well-known/jwks.json` - Public keys for verification
+
+### Use Cases
+
+**Private Organization Network:**
+- Multiple WordPress sites within one organization
+- Share AI capabilities across internal sites
+- Central directory for discovery
+- Private peer network with secure authentication
+
+**Public Directory Service:**
+- Community-run capability discovery
+- Accept registrations from external sites
+- Provide search API for consumers
+- Build an ecosystem marketplace
+
+**Capability Consumer:**
+- Query public directories for needed capabilities
+- Integrate with mesh router for automatic peer selection
+- No need to publish your own capabilities
+- Access specialized tools from the network
+
+### Configuration Options
+
+- **Regions**: Geographic locations (e.g., `us, eu, ap, global`)
+- **Data Tags**: Compliance policies (e.g., `no_pii, gdpr_ok, hipaa_like`)
+- **QPS Limit**: Queries per second (default: 5)
+- **Burst Capacity**: Simultaneous requests (default: 10)
+
+➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/federation-discovery.md)
+➡️ **Implementation Summary:** [FEDERATION-IMPLEMENTATION-SUMMARY.md](FEDERATION-IMPLEMENTATION-SUMMARY.md)
 
 ## 🕵️ Code Review
 
