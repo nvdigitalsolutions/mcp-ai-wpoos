@@ -74,11 +74,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		// If this is a notification (no id), return 202 Accepted with no body.
 		if ( null === $id ) {
-			return new WP_REST_Response( null, 202 );
+			$response = new WP_REST_Response( null, 202 );
+			$this->add_cors_headers( $response );
+			return $response;
 		}
 
 		// Return successful JSON-RPC response.
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			array(
 				'jsonrpc' => '2.0',
 				'id'      => $id,
@@ -86,6 +88,8 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			),
 			200
 		);
+		$this->add_cors_headers( $response );
+		return $response;
 	}
 
 	/**
@@ -130,6 +134,25 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @return array
 	 */
 	protected function mcp_initialize( $params, WP_REST_Request $request ) {
+		$site_name = get_bloginfo( 'name' );
+		$site_desc = get_bloginfo( 'description' );
+		
+		// Build instructions dynamically based on site info.
+		if ( ! empty( $site_desc ) ) {
+			$instructions = sprintf(
+				/* translators: 1: site name, 2: site description */
+				__( 'This is a WordPress site (%1$s). %2$s. You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				$site_name,
+				$site_desc
+			);
+		} else {
+			$instructions = sprintf(
+				/* translators: %s: site name */
+				__( 'This is a WordPress site (%s). You can use the available tools to interact with WordPress content, users, and functionality.', 'wp-mcp-ai' ),
+				$site_name
+			);
+		}
+
 		return array(
 			'protocolVersion' => '2024-11-05',
 			'capabilities'    => array(
@@ -144,6 +167,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				'name'    => 'WP oOS',
 				'version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
 			),
+			'instructions'    => $instructions,
 		);
 	}
 
@@ -197,7 +221,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert tools to MCP format.
 		$mcp_tools = array();
 		foreach ( $tools as $tool ) {
-			$schema = $tool->get_json_schema();
+			$schema = $tool->get_parameters_schema();
 
 			$mcp_tools[] = array(
 				'name'        => $tool->get_slug(),
@@ -362,7 +386,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			$error['data'] = $data;
 		}
 
-		return new WP_REST_Response(
+		$response = new WP_REST_Response(
 			array(
 				'jsonrpc' => '2.0',
 				'id'      => $id,
@@ -370,5 +394,45 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			),
 			$code === -32700 ? 400 : ( $code === -32601 ? 404 : 500 )
 		);
+		$this->add_cors_headers( $response );
+		return $response;
+	}
+
+	/**
+	 * Add CORS headers to MCP responses for OpenAI Agent Builder compatibility.
+	 *
+	 * By default, allows all origins for maximum compatibility. Can be restricted
+	 * via the 'wp_mcp_ai_cors_allow_origin' filter for production environments.
+	 *
+	 * @param WP_REST_Response $response Response object to modify.
+	 */
+	protected function add_cors_headers( $response ) {
+		/**
+		 * Filter the Access-Control-Allow-Origin header value.
+		 *
+		 * By default set to '*' for maximum compatibility with external AI services.
+		 * For production, consider restricting to specific trusted domains.
+		 *
+		 * @param string $origin The origin value to allow. Default '*'.
+		 *
+		 * @example
+		 * // Restrict to specific domain:
+		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function() {
+		 *     return 'https://api.openai.com';
+		 * } );
+		 *
+		 * // Allow multiple domains (requires additional logic):
+		 * add_filter( 'wp_mcp_ai_cors_allow_origin', function() {
+		 *     $allowed = array( 'https://api.openai.com', 'https://api.anthropic.com' );
+		 *     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+		 *     return in_array( $origin, $allowed, true ) ? $origin : '';
+		 * } );
+		 */
+		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+
+		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
+		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
+		$response->header( 'Access-Control-Max-Age', '3600' );
 	}
 }

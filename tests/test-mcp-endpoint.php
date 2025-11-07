@@ -238,7 +238,9 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'protocolVersion', $result );
 		$this->assertArrayHasKey( 'capabilities', $result );
 		$this->assertArrayHasKey( 'serverInfo', $result );
+		$this->assertArrayHasKey( 'instructions', $result );
 		$this->assertSame( 'WP oOS', $result['serverInfo']['name'] );
+		$this->assertNotEmpty( $result['instructions'], 'Instructions should not be empty' );
 	}
 
 	/**
@@ -397,5 +399,40 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 200, $response->get_status(), 'Bearer token should authenticate successfully' );
+	}
+
+	/**
+	 * Test CORS headers are present in MCP responses.
+	 */
+	public function test_cors_headers_present() {
+		$response = $this->send_mcp_request(
+			array(
+				'jsonrpc' => '2.0',
+				'id'      => 1,
+				'method'  => 'initialize',
+			)
+		);
+
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers, 'CORS origin header should be present' );
+		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'], 'CORS should allow all origins' );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Methods', $headers, 'CORS methods header should be present' );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Headers', $headers, 'CORS headers header should be present' );
+	}
+
+	/**
+	 * Test OPTIONS request for CORS preflight.
+	 */
+	public function test_options_request() {
+		$request = new WP_REST_Request( 'OPTIONS', '/mcp-ai/v1/mcp' );
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 204, $response->get_status(), 'OPTIONS should return 204' );
+		
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Methods', $headers );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Headers', $headers );
+		$this->assertArrayHasKey( 'Access-Control-Max-Age', $headers );
 	}
 }

@@ -134,11 +134,20 @@ WordPress WP oOS supports **TWO ways** to connect MCP clients:
 
 ### For OpenAI/ChatGPT
 
-1. Go to OpenAI platform settings
-2. Navigate to **Actions** or **Custom GPTs**
-3. Add new action using configuration from `openai-gpt-config.json`
-4. Configure authentication with bearer token
-5. Test the action
+1. Go to OpenAI Agent Builder platform (https://platform.openai.com)
+2. Navigate to **Agent Builder** or **Custom Actions**
+3. Add new MCP connector using configuration from `openai-gpt-config.json`
+4. Configure:
+   - **URL**: `https://your-site.com/wp-json/mcp-ai/v1/mcp`
+   - **Auth Type**: Bearer Token
+   - **Token**: Your generated assistant credential (e.g., `cred_xxxxx.SECRET`)
+5. Save and test the connection
+
+**Important**: Make sure your WordPress site:
+- Has HTTPS enabled (required for OpenAI)
+- REST API is accessible (test `/wp-json` endpoint)
+- No security plugins blocking REST API access
+- CORS is working (fixed in latest version)
 
 ## Generating Credentials
 
@@ -217,6 +226,56 @@ curl -H "Authorization: Bearer cred_xxxxx.SECRET" \
 ```
 
 ## Troubleshooting
+
+### OpenAI Agent Builder: "Unable to load tools for this server"
+
+This error was caused by critical bugs that have been fixed in the latest version:
+
+**Fixed Issues**:
+1. ✅ **Fatal PHP Error**: MCP code was calling non-existent `get_json_schema()` method
+2. ✅ **CORS Blocking**: OpenAI servers were blocked by missing CORS headers
+3. ✅ **Missing Fields**: Added required `instructions` and proper initialization
+
+**Solution**: Update to the latest version of WP oOS plugin
+
+**If still having issues after updating**:
+
+1. **Verify WordPress REST API is accessible**:
+   ```bash
+   curl https://your-site.com/wp-json
+   ```
+   Should return JSON with API routes.
+
+2. **Test MCP endpoint directly**:
+   ```bash
+   curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer cred_xxxxx.SECRET" \
+     -d '{
+       "jsonrpc": "2.0",
+       "id": 1,
+       "method": "initialize"
+     }'
+   ```
+   Should return initialization response with tools capability.
+
+3. **Check for security plugins blocking REST API**:
+   - Wordfence: Whitelist `/wp-json/mcp-ai/` in firewall
+   - Sucuri: Allow REST API access
+   - iThemes Security: Disable REST API restrictions for `/mcp-ai/`
+
+4. **Verify CORS headers** (use browser dev tools):
+   - Should see `Access-Control-Allow-Origin: *`
+   - Should see `Access-Control-Allow-Methods: GET, POST, OPTIONS`
+
+5. **Check credential is valid**:
+   - Go to WordPress Admin → AI Assistants
+   - Verify credential hasn't been revoked
+   - Generate a new one if needed
+
+6. **Ensure HTTPS is enabled**:
+   - OpenAI requires HTTPS connections
+   - Test with `https://` not `http://`
 
 ### LM Studio: "Invalid content type, expected text/event-stream"
 
