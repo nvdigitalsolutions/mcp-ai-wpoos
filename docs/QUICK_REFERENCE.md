@@ -207,6 +207,15 @@ add_filter( 'wp_mcp_ai_chat_capability', function( $cap ) {
 6. Test with token
 ```
 
+### WordPress.com/Gravatar Bridge
+```
+1. Settings → WP oOS → Authentication
+2. Enable WordPress.com/Gravatar identity bridge
+3. (Optional) Configure userinfo endpoint
+4. Save settings
+5. Use OAuth tokens with wordpress.com|* or gravatar|* subjects
+```
+
 ---
 
 ## 🧮 Token Counting & Budget Management
