@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Checks WordPress site security and warns about potential risks for using this plugin.
  */
-class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Annotations_Interface {
 	/**
 	 * Capability required to run the tool.
 	 */
@@ -476,5 +476,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 			default:
 				return __( 'SAFE: This site has no critical security issues detected. The plugin can be safely enabled.', 'wp-mcp-ai' );
 		}
+	}
+
+	/**
+	 * Get MCP tool annotations.
+	 *
+	 * This tool only reads data and doesn't modify anything,
+	 * so it's marked as read-only.
+	 *
+	 * @return array
+	 */
+	public function get_annotations() {
+		return array(
+			'readOnly' => true,
+		);
 	}
 }

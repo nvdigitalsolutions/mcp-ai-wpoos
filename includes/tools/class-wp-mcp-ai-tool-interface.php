@@ -84,3 +84,23 @@ interface WP_MCP_AI_Tool_Fallback_Shortcut_Interface {
 	 */
 	public function should_register_fallback_shortcut( $assistant_id );
 }
+
+/**
+ * Optional interface for tools that provide MCP annotations.
+ *
+ * Annotations help MCP clients understand tool behavior and safety:
+ * - readOnly: Tool only reads data, doesn't modify
+ * - destructive: Tool modifies or deletes data
+ * - requiresConfirmation: Client should confirm before executing
+ *
+ * @since 1.1.0
+ */
+interface WP_MCP_AI_Tool_Annotations_Interface {
+	/**
+	 * Get MCP tool annotations.
+	 *
+	 * @return array Associative array of annotation key-value pairs.
+	 *               Possible keys: 'readOnly', 'destructive', 'requiresConfirmation'
+	 */
+	public function get_annotations();
+}

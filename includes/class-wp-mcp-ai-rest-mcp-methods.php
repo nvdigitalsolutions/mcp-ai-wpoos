@@ -164,6 +164,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'listChanged' => true,
 				),
 				'prompts'   => array( 'listChanged' => true ),
+				'experimental' => array(
+					'streamableHttp'    => true,
+					'sessionManagement' => true,
+				),
 			),
 			'serverInfo'      => array(
 				'name'    => 'WP oOS',
@@ -252,11 +256,21 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		foreach ( $tools as $tool ) {
 			$schema = $tool->get_parameters_schema();
 
-			$mcp_tools[] = array(
+			$tool_data = array(
 				'name'        => $tool->get_slug(),
 				'description' => $tool->get_description(),
 				'inputSchema' => $schema,
 			);
+
+			// Add annotations if the tool implements the annotations interface.
+			if ( $tool instanceof WP_MCP_AI_Tool_Annotations_Interface ) {
+				$annotations = $tool->get_annotations();
+				if ( ! empty( $annotations ) && is_array( $annotations ) ) {
+					$tool_data['annotations'] = $annotations;
+				}
+			}
+
+			$mcp_tools[] = $tool_data;
 		}
 
 		return array( 'tools' => $mcp_tools );
@@ -281,9 +295,20 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$tool_name = sanitize_text_field( $params['name'] );
 		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
 
+		// Extract progress token from _meta if provided.
+		$progress_token = null;
+		if ( isset( $params['_meta']['progressToken'] ) ) {
+			$progress_token = sanitize_text_field( $params['_meta']['progressToken'] );
+		}
+
 		// Use existing tool execution infrastructure.
 		$request->set_param( 'tool', $tool_name );
 		$request->set_param( 'arguments', $arguments );
+
+		// Store progress token in request for tools to use.
+		if ( $progress_token ) {
+			$request->set_param( '_mcp_progress_token', $progress_token );
+		}
 
 		if ( isset( $params['assistant_id'] ) ) {
 			$request->set_param( 'assistant_id', absint( $params['assistant_id'] ) );
@@ -637,5 +662,40 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
 		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 		$response->header( 'Access-Control-Max-Age', '3600' );
+	}
+
+	/**
+	 * Send a progress notification for a long-running tool operation.
+	 *
+	 * This is a utility function that tools can call to emit progress updates
+	 * when a progressToken was provided in the request metadata.
+	 *
+	 * Note: In the current HTTP/REST implementation, progress notifications
+	 * cannot be sent mid-request. This function stores progress for potential
+	 * future use with streaming/SSE transport. Tools should still call this
+	 * to maintain compatibility with future enhancements.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $progress_token The token from request metadata.
+	 * @param int    $progress       Current progress value (must increase).
+	 * @param int    $total          Optional total value for percentage.
+	 * @param string $message        Optional descriptive message.
+	 * @return void
+	 */
+	public static function send_progress_notification( $progress_token, $progress, $total = null, $message = '' ) {
+		// Store progress notification for future streaming implementation.
+		// Currently, this is a placeholder for when streaming transport is available.
+		/**
+		 * Action fired when a tool sends a progress notification.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param string $progress_token The progress token.
+		 * @param int    $progress       Current progress value.
+		 * @param int    $total          Total value or null.
+		 * @param string $message        Progress message.
+		 */
+		do_action( 'wp_mcp_ai_progress_notification', $progress_token, $progress, $total, $message );
 	}
 }

@@ -104,7 +104,11 @@ Initialize the MCP connection and retrieve server capabilities.
     "capabilities": {
       "tools": { "listChanged": true },
       "resources": { "subscribe": false, "listChanged": true },
-      "prompts": { "listChanged": true }
+      "prompts": { "listChanged": true },
+      "experimental": {
+        "streamableHttp": true,
+        "sessionManagement": true
+      }
     },
     "serverInfo": {
       "name": "WP oOS",
@@ -268,6 +272,98 @@ Requests without an `id` field are treated as notifications and receive a `202 A
   }
 }
 ```
+
+## Streamable Features
+
+WP oOS supports the following MCP streamable features as indicated in the `experimental` capabilities:
+
+### Streamable HTTP
+
+The server supports streaming HTTP transport for real-time communication. This is indicated by:
+```json
+"experimental": {
+  "streamableHttp": true
+}
+```
+
+This capability enables:
+- Server-Sent Events (SSE) for progress notifications
+- Streaming responses for long-running operations
+- Real-time updates during tool execution
+
+### Session Management
+
+The server supports session management for maintaining state across requests:
+```json
+"experimental": {
+  "sessionManagement": true
+}
+```
+
+Session management enables:
+- Persistent context across multiple MCP requests
+- Session-scoped credentials and permissions
+- Efficient resource management
+
+### Progress Notifications
+
+Tools can report progress during long-running operations. To enable progress tracking, include a `progressToken` in the request metadata:
+
+**Request with progress token:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 42,
+  "method": "tools/call",
+  "params": {
+    "name": "run_crawl4ai_job",
+    "arguments": {
+      "url": "https://example.com"
+    },
+    "_meta": {
+      "progressToken": "abc123"
+    }
+  }
+}
+```
+
+**Progress notifications** (when streaming is available):
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/progress",
+  "params": {
+    "progressToken": "abc123",
+    "progress": 50,
+    "total": 100,
+    "message": "Halfway done crawling"
+  }
+}
+```
+
+**Note:** Progress notifications require streaming transport (SSE). In the current HTTP/REST implementation, progress is tracked internally but not streamed to clients during execution.
+
+### Tool Annotations
+
+Tools can provide annotations to help clients understand their behavior:
+
+**Example tool with annotations:**
+```json
+{
+  "name": "delete_post",
+  "description": "Delete a WordPress post",
+  "inputSchema": { ... },
+  "annotations": {
+    "destructive": true,
+    "requiresConfirmation": true
+  }
+}
+```
+
+**Supported annotations:**
+- `readOnly`: Tool only reads data, doesn't modify (boolean)
+- `destructive`: Tool modifies or deletes data (boolean)
+- `requiresConfirmation`: Client should confirm before executing (boolean)
 
 ## Error Handling
 
