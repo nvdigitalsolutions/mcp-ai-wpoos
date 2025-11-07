@@ -298,35 +298,28 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert REST response to MCP format.
 		$data = $result instanceof WP_REST_Response ? $result->get_data() : $result;
 
-		// Extract the actual result from the data structure.
-		$tool_result = isset( $data['result'] ) ? $data['result'] : $data;
+		// Guard against missing 'result' key.
+		if ( ! isset( $data['result'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_invalid_tool_response',
+				'Tool response missing required "result" key',
+				array( 'status' => 500 )
+			);
+		}
 
-		// Format the result as MCP content.
-		if ( is_string( $tool_result ) ) {
-			$text_content = $tool_result;
-		} elseif ( is_array( $tool_result ) || is_object( $tool_result ) ) {
-			// Ensure proper JSON encoding with pretty printing for readability.
-			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-			if ( false === $text_content ) {
-				// Fallback to basic encoding if pretty printing fails (e.g., due to encoding issues).
-				$text_content = wp_json_encode( $tool_result );
-				// If even basic encoding fails, return an error message.
-				if ( false === $text_content ) {
-					$text_content = '[Error: Unable to encode tool result]';
-					// Log error with metadata only (not actual content to avoid exposing sensitive data).
-					WP_MCP_AI_Logger::log_error(
-						'Failed to JSON encode tool result',
-						array(
-							'type' => gettype( $tool_result ),
-							'is_array' => is_array( $tool_result ),
-							'is_object' => is_object( $tool_result ),
-						)
-					);
-				}
-			}
-		} else {
-			// Handle scalar values (int, float, bool, null).
-			$text_content = wp_json_encode( $tool_result );
+		$tool_result = $data['result'];
+
+		// Check if tool already returned MCP-compatible structured content.
+		if ( $this->is_mcp_content_array( $tool_result ) ) {
+			// Tool already returned properly structured MCP content - use it directly.
+			return array( 'content' => $tool_result );
+		}
+
+		// Convert tool result to MCP text content.
+		$text_content = $this->convert_to_text_content( $tool_result );
+
+		if ( is_wp_error( $text_content ) ) {
+			return $text_content;
 		}
 
 		return array(
@@ -336,6 +329,142 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					'text' => $text_content,
 				),
 			),
+		);
+	}
+
+	/**
+	 * Check if a value is a valid MCP content array.
+	 *
+	 * MCP content is an array of content items, where each item has a 'type' field.
+	 * Valid types include: 'text', 'image', 'resource', 'embedded_resource'.
+	 *
+	 * @param mixed $value Value to check.
+	 * @return bool True if value is a valid MCP content array.
+	 */
+	protected function is_mcp_content_array( $value ) {
+		if ( ! is_array( $value ) ) {
+			return false;
+		}
+
+		// Empty arrays are not valid MCP content.
+		if ( empty( $value ) ) {
+			return false;
+		}
+
+		// Check if this is a numeric array (content items).
+		if ( ! isset( $value[0] ) ) {
+			return false;
+		}
+
+		// All items must have a 'type' field.
+		foreach ( $value as $item ) {
+			if ( ! is_array( $item ) || ! isset( $item['type'] ) ) {
+				return false;
+			}
+
+			$type = $item['type'];
+
+			// Validate known MCP content types and their required fields.
+			switch ( $type ) {
+				case 'text':
+					if ( ! isset( $item['text'] ) ) {
+						return false;
+					}
+					break;
+				case 'image':
+					if ( ! isset( $item['data'] ) && ! isset( $item['url'] ) ) {
+						return false;
+					}
+					break;
+				case 'resource':
+					if ( ! isset( $item['resource'] ) ) {
+						return false;
+					}
+					break;
+				case 'embedded_resource':
+					if ( ! isset( $item['resource'] ) ) {
+						return false;
+					}
+					break;
+				default:
+					// Unknown type - could be valid for future MCP versions.
+					// Allow it but log for monitoring.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_info(
+							'Unknown MCP content type encountered',
+							array( 'type' => $type )
+						);
+					}
+					break;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Convert a tool result to text content for MCP.
+	 *
+	 * @param mixed $tool_result The tool result to convert.
+	 * @return string|WP_Error Text content or error.
+	 */
+	protected function convert_to_text_content( $tool_result ) {
+		// Handle string results directly.
+		if ( is_string( $tool_result ) ) {
+			return $tool_result;
+		}
+
+		// Handle scalar values (int, float, bool, null).
+		if ( is_scalar( $tool_result ) || is_null( $tool_result ) ) {
+			$text_content = wp_json_encode( $tool_result );
+			if ( false === $text_content ) {
+				return new WP_Error(
+					'wp_mcp_ai_encoding_failed',
+					'Failed to encode scalar tool result',
+					array( 'status' => 500 )
+				);
+			}
+			return $text_content;
+		}
+
+		// Handle arrays and objects - encode as JSON.
+		if ( is_array( $tool_result ) || is_object( $tool_result ) ) {
+			// Try pretty printing first for better readability.
+			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+			
+			if ( false === $text_content ) {
+				// Fallback to basic encoding.
+				$text_content = wp_json_encode( $tool_result );
+				
+				if ( false === $text_content ) {
+					// Encoding failed completely - return structured error.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+						WP_MCP_AI_Logger::log_error(
+							'Failed to JSON encode tool result',
+							array(
+								'type'      => gettype( $tool_result ),
+								'is_array'  => is_array( $tool_result ),
+								'is_object' => is_object( $tool_result ),
+							)
+						);
+					}
+					
+					return new WP_Error(
+						'wp_mcp_ai_encoding_failed',
+						'Unable to encode tool result to JSON',
+						array( 'status' => 500 )
+					);
+				}
+			}
+			
+			return $text_content;
+		}
+
+		// Unexpected type - return error.
+		return new WP_Error(
+			'wp_mcp_ai_invalid_result_type',
+			sprintf( 'Tool result has unexpected type: %s', gettype( $tool_result ) ),
+			array( 'status' => 500 )
 		);
 	}
 
@@ -374,17 +503,29 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				if ( isset( $config['memory_files'] ) && is_array( $config['memory_files'] ) ) {
 					foreach ( $config['memory_files'] as $file_id ) {
 						$file_id = absint( $file_id );
-						if ( $file_id ) {
-							$attachment = get_post( $file_id );
-							if ( $attachment ) {
-								$resources[] = array(
-									'uri'         => wp_get_attachment_url( $file_id ),
-									'name'        => get_the_title( $attachment ),
-									'description' => get_post_field( 'post_excerpt', $attachment ),
-									'mimeType'    => get_post_mime_type( $attachment ),
-								);
-							}
+						if ( ! $file_id ) {
+							continue;
 						}
+
+						$attachment = get_post( $file_id );
+
+						// Validate that the post exists and is an attachment.
+						if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
+							continue;
+						}
+
+						// Get attachment URL and skip if unavailable.
+						$attachment_url = wp_get_attachment_url( $file_id );
+						if ( false === $attachment_url || empty( $attachment_url ) ) {
+							continue;
+						}
+
+						$resources[] = array(
+							'uri'         => $attachment_url,
+							'name'        => get_the_title( $attachment ),
+							'description' => get_post_field( 'post_excerpt', $attachment ),
+							'mimeType'    => get_post_mime_type( $attachment ),
+						);
 					}
 				}
 			}
