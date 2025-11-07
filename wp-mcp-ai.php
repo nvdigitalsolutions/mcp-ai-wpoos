@@ -165,6 +165,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
@@ -369,6 +370,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * Bootstrap the plugin.
 		 */
 		public function bootstrap() {
+			// Initialize nefarious usage monitor first to protect all operations.
+			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$monitor->init();
+
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
 			$registry->init();
 
