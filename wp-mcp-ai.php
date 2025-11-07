@@ -165,6 +165,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
@@ -373,6 +374,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * Bootstrap the plugin.
 		 */
 		public function bootstrap() {
+			// Check root security key first if required.
+			$security_key = WP_MCP_AI_Root_Security_Key::get_instance();
+			if ( ! $security_key->can_initialize() ) {
+				// Block initialization when security key is required but not verified.
+				// Admin interface will still load to allow key verification.
+				return;
+			}
+
 			// Initialize nefarious usage monitor first to protect all operations.
 			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
 			$monitor->init();

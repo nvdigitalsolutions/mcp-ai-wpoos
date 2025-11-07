@@ -487,6 +487,12 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				false
 			);
 
+			// Enable root security key requirement if configured.
+			$security_key = WP_MCP_AI_Root_Security_Key::get_instance();
+			if ( $security_key->is_key_configured() ) {
+				$security_key->enable_key_requirement( 'Emergency shutdown triggered by security monitor' );
+			}
+
 			WP_MCP_AI_Logger::log_event(
 				'emergency_shutdown',
 				'Emergency shutdown triggered due to excessive security violations',
