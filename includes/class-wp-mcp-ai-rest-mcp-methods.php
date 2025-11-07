@@ -75,6 +75,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// If this is a notification (no id), return 202 Accepted with no body.
 		if ( null === $id ) {
 			$response = new WP_REST_Response( null, 202 );
+			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 			$this->add_cors_headers( $response );
 			return $response;
 		}
@@ -88,6 +89,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			),
 			200
 		);
+		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );
 		return $response;
 	}
@@ -296,11 +298,28 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert REST response to MCP format.
 		$data = $result instanceof WP_REST_Response ? $result->get_data() : $result;
 
+		// Extract the actual result from the data structure.
+		$tool_result = isset( $data['result'] ) ? $data['result'] : $data;
+
+		// Format the result as MCP content.
+		if ( is_string( $tool_result ) ) {
+			$text_content = $tool_result;
+		} elseif ( is_array( $tool_result ) || is_object( $tool_result ) ) {
+			// Ensure proper JSON encoding with pretty printing for readability.
+			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+			if ( false === $text_content ) {
+				$text_content = wp_json_encode( $tool_result );
+			}
+		} else {
+			// Handle scalar values (int, float, bool, null).
+			$text_content = wp_json_encode( $tool_result );
+		}
+
 		return array(
 			'content' => array(
 				array(
 					'type' => 'text',
-					'text' => is_string( $data['result'] ) ? $data['result'] : wp_json_encode( $data['result'] ),
+					'text' => $text_content,
 				),
 			),
 		);
@@ -421,6 +440,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			),
 			$code === -32700 ? 400 : ( $code === -32601 ? 404 : 500 )
 		);
+		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
 		$this->add_cors_headers( $response );
 		return $response;
 	}
