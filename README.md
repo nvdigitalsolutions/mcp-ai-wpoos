@@ -1116,15 +1116,49 @@ See the complete [Claude Desktop setup guide](docs/remote-client-setup.md#claude
 
 ### LM Studio setup
 
-LM Studio provides a UI for adding MCP servers. Configure it with:
+**⚠️ Having SSE content-type errors?** Use the JSON-RPC endpoint instead!
 
-- **Server Name:** WordPress Site (or your preferred name)
-- **Base URL:** `https://your-site.com/wp-json/mcp-ai/v1`
-- **Authentication Type:** Bearer Token
+LM Studio can connect using **two methods**:
+
+#### Method 1: JSON-RPC (Recommended - No SSE)
+
+Use this if you're getting `SSE error: Invalid content type, expected "text/event-stream"`:
+
+```json
+{
+  "servers": [
+    {
+      "id": "wordpress-mcp",
+      "name": "WordPress Site",
+      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
+      "auth": {
+        "type": "bearer",
+        "token": "cred_xxxxx.SECRET"
+      },
+      "timeout": 30000
+    }
+  ]
+}
+```
+
+**Configure in LM Studio:**
+- **Server Name:** WordPress Site
+- **URL:** `https://your-site.com/wp-json/mcp-ai/v1/mcp`
+- **Auth Type:** Bearer Token
 - **Token:** `cred_xxxxx.SECRET`
-- **Enable SSE:** ✓ (checked)
+- **Do NOT enable SSE**
 
-Alternatively, use LM Studio's JSON configuration file — see the [LM Studio setup guide](docs/remote-client-setup.md#lm-studio-setup) and [example config](assets/examples/lmstudio-config.json).
+#### Method 2: SSE Streaming (Optional)
+
+If you want to use SSE for real-time updates:
+
+- **Base URL:** `https://your-site.com/wp-json/mcp-ai/v1`
+- **Enable SSE:** ✓ (checked)
+- **SSE Endpoint:** `/sse`
+
+See the complete [LM Studio setup guide](docs/remote-client-setup.md#lm-studio-setup) and example configurations:
+- [lmstudio-mcp-without-sse.json](assets/examples/lmstudio-mcp-without-sse.json) - Recommended
+- [lmstudio-config.json](assets/examples/lmstudio-config.json) - With SSE
 
 ### ChatGPT connector setup
 
@@ -1159,9 +1193,11 @@ Expected output confirms the server is reachable and lists available assistants.
 ### Complete documentation
 
 For comprehensive setup guides, troubleshooting, and advanced configurations, see:
+- **[MCP Client Configurations](docs/mcp-client-configurations.md)** – **⭐ NEW:** Complete guide for all MCP clients (LM Studio, Claude Desktop, Cursor, Continue.dev, Cline, OpenAI)
 - **[Remote Client Setup Guide](docs/remote-client-setup.md)** – Step-by-step instructions for Claude Desktop, LM Studio, and ChatGPT
 - **[MCP Server Authentication](docs/mcp-server-authentication.md)** – Authentication methods and credential management
 - **[REST API Reference](docs/rest-api.md)** – Endpoint documentation and payload examples
+- **[Example Configurations](assets/examples/)** – Ready-to-use config files for all major MCP clients
 
 ## 🤖 ChatGPT Connector
 OpenAI’s ChatGPT connector beta currently authenticates exclusively through Auth0. Because WP oOS issues its own assistant-scoped bearer credentials, you can connect LM Studio, Claude Desktop, and other MCP-aware clients today, while ChatGPT support will require either Auth0 bridging or native bearer support from OpenAI. We’ll update this section as soon as ChatGPT adds compatibility with first-party tokens.【F:docs/mcp-server-authentication.md†L22-L46】
