@@ -21,32 +21,60 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 			->onlyMethods( array( 'create_chat_completion' ) )
 			->getMock();
 
-		// Return assistant message with tool_call containing malformed JSON.
+		$message_sequence = array();
+
+		// The agentic loop makes TWO calls:
+		// 1. Initial call returns assistant message with tool_calls
+		// 2. Second call after tool execution (even when tool returns error)
 		$mock_client
-			->expects( $this->once() )
+			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
-			->willReturn(
-				array(
-					'id'      => 'chatcmpl-test-malformed',
-					'choices' => array(
-						array(
-							'message' => array(
-								'role'       => 'assistant',
-								'content'    => 'Let me check that for you.',
-								'tool_calls' => array(
-									array(
-										'id'       => 'call_test_123',
-										'type'     => 'function',
-										'function' => array(
-											'name'      => 'get_open_meteo_forecast',
-											'arguments' => '{invalid json here}',
+			->willReturnCallback(
+				function ( $messages ) use ( &$message_sequence ) {
+					$message_sequence[] = $messages;
+
+					// First call: return assistant message with malformed tool_call.
+					if ( 1 === count( $message_sequence ) ) {
+						return array(
+							'id'      => 'chatcmpl-test-malformed',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'       => 'assistant',
+										'content'    => 'Let me check that for you.',
+										'tool_calls' => array(
+											array(
+												'id'       => 'call_test_123',
+												'type'     => 'function',
+												'function' => array(
+													'name'      => 'get_open_meteo_forecast',
+													'arguments' => '{invalid json here}',
+												),
+											),
 										),
 									),
 								),
 							),
+						);
+					}
+
+					// Second call: verify error message was added and return final response.
+					$this->assertCount( 3, $messages, 'Should have 3 messages: user, assistant with tool_calls, and tool error' );
+					$this->assertSame( 'tool', $messages[2]['role'], 'Third message should be tool result with error' );
+					$this->assertStringContainsString( 'invalid JSON arguments', $messages[2]['content'] );
+
+					return array(
+						'id'      => 'chatcmpl-test-final',
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'There was an error with the tool parameters.',
+								),
+							),
 						),
-					),
-				)
+					);
+				}
 			);
 
 		$this->bootstrap_rest_controller( $mock_client );
@@ -179,32 +207,60 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 			->onlyMethods( array( 'create_chat_completion' ) )
 			->getMock();
 
-		// Return tool call with JSON that decodes to a string instead of object.
+		$message_sequence = array();
+
+		// The agentic loop makes TWO calls:
+		// 1. Initial call returns assistant message with tool_calls
+		// 2. Second call after tool execution (even when tool returns error)
 		$mock_client
-			->expects( $this->once() )
+			->expects( $this->exactly( 2 ) )
 			->method( 'create_chat_completion' )
-			->willReturn(
-				array(
-					'id'      => 'chatcmpl-test-string',
-					'choices' => array(
-						array(
-							'message' => array(
-								'role'       => 'assistant',
-								'content'    => 'Processing request.',
-								'tool_calls' => array(
-									array(
-										'id'       => 'call_test_456',
-										'type'     => 'function',
-										'function' => array(
-											'name'      => 'get_open_meteo_forecast',
-											'arguments' => '"just a string"', // Valid JSON but not an object.
+			->willReturnCallback(
+				function ( $messages ) use ( &$message_sequence ) {
+					$message_sequence[] = $messages;
+
+					// First call: return tool call with non-array JSON.
+					if ( 1 === count( $message_sequence ) ) {
+						return array(
+							'id'      => 'chatcmpl-test-string',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'       => 'assistant',
+										'content'    => 'Processing request.',
+										'tool_calls' => array(
+											array(
+												'id'       => 'call_test_456',
+												'type'     => 'function',
+												'function' => array(
+													'name'      => 'get_open_meteo_forecast',
+													'arguments' => '"just a string"', // Valid JSON but not an object.
+												),
+											),
 										),
 									),
 								),
 							),
+						);
+					}
+
+					// Second call: verify error message was added and return final response.
+					$this->assertCount( 3, $messages, 'Should have 3 messages: user, assistant with tool_calls, and tool error' );
+					$this->assertSame( 'tool', $messages[2]['role'], 'Third message should be tool result with error' );
+					$this->assertStringContainsString( 'expected JSON object', $messages[2]['content'] );
+
+					return array(
+						'id'      => 'chatcmpl-test-final',
+						'choices' => array(
+							array(
+								'message' => array(
+									'role'    => 'assistant',
+									'content' => 'There was an error with the tool parameters.',
+								),
+							),
 						),
-					),
-				)
+					);
+				}
 			);
 
 		$this->bootstrap_rest_controller( $mock_client );
