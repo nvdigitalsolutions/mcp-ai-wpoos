@@ -120,9 +120,10 @@ All 7 planned sections were implemented:
   - Initializes dashboard controller
 
 - **Feature Flag** (in `wp-mcp-ai.php`)
-  - `WP_MCP_AI_USE_NEW_DASHBOARD` constant (default: true)
-  - Allows toggling between new and legacy settings
-  - Ensures smooth transition
+  - `WP_MCP_AI_USE_OLD_SETTINGS` constant (default: false)
+  - New dashboard loads by default
+  - Set to true in wp-config.php to use legacy settings
+  - Ensures smooth transition for users who need the old UI
 
 ## Code Quality Results
 

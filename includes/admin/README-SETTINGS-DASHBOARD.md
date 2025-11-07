@@ -149,11 +149,11 @@ class WP_MCP_AI_Section_Custom extends WP_MCP_AI_Settings_Section {
 
 ## Feature Flag
 
-The new dashboard is enabled by default. To disable it and use the legacy settings:
+The new dashboard is enabled by default. To use the legacy settings instead:
 
 ```php
 // In wp-config.php
-define( 'WP_MCP_AI_USE_NEW_DASHBOARD', false );
+define( 'WP_MCP_AI_USE_OLD_SETTINGS', true );
 ```
 
 ## Testing

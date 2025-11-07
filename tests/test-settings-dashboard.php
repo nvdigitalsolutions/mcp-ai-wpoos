@@ -185,4 +185,16 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$this->assertIsBool( $sanitized['enable_logging'] );
 		$this->assertIsInt( $sanitized['max_history_messages'] );
 	}
+
+	/**
+	 * Test that the new dashboard loads by default.
+	 */
+	public function test_new_dashboard_loads_by_default() {
+		// By default, WP_MCP_AI_USE_OLD_SETTINGS should be false.
+		$this->assertFalse( WP_MCP_AI_USE_OLD_SETTINGS );
+		
+		// The settings dashboard should be initialized.
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ) );
+		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ) );
+	}
 }
