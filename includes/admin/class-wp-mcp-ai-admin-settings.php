@@ -5501,6 +5501,174 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render section description for security monitoring.
+		 */
+		public function render_security_monitor_section_description() {
+			?>
+		<p><?php esc_html_e( 'Configure security monitoring to detect and prevent suspicious usage patterns. The system can automatically disable tools when threats are detected.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the enable security monitoring checkbox field.
+		 */
+		public function render_security_monitor_enabled_field() {
+			$monitor  = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$settings = $monitor->get_settings();
+			$enabled  = ! empty( $settings['enabled'] );
+			?>
+		<label for="wp-mcp-ai-security-monitor-enabled">
+			<input id="wp-mcp-ai-security-monitor-enabled" type="checkbox" name="wp_mcp_ai_security_monitor_enabled" value="1" <?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Enable security monitoring to detect suspicious usage patterns', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description"><?php esc_html_e( 'When enabled, the system monitors tool execution and chat requests for malicious patterns like phishing attempts, credential harvesting, and spam.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the auto-shutdown checkbox field.
+		 */
+		public function render_security_monitor_auto_shutdown_field() {
+			$monitor  = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$settings = $monitor->get_settings();
+			$enabled  = ! empty( $settings['auto_shutdown_enabled'] );
+			?>
+		<label for="wp-mcp-ai-security-monitor-auto-shutdown">
+			<input id="wp-mcp-ai-security-monitor-auto-shutdown" type="checkbox" name="wp_mcp_ai_security_monitor_auto_shutdown" value="1" <?php checked( $enabled ); ?> />
+			<?php esc_html_e( 'Automatically disable tools when security violations exceed threshold', 'wp-mcp-ai' ); ?>
+		</label>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %d: violation threshold */
+				esc_html__( 'When enabled and %d security violations are detected within 5 minutes, the system will trigger an emergency shutdown.', 'wp-mcp-ai' ),
+				absint( $settings['violation_threshold'] )
+			);
+			?>
+		</p>
+		<div style="margin-top: 15px;">
+			<label for="wp-mcp-ai-security-monitor-max-requests-per-minute">
+				<?php esc_html_e( 'Max requests per minute:', 'wp-mcp-ai' ); ?>
+				<input 
+					type="number" 
+					id="wp-mcp-ai-security-monitor-max-requests-per-minute" 
+					name="wp_mcp_ai_security_monitor_max_requests_per_minute" 
+					value="<?php echo esc_attr( absint( $settings['max_requests_per_minute'] ) ); ?>" 
+					min="1" 
+					max="1000" 
+					style="width: 100px;"
+				/>
+			</label>
+			<p class="description"><?php esc_html_e( 'Maximum allowed API requests per minute from a single IP address.', 'wp-mcp-ai' ); ?></p>
+		</div>
+		<div style="margin-top: 15px;">
+			<label for="wp-mcp-ai-security-monitor-max-tools-per-hour">
+				<?php esc_html_e( 'Max tools per hour:', 'wp-mcp-ai' ); ?>
+				<input 
+					type="number" 
+					id="wp-mcp-ai-security-monitor-max-tools-per-hour" 
+					name="wp_mcp_ai_security_monitor_max_tools_per_hour" 
+					value="<?php echo esc_attr( absint( $settings['max_tools_per_hour'] ) ); ?>" 
+					min="1" 
+					max="10000" 
+					style="width: 100px;"
+				/>
+			</label>
+			<p class="description"><?php esc_html_e( 'Maximum allowed tool executions per hour across all users.', 'wp-mcp-ai' ); ?></p>
+		</div>
+		<div style="margin-top: 15px;">
+			<label for="wp-mcp-ai-security-monitor-violation-threshold">
+				<?php esc_html_e( 'Violation threshold:', 'wp-mcp-ai' ); ?>
+				<input 
+					type="number" 
+					id="wp-mcp-ai-security-monitor-violation-threshold" 
+					name="wp_mcp_ai_security_monitor_violation_threshold" 
+					value="<?php echo esc_attr( absint( $settings['violation_threshold'] ) ); ?>" 
+					min="1" 
+					max="100" 
+					style="width: 100px;"
+				/>
+			</label>
+			<p class="description"><?php esc_html_e( 'Number of violations within 5 minutes that triggers emergency shutdown.', 'wp-mcp-ai' ); ?></p>
+		</div>
+			<?php
+		}
+
+		/**
+		 * Render the security violations display field.
+		 */
+		public function render_security_monitor_violations_field() {
+			$monitor    = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$violations = $monitor->get_violations();
+			$shutdown   = $monitor->is_emergency_shutdown_active();
+
+			if ( $shutdown ) {
+				$shutdown_data = get_option( WP_MCP_AI_Nefarious_Usage_Monitor::SHUTDOWN_OPTION, array() );
+				?>
+				<div class="notice notice-error inline" style="padding: 12px; margin: 0 0 15px 0;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( '⚠️ Emergency Shutdown Active', 'wp-mcp-ai' ); ?></h4>
+					<p><strong><?php esc_html_e( 'All AI assistant tools have been disabled due to suspicious activity.', 'wp-mcp-ai' ); ?></strong></p>
+					<?php if ( ! empty( $shutdown_data['triggered_at'] ) ) : ?>
+						<p>
+							<?php
+							printf(
+								/* translators: %s: timestamp */
+								esc_html__( 'Triggered at: %s', 'wp-mcp-ai' ),
+								esc_html( $shutdown_data['triggered_at'] )
+							);
+							?>
+						</p>
+					<?php endif; ?>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 10px;">
+						<?php wp_nonce_field( 'wp_mcp_ai_clear_shutdown', 'wp_mcp_ai_clear_shutdown_nonce' ); ?>
+						<input type="hidden" name="action" value="wp_mcp_ai_clear_shutdown" />
+						<?php submit_button( __( 'Clear Emergency Shutdown', 'wp-mcp-ai' ), 'primary', 'submit', false ); ?>
+					</form>
+				</div>
+				<?php
+			}
+
+			if ( ! empty( $violations ) ) {
+				// Show only recent violations (last 20).
+				$recent_violations = array_slice( array_reverse( $violations ), 0, 20 );
+				?>
+				<div style="margin-bottom: 15px;">
+					<p><strong><?php esc_html_e( 'Recent Security Violations:', 'wp-mcp-ai' ); ?></strong></p>
+					<table class="wp-list-table widefat fixed striped" style="max-width: 100%;">
+						<thead>
+							<tr>
+								<th style="width: 20%;"><?php esc_html_e( 'Time', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Type', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 45%;"><?php esc_html_e( 'Message', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 20%;"><?php esc_html_e( 'IP Address', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $recent_violations as $violation ) : ?>
+								<tr>
+									<td><?php echo esc_html( isset( $violation['timestamp'] ) ? $violation['timestamp'] : '—' ); ?></td>
+									<td><code><?php echo esc_html( isset( $violation['type'] ) ? $violation['type'] : 'unknown' ); ?></code></td>
+									<td><?php echo esc_html( isset( $violation['message'] ) ? $violation['message'] : '—' ); ?></td>
+									<td><?php echo esc_html( isset( $violation['ip'] ) ? $violation['ip'] : '—' ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 10px;">
+						<?php wp_nonce_field( 'wp_mcp_ai_clear_violations', 'wp_mcp_ai_clear_violations_nonce' ); ?>
+						<input type="hidden" name="action" value="wp_mcp_ai_clear_violations" />
+						<?php submit_button( __( 'Clear All Violations', 'wp-mcp-ai' ), 'secondary', 'submit', false ); ?>
+					</form>
+				</div>
+				<?php
+			} else {
+				?>
+				<p class="description"><?php esc_html_e( 'No security violations recorded.', 'wp-mcp-ai' ); ?></p>
+				<?php
+			}
+		}
+
+		/**
 		 * Render the token usage management section.
 		 */
 		public function render_token_usage_section() {
