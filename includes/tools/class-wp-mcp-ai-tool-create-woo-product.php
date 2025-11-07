@@ -14,7 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Annotations_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -652,6 +652,21 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
 		return array(
 			'featured_image_id' => $primary_id,
 			'gallery_image_ids' => $product->get_gallery_image_ids(),
+		);
+	}
+
+	/**
+	 * Get MCP tool annotations.
+	 *
+	 * This tool creates new products (modifies the database),
+	 * so it's marked as destructive and should require confirmation.
+	 *
+	 * @return array
+	 */
+	public function get_annotations() {
+		return array(
+			'destructive'           => true,
+			'requiresConfirmation' => true,
 		);
 	}
 }
