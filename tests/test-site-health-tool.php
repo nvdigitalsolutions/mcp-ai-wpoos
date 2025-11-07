@@ -401,7 +401,8 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 				$this->assertArrayHasKey( 'context', $error, 'Error should have context array' );
 				$this->assertArrayHasKey( 'error_message', $error['context'], 'Context should include error_message' );
 				$this->assertArrayHasKey( 'callback', $error['context'], 'Context should include callback name' );
-				if ( false !== strpos( $error['context']['error_message'], 'undefined function' ) ) {
+				// Check case-insensitively for "undefined function" in the error message.
+				if ( false !== stripos( $error['context']['error_message'], 'undefined function' ) ) {
 					$found_undefined_function_error = true;
 				}
 			}
@@ -437,12 +438,13 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 	 * This simulates the scenario where WordPress admin includes are not loaded
 	 * and functions like wp_check_php_version() are unavailable.
 	 *
-	 * @throws Error Throws Error when call_user_func() attempts to call a non-existent function.
+	 * @throws Error Throws Error when an undefined function is called.
 	 */
 	public function run_test_with_undefined_function() {
 		// Simulate calling a function that doesn't exist.
-		// This will throw an Error in PHP 7+ when call_user_func() is invoked.
+		// This will throw an Error in PHP 7+ with message "Call to undefined function...".
+		// We use eval to dynamically call a non-existent function name.
 		$undefined_function_name = 'wp_mcp_ai_test_undefined_function_' . uniqid();
-		call_user_func( $undefined_function_name );
+		eval( $undefined_function_name . '();' );
 	}
 }
