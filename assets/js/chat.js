@@ -2439,6 +2439,7 @@
             chatWindow = state.messagesEl;
         }
 
+        // Check if we have cached session data
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
             const cachedSession = state.historySessionDetails[sessionKey];
             renderHistorySessionDetails(state, details, cachedSession);
@@ -2446,8 +2447,25 @@
             return;
         }
 
+        // If details panel is already rendered but session not in cache, we still need to load into main chat
+        // First check if we have the session data stored in the details element
+        if (details.dataset.loaded === 'true' && details.dataset.sessionData) {
+            try {
+                const sessionData = JSON.parse(details.dataset.sessionData);
+                loadHistorySessionIntoChat(state, sessionData, item, chatWindow);
+                return;
+            } catch (error) {
+                // JSON parse failed - dataset may be corrupted, proceed to fetch fresh data
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Failed to parse cached session data:', error);
+                }
+            }
+        }
+
+        // If details are loaded but we don't have session data, we need to fetch it
         if (details.dataset.loaded === 'true') {
-            return;
+            // Clear the loaded flag so we can fetch fresh data
+            details.dataset.loaded = 'false';
         }
 
         renderHistorySessionLoading(state, details);
@@ -2460,6 +2478,17 @@
 
                 renderHistorySessionDetails(state, details, data);
                 loadHistorySessionIntoChat(state, data, item, chatWindow);
+                
+                // Store session data in the details element for future use
+                try {
+                    details.dataset.sessionData = JSON.stringify(data);
+                } catch (error) {
+                    // Session data cannot be stringified (e.g., circular reference)
+                    // This is not critical - we still have the memory cache
+                    if (window.console && console.warn) {
+                        console.warn('[WP oOS] Failed to cache session data in DOM:', error);
+                    }
+                }
             })
             .catch(function (error) {
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
