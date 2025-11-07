@@ -51,6 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this, 'safe_ajax_handler' ) );
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 				add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 			}
@@ -95,6 +96,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
+				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
 			);
 
 			$action         = current_action();
@@ -1976,6 +1978,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				self::PAGE_SLUG,
 				'wp_mcp_ai_mesh_section'
 			);
+
+			add_settings_section(
+				'wp_mcp_ai_security_monitor_section',
+				__( 'Security Monitoring', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'security_monitor_enabled',
+				__( 'Enable Security Monitoring', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_enabled_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
+
+			add_settings_field(
+				'security_monitor_auto_shutdown',
+				__( 'Auto-Shutdown Tools', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_auto_shutdown_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
+
+			add_settings_field(
+				'security_monitor_violations',
+				__( 'Security Violations', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_violations_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
 		}
 
 		/**
@@ -2605,6 +2638,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php $this->render_error_log_section(); ?>
 			
 			<?php $this->render_token_usage_section(); ?>
+			
+			<?php $this->render_tool_token_limits_section(); ?>
 			
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
@@ -5629,6 +5664,139 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Render the tool token limits management section.
+		 */
+		public function render_tool_token_limits_section() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			$current_user_id = get_current_user_id();
+			$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
+
+			// Featured tools.
+			$featured_tools = array(
+				'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'wp-mcp-ai' ),
+				'general_tools'    => __( 'General Tools (Default)', 'wp-mcp-ai' ),
+			);
+			?>
+		<div class="wp-mcp-ai-tool-token-limits-section" style="margin-top: 40px;">
+			<h2><?php esc_html_e( 'Tool Token Usage Limits', 'wp-mcp-ai' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Configure daily token usage limits for individual tools. Different tools can have different limits based on their resource requirements.', 'wp-mcp-ai' ); ?></p>
+			
+			<div class="wp-mcp-ai-tool-limits-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
+				<?php foreach ( $featured_tools as $tool_slug => $tool_name ) : ?>
+					<?php
+					$tool_limit       = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+					$daily_usage      = WP_MCP_AI_Tool_Token_Limits::get_user_tool_daily_usage( $current_user_id, $tool_slug );
+					$usage_percentage = $tool_limit > 0 ? min( 100, ( $daily_usage / $tool_limit ) * 100 ) : 0;
+					?>
+					<div class="wp-mcp-ai-tool-limit-card" style="border: 1px solid #ddd; padding: 20px; background: #fff;">
+						<h3 style="margin-top: 0;"><?php echo esc_html( $tool_name ); ?></h3>
+						<div class="wp-mcp-ai-tool-limit-stat">
+							<label for="tool-limit-<?php echo esc_attr( $tool_slug ); ?>"><?php esc_html_e( 'Daily Token Limit:', 'wp-mcp-ai' ); ?></label>
+							<input type="number" id="tool-limit-<?php echo esc_attr( $tool_slug ); ?>" name="wp_mcp_ai_tool_limits[<?php echo esc_attr( $tool_slug ); ?>]" value="<?php echo esc_attr( $tool_limit ); ?>" min="0" step="1000" style="width: 100%; max-width: 200px;" />
+							<p class="description"><?php esc_html_e( 'Tokens per user, per 24 hours', 'wp-mcp-ai' ); ?></p>
+						</div>
+						<div class="wp-mcp-ai-tool-usage-today" style="margin-top: 15px;">
+							<div style="font-size: 13px; color: #666; margin-bottom: 5px;">
+								<?php
+								/* translators: 1: current usage, 2: limit */
+								printf( esc_html__( 'Your usage today: %1$s / %2$s tokens', 'wp-mcp-ai' ), number_format_i18n( $daily_usage ), number_format_i18n( $tool_limit ) );
+								?>
+							</div>
+							<div style="background: #f0f0f0; height: 10px; border-radius: 5px; overflow: hidden;">
+								<div style="background: <?php echo $usage_percentage > 90 ? '#dc3232' : ( $usage_percentage > 70 ? '#ffba00' : '#46b450' ); ?>; height: 100%; width: <?php echo esc_attr( $usage_percentage ); ?>%;"></div>
+							</div>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+
+			<p class="submit">
+				<button type="button" id="wp-mcp-ai-save-tool-limits" class="button button-primary"><?php esc_html_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?></button>
+			</p>
+
+			<?php if ( ! empty( $user_tool_usage ) ) : ?>
+				<div class="wp-mcp-ai-tool-usage-table" style="margin-top: 30px;">
+					<h3><?php esc_html_e( 'Your Tool Usage Statistics', 'wp-mcp-ai' ); ?></h3>
+					<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Tool', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Today', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Last Used', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							foreach ( $user_tool_usage as $tool_slug => $usage_data ) :
+								$date_key    = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+								$today_usage = isset( $usage_data['daily'][ $date_key ] ) ? $usage_data['daily'][ $date_key ] : 0;
+								?>
+								<tr>
+									<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+									<td><?php echo number_format_i18n( isset( $usage_data['requests'] ) ? $usage_data['requests'] : 0 ); ?></td>
+									<td><?php echo number_format_i18n( isset( $usage_data['total_tokens'] ) ? $usage_data['total_tokens'] : 0 ); ?></td>
+									<td><?php echo number_format_i18n( $today_usage ); ?></td>
+									<td><?php echo ! empty( $usage_data['last_used'] ) ? esc_html( $usage_data['last_used'] ) : '—'; ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php endif; ?>
+
+			<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				$('#wp-mcp-ai-save-tool-limits').on('click', function() {
+					var button = $(this);
+					var limits = {};
+					
+					$('input[name^="wp_mcp_ai_tool_limits"]').each(function() {
+						var name = $(this).attr('name');
+						var match = name.match(/wp_mcp_ai_tool_limits\[(.*?)\]/);
+						if (match) {
+							limits[match[1]] = $(this).val();
+						}
+					});
+
+					button.prop('disabled', true).text('<?php esc_attr_e( 'Saving...', 'wp-mcp-ai' ); ?>');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_save_tool_limits',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-settings' ) ); ?>',
+							limits: limits
+						},
+						success: function(response) {
+							if (response.success) {
+								button.text('<?php esc_attr_e( 'Saved!', 'wp-mcp-ai' ); ?>');
+								setTimeout(function() {
+									button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
+								}, 2000);
+							} else {
+								alert(response.data.message || '<?php esc_attr_e( 'Failed to save settings.', 'wp-mcp-ai' ); ?>');
+								button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
+							}
+						},
+						error: function() {
+							alert('<?php esc_attr_e( 'An error occurred while saving.', 'wp-mcp-ai' ); ?>');
+							button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
+						}
+					});
+				});
+			});
+			</script>
+		</div>
+			<?php
+		}
+
+		/**
 		 * Get usage data for all users.
 		 *
 		 * @return array Aggregated usage data.
@@ -5766,6 +5934,58 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to save tool token limits.
+		 */
+		public function handle_save_tool_limits() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get limits from request.
+			$limits = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( empty( $limits ) ) {
+				wp_send_json_error( array( 'message' => __( 'No limits provided.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Sanitize and save each limit.
+			$saved_count = 0;
+			foreach ( $limits as $tool_slug => $limit ) {
+				$tool_slug = sanitize_key( $tool_slug );
+				$limit     = absint( $limit );
+
+				if ( '' !== $tool_slug ) {
+					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_limit( $tool_slug, $limit ) ) {
+						++$saved_count;
+					}
+				}
+			}
+
+			if ( $saved_count > 0 ) {
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %d: number of limits saved */
+							__( 'Tool token limits saved successfully. %d limits updated.', 'wp-mcp-ai' ),
+							$saved_count
+						),
+					)
+				);
+			} else {
+				wp_send_json_error( array( 'message' => __( 'Failed to save tool limits.', 'wp-mcp-ai' ) ) );
+			}
 		}
 	}
 }

@@ -165,6 +165,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
@@ -184,6 +185,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.ph
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
@@ -228,6 +230,8 @@ if ( ! $skip_buffering ) {
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
+	WP_MCP_AI_Security_Monitor_Admin::init();
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -369,6 +373,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * Bootstrap the plugin.
 		 */
 		public function bootstrap() {
+			// Initialize nefarious usage monitor first to protect all operations.
+			$monitor = WP_MCP_AI_Nefarious_Usage_Monitor::get_instance();
+			$monitor->init();
+
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
 			$registry->init();
 
@@ -405,6 +413,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			WP_MCP_AI_Crawler::init();
 
 			WP_MCP_AI_Usage_Tracker::init();
+			WP_MCP_AI_Tool_Token_Limits::init();
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
 				WP_MCP_AI_Elementor_Integration::maybe_init();
