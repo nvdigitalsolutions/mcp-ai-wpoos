@@ -423,7 +423,7 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 			return 'critical';
 		}
 
-		if ( $critical_issues === 1 ) {
+		if ( $critical_issues >= 1 ) {
 			return 'high';
 		}
 
