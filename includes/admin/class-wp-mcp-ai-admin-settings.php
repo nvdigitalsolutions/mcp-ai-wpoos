@@ -2426,6 +2426,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['mesh_peer_sites'] = $this->sanitize_mesh_peer_sites( $settings['mesh_peer_sites'] );
 			}
 
+			/**
+			 * Filter sanitized settings before saving.
+			 *
+			 * @param array $clean    Sanitized settings.
+			 * @param array $settings Raw input settings.
+			 */
+			$clean = apply_filters( 'wp_mcp_ai_admin_settings_sanitize', $clean, $settings );
+
 			return $clean;
 		}
 
