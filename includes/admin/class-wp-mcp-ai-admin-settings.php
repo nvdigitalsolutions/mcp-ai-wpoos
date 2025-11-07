@@ -5637,8 +5637,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( ! empty( $violations ) ) {
-				// Show only recent violations (last 20).
-				$recent_violations = array_slice( array_reverse( $violations ), 0, 20 );
+				// Show only recent violations (last 20), in reverse chronological order.
+				$recent_violations = array_reverse( array_slice( $violations, -20 ) );
 				?>
 				<div style="margin-bottom: 15px;">
 					<p><strong><?php esc_html_e( 'Recent Security Violations:', 'wp-mcp-ai' ); ?></strong></p>
