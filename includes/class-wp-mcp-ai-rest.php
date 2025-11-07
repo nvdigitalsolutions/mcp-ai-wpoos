@@ -540,6 +540,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'callback'            => array( $this, 'handle_mcp_request' ),
 						'args'                => array(),
 					),
+					array(
+						'methods'             => 'OPTIONS',
+						'permission_callback' => '__return_true',
+						'callback'            => array( $this, 'handle_mcp_options' ),
+					),
 				),
 				true
 			);
@@ -3324,7 +3329,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Convert tools to a simple array format.
 			$tools_list = array();
 			foreach ( $tools as $tool ) {
-				$schema = $tool->get_json_schema();
+				$schema = $tool->get_parameters_schema();
 
 				$tools_list[] = array(
 					'name'        => $tool->get_slug(),
@@ -7286,6 +7291,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $cleaned;
+		}
+
+		/**
+		 * Handle OPTIONS request for MCP endpoint (CORS preflight).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response
+		 */
+		public function handle_mcp_options( WP_REST_Request $request ) {
+			$response = new WP_REST_Response( null, 204 );
+			$response->header( 'Access-Control-Allow-Origin', '*' );
+			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
+			$response->header( 'Access-Control-Max-Age', '3600' );
+			return $response;
 		}
 	}
 }
