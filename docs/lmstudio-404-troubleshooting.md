@@ -7,11 +7,42 @@ If you're getting:
 [ERROR] SSE error: Non-200 status code (404)
 ```
 
-This means LM Studio cannot find the MCP endpoint. Here are the solutions:
+Or when accessing `https://your-site.com/wp-json/mcp-ai/v1/mcp` in browser:
+```json
+{"code":"rest_no_route","message":"No route was found matching the URL and request method.","data":{"status":404}}
+```
+
+**This is NORMAL!** The `/mcp` endpoint only accepts POST requests with JSON-RPC payloads, not GET requests from browsers.
 
 ## Quick Fix Checklist
 
-### 1. Verify WordPress REST API is Working
+### 1. Test the Endpoint Correctly (POST, not GET)
+
+**❌ Wrong way (browser GET request):**
+```
+https://your-site.com/wp-json/mcp-ai/v1/mcp
+```
+This will show 404 because the endpoint requires POST.
+
+**✅ Correct way (POST with JSON-RPC):**
+```bash
+curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: ******" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {"name": "Test", "version": "1.0"}
+    }
+  }'
+```
+
+**Expected:** JSON response with `"jsonrpc":"2.0"` and server info.
+
+### 2. Verify WordPress REST API is Working
 
 Test this URL in your browser:
 ```
