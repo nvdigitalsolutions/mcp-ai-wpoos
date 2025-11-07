@@ -308,7 +308,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			// Ensure proper JSON encoding with pretty printing for readability.
 			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 			if ( false === $text_content ) {
+				// Fallback to basic encoding if pretty printing fails (e.g., due to encoding issues).
 				$text_content = wp_json_encode( $tool_result );
+				// If even basic encoding fails, return an error message.
+				if ( false === $text_content ) {
+					$text_content = '[Error: Unable to encode tool result]';
+					WP_MCP_AI_Logger::log_error( 'Failed to JSON encode tool result', array( 'result' => $tool_result ) );
+				}
 			}
 		} else {
 			// Handle scalar values (int, float, bool, null).
