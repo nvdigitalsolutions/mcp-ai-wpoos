@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "wordpress": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-http", "https://your-site.com/wp-json/mcp-ai/v1/mcp"],
+      "env": {
+        "AUTHORIZATION": "Bearer cred_xxxxx.SECRET"
+      }
+    }
+  }
+}

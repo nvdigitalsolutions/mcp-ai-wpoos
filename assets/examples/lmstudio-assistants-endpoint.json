@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "wordpress-mcp": {
+    "wordpress-assistants": {
       "url": "https://your-site.com/wp-json/mcp-ai/v1",
       "headers": {
         "Authorization": "Bearer cred_xxxxx.SECRET"

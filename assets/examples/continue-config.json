@@ -1,0 +1,14 @@
+{
+  "mcpServers": [
+    {
+      "name": "WordPress MCP",
+      "transport": {
+        "type": "sse",
+        "url": "https://your-site.com/wp-json/mcp-ai/v1/sse",
+        "headers": {
+          "Authorization": "Bearer cred_xxxxx.SECRET"
+        }
+      }
+    }
+  ]
+}
