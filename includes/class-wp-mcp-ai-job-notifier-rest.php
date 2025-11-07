@@ -37,21 +37,24 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_job_stream' ),
 					'args'                => array(
 						'job_id'        => array(
+							'description'       => __( 'Unique identifier for the job to stream.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'max_duration'  => array(
-							'type'    => 'integer',
-							'minimum' => 10,
-							'maximum' => 600,
-							'default' => 300,
+							'description' => __( 'Maximum duration in seconds to keep the stream open.', 'wp-mcp-ai' ),
+							'type'        => 'integer',
+							'minimum'     => 10,
+							'maximum'     => 600,
+							'default'     => 300,
 						),
 						'poll_interval' => array(
-							'type'    => 'integer',
-							'minimum' => 1,
-							'maximum' => 30,
-							'default' => 2,
+							'description' => __( 'Interval in seconds between status checks.', 'wp-mcp-ai' ),
+							'type'        => 'integer',
+							'minimum'     => 1,
+							'maximum'     => 30,
+							'default'     => 2,
 						),
 					),
 				),
@@ -70,6 +73,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_job_status' ),
 					'args'                => array(
 						'job_id' => array(
+							'description'       => __( 'Unique identifier for the job to check status.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
@@ -91,22 +95,26 @@ class WP_MCP_AI_Job_Notifier_REST {
 					'callback'            => array( __CLASS__, 'handle_webhook_register' ),
 					'args'                => array(
 						'job_id'      => array(
+							'description'       => __( 'Job identifier or wildcard pattern to register webhook for.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'webhook_url' => array(
-							'type'     => 'string',
-							'required' => true,
-							'format'   => 'uri',
+							'description'       => __( 'URL to POST webhook notifications to.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'format'            => 'uri',
+							'sanitize_callback' => 'esc_url_raw',
 						),
 						'events'      => array(
-							'type'    => 'array',
-							'items'   => array(
+							'description' => __( 'Array of event types to subscribe to.', 'wp-mcp-ai' ),
+							'type'        => 'array',
+							'items'       => array(
 								'type' => 'string',
 								'enum' => array( 'started', 'progress', 'completed', 'failed' ),
 							),
-							'default' => array( 'completed', 'failed' ),
+							'default'     => array( 'completed', 'failed' ),
 						),
 					),
 				),

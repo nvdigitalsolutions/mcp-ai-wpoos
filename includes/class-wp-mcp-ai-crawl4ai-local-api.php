@@ -36,7 +36,29 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'handle_crawl_request' ),
 					'permission_callback' => array( $this, 'check_permissions' ),
-					'args'                => array(),
+					'args'                => array(
+						'urls'        => array(
+							'description' => __( 'Array of URLs to crawl.', 'wp-mcp-ai' ),
+							'type'        => 'array',
+							'required'    => true,
+							'items'       => array(
+								'type'   => 'string',
+								'format' => 'uri',
+							),
+						),
+						'word_count_threshold' => array(
+							'description' => __( 'Minimum word count for content extraction.', 'wp-mcp-ai' ),
+							'type'        => 'integer',
+							'required'    => false,
+							'default'     => 50,
+						),
+						'extraction_strategy' => array(
+							'description' => __( 'Strategy for content extraction.', 'wp-mcp-ai' ),
+							'type'        => 'string',
+							'required'    => false,
+							'enum'        => array( 'NoExtractionStrategy', 'JsonCssExtractionStrategy', 'LLMExtractionStrategy' ),
+						),
+					),
 				)
 			);
 
@@ -49,6 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					'permission_callback' => array( $this, 'check_permissions' ),
 					'args'                => array(
 						'task_id' => array(
+							'description'       => __( 'Unique identifier for the crawl task.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
