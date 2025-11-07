@@ -655,6 +655,122 @@ if ( ! has_action( 'wp_initialize_site', 'wp_mcp_ai_new_site_activation' ) ) {
 	add_action( 'wpmu_new_blog', 'wp_mcp_ai_new_site_activation' );
 }
 
+if ( ! function_exists( 'wp_mcp_ai_check_activation_security' ) ) {
+	/**
+	 * Check site security during plugin activation.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_check_activation_security() {
+		// Allow users to bypass security check with a constant.
+		if ( defined( 'WP_MCP_AI_SKIP_SECURITY_CHECK' ) && WP_MCP_AI_SKIP_SECURITY_CHECK ) {
+			return;
+		}
+
+		// Load the security check tool.
+		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php';
+
+		$security_tool = new WP_MCP_AI_Tool_Check_Site_Security();
+		$result        = $security_tool->execute( array(), array( 'user_id' => get_current_user_id() ) );
+
+		// Store result for admin notice display.
+		if ( ! is_wp_error( $result ) ) {
+			set_transient( 'wp_mcp_ai_activation_security_check', $result, HOUR_IN_SECONDS );
+		}
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
+	/**
+	 * Display security warning notice after plugin activation.
+	 *
+	 * @return void
+	 */
+	function wp_mcp_ai_activation_security_notice() {
+		$security_check = get_transient( 'wp_mcp_ai_activation_security_check' );
+
+		if ( ! $security_check || ! is_array( $security_check ) ) {
+			return;
+		}
+
+		// Delete transient so notice only shows once.
+		delete_transient( 'wp_mcp_ai_activation_security_check' );
+
+		$risk_level = isset( $security_check['risk_level'] ) ? $security_check['risk_level'] : 'unknown';
+		$is_safe    = isset( $security_check['is_safe_to_use'] ) ? $security_check['is_safe_to_use'] : false;
+
+		// Only show notice for high and critical risk levels.
+		if ( 'critical' !== $risk_level && 'high' !== $risk_level ) {
+			return;
+		}
+
+		$recommendation = isset( $security_check['recommendation'] ) ? $security_check['recommendation'] : '';
+		$summary        = isset( $security_check['summary'] ) ? $security_check['summary'] : array();
+		$checks         = isset( $security_check['checks'] ) ? $security_check['checks'] : array();
+
+		$notice_class = 'critical' === $risk_level ? 'notice-error' : 'notice-warning';
+
+		?>
+		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
+			<h3><?php esc_html_e( 'WP oOS Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
+			
+			<?php if ( ! empty( $summary ) ) : ?>
+				<p>
+					<?php
+					printf(
+						/* translators: 1: Number of critical issues, 2: Number of warnings */
+						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
+						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
+						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
+					);
+					?>
+				</p>
+			<?php endif; ?>
+
+			<?php if ( ! empty( $checks ) ) : ?>
+				<ul style="list-style-type: disc; margin-left: 20px;">
+					<?php foreach ( $checks as $check ) : ?>
+						<?php if ( isset( $check['severity'] ) && in_array( $check['severity'], array( 'critical', 'warning' ), true ) ) : ?>
+							<li>
+								<strong><?php echo esc_html( isset( $check['name'] ) ? $check['name'] : '' ); ?>:</strong>
+								<?php echo esc_html( isset( $check['message'] ) ? $check['message'] : '' ); ?>
+								<?php if ( ! empty( $check['action'] ) ) : ?>
+									<br><em><?php echo esc_html( $check['action'] ); ?></em>
+								<?php endif; ?>
+							</li>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</ul>
+			<?php endif; ?>
+
+			<p>
+				<?php
+				esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' );
+				?>
+			</p>
+			<p>
+				<em>
+					<?php
+					printf(
+						/* translators: %s: Code snippet */
+						wp_kses(
+							__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
+							array( 'code' => array() )
+						),
+						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
+					);
+					?>
+				</em>
+			</p>
+		</div>
+		<?php
+	}
+}
+
+// Hook the activation security notice to admin_notices.
+add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
 	 * Plugin activation handler.
@@ -683,6 +799,9 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 	function wp_mcp_ai_activate_single_site() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
+
+		// Check site security and store result for display in admin notice.
+		wp_mcp_ai_check_activation_security();
 
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).

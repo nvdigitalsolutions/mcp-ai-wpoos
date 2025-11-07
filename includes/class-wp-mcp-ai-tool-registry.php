@@ -231,6 +231,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'probe_remote_mcp'                 => 'operations',
 				'query_remote_site'                => 'operations',
 				'query_mesh_intelligent'           => 'operations',
+				'check_site_security'              => 'operations',
 				'run_openai_external_action'       => 'automation',
 				'run_crawl4ai_job'                 => 'automation',
 				'create_google_calendar_event'     => 'automation',
@@ -374,6 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Check_WP_CLI'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php',
 				'WP_MCP_AI_Tool_Query_Remote_Site'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
 				'WP_MCP_AI_Tool_Query_Mesh_Intelligent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php',
+				'WP_MCP_AI_Tool_Check_Site_Security'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
