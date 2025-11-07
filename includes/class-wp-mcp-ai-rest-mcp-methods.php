@@ -153,7 +153,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			);
 		}
 
-		return array(
+		$response = array(
 			'protocolVersion' => '2024-11-05',
 			'capabilities'    => array(
 				'tools'     => array( 'listChanged' => true ),
@@ -169,6 +169,33 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			),
 			'instructions'    => $instructions,
 		);
+
+		/**
+		 * Filter to optionally include tools in the initialize response.
+		 *
+		 * Some MCP clients (like OpenAI Agent Builder) expect to see tool information
+		 * immediately after initialization without making a separate tools/list call.
+		 * This filter allows including tool information directly in the initialize response
+		 * for better compatibility with such clients.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param bool            $include_tools Whether to include tools in initialize response.
+		 * @param array           $params        Initialize method parameters.
+		 * @param WP_REST_Request $request       REST request instance.
+		 */
+		$include_tools = apply_filters( 'wp_mcp_ai_initialize_include_tools', true, $params, $request );
+
+		if ( $include_tools ) {
+			// Get tools using the same logic as tools/list for consistency.
+			$tools_result = $this->mcp_tools_list( $params, $request );
+			
+			if ( ! is_wp_error( $tools_result ) && isset( $tools_result['tools'] ) ) {
+				$response['tools'] = $tools_result['tools'];
+			}
+		}
+
+		return $response;
 	}
 
 	/**
