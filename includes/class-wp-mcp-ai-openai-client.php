@@ -3016,7 +3016,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : '';
 
 					// Convert input_image segments with file_id to image_url format
-					if ( 'input_image' === $type && isset( $segment['file_id'] ) ) {
+					if ( 'input_image' === $type ) {
+						if ( ! isset( $segment['file_id'] ) ) {
+							// input_image without file_id cannot be converted - skip it
+							WP_MCP_AI_Logger::log_error(
+								'Skipping input_image segment without file_id for Chat Completions API.',
+								array(
+									'segment' => $segment,
+								)
+							);
+							continue;
+						}
+
 						$file_id = (string) $segment['file_id'];
 
 						// Try to get the attachment data
@@ -3061,6 +3072,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 								}
 							}
 						}
+
+						// If we reach here, the input_image could not be converted to image_url.
+						// Skip it since Chat Completions API doesn't support input_image type.
+						WP_MCP_AI_Logger::log_error(
+							'Skipping input_image segment that could not be converted to image_url for Chat Completions API.',
+							array(
+								'file_id'       => $file_id,
+								'attachment_id' => $attachment_id,
+							)
+						);
+						continue;
 					}
 
 					// Keep all other segments as-is

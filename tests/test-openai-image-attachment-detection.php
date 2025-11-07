@@ -348,4 +348,148 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertSame( 'input_file', $converted[0]['content'][1]['type'] );
 		$this->assertSame( 'file-pdf-123', $converted[0]['content'][1]['file_id'] );
 	}
+
+	/**
+	 * Test that input_image segments without file_id are removed.
+	 */
+	public function test_convert_image_files_to_image_url_removes_input_image_without_file_id() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Hello',
+					),
+					array(
+						'type' => 'input_image',
+						// Missing file_id
+					),
+					array(
+						'type' => 'text',
+						'text' => 'World',
+					),
+				),
+			),
+		);
+
+		$attachment_lookup = array();
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		// Should have 2 segments (the two text segments), input_image was removed
+		$this->assertCount( 2, $converted[0]['content'] );
+
+		// First text segment
+		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
+		$this->assertSame( 'Hello', $converted[0]['content'][0]['text'] );
+
+		// Second text segment
+		$this->assertSame( 'text', $converted[0]['content'][1]['type'] );
+		$this->assertSame( 'World', $converted[0]['content'][1]['text'] );
+	}
+
+	/**
+	 * Test that input_image segments that cannot be converted are removed.
+	 */
+	public function test_convert_image_files_to_image_url_removes_unconvertible_input_image() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Before image',
+					),
+					array(
+						'type'    => 'input_image',
+						'file_id' => 'file-nonexistent',
+					),
+					array(
+						'type' => 'text',
+						'text' => 'After image',
+					),
+				),
+			),
+		);
+
+		// Attachment lookup has the file_id but no attachment_id
+		$attachment_lookup = array(
+			'file-nonexistent' => array(
+				'id'        => 'file-nonexistent',
+				'mime_type' => 'image/jpeg',
+				// Missing attachment_id, so conversion will fail
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		// Should have 2 segments (the two text segments), input_image was removed
+		$this->assertCount( 2, $converted[0]['content'] );
+
+		// First text segment
+		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
+		$this->assertSame( 'Before image', $converted[0]['content'][0]['text'] );
+
+		// Second text segment
+		$this->assertSame( 'text', $converted[0]['content'][1]['type'] );
+		$this->assertSame( 'After image', $converted[0]['content'][1]['text'] );
+	}
+
+	/**
+	 * Test that input_image with invalid attachment_id is removed.
+	 */
+	public function test_convert_image_files_to_image_url_removes_input_image_with_invalid_attachment() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Testing',
+					),
+					array(
+						'type'    => 'input_image',
+						'file_id' => 'file-invalid-attachment',
+					),
+				),
+			),
+		);
+
+		// Attachment lookup has an invalid attachment_id (9999999 doesn't exist)
+		$attachment_lookup = array(
+			'file-invalid-attachment' => array(
+				'id'            => 'file-invalid-attachment',
+				'attachment_id' => 9999999,
+				'mime_type'     => 'image/jpeg',
+			),
+		);
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 1, $converted );
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		// Should have 1 segment (the text segment), input_image was removed
+		$this->assertCount( 1, $converted[0]['content'] );
+
+		// Text segment should remain
+		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
+		$this->assertSame( 'Testing', $converted[0]['content'][0]['text'] );
+	}
 }
