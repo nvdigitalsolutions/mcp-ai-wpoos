@@ -43,6 +43,16 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 		const LOCKOUT_DURATION = 900; // 15 minutes.
 
 		/**
+		 * Time window for counting recent attempts (in seconds).
+		 */
+		const ATTEMPT_WINDOW = 300; // 5 minutes.
+
+		/**
+		 * Maximum number of failed attempts to store.
+		 */
+		const MAX_STORED_ATTEMPTS = 100;
+
+		/**
 		 * Singleton instance.
 		 *
 		 * @var WP_MCP_AI_Root_Security_Key|null
@@ -243,15 +253,15 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 				'ip'        => $this->get_client_ip(),
 			);
 
-			// Keep only last 100 attempts.
-			if ( count( $attempts ) > 100 ) {
-				$attempts = array_slice( $attempts, -100 );
+			// Keep only last MAX_STORED_ATTEMPTS attempts.
+			if ( count( $attempts ) > self::MAX_STORED_ATTEMPTS ) {
+				$attempts = array_slice( $attempts, -self::MAX_STORED_ATTEMPTS );
 			}
 
 			update_option( self::OPTION_KEY_FAILED_ATTEMPTS, $attempts, false );
 
 			// Check if should trigger lockout.
-			$recent_attempts = $this->count_recent_attempts( 300 ); // 5 minutes.
+			$recent_attempts = $this->count_recent_attempts( self::ATTEMPT_WINDOW );
 			if ( $recent_attempts >= self::MAX_FAILED_ATTEMPTS ) {
 				$this->trigger_lockout();
 			}
@@ -336,7 +346,7 @@ if ( ! class_exists( 'WP_MCP_AI_Root_Security_Key' ) ) {
 				'configured'      => $this->is_key_configured(),
 				'required'        => $this->is_key_required(),
 				'locked_out'      => $this->is_locked_out(),
-				'failed_attempts' => $this->count_recent_attempts( 300 ),
+				'failed_attempts' => $this->count_recent_attempts( self::ATTEMPT_WINDOW ),
 			);
 
 			if ( $this->is_key_required() ) {
