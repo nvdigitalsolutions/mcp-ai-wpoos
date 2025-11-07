@@ -1569,10 +1569,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$should_use_responses_api = $this->should_use_responses_api( $messages, $options );
 
-			// Don't force Responses API if there are tool calls, even if there are attachments.
-			// The Responses API doesn't support the tool_calls mechanism used by Chat Completions.
+			// Use Responses API as a backup when conversation is clean (no tool calls).
+			// This allows non-image attachments to work when the conversation doesn't require tool support.
+			// If there are tool calls in the conversation, stick with Chat Completions API
+			// which supports tool_calls/tool_call_id mechanism.
 			if ( ! empty( $attachments ) && ! $should_use_responses_api && ! $this->has_tool_calls_in_messages( $messages ) ) {
-				$should_use_responses_api = true;
+				// For non-image documents without tool calls, use Responses API
+				if ( ! $this->are_all_attachments_images( $attachments ) ) {
+					$should_use_responses_api = true;
+				}
+				// For images without tool calls, we can use either API
+				// Prefer Chat Completions API to maintain consistency and allow tools to work
 			}
 
 			$chat_messages     = $this->normalise_messages_for_payload( $messages );
