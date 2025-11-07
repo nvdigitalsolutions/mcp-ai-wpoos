@@ -1540,24 +1540,6 @@
         return fallback;
     }
 
-    function getRoleLabel(role) {
-        const labels = globalConfig.strings && globalConfig.strings.roleLabels ? globalConfig.strings.roleLabels : null;
-        const normalised = typeof role === 'string' ? role.toLowerCase() : '';
-
-        if (labels && Object.prototype.hasOwnProperty.call(labels, normalised)) {
-            const label = labels[normalised];
-            if (typeof label === 'string' && label) {
-                return label;
-            }
-        }
-
-        if (!normalised) {
-            return '';
-        }
-
-        return normalised.charAt(0).toUpperCase() + normalised.slice(1);
-    }
-
     function setTranscriptExpanded(state, expanded) {
         if (!state) {
             return;
@@ -1842,18 +1824,21 @@
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'wp-mcp-ai-chat__history-session';
-            button.setAttribute('aria-expanded', 'false');
             button.dataset.sessionKey = session && session.session_key ? session.session_key : '';
+            
+            const sessionTitle = formatHistorySessionTitle(state, session, index);
+            const metaText = buildHistoryMeta(state, session);
+            const ariaLabel = metaText ? sessionTitle + ' - ' + metaText : sessionTitle;
+            button.setAttribute('aria-label', getString('loadConversation', 'Load conversation') + ': ' + ariaLabel);
 
             const content = document.createElement('div');
             content.className = 'wp-mcp-ai-chat__history-session-content';
 
             const title = document.createElement('span');
             title.className = 'wp-mcp-ai-chat__history-session-title';
-            title.textContent = formatHistorySessionTitle(state, session, index);
+            title.textContent = sessionTitle;
             content.appendChild(title);
 
-            const metaText = buildHistoryMeta(state, session);
             if (metaText) {
                 const meta = document.createElement('span');
                 meta.className = 'wp-mcp-ai-chat__history-session-meta';
@@ -1862,14 +1847,6 @@
             }
 
             button.appendChild(content);
-
-            const icon = document.createElement('span');
-            icon.className = 'wp-mcp-ai-chat__history-session-icon';
-            icon.innerHTML =
-                '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-                '<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />' +
-                '</svg>';
-            button.appendChild(icon);
 
             const deleteButton = document.createElement('button');
             deleteButton.type = 'button';
@@ -1892,13 +1869,8 @@
                 handleHistoryDelete(state, session, item);
             });
 
-            const details = document.createElement('div');
-            details.className = 'wp-mcp-ai-chat__history-messages';
-            details.hidden = true;
-
             item.appendChild(button);
             item.appendChild(deleteButton);
-            item.appendChild(details);
 
             button.addEventListener('click', function (event) {
                 if (event && typeof event.preventDefault === 'function') {
@@ -2182,95 +2154,6 @@
         });
     }
 
-    function renderHistorySessionLoading(state, container) {
-        if (!container) {
-            return;
-        }
-
-        container.dataset.loaded = 'loading';
-        container.hidden = false;
-        container.textContent = '';
-
-        const notice = document.createElement('p');
-        notice.className = 'wp-mcp-ai-chat__history-notice';
-        notice.textContent = getString('historySessionLoading', 'Loading conversation…');
-        container.appendChild(notice);
-    }
-
-    function renderHistorySessionError(state, container, message) {
-        if (!container) {
-            return;
-        }
-
-        container.dataset.loaded = 'error';
-        container.textContent = '';
-
-        const notice = document.createElement('p');
-        notice.className = 'wp-mcp-ai-chat__history-notice wp-mcp-ai-chat__history-notice--error';
-        notice.textContent = message || getString('historySessionError', 'Unable to load this conversation. Please try again.');
-        container.appendChild(notice);
-    }
-
-    function renderHistorySessionDetails(state, container, session) {
-        if (!container) {
-            return;
-        }
-
-        container.dataset.loaded = 'true';
-        container.textContent = '';
-
-        if (!session || !Array.isArray(session.messages) || !session.messages.length) {
-            const empty = document.createElement('p');
-            empty.className = 'wp-mcp-ai-chat__history-notice';
-            empty.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
-            container.appendChild(empty);
-            return;
-        }
-
-        const list = document.createElement('ul');
-        list.className = 'wp-mcp-ai-chat__history-message-list';
-
-        session.messages.forEach(function (message) {
-            if (!message || typeof message !== 'object') {
-                return;
-            }
-
-            const role = typeof message.role === 'string' ? message.role.toLowerCase() : 'assistant';
-            const text = typeof message.content === 'string' ? message.content : '';
-
-            const item = document.createElement('li');
-            item.className = 'wp-mcp-ai-chat__history-message wp-mcp-ai-chat__history-message--' + role;
-
-            const roleLabel = document.createElement('span');
-            roleLabel.className = 'wp-mcp-ai-chat__history-message-role';
-            roleLabel.textContent = getRoleLabel(role);
-            item.appendChild(roleLabel);
-
-            const body = document.createElement('div');
-            body.className = 'wp-mcp-ai-chat__history-message-text';
-
-            if (text) {
-                const normalised = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
-                body.innerHTML = escapeHtml(normalised).replace(/\n/g, '<br />');
-            } else {
-                body.textContent = '';
-            }
-
-            item.appendChild(body);
-            list.appendChild(item);
-        });
-
-        if (!list.children.length) {
-            const fallback = document.createElement('p');
-            fallback.className = 'wp-mcp-ai-chat__history-notice';
-            fallback.textContent = getString('historyNoMessages', 'No messages were saved for this conversation.');
-            container.appendChild(fallback);
-            return;
-        }
-
-        container.appendChild(list);
-    }
-
     function normaliseHistoryRole(role) {
         if (!role) {
             return '';
@@ -2408,26 +2291,6 @@
             return;
         }
 
-        const button = item.querySelector('.wp-mcp-ai-chat__history-session');
-        const details = item.querySelector('.wp-mcp-ai-chat__history-messages');
-
-        if (!button || !details) {
-            return;
-        }
-
-        const expanded = button.getAttribute('aria-expanded') === 'true';
-
-        if (expanded) {
-            button.setAttribute('aria-expanded', 'false');
-            details.hidden = true;
-            item.classList.remove('wp-mcp-ai-chat__history-item--expanded');
-            return;
-        }
-
-        button.setAttribute('aria-expanded', 'true');
-        details.hidden = false;
-        item.classList.add('wp-mcp-ai-chat__history-item--expanded');
-
         const sessionKey = session && session.session_key ? session.session_key : '';
 
         // Find the main chat window relative to the history item to ensure correct targeting
@@ -2442,33 +2305,12 @@
         // Check if we have cached session data
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
             const cachedSession = state.historySessionDetails[sessionKey];
-            renderHistorySessionDetails(state, details, cachedSession);
             loadHistorySessionIntoChat(state, cachedSession, item, chatWindow);
             return;
         }
 
-        // If details panel is already rendered but session not in cache, we still need to load into main chat
-        // First check if we have the session data stored in the details element
-        if (details.dataset.loaded === 'true' && details.dataset.sessionData) {
-            try {
-                const sessionData = JSON.parse(details.dataset.sessionData);
-                loadHistorySessionIntoChat(state, sessionData, item, chatWindow);
-                return;
-            } catch (error) {
-                // JSON parse failed - dataset may be corrupted, proceed to fetch fresh data
-                if (window.console && console.warn) {
-                    console.warn('[WP oOS] Failed to parse cached session data:', error);
-                }
-            }
-        }
-
-        // If details are loaded but we don't have session data, we need to fetch it
-        if (details.dataset.loaded === 'true') {
-            // Clear the loaded flag so we can fetch fresh data
-            details.dataset.loaded = 'false';
-        }
-
-        renderHistorySessionLoading(state, details);
+        // Show loading status in main chat
+        setStatus(state.container, getString('historyLoading', 'Loading conversation...'));
 
         fetchHistorySessionDetails(state, sessionKey)
             .then(function (data) {
@@ -2476,23 +2318,12 @@
                     state.historySessionDetails[sessionKey] = data;
                 }
 
-                renderHistorySessionDetails(state, details, data);
                 loadHistorySessionIntoChat(state, data, item, chatWindow);
-                
-                // Store session data in the details element for future use
-                try {
-                    details.dataset.sessionData = JSON.stringify(data);
-                } catch (error) {
-                    // Session data cannot be stringified (e.g., circular reference)
-                    // This is not critical - we still have the memory cache
-                    if (window.console && console.warn) {
-                        console.warn('[WP oOS] Failed to cache session data in DOM:', error);
-                    }
-                }
             })
             .catch(function (error) {
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
-                renderHistorySessionError(state, details, message);
+                setStatus(state.container, message);
+                appendMessage(state.messagesEl, 'system', { text: message });
             });
     }
 
