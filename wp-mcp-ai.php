@@ -277,13 +277,13 @@ if ( is_admin() ) {
 	WP_MCP_AI_Security_Monitor_Admin::init();
 	new WP_MCP_AI_Auth0_Setup();
 
-	// Load new modular settings dashboard system.
-	// Set WP_MCP_AI_USE_NEW_DASHBOARD to false in wp-config.php to use legacy settings.
-	if ( ! defined( 'WP_MCP_AI_USE_NEW_DASHBOARD' ) ) {
-		define( 'WP_MCP_AI_USE_NEW_DASHBOARD', true );
+	// Load new modular settings dashboard system by default.
+	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
+	if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
+		define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
 	}
 
-	if ( WP_MCP_AI_USE_NEW_DASHBOARD ) {
+	if ( ! WP_MCP_AI_USE_OLD_SETTINGS ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 	}
 }
@@ -452,7 +452,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
 
 			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
-			$this->admin_settings     = new WP_MCP_AI_Admin_Settings();
+			
+			// Only instantiate old admin settings if legacy mode is enabled.
+			if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
+				$this->admin_settings = new WP_MCP_AI_Admin_Settings();
+			}
+			
 			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
 			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
@@ -465,7 +470,12 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
 			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
-			$GLOBALS['wp_mcp_ai_admin_settings']     = $this->admin_settings;
+			
+			// Only set admin_settings global if using old settings.
+			if ( isset( $this->admin_settings ) ) {
+				$GLOBALS['wp_mcp_ai_admin_settings'] = $this->admin_settings;
+			}
+			
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
 			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;

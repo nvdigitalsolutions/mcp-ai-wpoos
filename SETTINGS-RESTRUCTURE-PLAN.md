@@ -448,12 +448,12 @@ Migrate tab by tab:
 **Recommendation:** Option A with feature flag
 
 ```php
-define( 'WP_MCP_AI_USE_NEW_DASHBOARD', true );
+define( 'WP_MCP_AI_USE_OLD_SETTINGS', true );
 
-if ( defined( 'WP_MCP_AI_USE_NEW_DASHBOARD' ) && WP_MCP_AI_USE_NEW_DASHBOARD ) {
-    new WP_MCP_AI_Settings_Dashboard();
-} else {
+if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
     new WP_MCP_AI_Admin_Settings();
+} else {
+    new WP_MCP_AI_Settings_Dashboard();
 }
 ```
 
