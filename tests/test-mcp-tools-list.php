@@ -73,7 +73,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 
 		// Bootstrap REST controller.
 		$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
-		
+
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->getMock();

@@ -172,11 +172,13 @@ trait WP_MCP_AI_REST_MCP_Methods {
 
 		/**
 		 * Filter to optionally include tools in the initialize response.
-		 * 
+		 *
 		 * Some MCP clients (like OpenAI Agent Builder) expect to see tool information
 		 * immediately after initialization without making a separate tools/list call.
 		 * This filter allows including tool information directly in the initialize response
 		 * for better compatibility with such clients.
+		 *
+		 * @since 1.1.0
 		 *
 		 * @param bool            $include_tools Whether to include tools in initialize response.
 		 * @param array           $params        Initialize method parameters.
