@@ -39,6 +39,11 @@ class WP_MCP_AI_AI_Peer_CPT {
 	const META_VERIFICATION_DATA = '_wp_mcp_ai_peer_verification_data';
 
 	/**
+	 * Sync lock timeout in seconds.
+	 */
+	const SYNC_LOCK_TIMEOUT = 5;
+
+	/**
 	 * Register the post type and hooks.
 	 */
 	public function __construct() {
@@ -47,6 +52,8 @@ class WP_MCP_AI_AI_Peer_CPT {
 		add_action( 'add_meta_boxes', array( $this, 'register_meta_boxes' ) );
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( $this, 'add_list_columns' ) );
 		add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', array( $this, 'render_list_columns' ), 10, 2 );
+		add_action( 'save_post_' . self::POST_TYPE, array( $this, 'sync_to_cct_on_save' ), 20, 2 );
+		add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_cct_on_delete' ) );
 	}
 
 	/**
@@ -497,5 +504,173 @@ class WP_MCP_AI_AI_Peer_CPT {
 				}
 				break;
 		}
+	}
+
+	/**
+	 * Hook callback to sync CPT to CCT on save.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public function sync_to_cct_on_save( $post_id, $post ) {
+		// Skip if this is an autosave.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		// Skip if this is a revision.
+		if ( wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// Sync to JetEngine CCT if available.
+		$this->sync_to_cct( $post_id, $post );
+	}
+
+	/**
+	 * Synchronize CPT data to the JetEngine ai_peers CCT.
+	 *
+	 * This ensures that API consumers using the JetEngine CCT endpoint
+	 * have access to the same peer configuration as the CPT.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	protected function sync_to_cct( $post_id, $post ) {
+		// Only sync in Full Version when JetEngine is available.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_AI_Peers_CCT' ) ) {
+			return;
+		}
+
+		// Prevent concurrent sync operations using a transient lock.
+		$lock_key = 'wp_mcp_ai_peer_sync_lock_' . $post_id;
+		if ( get_transient( $lock_key ) ) {
+			// Another sync is in progress, skip to prevent locking.
+			return;
+		}
+
+		// Set a short-lived lock (5 seconds should be more than enough).
+		set_transient( $lock_key, true, self::SYNC_LOCK_TIMEOUT );
+
+		try {
+			// Get the CCT item handler.
+			$handler = WP_MCP_AI_JetEngine_AI_Peers_CCT::get_item_handler();
+
+			if ( ! $handler ) {
+				return;
+			}
+
+			// Validate handler has required methods.
+			if ( ! method_exists( $handler, 'update_item' ) ) {
+				return;
+			}
+
+			// Get peer metadata.
+			$site_name       = get_post_meta( $post_id, self::META_SITE_NAME, true );
+			$site_url        = get_post_meta( $post_id, self::META_SITE_URL, true );
+			$mcp_url         = get_post_meta( $post_id, self::META_MCP_URL, true );
+			$jwks_uri        = get_post_meta( $post_id, self::META_JWKS_URI, true );
+			$capabilities    = get_post_meta( $post_id, self::META_CAPABILITIES, true );
+			$regions         = get_post_meta( $post_id, self::META_REGIONS, true );
+			$data_tags       = get_post_meta( $post_id, self::META_DATA_TAGS, true );
+			$health_status   = get_post_meta( $post_id, self::META_HEALTH_STATUS, true );
+			$latency_p50     = get_post_meta( $post_id, self::META_LATENCY_P50, true );
+			$last_verified   = get_post_meta( $post_id, self::META_LAST_VERIFIED, true );
+
+			// Map CPT data to CCT fields.
+			$cct_data = array(
+				'site_name'     => $site_name ? $site_name : $post->post_title,
+				'site_url'      => $site_url ? $site_url : '',
+				'mcp_url'       => $mcp_url ? $mcp_url : '',
+				'jwks_uri'      => $jwks_uri ? $jwks_uri : '',
+				'capabilities'  => $capabilities ? $capabilities : '[]',
+				'regions'       => $regions ? $regions : '[]',
+				'data_tags'     => $data_tags ? $data_tags : '[]',
+				'health_status' => $health_status ? $health_status : '',
+				'latency_p50'   => $latency_p50 ? absint( $latency_p50 ) : 0,
+				'last_verified' => $last_verified ? $last_verified : '',
+			);
+
+			// Check if a CCT item already exists for this CPT post ID.
+			// We use a meta field to link CPT ID to CCT item ID.
+			$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id', true );
+
+			if ( $cct_item_id ) {
+				// Update existing CCT item.
+				$cct_data['_ID'] = absint( $cct_item_id );
+				$result          = $handler->update_item( $cct_data );
+
+				if ( ! $result ) {
+					// If update failed, the item might have been deleted. Clear the link and create new.
+					delete_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id' );
+					$cct_item_id = 0;
+				}
+			}
+
+			if ( ! $cct_item_id ) {
+				// Create new CCT item.
+				$new_item_id = $handler->update_item( $cct_data );
+
+				if ( $new_item_id ) {
+					// Store the link between CPT post ID and CCT item ID.
+					update_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id', $new_item_id );
+				}
+			}
+		} catch ( Throwable $e ) {
+			// Log error but don't block the save process.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			// Only log the error type, not potentially sensitive details.
+			error_log( sprintf( 'WP_MCP_AI: Failed to sync peer %d to CCT: %s', $post_id, get_class( $e ) ) );
+		} finally {
+			// Always release the lock.
+			delete_transient( $lock_key );
+		}
+	}
+
+	/**
+	 * Hook callback to cleanup CCT item on peer deletion.
+	 *
+	 * @param int $post_id Post ID being deleted.
+	 */
+	public function cleanup_cct_on_delete( $post_id ) {
+		$this->delete_cct_item( $post_id );
+	}
+
+	/**
+	 * Delete the linked JetEngine CCT item for this peer.
+	 *
+	 * @param int $post_id Post ID.
+	 */
+	protected function delete_cct_item( $post_id ) {
+		// Only attempt deletion in Full Version when JetEngine is available.
+		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_AI_Peers_CCT' ) ) {
+			return;
+		}
+
+		$cct_item_id = get_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id', true );
+
+		if ( ! $cct_item_id ) {
+			return;
+		}
+
+		$handler = WP_MCP_AI_JetEngine_AI_Peers_CCT::get_item_handler();
+
+		if ( ! $handler ) {
+			return;
+		}
+
+		// Delete the CCT item.
+		$handler->delete_item( absint( $cct_item_id ) );
+
+		// Remove the meta link.
+		delete_post_meta( $post_id, '_wp_mcp_ai_peer_cct_item_id' );
 	}
 }
