@@ -375,7 +375,10 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$file_path  = $upload_dir['path'] . '/' . $filename;
 		
 		// Create a simple text file.
-		file_put_contents( $file_path, 'Test content' );
+		$written = file_put_contents( $file_path, 'Test content' );
+		if ( false === $written ) {
+			$this->markTestSkipped( 'Could not create test file' );
+		}
 
 		$attachment_id = wp_insert_attachment(
 			array(
@@ -432,6 +435,8 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 
 		// Cleanup.
 		wp_delete_attachment( $attachment_id, true );
-		@unlink( $file_path );
+		if ( file_exists( $file_path ) ) {
+			unlink( $file_path );
+		}
 	}
 }

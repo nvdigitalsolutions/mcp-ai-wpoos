@@ -388,7 +388,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					break;
 				default:
 					// Unknown type - could be valid for future MCP versions.
-					// Allow it but log for monitoring.
+					// Allow it but log for monitoring (if logger is available).
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 						WP_MCP_AI_Logger::log_info(
 							'Unknown MCP content type encountered',
@@ -420,7 +420,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 			if ( false === $text_content ) {
 				return new WP_Error(
 					'wp_mcp_ai_encoding_failed',
-					'Failed to encode scalar tool result',
+					sprintf( 'Failed to encode scalar tool result of type: %s', gettype( $tool_result ) ),
 					array( 'status' => 500 )
 				);
 			}
