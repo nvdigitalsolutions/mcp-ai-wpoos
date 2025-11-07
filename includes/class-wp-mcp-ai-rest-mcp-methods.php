@@ -250,13 +250,52 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Convert tools to MCP format.
 		$mcp_tools = array();
 		foreach ( $tools as $tool ) {
-			$schema = $tool->get_parameters_schema();
+			try {
+				$schema = $tool->get_parameters_schema();
 
-			$mcp_tools[] = array(
-				'name'        => $tool->get_slug(),
-				'description' => $tool->get_description(),
-				'inputSchema' => $schema,
-			);
+				// Validate that the schema is a valid array.
+				if ( ! is_array( $schema ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'error',
+						'Tool returned invalid schema in MCP tools/list',
+						array(
+							'tool_slug'   => $tool->get_slug(),
+							'schema_type' => gettype( $schema ),
+						)
+					);
+					continue;
+				}
+
+				$mcp_tools[] = array(
+					'name'        => $tool->get_slug(),
+					'description' => $tool->get_description(),
+					'inputSchema' => $schema,
+				);
+			} catch ( Exception $e ) {
+				// Log the error and skip this tool.
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					'Tool schema generation failed in MCP tools/list',
+					array(
+						'tool_slug' => $tool->get_slug(),
+						'error'     => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+				continue;
+			} catch ( Error $e ) {
+				// Catch PHP 7+ errors as well.
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					'Tool schema generation failed in MCP tools/list with PHP Error',
+					array(
+						'tool_slug' => $tool->get_slug(),
+						'error'     => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+				continue;
+			}
 		}
 
 		return array( 'tools' => $mcp_tools );
