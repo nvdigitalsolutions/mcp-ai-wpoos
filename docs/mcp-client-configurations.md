@@ -384,6 +384,29 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 
 ## Common Issues and Solutions
 
+### Issue: "Empty request body" Error
+
+**Error:**
+```json
+{ "jsonrpc": "2.0", "id": null, "error": { "code": -32700, "message": "Parse error: Empty request body" } }
+```
+
+**Cause:** POST request reached endpoint but JSON payload wasn't received.
+
+**Solutions:**
+1. **Include Content-Type header**: `Content-Type: application/json`
+2. **Use POST method** (not GET)
+3. **Check security plugins** - They may strip POST data
+4. **Verify JSON is in request body** - Not in URL parameters
+
+**Correct curl command:**
+```bash
+curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer cred_xxxxx.SECRET" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"Test","version":"1.0"}}}'
+```
+
 ### Issue: "Invalid content type, expected text/event-stream"
 
 **Cause:** Client is configured for SSE but server is returning JSON.

@@ -234,6 +234,93 @@ Sometimes reactivating fixes registration issues:
 
 ## LM Studio-Specific Issues
 
+### Issue: "Empty request body" Error
+
+If you get:
+```json
+{ "jsonrpc": "2.0", "id": null, "error": { "code": -32700, "message": "Parse error: Empty request body" } }
+```
+
+This means the POST request reached the endpoint but the JSON payload wasn't received.
+
+**Common Causes:**
+
+1. **Missing Content-Type header**
+   ```bash
+   # ❌ Wrong - no Content-Type
+   curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+   
+   # ✅ Correct - with Content-Type
+   curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+   ```
+
+2. **Using GET instead of POST**
+   - The endpoint requires POST with JSON body
+   - GET requests will show 404
+
+3. **Security plugin stripping request body**
+   - Some security plugins block or strip POST data
+   - Try temporarily disabling security plugins
+   - Whitelist `/wp-json/mcp-ai/*` in your security plugin
+
+4. **Web server configuration issue**
+   - Apache/Nginx might not be passing request body
+   - Check your `.htaccess` or nginx config
+   - Ensure `php://input` is accessible
+
+**Solutions:**
+
+**Test with proper headers:**
+```bash
+curl -X POST "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/mcp" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer cred_xxxxx.SECRET" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "clientInfo": {
+        "name": "Test Client",
+        "version": "1.0"
+      }
+    }
+  }'
+```
+
+**If using Postman:**
+1. Set method to POST
+2. Set URL to `https://your-site.com/wp-json/mcp-ai/v1/mcp`
+3. Go to Headers tab, add:
+   - `Content-Type: application/json`
+   - `Authorization: Bearer cred_xxxxx.SECRET`
+4. Go to Body tab, select "raw" and "JSON"
+5. Paste the JSON-RPC request
+
+**Expected successful response:**
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": { "listChanged": true },
+      "resources": { "subscribe": false, "listChanged": true },
+      "prompts": { "listChanged": true }
+    },
+    "serverInfo": {
+      "name": "WP oOS",
+      "version": "1.0.0"
+    }
+  }
+}
+```
+
 ### Issue: LM Studio keeps using SSE
 
 LM Studio might auto-detect SSE even if not configured.
