@@ -4,6 +4,7 @@ Donate link: https://nvdigitalsolutions.com/openwp-operator-system
 Tags: ai, assistant, jetengine, openai, gpt, chatbot
 Requires at least: 6.0
 Tested up to: 6.7
+Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -16,6 +17,10 @@ Please retain credit in derivative works.
 == Description ==
 
 This plugin provides a robust framework for integrating AI-powered assistants into WordPress. It works perfectly with vanilla WordPress and optionally integrates with third-party plugins like JetEngine, WooCommerce, and Elementor for enhanced functionality.
+
+**System Requirements:**
+*   WordPress 6.0 or higher
+*   PHP 7.4 or higher (PHP 8.0+ recommended)
 
 **Key Features:**
 *   Create and manage AI assistants with OpenAI, Gemini, or Ollama

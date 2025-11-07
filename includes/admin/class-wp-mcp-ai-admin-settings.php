@@ -43,6 +43,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
+			add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'safe_ajax_handler' ) );
@@ -3037,6 +3038,85 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					),
 				)
 			) . '</p></div>';
+		}
+
+		/**
+		 * Display an admin notice about OPcache if file updates detected recently.
+		 *
+		 * Shows a dismissible notice suggesting users clear their OPcache after
+		 * plugin updates to prevent "unexpected token" errors.
+		 */
+		public function maybe_render_opcache_warning() {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			// Check if notice has been dismissed.
+			if ( get_transient( 'wp_mcp_ai_opcache_notice_dismissed' ) ) {
+				return;
+			}
+
+			// Only show on plugin pages and our settings page.
+			if ( ! function_exists( 'get_current_screen' ) ) {
+				return;
+			}
+
+			$screen = get_current_screen();
+			if ( ! $screen ) {
+				return;
+			}
+
+			$allowed_screens = array(
+				'plugins',
+				'plugins-network',
+				'plugin-install',
+				'plugin-install-network',
+				'settings_page_wp-mcp-ai-settings',
+			);
+
+			if ( ! in_array( $screen->id, $allowed_screens, true ) ) {
+				return;
+			}
+
+			// Check if plugin was recently updated (within last 24 hours).
+			$plugin_file = WP_MCP_AI_PATH . 'wp-mcp-ai.php';
+			if ( ! file_exists( $plugin_file ) ) {
+				return;
+			}
+
+			$file_modified = filemtime( $plugin_file );
+			$time_diff     = time() - $file_modified;
+
+			// Only show if modified in last 24 hours (86400 seconds).
+			if ( $time_diff > 86400 ) {
+				return;
+			}
+
+			// Check if OPcache is enabled.
+			$opcache_enabled = function_exists( 'opcache_get_status' ) && opcache_get_status() !== false;
+			if ( ! $opcache_enabled ) {
+				return;
+			}
+
+			$troubleshooting_url = 'https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/TROUBLESHOOTING-SYNTAX-ERRORS.md';
+
+			?>
+			<div class="notice notice-warning is-dismissible">
+				<p>
+					<strong><?php esc_html_e( 'WP oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
+				</p>
+				<p>
+					<?php
+					esc_html_e( 'Plugin files were recently updated. If you experience "unexpected token" or syntax errors, your server\'s OPcache may need to be cleared.', 'wp-mcp-ai' );
+					?>
+				</p>
+				<p>
+					<a href="<?php echo esc_url( $troubleshooting_url ); ?>" target="_blank" class="button button-secondary">
+						<?php esc_html_e( 'View Troubleshooting Guide', 'wp-mcp-ai' ); ?>
+					</a>
+				</p>
+			</div>
+			<?php
 		}
 
 		/**
