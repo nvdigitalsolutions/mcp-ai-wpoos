@@ -1582,11 +1582,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				$payload['input']  = $this->prepare_responses_input( $messages, $chat_messages, $attachments );
 			} else {
-				// When using Chat Completions API with image attachments, convert to image_url format
+				// When using Chat Completions API, convert input_image segments to image_url format
+				// This is necessary because Chat Completions API doesn't support input_image type
 				if ( ! empty( $attachments ) && $this->are_all_attachments_images( $attachments ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
-					$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				}
+				// Always run conversion to handle input_image segments from conversation history
+				$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 

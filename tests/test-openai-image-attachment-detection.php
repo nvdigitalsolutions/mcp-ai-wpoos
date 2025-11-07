@@ -492,4 +492,58 @@ class WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
 		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
 		$this->assertSame( 'Testing', $converted[0]['content'][0]['text'] );
 	}
+
+	/**
+	 * Test that input_image is removed when attachment_lookup is empty (conversation history scenario).
+	 */
+	public function test_convert_image_files_to_image_url_with_empty_attachment_lookup() {
+		$client = new WP_MCP_AI_OpenAI_Client_Test_Helper();
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Previous message',
+					),
+					array(
+						'type'    => 'input_image',
+						'file_id' => 'file-from-history',
+					),
+				),
+			),
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => 'Current message with tool call',
+					),
+				),
+			),
+		);
+
+		// Empty attachment lookup - simulates using Chat Completions API without current attachments
+		$attachment_lookup = array();
+
+		$converted = $client->public_convert_image_files_to_image_url( $messages, $attachment_lookup );
+
+		$this->assertIsArray( $converted );
+		$this->assertCount( 2, $converted );
+
+		// First message should have input_image removed
+		$this->assertSame( 'user', $converted[0]['role'] );
+		$this->assertIsArray( $converted[0]['content'] );
+		$this->assertCount( 1, $converted[0]['content'] ); // Only text remains
+		$this->assertSame( 'text', $converted[0]['content'][0]['type'] );
+		$this->assertSame( 'Previous message', $converted[0]['content'][0]['text'] );
+
+		// Second message should be unchanged
+		$this->assertSame( 'user', $converted[1]['role'] );
+		$this->assertIsArray( $converted[1]['content'] );
+		$this->assertCount( 1, $converted[1]['content'] );
+		$this->assertSame( 'text', $converted[1]['content'][0]['type'] );
+		$this->assertSame( 'Current message with tool call', $converted[1]['content'][0]['text'] );
+	}
 }
