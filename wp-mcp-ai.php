@@ -273,7 +273,9 @@ if ( ! $skip_buffering ) {
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
+	new WP_MCP_AI_Auth0_Setup();
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
