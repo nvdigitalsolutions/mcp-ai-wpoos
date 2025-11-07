@@ -74,3 +74,158 @@ Assistant overrides are now blocked server-side; if a token authenticates for on
 * **Validation service exceptions.** When Simple JWT Login’s validation service fails to produce a response, WP oOS falls back to decoding the JWT directly and mirrors any remaining errors in the REST response. Inspect `wp_mcp_ai_simple_jwt_login_invalid_token` payloads for the captured exception message. 【F:includes/class-wp-mcp-ai-simple-jwt-login-integration.php†L108-L214】
 
 For deeper diagnostics, enable WP_DEBUG logging and monitor the REST responses returned by `/wp-json/mcp-ai/v1/...`. The response payloads include actionable `code` and `message` fields alongside remediation hints.
+
+# Authentication with WordPress.com/Gravatar Identity Bridge
+
+WP oOS includes a first-class identity bridge for WordPress.com and Gravatar OAuth/OIDC providers. This integration detects verifiable tokens issued by the "new Gravatar identity network" and automatically maps them to WordPress users, enriching the authentication payload with profile fields (display name, avatar URL, Gravatar hash) for clean audit trails.
+
+## How it works
+
+The WordPress/Gravatar bridge operates similarly to the Auth0→GitHub integration:
+
+1. **Subject detection.** When a bearer token payload contains a subject prefixed with `wordpress.com|` or `gravatar|`, the integration enriches the payload with WordPress-specific metadata.
+2. **Profile enrichment.** The integration extracts profile fields (email, display name, avatar URL, Gravatar hash) from the token payload and merges them with cached or remote profile data when available.
+3. **User mapping.** The integration locates existing WordPress users by matching stored metadata or creates new subscribers when needed, ensuring every authenticated request has a clean audit trail.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L1-L630】
+
+## Enable the integration
+
+1. **Visit `Settings → WP oOS → Authentication`.** Locate the **WordPress.com/Gravatar Bridge** section.
+2. **Check the enable toggle.** Activate **Enable WordPress.com/Gravatar identity bridge** to allow tokens with `wordpress.com|` or `gravatar|` subjects to reach the authentication layer.
+3. **(Optional) Configure userinfo endpoint.** If your OAuth provider exposes a custom userinfo endpoint, enter it in the **Userinfo Endpoint URL** field. Leave blank to skip remote profile fetching when the token payload contains sufficient information.
+4. **Save settings.** The integration activates immediately and begins processing matching bearer tokens.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L175-L201】
+
+## Supported OAuth providers
+
+The integration works with any OAuth 2.0 or OIDC provider that:
+
+* Issues JWT bearer tokens with a subject claim (`sub`) prefixed with `wordpress.com|` or `gravatar|`
+* Includes user profile data in the token payload (email, name, username) or exposes a userinfo endpoint
+* Follows standard OAuth 2.0 bearer token conventions
+
+Common providers include:
+
+* **WordPress.com OAuth** — Official WordPress.com OAuth service with Gravatar integration
+* **Gravatar OAuth** — Gravatar's identity service (when available)
+* **Auth0 with WordPress.com connection** — Auth0 configured with a WordPress.com social connection
+
+## Token payload enrichment
+
+When the integration detects a WordPress.com or Gravatar subject, it automatically enriches the token payload with:
+
+* **`wordpress_user_id`** — The unique identifier extracted from the subject (e.g., `12345` from `wordpress.com|12345`)
+* **`gravatar_hash`** — MD5 hash of the user's email address for Gravatar avatar lookups, or the hash provided in the token
+* **`display_name`** — User's display name from the profile, when available
+* **`picture`** — Avatar URL from the profile, mapped to the `picture` claim for compatibility
+
+These enriched claims are available to all MCP tools and chat handlers, allowing for personalized responses and accurate user attribution.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L62-L107】
+
+## User mapping and creation
+
+The integration follows this workflow to map tokens to WordPress users:
+
+1. **Check for existing mapping.** Search for users with stored subject or WordPress ID metadata that matches the token.
+2. **Locate by email.** If no metadata match exists, attempt to find users by email address.
+3. **Fetch remote profile.** When the token payload lacks required fields (email, username), query the configured userinfo endpoint.
+4. **Create new user.** If no existing user is found and the token provides an email address, create a new subscriber account with:
+   - **Username** — Derived from the token's username claim or generated from the WordPress ID
+   - **Email** — From the token's email claim (required)
+   - **Display name** — From the token's name claim or falls back to username
+   - **Password** — Randomly generated 32-character password
+   - **Role** — Subscriber (can be filtered via WordPress hooks)
+5. **Sync metadata.** Store the subject, WordPress ID, and Gravatar hash in user meta for future lookups and profile synchronization.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L113-L166】【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L351-L429】
+
+## Example token payload
+
+A typical WordPress.com OAuth token might look like:
+
+```json
+{
+  "sub": "wordpress.com|123456789",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "username": "johndoe",
+  "picture": "https://gravatar.com/avatar/abc123...",
+  "aud": "your-client-id",
+  "iat": 1699900000,
+  "exp": 1699910000
+}
+```
+
+After enrichment, the payload includes:
+
+```json
+{
+  "sub": "wordpress.com|123456789",
+  "email": "user@example.com",
+  "name": "John Doe",
+  "username": "johndoe",
+  "picture": "https://gravatar.com/avatar/abc123...",
+  "wordpress_user_id": "123456789",
+  "gravatar_hash": "5d41402abc4b2a76b9719d911017c592",
+  "display_name": "John Doe",
+  "aud": "your-client-id",
+  "iat": 1699900000,
+  "exp": 1699910000
+}
+```
+
+## Call MCP REST endpoints with WordPress.com tokens
+
+Once your OAuth provider is configured, include the bearer token in the `Authorization` header:
+
+```bash
+curl \
+  -H "Authorization: Bearer <WORDPRESS_OAUTH_TOKEN>" \
+  https://example.com/wp-json/mcp-ai/v1/assistants
+```
+
+Chat requests follow the same pattern:
+
+```bash
+curl \
+  -X POST \
+  -H "Authorization: Bearer <WORDPRESS_OAUTH_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id":123,"messages":[{"role":"user","content":[{"type":"text","text":"Hello"}]}]}' \
+  https://example.com/wp-json/mcp-ai/v1/chat
+```
+
+The integration automatically resolves the token to a WordPress user and populates the request context with user ID and profile metadata.
+
+## Stored user metadata
+
+The integration stores the following metadata on mapped WordPress users:
+
+* **`_wp_mcp_ai_wordpress_gravatar_subject`** — Full subject identifier (e.g., `wordpress.com|123456789`)
+* **`_wp_mcp_ai_wordpress_id`** — WordPress.com user ID extracted from the subject
+* **`_wp_mcp_ai_gravatar_hash`** — MD5 hash of the user's email for Gravatar lookups
+
+These fields allow the integration to quickly locate existing users and synchronize profile updates on subsequent authentications.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L18-L20】【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L430-L469】
+
+## Troubleshooting
+
+* **Missing email address.** User creation fails with `wp_mcp_ai_wordpress_gravatar_missing_email` when the token payload and userinfo endpoint do not provide an email. Ensure your OAuth provider includes the email claim in issued tokens.
+* **Userinfo endpoint failures.** If the configured endpoint returns non-200 responses, the integration falls back to the token payload. Verify the endpoint URL and ensure the bearer token has sufficient scope to access profile information.
+* **Integration not running.** If WordPress.com/Gravatar tokens are not being processed, verify the **Enable WordPress.com/Gravatar identity bridge** setting is checked and saved in `Settings → WP oOS → Authentication`.
+* **User mapping conflicts.** When multiple users have the same email address, the integration returns the first match found. Consider enforcing unique email addresses or implementing custom user resolution logic via the `wp_mcp_ai_map_bearer_to_user_id` filter.
+
+Enable `WP_DEBUG` logging to capture detailed integration activity including subject detection, profile enrichment, and user mapping results.
+
+## Security considerations
+
+* **Token validation.** The WordPress/Gravatar bridge relies on the OAuth introspection MU plugin or your OAuth provider's token validation. Always configure proper token verification (signature validation, expiry checks, audience verification).
+* **User creation permissions.** New users are created as subscribers by default. Filter the `wp_insert_user` call if you need to assign different roles based on token claims.
+* **Profile synchronization.** The integration updates display names on each authentication. Implement custom logic if you need to preserve manual profile changes or restrict automated updates.
+* **Metadata storage.** Subject identifiers and WordPress IDs are stored in user meta. Ensure your privacy policy covers OAuth identity mapping and metadata retention.
+
+【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L175-L201】
