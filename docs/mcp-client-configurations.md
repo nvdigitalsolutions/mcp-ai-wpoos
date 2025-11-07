@@ -56,32 +56,29 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 
 ```json
 {
-  "servers": [
-    {
-      "id": "wordpress-mcp",
-      "name": "WordPress Site",
+  "mcpServers": {
+    "wordpress-mcp": {
       "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_xxxxx.SECRET"
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
       },
       "timeout": 30000
     }
-  ]
+  }
 }
 ```
 
 **Configuration Steps:**
 1. Open LM Studio
 2. Navigate to **Settings** → **MCP Servers**
-3. Click **Add MCP Server**
-4. Enter:
-   - **Name**: WordPress Site
-   - **URL**: `https://your-site.com/wp-json/mcp-ai/v1/mcp`
-   - **Auth Type**: Bearer Token
-   - **Token**: Your generated credential
-5. **Do NOT** enable SSE
-6. Save and test connection
+3. Click **Add Server** or edit your `mcp.json` file
+4. Use the configuration above, replacing:
+   - `your-site.com` with your WordPress site URL
+   - `cred_xxxxx.SECRET` with your actual credential token
+5. **Do NOT** enable SSE or add SSE configuration
+6. Save and LM Studio will automatically connect
+
+**Important:** LM Studio uses `mcpServers` object format (same as Claude Desktop), not an array.
 
 **Troubleshooting SSE Errors:**
 

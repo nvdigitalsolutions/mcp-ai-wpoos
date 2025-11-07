@@ -1,15 +1,12 @@
 {
-  "servers": [
-    {
-      "id": "wordpress-assistants",
-      "name": "WordPress Site (Assistants Directory)",
-      "baseUrl": "https://your-site.com/wp-json/mcp-ai/v1",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_xxxxx.SECRET"
+  "mcpServers": {
+    "wordpress-assistants": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
       },
-      "timeout": 30000,
-      "description": "Uses /assistants endpoint for directory, then individual endpoints for operations. SSE optional."
+      "sse": true,
+      "timeout": 30000
     }
-  ]
+  }
 }

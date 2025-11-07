@@ -79,52 +79,47 @@ curl -X POST "https://your-site.com/wp-json/mcp-ai/v1/mcp" \
 
 ### 4. Use the Correct LM Studio Configuration
 
-LM Studio might be using the wrong endpoint. There are two ways to configure:
+LM Studio might be using the wrong endpoint. Use this configuration format:
 
-#### Option A: JSON-RPC Endpoint (Recommended)
+#### Recommended: JSON-RPC Endpoint (No SSE)
 
-**File: lmstudio-mcp-without-sse.json**
+**File: mcp.json**
 ```json
 {
-  "servers": [
-    {
-      "id": "wordpress-mcp",
-      "name": "WordPress Site",
+  "mcpServers": {
+    "wordpress-mcp": {
       "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_xxxxx.SECRET"
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
       },
       "timeout": 30000
     }
-  ]
+  }
 }
 ```
 
-**Important:** Use `"url"` not `"baseUrl"`, and point directly to `/mcp` endpoint.
+**Important:** 
+- Use `"mcpServers"` object (not `"servers"` array)
+- Use `"url"` pointing directly to `/mcp` endpoint
+- Use `"headers"` with `"Authorization": "Bearer TOKEN"`
+- Do NOT include SSE configuration
 
-#### Option B: Assistants Directory (Alternative)
-
-If Option A doesn't work, try the directory endpoint:
+#### Alternative: Assistants Directory (With SSE)
 
 ```json
 {
-  "servers": [
-    {
-      "id": "wordpress-assistants",
-      "name": "WordPress Assistants",
-      "baseUrl": "https://your-site.com/wp-json/mcp-ai/v1",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_xxxxx.SECRET"
+  "mcpServers": {
+    "wordpress-assistants": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
       },
+      "sse": true,
       "timeout": 30000
     }
-  ]
+  }
 }
 ```
-
-Note: This uses `"baseUrl"` (directory mode) instead of `"url"` (direct endpoint).
 
 ### 5. Check Security Plugins
 
@@ -389,29 +384,26 @@ If none of these work, provide:
 
 ## Working Configuration Example
 
-This is a confirmed working configuration:
+This is a confirmed working configuration for LM Studio:
 
 ```json
 {
-  "servers": [
-    {
-      "id": "wordpress",
-      "name": "My WordPress Site",
+  "mcpServers": {
+    "wordpress": {
       "url": "https://example.com/wp-json/mcp-ai/v1/mcp",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_abc123.secretkey456"
+      "headers": {
+        "Authorization": "Bearer cred_abc123.secretkey456"
       },
       "timeout": 30000
     }
-  ]
+  }
 }
 ```
 
 **Checklist:**
-- ✅ Uses `"url"` (not `"baseUrl"`)
-- ✅ Points to `/mcp` endpoint directly
-- ✅ Has `"auth"` with `"type": "bearer"`
+- ✅ Uses `"mcpServers"` object (not `"servers"` array)
+- ✅ Uses `"url"` pointing to `/mcp` endpoint directly
+- ✅ Has `"headers"` with `"Authorization": "Bearer TOKEN"`
 - ✅ Token starts with `cred_`
 - ✅ No SSE configuration
 - ✅ Reasonable timeout (30 seconds)

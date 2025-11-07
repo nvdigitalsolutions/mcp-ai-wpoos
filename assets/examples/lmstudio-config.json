@@ -1,18 +1,12 @@
 {
-  "servers": [
-    {
-      "id": "wordpress-mcp",
-      "name": "WordPress Site",
-      "baseUrl": "https://your-site.com/wp-json/mcp-ai/v1",
-      "auth": {
-        "type": "bearer",
-        "token": "cred_xxxxx.SECRET"
+  "mcpServers": {
+    "wordpress-mcp": {
+      "url": "https://your-site.com/wp-json/mcp-ai/v1",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
       },
-      "sse": {
-        "enabled": true,
-        "endpoint": "/sse"
-      },
+      "sse": true,
       "timeout": 30000
     }
-  ]
+  }
 }
