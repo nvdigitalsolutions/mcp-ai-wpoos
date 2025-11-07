@@ -1978,6 +1978,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				self::PAGE_SLUG,
 				'wp_mcp_ai_mesh_section'
 			);
+
+			add_settings_section(
+				'wp_mcp_ai_security_monitor_section',
+				__( 'Security Monitoring', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_section_description' ),
+				self::PAGE_SLUG
+			);
+
+			add_settings_field(
+				'security_monitor_enabled',
+				__( 'Enable Security Monitoring', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_enabled_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
+
+			add_settings_field(
+				'security_monitor_auto_shutdown',
+				__( 'Auto-Shutdown Tools', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_auto_shutdown_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
+
+			add_settings_field(
+				'security_monitor_violations',
+				__( 'Security Violations', 'wp-mcp-ai' ),
+				array( $this, 'render_security_monitor_violations_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_security_monitor_section'
+			);
 		}
 
 		/**
