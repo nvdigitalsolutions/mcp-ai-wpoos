@@ -4,6 +4,8 @@
  * Plugin URI: https://github.com/nvdigitalsolutions/wp-mcp-ai
  * Description: Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
  * Version: 1.0.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -18,6 +20,44 @@
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
+}
+
+/**
+ * Check PHP version compatibility before loading any classes.
+ * 
+ * This plugin requires PHP 7.4 or later. On older PHP versions, class files
+ * will fail to parse with syntax errors like "unexpected token 'private'".
+ * We check the version early to provide a clear error message instead of
+ * cryptic parse errors.
+ */
+if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+	/**
+	 * Display admin notice for PHP version incompatibility.
+	 */
+	function wp_mcp_ai_php_version_notice() {
+		$message = sprintf(
+			/* translators: 1: Current PHP version, 2: Required PHP version */
+			__( '<strong>WP Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.', 'wp-mcp-ai' ),
+			PHP_VERSION,
+			'7.4.0'
+		);
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses_post( $message )
+		);
+	}
+	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
+	
+	/**
+	 * Prevent plugin activation on incompatible PHP versions.
+	 */
+	function wp_mcp_ai_deactivate_self() {
+		deactivate_plugins( plugin_basename( __FILE__ ) );
+	}
+	add_action( 'admin_init', 'wp_mcp_ai_deactivate_self' );
+	
+	// Stop execution - don't load any class files that will cause parse errors.
+	return;
 }
 
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
