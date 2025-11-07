@@ -29,7 +29,7 @@ class WP_MCP_AI_Crawl4AI_JSON_Extraction_Test extends WP_UnitTestCase {
 			'results' => array(
 				array(
 					'url'      => 'https://example.com',
-					'markdown' => str_repeat( 'Test content. ', 10000 ), // ~140,000 chars.
+					'markdown' => str_repeat( 'Test content. ', 10000 ), // 140,000 chars (14 chars * 10000).
 				),
 			),
 		);
@@ -55,7 +55,7 @@ class WP_MCP_AI_Crawl4AI_JSON_Extraction_Test extends WP_UnitTestCase {
 			'results' => array(
 				array(
 					'url'      => 'https://example.com',
-					'markdown' => str_repeat( 'Large content. ', 50000 ), // ~700,000 chars.
+					'markdown' => str_repeat( 'Large content. ', 50000 ), // 750,000 chars (15 chars * 50000).
 				),
 			),
 		);

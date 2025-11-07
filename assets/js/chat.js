@@ -3669,7 +3669,7 @@
     }
 
     function normaliseCrawl4aiResult(result) {
-        if (!result || typeof result !== 'object') {
+        if (!result) {
             return null;
         }
 
@@ -3684,6 +3684,11 @@
                     attachments: []
                 };
             }
+        }
+
+        // After parsing, check if result is now a valid object
+        if (typeof result !== 'object') {
+            return null;
         }
 
         // Extract results array - handle nested structures

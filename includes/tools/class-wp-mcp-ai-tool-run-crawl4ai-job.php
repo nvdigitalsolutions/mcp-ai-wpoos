@@ -1604,7 +1604,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		$request_args = $this->build_local_request_args( $settings, $context, $arguments );
 
 		foreach ( $urls as $url ) {
-			// Wrap in try-catch to handle any unexpected errors during crawling.
+			// Wrap in try-catch to handle exceptions from wp_remote_get, build_local_result, or filters.
 			try {
 				$response = wp_remote_get(
 					$url,
