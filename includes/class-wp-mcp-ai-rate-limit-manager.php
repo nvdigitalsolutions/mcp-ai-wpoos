@@ -56,9 +56,36 @@ class WP_MCP_AI_Rate_Limit_Manager {
 			);
 		}
 
-		$max_retries   = isset( $retry_options['max_retries'] ) ? absint( $retry_options['max_retries'] ) : self::DEFAULT_MAX_RETRIES;
-		$initial_delay = isset( $retry_options['initial_delay'] ) ? absint( $retry_options['initial_delay'] ) : self::DEFAULT_INITIAL_DELAY;
-		$max_delay     = isset( $retry_options['max_delay'] ) ? absint( $retry_options['max_delay'] ) : self::DEFAULT_MAX_DELAY;
+		/**
+		 * Filter the default maximum number of retry attempts.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_retries Maximum number of retries. Default 3.
+		 */
+		$default_max_retries = apply_filters( 'wp_mcp_ai_rate_limit_max_retries', self::DEFAULT_MAX_RETRIES );
+
+		/**
+		 * Filter the default initial retry delay in seconds.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $initial_delay Initial delay in seconds. Default 2.
+		 */
+		$default_initial_delay = apply_filters( 'wp_mcp_ai_rate_limit_initial_delay', self::DEFAULT_INITIAL_DELAY );
+
+		/**
+		 * Filter the default maximum retry delay in seconds.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_delay Maximum delay in seconds. Default 30.
+		 */
+		$default_max_delay = apply_filters( 'wp_mcp_ai_rate_limit_max_delay', self::DEFAULT_MAX_DELAY );
+
+		$max_retries   = isset( $retry_options['max_retries'] ) ? absint( $retry_options['max_retries'] ) : $default_max_retries;
+		$initial_delay = isset( $retry_options['initial_delay'] ) ? absint( $retry_options['initial_delay'] ) : $default_initial_delay;
+		$max_delay     = isset( $retry_options['max_delay'] ) ? absint( $retry_options['max_delay'] ) : $default_max_delay;
 
 		$attempt = 0;
 		$delay   = $initial_delay;
@@ -115,7 +142,15 @@ class WP_MCP_AI_Rate_Limit_Manager {
 			sleep( $retry_delay );
 
 			// Update delay for next iteration using exponential backoff.
-			$delay = min( $delay * self::BACKOFF_MULTIPLIER, $max_delay );
+			/**
+			 * Filter the exponential backoff multiplier.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $backoff_multiplier Backoff multiplier. Default 2.
+			 */
+			$backoff_multiplier = apply_filters( 'wp_mcp_ai_rate_limit_backoff_multiplier', self::BACKOFF_MULTIPLIER );
+			$delay              = min( $delay * $backoff_multiplier, $max_delay );
 			++$attempt;
 		}
 

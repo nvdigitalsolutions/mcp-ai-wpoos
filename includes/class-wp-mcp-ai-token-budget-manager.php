@@ -125,7 +125,15 @@ class WP_MCP_AI_Token_Budget_Manager {
 		}
 
 		// Default to a conservative limit.
-		return 8192;
+		/**
+		 * Filter the default token limit fallback for unknown models.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int    $default_limit Default token limit. Default 8192.
+		 * @param string $model         Model identifier.
+		 */
+		return apply_filters( 'wp_mcp_ai_token_budget_default_limit', 8192, $model );
 	}
 
 	/**
@@ -184,7 +192,14 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 */
 	public static function calculate_budget( $model, array $messages, $max_output_tokens = 0, $safety_margin = null ) {
 		if ( null === $safety_margin ) {
-			$safety_margin = self::DEFAULT_SAFETY_MARGIN;
+			/**
+			 * Filter the default token budget safety margin.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param float $safety_margin Safety margin percentage (0-1). Default 0.1 (10%).
+			 */
+			$safety_margin = apply_filters( 'wp_mcp_ai_token_budget_safety_margin', self::DEFAULT_SAFETY_MARGIN );
 		}
 
 		$safety_margin = max( 0, min( 1, (float) $safety_margin ) );
@@ -319,9 +334,18 @@ class WP_MCP_AI_Token_Budget_Manager {
 	 * @return array Array of text chunks.
 	 */
 	public static function split_document( $content, $chunk_size, $overlap = 0 ) {
-		$content    = (string) $content;
-		$chunk_size = max( self::MIN_CHUNK_SIZE, absint( $chunk_size ) );
-		$overlap    = max( 0, min( $chunk_size - 1, absint( $overlap ) ) );
+		$content = (string) $content;
+
+		/**
+		 * Filter the minimum chunk size for document splitting.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $min_chunk_size Minimum chunk size in tokens. Default 1000.
+		 */
+		$min_chunk_size = apply_filters( 'wp_mcp_ai_token_budget_min_chunk_size', self::MIN_CHUNK_SIZE );
+		$chunk_size     = max( $min_chunk_size, absint( $chunk_size ) );
+		$overlap        = max( 0, min( $chunk_size - 1, absint( $overlap ) ) );
 
 		if ( '' === $content ) {
 			return array();
@@ -420,19 +444,28 @@ class WP_MCP_AI_Token_Budget_Manager {
 	public static function validate_input_tokens( array $messages, $model ) {
 		$budget = self::calculate_budget( $model, $messages );
 
-		if ( $budget['used'] > self::MAX_INPUT_TOKENS ) {
+		/**
+		 * Filter the maximum input tokens limit.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param int $max_input_tokens Maximum input tokens. Default 12000.
+		 */
+		$max_input_tokens = apply_filters( 'wp_mcp_ai_token_budget_max_input_tokens', self::MAX_INPUT_TOKENS );
+
+		if ( $budget['used'] > $max_input_tokens ) {
 			return new WP_Error(
 				'wp_mcp_ai_input_tokens_exceeded',
 				sprintf(
 					/* translators: %1$d: used tokens, %2$d: maximum allowed tokens */
 					__( 'Input exceeds maximum token limit. Used: %1$d tokens, Maximum: %2$d tokens. Please reduce message length or split into chunks.', 'wp-mcp-ai' ),
 					$budget['used'],
-					self::MAX_INPUT_TOKENS
+					$max_input_tokens
 				),
 				array(
 					'status'      => 400,
 					'used_tokens' => $budget['used'],
-					'max_tokens'  => self::MAX_INPUT_TOKENS,
+					'max_tokens'  => $max_input_tokens,
 				)
 			);
 		}
