@@ -39,6 +39,7 @@
 - SSE endpoint modernized with automatic reconnection, event IDs, and HTTP/2 compatibility
 
 ### Fixed
+- JavaScript lint errors: Fixed 6 linting errors including unused function parameters in admin-settings.js and camelcase identifier warnings in settings-dashboard.js
 - JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
 - 164 PHP coding standard violations auto-fixed across 19 files
 - Tool registry validation ensuring correct slug-to-class mappings

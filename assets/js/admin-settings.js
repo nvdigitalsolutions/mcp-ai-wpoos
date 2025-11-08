@@ -691,10 +691,10 @@ window.wpMcpAiSaveExpandedState = function() {
                 placeholder: 'wp-mcp-ai-provider-item ui-sortable-placeholder',
                 opacity: 0.8,
                 tolerance: 'pointer',
-                update: function(event, ui) {
+                update: function(_event, _ui) {
                     log('Provider list reordered');
                     // Update hidden input values to maintain order
-                    $sortable.find('li').each(function(index) {
+                    $sortable.find('li').each(function(_index) {
                         const $item = $(this);
                         const provider = $item.data('provider');
                         $item.find('input[type="hidden"]').val(provider);
