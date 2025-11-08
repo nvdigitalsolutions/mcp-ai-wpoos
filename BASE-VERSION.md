@@ -37,7 +37,6 @@ The base version includes tools that work with a standard WordPress installation
 - `generate_gemini_image` - Generate images via Gemini
 - `generate_openai_speech` - Text-to-speech via OpenAI
 - `transcribe_openai_audio` - Audio transcription via OpenAI
-- `generate_perfume_lifestyle_image` - Specialized image generation
 
 #### Research & External Data
 - `web_search` - DuckDuckGo and Brave web search
