@@ -150,7 +150,15 @@ class WP_MCP_AI_Federation_Peer_Verifier {
 			}
 
 			// Small delay to avoid overwhelming servers.
-			usleep( 100000 ); // 100ms delay.
+			/**
+			 * Filter the delay between peer verification requests.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $delay_microseconds Delay in microseconds. Default 100000 (100ms).
+			 */
+			$delay_microseconds = apply_filters( 'wp_mcp_ai_federation_peer_verification_delay', 100000 );
+			usleep( absint( $delay_microseconds ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(

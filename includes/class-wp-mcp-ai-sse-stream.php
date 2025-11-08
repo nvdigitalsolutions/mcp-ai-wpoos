@@ -27,11 +27,25 @@ class WP_MCP_AI_SSE_Stream {
 	 */
 	public static function stream_job_status( $job_id, $max_duration = null, $poll_interval = null ) {
 		if ( null === $max_duration ) {
-			$max_duration = self::MAX_DURATION;
+			/**
+			 * Filter the maximum SSE connection duration.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $max_duration Maximum connection duration in seconds. Default 300 (5 minutes).
+			 */
+			$max_duration = apply_filters( 'wp_mcp_ai_sse_max_duration', self::MAX_DURATION );
 		}
 
 		if ( null === $poll_interval ) {
-			$poll_interval = self::POLL_INTERVAL;
+			/**
+			 * Filter the SSE polling interval.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $poll_interval Polling interval in seconds. Default 2.
+			 */
+			$poll_interval = apply_filters( 'wp_mcp_ai_sse_poll_interval', self::POLL_INTERVAL );
 		}
 
 		// Validate parameters.
@@ -109,7 +123,15 @@ class WP_MCP_AI_SSE_Stream {
 			}
 
 			// Send heartbeat to keep connection alive.
-			if ( ( time() - $last_heartbeat ) >= self::HEARTBEAT_INTERVAL ) {
+			/**
+			 * Filter the SSE heartbeat interval.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $heartbeat_interval Heartbeat interval in seconds. Default 15.
+			 */
+			$heartbeat_interval = apply_filters( 'wp_mcp_ai_sse_heartbeat_interval', self::HEARTBEAT_INTERVAL );
+			if ( ( time() - $last_heartbeat ) >= $heartbeat_interval ) {
 				$stream        .= self::format_sse_comment( 'heartbeat' );
 				$last_heartbeat = time();
 			}

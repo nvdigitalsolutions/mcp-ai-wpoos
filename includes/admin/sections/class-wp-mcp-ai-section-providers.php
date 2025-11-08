@@ -139,7 +139,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for your local Ollama installation (e.g., http://localhost:11434).', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:11434',
-					'default'     => 'http://localhost:11434',
+					/**
+					 * Filter the default Ollama endpoint URL.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param string $url Default URL. Default 'http://localhost:11434'.
+					 */
+					'default'     => apply_filters( 'wp_mcp_ai_default_ollama_endpoint_url', 'http://localhost:11434' ),
 				),
 				'ollama_model'          => array(
 					'type'        => 'text',
@@ -154,7 +161,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for your local LM Studio installation (e.g., http://localhost:1234/v1).', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:1234/v1',
-					'default'     => 'http://localhost:1234/v1',
+					/**
+					 * Filter the default LM Studio endpoint URL.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param string $url Default URL. Default 'http://localhost:1234/v1'.
+					 */
+					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234/v1' ),
 				),
 				'lm_studio_model'       => array(
 					'type'        => 'text',
