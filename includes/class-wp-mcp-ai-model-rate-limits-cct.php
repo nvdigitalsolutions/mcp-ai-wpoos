@@ -120,6 +120,24 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	}
 
 	/**
+	 * Get the configured fallback model for a specific model.
+	 *
+	 * @param string $model Model identifier.
+	 * @return string|null Fallback model identifier or null if not configured.
+	 */
+	public static function get_model_fallback( $model ) {
+		$model_data = self::get_model_limits( $model );
+
+		if ( ! $model_data || ! isset( $model_data['fallback_model'] ) ) {
+			return null;
+		}
+
+		$fallback = sanitize_text_field( $model_data['fallback_model'] );
+
+		return ! empty( $fallback ) ? $fallback : null;
+	}
+
+	/**
 	 * Automatically enable the JetEngine data stores module if it's not already active.
 	 */
 	public static function maybe_enable_data_stores() {
@@ -329,6 +347,10 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
+				'fallback_model' => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
 				'cct_created'    => array(
 					'enabled'     => true,
 					'is_sortable' => true,
@@ -520,6 +542,15 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				array(
 					'rows'        => 3,
 					'description' => __( 'Additional notes about this model configuration.', 'wp-mcp-ai' ),
+				)
+			),
+			self::build_field(
+				20014,
+				'fallback_model',
+				__( 'High-Capacity Fallback Model', 'wp-mcp-ai' ),
+				'text',
+				array(
+					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.0-flash-exp). Leave empty to use global fallback setting.', 'wp-mcp-ai' ),
 				)
 			),
 		);
