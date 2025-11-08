@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -62,6 +63,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	protected $authenticator;
 
+	/**
+	 * Request validator and sanitizer.
+	 *
+	 * @var WP_MCP_AI_REST_Validator
+	 */
+	protected $validator;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -87,6 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->client   = $client;
 
 			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
+			$this->validator     = new WP_MCP_AI_REST_Validator();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
@@ -376,7 +385,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -403,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => false,
-								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -487,7 +496,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -514,7 +523,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => false,
-								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -645,7 +654,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -866,7 +875,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'type'              => 'object',
 								'required'          => false,
 								'default'           => array(),
-								'validate_callback' => array( $this, 'validate_mcp_params' ),
+								'validate_callback' => array( $this->validator, 'validate_mcp_params' ),
 							),
 						),
 					),
@@ -878,297 +887,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
-		}
-
-		/**
-		 * Validate messages array structure for chat endpoint.
-		 *
-		 * @param mixed           $value   The messages array to validate.
-		 * @param WP_REST_Request $request The request object.
-		 * @param string          $param   The parameter name.
-		 * @return bool|WP_Error True if valid, WP_Error if invalid.
-		 */
-		public function validate_messages_array( $value, $request, $param ) {
-			if ( ! is_array( $value ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: %s: parameter name */
-						__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
-						$param
-					),
-					array( 'status' => 400 )
-				);
-			}
-
-			if ( empty( $value ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					__( 'The "messages" array cannot be empty. At least one message is required.', 'wp-mcp-ai' ),
-					array(
-						'status'  => 400,
-						'actions' => array(
-							'provide_messages' => __( 'Include at least one message object with "role" and "content" properties.', 'wp-mcp-ai' ),
-						),
-					)
-				);
-			}
-
-			foreach ( $value as $index => $message ) {
-				if ( ! is_array( $message ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: message index */
-							__( 'Message at index %d must be an object/array.', 'wp-mcp-ai' ),
-							$index
-						),
-						array( 'status' => 400 )
-					);
-				}
-
-				// Validate role field.
-				if ( ! isset( $message['role'] ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: message index */
-							__( 'Message at index %d is missing required "role" property.', 'wp-mcp-ai' ),
-							$index
-						),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'add_role' => __( 'Each message must include a "role" property with one of: "system", "user", "assistant", or "tool".', 'wp-mcp-ai' ),
-							),
-						)
-					);
-				}
-
-				$role = $message['role'];
-				$valid_roles = array( 'system', 'user', 'assistant', 'tool' );
-
-				if ( ! in_array( $role, $valid_roles, true ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: 1: message index, 2: invalid role, 3: valid roles list */
-							__( 'Message at index %1$d has invalid role "%2$s". Must be one of: %3$s', 'wp-mcp-ai' ),
-							$index,
-							$role,
-							implode( ', ', $valid_roles )
-						),
-						array( 'status' => 400 )
-					);
-				}
-
-				// Validate content field (required for most roles).
-				if ( ! isset( $message['content'] ) && 'assistant' !== $role ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: message index */
-							__( 'Message at index %d is missing required "content" property.', 'wp-mcp-ai' ),
-							$index
-						),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'add_content' => __( 'Each message must include a "content" property (string or array of content parts).', 'wp-mcp-ai' ),
-							),
-						)
-					);
-				}
-
-				// Validate tool_call_id for tool messages.
-				if ( 'tool' === $role && empty( $message['tool_call_id'] ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: message index */
-							__( 'Tool message at index %d is missing required "tool_call_id" property.', 'wp-mcp-ai' ),
-							$index
-						),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'add_tool_call_id' => __( 'Messages with role "tool" must include a "tool_call_id" matching the assistant\'s tool call.', 'wp-mcp-ai' ),
-							),
-						)
-					);
-				}
-			}
-
-			return true;
-		}
-
-		/**
-		 * Validate attachments array structure for chat endpoint.
-		 *
-		 * @param mixed           $value   The attachments array to validate.
-		 * @param WP_REST_Request $request The request object.
-		 * @param string          $param   The parameter name.
-		 * @return bool|WP_Error True if valid, WP_Error if invalid.
-		 */
-		public function validate_attachments_array( $value, $request, $param ) {
-			if ( ! is_array( $value ) ) {
-				return new WP_Error(
-					'rest_invalid_param',
-					sprintf(
-						/* translators: %s: parameter name */
-						__( 'The "%s" parameter must be an array.', 'wp-mcp-ai' ),
-						$param
-					),
-					array( 'status' => 400 )
-				);
-			}
-
-			foreach ( $value as $index => $attachment ) {
-				if ( ! is_array( $attachment ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: attachment index */
-							__( 'Attachment at index %d must be an object/array.', 'wp-mcp-ai' ),
-							$index
-						),
-						array( 'status' => 400 )
-					);
-				}
-
-				// Each attachment must have either file_id or url.
-				$has_file_id = isset( $attachment['file_id'] ) && is_numeric( $attachment['file_id'] ) && absint( $attachment['file_id'] ) > 0;
-				$has_url     = isset( $attachment['url'] ) && is_string( $attachment['url'] );
-
-				if ( ! $has_file_id && ! $has_url ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: attachment index */
-							__( 'Attachment at index %d must include either "file_id" (integer) or "url" (string).', 'wp-mcp-ai' ),
-							$index
-						),
-						array(
-							'status'  => 400,
-							'actions' => array(
-								'provide_file_reference' => __( 'Each attachment must specify either a WordPress attachment ID via "file_id" or an external URL via "url".', 'wp-mcp-ai' ),
-							),
-						)
-					);
-				}
-
-				// Validate file_id if provided (additional check for clarity).
-				if ( isset( $attachment['file_id'] ) ) {
-					$file_id = absint( $attachment['file_id'] );
-					if ( $file_id <= 0 ) {
-						return new WP_Error(
-							'rest_invalid_param',
-							sprintf(
-								/* translators: %d: attachment index */
-								__( 'Attachment at index %d has invalid "file_id". Must be a positive integer.', 'wp-mcp-ai' ),
-								$index
-							),
-							array( 'status' => 400 )
-						);
-					}
-				}
-
-				// Validate url if provided.
-				if ( $has_url && ! filter_var( $attachment['url'], FILTER_VALIDATE_URL ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						sprintf(
-							/* translators: %d: attachment index */
-							__( 'Attachment at index %d has invalid "url". Must be a valid URL.', 'wp-mcp-ai' ),
-							$index
-						),
-						array( 'status' => 400 )
-					);
-				}
-			}
-
-			return true;
-		}
-
-		/**
-		 * Validate MCP JSON-RPC request structure.
-		 *
-		 * @param mixed           $value   The request body to validate.
-		 * @param WP_REST_Request $request The request object.
-		 * @param string          $param   The parameter name.
-		 * @return bool|WP_Error True if valid, WP_Error if invalid.
-		 */
-		public function validate_mcp_params( $value, $request, $param ) {
-			// This validates the params object for MCP requests.
-			// The structure depends on the method, so we validate based on that.
-			$method = $request->get_param( 'method' );
-
-			if ( ! $method ) {
-				// Method will be validated by the endpoint args, so we just check if params is an object/array.
-				if ( null !== $value && ! is_array( $value ) ) {
-					return new WP_Error(
-						'rest_invalid_param',
-						__( 'The "params" parameter must be an object/array or null.', 'wp-mcp-ai' ),
-						array( 'status' => 400 )
-					);
-				}
-				return true;
-			}
-
-			// Validate params structure based on method.
-			switch ( $method ) {
-				case 'tools/call':
-					if ( ! is_array( $value ) ) {
-						return new WP_Error(
-							'rest_invalid_param',
-							__( 'The "params" parameter must be an object for tools/call method.', 'wp-mcp-ai' ),
-							array( 'status' => 400 )
-						);
-					}
-
-					if ( ! isset( $value['name'] ) || ! is_string( $value['name'] ) ) {
-						return new WP_Error(
-							'rest_invalid_param',
-							__( 'MCP tools/call requires a "name" parameter (string) specifying the tool to call.', 'wp-mcp-ai' ),
-							array(
-								'status'  => 400,
-								'actions' => array(
-									'provide_tool_name' => __( 'Include "params": {"name": "tool_slug", "arguments": {...}} in your request.', 'wp-mcp-ai' ),
-								),
-							)
-						);
-					}
-
-					// Arguments is optional but must be an object if provided.
-					if ( isset( $value['arguments'] ) && ! is_array( $value['arguments'] ) ) {
-						return new WP_Error(
-							'rest_invalid_param',
-							__( 'The "arguments" parameter in tools/call must be an object.', 'wp-mcp-ai' ),
-							array( 'status' => 400 )
-						);
-					}
-					break;
-
-				case 'initialize':
-				case 'tools/list':
-				case 'resources/list':
-				case 'prompts/list':
-					// These methods accept optional params.
-					if ( null !== $value && ! is_array( $value ) ) {
-						return new WP_Error(
-							'rest_invalid_param',
-							sprintf(
-								/* translators: %s: method name */
-								__( 'The "params" parameter for %s method must be an object or null.', 'wp-mcp-ai' ),
-								$method
-							),
-							array( 'status' => 400 )
-						);
-					}
-					break;
-			}
-
-			return true;
 		}
 
 		/**
@@ -1307,7 +1025,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->hydrate_request_body_params( $request );
 
 			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-			$session_key  = $this->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+			$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 			$messages     = $request->get_param( 'messages' );
 
 			if ( ! $assistant_id ) {
@@ -1341,7 +1059,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Sanitize messages.
-			$sanitized_messages = $this->sanitize_messages( $messages );
+			$sanitized_messages = $this->validator->sanitize_messages( $messages );
 			if ( is_wp_error( $sanitized_messages ) ) {
 				return $sanitized_messages;
 			}
@@ -2706,7 +2424,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $assistant_post;
 			}
 
-			$sanitized_messages = $this->sanitize_messages( $request->get_param( 'messages' ) );
+			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
 			if ( is_wp_error( $sanitized_messages ) ) {
 				return $sanitized_messages;
 			}
@@ -2720,7 +2438,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
-			$options = $this->sanitize_options( $request->get_param( 'options' ), $assistant_config );
+			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
 			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
 			$enforced      = $this->enforce_chat_request_limits( $messages, $attachments, $limit_context );
@@ -2734,7 +2452,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$transcript_context = array(
 				'save_transcript' => $this->should_save_transcript( $request ),
-				'session_key'     => $this->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
+				'session_key'     => $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
 			);
 
 			if ( ! empty( $attachments ) ) {
@@ -2905,7 +2623,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result_messages[] = $full_tool_message;
 
 					// Create a sanitized version for the LLM (strip large content fields).
-					$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
 
 					$tool_message = array(
 						'role'    => 'tool',
@@ -3235,7 +2953,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'type'      => 'tool_result',
 						'tool_name' => $tool_name,
 						'tool_id'   => $tool_call_id,
-						'result'    => $this->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						'result'    => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
 					)
 				);
 
@@ -3256,7 +2974,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$tool_result_messages[] = $full_tool_message;
 
 				// Create sanitized version for LLM.
-				$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+				$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
 
 				$tool_message = array(
 					'role'    => 'tool',
@@ -3468,43 +3186,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
-	}
-
-	/**
-	 * Sanitize tool result for display in UI.
-	 *
-	 * @param mixed  $result    Tool result.
-	 * @param string $tool_name Tool name.
-	 * @return string|array Sanitized result.
-	 */
-	protected function sanitize_tool_result_for_display( $result, $tool_name ) {
-		// Special handling for crawl4ai - return full result structure for proper UI display.
-		if ( 'run_crawl4ai_job' === $tool_name ) {
-			// Return the complete crawl4ai result for proper frontend rendering.
-			// The frontend has specialized handling in normaliseCrawl4aiResult().
-			return $result;
-		}
-
-		// For display, we want a summarized version for other tools.
-		if ( is_string( $result ) ) {
-			// Limit string length for display.
-			if ( strlen( $result ) > 500 ) {
-				return substr( $result, 0, 500 ) . '… [truncated]';
-			}
-			return $result;
-		}
-
-		if ( is_array( $result ) ) {
-			// Return summary for arrays.
-			return array(
-				'type'        => 'object',
-				'tool_name'   => $tool_name,
-				'summary'     => count( $result ) . ' items',
-				'preview'     => array_slice( $result, 0, 3 ),
-			);
-		}
-
-		return $result;
 	}
 
 		/**
@@ -4816,98 +4497,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Sanitize the messages payload.
-		 *
-		 * Allowed roles can be customized via the `wp_mcp_ai_allowed_message_roles` filter.
-		 *
-		 * @param mixed $messages Raw messages.
-		 * @return array|WP_Error
-		 */
-		protected function sanitize_messages( $messages ) {
-			if ( ! is_array( $messages ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
-			}
-
-			$attachments_helper = new WP_MCP_AI_Message_Attachments();
-			$sanitized          = array();
-
-			$default_roles = array( 'user', 'assistant', 'system', 'tool' );
-			$allowed_roles = apply_filters( 'wp_mcp_ai_allowed_message_roles', $default_roles );
-
-			if ( ! is_array( $allowed_roles ) ) {
-				$allowed_roles = $default_roles;
-			}
-
-			$allowed_roles = array_values(
-				array_filter(
-					array_unique(
-						array_map( 'sanitize_key', $allowed_roles )
-					)
-				)
-			);
-
-			if ( empty( $allowed_roles ) ) {
-				$allowed_roles = $default_roles;
-			}
-
-			foreach ( $messages as $message ) {
-				if ( ! is_array( $message ) ) {
-					continue;
-				}
-
-				$raw_role = isset( $message['role'] ) ? $message['role'] : '';
-				$role     = sanitize_key( $raw_role );
-				if ( empty( $role ) ) {
-					continue;
-				}
-
-				if ( ! in_array( $role, $allowed_roles, true ) ) {
-					$display_role = is_scalar( $raw_role ) ? (string) $raw_role : $role;
-					$display_role = sanitize_text_field( $display_role );
-
-					return new WP_Error(
-						'wp_mcp_ai_invalid_message_role',
-						sprintf(
-						/* translators: 1: Provided role, 2: list of supported roles. */
-							__( 'The message role "%1$s" is not supported. Supported roles: %2$s.', 'wp-mcp-ai' ),
-							$display_role,
-							implode( ', ', $allowed_roles )
-						),
-						array( 'status' => 400 )
-					);
-				}
-
-				$content  = isset( $message['content'] ) ? $message['content'] : '';
-				$segments = $this->sanitize_message_content( $content, $attachments_helper );
-
-				if ( is_wp_error( $segments ) ) {
-					return $segments;
-				}
-
-				$metadata = $this->sanitize_message_metadata( $message );
-
-				if ( empty( $segments ) && empty( $metadata ) ) {
-					continue;
-				}
-
-				$sanitized[] = array_merge(
-					array(
-						'role'    => $role,
-						'content' => $segments,
-					),
-					$metadata
-				);
-			}
-
-			$filtered_messages = $this->filter_tool_messages_without_matching_calls( array_values( $sanitized ) );
-
-			return array(
-				'messages'    => $filtered_messages,
-				'attachments' => $attachments_helper->get_attachments(),
-			);
-		}
-
-		/**
 		 * Build the context array used when enforcing chat request limits.
 		 *
 		 * @param int   $assistant_id Assistant identifier.
@@ -5747,266 +5336,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Sanitize additional metadata attached to a message.
-		 *
-		 * @param array $message Raw message data.
-		 * @return array
-		 */
-		protected function sanitize_message_metadata( array $message ) {
-			$metadata = array();
-
-			if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
-				$tool_calls = array();
-
-				foreach ( $message['tool_calls'] as $tool_call ) {
-					if ( ! is_array( $tool_call ) ) {
-						continue;
-					}
-
-					$sanitized_call = array();
-
-					if ( isset( $tool_call['id'] ) ) {
-						$sanitized_call['id'] = sanitize_text_field( $tool_call['id'] );
-					}
-
-					if ( isset( $tool_call['type'] ) ) {
-						$sanitized_call['type'] = sanitize_text_field( $tool_call['type'] );
-					}
-
-					if ( isset( $tool_call['function'] ) && is_array( $tool_call['function'] ) ) {
-						$function = array();
-
-						if ( isset( $tool_call['function']['name'] ) ) {
-							$function['name'] = sanitize_text_field( $tool_call['function']['name'] );
-						}
-
-						if ( isset( $tool_call['function']['arguments'] ) ) {
-							$function['arguments'] = wp_check_invalid_utf8( (string) $tool_call['function']['arguments'], true );
-						}
-
-						if ( ! empty( $function ) ) {
-							$sanitized_call['function'] = $function;
-						}
-					}
-
-					if ( isset( $tool_call['index'] ) ) {
-						$sanitized_call['index'] = absint( $tool_call['index'] );
-					}
-
-					if ( ! empty( $sanitized_call ) ) {
-						$tool_calls[] = $sanitized_call;
-					}
-				}
-
-				if ( ! empty( $tool_calls ) ) {
-					$metadata['tool_calls'] = $tool_calls;
-				}
-			}
-
-			if ( isset( $message['tool_call_id'] ) ) {
-				$metadata['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
-			}
-
-			if ( isset( $message['name'] ) ) {
-				$metadata['name'] = sanitize_text_field( $message['name'] );
-			}
-
-			return $metadata;
-		}
-
-		/**
-		 * Sanitize the content of a single message and normalise into segments.
-		 *
-		 * @param mixed                         $content             Raw content provided by the client.
-		 * @param WP_MCP_AI_Message_Attachments $attachments_helper Attachment helper instance.
-		 * @return array|WP_Error
-		 */
-		protected function sanitize_message_content( $content, WP_MCP_AI_Message_Attachments $attachments_helper ) {
-			if ( $content instanceof \Traversable ) {
-				$content = iterator_to_array( $content );
-			}
-
-			if ( is_object( $content ) ) {
-				$content = (array) $content;
-			}
-
-			if ( is_string( $content ) || is_numeric( $content ) ) {
-				$segment = $attachments_helper->prepare_input_text_segment( $content );
-
-				return '' === $segment['text'] ? array() : array( $segment );
-			}
-
-			if ( empty( $content ) ) {
-				return array();
-			}
-
-			if ( ! is_array( $content ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_message_content', __( 'Message content must be a string or an array of segments.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
-			}
-
-			if ( ! wp_is_numeric_array( $content ) ) {
-				$content = array( $content );
-			}
-
-			$segments = array();
-
-			foreach ( $content as $segment ) {
-				if ( is_string( $segment ) || is_numeric( $segment ) ) {
-					$prepared = $attachments_helper->prepare_input_text_segment( $segment );
-
-					if ( '' !== $prepared['text'] ) {
-						$segments[] = $prepared;
-					}
-
-					continue;
-				}
-
-				if ( ! is_array( $segment ) ) {
-					continue;
-				}
-
-				$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
-
-				switch ( $type ) {
-					case 'text':
-					case 'input_text':
-						if ( isset( $segment['text'] ) ) {
-							$prepared = $attachments_helper->prepare_input_text_segment( $segment['text'] );
-						} elseif ( isset( $segment['content'] ) ) {
-							$prepared = $attachments_helper->prepare_input_text_segment( $segment['content'] );
-						} else {
-							$prepared = $attachments_helper->prepare_input_text_segment( '' );
-						}
-
-						if ( '' !== $prepared['text'] ) {
-							$segments[] = $prepared;
-						}
-						break;
-
-					case 'input_image':
-						$prepared = $attachments_helper->prepare_input_image_segment( $segment );
-						if ( is_wp_error( $prepared ) ) {
-							return $prepared;
-						}
-						$segments[] = $prepared;
-						break;
-
-					case 'input_file':
-						$prepared = $attachments_helper->prepare_input_file_segment( $segment );
-						if ( is_wp_error( $prepared ) ) {
-							return $prepared;
-						}
-						$segments[] = $prepared;
-						break;
-
-					default:
-						return new WP_Error( 'wp_mcp_ai_invalid_message_segment', __( 'One or more message segments use an unsupported type.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
-				}
-			}
-
-			return $segments;
-		}
-
-		/**
-		 * Sanitize request options and merge with assistant defaults.
-		 *
-		 * @param mixed $options          Raw options from the request.
-		 * @param array $assistant_config Assistant configuration array.
-		 * @return array
-		 */
-		protected function sanitize_options( $options, array $assistant_config ) {
-			$options = is_array( $options ) ? $options : array();
-
-			$provider = '';
-			if ( isset( $options['provider'] ) ) {
-				$provider = sanitize_key( $options['provider'] );
-			}
-
-			if ( empty( $provider ) && ! empty( $assistant_config['provider'] ) ) {
-				$provider = sanitize_key( $assistant_config['provider'] );
-			}
-
-			if ( empty( $provider ) ) {
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
-			}
-
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini' ) );
-			if ( ! is_array( $allowed_providers ) ) {
-				$allowed_providers = array( 'openai', 'gemini' );
-			}
-
-			if ( ! in_array( $provider, $allowed_providers, true ) ) {
-				$provider = 'openai';
-			}
-
-			$options['provider'] = $provider;
-
-			if ( isset( $options['model'] ) ) {
-				$options['model'] = sanitize_text_field( $options['model'] );
-			}
-
-			if ( empty( $options['model'] ) && ! empty( $assistant_config['model'] ) ) {
-				$options['model'] = sanitize_text_field( $assistant_config['model'] );
-			}
-
-			$assistant_temperature = ( isset( $assistant_config['temperature'] ) && null !== $assistant_config['temperature'] )
-			? floatval( $assistant_config['temperature'] )
-			: null;
-
-			$has_request_temperature = array_key_exists( 'temperature', $options );
-			$raw_temperature         = $has_request_temperature ? $options['temperature'] : null;
-
-			if ( $has_request_temperature && '' !== $raw_temperature && null !== $raw_temperature ) {
-				$temperature = floatval( $raw_temperature );
-
-				if ( ( $temperature < 0 || $temperature > 2 ) && null !== $assistant_temperature ) {
-					$temperature = $assistant_temperature;
-				}
-			} elseif ( ! $has_request_temperature && null !== $assistant_temperature ) {
-				$temperature = $assistant_temperature;
-			} else {
-				$temperature = null;
-			}
-
-			if ( null !== $temperature ) {
-				$options['temperature'] = (float) max( 0, min( 2, $temperature ) );
-			} elseif ( $has_request_temperature ) {
-				unset( $options['temperature'] );
-			}
-
-			if ( isset( $options['system_prompt'] ) ) {
-				$options['system_prompt'] = wp_kses_post( $options['system_prompt'] );
-			}
-
-			if ( empty( $options['system_prompt'] ) && ! empty( $assistant_config['system_prompt'] ) ) {
-				$options['system_prompt'] = wp_kses_post( $assistant_config['system_prompt'] );
-			}
-
-			if ( isset( $options['memory_files'] ) ) {
-				$options['memory_files'] = $this->sanitize_memory_files( $options['memory_files'] );
-			} elseif ( ! empty( $assistant_config['memory_files'] ) ) {
-				$options['memory_files'] = $this->sanitize_memory_files( $assistant_config['memory_files'] );
-			} else {
-				$options['memory_files'] = array();
-			}
-
-			if ( isset( $options['vector_store_id'] ) ) {
-				$options['vector_store_id'] = sanitize_text_field( $options['vector_store_id'] );
-			} elseif ( isset( $assistant_config['vector_store_id'] ) && '' !== $assistant_config['vector_store_id'] ) {
-				$options['vector_store_id'] = sanitize_text_field( $assistant_config['vector_store_id'] );
-			} else {
-				$options['vector_store_id'] = '';
-			}
-
-			if ( isset( $options['response_format'] ) && ! is_array( $options['response_format'] ) ) {
-				unset( $options['response_format'] );
-			}
-
-			return $options;
-		}
-
-		/**
 		 * Determine whether transcripts should be saved for the current request.
 		 *
 		 * @param WP_REST_Request $request REST request instance.
@@ -6032,34 +5361,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return ! empty( $value );
-		}
-
-		/**
-		 * Sanitise the session key parameter supplied with chat requests.
-		 *
-		 * @param mixed $value Raw session key value.
-		 * @return string
-		 */
-		protected function sanitize_session_key_param( $value ) {
-			if ( ! is_scalar( $value ) ) {
-				return '';
-			}
-
-			$value = trim( (string) $value );
-
-			if ( '' === $value ) {
-				return '';
-			}
-
-			$value = preg_replace( '/[^a-zA-Z0-9_-]/', '', $value );
-
-			if ( ! is_string( $value ) || '' === $value ) {
-				return '';
-			}
-
-			$max_length = class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ? WP_MCP_AI_Chat_Transcript_Recorder::MAX_SESSION_KEY_LENGTH : 96;
-
-			return substr( $value, 0, $max_length );
 		}
 
 		/**
@@ -6135,28 +5436,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $tools_payload;
-		}
-
-		/**
-		 * Sanitize memory file identifiers.
-		 *
-		 * @param mixed $files Raw file identifiers.
-		 * @return array
-		 */
-		protected function sanitize_memory_files( $files ) {
-			if ( ! is_array( $files ) ) {
-				$files = array( $files );
-			}
-
-			$sanitized = array();
-			foreach ( $files as $file_id ) {
-				$file_id = absint( $file_id );
-				if ( $file_id ) {
-					$sanitized[] = $file_id;
-				}
-			}
-
-			return array_values( array_unique( $sanitized ) );
 		}
 
 		/**
@@ -8071,50 +7350,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Sanitize tool result for LLM consumption in agentic workflow.
-		 *
-		 * This method implements a two-tier sanitization strategy:
-		 * 1. Check if the tool implements WP_MCP_AI_Tool_LLM_Sanitizer_Interface
-		 *    and use its custom sanitization rules
-		 * 2. Fall back to generic sanitization for tools without custom rules
-		 *
-		 * This approach keeps sanitization logic maintainable and allows each tool
-		 * to define what data is necessary vs. unnecessary for LLM context.
-		 *
-		 * The full, unsanitized result is always preserved in tool_results[] for
-		 * frontend display.
-		 *
-		 * @param mixed  $result           Tool execution result.
-		 * @param string $tool_name        Tool name from function call.
-		 * @param array  $assistant_config Assistant configuration.
-		 * @return mixed Sanitized result safe for LLM consumption.
-		 */
-		protected function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array() ) {
-			if ( ! is_array( $result ) ) {
-				return $result;
-			}
-
-			// Try to get the tool instance to check if it implements custom sanitization.
-			if ( '' !== $tool_name ) {
-				$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-				$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
-				$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
-
-				if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
-					$tool = $this->registry->get_tool( $tool_slug );
-
-					// Check if tool implements custom LLM sanitization.
-					if ( $tool && $tool instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
-						return $tool->sanitize_for_llm( $result );
-					}
-				}
-			}
-
-			// Fall back to generic sanitization.
-			return $this->generic_sanitize_for_llm( $result );
-		}
-
-		/**
 		 * Generic sanitization for tools that don't implement custom rules.
 		 *
 		 * @param mixed $result Tool execution result.
@@ -8159,56 +7394,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $sanitized;
-		}
-
-		/**
-		 * Sanitize metadata fields by removing verbose data.
-		 *
-		 * @param array $metadata Metadata array.
-		 * @return array Cleaned metadata.
-		 */
-		protected function sanitize_metadata_for_llm( array $metadata ) {
-			// Remove verbose fields.
-			$fields_to_remove = array( 'headers', 'raw', 'response', 'request', 'retrieved_at', 'fetched_at', 'user_agent' );
-
-			foreach ( $fields_to_remove as $key ) {
-				unset( $metadata[ $key ] );
-			}
-
-			// Recursively clean nested metadata.
-			foreach ( $metadata as $key => $value ) {
-				if ( is_array( $value ) ) {
-					$metadata[ $key ] = $this->sanitize_metadata_for_llm( $value );
-				}
-			}
-
-			return $metadata;
-		}
-
-		/**
-		 * Sanitize content arrays by removing base64 data.
-		 *
-		 * @param array $content Content array.
-		 * @return array Cleaned content.
-		 */
-		protected function sanitize_content_for_llm( array $content ) {
-			// Remove base64-encoded data.
-			if ( isset( $content['encoding'] ) && 'base64' === $content['encoding'] ) {
-				unset( $content['data'] );
-				unset( $content['data_url'] );
-			}
-
-			// Keep only essential metadata.
-			$keep_keys = array( 'type', 'mime_type', 'encoding', 'size', 'url', 'title', 'format' );
-			$cleaned   = array();
-
-			foreach ( $keep_keys as $key ) {
-				if ( isset( $content[ $key ] ) ) {
-					$cleaned[ $key ] = $content[ $key ];
-				}
-			}
-
-			return $cleaned;
 		}
 
 		/**
