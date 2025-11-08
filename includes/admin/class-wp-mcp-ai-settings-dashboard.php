@@ -165,10 +165,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		private function get_active_tab() {
 			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
-			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
+			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
-				$active_tab = 'overview';
+				$active_tab = 'general';
 			}
 
 			return $active_tab;
