@@ -988,7 +988,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
 		$this->assertIsArray( $sanitized['provider_priority_list'] );
 		// Should return default list.
-		$this->assertEquals( array( 'openai', 'gemini', 'ollama', 'lm_studio' ), $sanitized['provider_priority_list'] );
+		$this->assertEquals( array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ), $sanitized['provider_priority_list'] );
 	}
 
 	/**
@@ -1005,7 +1005,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$sanitized = $settings_base->sanitize_settings( $input );
 
 		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
-		$this->assertEquals( 4, count( $sanitized['provider_priority_list'] ) );
+		$this->assertEquals( 5, count( $sanitized['provider_priority_list'] ) );
 		// Specified providers should be first.
 		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
 		$this->assertEquals( 'openai', $sanitized['provider_priority_list'][1] );

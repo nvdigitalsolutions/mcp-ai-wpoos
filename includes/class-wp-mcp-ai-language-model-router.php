@@ -30,6 +30,13 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $gemini_client;
 
 		/**
+		 * Anthropic client instance.
+		 *
+		 * @var WP_MCP_AI_Anthropic_Client
+		 */
+		protected $anthropic_client;
+
+		/**
 		 * Ollama client instance.
 		 *
 		 * @var WP_MCP_AI_Ollama_Client
@@ -50,12 +57,14 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param WP_MCP_AI_Gemini_Client    $gemini_client     Gemini client instance.
 		 * @param WP_MCP_AI_Ollama_Client    $ollama_client     Ollama client instance (optional).
 		 * @param WP_MCP_AI_LM_Studio_Client $lm_studio_client  LM Studio client instance (optional).
+		 * @param WP_MCP_AI_Anthropic_Client $anthropic_client  Anthropic client instance (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null ) {
 			$this->openai_client    = $openai_client;
 			$this->gemini_client    = $gemini_client;
 			$this->ollama_client    = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
 			$this->lm_studio_client = $lm_studio_client ? $lm_studio_client : new WP_MCP_AI_LM_Studio_Client();
+			$this->anthropic_client = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
 		}
 
 		/**
@@ -80,7 +89,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list  = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
 
 			$last_error = null;
 
@@ -139,6 +148,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 */
 		protected function route_to_provider( $provider, array $messages, array $options ) {
 			switch ( $provider ) {
+				case 'anthropic':
+					return $this->anthropic_client->create_chat_completion( $messages, $options );
+
 				case 'gemini':
 					return $this->gemini_client->create_chat_completion( $messages, $options );
 
