@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settin
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
 // Load all section implementations.
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-overview.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-general.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php';
@@ -46,6 +47,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 	// Wrap initialization in try-catch to prevent silent failures.
 	try {
 		// Register all sections with the registry.
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Overview() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
