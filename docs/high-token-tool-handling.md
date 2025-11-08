@@ -96,16 +96,24 @@ Navigate to **Settings → WP oOS → High Token Tool Handling**
   - **GPT-4o** - 128k tokens - OpenAI's highest capacity
   - **GPT-4 Turbo** - 128k tokens - Alternative OpenAI option
 
-**Note**: This is the global fallback setting. You can also configure per-model fallback settings in the Model Rate Limits section (see below).
+**Note**: This is the global fallback setting. You can also configure per-model fallback settings (see below).
 
-#### Per-Model Fallback Configuration (Advanced)
+#### Per-Model Fallback Configuration
 
-For advanced users with JetEngine installed, you can configure different fallback models for each AI model:
+You can configure different fallback models for each AI model directly in the settings page:
 
-1. Navigate to **WP oOS → Model Rate Limits** in the WordPress admin
-2. Edit the model you want to configure (e.g., `gpt-4o`)
-3. Set the **High-Capacity Fallback Model** field to your preferred fallback (e.g., `gemini-1.5-pro`)
-4. Save the model configuration
+1. Navigate to **Settings → WP oOS → High Token Tool Handling**
+2. Scroll to the **Per-Model Fallback Configuration** section
+3. For each model (e.g., `gpt-4o-mini`, `gpt-4o`), select a specific fallback from the dropdown
+4. Leave blank to use the global fallback setting
+5. Save settings
+
+**Available Models for Configuration:**
+- **GPT-4o Mini** - Tier 1: 200k TPM
+- **GPT-4o** - Tier 1: 30k TPM / Tier 5: 800k TPM
+- **GPT-4 Turbo** - Tier 1: 80k TPM
+- **O1 Preview** - Tier 1: 200k TPM
+- **O1 Mini** - Tier 1: 200k TPM
 
 **When to use per-model fallbacks:**
 - You have different OpenAI API tier levels for different models
@@ -113,10 +121,28 @@ For advanced users with JetEngine installed, you can configure different fallbac
 - You want to use different fallback strategies for different providers (e.g., OpenAI → Gemini, Claude → GPT-4o)
 - You need fine-grained control over model switching behavior
 
+**Example Configuration:**
+```
+Global Fallback: gemini-2.0-flash-exp
+gpt-4o-mini → gpt-4o (upgrade to full model when exceeds 200k TPM)
+gpt-4o → gemini-1.5-pro (switch to high-capacity when exceeds tier limit)
+gpt-4-turbo → (blank - uses global fallback)
+```
+
+#### Advanced: JetEngine CCT Configuration
+
+For advanced users with JetEngine installed, you can also configure fallback models for additional AI models in the Model Rate Limits CCT:
+
+1. Navigate to **WP oOS → Model Rate Limits** in the WordPress admin
+2. Edit the model you want to configure (e.g., `claude-3-opus`)
+3. Set the **High-Capacity Fallback Model** field to your preferred fallback
+4. Save the model configuration
+
 **Fallback Resolution Order:**
-1. Check if the specific model has a configured fallback in Model Rate Limits CCT
-2. If not, use the global "High-Capacity Fallback Model" setting
-3. If neither is configured, default to `gemini-2.0-flash-exp`
+1. Check if the specific model has a configured fallback in Settings page
+2. If not, check if the specific model has a configured fallback in Model Rate Limits CCT (JetEngine)
+3. If not, use the global "High-Capacity Fallback Model" setting
+4. If neither is configured, default to `gemini-2.0-flash-exp`
 
 #### Choosing a Fallback Model
 
@@ -209,11 +235,12 @@ Context:
   - fallback_model: "gemini-2.0-flash-exp"
   - required_tokens: 250000
   - fallback_tpm_limit: 1000000
-  - fallback_source: "per_model" or "global"
+  - fallback_source: "settings_per_model", "cct_per_model", or "global"
 ```
 
-**New in 1.1.0**: The log now includes `fallback_source` which indicates whether the fallback came from:
-- `per_model`: Model-specific fallback configured in Model Rate Limits CCT
+**New in 1.2.0**: The log now includes `fallback_source` which indicates where the fallback came from:
+- `settings_per_model`: Model-specific fallback configured in Settings → WP oOS
+- `cct_per_model`: Model-specific fallback configured in Model Rate Limits CCT (JetEngine)
 - `global`: Global fallback setting from Settings → WP oOS
 
 #### Agentic Model Switch Event
@@ -386,16 +413,22 @@ A: Use per-model configuration when:
 - You're mixing multiple AI providers and want custom fallback paths
 
 **Q: How do I set up per-model fallback?**
-A: With JetEngine installed:
+A: In the main settings page:
+1. Go to **Settings → WP oOS → High Token Tool Handling**
+2. Scroll to **Per-Model Fallback Configuration**
+3. For each model, select a fallback or leave blank to use global fallback
+4. Click **Save Changes**
+
+For additional models (with JetEngine):
 1. Go to **WP oOS → Model Rate Limits** in WordPress admin
-2. Edit the model you want to configure (or create a new one)
+2. Edit the model you want to configure
 3. Set the **High-Capacity Fallback Model** field
 4. Save the configuration
 
 The system will automatically use the per-model setting when available, falling back to the global setting if not configured.
 
 **Q: What if I don't have JetEngine installed?**
-A: The system will use the global "High-Capacity Fallback Model" setting for all models. This works perfectly fine for most users.
+A: You can still configure per-model fallbacks in Settings → WP oOS for the most common OpenAI models (gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini). JetEngine is only needed to configure additional models beyond these.
 
 ## Related Documentation
 
@@ -408,8 +441,15 @@ A: The system will use the global "High-Capacity Fallback Model" setting for all
 
 ## Changelog
 
+### Version 1.2.0
+- Added per-model fallback configuration UI in Settings → WP oOS
+- Support for configuring fallbacks for common OpenAI models (gpt-4o-mini, gpt-4o, gpt-4-turbo, o1-preview, o1-mini)
+- Updated fallback resolution order: Settings per-model → CCT per-model → Global → Default
+- Enhanced logging with three fallback source types: `settings_per_model`, `cct_per_model`, `global`
+- Works without JetEngine for basic per-model configuration
+
 ### Version 1.1.0
-- Added per-model fallback configuration support
+- Added per-model fallback configuration support via CCT
 - New `fallback_model` field in Model Rate Limits CCT for customizing fallback per model
 - Enhanced logging to show whether per-model or global fallback was used
 - Improved fallback resolution order: per-model → global → default
