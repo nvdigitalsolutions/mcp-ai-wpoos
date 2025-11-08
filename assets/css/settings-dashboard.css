@@ -210,3 +210,53 @@
 .wp-mcp-ai-settings-dashboard .status-indicator.status-error {
 	background-color: #d63638;
 }
+
+/* Custom Filters Section */
+.wp-mcp-ai-settings-dashboard .filter-group-header td {
+	padding: 0 !important;
+}
+
+.wp-mcp-ai-settings-dashboard .filter-group-title {
+	margin: 20px 0 10px 0;
+	padding-top: 20px;
+	border-top: 1px solid #dcdcde;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.wp-mcp-ai-settings-dashboard .filter-group-header:first-child .filter-group-title {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: none;
+}
+
+.wp-mcp-ai-settings-dashboard #section-custom_filters .form-table tr:not(.filter-group-header) {
+	background-color: #f9f9f9;
+	transition: background-color 0.2s ease;
+}
+
+.wp-mcp-ai-settings-dashboard #section-custom_filters .form-table tr:not(.filter-group-header):hover {
+	background-color: #f0f0f1;
+}
+
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="text"],
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="url"],
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="number"] {
+	max-width: 400px;
+}
+
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="text"]:placeholder-shown,
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="url"]:placeholder-shown,
+.wp-mcp-ai-settings-dashboard #section-custom_filters input[type="number"]:placeholder-shown {
+	font-style: italic;
+	color: #8c8f94;
+}
+
+.wp-mcp-ai-settings-dashboard #section-custom_filters .description strong {
+	color: #d63638;
+	font-weight: 600;
+}
+

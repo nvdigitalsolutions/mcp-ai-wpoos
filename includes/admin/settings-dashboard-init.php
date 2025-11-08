@@ -16,12 +16,16 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 
+// Load custom filters applicator.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-custom-filters-applicator.php';
+
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
 // Load all section implementations.
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-overview.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-general.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-tools.php';
@@ -49,6 +53,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Register all sections with the registry.
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Overview() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Custom_Filters() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
@@ -60,6 +65,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// This creates the top-level "WP oOS" menu item.
 		// Store the instance globally for potential access by other code.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new WP_MCP_AI_Settings_Dashboard();
+
+		// Initialize the custom filters applicator.
+		// This applies saved filter values to WordPress filters.
+		$GLOBALS['wp_mcp_ai_custom_filters_applicator'] = new WP_MCP_AI_Custom_Filters_Applicator();
 	} catch ( Throwable $e ) {
 		// Log the error if logging is enabled.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
