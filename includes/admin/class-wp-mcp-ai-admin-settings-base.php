@@ -68,13 +68,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				$value = $settings[ $key ];
 
 				// Sanitize based on key patterns and types.
-				if ( str_contains( $key, '_api_key' ) || str_contains( $key, '_api_token' ) || str_contains( $key, '_secret' ) ) {
+				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
+				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) ) {
 					$sanitized[ $key ] = sanitize_text_field( $value );
-				} elseif ( str_contains( $key, '_email' ) ) {
+				} elseif ( false !== strpos( $key, '_email' ) ) {
 					$sanitized[ $key ] = sanitize_email( $value );
-				} elseif ( str_contains( $key, '_url' ) || str_contains( $key, '_endpoint' ) ) {
+				} elseif ( false !== strpos( $key, '_url' ) || false !== strpos( $key, '_endpoint' ) ) {
 					$sanitized[ $key ] = esc_url_raw( $value );
-				} elseif ( str_contains( $key, '_model' ) ) {
+				} elseif ( false !== strpos( $key, '_model' ) ) {
 					$sanitized[ $key ] = sanitize_text_field( $value );
 				} elseif ( is_bool( $default_value ) ) {
 					$sanitized[ $key ] = ! empty( $value );
