@@ -292,22 +292,16 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									<thead>
 										<tr>
 											<th><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
+											<th><?php esc_html_e( 'Name', 'wp-mcp-ai' ); ?></th>
 											<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
-											<th><?php esc_html_e( 'Capability Required', 'wp-mcp-ai' ); ?></th>
 										</tr>
 									</thead>
 									<tbody>
 										<?php foreach ( $tools as $tool ) : ?>
 											<tr>
 												<td><code><?php echo esc_html( $tool->get_slug() ); ?></code></td>
+												<td><?php echo esc_html( $tool->get_name() ); ?></td>
 												<td><?php echo esc_html( wp_trim_words( $tool->get_description(), 15 ) ); ?></td>
-												<td>
-													<?php
-													$definition   = $tool->get_definition();
-													$required_cap = isset( $definition['required_capability'] ) ? $definition['required_capability'] : 'edit_posts';
-													?>
-													<code><?php echo esc_html( $required_cap ); ?></code>
-												</td>
 											</tr>
 										<?php endforeach; ?>
 									</tbody>
