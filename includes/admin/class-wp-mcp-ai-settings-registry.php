@@ -49,9 +49,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 				'title' => 'Tools & Features',
 				'icon'  => 'dashicons-admin-tools',
 			),
-			'integrations'   => array(
-				'title' => 'Integrations',
-				'icon'  => 'dashicons-admin-plugins',
+			'orchestration'  => array(
+				'title' => 'Orchestration',
+				'icon'  => 'dashicons-networking',
 			),
 			'token_manager'  => array(
 				'title' => 'Token Manager',
