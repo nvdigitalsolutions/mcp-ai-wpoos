@@ -188,6 +188,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 						$this->render_field( $key, $fields[ $key ] );
 					}
 				}
+
+				// Add button to Auth0 Setup Wizard after Auth0 Configuration fields.
+				if ( 'Auth0 Configuration' === $group_name ) {
+					?>
+					<tr>
+						<th scope="row"></th>
+						<td>
+							<p style="margin-top: 15px; margin-bottom: 0;">
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-auth0-setup' ) ); ?>" class="button button-secondary">
+									<?php esc_html_e( 'Open Auth0 Setup Wizard', 'wp-mcp-ai' ); ?>
+								</a>
+							</p>
+							<p class="description" style="margin-top: 8px;">
+								<?php esc_html_e( 'Use the 1-click setup wizard to automatically configure Auth0 from a bearer token.', 'wp-mcp-ai' ); ?>
+							</p>
+						</td>
+					</tr>
+					<?php
+				}
 			}
 		}
 
