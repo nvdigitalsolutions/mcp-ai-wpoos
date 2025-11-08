@@ -54,6 +54,69 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure the default model choices include comprehensive OpenAI models from fallback.
+	 */
+	public function test_default_model_choices_include_comprehensive_models() {
+		$admin_settings  = new WP_MCP_AI_Admin_Settings();
+		$reflection      = new ReflectionClass( $admin_settings );
+		$method          = $reflection->getMethod( 'get_openai_default_model_choices' );
+		$method->setAccessible( true );
+		$choices         = $method->invoke( $admin_settings );
+
+		// Verify we have more models than the original 8 hardcoded ones.
+		$this->assertGreaterThanOrEqual( 15, count( $choices ) );
+
+		// Verify some key models are present.
+		$this->assertArrayHasKey( 'gpt-5', $choices );
+		$this->assertArrayHasKey( 'gpt-5-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-4o', $choices );
+		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-4.1', $choices );
+		$this->assertArrayHasKey( 'gpt-4.1-mini', $choices );
+		$this->assertArrayHasKey( 'gpt-4.1-nano', $choices );
+		$this->assertArrayHasKey( 'gpt-4-turbo', $choices );
+		$this->assertArrayHasKey( 'gpt-4', $choices );
+		$this->assertArrayHasKey( 'gpt-3.5-turbo', $choices );
+		$this->assertArrayHasKey( 'o1-preview', $choices );
+		$this->assertArrayHasKey( 'o1-mini', $choices );
+	}
+
+	/**
+	 * Ensure the format_model_label method formats model names correctly.
+	 */
+	public function test_format_model_label_handles_common_patterns() {
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+		$reflection     = new ReflectionClass( $admin_settings );
+		$method         = $reflection->getMethod( 'format_model_label' );
+		$method->setAccessible( true );
+
+		// Test special cases.
+		$this->assertSame( 'GPT-5', $method->invoke( $admin_settings, 'gpt-5' ) );
+		$this->assertSame( 'GPT-4o', $method->invoke( $admin_settings, 'gpt-4o' ) );
+		$this->assertSame( 'GPT-4o Mini', $method->invoke( $admin_settings, 'gpt-4o-mini' ) );
+		$this->assertSame( 'GPT-4.1', $method->invoke( $admin_settings, 'gpt-4.1' ) );
+		$this->assertSame( 'GPT-4 Turbo', $method->invoke( $admin_settings, 'gpt-4-turbo' ) );
+		$this->assertSame( 'O1 Preview', $method->invoke( $admin_settings, 'o1-preview' ) );
+		$this->assertSame( 'O1 Mini', $method->invoke( $admin_settings, 'o1-mini' ) );
+	}
+
+	/**
+	 * Ensure get_openai_models_from_cct returns empty array when CCT is not available.
+	 */
+	public function test_get_openai_models_from_cct_returns_empty_without_jetengine() {
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+		$reflection     = new ReflectionClass( $admin_settings );
+		$method         = $reflection->getMethod( 'get_openai_models_from_cct' );
+		$method->setAccessible( true );
+
+		$models = $method->invoke( $admin_settings );
+
+		// Without JetEngine, should return empty array.
+		$this->assertIsArray( $models );
+		$this->assertEmpty( $models );
+	}
+
+	/**
 	 * Ensure defaults include the Crawl4AI configuration keys.
 	 */
 	public function test_default_settings_include_crawl4ai_configuration() {
