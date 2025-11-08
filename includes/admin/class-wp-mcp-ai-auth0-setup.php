@@ -29,6 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		public function __construct() {
 			add_action( 'admin_menu', array( $this, 'register_page' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_auto_configure_auth0', array( $this, 'handle_auto_configure' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_toggle_auth0_bridge', array( $this, 'handle_toggle_bridge' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		}
 
@@ -111,11 +112,21 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 								</td>
 							</tr>
 							<tr>
-								<th><?php esc_html_e( 'Bridge Status', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Enable Auth0 GitHub Bridge', 'wp-mcp-ai' ); ?></th>
 								<td>
-									<span class="status-badge <?php echo $bridge_enabled ? 'enabled' : 'disabled'; ?>">
-										<?php echo $bridge_enabled ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
-									</span>
+									<label for="enable-auth0-github-bridge">
+										<input 
+											type="checkbox" 
+											id="enable-auth0-github-bridge" 
+											name="enable_auth0_github_bridge" 
+											value="1" 
+											<?php checked( $bridge_enabled ); ?>
+										/>
+										<?php esc_html_e( 'Resolve Auth0 GitHub identities into WordPress users', 'wp-mcp-ai' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Maps Auth0 GitHub identities to WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' ); ?>
+									</p>
 								</td>
 							</tr>
 						</table>
@@ -334,6 +345,40 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 					'message'  => __( 'Auth0 domain configured successfully!', 'wp-mcp-ai' ),
 					'domain'   => $domain,
 					'audience' => ! empty( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '',
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to toggle the Auth0 GitHub bridge.
+		 */
+		public function handle_toggle_bridge() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp-mcp-ai-auth0-setup', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get enabled state from request.
+			$enabled = ! empty( $_POST['enabled'] );
+
+			// Update settings.
+			$settings                              = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$settings['enable_auth0_github_bridge'] = $enabled;
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+			wp_send_json_success(
+				array(
+					'message' => $enabled
+						? __( 'Auth0 GitHub bridge enabled successfully!', 'wp-mcp-ai' )
+						: __( 'Auth0 GitHub bridge disabled successfully!', 'wp-mcp-ai' ),
+					'enabled' => $enabled,
 				)
 			);
 		}

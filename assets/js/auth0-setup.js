@@ -12,6 +12,44 @@
 		const $currentDomain = $('#current-domain');
 		const $currentAudience = $('#current-audience');
 		const $auth0DashboardLink = $('#open-auth0-dashboard');
+		const $bridgeCheckbox = $('#enable-auth0-github-bridge');
+
+		// Handle checkbox toggle
+		$bridgeCheckbox.on('change', function() {
+			const enabled = $(this).is(':checked');
+
+			// Make AJAX request to save the setting
+			$.ajax({
+				url: wpMcpAiAuth0Setup.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_toggle_auth0_bridge',
+					nonce: wpMcpAiAuth0Setup.nonce,
+					enabled: enabled ? '1' : '0'
+				},
+				success: function(response) {
+					if (response.success) {
+						// Show a brief success message
+						const $notice = $('<div class="notice notice-success is-dismissible"><p>' + response.data.message + '</p></div>');
+						$('.wp-mcp-ai-setup-wizard').prepend($notice);
+						setTimeout(function() {
+							$notice.fadeOut(function() {
+								$(this).remove();
+							});
+						}, 3000);
+					} else {
+						// Revert checkbox on error
+						$bridgeCheckbox.prop('checked', !enabled);
+						alert(response.data.message || 'Failed to update setting.');
+					}
+				},
+				error: function() {
+					// Revert checkbox on error
+					$bridgeCheckbox.prop('checked', !enabled);
+					alert('Failed to update setting. Please try again.');
+				}
+			});
+		});
 
 		// Auto-configure from token
 		$autoConfigureBtn.on('click', function(e) {
