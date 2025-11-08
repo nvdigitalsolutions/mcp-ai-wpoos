@@ -696,6 +696,17 @@ Complete these after installation to unlock every integration point:
 
 A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, or a local Ollama instance while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
+### Provider Priority List & Automatic Fallback
+
+The plugin includes an intelligent provider priority system that automatically tries alternative providers when the primary one fails or is unavailable. In **Settings → WP oOS**, you can:
+
+- **Drag and drop** providers to set your preferred order
+- **Automatic fallback** - if the first provider fails, the system tries the next one
+- **Visual management** - see all available providers (OpenAI, Gemini, Ollama, LM Studio) in one sortable list
+- **Flexible prioritization** - adjust based on cost, performance, or availability needs
+
+The first provider in the list serves as the default. If any provider returns an error, the router automatically attempts the next provider in the list until one succeeds. This ensures maximum uptime and resilience without manual intervention. All fallback attempts are logged for debugging and monitoring.
+
 ### Local AI with Ollama
 
 The Ollama provider enables privacy-focused, cost-free AI processing by connecting to a local Ollama or LM Studio instance running on your server or development machine. This is ideal for:
