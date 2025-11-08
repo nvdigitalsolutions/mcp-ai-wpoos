@@ -146,6 +146,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content .= '<li>' . esc_html__( 'Tool execution with visual feedback', 'wp-mcp-ai' ) . '</li>';
 			$content .= '<li>' . esc_html__( 'Markdown rendering and code syntax highlighting', 'wp-mcp-ai' ) . '</li>';
 			$content .= '</ul>';
+			if ( wp_mcp_ai_is_base_version() ) {
+				$content .= '<p style="margin-top: 1rem; background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem;"><strong>' . esc_html__( 'Note:', 'wp-mcp-ai' ) . '</strong> ' . esc_html__( 'Elementor widgets are currently disabled (Base Version mode). To enable them, add this to wp-config.php:', 'wp-mcp-ai' ) . '<br><code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block; margin-top: 0.5rem;">define( \'WP_MCP_AI_BASE_VERSION\', false );</code></p>';
+			}
 			$content .= '</div>';
 			
 			return $content;
