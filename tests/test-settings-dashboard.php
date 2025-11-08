@@ -54,8 +54,44 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'authentication', $tabs );
 		$this->assertArrayHasKey( 'tools', $tabs );
 		$this->assertArrayHasKey( 'integrations', $tabs );
+		$this->assertArrayHasKey( 'token_manager', $tabs );
 		$this->assertArrayHasKey( 'security', $tabs );
 		$this->assertArrayHasKey( 'advanced', $tabs );
+	}
+
+	/**
+	 * Test that token manager tab is correctly configured.
+	 */
+	public function test_token_manager_tab_is_configured() {
+		$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+
+		$this->assertArrayHasKey( 'token_manager', $tabs );
+		$this->assertEquals( 'Token Manager', $tabs['token_manager']['title'] );
+		$this->assertEquals( 'dashicons-chart-bar', $tabs['token_manager']['icon'] );
+	}
+
+	/**
+	 * Test that token manager section is registered.
+	 */
+	public function test_token_manager_section_is_registered() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'token_manager' );
+
+		$this->assertInstanceOf( 'WP_MCP_AI_Section_Token_Manager', $section );
+		$this->assertEquals( 'token_manager', $section->get_id() );
+		$this->assertEquals( 'token_manager', $section->get_tab() );
+		$this->assertEquals( 'Token Usage Manager', $section->get_title() );
+	}
+
+	/**
+	 * Test that token manager section has proper fields.
+	 */
+	public function test_token_manager_section_fields() {
+		$section = new WP_MCP_AI_Section_Token_Manager();
+		$fields  = $section->get_fields();
+
+		// Token manager is a custom section with no standard fields.
+		$this->assertIsArray( $fields );
+		$this->assertEmpty( $fields );
 	}
 
 	/**

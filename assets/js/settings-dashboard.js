@@ -14,6 +14,7 @@
 		init: function() {
 			this.bindEvents();
 			this.initTooltips();
+			this.initTokenManager();
 		},
 
 		/**
@@ -25,6 +26,163 @@
 
 			// Tab switching
 			$('.nav-tab').on('click', this.handleTabSwitch.bind(this));
+		},
+
+		/**
+		 * Initialize token manager functionality.
+		 */
+		initTokenManager: function() {
+			// Reset user token usage
+			$('.wp-mcp-ai-reset-user-usage').on('click', this.handleResetUserUsage.bind(this));
+
+			// Reset all users' token usage
+			$('#wp-mcp-ai-reset-all-usage').on('click', this.handleResetAllUsage.bind(this));
+
+			// View user details
+			$('.wp-mcp-ai-view-user-details').on('click', this.handleViewUserDetails.bind(this));
+
+			// Save all tool limits
+			$('#wp-mcp-ai-save-all-tool-limits').on('click', this.handleSaveToolLimits.bind(this));
+		},
+
+		/**
+		 * Handle reset user token usage.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleResetUserUsage: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const userId = $button.data('user-id');
+			const userName = $button.data('user-name');
+
+			if (!confirm('Are you sure you want to reset token usage for ' + userName + '? This action cannot be undone.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Resetting...');
+
+			$.ajax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_reset_user_token_usage',
+					nonce: wpMcpAiDashboard.nonce,
+					user_id: userId
+				},
+				success: function(response) {
+					if (response.success) {
+						window.location.reload();
+					} else {
+						alert(response.data.message || 'Failed to reset user token usage.');
+						$button.prop('disabled', false).text('Reset');
+					}
+				},
+				error: function() {
+					alert('An error occurred while resetting user token usage.');
+					$button.prop('disabled', false).text('Reset');
+				}
+			});
+		},
+
+		/**
+		 * Handle reset all users' token usage.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleResetAllUsage: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+
+			if (!confirm('Are you sure you want to reset token usage for ALL users? This action cannot be undone.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Resetting...');
+
+			$.ajax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_reset_all_token_usage',
+					nonce: wpMcpAiDashboard.nonce
+				},
+				success: function(response) {
+					if (response.success) {
+						window.location.reload();
+					} else {
+						alert(response.data.message || 'Failed to reset all token usage.');
+						$button.prop('disabled', false).text('Reset All Users\' Token Usage');
+					}
+				},
+				error: function() {
+					alert('An error occurred while resetting token usage.');
+					$button.prop('disabled', false).text('Reset All Users\' Token Usage');
+				}
+			});
+		},
+
+		/**
+		 * Handle view user details toggle.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleViewUserDetails: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const userId = $button.data('user-id');
+			const $detailsRow = $('#user-details-' + userId);
+
+			if ($detailsRow.is(':visible')) {
+				$detailsRow.hide();
+				$button.text('Details');
+			} else {
+				$detailsRow.show();
+				$button.text('Hide Details');
+			}
+		},
+
+		/**
+		 * Handle save tool limits.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleSaveToolLimits: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const limits = {};
+
+			$('.wp-mcp-ai-tool-limit-input').each(function() {
+				const $input = $(this);
+				limits[$input.data('tool-slug')] = $input.val();
+			});
+
+			$button.prop('disabled', true).text('Saving...');
+
+			$.ajax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_save_tool_limits',
+					nonce: wpMcpAiDashboard.nonce,
+					limits: limits
+				},
+				success: function(response) {
+					if (response.success) {
+						$button.text('Saved!');
+						setTimeout(function() {
+							window.location.reload();
+						}, 1000);
+					} else {
+						alert(response.data.message || 'Failed to save tool limits.');
+						$button.prop('disabled', false).text('Save All Tool Limits');
+					}
+				},
+				error: function() {
+					alert('An error occurred while saving tool limits.');
+					$button.prop('disabled', false).text('Save All Tool Limits');
+				}
+			});
 		},
 
 		/**

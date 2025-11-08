@@ -53,6 +53,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 				'title' => 'Integrations',
 				'icon'  => 'dashicons-admin-plugins',
 			),
+			'token_manager'  => array(
+				'title' => 'Token Manager',
+				'icon'  => 'dashicons-chart-bar',
+			),
 			'security'       => array(
 				'title' => 'Security',
 				'icon'  => 'dashicons-shield',
