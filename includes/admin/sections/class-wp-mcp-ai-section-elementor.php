@@ -146,7 +146,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content .= '<li>' . esc_html__( 'Tool execution with visual feedback', 'wp-mcp-ai' ) . '</li>';
 			$content .= '<li>' . esc_html__( 'Markdown rendering and code syntax highlighting', 'wp-mcp-ai' ) . '</li>';
 			$content .= '</ul>';
-			$content .= '<p style="margin-top: 1rem;"><em>' . esc_html__( 'Note: Elementor widgets are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'wp-mcp-ai' ) . '</em></p>';
 			$content .= '</div>';
 			
 			return $content;

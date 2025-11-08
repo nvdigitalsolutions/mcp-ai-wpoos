@@ -166,10 +166,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 							</div>
 						</div>
 
-						<div style="background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem; margin-top: 1.5rem;">
-							<p style="margin: 0;"><strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong> <?php esc_html_e( 'Elementor widgets are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'wp-mcp-ai' ); ?></p>
-						</div>
-
 						<?php submit_button( __( 'Save Elementor Settings', 'wp-mcp-ai' ) ); ?>
 					</form>
 
