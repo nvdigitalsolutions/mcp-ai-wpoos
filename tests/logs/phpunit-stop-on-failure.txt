@@ -1,0 +1,26 @@
+
+Warning: Constant WP_LANG_DIR already defined in /workspace/wp-mcp-ai/vendor/wp-phpunit/wp-phpunit/includes/bootstrap.php on line 218
+Installing...
+Running as single site... To run multisite, use -c tests/phpunit/multisite.xml
+
+Notice: Function _load_textdomain_just_in_time was called <strong>incorrectly</strong>. Translation loading for the <code>wp-mcp-ai</code> domain was triggered too early. This is usually an indicator for some code in the plugin or theme running too early. Translations should be loaded at the <code>init</code> action or later. Please see <a href="https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/">Debugging in WordPress</a> for more information. (This message was added in version 6.7.0.) in /workspace/wp-mcp-ai/.codex-wordpress/wordpress/wp-includes/functions.php on line 6121
+Not running ajax tests. To execute these, use --group ajax.
+Not running ms-files tests. To execute these, use --group ms-files.
+Not running external-http tests. To execute these, use --group external-http.
+PHPUnit 9.6.29 by Sebastian Bergmann and contributors.
+
+.......................................F
+
+Time: 00:02.342, Memory: 64.50 MB
+
+There was 1 failure:
+
+1) WP_MCP_AI_Admin_Settings_Test::test_gmail_section_renders_connect_button_with_credentials
+Failed asserting that '		<p>Provide OAuth credentials for the Gmail API. These are used by assistants to search email on your behalf.</p>\n
+						<p class="description">Save your Gmail client ID and secret, then reload this page to enable the Google login button.</p>\n
+								' contains "Connect Gmail Account".
+
+/workspace/wp-mcp-ai/tests/test-admin-settings.php:267
+
+FAILURES!
+Tests: 40, Assertions: 140, Failures: 1.
