@@ -1,0 +1,327 @@
+=== Code Inventory Report ===
+Generated: Sat Nov  8 11:57:54 UTC 2025
+
+Total PHP Files:
+333
+
+Total Lines of Code:
+ 138188 total
+
+Total Classes:
+270
+
+Total Functions:
+6
+
+Total Methods (public):
+2319
+
+Total Methods (protected):
+765
+
+Total Methods (private):
+76
+
+=== Three Main Classes - Method Count ===
+
+File: includes/class-wp-mcp-ai-rest.php
+  Public methods: 24
+  Protected methods: 98
+  Private methods: 1
+  Total methods: 123
+
+File: includes/admin/class-wp-mcp-ai-admin-settings.php
+  Public methods: 109
+  Protected methods: 15
+  Private methods: 15
+  Total methods: 139
+
+File: includes/assistants/class-wp-mcp-ai-assistant-cpt.php
+  Public methods: 14
+  Protected methods: 10
+  Private methods: 0
+  Total methods: 24
+
+=== Detailed Class Inventory ===
+./includes/admin/class-wp-mcp-ai-admin-cron-manager.php: WP_MCP_AI_Admin_Cron_Manager {
+./includes/class-wp-mcp-ai-ai-peer-cpt.php: WP_MCP_AI_AI_Peer_CPT {
+./includes/class-wp-mcp-ai-chat-transcript-recorder.php: WP_MCP_AI_Chat_Transcript_Recorder {
+./includes/class-wp-mcp-ai-chatkit-integration.php: WP_MCP_AI_ChatKit_Integration {
+./includes/class-wp-mcp-ai-elementor-integration.php: WP_MCP_AI_Elementor_Integration {
+./includes/class-wp-mcp-ai-enhanced-openai-client.php: WP_MCP_AI_Enhanced_OpenAI_Client {
+./includes/class-wp-mcp-ai-federation-directory-rest.php: WP_MCP_AI_Federation_Directory_REST {
+./includes/class-wp-mcp-ai-federation-peer-verifier.php: WP_MCP_AI_Federation_Peer_Verifier {
+./includes/class-wp-mcp-ai-federation-settings.php: WP_MCP_AI_Federation_Settings {
+./includes/class-wp-mcp-ai-federation-wellknown.php: WP_MCP_AI_Federation_WellKnown {
+./includes/class-wp-mcp-ai-federation.php: WP_MCP_AI_Federation {
+./includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php: WP_MCP_AI_JetEngine_AI_Peers_CCT {
+./includes/class-wp-mcp-ai-jetengine-assistants-cct.php: WP_MCP_AI_JetEngine_Assistants_CCT {
+./includes/class-wp-mcp-ai-jetengine-cct.php: WP_MCP_AI_JetEngine_CCT {
+./includes/class-wp-mcp-ai-jetengine-endpoint-report.php: WP_MCP_AI_JetEngine_Endpoint_Report {
+./includes/class-wp-mcp-ai-jetengine-tool-handlers.php: WP_MCP_AI_JetEngine_Tool_Handlers {
+./includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php: WP_MCP_AI_JetFormBuilder_Tool_Handlers {
+./includes/class-wp-mcp-ai-job-notifier-rest.php: WP_MCP_AI_Job_Notifier_REST {
+./includes/class-wp-mcp-ai-job-notifier.php: WP_MCP_AI_Job_Notifier {
+./includes/class-wp-mcp-ai-job-queue-manager.php: WP_MCP_AI_Job_Queue_Manager {
+./includes/class-wp-mcp-ai-mesh-router.php: WP_MCP_AI_Mesh_Router {
+./includes/class-wp-mcp-ai-model-rate-limits-cct.php: WP_MCP_AI_Model_Rate_Limits_CCT {
+./includes/class-wp-mcp-ai-model-selector.php: WP_MCP_AI_Model_Selector {
+./includes/class-wp-mcp-ai-proxy-utils.php: WP_MCP_AI_Proxy_Utils {
+./includes/class-wp-mcp-ai-rate-limit-manager.php: WP_MCP_AI_Rate_Limit_Manager {
+./includes/class-wp-mcp-ai-remote-tester.php: WP_MCP_AI_Remote_Tester {
+./includes/class-wp-mcp-ai-request-context.php: WP_MCP_AI_Request_Context {
+./includes/class-wp-mcp-ai-shortcode.php: WP_MCP_AI_Shortcode {
+./includes/class-wp-mcp-ai-sse-stream.php: WP_MCP_AI_SSE_Stream {
+./includes/class-wp-mcp-ai-token-budget-manager.php: WP_MCP_AI_Token_Budget_Manager {
+./includes/class-wp-mcp-ai-tool-token-limits.php: WP_MCP_AI_Tool_Token_Limits {
+./includes/class-wp-mcp-ai-usage-tracker.php: WP_MCP_AI_Usage_Tracker {
+./includes/crawler/class-wp-mcp-ai-crawler.php: WP_MCP_AI_Crawler {
+./includes/elementor/class-wp-mcp-ai-elementor-assistant-base-knowledge-widget.php: WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-assistant-defaults-widget.php: WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-assistant-prompt-shortcuts-widget.php: WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-assistant-tools-widget.php: WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-chat-faq-widget.php: WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php: WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-chat-usage-timer-widget.php: WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php: WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php: WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php: WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-tool-matrix-widget.php: WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-capability-widget.php: WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-chats-widget.php: WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-dashboard-user-files-widget.php: WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_Base {
+./includes/elementor/class-wp-mcp-ai-elementor-widget.php: WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
+./includes/tools/class-wp-mcp-ai-tool-check-site-security.php: WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-check-wp-cli.php: WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-count-tokens.php: WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-crawl4ai-price-lookup.php: WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-create-cron-job.php: WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-create-google-calendar-event.php: WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-create-woo-product.php: WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-create-wpcode-snippet.php: WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-delete-cron-job.php: WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php: WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php: WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+./includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php: WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+./includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php: WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-generate-simple-jwt-token.php: WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-cron-job.php: WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php: WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-environment-status.php: WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-facebook-instagram-insights.php: WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php: WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-google-analytics-report.php: WP_MCP_AI_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-google-business-insights.php: WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-import-duty.php: WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php: WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php: WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php: WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-linkedin-insights.php: WP_MCP_AI_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php: WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-open-meteo-forecast.php: WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-quickbooks-report.php: WP_MCP_AI_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-rankmath-seo.php: WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-recent-posts.php: WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-site-health.php: WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-site-summary.php: WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-system-logs.php: WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-tiktok-insights.php: WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-update-status.php: WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-user-info.php: WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-woo-products.php: WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php: WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-invoke-jetengine-route.php: WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-list-cron-jobs.php: WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-list-jetengine-routes.php: WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php: WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php: WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-post-facebook-instagram.php: WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-post-google-business-update.php: WP_MCP_AI_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-post-linkedin-update.php: WP_MCP_AI_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-post-tiktok-video.php: WP_MCP_AI_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-probe-chat.php: WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+./includes/tools/class-wp-mcp-ai-tool-probe-remote-mcp.php: WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+./includes/tools/class-wp-mcp-ai-tool-purge-cache.php: WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-purge-cloudflare-cache.php: WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-purge-varnish-cache.php: WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php: WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-query-remote-site.php: WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-reliefweb-reports.php: WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php: WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+./includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php: WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-save-post.php: WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-schedule-notify-sms.php: WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-search-attachments.php: WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-search-content.php: WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-search-gmail.php: WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-send-group-email.php: WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-send-mailjet-email.php: WP_MCP_AI_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php: WP_MCP_AI_Tool_Send_Telegram_Message implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-send-whatsapp-message.php: WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php: WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php: WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-vision-object-localization.php: WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-vision-product-search.php: WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
+./includes/tools/class-wp-mcp-ai-tool-web-search.php: WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface {
+./tests/crawler/test-crawl4ai-job-manager.php: WP_MCP_AI_Crawler_Job_Manager_Test extends WP_UnitTestCase {
+./tests/memory/test-memory-streaming.php: WP_MCP_AI_Memory_Streaming_Test extends WP_UnitTestCase {
+./tests/rest-api/test-rest-search-content-tool.php: WP_MCP_AI_REST_Search_Content_Tool_Test extends WP_Test_REST_TestCase {
+./tests/rest-api/test-rest-tool-slug-normalization.php: WP_MCP_AI_REST_Tool_Slug_Normalization_Test extends WP_Test_REST_TestCase {
+./tests/rest-api/test-rest-tool-slug-normalization.php: WP_MCP_AI_REST_Tool_Slug_Normalization_Test_Stub_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/rest/test-auth0-github-integration.php: WP_MCP_AI_Auth0_Github_Integration_Test extends WP_UnitTestCase {
+./tests/rest/test-wordpress-gravatar-integration.php: WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
+./tests/test-admin-hook-suffixes.php: Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
+./tests/test-admin-settings.php: WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
+./tests/test-advanced-section-logging.php: Test_Advanced_Section_Logging extends WP_UnitTestCase {
+./tests/test-agentic-loop-tpm-validation.php: WP_MCP_AI_Agentic_Loop_TPM_Validation_Test extends WP_UnitTestCase {
+./tests/test-agentic-tool-loop.php: WP_MCP_AI_Agentic_Tool_Loop_Test extends WP_UnitTestCase {
+./tests/test-agentic-tool-parameters.php: WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
+./tests/test-ai-peer-cct-sync.php: WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
+./tests/test-assistant-memory.php: WP_MCP_AI_Assistant_Memory_Test extends WP_UnitTestCase {
+./tests/test-assistant-prompt-shortcuts.php: Test_Assistant_Prompt_Shortcuts extends WP_UnitTestCase {
+./tests/test-assistant-prompt-shortcuts.php: WP_MCP_AI_Test_Prompt_Shortcut_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+./tests/test-assistant-tools.php: WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
+./tests/test-auth0-bridge-toggle.php: Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
+./tests/test-auth0-setup-menu-registration.php: Test_Auth0_Setup_Menu_Registration extends WP_UnitTestCase {
+./tests/test-base-version.php: WP_MCP_AI_Base_Version_Test extends WP_UnitTestCase {
+./tests/test-bearer-token-privilege-escalation.php: WP_MCP_AI_Bearer_Token_Privilege_Escalation_Test extends WP_UnitTestCase {
+./tests/test-chat-capability.php: WP_MCP_AI_Chat_Capability_Test extends WP_UnitTestCase {
+./tests/test-chat-performance-optimizations.php: WP_MCP_AI_Test_Chat_Performance_Optimizations extends WP_UnitTestCase {
+./tests/test-chat-transcript-filtering.php: WP_MCP_AI_Chat_Transcript_Filtering_Test extends WP_UnitTestCase {
+./tests/test-chat-transcripts.php: WP_MCP_AI_Chat_Transcripts_Test extends WP_UnitTestCase {
+./tests/test-chatkit-integration.php: Test_ChatKit_Integration extends WP_UnitTestCase {
+./tests/test-check-site-security-tool.php: Test_Check_Site_Security_Tool extends WP_UnitTestCase {
+./tests/test-count-tokens-tool.php: WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
+./tests/test-cpt-cct-sync.php: WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
+./tests/test-crawl4ai-json-extraction.php: WP_MCP_AI_Crawl4AI_JSON_Extraction_Test extends WP_UnitTestCase {
+./tests/test-crawl4ai-local-api.php: WP_MCP_AI_Crawl4AI_Local_API_Test extends WP_Test_REST_TestCase {
+./tests/test-crawl4ai-price-lookup-tool.php: WP_MCP_AI_Crawl4AI_Price_Lookup_Tool_Test extends WP_UnitTestCase {
+./tests/test-crawl4ai-tool.php: WP_MCP_AI_Crawl4AI_Tool_Test extends WP_UnitTestCase {
+./tests/test-crawler-coordinator.php: WP_MCP_AI_Crawler_Tests extends WP_UnitTestCase {
+./tests/test-create-cron-job-tool.php: WP_MCP_AI_Create_Cron_Job_Tool_Test extends WP_UnitTestCase {
+./tests/test-credentials.php: WP_MCP_AI_Credentials_Tests extends WP_UnitTestCase {
+./tests/test-cron-management-tools.php: WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
+./tests/test-cron-manager.php: WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
+./tests/test-dashboard-diagnostic-globals.php: WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
+./tests/test-dynamic-configuration-filters.php: WP_MCP_AI_Dynamic_Configuration_Filters_Test extends WP_UnitTestCase {
+./tests/test-elementor-ajax-no-buffering.php: WP_MCP_AI_Elementor_AJAX_No_Buffering_Test extends WP_UnitTestCase {
+./tests/test-elementor-debug-mode.php: WP_MCP_AI_Elementor_Debug_Mode_Test extends WP_UnitTestCase {
+./tests/test-elementor-editor-no-buffering.php: WP_MCP_AI_Elementor_Editor_No_Buffering_Test extends WP_UnitTestCase {
+./tests/test-elementor-output-buffering.php: WP_MCP_AI_Elementor_Output_Buffering_Test extends WP_UnitTestCase {
+./tests/test-elementor-tool.php: WP_MCP_AI_Elementor_Tool_Availability_Test extends WP_UnitTestCase {
+./tests/test-elementor-tool.php: WP_MCP_AI_Elementor_Tool_Execution_Test extends WP_UnitTestCase {
+./tests/test-elementor-widget-loading.php: WP_MCP_AI_Elementor_Widget_Loading_Test extends WP_UnitTestCase {
+./tests/test-elementor-widget-rendering.php: WP_MCP_AI_Elementor_Widget_Rendering_Test extends WP_UnitTestCase {
+./tests/test-enhanced-openai-client-stabilization.php: Test_WP_MCP_AI_Enhanced_OpenAI_Client_Stabilization extends WP_UnitTestCase {
+./tests/test-federation.php: WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
+./tests/test-gdacs-tool.php: Test_GDACS_Tool extends WP_UnitTestCase {
+./tests/test-gemini-client.php: WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
+./tests/test-gemini-image-tool.php: WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
+./tests/test-generate-auth0-token-tool.php: Test_WP_MCP_AI_Tool_Generate_Auth0_Token extends WP_UnitTestCase {
+./tests/test-google-calendar-tool.php: WP_MCP_AI_Google_Calendar_Tool_Test extends WP_UnitTestCase {
+./tests/test-http-logging.php: WP_MCP_AI_HTTP_Logging_Tests extends WP_UnitTestCase {
+./tests/test-http.php: WP_MCP_AI_HTTP_Tests extends WP_UnitTestCase {
+./tests/test-i18n.php: WP_MCP_AI_I18N_Test extends WP_UnitTestCase {
+./tests/test-jetengine-assistants-cct.php: WP_MCP_AI_JetEngine_Assistants_CCT_Test extends WP_UnitTestCase {
+./tests/test-jetengine-data-stores-activation.php: WP_MCP_AI_JetEngine_Data_Stores_Activation_Test extends WP_UnitTestCase {
+./tests/test-jetengine-tool-handlers.php: WP_MCP_AI_JetEngine_Tool_Handlers_Test extends WP_UnitTestCase {
+./tests/test-jetformbuilder-tool-handlers.php: WP_MCP_AI_JetFormBuilder_Tool_Handlers_Test extends WP_UnitTestCase {
+./tests/test-jetformbuilder-tools.php: WP_MCP_AI_JetFormBuilder_Tools_Test extends WP_UnitTestCase {
+./tests/test-job-notifier.php: Test_Job_Notifier extends WP_UnitTestCase {
+./tests/test-job-queue-manager.php: WP_MCP_AI_Job_Queue_Manager_Test extends WP_UnitTestCase {
+./tests/test-language-model-router.php: WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
+./tests/test-lm-studio-client.php: WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
+./tests/test-logger.php: WP_MCP_AI_Logger_Test extends WP_UnitTestCase {
+./tests/test-mailjet-tool.php: WP_MCP_AI_Send_Mailjet_Email_Tool_Test extends WP_UnitTestCase {
+./tests/test-mcp-client-compatibility.php: WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
+./tests/test-mcp-client-configurations.php: WP_MCP_AI_MCP_Client_Configuration_Test extends WP_UnitTestCase {
+./tests/test-mcp-diagnostic-endpoints.php: WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
+./tests/test-mcp-endpoint-validation.php: WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
+./tests/test-mcp-endpoint.php: WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
+./tests/test-mcp-protocol-fixes.php: WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
+./tests/test-mcp-tools-list.php: WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
+./tests/test-mesh-networking.php: Test_Mesh_Networking extends WP_UnitTestCase {
+./tests/test-mesh-router.php: Test_Mesh_Router extends WP_UnitTestCase {
+./tests/test-model-rate-limits-cct.php: WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
+./tests/test-model-selector.php: Test_WP_MCP_AI_Model_Selector extends WP_UnitTestCase {
+./tests/test-multisite-support.php: WP_MCP_AI_Test_Multisite_Support extends WP_UnitTestCase {
+./tests/test-nefarious-usage-monitor.php: WP_MCP_AI_Nefarious_Usage_Monitor_Test extends WP_UnitTestCase {
+./tests/test-ollama-client.php: WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
+./tests/test-open-meteo-forecast-tool.php: Test_Open_Meteo_Forecast_Tool extends WP_UnitTestCase {
+./tests/test-openai-client.php: WP_MCP_AI_Force_Chat_Client extends WP_MCP_AI_OpenAI_Client {
+./tests/test-openai-client.php: WP_MCP_AI_Force_Responses_Client extends WP_MCP_AI_OpenAI_Client {
+./tests/test-openai-client.php: WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
+./tests/test-openai-external-action-tool.php: WP_MCP_AI_OpenAI_External_Action_Tool_Test extends WP_UnitTestCase {
+./tests/test-openai-image-attachment-detection.php: WP_MCP_AI_OpenAI_Client_Test_Helper extends WP_MCP_AI_OpenAI_Client {
+./tests/test-openai-image-attachment-detection.php: WP_MCP_AI_OpenAI_Image_Attachment_Detection_Test extends WP_UnitTestCase {
+./tests/test-openai-image-tool.php: WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
+./tests/test-openai-multi-tool-calls.php: WP_MCP_AI_OpenAI_Multi_Tool_Calls_Test extends WP_UnitTestCase {
+./tests/test-openai-speech-tool.php: WP_MCP_AI_OpenAI_Speech_Tool_Test extends WP_UnitTestCase {
+./tests/test-openai-transcription-tool.php: WP_MCP_AI_OpenAI_Transcription_Tool_Test extends WP_UnitTestCase {
+./tests/test-per-model-fallback.php: Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
+./tests/test-proxy-utils.php: WP_MCP_AI_Proxy_Utils_Tests extends WP_UnitTestCase {
+./tests/test-rate-limit-manager.php: WP_MCP_AI_Rate_Limit_Manager_Test extends WP_UnitTestCase {
+./tests/test-rate-limit-stabilization.php: Test_WP_MCP_AI_Rate_Limit_Manager_Stabilization extends WP_UnitTestCase {
+./tests/test-remote-tester.php: WP_MCP_AI_Remote_Tester_Test extends WP_UnitTestCase {
+./tests/test-request-context.php: WP_MCP_AI_Request_Context_Tests extends WP_UnitTestCase {
+./tests/test-resource-manager.php: WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
+./tests/test-response-attachments.php: WP_MCP_AI_Response_Attachments_Tests extends WP_UnitTestCase {
+./tests/test-rest-assistant-access.php: WP_MCP_AI_Dummy_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/test-rest-assistant-access.php: WP_MCP_AI_REST_Assistant_Access_Test extends WP_UnitTestCase {
+./tests/test-rest-assistant-directory.php: WP_MCP_AI_REST_Assistant_Directory_Test extends WP_UnitTestCase {
+./tests/test-rest-authentication.php: WP_MCP_AI_REST_Authentication_Test extends WP_UnitTestCase {
+./tests/test-rest-chat-authentication-modes.php: WP_MCP_AI_REST_Chat_Authentication_Modes_Test extends WP_UnitTestCase {
+./tests/test-rest-chat-error-logging.php: WP_MCP_AI_REST_Chat_Error_Logging_Test extends WP_UnitTestCase {
+./tests/test-rest-chat-event-stream.php: WP_MCP_AI_REST_Chat_Event_Stream_Test extends WP_UnitTestCase {
+./tests/test-rest-chat-model-defaults.php: WP_MCP_AI_REST_Model_Defaults_Test extends WP_UnitTestCase {
+./tests/test-rest-chat-tool-messages.php: WP_MCP_AI_REST_Tool_Message_Sanitization_Test extends WP_UnitTestCase {
+./tests/test-rest-endpoint-validation.php: WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
+./tests/test-rest-message-attachments.php: WP_MCP_AI_REST_Message_Attachments_Test extends WP_UnitTestCase {
+./tests/test-rest-tools-endpoint.php: WP_MCP_AI_REST_Tools_Endpoint_Test extends WP_UnitTestCase {
+./tests/test-rest-tools-error-handling.php: WP_MCP_AI_Mock_Broken_Schema_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/test-rest-tools-error-handling.php: WP_MCP_AI_Mock_Invalid_Schema_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/test-rest-tools-error-handling.php: WP_MCP_AI_Mock_Working_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/test-rest-tools-error-handling.php: WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
+./tests/test-root-security-key.php: Test_Root_Security_Key extends WP_UnitTestCase {
+./tests/test-sample.php: WP_MCP_AI_Sample_Test extends WP_UnitTestCase {
+./tests/test-search-gmail-tool.php: WP_MCP_AI_Search_Gmail_Tool_Test extends WP_UnitTestCase {
+./tests/test-send-group-email-tool.php: WP_MCP_AI_Send_Group_Email_Tool_Test extends WP_UnitTestCase {
+./tests/test-settings-dashboard-tab-order.php: Test_Settings_Dashboard_Tab_Order extends WP_UnitTestCase {
+./tests/test-settings-dashboard.php: Test_Settings_Dashboard extends WP_UnitTestCase {
+./tests/test-shortcodes-coordinator.php: WP_MCP_AI_Shortcodes_Coordinator_Tests extends WP_UnitTestCase {
+./tests/test-shortcodes.php: Test_Shortcodes extends WP_UnitTestCase {
+./tests/test-site-health-tool.php: WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
+./tests/test-social-publishing-tools.php: WP_MCP_AI_Social_Publishing_Tools_Test extends WP_UnitTestCase {
+./tests/test-social-reporting-tools.php: WP_MCP_AI_Social_Reporting_Tools_Test extends WP_UnitTestCase {
+./tests/test-sse-disabled-fallback.php: WP_MCP_AI_SSE_Disabled_Fallback_Test extends WP_Test_REST_TestCase {
+./tests/test-submit-document-prompt-tool.php: WP_MCP_AI_Submit_Document_Prompt_Tool_Test extends WP_UnitTestCase {
+./tests/test-token-budget-manager.php: WP_MCP_AI_Token_Budget_Manager_Test extends WP_UnitTestCase {
+./tests/test-token-budget-stabilization.php: Test_WP_MCP_AI_Token_Budget_Manager_Stabilization extends WP_UnitTestCase {
+./tests/test-token-sanitization.php: WP_MCP_AI_Token_Sanitization_Test extends WP_UnitTestCase {
+./tests/test-token-sanitizers.php: WP_MCP_AI_Token_Sanitizer_Test extends WP_UnitTestCase {
+./tests/test-tool-llm-sanitization.php: WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
+./tests/test-tool-registry.php: WP_MCP_AI_Mock_Tool implements WP_MCP_AI_Tool_Interface {
+./tests/test-tool-registry.php: WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
+./tests/test-tool-save-post.php: WP_MCP_AI_Tool_Save_Post_Test extends WP_UnitTestCase {
+./tests/test-tool-slug-integrity.php: WP_MCP_AI_Tool_Slug_Integrity_Tests extends WP_UnitTestCase {
+./tests/test-tool-token-limits.php: Test_Tool_Token_Limits extends WP_UnitTestCase {
+./tests/test-tpm-limit-validation.php: Test_TPM_Limit_Validation extends WP_UnitTestCase {
+./tests/test-transcript-reconstruction.php: WP_MCP_AI_Transcript_Reconstruction_Test extends WP_UnitTestCase {
+./tests/test-usage-tracker.php: WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
+./tests/test-vision-tools.php: WP_MCP_AI_Vision_Tools_Test extends WP_UnitTestCase {
+./tests/test-web-search-tool.php: WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
+./tests/test-woo-tools.php: WP_MCP_AI_Woo_Tool_Availability_Test extends WP_UnitTestCase {
+./tests/test-woo-tools.php: WP_MCP_AI_Woo_Tool_Execution_Test extends WP_UnitTestCase {
+./tests/test-wp-cli-tool.php: WP_MCP_AI_WP_CLI_Tool_Test extends WP_UnitTestCase {
+
+=== Global Function Definitions ===
+4
+Total wp_mcp_ai_* functions
+
+=== WordPress Hook Registrations ===
+add_action calls: 128
+add_filter calls: 298
+
+=== REST API Endpoints ===
+30
+Total REST route registrations
