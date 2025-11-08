@@ -285,4 +285,37 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		// Verify jQuery is enqueued.
 		$this->assertTrue( wp_script_is( 'jquery', 'enqueued' ), 'jQuery should be enqueued on diagnostic page' );
 	}
+
+	/**
+	 * Test that wpMcpAiMcpDiagnostic is properly localized.
+	 */
+	public function test_diagnostic_script_data_is_localized() {
+		global $wp_scripts;
+
+		// Trigger admin_menu to register the page.
+		set_current_screen( 'tools.php' );
+		do_action( 'admin_menu' );
+
+		// Get the page hook.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_MCP_Server_Diagnostic' );
+		$property   = $reflection->getProperty( 'page_hook' );
+		$property->setAccessible( true );
+		$page_hook = $property->getValue();
+
+		// Simulate being on the diagnostic page.
+		set_current_screen( $page_hook );
+
+		// Trigger the enqueue_assets method.
+		do_action( 'admin_enqueue_scripts', $page_hook );
+
+		// Verify localized script data is available.
+		$this->assertTrue( wp_script_is( 'jquery', 'enqueued' ), 'jQuery should be enqueued' );
+
+		// Get the localized data.
+		$jquery_data = $wp_scripts->get_data( 'jquery', 'data' );
+		$this->assertNotEmpty( $jquery_data, 'jQuery should have localized data' );
+		$this->assertStringContainsString( 'wpMcpAiMcpDiagnostic', $jquery_data, 'Localized data should contain wpMcpAiMcpDiagnostic' );
+		$this->assertStringContainsString( 'ajaxUrl', $jquery_data, 'Localized data should contain ajaxUrl' );
+		$this->assertStringContainsString( 'nonce', $jquery_data, 'Localized data should contain nonce' );
+	}
 }
