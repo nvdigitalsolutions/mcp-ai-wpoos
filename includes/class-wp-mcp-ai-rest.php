@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -70,6 +71,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	protected $validator;
 
+	/**
+	 * Server-Sent Events handler.
+	 *
+	 * @var WP_MCP_AI_SSE_Handler
+	 */
+	protected $sse_handler;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -96,6 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
 			$this->validator     = new WP_MCP_AI_REST_Validator();
+			$this->sse_handler   = new WP_MCP_AI_SSE_Handler();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
@@ -2487,220 +2496,65 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 	/**
 	 * Send SSE headers for streaming response.
+	 *
+	 * Delegates to SSE handler.
+	 *
+	 * @since 1.0.0
 	 */
 	protected function send_sse_headers() {
-		if ( ! headers_sent() ) {
-			header( 'Content-Type: text/event-stream; charset=UTF-8' );
-			header( 'Cache-Control: no-cache, no-store, must-revalidate, no-transform' );
-			header( 'Pragma: no-cache' );
-			header( 'Connection: keep-alive' );
-			header( 'X-Accel-Buffering: no' );
-			header( 'Access-Control-Allow-Origin: *' );
-			header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
-			header( 'Access-Control-Allow-Methods: GET, POST, OPTIONS' );
-
-			// Remove Connection header for HTTP/2.
-			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-				header_remove( 'Connection' );
-			}
-		}
-
-		// Disable output buffering.
-		while ( ob_get_level() > 0 ) {
-			ob_end_flush();
-		}
+		$this->sse_handler->send_sse_headers();
 	}
 
 	/**
 	 * Send an SSE event.
 	 *
+	 * Delegates to SSE handler.
+	 *
 	 * @param string $event Event name.
 	 * @param array  $data  Event data.
 	 */
 	protected function send_sse_event( $event, $data ) {
-		echo 'event: ' . esc_html( $event ) . "\n";
-		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
-
-		if ( function_exists( 'flush' ) ) {
-			flush();
-		}
+		$this->sse_handler->send_sse_event( $event, $data );
 	}
 
 	/**
 	 * Send SSE done marker.
+	 *
+	 * Delegates to SSE handler.
 	 */
 	protected function send_sse_done() {
-		echo "data: [DONE]\n\n";
-
-		if ( function_exists( 'flush' ) ) {
-			flush();
-		}
+		$this->sse_handler->send_sse_done();
 	}
 
 		/**
 		 * Determine whether the current request prefers an event stream response.
 		 *
+		 * Delegates to SSE handler.
+		 *
 		 * @param WP_REST_Request $request REST request instance.
 		 * @return bool
 		 */
 		protected function request_wants_event_stream( WP_REST_Request $request ) {
-			$stream_param    = $request->get_param( 'stream' );
-			$explicit_stream = null;
-
-			if ( null !== $stream_param ) {
-				if ( is_array( $stream_param ) || is_object( $stream_param ) ) {
-					$stream_data = (array) $stream_param;
-
-					if ( array_key_exists( 'enabled', $stream_data ) ) {
-						$normalized_enabled = rest_sanitize_boolean( $stream_data['enabled'] );
-
-						if ( null !== $normalized_enabled ) {
-							$explicit_stream = $normalized_enabled;
-						}
-					}
-
-					if ( null === $explicit_stream && ! empty( $stream_data ) ) {
-						$explicit_stream = true;
-					}
-				} else {
-					$normalized_stream = rest_sanitize_boolean( $stream_param );
-
-					if ( null !== $normalized_stream ) {
-						$explicit_stream = $normalized_stream;
-					}
-				}
-			}
-
-			if ( true === $explicit_stream ) {
-				return true;
-			}
-
-			if ( false === $explicit_stream ) {
-				return false;
-			}
-
-			$accept_header = $request->get_header( 'accept' );
-
-			if ( is_string( $accept_header ) && '' !== $accept_header ) {
-				$normalized_accept = strtolower( $accept_header );
-
-				if ( preg_match( '#(^|,|\s)text/event-stream(?:(?=\s*[;,])|$)#i', $normalized_accept ) ) {
-					return true;
-				}
-			}
-
-			if ( false === $explicit_stream ) {
-				return false;
-			}
-
-			return false;
+			return $this->sse_handler->request_wants_event_stream( $request );
 		}
 
 		/**
 		 * Stream the provided payload as an event stream response.
 		 *
-		 * Implements Server-Sent Events (SSE) with modern best practices (2024-2025):
-		 * - Proper Content-Type: text/event-stream with UTF-8
-		 * - Cache-Control: no-cache to prevent proxy/browser caching
-		 * - Connection: keep-alive for persistent streaming
-		 * - Retry directive for automatic client reconnection
-		 * - Event IDs for reconnection state tracking
-		 * - HTTP/2 compatibility (removes Connection header when appropriate)
-		 * - CORS headers for cross-origin access
+		 * Delegates to SSE handler.
 		 *
 		 * @param array  $payload Response payload to emit.
 		 * @param string $event   Event name used for the SSE frame.
 		 * @return WP_REST_Response
 		 */
 		protected function stream_event_stream_payload( array $payload, $event = 'message' ) {
-			$encoded_payload = wp_json_encode( $payload );
-
-			if ( false === $encoded_payload ) {
-				return rest_ensure_response( $payload );
-			}
-
-			$event_name = (string) $event;
-			if ( '' === $event_name ) {
-				$event_name = 'message';
-			}
-
-			// Add retry directive for automatic reconnection (3 seconds).
-			$frames  = "retry: 3000\n\n";
-			$frames .= $this->build_event_stream_chunk( $event_name, $encoded_payload, (string) time() );
-			$frames .= $this->build_event_stream_chunk( '', '[DONE]' );
-
-			$headers = array(
-				'Content-Type'                 => 'text/event-stream; charset=UTF-8',
-				'Cache-Control'                => 'no-cache, no-store, must-revalidate, no-transform',
-				'Pragma'                       => 'no-cache',
-				'Connection'                   => 'keep-alive',
-				'Vary'                         => 'Accept, Authorization',
-				'Access-Control-Allow-Origin'  => '*',
-				'Access-Control-Allow-Headers' => 'Authorization, Content-Type, X-WP-Nonce',
-				'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
-				'X-Accel-Buffering'            => 'no',
-				'X-Content-Type-Options'       => 'nosniff',
-			);
-
-			if ( isset( $_SERVER['SERVER_PROTOCOL'] ) && 0 === strpos( sanitize_text_field( wp_unslash( $_SERVER['SERVER_PROTOCOL'] ) ), 'HTTP/2' ) ) {
-				unset( $headers['Connection'] );
-			}
-
-			$callback = null;
-			$callback = static function ( $served, $response, $request, $server ) use ( $headers, $frames, &$callback ) {
-				if ( $served ) {
-					return $served;
-				}
-
-				if ( method_exists( $server, 'remove_header' ) ) {
-					$server->remove_header( 'Content-Type' );
-				} else {
-					header_remove( 'Content-Type' );
-				}
-
-				foreach ( $headers as $name => $value ) {
-					if ( '' === $name || null === $value ) {
-						continue;
-					}
-
-					$server->send_header( $name, $value );
-				}
-
-				echo $frames; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-				if ( function_exists( 'ob_get_level' ) && function_exists( 'ob_end_flush' ) ) {
-					while ( ob_get_level() > 0 ) {
-						if ( false === ob_end_flush() ) {
-							break;
-						}
-					}
-				} elseif ( function_exists( 'ob_flush' ) ) {
-					ob_flush();
-				}
-
-				if ( function_exists( 'flush' ) ) {
-					flush();
-				}
-
-				remove_filter( 'rest_pre_serve_request', $callback, 999 );
-
-				return true;
-			};
-
-			add_filter( 'rest_pre_serve_request', $callback, 999, 4 );
-
-			$response = new WP_REST_Response( null, 200 );
-			$response->set_headers( $headers );
-			$response->header( 'Content-Type', 'text/event-stream; charset=UTF-8' );
-
-			return $response;
+			return $this->sse_handler->stream_event_stream_payload( $payload, $event );
 		}
 
 		/**
 		 * Build a Server-Sent Events chunk for the provided data.
 		 *
-		 * Formats data according to SSE specification with optional event ID
-		 * for client-side reconnection tracking.
+		 * Delegates to SSE handler.
 		 *
 		 * @param string $event  Event name.
 		 * @param string $data   Event data payload.
@@ -2708,27 +2562,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return string
 		 */
 		protected function build_event_stream_chunk( $event, $data, $id = '' ) {
-			$chunk = '';
-
-			$id = (string) $id;
-			if ( '' !== $id ) {
-				$chunk .= 'id: ' . $id . "\n";
-			}
-
-			$event = (string) $event;
-			if ( '' !== $event ) {
-				$chunk .= 'event: ' . $event . "\n";
-			}
-
-			$data_lines = explode( "\n", (string) $data );
-
-			foreach ( $data_lines as $line ) {
-				$chunk .= 'data: ' . $line . "\n";
-			}
-
-			$chunk .= "\n";
-
-			return $chunk;
+			return $this->sse_handler->build_event_stream_chunk( $event, $data, $id );
 		}
 
 		/**
