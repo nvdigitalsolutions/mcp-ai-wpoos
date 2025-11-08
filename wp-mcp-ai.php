@@ -277,8 +277,9 @@ if ( is_admin() ) {
 	WP_MCP_AI_Security_Monitor_Admin::init();
 	new WP_MCP_AI_Auth0_Setup();
 
-	// Load diagnostic page (always available under Tools menu).
+	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 
 	// Load new modular settings dashboard system by default.
 	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
