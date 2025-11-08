@@ -39,6 +39,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		protected $registry;
 
 		/**
+		 * Metabox instances.
+		 *
+		 * @var array<string, WP_MCP_AI_Metabox_Base>
+		 */
+		protected $metaboxes = array();
+
+		/**
 		 * Track whether the credential action script has been printed.
 		 *
 		 * @var bool
@@ -52,6 +59,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 */
 		public function __construct( WP_MCP_AI_Tool_Registry $registry ) {
 			$this->registry = $registry;
+
+			// Initialize metabox instances.
+			$this->metaboxes['credentials']    = new WP_MCP_AI_Metabox_Credentials( $this );
+			$this->metaboxes['defaults']       = new WP_MCP_AI_Metabox_Defaults( $this );
+			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
+			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
 
 			add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 			add_action( 'init', array( __CLASS__, 'register_meta' ) );
@@ -976,43 +989,54 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'default'
 			);
 
-			add_meta_box(
-				'wp-mcp-ai-defaults',
-				__( 'Model Defaults', 'wp-mcp-ai' ),
-				array( $this, 'render_defaults_meta_box' ),
-				self::POST_TYPE,
-				'side',
-				'default'
-			);
+			// Register metaboxes from dedicated metabox classes.
+			if ( isset( $this->metaboxes['defaults'] ) ) {
+				$metabox = $this->metaboxes['defaults'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
 
-			add_meta_box(
-				'wp-mcp-ai-base-knowledge',
-				__( 'Base Knowledge', 'wp-mcp-ai' ),
-				array( $this, 'render_base_knowledge_meta_box' ),
-				self::POST_TYPE,
-				'normal',
-				'default'
-			);
+			if ( isset( $this->metaboxes['base-knowledge'] ) ) {
+				$metabox = $this->metaboxes['base-knowledge'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
 
-			add_meta_box(
-				'wp-mcp-ai-credentials',
-				__( 'API Credentials', 'wp-mcp-ai' ),
-				array( $this, 'render_credentials_meta_box' ),
-				self::POST_TYPE,
-				'side',
-				'default'
-			);
+			if ( isset( $this->metaboxes['credentials'] ) ) {
+				$metabox = $this->metaboxes['credentials'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
 
 			// Only show mesh routing meta box if mesh is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			if ( ! empty( $settings['enable_mesh'] ) ) {
+			if ( ! empty( $settings['enable_mesh'] ) && isset( $this->metaboxes['mesh-routing'] ) ) {
+				$metabox = $this->metaboxes['mesh-routing'];
 				add_meta_box(
-					'wp-mcp-ai-mesh-routing',
-					__( 'Mesh Compute Routing', 'wp-mcp-ai' ),
-					array( $this, 'render_mesh_routing_meta_box' ),
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
 					self::POST_TYPE,
-					'normal',
-					'default'
+					$metabox->get_context(),
+					$metabox->get_priority()
 				);
 			}
 		}
@@ -3023,6 +3047,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 
 					WP_MCP_AI_Mesh_Router::update_hub_config( $post_id, $mesh_config );
+				}
+			}
+
+			// Delegate to metabox save methods for additional processing.
+			foreach ( $this->metaboxes as $metabox ) {
+				if ( $metabox instanceof WP_MCP_AI_Metabox_Base ) {
+					$metabox->save( $post_id, $post );
 				}
 			}
 
