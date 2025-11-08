@@ -44,7 +44,7 @@ class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface {
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			'properties'           => (object) array(),
 			'additionalProperties' => false,
 		);
 	}
