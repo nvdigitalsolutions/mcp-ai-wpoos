@@ -694,6 +694,9 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 	 * and to provide a hook point for any late initialization logic.
 	 */
 	function wp_mcp_ai_bootstrap() {
+		// Initialize the main plugin instance.
+		WP_MCP_AI::instance()->bootstrap();
+		
 		// Apply any filters that need to run after all plugins are loaded.
 		/**
 		 * Fires after WP oOS has completed its bootstrap process.
