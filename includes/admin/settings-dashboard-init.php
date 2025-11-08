@@ -36,19 +36,62 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-a
  * alongside this new system during the transition period.
  */
 function wp_mcp_ai_init_settings_dashboard() {
-	// Register all sections with the registry.
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
-	WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );
+	// Only initialize once.
+	static $initialized = false;
+	if ( $initialized ) {
+		return;
+	}
+	$initialized = true;
 
-	// Initialize the dashboard controller.
-	// This creates the new Settings > WP oOS menu item.
-	new WP_MCP_AI_Settings_Dashboard();
+	// Wrap initialization in try-catch to prevent silent failures.
+	try {
+		// Register all sections with the registry.
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );
+
+		// Initialize the dashboard controller.
+		// This creates the top-level "WP oOS" menu item.
+		// Store the instance globally for potential access by other code.
+		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new WP_MCP_AI_Settings_Dashboard();
+	} catch ( Throwable $e ) {
+		// Log the error if logging is enabled.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Failed to initialize settings dashboard: ' . $e->getMessage(),
+				array(
+					'file'  => $e->getFile(),
+					'line'  => $e->getLine(),
+					'trace' => $e->getTraceAsString(),
+				)
+			);
+		}
+
+		// Show admin notice about the error.
+		add_action(
+			'admin_notices',
+			function() use ( $e ) {
+				?>
+				<div class="notice notice-error">
+					<p>
+						<strong>WP oOS Settings Dashboard Error:</strong>
+						<?php echo esc_html( $e->getMessage() ); ?>
+					</p>
+					<p>
+						<em>Please check the error log for more details or contact support.</em>
+					</p>
+				</div>
+				<?php
+			}
+		);
+	}
 }
 
-// Initialize dashboard on admin_init to ensure WordPress is fully loaded.
+// Hook into admin initialization.
+// This file is only loaded when is_admin() is true, so we don't need to check again.
 add_action( 'admin_init', 'wp_mcp_ai_init_settings_dashboard', 1 );
