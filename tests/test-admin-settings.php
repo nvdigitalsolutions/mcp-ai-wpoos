@@ -1013,4 +1013,32 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertContains( 'ollama', $sanitized['provider_priority_list'] );
 		$this->assertContains( 'lm_studio', $sanitized['provider_priority_list'] );
 	}
+
+	/**
+	 * Test that the admin settings script enqueues jquery-ui-sortable dependency.
+	 */
+	public function test_admin_settings_script_enqueues_sortable_dependency() {
+		// Create an admin user and set as current user.
+		$admin_user = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_user );
+
+		// Instantiate the admin settings class.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Set the current screen to the settings page.
+		set_current_screen( 'settings_page_wp-mcp-ai-settings' );
+
+		// Trigger the enqueue_admin_assets method.
+		do_action( 'admin_enqueue_scripts', 'settings_page_wp-mcp-ai-settings' );
+
+		// Check if the admin settings script is enqueued.
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-admin-settings', 'enqueued' ) );
+
+		// Get the script data.
+		global $wp_scripts;
+		$script_data = $wp_scripts->registered['wp-mcp-ai-admin-settings'];
+
+		// Verify that jquery-ui-sortable is in the dependencies.
+		$this->assertContains( 'jquery-ui-sortable', $script_data->deps, 'The wp-mcp-ai-admin-settings script should have jquery-ui-sortable as a dependency.' );
+	}
 }
