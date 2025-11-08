@@ -317,7 +317,7 @@ if ( is_admin() ) {
 			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
 		}
 
-		$diagnostic_link = admin_url( 'admin.php?page=wp-mcp-ai-diagnostic' );
+		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
 			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
