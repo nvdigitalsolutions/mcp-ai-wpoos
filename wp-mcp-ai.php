@@ -273,9 +273,7 @@ if ( ! $skip_buffering ) {
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
-	new WP_MCP_AI_Auth0_Setup();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
@@ -290,6 +288,9 @@ if ( is_admin() ) {
 
 	if ( ! WP_MCP_AI_USE_OLD_SETTINGS ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+		// Load Auth0 Setup wizard only when using new dashboard (it's a submenu of wp-mcp-ai-dashboard).
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
+		new WP_MCP_AI_Auth0_Setup();
 	}
 }
 
