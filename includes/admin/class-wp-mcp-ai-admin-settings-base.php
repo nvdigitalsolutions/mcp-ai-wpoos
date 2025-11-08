@@ -61,7 +61,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			$defaults  = self::get_default_settings();
 
 			foreach ( $defaults as $key => $default_value ) {
+				// If key is not present in submitted settings, use the default value.
 				if ( ! isset( $settings[ $key ] ) ) {
+					// For boolean defaults (checkboxes), missing key means false (unchecked).
+					if ( is_bool( $default_value ) ) {
+						$sanitized[ $key ] = false;
+					} else {
+						// For other types, use the default value.
+						$sanitized[ $key ] = $default_value;
+					}
 					continue;
 				}
 
