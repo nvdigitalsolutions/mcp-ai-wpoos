@@ -688,7 +688,9 @@ window.wpMcpAiSaveExpandedState = function() {
                 axis: 'y',
                 handle: '.dashicons-menu',
                 cursor: 'move',
-                placeholder: 'wp-mcp-ai-provider-item-placeholder',
+                placeholder: 'wp-mcp-ai-provider-item ui-sortable-placeholder',
+                opacity: 0.8,
+                tolerance: 'pointer',
                 update: function(event, ui) {
                     log('Provider list reordered');
                     // Update hidden input values to maintain order

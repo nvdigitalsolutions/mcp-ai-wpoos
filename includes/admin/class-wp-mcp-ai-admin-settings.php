@@ -4549,23 +4549,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			.wp-mcp-ai-provider-item {
 				background: #fff;
 				border: 1px solid #ddd;
-				padding: 10px;
+				padding: 10px 15px;
 				margin: 5px 0;
 				cursor: move;
 				display: flex;
 				align-items: center;
 				gap: 10px;
+				border-radius: 3px;
+				transition: box-shadow 0.2s ease;
+			}
+			.wp-mcp-ai-provider-item:hover {
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 			}
 			.wp-mcp-ai-provider-item .dashicons {
 				color: #999;
+				flex-shrink: 0;
 			}
 			.wp-mcp-ai-provider-item.ui-sortable-helper {
 				background: #f0f0f0;
-				border-color: #999;
+				border-color: #0073aa;
+				box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+			}
+			.wp-mcp-ai-provider-item.ui-sortable-placeholder {
+				background: #f9f9f9;
+				border: 2px dashed #ddd;
+				visibility: visible !important;
+				height: 42px;
 			}
 			.wp-mcp-ai-provider-item .provider-label {
 				flex: 1;
 				font-weight: 500;
+				user-select: none;
 			}
 		</style>
 			<?php
