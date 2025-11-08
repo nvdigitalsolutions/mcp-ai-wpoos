@@ -146,7 +146,34 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 			$content .= '<li>' . esc_html__( 'Tool execution with visual feedback', 'wp-mcp-ai' ) . '</li>';
 			$content .= '<li>' . esc_html__( 'Markdown rendering and code syntax highlighting', 'wp-mcp-ai' ) . '</li>';
 			$content .= '</ul>';
-			$content .= '<p style="margin-top: 1rem;"><em>' . esc_html__( 'Note: Elementor widgets are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'wp-mcp-ai' ) . '</em></p>';
+			
+			// Debug information.
+			$is_base_version = wp_mcp_ai_is_base_version();
+			$constant_defined = defined( 'WP_MCP_AI_BASE_VERSION' );
+			$constant_value = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
+			
+			$content .= '<div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1rem; margin-top: 1rem;">';
+			$content .= '<p style="margin: 0;"><strong>' . esc_html__( 'Current Configuration:', 'wp-mcp-ai' ) . '</strong></p>';
+			$content .= '<ul style="margin: 0.5rem 0 0 1.5rem;">';
+			$content .= '<li><strong>WP_MCP_AI_BASE_VERSION:</strong> ';
+			if ( $constant_defined ) {
+				$content .= '<code>' . esc_html( $constant_value ? 'true' : 'false' ) . '</code>';
+			} else {
+				$content .= '<code>not defined</code> (defaults to base version)';
+			}
+			$content .= '</li>';
+			$content .= '<li><strong>Mode:</strong> ';
+			$content .= $is_base_version ? '<strong style="color: #8b6c00;">Base Version</strong> (widgets disabled)' : '<strong style="color: #0a5f1a;">Full Version</strong> (widgets enabled)';
+			$content .= '</li>';
+			$content .= '</ul>';
+			$content .= '</div>';
+			
+			if ( $is_base_version ) {
+				$content .= '<p style="margin-top: 1rem; background: #fef7e0; border-left: 4px solid #8b6c00; padding: 1rem;"><strong>' . esc_html__( 'To Enable Elementor Widgets:', 'wp-mcp-ai' ) . '</strong><br>' . esc_html__( 'Add this to wp-config.php:', 'wp-mcp-ai' ) . '<br><code style="background: #fff; padding: 0.25rem 0.5rem; display: inline-block; margin-top: 0.5rem;">define( \'WP_MCP_AI_BASE_VERSION\', false );</code></p>';
+			} else {
+				$content .= '<p style="margin-top: 1rem; background: #d5f0db; border-left: 4px solid #0a5f1a; padding: 1rem;"><strong style="color: #0a5f1a;">✓ ' . esc_html__( 'Elementor Widgets Enabled', 'wp-mcp-ai' ) . '</strong><br>' . esc_html__( 'Full Version mode is active. All widgets are available.', 'wp-mcp-ai' ) . '</p>';
+			}
+			
 			$content .= '</div>';
 			
 			return $content;
