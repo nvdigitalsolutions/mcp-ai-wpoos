@@ -12,76 +12,112 @@ bash bin/code-inventory.sh > CURRENT-INVENTORY.txt 2>&1
 echo "=== Changes Summary ==="
 echo ""
 
-baseline_files=$(grep "Total PHP Files:" BASELINE-INVENTORY.txt | awk '{print $4}')
-current_files=$(grep "Total PHP Files:" CURRENT-INVENTORY.txt | awk '{print $4}')
+baseline_files=$(grep "^Total PHP Files:" BASELINE-INVENTORY.txt | awk '{print $4}')
+current_files=$(grep "^Total PHP Files:" CURRENT-INVENTORY.txt | awk '{print $4}')
 echo "PHP Files:"
 echo "  Before: $baseline_files"
 echo "  After:  $current_files"
-echo "  Change: $((current_files - baseline_files))"
+if [ -n "$baseline_files" ] && [ -n "$current_files" ]; then
+    echo "  Change: $((current_files - baseline_files))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_classes=$(grep "Total Classes:" BASELINE-INVENTORY.txt | awk '{print $3}')
-current_classes=$(grep "Total Classes:" CURRENT-INVENTORY.txt | awk '{print $3}')
+baseline_classes=$(grep "^Total Classes:" BASELINE-INVENTORY.txt | awk '{print $3}')
+current_classes=$(grep "^Total Classes:" CURRENT-INVENTORY.txt | awk '{print $3}')
 echo "Classes:"
 echo "  Before: $baseline_classes"
 echo "  After:  $current_classes"
-echo "  Change: $((current_classes - baseline_classes))"
+if [ -n "$baseline_classes" ] && [ -n "$current_classes" ]; then
+    echo "  Change: $((current_classes - baseline_classes))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_functions=$(grep "Total Functions:" BASELINE-INVENTORY.txt | awk '{print $3}')
-current_functions=$(grep "Total Functions:" CURRENT-INVENTORY.txt | awk '{print $3}')
+baseline_functions=$(grep "^Total Functions:" BASELINE-INVENTORY.txt | awk '{print $3}')
+current_functions=$(grep "^Total Functions:" CURRENT-INVENTORY.txt | awk '{print $3}')
 echo "Global Functions:"
 echo "  Before: $baseline_functions"
 echo "  After:  $current_functions"
-echo "  Change: $((current_functions - baseline_functions))"
+if [ -n "$baseline_functions" ] && [ -n "$current_functions" ]; then
+    echo "  Change: $((current_functions - baseline_functions))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_public=$(grep "Total Methods (public):" BASELINE-INVENTORY.txt | awk '{print $4}')
-current_public=$(grep "Total Methods (public):" CURRENT-INVENTORY.txt | awk '{print $4}')
+baseline_public=$(grep "^Total Methods (public):" BASELINE-INVENTORY.txt | awk '{print $4}')
+current_public=$(grep "^Total Methods (public):" CURRENT-INVENTORY.txt | awk '{print $4}')
 echo "Public Methods:"
 echo "  Before: $baseline_public"
 echo "  After:  $current_public"
-echo "  Change: $((current_public - baseline_public))"
+if [ -n "$baseline_public" ] && [ -n "$current_public" ]; then
+    echo "  Change: $((current_public - baseline_public))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_protected=$(grep "Total Methods (protected):" BASELINE-INVENTORY.txt | awk '{print $4}')
-current_protected=$(grep "Total Methods (protected):" CURRENT-INVENTORY.txt | awk '{print $4}')
+baseline_protected=$(grep "^Total Methods (protected):" BASELINE-INVENTORY.txt | awk '{print $4}')
+current_protected=$(grep "^Total Methods (protected):" CURRENT-INVENTORY.txt | awk '{print $4}')
 echo "Protected Methods:"
 echo "  Before: $baseline_protected"
 echo "  After:  $current_protected"
-echo "  Change: $((current_protected - baseline_protected))"
+if [ -n "$baseline_protected" ] && [ -n "$current_protected" ]; then
+    echo "  Change: $((current_protected - baseline_protected))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_private=$(grep "Total Methods (private):" BASELINE-INVENTORY.txt | awk '{print $4}')
-current_private=$(grep "Total Methods (private):" CURRENT-INVENTORY.txt | awk '{print $4}')
+baseline_private=$(grep "^Total Methods (private):" BASELINE-INVENTORY.txt | awk '{print $4}')
+current_private=$(grep "^Total Methods (private):" CURRENT-INVENTORY.txt | awk '{print $4}')
 echo "Private Methods:"
 echo "  Before: $baseline_private"
 echo "  After:  $current_private"
-echo "  Change: $((current_private - baseline_private))"
+if [ -n "$baseline_private" ] && [ -n "$current_private" ]; then
+    echo "  Change: $((current_private - baseline_private))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_actions=$(grep "add_action calls:" BASELINE-INVENTORY.txt | awk '{print $3}')
-current_actions=$(grep "add_action calls:" CURRENT-INVENTORY.txt | awk '{print $3}')
+baseline_actions=$(grep "^add_action calls:" BASELINE-INVENTORY.txt | awk '{print $3}')
+current_actions=$(grep "^add_action calls:" CURRENT-INVENTORY.txt | awk '{print $3}')
 echo "WordPress add_action Hooks:"
 echo "  Before: $baseline_actions"
 echo "  After:  $current_actions"
-echo "  Change: $((current_actions - baseline_actions))"
+if [ -n "$baseline_actions" ] && [ -n "$current_actions" ]; then
+    echo "  Change: $((current_actions - baseline_actions))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_filters=$(grep "add_filter calls:" BASELINE-INVENTORY.txt | awk '{print $3}')
-current_filters=$(grep "add_filter calls:" CURRENT-INVENTORY.txt | awk '{print $3}')
+baseline_filters=$(grep "^add_filter calls:" BASELINE-INVENTORY.txt | awk '{print $3}')
+current_filters=$(grep "^add_filter calls:" CURRENT-INVENTORY.txt | awk '{print $3}')
 echo "WordPress add_filter Hooks:"
 echo "  Before: $baseline_filters"
 echo "  After:  $current_filters"
-echo "  Change: $((current_filters - baseline_filters))"
+if [ -n "$baseline_filters" ] && [ -n "$current_filters" ]; then
+    echo "  Change: $((current_filters - baseline_filters))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 echo ""
-baseline_routes=$(grep "Total REST route registrations" BASELINE-INVENTORY.txt -B1 | head -1 | awk '{print $1}')
-current_routes=$(grep "Total REST route registrations" CURRENT-INVENTORY.txt -B1 | head -1 | awk '{print $1}')
+baseline_routes=$(grep "^Total REST route registrations:" BASELINE-INVENTORY.txt | awk '{print $5}')
+current_routes=$(grep "^Total REST route registrations:" CURRENT-INVENTORY.txt | awk '{print $5}')
 echo "REST Route Registrations:"
 echo "  Before: $baseline_routes"
 echo "  After:  $current_routes"
-echo "  Change: $((current_routes - baseline_routes))"
+if [ -n "$baseline_routes" ] && [ -n "$current_routes" ]; then
+    echo "  Change: $((current_routes - baseline_routes))"
+else
+    echo "  Change: Unable to parse values"
+fi
 
 # Verify method counts in main classes
 echo ""
@@ -105,12 +141,14 @@ echo "=== Critical Checks ==="
 # Check if public methods were removed
 echo ""
 echo "Checking for removed public methods..."
-grep "public function" BASELINE-INVENTORY.txt | sort > /tmp/baseline-public.txt 2>/dev/null
-grep "public function" CURRENT-INVENTORY.txt | sort > /tmp/current-public.txt 2>/dev/null
+# Extract method signatures from inventory files
+sed -n '/^=== Public Method Signatures/,/^===/p' BASELINE-INVENTORY.txt | grep "^public function" | sort > /tmp/baseline-public.txt 2>/dev/null
+sed -n '/^=== Public Method Signatures/,/^===/p' CURRENT-INVENTORY.txt | grep "^public function" | sort > /tmp/current-public.txt 2>/dev/null
 removed_public=$(diff /tmp/baseline-public.txt /tmp/current-public.txt 2>/dev/null | grep "^<" | wc -l)
 if [ "$removed_public" -gt 0 ]; then
     echo "  ❌ WARNING: $removed_public public method(s) removed!"
-    diff /tmp/baseline-public.txt /tmp/current-public.txt | grep "^<" | head -10
+    echo "  Removed methods:"
+    diff /tmp/baseline-public.txt /tmp/current-public.txt | grep "^<" | head -10 | sed 's/^< /    /'
 else
     echo "  ✓ No public methods removed"
 fi
@@ -131,7 +169,7 @@ fi
 # Check if global functions were removed
 echo ""
 echo "Checking for removed global functions..."
-if [ "$current_functions" -lt "$baseline_functions" ]; then
+if [ -n "$baseline_functions" ] && [ -n "$current_functions" ] && [ "$current_functions" -lt "$baseline_functions" ]; then
     echo "  ❌ WARNING: $(($baseline_functions - $current_functions)) global function(s) removed!"
 else
     echo "  ✓ No global functions removed"
@@ -140,7 +178,7 @@ fi
 # Check if REST routes were removed
 echo ""
 echo "Checking for removed REST routes..."
-if [ "$current_routes" -lt "$baseline_routes" ]; then
+if [ -n "$baseline_routes" ] && [ -n "$current_routes" ] && [ "$current_routes" -lt "$baseline_routes" ]; then
     echo "  ❌ WARNING: $(($baseline_routes - $current_routes)) REST route(s) removed!"
 else
     echo "  ✓ No REST routes removed"
@@ -157,10 +195,10 @@ fi
 if [ "$removed_classes" -gt 0 ]; then
     errors=$((errors + 1))
 fi
-if [ "$current_functions" -lt "$baseline_functions" ]; then
+if [ -n "$baseline_functions" ] && [ -n "$current_functions" ] && [ "$current_functions" -lt "$baseline_functions" ]; then
     errors=$((errors + 1))
 fi
-if [ "$current_routes" -lt "$baseline_routes" ]; then
+if [ -n "$baseline_routes" ] && [ -n "$current_routes" ] && [ "$current_routes" -lt "$baseline_routes" ]; then
     errors=$((errors + 1))
 fi
 

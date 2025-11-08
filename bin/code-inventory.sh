@@ -5,32 +5,32 @@ echo "=== Code Inventory Report ==="
 echo "Generated: $(date)"
 echo ""
 
-echo "Total PHP Files:"
-find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" | wc -l
+php_files=$(find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" | wc -l)
+echo "Total PHP Files: $php_files"
 
 echo ""
-echo "Total Lines of Code:"
-find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" -exec wc -l {} + 2>/dev/null | tail -1
+lines_of_code=$(find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print $1}')
+echo "Total Lines of Code: $lines_of_code"
 
 echo ""
-echo "Total Classes:"
-grep -r "^class " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
+total_classes=$(grep -r "^class " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total Classes: $total_classes"
 
 echo ""
-echo "Total Functions:"
-grep -r "^function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
+total_functions=$(grep -r "^function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total Functions: $total_functions"
 
 echo ""
-echo "Total Methods (public):"
-grep -r "public function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
+public_methods=$(grep -r "public function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total Methods (public): $public_methods"
 
 echo ""
-echo "Total Methods (protected):"
-grep -r "protected function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
+protected_methods=$(grep -r "protected function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total Methods (protected): $protected_methods"
 
 echo ""
-echo "Total Methods (private):"
-grep -r "private function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
+private_methods=$(grep -r "private function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total Methods (private): $private_methods"
 
 echo ""
 echo "=== Three Main Classes - Method Count ==="
@@ -51,15 +51,25 @@ grep -r "^class " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modu
 
 echo ""
 echo "=== Global Function Definitions ==="
-grep -r "^function wp_mcp_ai" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
-echo "Total wp_mcp_ai_* functions"
+wp_mcp_ai_functions=$(grep -r "^function wp_mcp_ai" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total wp_mcp_ai_* functions: $wp_mcp_ai_functions"
 
 echo ""
 echo "=== WordPress Hook Registrations ==="
-echo "add_action calls: $(grep -r "add_action" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)"
-echo "add_filter calls: $(grep -r "add_filter" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)"
+action_hooks=$(grep -r "add_action" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+filter_hooks=$(grep -r "add_filter" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "add_action calls: $action_hooks"
+echo "add_filter calls: $filter_hooks"
 
 echo ""
 echo "=== REST API Endpoints ==="
-grep -r "register_rest_route" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l
-echo "Total REST route registrations"
+rest_routes=$(grep -r "register_rest_route" --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | wc -l)
+echo "Total REST route registrations: $rest_routes"
+
+echo ""
+echo "=== Public Method Signatures (for verification) ==="
+grep -rh "public function " --include="*.php" --exclude-dir=vendor --exclude-dir=node_modules . 2>/dev/null | \
+    sed 's/^\s*//' | \
+    sed 's/{.*//' | \
+    sort | \
+    uniq
