@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 	/**
-	 * Integrations settings section.
+	 * Integrations settings section - Gmail and Crawl4AI.
 	 */
 	class WP_MCP_AI_Section_Integrations extends WP_MCP_AI_Settings_Section {
 		/**
@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_id() {
-			return 'integrations';
+			return 'integrations_gmail_crawl4ai';
 		}
 
 		/**
@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Third-Party Integrations', 'wp-mcp-ai' );
+			return __( 'Gmail & Crawl4AI Integration', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'integrations';
+			return 'orchestration';
 		}
 
 		/**
@@ -47,7 +47,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure integrations with JetEngine, WooCommerce, Gmail, Elementor, and Crawl4AI.', 'wp-mcp-ai' );
+			return __( 'Configure Gmail OAuth credentials for email integration and Crawl4AI service for web scraping capabilities.', 'wp-mcp-ai' );
+		}
+
+		/**
+		 * Get section priority.
+		 *
+		 * @return int
+		 */
+		public function get_priority() {
+			return 20;
 		}
 
 		/**
