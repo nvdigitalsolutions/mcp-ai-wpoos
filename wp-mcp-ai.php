@@ -228,6 +228,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-openai-client.p
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
@@ -488,7 +489,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$gemini_client    = new WP_MCP_AI_Gemini_Client();
 			$ollama_client    = new WP_MCP_AI_Ollama_Client();
 			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
-			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client );
+			$anthropic_client = new WP_MCP_AI_Anthropic_Client();
+			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client, $anthropic_client );
 
 			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
 			
