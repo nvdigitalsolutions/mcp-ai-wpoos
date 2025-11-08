@@ -4519,6 +4519,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			
 			$provider_labels = array(
 				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
 				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
 				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
 				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
