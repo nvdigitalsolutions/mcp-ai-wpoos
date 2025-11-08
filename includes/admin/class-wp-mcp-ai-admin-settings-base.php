@@ -100,6 +100,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				}
 			}
 
+			/**
+			 * Filter sanitized settings before saving.
+			 *
+			 * Allows third-party plugins and extensions to modify or inject settings.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $sanitized Sanitized settings array.
+			 * @param array $settings  Raw input settings array.
+			 */
+			$sanitized = apply_filters( 'wp_mcp_ai_admin_settings_sanitize', $sanitized, $settings );
+
 			// Clear settings cache.
 			self::reset_settings_cache();
 
