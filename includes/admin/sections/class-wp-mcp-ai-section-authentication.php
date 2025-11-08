@@ -119,7 +119,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'type'        => 'url',
 					'label'       => __( 'Userinfo Endpoint', 'wp-mcp-ai' ),
 					'description' => __( 'WordPress.com userinfo endpoint URL', 'wp-mcp-ai' ),
-					'default'     => 'https://public-api.wordpress.com/oauth2/userinfo',
+					/**
+					 * Filter the default WordPress.com userinfo endpoint URL.
+					 *
+					 * @since 1.0.0
+					 *
+					 * @param string $url Default URL. Default 'https://public-api.wordpress.com/oauth2/userinfo'.
+					 */
+					'default'     => apply_filters( 'wp_mcp_ai_default_wpcom_userinfo_endpoint', 'https://public-api.wordpress.com/oauth2/userinfo' ),
 					'placeholder' => 'https://public-api.wordpress.com/oauth2/userinfo',
 				),
 

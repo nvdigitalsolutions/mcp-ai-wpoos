@@ -23,6 +23,7 @@ This document provides a comprehensive index of all documentation available for 
 2. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
 3. [tool-reference.md](tool-reference.md) - Complete tool catalog
 4. [rest-api.md](rest-api.md) - REST API reference
+5. [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) - Dynamic configuration via WordPress filters
 
 ### For System Administrators
 1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
@@ -108,6 +109,7 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |

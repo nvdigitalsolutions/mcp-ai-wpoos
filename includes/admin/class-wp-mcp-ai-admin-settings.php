@@ -3599,11 +3599,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				10 * MINUTE_IN_SECONDS
 			);
 
+			/**
+			 * Filter the Gmail OAuth scope.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $scope OAuth scope. Default 'https://www.googleapis.com/auth/gmail.readonly'.
+			 */
+			$oauth_scope = apply_filters( 'wp_mcp_ai_gmail_oauth_scope', self::GMAIL_OAUTH_SCOPE );
+
 			$params = array(
 				'client_id'              => $settings['gmail_client_id'],
 				'redirect_uri'           => $this->get_gmail_oauth_redirect_uri(),
 				'response_type'          => 'code',
-				'scope'                  => self::GMAIL_OAUTH_SCOPE,
+				'scope'                  => $oauth_scope,
 				'access_type'            => 'offline',
 				'include_granted_scopes' => 'true',
 				'prompt'                 => 'consent',
@@ -3614,7 +3623,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$params['login_hint'] = $settings['gmail_user_email'];
 			}
 
-			$authorize_url = add_query_arg( $params, self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
+			/**
+			 * Filter the Gmail OAuth authorize endpoint.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $endpoint OAuth authorize endpoint. Default 'https://accounts.google.com/o/oauth2/v2/auth'.
+			 */
+			$authorize_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_authorize_endpoint', self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
+			$authorize_url      = add_query_arg( $params, $authorize_endpoint );
 
 			wp_safe_redirect( $authorize_url );
 			exit;
@@ -3629,7 +3646,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return string[]
 		 */
 		public function allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
-			$google_host = wp_parse_url( self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT, PHP_URL_HOST );
+			/**
+			 * Filter the Gmail OAuth authorize endpoint.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $endpoint OAuth authorize endpoint. Default 'https://accounts.google.com/o/oauth2/v2/auth'.
+			 */
+			$authorize_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_authorize_endpoint', self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
+			$google_host        = wp_parse_url( $authorize_endpoint, PHP_URL_HOST );
 
 			if ( $google_host ) {
 				$allowed_hosts[] = $google_host;
@@ -3697,8 +3722,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$this->redirect_to_settings_page();
 			}
 
+			/**
+			 * Filter the Gmail OAuth token endpoint.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $endpoint OAuth token endpoint. Default 'https://oauth2.googleapis.com/token'.
+			 */
+			$token_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_token_endpoint', self::GMAIL_OAUTH_TOKEN_ENDPOINT );
+
 			$response = wp_remote_post(
-				self::GMAIL_OAUTH_TOKEN_ENDPOINT,
+				$token_endpoint,
 				array(
 					'timeout' => 15,
 					'body'    => array(
@@ -3775,8 +3809,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$email_address = '';
 
 			if ( $access_token ) {
+				/**
+				 * Filter the Gmail profile endpoint.
+				 *
+				 * @since 1.0.0
+				 *
+				 * @param string $endpoint Gmail profile endpoint. Default 'https://gmail.googleapis.com/gmail/v1/users/me/profile'.
+				 */
+				$profile_endpoint = apply_filters( 'wp_mcp_ai_gmail_profile_endpoint', self::GMAIL_PROFILE_ENDPOINT );
+
 				$profile_response = wp_remote_get(
-					self::GMAIL_PROFILE_ENDPOINT,
+					$profile_endpoint,
 					array(
 						'timeout' => 15,
 						'headers' => array(
