@@ -187,6 +187,25 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that checkboxes are properly saved when unchecked.
+	 */
+	public function test_section_sanitizes_unchecked_checkboxes() {
+		$section = new WP_MCP_AI_Section_Authentication();
+
+		// Simulate form submission where checkbox is checked.
+		$input_checked = array(
+			'enable_auth0_github_bridge' => '1',
+		);
+		$sanitized = $section->sanitize( $input_checked );
+		$this->assertTrue( $sanitized['enable_auth0_github_bridge'] );
+
+		// Simulate form submission where checkbox is unchecked (not in POST data).
+		$input_unchecked = array();
+		$sanitized       = $section->sanitize( $input_unchecked );
+		$this->assertFalse( $sanitized['enable_auth0_github_bridge'] );
+	}
+
+	/**
 	 * Test that the new dashboard loads by default.
 	 */
 	public function test_new_dashboard_loads_by_default() {
