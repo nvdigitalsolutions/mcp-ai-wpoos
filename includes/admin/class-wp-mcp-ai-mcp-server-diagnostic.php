@@ -69,8 +69,28 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				WP_MCP_AI_VERSION
 			);
 
-			// Ensure jQuery is loaded for the inline scripts.
+			// Enqueue jQuery for the inline scripts.
 			wp_enqueue_script( 'jquery' );
+
+			// Enqueue a dummy script handle to attach localized data.
+			wp_register_script(
+				'wp-mcp-ai-mcp-diagnostic-inline',
+				'',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+			wp_enqueue_script( 'wp-mcp-ai-mcp-diagnostic-inline' );
+
+			// Localize script with AJAX URL and nonce.
+			wp_localize_script(
+				'wp-mcp-ai-mcp-diagnostic-inline',
+				'wpMcpAiMcpDiagnostic',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ),
+				)
+			);
 		}
 
 		/**
@@ -594,10 +614,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			</div>
 
 			<script type="text/javascript">
-			/* global ajaxurl */
+			/* global wpMcpAiMcpDiagnostic */
 			jQuery(document).ready(function($) {
-				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
-				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				// Use localized script data.
+				var ajaxUrl = wpMcpAiMcpDiagnostic.ajaxUrl;
+				var nonce = wpMcpAiMcpDiagnostic.nonce;
 				
 				// Test MCP endpoint connectivity.
 				$('#test-mcp-endpoint').on('click', function() {
@@ -612,7 +633,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_mcp_endpoint',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ) ); ?>'
+							nonce: nonce
 						},
 						success: function(response) {
 							if (response.success) {
@@ -660,7 +681,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_mcp_method',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ) ); ?>',
+							nonce: nonce,
 							method: method
 						},
 						success: function(response) {
