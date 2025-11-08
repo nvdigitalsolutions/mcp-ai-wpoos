@@ -29,12 +29,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	}
 
 	/**
-	 * Register the cron manager page under the Tools menu.
+	 * Register the cron manager page under the WP oOS menu.
 	 */
 	public function register_page() {
-		add_management_page(
+		add_submenu_page(
+			'wp-mcp-ai-dashboard',
 			__( 'WP oOS Cron Manager', 'wp-mcp-ai' ),
-			__( 'WP oOS Crons', 'wp-mcp-ai' ),
+			__( 'Cron Manager', 'wp-mcp-ai' ),
 			'manage_options',
 			self::PAGE_SLUG,
 			array( $this, 'render_page' )
@@ -47,7 +48,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'tools_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'wp-oos_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
@@ -86,7 +87,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 				'page'    => self::PAGE_SLUG,
 				'updated' => $deleted ? '1' : '0',
 			),
-			admin_url( 'tools.php' )
+			admin_url( 'admin.php' )
 		);
 
 		wp_safe_redirect( $redirect );

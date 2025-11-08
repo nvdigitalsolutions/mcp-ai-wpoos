@@ -27,10 +27,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		}
 
 		/**
-		 * Register diagnostic page under Tools menu.
+		 * Register diagnostic page under WP oOS menu.
 		 */
 		public static function register_page() {
-			add_management_page(
+			add_submenu_page(
+				'wp-mcp-ai-dashboard',
 				__( 'Provider Connectivity Diagnostic', 'wp-mcp-ai' ),
 				__( 'Provider Test', 'wp-mcp-ai' ),
 				'manage_options',
@@ -45,7 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public static function enqueue_assets( $hook ) {
-			if ( 'tools_page_wp-mcp-ai-provider-diagnostic' !== $hook ) {
+			if ( 'wp-oos_page_wp-mcp-ai-provider-diagnostic' !== $hook ) {
 				return;
 			}
 
