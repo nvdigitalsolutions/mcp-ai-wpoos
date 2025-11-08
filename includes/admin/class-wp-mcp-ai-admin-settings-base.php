@@ -158,12 +158,24 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			}
 
 			$defaults  = self::get_default_settings();
-			$settings  = get_option( self::OPTION_NAME, array() );
-			$merged    = wp_parse_args( $settings, $defaults );
+			$saved     = get_option( self::OPTION_NAME, array() );
+			
+			if ( ! is_array( $saved ) ) {
+				$saved = array();
+			}
+			
+			$settings  = wp_parse_args( $saved, $defaults );
 
-			self::$settings_cache = $merged;
+			// Ensure chat_colors is properly merged.
+			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
+				$settings['chat_colors'] = self::get_default_chat_colors();
+			} else {
+				$settings['chat_colors'] = array_merge( self::get_default_chat_colors(), $settings['chat_colors'] );
+			}
 
-			return $merged;
+			self::$settings_cache = $settings;
+
+			return $settings;
 		}
 
 		/**
@@ -282,6 +294,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array
 		 */
 		public static function get_chat_color_definitions() {
+			// Delegate to main admin settings class if it exists and has the full definitions.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'get_chat_color_definitions' ) ) {
+				return WP_MCP_AI_Admin_Settings::get_chat_color_definitions();
+			}
+			
+			// Fallback to basic definitions (this should not happen in practice).
 			return array(
 				'container-border'                    => array(
 					'label'       => __( 'Container border', 'wp-mcp-ai' ),
@@ -297,7 +315,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 					'format'      => 'hex',
 					'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
 				),
-				// Additional color definitions omitted for brevity - they would be copied from the original file.
 			);
 		}
 
