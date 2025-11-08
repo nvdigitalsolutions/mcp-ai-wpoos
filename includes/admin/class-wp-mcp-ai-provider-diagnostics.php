@@ -439,10 +439,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 									'</strong> ' + message + '</p>' + details + '</div>'
 								);
 							} else {
+								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'wp-mcp-ai' ) ); ?>';
 								resultDiv.html(
 									'<div class="notice notice-error inline"><p><strong>' +
 									'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + response.data.message + '</p></div>'
+									'</strong> ' + errorMessage + '</p></div>'
 								);
 							}
 						},
@@ -454,7 +455,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							);
 						},
 						complete: function() {
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Test ', 'wp-mcp-ai' ); ?>' + provider.toUpperCase().replace('_', ' ') + ' <?php esc_attr_e( 'Connection', 'wp-mcp-ai' ); ?>');
+							var providerName = provider.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+							button.prop('disabled', false).text('<?php esc_attr_e( 'Test', 'wp-mcp-ai' ); ?> ' + providerName + ' <?php esc_attr_e( 'Connection', 'wp-mcp-ai' ); ?>');
 						}
 					});
 				});

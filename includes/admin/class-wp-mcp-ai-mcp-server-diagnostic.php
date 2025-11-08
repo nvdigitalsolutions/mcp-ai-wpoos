@@ -637,10 +637,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									'</pre></div>'
 								);
 							} else {
+								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'wp-mcp-ai' ) ); ?>';
 								resultDiv.html(
 									'<div class="notice notice-error inline"><p><strong>' +
 									'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + response.data.message + '</p></div>'
+									'</strong> ' + errorMessage + '</p></div>'
 								);
 							}
 						},
@@ -699,10 +700,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									'</pre></details></div>'
 								);
 							} else {
+								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'wp-mcp-ai' ) ); ?>';
 								resultDiv.html(
 									'<div class="notice notice-error inline"><p><strong>' +
 									'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + response.data.message + '</p></div>'
+									'</strong> ' + errorMessage + '</p></div>'
 								);
 							}
 						},
@@ -714,8 +716,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							);
 						},
 						complete: function() {
-							var originalText = button.parent().find('h3').text();
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Test', 'wp-mcp-ai' ); ?> ' + originalText.split(' ')[0]);
+							// Store original button text in data attribute if not already stored.
+							if (!button.data('original-text')) {
+								button.data('original-text', button.text());
+							}
+							button.prop('disabled', false).text(button.data('original-text'));
 						}
 					});
 				});
