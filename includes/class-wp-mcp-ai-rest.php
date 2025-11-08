@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -62,6 +63,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	protected $authenticator;
 
+	/**
+	 * Request validator and sanitizer.
+	 *
+	 * @var WP_MCP_AI_REST_Validator
+	 */
+	protected $validator;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -87,6 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->client   = $client;
 
 			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
+			$this->validator     = new WP_MCP_AI_REST_Validator();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
@@ -376,7 +385,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -403,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => false,
-								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -487,7 +496,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of message objects with role and content.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -514,7 +523,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Optional array of file attachments to include with the request.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => false,
-								'validate_callback' => array( $this, 'validate_attachments_array' ),
+								'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -645,7 +654,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
 								'type'              => 'array',
 								'required'          => true,
-								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'validate_callback' => array( $this->validator, 'validate_messages_array' ),
 								'items'             => array(
 									'type'       => 'object',
 									'properties' => array(
@@ -866,7 +875,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'type'              => 'object',
 								'required'          => false,
 								'default'           => array(),
-								'validate_callback' => array( $this, 'validate_mcp_params' ),
+								'validate_callback' => array( $this->validator, 'validate_mcp_params' ),
 							),
 						),
 					),
@@ -1307,7 +1316,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->hydrate_request_body_params( $request );
 
 			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-			$session_key  = $this->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+			$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 			$messages     = $request->get_param( 'messages' );
 
 			if ( ! $assistant_id ) {
@@ -1341,7 +1350,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Sanitize messages.
-			$sanitized_messages = $this->sanitize_messages( $messages );
+			$sanitized_messages = $this->validator->sanitize_messages( $messages );
 			if ( is_wp_error( $sanitized_messages ) ) {
 				return $sanitized_messages;
 			}
@@ -2706,7 +2715,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $assistant_post;
 			}
 
-			$sanitized_messages = $this->sanitize_messages( $request->get_param( 'messages' ) );
+			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
 			if ( is_wp_error( $sanitized_messages ) ) {
 				return $sanitized_messages;
 			}
@@ -2720,7 +2729,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
-			$options = $this->sanitize_options( $request->get_param( 'options' ), $assistant_config );
+			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
 			$limit_context = $this->build_chat_limit_context( $assistant_id, $options );
 			$enforced      = $this->enforce_chat_request_limits( $messages, $attachments, $limit_context );
@@ -2734,7 +2743,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$transcript_context = array(
 				'save_transcript' => $this->should_save_transcript( $request ),
-				'session_key'     => $this->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
+				'session_key'     => $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) ),
 			);
 
 			if ( ! empty( $attachments ) ) {
@@ -2905,7 +2914,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result_messages[] = $full_tool_message;
 
 					// Create a sanitized version for the LLM (strip large content fields).
-					$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
 
 					$tool_message = array(
 						'role'    => 'tool',
@@ -3235,7 +3244,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'type'      => 'tool_result',
 						'tool_name' => $tool_name,
 						'tool_id'   => $tool_call_id,
-						'result'    => $this->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						'result'    => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
 					)
 				);
 
@@ -3256,7 +3265,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$tool_result_messages[] = $full_tool_message;
 
 				// Create sanitized version for LLM.
-				$sanitized_result = $this->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+				$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
 
 				$tool_message = array(
 					'role'    => 'tool',
