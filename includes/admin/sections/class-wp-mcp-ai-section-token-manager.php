@@ -493,10 +493,38 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * @return array Tool slug => Tool name pairs.
 		 */
 		private function get_all_available_tools() {
-			$tools = array(
-				'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'wp-mcp-ai' ),
-				'general_tools'    => __( 'General Tools (Default)', 'wp-mcp-ai' ),
-			);
+			$tools = array();
+
+			// Get all registered tools from the tool registry.
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+			
+			if ( ! $registry ) {
+				// Fallback to hardcoded tools if registry is not available.
+				$tools = array(
+					'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'wp-mcp-ai' ),
+					'general_tools'    => __( 'General Tools (Default)', 'wp-mcp-ai' ),
+				);
+			} else {
+				// Ensure registry is initialized.
+				$registry->init();
+				
+				$registered_tools = $registry->get_tools();
+
+				// Build array of tool slug => name pairs.
+				foreach ( $registered_tools as $tool ) {
+					if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+						$slug = $tool->get_slug();
+						$name = $tool->get_name();
+						
+						if ( ! empty( $slug ) && ! empty( $name ) ) {
+							$tools[ $slug ] = $name;
+						}
+					}
+				}
+
+				// Sort tools by name for better UI experience.
+				asort( $tools );
+			}
 
 			/**
 			 * Filter available tools for token limit configuration.
