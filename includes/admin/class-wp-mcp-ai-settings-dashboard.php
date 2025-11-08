@@ -96,6 +96,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$sanitized = array_merge( $sanitized, $section_input );
 			}
 
+			// Clear settings cache.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
 			return $sanitized;
 		}
 

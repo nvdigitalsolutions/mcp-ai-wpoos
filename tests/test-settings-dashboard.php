@@ -313,4 +313,29 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 
 		$this->assertTrue( $general_settings_found, 'General Settings submenu item should be registered' );
 	}
+
+	/**
+	 * Test that sanitize_settings clears the settings cache.
+	 */
+	public function test_sanitize_settings_clears_cache() {
+		// Set up the settings dashboard.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// First, populate the cache by getting settings.
+		$initial_settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$this->assertIsArray( $initial_settings );
+
+		// Now sanitize settings (which should clear the cache).
+		$input     = array( 'enable_logging' => '1' );
+		$sanitized = $dashboard->sanitize_settings( $input );
+
+		// The cache should have been cleared.
+		// We can verify this by checking that the static cache property is null.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );
+		$cache_prop = $reflection->getProperty( 'settings_cache' );
+		$cache_prop->setAccessible( true );
+		$cache = $cache_prop->getValue();
+
+		$this->assertNull( $cache, 'Settings cache should be cleared after sanitize_settings is called' );
+	}
 }
