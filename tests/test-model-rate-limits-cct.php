@@ -366,4 +366,55 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$model = reset( $gpt5 );
 		$this->assertGreaterThanOrEqual( 500000, $model['tpm_limit'] );
 	}
+
+	/**
+	 * Test that Gemini image models are included in defaults.
+	 */
+	public function test_default_models_include_gemini_image_models() {
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+		$method     = $reflection->getMethod( 'get_default_model_data' );
+		$method->setAccessible( true );
+
+		$default_models = $method->invoke( null );
+
+		$google_models = array_filter(
+			$default_models,
+			function ( $model ) {
+				return 'google' === $model['provider'];
+			}
+		);
+
+		$model_names = array_column( $google_models, 'model_name' );
+
+		// Check that Gemini 2.5 Flash Image is included (latest model).
+		$this->assertContains( 'gemini-2.5-flash-image', $model_names, 'Gemini 2.5 Flash Image should be in default models' );
+
+		// Check that Gemini 2.0 Flash Image is included (legacy).
+		$this->assertContains( 'gemini-2.0-flash-image', $model_names, 'Gemini 2.0 Flash Image should be in default models' );
+
+		// Check that Imagen 3 is included (alternative).
+		$this->assertContains( 'imagen-3', $model_names, 'Imagen 3 should be in default models' );
+
+		// Verify Gemini 2.5 Flash Image has correct configuration.
+		$gemini_25_flash_image = array_values(
+			array_filter(
+				$default_models,
+				function ( $model ) {
+					return 'gemini-2.5-flash-image' === $model['model_name'];
+				}
+			)
+		);
+
+		$this->assertNotEmpty( $gemini_25_flash_image, 'Should find gemini-2.5-flash-image in defaults' );
+		$model = reset( $gemini_25_flash_image );
+
+		// Verify key properties.
+		$this->assertSame( 'google', $model['provider'], 'Provider should be google' );
+		$this->assertSame( 1000000, $model['tpm_limit'], 'TPM limit should be 1M' );
+		$this->assertSame( 1000, $model['rpm_limit'], 'RPM limit should be 1000' );
+		$this->assertFalse( $model['supports_streaming'], 'Image models should not support streaming' );
+		$this->assertFalse( $model['supports_function_calling'], 'Image models should not support function calling' );
+		$this->assertTrue( $model['supports_vision'], 'Image models should support vision' );
+		$this->assertSame( 0.03, $model['cost_per_1k_output_tokens'], 'Output token cost should be $0.03 per 1K' );
+	}
 }

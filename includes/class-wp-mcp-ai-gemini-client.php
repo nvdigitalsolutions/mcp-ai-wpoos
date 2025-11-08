@@ -328,6 +328,27 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'revised_prompt' => $image_payload['revised_prompt'],
 			);
 
+			// Extract usage metadata from the response for token tracking.
+			if ( isset( $decoded['usageMetadata'] ) && is_array( $decoded['usageMetadata'] ) ) {
+				$usage = array();
+
+				if ( isset( $decoded['usageMetadata']['promptTokenCount'] ) ) {
+					$usage['prompt_tokens'] = (int) $decoded['usageMetadata']['promptTokenCount'];
+				}
+
+				if ( isset( $decoded['usageMetadata']['candidatesTokenCount'] ) ) {
+					$usage['completion_tokens'] = (int) $decoded['usageMetadata']['candidatesTokenCount'];
+				}
+
+				if ( isset( $decoded['usageMetadata']['totalTokenCount'] ) ) {
+					$usage['total_tokens'] = (int) $decoded['usageMetadata']['totalTokenCount'];
+				}
+
+				if ( ! empty( $usage ) ) {
+					$result['usage'] = $usage;
+				}
+			}
+
 			/**
 			 * Allow third parties to filter the Gemini image result payload.
 			 *
