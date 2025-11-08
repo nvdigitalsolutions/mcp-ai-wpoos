@@ -25,13 +25,17 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 		}
 
 		/**
-		 * Register diagnostic page under WP oOS menu.
+		 * Register diagnostic page under Tools menu.
+		 *
+		 * Note: Changed from submenu of 'wp-mcp-ai-dashboard' to 'tools.php'
+		 * to ensure the diagnostic page is always accessible, even when the
+		 * main dashboard isn't loaded (e.g., when WP_MCP_AI_USE_OLD_SETTINGS is true).
 		 */
 		public static function register_page() {
 			add_submenu_page(
-				'wp-mcp-ai-dashboard',
+				'tools.php',
 				__( 'WP oOS Dashboard Diagnostic', 'wp-mcp-ai' ),
-				__( 'Diagnostics', 'wp-mcp-ai' ),
+				__( 'WP oOS Diagnostic', 'wp-mcp-ai' ),
 				'manage_options',
 				'wp-mcp-ai-diagnostic',
 				array( __CLASS__, 'render_page' )
