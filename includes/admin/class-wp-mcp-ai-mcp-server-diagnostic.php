@@ -18,6 +18,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 	 */
 	class WP_MCP_AI_MCP_Server_Diagnostic {
 		/**
+		 * Page hook suffix.
+		 *
+		 * @var string
+		 */
+		private static $page_hook = '';
+
+		/**
 		 * Initialize the diagnostic page.
 		 */
 		public static function init() {
@@ -28,13 +35,17 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		}
 
 		/**
-		 * Register diagnostic page under WP oOS menu.
+		 * Register diagnostic page under Tools menu.
+		 *
+		 * Note: Changed from submenu of 'wp-mcp-ai-dashboard' to 'tools.php'
+		 * to ensure the diagnostic page is always accessible, even when the
+		 * main dashboard isn't loaded (e.g., when WP_MCP_AI_USE_OLD_SETTINGS is true).
 		 */
 		public static function register_page() {
-			add_submenu_page(
-				'wp-mcp-ai-dashboard',
+			self::$page_hook = add_submenu_page(
+				'tools.php',
 				__( 'MCP Server Diagnostic', 'wp-mcp-ai' ),
-				__( 'MCP Server Test', 'wp-mcp-ai' ),
+				__( 'WP oOS MCP Test', 'wp-mcp-ai' ),
 				'manage_options',
 				'wp-mcp-ai-mcp-diagnostic',
 				array( __CLASS__, 'render_page' )
@@ -47,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public static function enqueue_assets( $hook ) {
-			if ( 'wp-mcp-ai-dashboard_page_wp-mcp-ai-mcp-diagnostic' !== $hook ) {
+			if ( self::$page_hook !== $hook ) {
 				return;
 			}
 

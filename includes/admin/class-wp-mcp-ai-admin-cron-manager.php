@@ -20,6 +20,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	const PAGE_SLUG = 'wp-mcp-ai-cron-manager';
 
 	/**
+	 * Page hook suffix.
+	 *
+	 * @var string
+	 */
+	private $page_hook = '';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -32,7 +39,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 * Register the cron manager page under the WP oOS menu.
 	 */
 	public function register_page() {
-		add_submenu_page(
+		$this->page_hook = add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'WP oOS Cron Manager', 'wp-mcp-ai' ),
 			__( 'Cron Manager', 'wp-mcp-ai' ),
@@ -48,7 +55,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'wp-mcp-ai-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( $this->page_hook !== $hook ) {
 			return;
 		}
 

@@ -17,6 +17,13 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		const PAGE_SLUG = 'wp-mcp-ai-auth0-setup';
 
 		/**
+		 * Page hook suffix.
+		 *
+		 * @var string
+		 */
+		private $page_hook = '';
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
@@ -29,7 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		 * Register the setup wizard page.
 		 */
 		public function register_page() {
-			add_submenu_page(
+			$this->page_hook = add_submenu_page(
 				'wp-mcp-ai-dashboard',
 				__( 'Auth0 Setup', 'wp-mcp-ai' ),
 				__( 'Auth0 Setup', 'wp-mcp-ai' ),
@@ -45,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			if ( 'wp-oos_page_' . self::PAGE_SLUG !== $hook && 'wp-mcp-ai-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
+			if ( $this->page_hook !== $hook ) {
 				return;
 			}
 

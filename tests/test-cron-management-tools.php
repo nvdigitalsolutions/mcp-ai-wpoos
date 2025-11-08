@@ -481,7 +481,7 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '"properties":[]', $json );
 
 		// Also verify when decoded and re-encoded it stays as object
-		$decoded   = json_decode( $json, true );
+		$decoded   = json_decode( $json );
 		$reencoded = wp_json_encode( $decoded );
 		$this->assertStringContainsString( '"properties":{}', $reencoded );
 	}
