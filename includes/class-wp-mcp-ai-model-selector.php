@@ -183,19 +183,43 @@ class WP_MCP_AI_Model_Selector {
 			)
 		);
 
+		// Check if auto-switching to high-capacity model is enabled and use configured fallback.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		if ( ! empty( $settings['enable_high_token_model_switch'] ) && ! empty( $settings['high_token_fallback_model'] ) ) {
+			$high_capacity_model = sanitize_text_field( $settings['high_token_fallback_model'] );
+			
+			// Verify the high-capacity model can handle the token requirement.
+			$fallback_tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $high_capacity_model );
+			
+			// If the high-capacity model has no limit or a higher limit, use it.
+			if ( null === $fallback_tpm_limit || 0 === $fallback_tpm_limit || $total_tokens <= $fallback_tpm_limit ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_switched_to_high_capacity',
+					'Automatically switched to configured high-capacity fallback model.',
+					array(
+						'original_model'      => $model,
+						'fallback_model'      => $high_capacity_model,
+						'required_tokens'     => $total_tokens,
+						'fallback_tpm_limit'  => $fallback_tpm_limit,
+					)
+				);
+				return $high_capacity_model;
+			}
+		}
+
 		// Determine the provider and suggest an appropriate fallback.
 		$model_lower = strtolower( $model );
 
-		// OpenAI models - try gpt-4o if currently on gpt-4o-mini, or Gemini for very large requests.
+		// OpenAI models - try gpt-4o if currently on gpt-4o-mini, or high-capacity Gemini for very large requests.
 		if ( false !== strpos( $model_lower, 'gpt' ) || false !== strpos( $model_lower, 'o1' ) ) {
 			// If on gpt-4o-mini and request is too large, try gpt-4o.
 			if ( false !== strpos( $model_lower, 'mini' ) && $total_tokens <= 30000 ) {
 				return 'gpt-4o';
 			}
 
-			// For very large requests (> 30k tokens), fallback to Gemini which has 1M TPM.
+			// For very large requests (> 30k tokens), fallback to configured high-capacity model or Gemini.
 			if ( $total_tokens > 30000 ) {
-				return 'gemini-2.0-flash';
+				return self::get_high_capacity_fallback_model();
 			}
 
 			// Otherwise, fallback to gpt-4o.
@@ -204,9 +228,9 @@ class WP_MCP_AI_Model_Selector {
 
 		// Gemini models already have high TPM limits (1M), unlikely to hit this.
 		if ( false !== strpos( $model_lower, 'gemini' ) ) {
-			// Fallback to gemini-1.5-pro for very large requests.
+			// Fallback to configured high-capacity model or gemini-1.5-pro for very large requests.
 			if ( $total_tokens > 1000000 ) {
-				// Even Gemini can't handle this - log error but return flash.
+				// Even Gemini can't handle this - log error but return high-capacity fallback.
 				WP_MCP_AI_Logger::log_error(
 					'Request too large even for Gemini.',
 					array(
@@ -216,22 +240,42 @@ class WP_MCP_AI_Model_Selector {
 				);
 			}
 
-			return 'gemini-2.0-flash';
+			return self::get_high_capacity_fallback_model();
 		}
 
-		// Claude models - try higher tier or fallback to Gemini.
+		// Claude models - try higher tier or fallback to high-capacity model.
 		if ( false !== strpos( $model_lower, 'claude' ) ) {
-			// If on claude-3-haiku or claude-3.5-sonnet and request is too large, try Gemini.
+			// If on claude-3-haiku or claude-3.5-sonnet and request is too large, try high-capacity model.
 			if ( $total_tokens > 50000 ) {
-				return 'gemini-2.0-flash';
+				return self::get_high_capacity_fallback_model();
 			}
 
 			// Otherwise, try claude-3-haiku.
 			return 'claude-3-haiku';
 		}
 
-		// Default fallback for unknown models - use Gemini which has high limits.
-		return 'gemini-2.0-flash';
+		// Default fallback for unknown models - use configured high-capacity model.
+		return self::get_high_capacity_fallback_model();
+	}
+
+	/**
+	 * Get the configured high-capacity fallback model.
+	 *
+	 * Returns the model configured in settings for handling high token volumes,
+	 * or a sensible default if not configured.
+	 *
+	 * @return string Model identifier for high-capacity fallback.
+	 */
+	protected static function get_high_capacity_fallback_model() {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		
+		// Use configured high-capacity fallback model if available.
+		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
+			return sanitize_text_field( $settings['high_token_fallback_model'] );
+		}
+		
+		// Default to gemini-2.0-flash-exp which has high token capacity.
+		return 'gemini-2.0-flash-exp';
 	}
 
 	/**
