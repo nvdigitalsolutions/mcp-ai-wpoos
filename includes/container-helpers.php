@@ -23,15 +23,22 @@ function wp_mcp_ai_container() {
 }
 
 /**
- * Resolve a service from the container
+ * Resolve a service from the container or get the container itself
  *
- * Shorthand for wp_mcp_ai_container()->get($id)
+ * When called with a service ID: Returns the service instance.
+ * When called without parameters: Returns the container itself.
  *
- * @param string $id Service identifier.
- * @return mixed Service instance.
+ * @param string $id Optional. Service identifier.
+ * @return mixed Service instance if $id provided, container instance otherwise.
  */
-function wp_mcp_ai( $id ) {
-	return wp_mcp_ai_container()->get( $id );
+function wp_mcp_ai( $id = null ) {
+	$container = wp_mcp_ai_container();
+	
+	if ( null === $id ) {
+		return $container;
+	}
+	
+	return $container->get( $id );
 }
 
 /**

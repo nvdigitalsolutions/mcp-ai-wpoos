@@ -237,7 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Group fields by provider.
 			$providers = array(
 				'OpenAI'      => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
-			'Anthropic'          => array( 'anthropic_api_key', 'anthropic_model' ),
+				'Anthropic'          => array( 'anthropic_api_key', 'anthropic_model' ),
 				'Google Gemini' => array( 'gemini_api_key', 'default_gemini_model' ),
 				'Ollama (Local)' => array( 'ollama_endpoint_url', 'ollama_model' ),
 				'LM Studio (Local)' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),

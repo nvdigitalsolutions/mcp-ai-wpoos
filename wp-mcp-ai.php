@@ -678,23 +678,22 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	}
 }
 
-if ( ! function_exists( 'wp_mcp_ai' ) ) {
-	/**
-	 * Returns the main instance of WP_MCP_AI.
-	 *
-	 * @return WP_MCP_AI
-	 */
-	function wp_mcp_ai() {
-		return WP_MCP_AI::instance();
-	}
-}
-
 if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 	/**
 	 * Bootstrap the plugin once all dependencies are loaded.
+	 *
+	 * Note: With Phase 4 refactoring, most bootstrap logic happens
+	 * during file loading. This function is kept for backward compatibility
+	 * and to provide a hook point for any late initialization logic.
 	 */
 	function wp_mcp_ai_bootstrap() {
-		wp_mcp_ai()->bootstrap();
+		// Apply any filters that need to run after all plugins are loaded.
+		/**
+		 * Fires after WP oOS has completed its bootstrap process.
+		 *
+		 * @since 1.0.0
+		 */
+		do_action( 'wp_mcp_ai_bootstrapped' );
 	}
 }
 
