@@ -64,22 +64,37 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 			wp_enqueue_style(
 				'wp-mcp-ai-mcp-diagnostic',
-				WP_MCP_AI_URL . 'assets/css/admin-settings.css',
+				WP_MCP_AI_URL . 'assets/css/mcp-diagnostic.css',
 				array(),
 				WP_MCP_AI_VERSION
 			);
 
-			// Enqueue jQuery for the inline scripts.
-			wp_enqueue_script( 'jquery' );
+			// Enqueue the diagnostic page JavaScript.
+			wp_enqueue_script(
+				'wp-mcp-ai-mcp-diagnostic',
+				WP_MCP_AI_URL . 'assets/js/mcp-diagnostic.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
 
-			// Localize script data for use in inline JavaScript.
-			// This creates a global wpMcpAiMcpDiagnostic variable available immediately.
+			// Localize script data for the diagnostic JavaScript.
 			wp_localize_script(
-				'jquery',
+				'wp-mcp-ai-mcp-diagnostic',
 				'wpMcpAiMcpDiagnostic',
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ),
+					'i18n'    => array(
+						'testing'         => __( 'Testing...', 'wp-mcp-ai' ),
+						'testingEndpoint' => __( 'Testing MCP endpoint...', 'wp-mcp-ai' ),
+						'testingMethod'   => __( 'Testing method...', 'wp-mcp-ai' ),
+						'success'         => __( 'Success!', 'wp-mcp-ai' ),
+						'error'           => __( 'Error!', 'wp-mcp-ai' ),
+						'unknownError'    => __( 'Unknown error occurred', 'wp-mcp-ai' ),
+						'testEndpoint'    => __( 'Test MCP Endpoint', 'wp-mcp-ai' ),
+						'viewResponse'    => __( 'View Response', 'wp-mcp-ai' ),
+					),
 				)
 			);
 		}
@@ -603,144 +618,6 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					</ul>
 				</div>
 			</div>
-
-			<script type="text/javascript">
-			/* global wpMcpAiMcpDiagnostic */
-			jQuery(document).ready(function($) {
-				// Use localized script data.
-				var ajaxUrl = wpMcpAiMcpDiagnostic.ajaxUrl;
-				var nonce = wpMcpAiMcpDiagnostic.nonce;
-				
-				// Test MCP endpoint connectivity.
-				$('#test-mcp-endpoint').on('click', function() {
-					var button = $(this);
-					var resultDiv = $('#mcp-endpoint-test-result');
-					
-					button.prop('disabled', true).text('<?php esc_attr_e( 'Testing...', 'wp-mcp-ai' ); ?>');
-					resultDiv.html('<p><?php esc_html_e( 'Testing MCP endpoint...', 'wp-mcp-ai' ); ?></p>');
-
-					$.ajax({
-						url: ajaxUrl,
-						type: 'POST',
-						data: {
-							action: 'wp_mcp_ai_test_mcp_endpoint',
-							nonce: nonce
-						},
-						success: function(response) {
-							if (response.success) {
-								resultDiv.html(
-									'<div class="notice notice-success inline"><p><strong>' +
-									'<?php esc_html_e( 'Success!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + response.data.message + '</p>' +
-									'<pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;">' +
-									JSON.stringify(response.data.response, null, 2) +
-									'</pre></div>'
-								);
-							} else {
-								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'wp-mcp-ai' ) ); ?>';
-								resultDiv.html(
-									'<div class="notice notice-error inline"><p><strong>' +
-									'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + errorMessage + '</p></div>'
-								);
-							}
-						},
-						error: function(xhr, status, error) {
-							resultDiv.html(
-								'<div class="notice notice-error inline"><p><strong>' +
-								'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-								'</strong> ' + error + '</p></div>'
-							);
-						},
-						complete: function() {
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Test MCP Endpoint', 'wp-mcp-ai' ); ?>');
-						}
-					});
-				});
-
-				// Test individual MCP methods.
-				$('.test-mcp-method').on('click', function() {
-					var button = $(this);
-					var method = button.data('method');
-					var methodId = button.data('method-id');
-					var resultDiv = $('#result-' + methodId);
-					
-					button.prop('disabled', true).text('<?php esc_attr_e( 'Testing...', 'wp-mcp-ai' ); ?>');
-					resultDiv.html('<p><?php esc_html_e( 'Testing method...', 'wp-mcp-ai' ); ?></p>');
-
-					$.ajax({
-						url: ajaxUrl,
-						type: 'POST',
-						data: {
-							action: 'wp_mcp_ai_test_mcp_method',
-							nonce: nonce,
-							method: method
-						},
-						success: function(response) {
-							if (response.success) {
-								var resultCount = '';
-								if (response.data.response && response.data.response.result) {
-									var result = response.data.response.result;
-									if (result.tools && Array.isArray(result.tools)) {
-										resultCount = ' (' + result.tools.length + ' tools)';
-									} else if (result.resources && Array.isArray(result.resources)) {
-										resultCount = ' (' + result.resources.length + ' resources)';
-									} else if (result.prompts && Array.isArray(result.prompts)) {
-										resultCount = ' (' + result.prompts.length + ' prompts)';
-									}
-								}
-								
-								resultDiv.html(
-									'<div class="notice notice-success inline"><p><strong>' +
-									'<?php esc_html_e( 'Success!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + response.data.message + resultCount + '</p>' +
-									'<details><summary style="cursor: pointer;"><?php esc_html_e( 'View Response', 'wp-mcp-ai' ); ?></summary>' +
-									'<pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; max-height: 400px;">' +
-									JSON.stringify(response.data.response, null, 2) +
-									'</pre></details></div>'
-								);
-							} else {
-								var errorMessage = (response.data && response.data.message) ? response.data.message : '<?php esc_js( __( 'Unknown error occurred', 'wp-mcp-ai' ) ); ?>';
-								resultDiv.html(
-									'<div class="notice notice-error inline"><p><strong>' +
-									'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-									'</strong> ' + errorMessage + '</p></div>'
-								);
-							}
-						},
-						error: function(xhr, status, error) {
-							resultDiv.html(
-								'<div class="notice notice-error inline"><p><strong>' +
-								'<?php esc_html_e( 'Error!', 'wp-mcp-ai' ); ?>' +
-								'</strong> ' + error + '</p></div>'
-							);
-						},
-						complete: function() {
-							// Store original button text in data attribute if not already stored.
-							if (!button.data('original-text')) {
-								button.data('original-text', button.text());
-							}
-							button.prop('disabled', false).text(button.data('original-text'));
-						}
-					});
-				});
-			});
-			</script>
-
-			<style>
-			.mcp-test-result {
-				min-height: 20px;
-			}
-			.mcp-test-result .notice {
-				margin: 0;
-			}
-			.mcp-method-test {
-				transition: background-color 0.2s;
-			}
-			.mcp-method-test:hover {
-				background-color: #f0f0f0 !important;
-			}
-			</style>
 			<?php
 		}
 
