@@ -218,12 +218,44 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 				if ( is_array( $menu_item ) && isset( $menu_item[2] ) && 'wp-mcp-ai-dashboard' === $menu_item[2] ) {
 					$menu_registered = true;
 					// Verify it has the correct icon.
-					$this->assertEquals( 'dashicons-admin-generic', $menu_item[6] );
+					$this->assertEquals( 'dashicons-format-chat', $menu_item[6] );
 					break;
 				}
 			}
 		}
 
 		$this->assertTrue( $menu_registered, 'WP oOS menu should be registered as a top-level menu item' );
+	}
+
+	/**
+	 * Test that the General Settings submenu item is registered.
+	 */
+	public function test_general_settings_submenu_registered() {
+		global $submenu;
+
+		// Set up an admin user.
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+		set_current_screen( 'dashboard' );
+
+		// Trigger the admin_menu action to register menus.
+		do_action( 'admin_menu' );
+
+		// Check that the submenu is registered under wp-mcp-ai-dashboard.
+		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $submenu, 'WP oOS should have submenu items' );
+
+		// Find the General Settings submenu item.
+		$general_settings_found = false;
+		if ( isset( $submenu['wp-mcp-ai-dashboard'] ) && is_array( $submenu['wp-mcp-ai-dashboard'] ) ) {
+			foreach ( $submenu['wp-mcp-ai-dashboard'] as $submenu_item ) {
+				if ( is_array( $submenu_item ) && isset( $submenu_item[2] ) && 'wp-mcp-ai-dashboard' === $submenu_item[2] ) {
+					$general_settings_found = true;
+					// Verify the menu title.
+					$this->assertEquals( 'General Settings', $submenu_item[0] );
+					break;
+				}
+			}
+		}
+
+		$this->assertTrue( $general_settings_found, 'General Settings submenu item should be registered' );
 	}
 }

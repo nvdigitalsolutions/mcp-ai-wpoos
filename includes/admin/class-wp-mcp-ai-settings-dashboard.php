@@ -38,8 +38,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
-				'dashicons-admin-generic',
+				'dashicons-format-chat',
 				30
+			);
+
+			// Add submenu item for General Settings (this makes the first submenu item link to the main page).
+			add_submenu_page(
+				self::PAGE_SLUG,
+				__( 'General Settings', 'wp-mcp-ai' ),
+				__( 'General Settings', 'wp-mcp-ai' ),
+				'manage_options',
+				self::PAGE_SLUG,
+				array( $this, 'render_dashboard' )
 			);
 		}
 
