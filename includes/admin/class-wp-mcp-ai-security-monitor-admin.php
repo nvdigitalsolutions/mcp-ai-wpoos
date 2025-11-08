@@ -79,10 +79,11 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'    => 'wp-mcp-ai-settings',
+						'page'    => 'wp-mcp-ai-dashboard',
+						'tab'     => 'security',
 						'cleared' => 'shutdown',
 					),
-					admin_url( 'options-general.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;
@@ -104,10 +105,11 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'    => 'wp-mcp-ai-settings',
+						'page'    => 'wp-mcp-ai-dashboard',
+						'tab'     => 'security',
 						'cleared' => 'violations',
 					),
-					admin_url( 'options-general.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;
@@ -132,10 +134,11 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'      => 'wp-mcp-ai-settings',
+							'page'      => 'wp-mcp-ai-dashboard',
+							'tab'       => 'security',
 							'root_key'  => 'empty',
 						),
-						admin_url( 'options-general.php' )
+						admin_url( 'admin.php' )
 					)
 				);
 				exit;
@@ -148,11 +151,12 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'      => 'wp-mcp-ai-settings',
+							'page'      => 'wp-mcp-ai-dashboard',
+							'tab'       => 'security',
 							'root_key'  => 'invalid',
 							'error'     => urlencode( $result->get_error_message() ),
 						),
-						admin_url( 'options-general.php' )
+						admin_url( 'admin.php' )
 					)
 				);
 				exit;
@@ -161,10 +165,11 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'      => 'wp-mcp-ai-settings',
+						'page'      => 'wp-mcp-ai-dashboard',
+						'tab'       => 'security',
 						'root_key'  => 'verified',
 					),
-					admin_url( 'options-general.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;

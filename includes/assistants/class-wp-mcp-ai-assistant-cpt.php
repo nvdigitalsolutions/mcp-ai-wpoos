@@ -3728,7 +3728,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							sprintf(
 								/* translators: %s: Settings URL */
 								__( 'No mesh peer sites configured. <a href="%s">Configure mesh peers</a> to enable distributed compute routing, or use AI routing with multiple providers on this site.', 'wp-mcp-ai' ),
-								admin_url( 'options-general.php?page=wp-mcp-ai-settings#mesh_network' )
+								admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools' )
 							)
 						);
 						?>

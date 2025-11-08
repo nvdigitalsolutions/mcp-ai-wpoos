@@ -304,7 +304,7 @@ if ( is_admin() ) {
 		
 		// Link to the appropriate settings page based on configuration.
 		if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
-			$settings_link = admin_url( 'options-general.php?page=wp-mcp-ai-settings' );
+			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-settings' );
 		} else {
 			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
 		}

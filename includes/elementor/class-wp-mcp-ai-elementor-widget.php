@@ -1158,13 +1158,13 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			return '';
 		}
 
-		$slug = 'wp-mcp-ai-settings';
+		$slug = 'wp-mcp-ai-dashboard';
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && defined( 'WP_MCP_AI_Admin_Settings::PAGE_SLUG' ) ) {
 			$slug = WP_MCP_AI_Admin_Settings::PAGE_SLUG;
 		}
 
-		return admin_url( 'admin.php?page=' . $slug . '#wp_mcp_ai_chat_colors_section' );
+		return admin_url( 'admin.php?page=' . $slug );
 	}
 
 	/**
