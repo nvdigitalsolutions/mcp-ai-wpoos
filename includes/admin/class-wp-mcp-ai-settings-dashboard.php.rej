@@ -1,0 +1,17 @@
+*** /dev/null
+--- /dev/null
+***************
+*** 99,102
+- $settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
+- $settings = $this->sanitize_settings( $settings );
+- 
+- update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+--- 99,106 -----
++ $posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
++ $sanitized_new   = $this->sanitize_settings( $posted_settings );
++ 
++ // Merge with existing settings to avoid wiping unrelated fields.
++ // This is critical for display-only sections (like Overview) that have no editable fields.
++ $existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
++ $merged_settings   = array_merge( $existing_settings, $sanitized_new );
++ 

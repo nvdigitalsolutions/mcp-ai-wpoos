@@ -96,15 +96,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
 
-			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
-			$sanitized_new   = $this->sanitize_settings( $posted_settings );
+			$settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
+			$settings = $this->sanitize_settings( $settings );
 
-		// Merge with existing settings to avoid wiping unrelated fields.
-		// This is critical for display-only sections (like Overview) that have no editable fields.
-		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged_settings   = array_merge( $existing_settings, $sanitized_new );
-
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 			wp_safe_redirect(
 				add_query_arg(
