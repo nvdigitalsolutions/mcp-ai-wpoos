@@ -689,15 +689,14 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 	/**
 	 * Bootstrap the plugin once all dependencies are loaded.
 	 *
-	 * Note: With Phase 4 refactoring, most bootstrap logic happens
-	 * during file loading. This function is kept for backward compatibility
-	 * and to provide a hook point for any late initialization logic.
+	 * Instantiates the main plugin singleton and calls its bootstrap method
+	 * to initialize all core components (REST API, tool registry, assistants, etc.).
 	 */
 	function wp_mcp_ai_bootstrap() {
-		// Initialize the main plugin instance.
-		WP_MCP_AI::instance()->bootstrap();
+		// Instantiate the main plugin singleton and bootstrap it.
+		$plugin = WP_MCP_AI::instance();
+		$plugin->bootstrap();
 		
-		// Apply any filters that need to run after all plugins are loaded.
 		/**
 		 * Fires after WP oOS has completed its bootstrap process.
 		 *
