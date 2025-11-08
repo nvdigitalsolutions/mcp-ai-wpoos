@@ -292,6 +292,33 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 		new WP_MCP_AI_Auth0_Setup();
 	}
+
+	/**
+	 * Add plugin action links in the plugins list.
+	 *
+	 * @param array $links Existing plugin action links.
+	 * @return array Modified plugin action links.
+	 */
+	function wp_mcp_ai_add_plugin_action_links( $links ) {
+		$settings_link = '';
+		
+		// Link to the appropriate settings page based on configuration.
+		if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
+			$settings_link = admin_url( 'options-general.php?page=wp-mcp-ai-settings' );
+		} else {
+			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
+		}
+
+		$diagnostic_link = admin_url( 'admin.php?page=wp-mcp-ai-diagnostic' );
+
+		$plugin_links = array(
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
+		);
+
+		return array_merge( $plugin_links, $links );
+	}
+	add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
