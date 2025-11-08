@@ -260,3 +260,162 @@
 	font-weight: 600;
 }
 
+/* Token Manager Styles */
+.wp-mcp-ai-token-manager__nav {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 20px;
+	padding-bottom: 10px;
+	border-bottom: 2px solid #e5e5e5;
+}
+
+.wp-mcp-ai-token-manager__nav-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 16px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	color: #2c3338;
+	text-decoration: none;
+	font-size: 14px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-token-manager__nav-item .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+.wp-mcp-ai-token-manager__nav-item:hover {
+	background: #e8eaeb;
+	color: #0073aa;
+	border-color: #c3c4c7;
+}
+
+.wp-mcp-ai-token-manager__nav-item.active {
+	background: #0073aa;
+	color: #fff;
+	border-color: #0073aa;
+	box-shadow: 0 2px 4px rgba(0, 115, 170, 0.2);
+}
+
+.wp-mcp-ai-token-manager__content {
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+/* Stats Grid */
+.wp-mcp-ai-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 20px;
+	margin: 20px 0 30px;
+}
+
+.wp-mcp-ai-stats-card {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	padding: 20px;
+	background: linear-gradient(135deg, #f6f7f7 0%, #fff 100%);
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-stats-card:hover {
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+}
+
+.wp-mcp-ai-stats-card__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 50px;
+	height: 50px;
+	background: linear-gradient(135deg, #0073aa 0%, #005177 100%);
+	border-radius: 50%;
+	color: #fff;
+	font-size: 24px;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-stats-card__icon .dashicons {
+	width: 24px;
+	height: 24px;
+	font-size: 24px;
+}
+
+.wp-mcp-ai-stats-card__content {
+	flex: 1;
+}
+
+.wp-mcp-ai-stats-card__label {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: #646970;
+	letter-spacing: 0.5px;
+	margin-bottom: 5px;
+}
+
+.wp-mcp-ai-stats-card__value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #1d2327;
+	line-height: 1;
+}
+
+/* User Details Row */
+.wp-mcp-ai-user-details-row td {
+	background: #f6f7f7;
+	padding: 20px !important;
+}
+
+.wp-mcp-ai-user-details {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	background: #fff;
+	padding: 15px;
+}
+
+.wp-mcp-ai-user-details h4 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-user-details table {
+	font-size: 13px;
+}
+
+/* Tool Limit Input */
+.wp-mcp-ai-tool-limit-input {
+	width: 120px;
+	text-align: right;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-token-manager__nav {
+		flex-direction: column;
+	}
+
+	.wp-mcp-ai-token-manager__nav-item {
+		justify-content: center;
+	}
+
+	.wp-mcp-ai-stats-grid {
+		grid-template-columns: 1fr;
+	}
+}
