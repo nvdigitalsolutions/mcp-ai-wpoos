@@ -28,10 +28,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		}
 
 		/**
-		 * Register diagnostic page under Tools menu.
+		 * Register diagnostic page under WP oOS menu.
 		 */
 		public static function register_page() {
-			add_management_page(
+			add_submenu_page(
+				'wp-mcp-ai-dashboard',
 				__( 'MCP Server Diagnostic', 'wp-mcp-ai' ),
 				__( 'MCP Server Test', 'wp-mcp-ai' ),
 				'manage_options',
@@ -46,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public static function enqueue_assets( $hook ) {
-			if ( 'tools_page_wp-mcp-ai-mcp-diagnostic' !== $hook ) {
+			if ( 'wp-mcp-ai-dashboard_page_wp-mcp-ai-mcp-diagnostic' !== $hook ) {
 				return;
 			}
 
@@ -576,7 +577,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					<ul>
 						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>"><?php esc_html_e( 'Manage Assistants', 'wp-mcp-ai' ); ?></a></li>
-						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'wp-mcp-ai' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'wp-mcp-ai' ); ?></a></li>
 					</ul>
 				</div>
 			</div>
