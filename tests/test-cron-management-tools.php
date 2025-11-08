@@ -459,4 +459,30 @@ class WP_MCP_AI_Cron_Management_Tools_Test extends WP_UnitTestCase {
 		$scheduled_after = wp_next_scheduled( $hook, array() );
 		$this->assertFalse( $scheduled_after );
 	}
+
+	/**
+	 * Test list_cron_jobs schema encodes properties as empty object not array.
+	 *
+	 * This test ensures the fix for the chat UI schema validation error where
+	 * an empty PHP array() was being encoded as JSON [] instead of {}.
+	 */
+	public function test_list_cron_jobs_schema_encodes_properties_as_object() {
+		$tool   = new WP_MCP_AI_Tool_List_Cron_Jobs();
+		$schema = $tool->get_parameters_schema();
+
+		$this->assertIsArray( $schema );
+		$this->assertArrayHasKey( 'properties', $schema );
+
+		// Encode the schema to JSON
+		$json = wp_json_encode( $schema );
+
+		// Verify properties is encoded as {} not []
+		$this->assertStringContainsString( '"properties":{}', $json );
+		$this->assertStringNotContainsString( '"properties":[]', $json );
+
+		// Also verify when decoded and re-encoded it stays as object
+		$decoded   = json_decode( $json, true );
+		$reencoded = wp_json_encode( $decoded );
+		$this->assertStringContainsString( '"properties":{}', $reencoded );
+	}
 }
