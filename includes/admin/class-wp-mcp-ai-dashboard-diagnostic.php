@@ -152,29 +152,79 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 
 				<div class="card">
 					<h2><?php esc_html_e( '4. Global Variables', 'wp-mcp-ai' ); ?></h2>
+					<?php
+					// Check which settings system is active.
+					$using_old_settings = defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS;
+					?>
+					<p>
+						<strong><?php esc_html_e( 'Active Settings System:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						if ( $using_old_settings ) {
+							echo '<span style="color: orange;">' . esc_html__( 'Legacy Settings (WP_MCP_AI_USE_OLD_SETTINGS = true)', 'wp-mcp-ai' ) . '</span>';
+						} else {
+							echo '<span style="color: green;">' . esc_html__( 'New Settings Dashboard (default)', 'wp-mcp-ai' ) . '</span>';
+						}
+						?>
+					</p>
 					<table class="widefat striped">
 						<thead>
 							<tr>
 								<th><?php esc_html_e( 'Variable', 'wp-mcp-ai' ); ?></th>
 								<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Notes', 'wp-mcp-ai' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
 							<?php
-							$globals = array(
-								'wp_mcp_ai_settings_dashboard',
-								'wp_mcp_ai_admin_settings',
-							);
-							foreach ( $globals as $global ) {
-								$exists = isset( $GLOBALS[ $global ] );
-								?>
-								<tr>
-									<td><code>$GLOBALS['<?php echo esc_html( $global ); ?>']</code></td>
-									<td><?php echo $exists ? '<span style="color: green;">✓ Set</span>' : '<span style="color: orange;">Not Set</span>'; ?></td>
-								</tr>
-								<?php
-							}
+							// Check for new settings dashboard global.
+							$dashboard_exists = isset( $GLOBALS['wp_mcp_ai_settings_dashboard'] );
 							?>
+							<tr>
+								<td><code>$GLOBALS['wp_mcp_ai_settings_dashboard']</code></td>
+								<td>
+									<?php
+									if ( $dashboard_exists ) {
+										echo '<span style="color: green;">✓ Set</span>';
+									} else {
+										echo '<span style="color: ' . ( $using_old_settings ? 'gray' : 'red' ) . ';">Not Set</span>';
+									}
+									?>
+								</td>
+								<td>
+									<?php
+									if ( $using_old_settings ) {
+										esc_html_e( 'Not needed (legacy mode)', 'wp-mcp-ai' );
+									} else {
+										esc_html_e( 'New settings dashboard instance', 'wp-mcp-ai' );
+									}
+									?>
+								</td>
+							</tr>
+							<?php
+							// Check for old admin settings global.
+							$admin_settings_exists = isset( $GLOBALS['wp_mcp_ai_admin_settings'] );
+							?>
+							<tr>
+								<td><code>$GLOBALS['wp_mcp_ai_admin_settings']</code></td>
+								<td>
+									<?php
+									if ( $admin_settings_exists ) {
+										echo '<span style="color: green;">✓ Set</span>';
+									} else {
+										echo '<span style="color: ' . ( $using_old_settings ? 'red' : 'gray' ) . ';">Not Set</span>';
+									}
+									?>
+								</td>
+								<td>
+									<?php
+									if ( $using_old_settings ) {
+										esc_html_e( 'Legacy admin settings instance', 'wp-mcp-ai' );
+									} else {
+										esc_html_e( 'Not needed (new dashboard mode)', 'wp-mcp-ai' );
+									}
+									?>
+								</td>
+							</tr>
 						</tbody>
 					</table>
 				</div>
