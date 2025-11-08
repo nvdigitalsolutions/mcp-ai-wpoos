@@ -2204,6 +2204,11 @@
             return;
         }
 
+        // Save the current conversation before replacing it (if it has messages)
+        if (state.conversation && state.conversation.length > 0) {
+            saveConversationToStorage(state);
+        }
+
         const sessionKey = session.session_key ? String(session.session_key) : '';
         setActiveHistorySession(state, sessionKey, activeItem);
 
