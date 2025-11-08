@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							
 							<button 
 								type="button" 
-								class="button test-mcp-method" 
+								class="button button-secondary test-mcp-method" 
 								data-method="<?php echo esc_attr( $method ); ?>"
 								data-method-id="<?php echo esc_attr( $method_id ); ?>">
 								<?php
