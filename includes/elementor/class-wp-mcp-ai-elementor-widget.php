@@ -1034,18 +1034,22 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			return $options;
 		}
 
-		// Suppress any PHP notices/warnings that could break Elementor's JSON response.
-		// Error suppression is necessary here because any output during AJAX widget registration
-		// will contaminate the JSON response and cause parsing errors in the Elementor editor.
-		$assistants = @get_posts(
+		// Check if the post type is registered before querying.
+		// During Elementor AJAX requests, the post type may not be registered yet.
+		if ( ! post_type_exists( WP_MCP_AI_Assistant_CPT::POST_TYPE ) ) {
+			return $options;
+		}
+
+		$assistants = get_posts(
 			array(
 				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
 				'post_status'      => 'publish',
 				'numberposts'      => -1,
 				'orderby'          => 'title',
 				'order'            => 'ASC',
-				'suppress_filters' => false,
+				'suppress_filters' => true,
 				'fields'           => 'ids',
+				'no_found_rows'    => true,
 			)
 		);
 
@@ -1054,9 +1058,8 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		}
 
 		foreach ( $assistants as $assistant_id ) {
-			// Suppress errors on get_the_title as well to prevent JSON contamination.
-			$title = @get_the_title( $assistant_id );
-			if ( $title ) {
+			$title = get_the_title( $assistant_id );
+			if ( $title && ! is_wp_error( $title ) ) {
 				$options[ (string) $assistant_id ] = $title;
 			}
 		}
