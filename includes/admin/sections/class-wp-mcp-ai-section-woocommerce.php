@@ -80,17 +80,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 
 			if ( $woo_active ) {
 				$fields['enable_woocommerce_tools'] = array(
-					'type'        => 'checkbox',
-					'label'       => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
-					'description' => __( 'Activate AI tools for product management, inventory tracking, and order operations.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate AI tools for product management, inventory tracking, and order operations.', 'wp-mcp-ai' ),
+					'default'        => true,
 				);
 
 				$fields['enable_woo_analytics'] = array(
-					'type'        => 'checkbox',
-					'label'       => __( 'Enable Sales Analytics Tools', 'wp-mcp-ai' ),
-					'description' => __( 'Allow AI to query sales data, revenue metrics, and customer analytics.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Sales Analytics Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable sales analytics tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Allow AI to query sales data, revenue metrics, and customer analytics.', 'wp-mcp-ai' ),
+					'default'        => true,
 				);
 
 				$fields['woocommerce_tools_list'] = array(

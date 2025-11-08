@@ -80,17 +80,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 
 			if ( $jetengine_active ) {
 				$fields['enable_jetengine_cct'] = array(
-					'type'        => 'checkbox',
-					'label'       => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
-					'description' => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'wp-mcp-ai' ),
+					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
+					'default'        => true,
 				);
 
 				$fields['enable_jetengine_tools'] = array(
-					'type'        => 'checkbox',
-					'label'       => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
-					'description' => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable JetEngine AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
+					'default'        => true,
 				);
 
 				$fields['jetengine_tools_list'] = array(
