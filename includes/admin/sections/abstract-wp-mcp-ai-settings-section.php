@@ -86,11 +86,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$fields    = $this->get_fields();
 
 			foreach ( $fields as $key => $field ) {
+				$type = isset( $field['type'] ) ? $field['type'] : 'text';
+
+				// Special handling for checkboxes: if not present in input, set to false.
+				if ( 'checkbox' === $type ) {
+					$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
+					continue;
+				}
+
+				// For other field types, skip if not present in input.
 				if ( ! isset( $input[ $key ] ) ) {
 					continue;
 				}
 
-				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
 				$value = $input[ $key ];
 
 				switch ( $type ) {
@@ -110,10 +118,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 					case 'number':
 						$sanitized[ $key ] = absint( $value );
-						break;
-
-					case 'checkbox':
-						$sanitized[ $key ] = (bool) $value;
 						break;
 
 					case 'select':
