@@ -65,7 +65,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Get available providers for dropdown.
+			$provider_options = array(
+				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+				'gemini'     => __( 'Google Gemini', 'wp-mcp-ai' ),
+				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+			);
+
+			// Get available assistants for dropdown.
+			$assistant_options = $this->get_assistant_options();
+
 			return array(
+				'default_provider'     => array(
+					'type'        => 'select',
+					'label'       => __( 'Default AI Provider', 'wp-mcp-ai' ),
+					'description' => __( 'The primary AI provider used when no specific provider is specified. This affects new conversations and REST API requests. Make sure the selected provider is properly configured in the Providers tab.', 'wp-mcp-ai' ),
+					'options'     => $provider_options,
+					'default'     => 'openai',
+				),
+				'default_assistant'    => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Assistant', 'wp-mcp-ai' ),
+					'description' => __( 'The assistant used by default when one is not explicitly specified in REST API interactions. Leave as "None" to require explicit assistant selection.', 'wp-mcp-ai' ),
+					'options'     => $assistant_options,
+					'default'     => 0,
+				),
 				'enable_logging'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Logging', 'wp-mcp-ai' ),
@@ -83,18 +108,52 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				'max_history_messages' => array(
 					'type'        => 'number',
 					'label'       => __( 'Max History Messages', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum number of previous messages to include in chat context.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of previous messages to include in chat context. Higher values provide more context but increase token usage.', 'wp-mcp-ai' ),
 					'default'     => 10,
 					'placeholder' => '10',
+					'min'         => 1,
+					'max'         => 100,
 				),
 				'request_timeout'      => array(
 					'type'        => 'number',
 					'label'       => __( 'Request Timeout (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'How long to wait for AI provider responses before timing out.', 'wp-mcp-ai' ),
+					'description' => __( 'How long to wait for AI provider responses before timing out. Increase for complex requests or slower providers.', 'wp-mcp-ai' ),
 					'default'     => 60,
 					'placeholder' => '60',
+					'min'         => 10,
+					'max'         => 600,
 				),
 			);
+		}
+
+		/**
+		 * Get assistant options for select dropdown.
+		 *
+		 * @return array
+		 */
+		private function get_assistant_options() {
+			$options = array(
+				0 => __( 'None (explicit selection required)', 'wp-mcp-ai' ),
+			);
+
+			// Get published assistants.
+			$assistants = get_posts(
+				array(
+					'post_type'      => 'mcp_ai_assistant',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			if ( ! empty( $assistants ) ) {
+				foreach ( $assistants as $assistant ) {
+					$options[ $assistant->ID ] = $assistant->post_title;
+				}
+			}
+
+			return $options;
 		}
 
 		/**
@@ -108,6 +167,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			}
 		}
 
+	/**
+	 * Sanitize section input.
+	 *
+	 * @param array $input Raw input from form.
+	 * @return array Sanitized input.
+	 */
+	public function sanitize( $input ) {
+		// Call parent sanitization first.
+		$sanitized = parent::sanitize( $input );
+
+		// Special handling for default_assistant: convert to integer.
+		if ( isset( $sanitized['default_assistant'] ) ) {
+			$sanitized['default_assistant'] = absint( $sanitized['default_assistant'] );
+		}
+
+		return $sanitized;
+	}
+
 		/**
 		 * Validate section input.
 		 *
@@ -116,6 +193,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 */
 		public function validate( $input ) {
 			$errors = array();
+
+			// Validate default_provider.
+			if ( isset( $input['default_provider'] ) ) {
+				$valid_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+				if ( ! in_array( $input['default_provider'], $valid_providers, true ) ) {
+					$errors[] = __( 'Invalid AI provider selected.', 'wp-mcp-ai' );
+				}
+			}
+
+			// Validate default_assistant.
+			if ( isset( $input['default_assistant'] ) ) {
+				$assistant_id = absint( $input['default_assistant'] );
+				if ( $assistant_id > 0 ) {
+					$assistant = get_post( $assistant_id );
+					if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
+						$errors[] = __( 'Invalid assistant selected.', 'wp-mcp-ai' );
+					}
+				}
+			}
 
 			// Validate max_history_messages.
 			if ( isset( $input['max_history_messages'] ) ) {
