@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 						printf(
 							/* translators: %s: Settings page URL */
 							esc_html__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'wp-mcp-ai' ),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'wp-mcp-ai' ) . '</a>'
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'wp-mcp-ai' ) . '</a>'
 						);
 						?>
 					</p>
@@ -621,7 +621,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 								/* translators: 1: Number of violations, 2: Settings page URL */
 								esc_html( _n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'wp-mcp-ai' ) ),
 								absint( $recent_violations ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=security' ) ) . '">' . esc_html__( 'View details', 'wp-mcp-ai' ) . '</a>'
+								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'View details', 'wp-mcp-ai' ) . '</a>'
 							);
 							?>
 						</p>

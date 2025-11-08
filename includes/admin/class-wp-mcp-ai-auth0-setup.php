@@ -178,7 +178,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 								<strong><?php esc_html_e( 'Configure Credentials in Settings', 'wp-mcp-ai' ); ?></strong>
 								<p><?php esc_html_e( 'Copy the Client ID and Client Secret to:', 'wp-mcp-ai' ); ?></p>
 								<p>
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings#auth0' ) ); ?>" class="button button-secondary">
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=authentication' ) ); ?>" class="button button-secondary">
 										<?php esc_html_e( 'Go to WP oOS Settings', 'wp-mcp-ai' ); ?>
 									</a>
 								</p>

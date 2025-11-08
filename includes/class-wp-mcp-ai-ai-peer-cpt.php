@@ -82,7 +82,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 			'public'             => false,
 			'publicly_queryable' => false,
 			'show_ui'            => true,
-			'show_in_menu'       => 'wp-mcp-ai-settings',
+			'show_in_menu'       => 'wp-mcp-ai-dashboard',
 			'query_var'          => false,
 			'rewrite'            => false,
 			'capability_type'    => 'post',
