@@ -173,8 +173,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Delegate to the settings base class.
 			return WP_MCP_AI_Admin_Settings_Base::get_default_settings();
 		}
-			);
-		}
 
 		/**
 		 * Retrieve metadata describing external service connectors.
