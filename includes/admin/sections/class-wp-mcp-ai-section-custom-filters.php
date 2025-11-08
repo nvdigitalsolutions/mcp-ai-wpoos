@@ -203,6 +203,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		}
 
 		/**
+		 * Sanitize section input.
+		 *
+		 * Override parent to handle empty number fields properly.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input.
+		 */
+		public function sanitize( $input ) {
+			$sanitized = array();
+			$fields    = $this->get_fields();
+
+			foreach ( $fields as $key => $field ) {
+				if ( ! isset( $input[ $key ] ) ) {
+					continue;
+				}
+
+				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
+				$value = $input[ $key ];
+
+				switch ( $type ) {
+					case 'text':
+					case 'password':
+						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+
+					case 'url':
+						// Keep empty strings, only sanitize non-empty values.
+						$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
+						break;
+
+					case 'number':
+						// Keep empty strings for "use default" functionality.
+						$sanitized[ $key ] = '' === $value ? '' : absint( $value );
+						break;
+
+					default:
+						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+				}
+			}
+
+			return $sanitized;
+		}
+
+		/**
 		 * Validate section input.
 		 *
 		 * @param array $input Raw input.
