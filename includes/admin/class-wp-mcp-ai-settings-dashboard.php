@@ -172,11 +172,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				WP_MCP_AI_VERSION
 			);
 
-			// Enqueue dashboard scripts.
+			// Enqueue dashboard scripts with jQuery UI Sortable dependency.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/js/settings-dashboard.js',
-				array( 'jquery' ),
+				array( 'jquery', 'jquery-ui-sortable' ),
 				WP_MCP_AI_VERSION,
 				true
 			);

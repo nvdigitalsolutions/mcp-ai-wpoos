@@ -314,6 +314,58 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		}
 
 		/**
+		 * Sanitize input for this section.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input.
+		 */
+		public function sanitize( $input ) {
+			$sanitized = array();
+
+			// Handle provider_priority_list separately.
+			if ( isset( $input['provider_priority_list'] ) && is_array( $input['provider_priority_list'] ) ) {
+				$sanitized['provider_priority_list'] = $this->sanitize_provider_priority_list( $input['provider_priority_list'] );
+			}
+
+			// Call parent sanitization for other fields.
+			$parent_sanitized = parent::sanitize( $input );
+			$sanitized        = array_merge( $parent_sanitized, $sanitized );
+
+			return $sanitized;
+		}
+
+		/**
+		 * Sanitize provider priority list.
+		 *
+		 * @param array $priority_list The provider priority list to sanitize.
+		 * @return array Sanitized provider priority list.
+		 */
+		private function sanitize_provider_priority_list( $priority_list ) {
+			$valid_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			$sanitized       = array();
+
+			if ( ! is_array( $priority_list ) ) {
+				return $valid_providers;
+			}
+
+			foreach ( $priority_list as $provider ) {
+				$provider = sanitize_text_field( $provider );
+				if ( in_array( $provider, $valid_providers, true ) && ! in_array( $provider, $sanitized, true ) ) {
+					$sanitized[] = $provider;
+				}
+			}
+
+			// Ensure all providers are included (add any missing ones at the end).
+			foreach ( $valid_providers as $provider ) {
+				if ( ! in_array( $provider, $sanitized, true ) ) {
+					$sanitized[] = $provider;
+				}
+			}
+
+			return $sanitized;
+		}
+
+		/**
 		 * Validate section input.
 		 *
 		 * @param array $input Raw input.
