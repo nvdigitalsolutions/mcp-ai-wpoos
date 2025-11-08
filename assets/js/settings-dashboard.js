@@ -7,6 +7,7 @@
 (function($) {
 	'use strict';
 
+	// eslint-disable-next-line camelcase
 	const WP_MCP_AI_Dashboard = {
 		/**
 		 * Initialize the dashboard.
@@ -255,10 +256,12 @@
 
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
+		// eslint-disable-next-line camelcase
 		WP_MCP_AI_Dashboard.init();
 	});
 
 	// Expose to global scope if needed.
+	// eslint-disable-next-line camelcase
 	window.WP_MCP_AI_Dashboard = WP_MCP_AI_Dashboard;
 
 })(jQuery);
