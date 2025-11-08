@@ -898,4 +898,119 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		return ob_get_clean();
 	}
+
+	/**
+	 * Test that default settings include provider_priority_list.
+	 */
+	public function test_default_settings_include_provider_priority_list() {
+		$defaults = WP_MCP_AI_Admin_Settings_Base::get_default_settings();
+
+		$this->assertArrayHasKey( 'provider_priority_list', $defaults );
+		$this->assertIsArray( $defaults['provider_priority_list'] );
+		$this->assertContains( 'openai', $defaults['provider_priority_list'] );
+		$this->assertContains( 'gemini', $defaults['provider_priority_list'] );
+		$this->assertContains( 'ollama', $defaults['provider_priority_list'] );
+		$this->assertContains( 'lm_studio', $defaults['provider_priority_list'] );
+	}
+
+	/**
+	 * Test provider priority list sanitization - valid input.
+	 */
+	public function test_provider_priority_list_sanitization_valid() {
+		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+
+		// Test with valid reordered list.
+		$input = array(
+			'provider_priority_list' => array( 'gemini', 'ollama', 'openai', 'lm_studio' ),
+		);
+
+		$sanitized = $settings_base->sanitize_settings( $input );
+
+		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
+		$this->assertEquals( array( 'gemini', 'ollama', 'openai', 'lm_studio' ), $sanitized['provider_priority_list'] );
+	}
+
+	/**
+	 * Test provider priority list sanitization - removes invalid providers.
+	 */
+	public function test_provider_priority_list_sanitization_removes_invalid() {
+		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+
+		// Test with invalid provider.
+		$input = array(
+			'provider_priority_list' => array( 'openai', 'invalid_provider', 'gemini' ),
+		);
+
+		$sanitized = $settings_base->sanitize_settings( $input );
+
+		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
+		// Should remove invalid_provider and add missing providers.
+		$this->assertContains( 'openai', $sanitized['provider_priority_list'] );
+		$this->assertContains( 'gemini', $sanitized['provider_priority_list'] );
+		$this->assertNotContains( 'invalid_provider', $sanitized['provider_priority_list'] );
+		// Missing providers should be added at the end.
+		$this->assertContains( 'ollama', $sanitized['provider_priority_list'] );
+		$this->assertContains( 'lm_studio', $sanitized['provider_priority_list'] );
+	}
+
+	/**
+	 * Test provider priority list sanitization - removes duplicates.
+	 */
+	public function test_provider_priority_list_sanitization_removes_duplicates() {
+		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+
+		// Test with duplicates.
+		$input = array(
+			'provider_priority_list' => array( 'openai', 'gemini', 'openai', 'ollama' ),
+		);
+
+		$sanitized = $settings_base->sanitize_settings( $input );
+
+		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
+		$this->assertEquals( 4, count( $sanitized['provider_priority_list'] ) );
+		// Should only have one instance of openai.
+		$this->assertEquals( 1, count( array_keys( $sanitized['provider_priority_list'], 'openai' ) ) );
+	}
+
+	/**
+	 * Test provider priority list sanitization - handles non-array input.
+	 */
+	public function test_provider_priority_list_sanitization_handles_non_array() {
+		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+
+		// Test with non-array input.
+		$input = array(
+			'provider_priority_list' => 'not_an_array',
+		);
+
+		$sanitized = $settings_base->sanitize_settings( $input );
+
+		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
+		$this->assertIsArray( $sanitized['provider_priority_list'] );
+		// Should return default list.
+		$this->assertEquals( array( 'openai', 'gemini', 'ollama', 'lm_studio' ), $sanitized['provider_priority_list'] );
+	}
+
+	/**
+	 * Test provider priority list sanitization - adds missing providers.
+	 */
+	public function test_provider_priority_list_sanitization_adds_missing_providers() {
+		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+
+		// Test with partial list.
+		$input = array(
+			'provider_priority_list' => array( 'gemini', 'openai' ),
+		);
+
+		$sanitized = $settings_base->sanitize_settings( $input );
+
+		$this->assertArrayHasKey( 'provider_priority_list', $sanitized );
+		$this->assertEquals( 4, count( $sanitized['provider_priority_list'] ) );
+		// Specified providers should be first.
+		$this->assertEquals( 'gemini', $sanitized['provider_priority_list'][0] );
+		$this->assertEquals( 'openai', $sanitized['provider_priority_list'][1] );
+		// Missing providers should be added.
+		$this->assertContains( 'ollama', $sanitized['provider_priority_list'] );
+		$this->assertContains( 'lm_studio', $sanitized['provider_priority_list'] );
+	}
 }
