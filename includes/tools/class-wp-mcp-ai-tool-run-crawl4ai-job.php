@@ -1279,6 +1279,9 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Increase default token limit to 100000 for crawl4ai to handle larger web scraping jobs.
 		// This tool specifically needs high token capacity due to the nature of web content.
+		// When results exceed model TPM limits, WP_MCP_AI_Model_Selector::check_tpm_and_suggest_fallback()
+		// will automatically switch to the configured high-capacity fallback model (default: gemini-2.0-flash-exp)
+		// if 'enable_high_token_model_switch' is enabled in settings.
 		$limit_tokens = (int) apply_filters( 'wp_mcp_ai_crawl4ai_result_token_limit', 100000, $response );
 
 		if ( $limit_tokens <= 0 ) {

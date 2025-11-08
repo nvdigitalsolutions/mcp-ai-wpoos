@@ -139,7 +139,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$this->assertNotEquals( 'gpt-4o-mini', $selected_model, 'Should fallback from gpt-4o-mini for large requests.' );
 		$this->assertContains(
 			$selected_model,
-			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-1.5-flash' ),
+			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash' ),
 			'Should fallback to a higher-capacity model.'
 		);
 	}
@@ -211,7 +211,7 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$this->assertNotEquals( $model, $result, 'Should suggest fallback model when exceeding TPM limits.' );
 		$this->assertContains(
 			$result,
-			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-1.5-flash' ),
+			array( 'gpt-4o', 'gemini-2.0-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-flash' ),
 			'Should suggest a higher-capacity model.'
 		);
 	}
@@ -290,4 +290,129 @@ class Test_TPM_Limit_Validation extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Limit:', $error_message );
 		$this->assertStringContainsString( 'Requested:', $error_message );
 	}
+
+	/**
+	 * Test that configured high-capacity fallback model is used when enabled.
+	 */
+	public function test_high_capacity_fallback_model_is_used() {
+		// Set custom high-capacity fallback model in settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_high_token_model_switch' => true,
+				'high_token_fallback_model'      => 'gemini-2.0-flash-exp',
+			)
+		);
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
+		$method     = $reflection->getMethod( 'check_tpm_and_suggest_fallback' );
+		$method->setAccessible( true );
+
+		// Create a large request that exceeds gpt-4o-mini's 200k TPM limit.
+		$large_content = str_repeat( 'Large test content. ', 50000 );
+		$messages      = array(
+			array(
+				'role'    => 'user',
+				'content' => $large_content,
+			),
+		);
+
+		$model   = 'gpt-4o-mini';
+		$options = array();
+
+		$result = $method->invoke( null, $messages, $model, $options );
+
+		// Should use the configured high-capacity fallback model.
+		$this->assertEquals(
+			'gemini-2.0-flash-exp',
+			$result,
+			'Should use configured high-capacity fallback model (gemini-2.0-flash-exp) for large requests.'
+		);
+	}
+
+	/**
+	 * Test that high-capacity fallback uses default when setting is disabled.
+	 */
+	public function test_high_capacity_fallback_disabled() {
+		// Disable high-capacity fallback in settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_high_token_model_switch' => false,
+				'high_token_fallback_model'      => 'gemini-2.0-flash-exp',
+			)
+		);
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
+		$method     = $reflection->getMethod( 'check_tpm_and_suggest_fallback' );
+		$method->setAccessible( true );
+
+		// Create a large request that exceeds gpt-4o's 30k TPM limit.
+		$large_content = str_repeat( 'Very large test content. ', 10000 );
+		$messages      = array(
+			array(
+				'role'    => 'user',
+				'content' => $large_content,
+			),
+		);
+
+		$model   = 'gpt-4o';
+		$options = array();
+
+		$result = $method->invoke( null, $messages, $model, $options );
+
+		// Should use the fallback logic (not the configured high-capacity model).
+		// For gpt-4o with > 30k tokens, it should fallback to get_high_capacity_fallback_model().
+		$this->assertContains(
+			$result,
+			array( 'gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-1.5-flash' ),
+			'Should use default fallback logic when high-capacity model switch is disabled.'
+		);
+	}
+
+	/**
+	 * Test get_high_capacity_fallback_model method returns configured model.
+	 */
+	public function test_get_high_capacity_fallback_model() {
+		// Set custom high-capacity fallback model.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'high_token_fallback_model' => 'gemini-2.0-flash-exp',
+			)
+		);
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
+		$method     = $reflection->getMethod( 'get_high_capacity_fallback_model' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( null );
+
+		$this->assertEquals(
+			'gemini-2.0-flash-exp',
+			$result,
+			'Should return configured high-capacity fallback model.'
+		);
+	}
+
+	/**
+	 * Test get_high_capacity_fallback_model returns default when not configured.
+	 */
+	public function test_get_high_capacity_fallback_model_default() {
+		// Clear settings to test default behavior.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
+		$method     = $reflection->getMethod( 'get_high_capacity_fallback_model' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( null );
+
+		$this->assertEquals(
+			'gemini-2.0-flash-exp',
+			$result,
+			'Should return default high-capacity fallback model (gemini-2.0-flash-exp).'
+		);
+	}
 }
+
