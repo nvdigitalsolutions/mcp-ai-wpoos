@@ -65,6 +65,59 @@ The GitHub bridge lets you reuse Auth0’s GitHub social connection while mainta
 
 Use the bundled `wp mcp-ai remote` command to verify bearer tokens, guest tokens, or WordPress nonces before handing them to an external partner. Provide the REST base (`https://example.com/wp-json/mcp-ai/v1`) alongside the relevant flags (`--token`, `--guest-token`, `--nonce`, or `--assistant-id`) and the CLI will replay the `/assistants` request with matching headers before issuing a lightweight `/chat` probe. Successful runs echo the detected assistant count, chat probe status, and token scope, while failures surface the remote REST error codes so you know whether the credential, SSL layer, or network path needs attention.【F:includes/class-wp-mcp-ai-cli-command.php†L137-L280】【F:includes/class-wp-mcp-ai-remote-tester.php†L29-L331】
 
+## Generating Auth0 bearer tokens
+
+The **Generate Auth0 Token** tool (`generate_auth0_token`) provides a programmatic way to obtain Auth0 bearer tokens using OAuth 2.0 client credentials flow. This is particularly useful for:
+
+- **1-Click Auth0 setup workflows** — Generate a token from client credentials, then use the Auth0 1-click setup wizard to auto-configure domain and audience settings
+- **API testing and debugging** — Obtain temporary bearer tokens for testing Auth0-protected endpoints without manual OAuth flows
+- **Automated integrations** — Script token generation for CI/CD pipelines or scheduled tasks that need Auth0 API access
+
+### Usage
+
+The tool requires three mandatory parameters:
+- **`auth0_domain`** — Your Auth0 tenant domain (e.g., `example.us.auth0.com`)
+- **`client_id`** — Auth0 Management API Client ID
+- **`client_secret`** — Auth0 Management API Client Secret
+
+And one optional parameter:
+- **`audience`** — API audience (defaults to `https://DOMAIN/api/v2/` for Management API access)
+
+### Example with AI Assistant
+
+Ask your AI assistant:
+```
+Generate an Auth0 token using:
+- Domain: example.us.auth0.com
+- Client ID: abc123xyz
+- Client Secret: secret456def
+```
+
+The assistant will invoke the `generate_auth0_token` tool and return:
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 86400,
+  "expires_at": "2025-11-09T02:48:57+00:00",
+  "scope": "read:users read:user_idp_tokens"
+}
+```
+
+You can then use this token:
+1. With the Auth0 1-click setup wizard (Settings → WP oOS → Auth0 Setup) to auto-configure your Auth0 integration
+2. As a bearer token for Auth0 Management API requests
+3. For testing Auth0-protected MCP endpoints
+
+### Security considerations
+
+- The tool requires `manage_options` capability (administrator access only)
+- Client secrets are **never** stored by the tool — they're only used transiently to request the token
+- Generated tokens are returned directly to the requesting user and not cached
+- Token expiration times are included in the response for proper lifecycle management
+
+Refer to the Auth0 1-click setup documentation and [includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php](../includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php) for implementation details.【F:includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php†L15-L248】
+
 ## Server-side validation
 
 1. `WP_MCP_AI_REST::permissions_check()` extracts the bearer token, normalises the Auth0 domain configured in **Settings → WP oOS**, and downloads the tenant's JWKS (cached for one hour).
