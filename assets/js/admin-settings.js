@@ -579,6 +579,7 @@ window.wpMcpAiSaveExpandedState = function() {
         initCloudwaysHandlers();
         initCloudflareHandlers();
         initTokenUsageHandlers();
+        initProviderPriorityList();
         
         log('All admin handlers initialized successfully');
     });
@@ -673,4 +674,35 @@ window.wpMcpAiSaveExpandedState = function() {
         
         log('Token usage handlers initialized');
     }
+
+    /**
+     * Initialize provider priority list sortable.
+     */
+    function initProviderPriorityList() {
+        log('Initializing provider priority list sortable...');
+        
+        const $sortable = $('#wp-mcp-ai-provider-sortable');
+        
+        if ($sortable.length && typeof $sortable.sortable === 'function') {
+            $sortable.sortable({
+                axis: 'y',
+                handle: '.dashicons-menu',
+                cursor: 'move',
+                placeholder: 'wp-mcp-ai-provider-item ui-sortable-placeholder',
+                opacity: 0.8,
+                tolerance: 'pointer',
+                update: function(event, ui) {
+                    log('Provider list reordered');
+                    // Update hidden input values to maintain order
+                    $sortable.find('li').each(function(index) {
+                        const $item = $(this);
+                        const provider = $item.data('provider');
+                        $item.find('input[type="hidden"]').val(provider);
+                    });
+                }
+            });
+            log('Provider priority list sortable initialized');
+        }
+    }
+
 })(jQuery);

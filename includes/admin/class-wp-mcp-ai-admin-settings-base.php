@@ -101,6 +101,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				$sanitized['mesh_peer_sites'] = $this->sanitize_mesh_peer_sites( $settings['mesh_peer_sites'] );
 			}
 
+			// Provider priority list special handling.
+			if ( isset( $settings['provider_priority_list'] ) ) {
+				$sanitized['provider_priority_list'] = $this->sanitize_provider_priority_list( $settings['provider_priority_list'] );
+			}
+
 			// Generate mesh API key if needed.
 			if ( isset( $settings['enable_mesh'] ) && ! empty( $settings['enable_mesh'] ) ) {
 				if ( empty( $sanitized['mesh_inbound_api_key'] ) ) {
@@ -169,6 +174,43 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		}
 
 		/**
+		 * Sanitize provider priority list.
+		 *
+		 * Ensures the list only contains valid provider keys and removes duplicates.
+		 *
+		 * @param mixed $priority_list The provider priority list to sanitize.
+		 * @return array Sanitized provider priority list.
+		 */
+		private function sanitize_provider_priority_list( $priority_list ) {
+			if ( ! is_array( $priority_list ) ) {
+				return array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			}
+
+			$available_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			$sanitized           = array();
+			$seen                = array();
+
+			foreach ( $priority_list as $provider ) {
+				$provider = sanitize_key( $provider );
+
+				// Only include valid providers that haven't been added yet.
+				if ( in_array( $provider, $available_providers, true ) && ! in_array( $provider, $seen, true ) ) {
+					$sanitized[] = $provider;
+					$seen[]      = $provider;
+				}
+			}
+
+			// Ensure all available providers are in the list (add missing ones at the end).
+			foreach ( $available_providers as $provider ) {
+				if ( ! in_array( $provider, $sanitized, true ) ) {
+					$sanitized[] = $provider;
+				}
+			}
+
+			return $sanitized;
+		}
+
+		/**
 		 * Get all settings with defaults.
 		 *
 		 * @return array
@@ -224,6 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_model'                     => 'gpt-4o-mini',
 				'default_gemini_model'              => 'gemini-1.5-flash',
 				'default_provider'                  => 'openai',
+				'provider_priority_list'            => array( 'openai', 'gemini', 'ollama', 'lm_studio' ),
 				'web_search_provider'               => 'duckduckgo',
 				'brave_search_api_key'              => '',
 				'ita_tariff_api_key'                => '',

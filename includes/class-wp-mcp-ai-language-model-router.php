@@ -62,7 +62,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * Dispatch a chat completion request to the appropriate provider.
 		 *
 		 * Uses the provider specified in options, or falls back to the configured
-		 * default API provider from settings. If no default is configured, uses OpenAI.
+		 * provider priority list. Will try providers in order until one succeeds.
 		 *
 		 * @param array $messages Sanitized message payload.
 		 * @param array $options  Request options.
@@ -71,12 +71,73 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		public function create_chat_completion( array $messages, array $options = array() ) {
 			$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
 
-			// If no provider specified, use the configured default API setting.
-			if ( empty( $provider ) ) {
-				$settings = WP_MCP_AI_Admin_Settings::get_settings();
-				$provider = isset( $settings['default_provider'] ) ? sanitize_key( $settings['default_provider'] ) : 'openai';
+			// If provider is explicitly specified, use it directly without fallback.
+			if ( ! empty( $provider ) ) {
+				return $this->route_to_provider( $provider, $messages, $options );
 			}
 
+			// No provider specified - use priority list with fallback.
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+			$priority_list  = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
+				? $settings['provider_priority_list']
+				: array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+
+			$last_error = null;
+
+			// Try providers in priority order.
+			foreach ( $priority_list as $try_provider ) {
+				$try_provider = sanitize_key( $try_provider );
+				
+				if ( empty( $try_provider ) ) {
+					continue;
+				}
+
+				$result = $this->route_to_provider( $try_provider, $messages, $options );
+
+				// If successful, return the result.
+				if ( ! is_wp_error( $result ) ) {
+					// Log successful provider if we had to try multiple.
+					if ( $last_error ) {
+						WP_MCP_AI_Logger::log_event(
+							'provider_fallback_success',
+							sprintf( 'Successfully used fallback provider: %s', $try_provider ),
+							array(
+								'provider' => $try_provider,
+								'previous_errors' => count( (array) $last_error ),
+							)
+						);
+					}
+					return $result;
+				}
+
+				// Store error and continue to next provider.
+				$last_error = $result;
+				
+				WP_MCP_AI_Logger::log_error(
+					sprintf( 'Provider %s failed, trying next in priority list.', $try_provider ),
+					array(
+						'provider' => $try_provider,
+						'error'    => $result->get_error_message(),
+					)
+				);
+			}
+
+			// All providers failed, return the last error.
+			return $last_error ? $last_error : new WP_Error(
+				'no_providers_available',
+				__( 'No AI providers are available or configured.', 'wp-mcp-ai' )
+			);
+		}
+
+		/**
+		 * Route a request to a specific provider.
+		 *
+		 * @param string $provider Provider key.
+		 * @param array  $messages Messages array.
+		 * @param array  $options  Request options.
+		 * @return array|WP_Error
+		 */
+		protected function route_to_provider( $provider, array $messages, array $options ) {
 			switch ( $provider ) {
 				case 'gemini':
 					return $this->gemini_client->create_chat_completion( $messages, $options );

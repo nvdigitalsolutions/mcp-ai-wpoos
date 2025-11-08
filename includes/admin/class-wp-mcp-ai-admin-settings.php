@@ -1527,6 +1527,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_field(
+				'provider_priority_list',
+				__( 'Provider Priority List', 'wp-mcp-ai' ),
+				array( $this, 'render_provider_priority_list_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_assistant_section'
+			);
+
+			add_settings_field(
 				'default_assistant',
 				__( 'Default Assistant', 'wp-mcp-ai' ),
 				array( $this, 'render_default_assistant_field' ),
@@ -4497,6 +4505,83 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		</select>
 		<p class="description"><?php esc_html_e( 'Default API for the system. This provider will be used by assistants and API requests when no specific provider is set. Changing this affects all new conversations.', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the provider priority list field.
+		 */
+		public function render_provider_priority_list_field() {
+			$settings       = self::get_settings();
+			$priority_list  = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] ) 
+				? $settings['provider_priority_list'] 
+				: array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			
+			$provider_labels = array(
+				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+			);
+			?>
+		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
+			<ul id="wp-mcp-ai-provider-sortable">
+				<?php foreach ( $priority_list as $provider ) : ?>
+					<?php if ( isset( $provider_labels[ $provider ] ) ) : ?>
+						<li class="wp-mcp-ai-provider-item" data-provider="<?php echo esc_attr( $provider ); ?>">
+							<span class="dashicons dashicons-menu"></span>
+							<span class="provider-label"><?php echo esc_html( $provider_labels[ $provider ] ); ?></span>
+							<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[provider_priority_list][]" value="<?php echo esc_attr( $provider ); ?>">
+						</li>
+					<?php endif; ?>
+				<?php endforeach; ?>
+			</ul>
+		</div>
+		<p class="description">
+			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'wp-mcp-ai' ); ?>
+		</p>
+		<style>
+			#wp-mcp-ai-provider-sortable {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.wp-mcp-ai-provider-item {
+				background: #fff;
+				border: 1px solid #ddd;
+				padding: 10px 15px;
+				margin: 5px 0;
+				cursor: move;
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				border-radius: 3px;
+				transition: box-shadow 0.2s ease;
+			}
+			.wp-mcp-ai-provider-item:hover {
+				box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			}
+			.wp-mcp-ai-provider-item .dashicons {
+				color: #999;
+				flex-shrink: 0;
+			}
+			.wp-mcp-ai-provider-item.ui-sortable-helper {
+				background: #f0f0f0;
+				border-color: #0073aa;
+				box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+			}
+			.wp-mcp-ai-provider-item.ui-sortable-placeholder {
+				background: #f9f9f9;
+				border: 2px dashed #ddd;
+				visibility: visible !important;
+				height: 42px;
+			}
+			.wp-mcp-ai-provider-item .provider-label {
+				flex: 1;
+				font-weight: 500;
+				user-select: none;
+			}
+		</style>
 			<?php
 		}
 
