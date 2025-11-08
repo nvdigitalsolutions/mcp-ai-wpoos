@@ -78,6 +78,34 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	protected $sse_handler;
 
+	/**
+	 * Chat service.
+	 *
+	 * @var WP_MCP_AI_Chat_Service
+	 */
+	protected $chat_service;
+
+	/**
+	 * Assistant service.
+	 *
+	 * @var WP_MCP_AI_Assistant_Service
+	 */
+	protected $assistant_service;
+
+	/**
+	 * Tool service.
+	 *
+	 * @var WP_MCP_AI_Tool_Service
+	 */
+	protected $tool_service;
+
+	/**
+	 * File service.
+	 *
+	 * @var WP_MCP_AI_File_Service
+	 */
+	protected $file_service;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
