@@ -32,12 +32,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * Register the settings page in WordPress admin menu.
 		 */
 		public function register_menu() {
-			add_options_page(
+			add_menu_page(
 				__( 'WP oOS Settings', 'wp-mcp-ai' ),
 				__( 'WP oOS', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
-				array( $this, 'render_dashboard' )
+				array( $this, 'render_dashboard' ),
+				'dashicons-admin-generic',
+				30
 			);
 		}
 
@@ -105,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						'page'    => self::PAGE_SLUG,
 						'updated' => 'true',
 					),
-					admin_url( 'options-general.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;
@@ -117,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			if ( 'settings_page_' . self::PAGE_SLUG !== $hook ) {
+			if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook ) {
 				return;
 			}
 
@@ -199,7 +201,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 								'page' => self::PAGE_SLUG,
 								'tab'  => $tab_id,
 							),
-							admin_url( 'options-general.php' )
+							admin_url( 'admin.php' )
 						);
 						$active  = ( $tab_id === $active_tab ) ? 'nav-tab-active' : '';
 						?>

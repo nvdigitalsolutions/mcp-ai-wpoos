@@ -197,4 +197,33 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ) );
 	}
+
+	/**
+	 * Test that the settings page is registered as a top-level menu.
+	 */
+	public function test_settings_page_registered_as_top_level_menu() {
+		global $menu, $submenu;
+
+		// Set up an admin user.
+		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
+		set_current_screen( 'dashboard' );
+
+		// Trigger the admin_menu action to register menus.
+		do_action( 'admin_menu' );
+
+		// Check that the menu is registered.
+		$menu_registered = false;
+		if ( is_array( $menu ) ) {
+			foreach ( $menu as $menu_item ) {
+				if ( is_array( $menu_item ) && isset( $menu_item[2] ) && 'wp-mcp-ai-dashboard' === $menu_item[2] ) {
+					$menu_registered = true;
+					// Verify it has the correct icon.
+					$this->assertEquals( 'dashicons-admin-generic', $menu_item[6] );
+					break;
+				}
+			}
+		}
+
+		$this->assertTrue( $menu_registered, 'WP oOS menu should be registered as a top-level menu item' );
+	}
 }
