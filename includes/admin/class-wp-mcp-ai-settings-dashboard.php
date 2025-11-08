@@ -107,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						'page'    => self::PAGE_SLUG,
 						'updated' => 'true',
 					),
-					admin_url( 'options-general.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;
@@ -201,7 +201,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 								'page' => self::PAGE_SLUG,
 								'tab'  => $tab_id,
 							),
-							admin_url( 'options-general.php' )
+							admin_url( 'admin.php' )
 						);
 						$active  = ( $tab_id === $active_tab ) ? 'nav-tab-active' : '';
 						?>
