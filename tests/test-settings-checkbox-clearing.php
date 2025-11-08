@@ -254,4 +254,67 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 			'enable_logging should be true after saving General tab' 
 		);
 	}
+
+	/**
+	 * Test that select fields with integer keys save correctly.
+	 * 
+	 * This specifically tests the default_assistant field which has integer post IDs as option keys.
+	 * Form submissions send all values as strings, but we need to convert them back to integers
+	 * to match the option keys for proper validation.
+	 */
+	public function test_select_field_with_integer_keys_saves_correctly() {
+		// Create a mock assistant post.
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		$section = new WP_MCP_AI_Section_General();
+
+		// Simulate form submission - values come as strings from POST data.
+		$submitted = array(
+			'default_assistant' => (string) $assistant_id, // String representation of integer ID.
+			'default_provider'  => 'openai',
+			'enable_logging'    => '1',
+		);
+
+		$sanitized = $section->sanitize( $submitted );
+
+		// The default_assistant should be in the sanitized output.
+		$this->assertArrayHasKey( 'default_assistant', $sanitized, 'default_assistant should be in sanitized settings' );
+		
+		// The default_assistant should be converted to an integer.
+		$this->assertIsInt( $sanitized['default_assistant'], 'default_assistant should be an integer' );
+		
+		// The default_assistant should have the correct value.
+		$this->assertSame( $assistant_id, $sanitized['default_assistant'], 'default_assistant should have the correct assistant ID' );
+	}
+
+	/**
+	 * Test that select fields with string keys still work correctly.
+	 */
+	public function test_select_field_with_string_keys_saves_correctly() {
+		$section = new WP_MCP_AI_Section_General();
+
+		// Simulate form submission with string-based select.
+		$submitted = array(
+			'default_provider'  => 'gemini', // String key.
+			'default_assistant' => '0', // "None" option.
+			'enable_logging'    => '1',
+		);
+
+		$sanitized = $section->sanitize( $submitted );
+
+		// The default_provider should be in the sanitized output.
+		$this->assertArrayHasKey( 'default_provider', $sanitized, 'default_provider should be in sanitized settings' );
+		
+		// The default_provider should be a string.
+		$this->assertSame( 'gemini', $sanitized['default_provider'], 'default_provider should be "gemini"' );
+		
+		// The default_assistant should be 0 (integer, not string "0").
+		$this->assertSame( 0, $sanitized['default_assistant'], 'default_assistant should be 0 when set to "None"' );
+	}
 }

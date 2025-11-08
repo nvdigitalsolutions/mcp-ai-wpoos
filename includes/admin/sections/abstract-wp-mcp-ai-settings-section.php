@@ -122,8 +122,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 					case 'select':
 						$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
-						if ( in_array( $value, $options, true ) ) {
-							$sanitized[ $key ] = $value;
+						// Convert value to match the type of option keys for proper comparison.
+						// Form submissions send all values as strings, but option keys might be integers.
+						$typed_value = $value;
+						if ( ! empty( $options ) ) {
+							// Check if we have numeric option keys - if so, convert value to int for comparison.
+							$first_key = $options[0];
+							if ( is_int( $first_key ) && is_numeric( $value ) ) {
+								$typed_value = absint( $value );
+							}
+						}
+						// Use non-strict comparison to handle string/int type juggling.
+						if ( in_array( $typed_value, $options, false ) ) {
+							$sanitized[ $key ] = $typed_value;
 						}
 						break;
 
