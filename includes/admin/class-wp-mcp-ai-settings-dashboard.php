@@ -96,10 +96,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
 
-			$settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
-			$settings = $this->sanitize_settings( $settings );
+			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
+			$sanitized_new   = $this->sanitize_settings( $posted_settings );
 
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+		// Merge with existing settings to avoid wiping unrelated fields.
+		// This is critical for display-only sections (like Overview) that have no editable fields.
+		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+
+			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
 
 			wp_safe_redirect(
 				add_query_arg(
@@ -160,10 +165,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		private function get_active_tab() {
 			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
-			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
+			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
-				$active_tab = 'general';
+				$active_tab = 'overview';
 			}
 
 			return $active_tab;
