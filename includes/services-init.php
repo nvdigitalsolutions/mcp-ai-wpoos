@@ -23,36 +23,19 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-servic
  * Initialize services
  *
  * Creates and returns service instances with proper dependencies.
+ * Uses DI container for dependency management.
  *
  * @return array Array of service instances keyed by service name.
  */
 function wp_mcp_ai_init_services() {
-	static $services = null;
+	$container = WP_MCP_AI_Container::get_instance();
 
-	if ( null !== $services ) {
-		return $services; // Return cached instances.
-	}
-
-	// Initialize dependencies that services need.
-	$router               = wp_mcp_ai_get_language_model_router();
-	$rate_limiter         = wp_mcp_ai_get_rate_limit_manager();
-	$token_budget_manager = wp_mcp_ai_get_token_budget_manager();
-	$tool_registry        = wp_mcp_ai_get_tool_registry();
-
-	// Create service instances.
-	$services = array(
-		'chat'      => new WP_MCP_AI_Chat_Service(
-			$router,
-			$rate_limiter,
-			$token_budget_manager,
-			$tool_registry
-		),
-		'assistant' => new WP_MCP_AI_Assistant_Service(),
-		'tool'      => new WP_MCP_AI_Tool_Service( $tool_registry ),
-		'file'      => new WP_MCP_AI_File_Service(),
+	return array(
+		'chat'      => $container->get( 'service.chat' ),
+		'assistant' => $container->get( 'service.assistant' ),
+		'tool'      => $container->get( 'service.tool' ),
+		'file'      => $container->get( 'service.file' ),
 	);
-
-	return $services;
 }
 
 /**
@@ -98,67 +81,47 @@ function wp_mcp_ai_get_file_service() {
 /**
  * Get language model router instance
  *
- * Helper function to get or create router instance.
+ * Helper function to get router instance from container.
  *
  * @return WP_MCP_AI_Language_Model_Router Router instance.
  */
 function wp_mcp_ai_get_language_model_router() {
-	static $router = null;
-
-	if ( null === $router ) {
-		$router = new WP_MCP_AI_Language_Model_Router();
-	}
-
-	return $router;
+	$container = WP_MCP_AI_Container::get_instance();
+	return $container->get( 'router' );
 }
 
 /**
  * Get rate limit manager instance
  *
- * Helper function to get or create rate limiter instance.
+ * Helper function to get rate limiter instance from container.
  *
  * @return WP_MCP_AI_Rate_Limit_Manager Rate limiter instance.
  */
 function wp_mcp_ai_get_rate_limit_manager() {
-	static $rate_limiter = null;
-
-	if ( null === $rate_limiter ) {
-		$rate_limiter = new WP_MCP_AI_Rate_Limit_Manager();
-	}
-
-	return $rate_limiter;
+	$container = WP_MCP_AI_Container::get_instance();
+	return $container->get( 'rate_limiter' );
 }
 
 /**
  * Get token budget manager instance
  *
- * Helper function to get or create token budget manager instance.
+ * Helper function to get token budget manager instance from container.
  *
  * @return WP_MCP_AI_Token_Budget_Manager Token budget manager instance.
  */
 function wp_mcp_ai_get_token_budget_manager() {
-	static $token_budget_manager = null;
-
-	if ( null === $token_budget_manager ) {
-		$token_budget_manager = new WP_MCP_AI_Token_Budget_Manager();
-	}
-
-	return $token_budget_manager;
+	$container = WP_MCP_AI_Container::get_instance();
+	return $container->get( 'token_budget_manager' );
 }
 
 /**
  * Get tool registry instance
  *
- * Helper function to get or create tool registry instance.
+ * Helper function to get tool registry instance from container.
  *
  * @return WP_MCP_AI_Tool_Registry Tool registry instance.
  */
 function wp_mcp_ai_get_tool_registry() {
-	static $tool_registry = null;
-
-	if ( null === $tool_registry ) {
-		$tool_registry = new WP_MCP_AI_Tool_Registry();
-	}
-
-	return $tool_registry;
+	$container = WP_MCP_AI_Container::get_instance();
+	return $container->get( 'tool_registry' );
 }

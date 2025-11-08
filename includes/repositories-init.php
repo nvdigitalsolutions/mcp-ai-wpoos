@@ -21,25 +21,18 @@ require_once plugin_dir_path( __FILE__ ) . 'repositories/class-wp-mcp-ai-setting
 /**
  * Initialize repositories
  *
- * Creates and returns repository instances.
+ * Creates and returns repository instances from DI container.
  *
  * @return array Array of repository instances keyed by repository name.
  */
 function wp_mcp_ai_init_repositories() {
-	static $repositories = null;
+	$container = WP_MCP_AI_Container::get_instance();
 
-	if ( null !== $repositories ) {
-		return $repositories; // Return cached instances.
-	}
-
-	// Create repository instances.
-	$repositories = array(
-		'assistant'  => new WP_MCP_AI_Assistant_Repository(),
-		'credential' => new WP_MCP_AI_Credential_Repository(),
-		'settings'   => new WP_MCP_AI_Settings_Repository(),
+	return array(
+		'assistant'  => $container->get( 'repository.assistant' ),
+		'credential' => $container->get( 'repository.credential' ),
+		'settings'   => $container->get( 'repository.settings' ),
 	);
-
-	return $repositories;
 }
 
 /**

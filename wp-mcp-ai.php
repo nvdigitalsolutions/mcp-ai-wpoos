@@ -247,11 +247,15 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
-// Load service layer (Phase 4 refactoring - Milestone 8).
-require_once WP_MCP_AI_PATH . 'includes/services-init.php';
+// Load dependency injection container (Phase 4 refactoring - Milestone 10).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
+require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 
 // Load repository layer (Phase 4 refactoring - Milestone 9).
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
+
+// Load service layer (Phase 4 refactoring - Milestone 8).
+require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
 // Load federation system components.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php';
