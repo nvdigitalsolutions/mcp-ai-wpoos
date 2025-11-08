@@ -615,6 +615,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							),
 						),
 					),
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+						'callback'            => array( $this, 'handle_chat_transcript_save' ),
+						'args'                => array(
+							'assistant_id' => array(
+								'description'       => __( 'ID of the assistant for this chat transcript.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => true,
+								'sanitize_callback' => 'absint',
+							),
+							'session_key'  => array(
+								'description'       => __( 'Session key for this conversation.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_text_field',
+							),
+							'messages'     => array(
+								'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
+								'type'              => 'array',
+								'required'          => true,
+								'validate_callback' => array( $this, 'validate_messages_array' ),
+								'items'             => array(
+									'type'       => 'object',
+									'properties' => array(
+										'role'    => array(
+											'type' => 'string',
+											'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+										),
+										'content' => array(
+											'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+											'oneOf'       => array(
+												array( 'type' => 'string' ),
+												array(
+													'type'  => 'array',
+													'items' => array(
+														'type' => 'object',
+													),
+												),
+											),
+										),
+									),
+								),
+							),
+						),
+					),
 				),
 				true
 			);
@@ -1235,6 +1281,121 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'total'    => isset( $sessions['total'] ) ? (int) $sessions['total'] : 0,
 					'per_page' => $per_page,
 					'page'     => $page,
+				)
+			);
+		}
+
+		/**
+		 * Save a chat transcript explicitly without requiring a chat response.
+		 *
+		 * This endpoint allows the frontend to persist a conversation to CCT
+		 * before clearing it (e.g., when starting a new chat or switching conversations).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_chat_transcript_save( WP_REST_Request $request ) {
+			$this->hydrate_request_body_params( $request );
+
+			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+			$session_key  = $this->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+			$messages     = $request->get_param( 'messages' );
+
+			if ( ! $assistant_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_missing_assistant',
+					__( 'Assistant ID is required to save a transcript.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( '' === $session_key ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_missing_session',
+					__( 'Session key is required to save a transcript.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( empty( $messages ) || ! is_array( $messages ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_missing_messages',
+					__( 'Messages array is required to save a transcript.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate assistant access.
+			$assistant_post = $this->validate_assistant_access( $assistant_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
+
+			// Sanitize messages.
+			$sanitized_messages = $this->sanitize_messages( $messages );
+			if ( is_wp_error( $sanitized_messages ) ) {
+				return $sanitized_messages;
+			}
+
+			$clean_messages = $sanitized_messages['messages'];
+
+			if ( empty( $clean_messages ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_invalid_messages',
+					__( 'No valid messages to save.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get user ID.
+			$user_id = get_current_user_id();
+
+			if ( ! $user_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_missing_user',
+					__( 'You must be logged in to save a transcript.', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			// Get assistant configuration for metadata.
+			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
+
+			// Build a minimal response payload for the recorder.
+			// Since this is just saving a conversation without a new response,
+			// we create a synthetic response payload.
+			$response = array(
+				'model'   => $model,
+				'choices' => array(),
+			);
+
+			// Build context for the transcript recorder.
+			$context = array(
+				'session_key'            => $session_key,
+				'save_transcript'        => true,
+				'request_started_at'     => microtime( true ),
+				'response_completed_at'  => microtime( true ),
+			);
+
+			// Use the transcript recorder to save.
+			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				WP_MCP_AI_Chat_Transcript_Recorder::record(
+					$assistant_id,
+					$clean_messages,
+					array( 'model' => $model ),
+					$response,
+					$request,
+					$user_id,
+					$context
+				);
+			}
+
+			return rest_ensure_response(
+				array(
+					'success'     => true,
+					'session_key' => $session_key,
+					'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
 				)
 			);
 		}

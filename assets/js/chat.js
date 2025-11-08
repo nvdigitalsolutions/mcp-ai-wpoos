@@ -155,6 +155,64 @@
         }
     }
 
+    /**
+     * Save the current conversation to CCT via the REST API.
+     * This is called before clearing a conversation to ensure messages are not lost.
+     * 
+     * @param {Object} state - Chat state object
+     * @returns {Promise} Promise that resolves when save is complete or fails silently
+     */
+    function saveConversationToCCT(state) {
+        // Return resolved promise if conditions aren't met for saving
+        if (!state || !state.config || !state.config.assistantId) {
+            return Promise.resolve();
+        }
+
+        if (!state.conversation || !Array.isArray(state.conversation) || state.conversation.length === 0) {
+            return Promise.resolve();
+        }
+
+        if (!state.config.sessionKey) {
+            return Promise.resolve();
+        }
+
+        if (!state.config.transcriptsEndpoint) {
+            return Promise.resolve();
+        }
+
+        const payload = {
+            assistant_id: state.config.assistantId,
+            session_key: state.config.sessionKey,
+            messages: state.conversation
+        };
+
+        return fetch(state.config.transcriptsEndpoint, {
+            method: 'POST',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+            body: JSON.stringify(payload)
+        })
+            .then(function(response) {
+                return response.json().catch(function() {
+                    return null;
+                }).then(function(body) {
+                    if (!response.ok) {
+                        // Log error but don't block the UI
+                        if (window.console && console.error) {
+                            console.error('Failed to save conversation to CCT:', body);
+                        }
+                    }
+                    return body;
+                });
+            })
+            .catch(function(error) {
+                // Fail silently - we don't want to block the user from starting a new chat
+                if (window.console && console.error) {
+                    console.error('Error saving conversation to CCT:', error);
+                }
+            });
+    }
+
     function registerObjectUrl(url) {
         if (!url) {
             return;
@@ -1578,14 +1636,35 @@
             return;
         }
 
-        // Confirm with user before clearing the conversation
-        if (state.conversation.length > 0) {
+        // Save current conversation to CCT before clearing (if there are messages)
+        if (state.conversation && state.conversation.length > 0) {
+            // Confirm with user before clearing the conversation
             const confirmMessage = getString('newConversation', 'Start new conversation') + '?';
             if (!confirm(confirmMessage)) {
                 return;
             }
-        }
 
+            // Show saving status
+            setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
+
+            // Save to CCT before clearing
+            saveConversationToCCT(state).then(function() {
+                // After saving (or failing silently), proceed with clearing
+                performConversationClear(state);
+            });
+        } else {
+            // No messages to save, just clear
+            performConversationClear(state);
+        }
+    }
+
+    /**
+     * Actually perform the conversation clear after saving is complete.
+     * Extracted from startNewConversation to allow async save before clear.
+     * 
+     * @param {Object} state - Chat state object
+     */
+    function performConversationClear(state) {
         // Clear the conversation array
         state.conversation = [];
 
@@ -2207,6 +2286,8 @@
         // Save the current conversation before replacing it (if it has messages)
         if (state.conversation && state.conversation.length > 0) {
             saveConversationToStorage(state);
+            // Also save to CCT to prevent message loss
+            saveConversationToCCT(state);
         }
 
         const sessionKey = session.session_key ? String(session.session_key) : '';
