@@ -259,4 +259,30 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( $found, 'MCP diagnostic page should be registered under Tools menu' );
 	}
+
+	/**
+	 * Test that jQuery is enqueued on the diagnostic page.
+	 */
+	public function test_jquery_is_enqueued_on_diagnostic_page() {
+		global $wp_scripts;
+
+		// Trigger admin_menu to register the page.
+		set_current_screen( 'tools.php' );
+		do_action( 'admin_menu' );
+
+		// Get the page hook.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_MCP_Server_Diagnostic' );
+		$property   = $reflection->getProperty( 'page_hook' );
+		$property->setAccessible( true );
+		$page_hook = $property->getValue();
+
+		// Simulate being on the diagnostic page.
+		set_current_screen( $page_hook );
+
+		// Trigger the enqueue_assets method.
+		do_action( 'admin_enqueue_scripts', $page_hook );
+
+		// Verify jQuery is enqueued.
+		$this->assertTrue( wp_script_is( 'jquery', 'enqueued' ), 'jQuery should be enqueued on diagnostic page' );
+	}
 }

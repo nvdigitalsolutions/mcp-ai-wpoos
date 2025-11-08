@@ -72,25 +72,15 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			// Enqueue jQuery for the inline scripts.
 			wp_enqueue_script( 'jquery' );
 
-			// Enqueue a dummy script handle to attach localized data.
-			wp_register_script(
-				'wp-mcp-ai-mcp-diagnostic-inline',
-				'',
-				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
-				true
+			// Add inline script to footer with localized data.
+			// We use wp_add_inline_script to attach our data and handlers to jQuery.
+			$localized_data = array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ),
 			);
-			wp_enqueue_script( 'wp-mcp-ai-mcp-diagnostic-inline' );
 
-			// Localize script with AJAX URL and nonce.
-			wp_localize_script(
-				'wp-mcp-ai-mcp-diagnostic-inline',
-				'wpMcpAiMcpDiagnostic',
-				array(
-					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-					'nonce'   => wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ),
-				)
-			);
+			$inline_script = 'var wpMcpAiMcpDiagnostic = ' . wp_json_encode( $localized_data ) . ';';
+			wp_add_inline_script( 'jquery', $inline_script );
 		}
 
 		/**
