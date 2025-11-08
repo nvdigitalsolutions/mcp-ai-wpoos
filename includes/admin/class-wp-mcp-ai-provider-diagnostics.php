@@ -398,7 +398,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			</div>
 
 			<script type="text/javascript">
+			/* global ajaxurl */
 			jQuery(document).ready(function($) {
+				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
+				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				
 				// Test provider connection.
 				$('.test-provider').on('click', function() {
 					var button = $(this);
@@ -409,7 +413,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					resultDiv.html('<p><?php esc_html_e( 'Testing connection...', 'wp-mcp-ai' ); ?></p>');
 
 					$.ajax({
-						url: ajaxurl,
+						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_provider',
