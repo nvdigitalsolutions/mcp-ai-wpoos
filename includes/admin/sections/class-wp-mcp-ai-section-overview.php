@@ -144,6 +144,11 @@ $description = $this->get_description();
 							<strong><?php esc_html_e( 'Security Settings', 'wp-mcp-ai' ); ?></strong>
 							<span class="description"><?php esc_html_e( 'Monitor and configure security', 'wp-mcp-ai' ); ?></span>
 						</a>
+						<a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>" class="wp-mcp-ai-link-card">
+							<span class="dashicons dashicons-admin-tools"></span>
+							<strong><?php esc_html_e( 'MCP Server Diagnostic', 'wp-mcp-ai' ); ?></strong>
+							<span class="description"><?php esc_html_e( 'Test MCP methods and server functionality', 'wp-mcp-ai' ); ?></span>
+						</a>
 					</div>
 				</div>
 			</div>
