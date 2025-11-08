@@ -7,5 +7,8 @@ package-lock.json
 *.log
 .env
 .env.local
-.bak
+*.bak
 opcache-reset.php
+*.zip
+*.tar.gz
+*.rar
