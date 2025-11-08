@@ -489,10 +489,16 @@
         }
 
         // Otherwise, fetch the full session details first
-        const url = buildRestUrl({
+        const params = {
             session_key: sessionKey,
             user_id: state.config.userId
-        });
+        };
+
+        if (state.config.assistantId > 0) {
+            params.assistant_id = state.config.assistantId;
+        }
+
+        const url = buildRestUrl(params);
 
         if (!url) {
             setStatus(state, getString(state, 'errorLoadingIntoChat', 'Unable to load into chat.'));
@@ -568,10 +574,16 @@
             return;
         }
 
-        const url = buildRestUrl({
+        const params = {
             session_key: sessionKey,
             user_id: state.config.userId
-        });
+        };
+
+        if (state.config.assistantId > 0) {
+            params.assistant_id = state.config.assistantId;
+        }
+
+        const url = buildRestUrl(params);
 
         if (!url) {
             setStatus(state, getString(state, 'errorLoadingSession', 'Unable to load the selected chat.'));
@@ -625,6 +637,10 @@
         const params = {
             user_id: state.config.userId
         };
+
+        if (state.config.assistantId > 0) {
+            params.assistant_id = state.config.assistantId;
+        }
 
         if (state.config.maxSessions > 0) {
             params.per_page = state.config.maxSessions;
@@ -705,6 +721,11 @@
             userId = 0;
         }
 
+        let assistantId = parseInt(config.assistantId, 10);
+        if (isNaN(assistantId)) {
+            assistantId = 0;
+        }
+
         let maxSessions = parseInt(config.maxSessions, 10);
         if (isNaN(maxSessions)) {
             maxSessions = 0;
@@ -747,6 +768,7 @@
             container: container,
             config: {
                 userId: userId,
+                assistantId: assistantId,
                 maxSessions: maxSessions,
                 targetChatWidget: targetChatWidget
             },

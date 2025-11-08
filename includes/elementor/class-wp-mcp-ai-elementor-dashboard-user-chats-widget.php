@@ -144,6 +144,33 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		);
 
 		$this->add_control(
+			'assistant_mode',
+			array(
+				'label'   => __( 'Assistant Filter', 'wp-mcp-ai' ),
+				'type'    => \Elementor\Controls_Manager::SELECT,
+				'default' => 'all',
+				'options' => array(
+					'all'      => __( 'All assistants', 'wp-mcp-ai' ),
+					'specific' => __( 'Specific assistant ID', 'wp-mcp-ai' ),
+				),
+			)
+		);
+
+		$this->add_control(
+			'assistant_id',
+			array(
+				'label'       => __( 'Assistant ID', 'wp-mcp-ai' ),
+				'type'        => \Elementor\Controls_Manager::NUMBER,
+				'min'         => 1,
+				'label_block' => true,
+				'description' => __( 'Filter chats by a specific assistant.', 'wp-mcp-ai' ),
+				'condition'   => array(
+					'assistant_mode' => 'specific',
+				),
+			)
+		);
+
+		$this->add_control(
 			'max_sessions',
 			array(
 				'label'       => __( 'Maximum chats to show', 'wp-mcp-ai' ),
@@ -237,21 +264,29 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 
-		$title                 = isset( $settings['title'] ) ? $settings['title'] : '';
-		$description           = isset( $settings['description'] ) ? $settings['description'] : '';
-		$user_mode             = isset( $settings['user_mode'] ) ? $settings['user_mode'] : 'current';
-		$user_id_setting       = isset( $settings['user_id'] ) ? (int) $settings['user_id'] : 0;
-		$max_sessions_setting  = isset( $settings['max_sessions'] ) ? (int) $settings['max_sessions'] : 0;
-		$empty_message         = isset( $settings['empty_message'] ) ? $settings['empty_message'] : '';
-		$no_user_message       = isset( $settings['no_user_message'] ) ? $settings['no_user_message'] : '';
-		$empty_session_message = isset( $settings['empty_session_message'] ) ? $settings['empty_session_message'] : '';
-		$select_prompt_message = isset( $settings['select_prompt_message'] ) ? $settings['select_prompt_message'] : '';
-		$target_chat_widget    = isset( $settings['target_chat_widget'] ) ? $settings['target_chat_widget'] : '';
+		$title                  = isset( $settings['title'] ) ? $settings['title'] : '';
+		$description            = isset( $settings['description'] ) ? $settings['description'] : '';
+		$user_mode              = isset( $settings['user_mode'] ) ? $settings['user_mode'] : 'current';
+		$user_id_setting        = isset( $settings['user_id'] ) ? (int) $settings['user_id'] : 0;
+		$assistant_mode         = isset( $settings['assistant_mode'] ) ? $settings['assistant_mode'] : 'all';
+		$assistant_id_setting   = isset( $settings['assistant_id'] ) ? (int) $settings['assistant_id'] : 0;
+		$max_sessions_setting   = isset( $settings['max_sessions'] ) ? (int) $settings['max_sessions'] : 0;
+		$empty_message          = isset( $settings['empty_message'] ) ? $settings['empty_message'] : '';
+		$no_user_message        = isset( $settings['no_user_message'] ) ? $settings['no_user_message'] : '';
+		$empty_session_message  = isset( $settings['empty_session_message'] ) ? $settings['empty_session_message'] : '';
+		$select_prompt_message  = isset( $settings['select_prompt_message'] ) ? $settings['select_prompt_message'] : '';
+		$target_chat_widget     = isset( $settings['target_chat_widget'] ) ? $settings['target_chat_widget'] : '';
 
 		if ( 'specific' === $user_mode ) {
 			$user_id = absint( $user_id_setting );
 		} else {
 			$user_id = get_current_user_id();
+		}
+
+		if ( 'specific' === $assistant_mode ) {
+			$assistant_id = absint( $assistant_id_setting );
+		} else {
+			$assistant_id = 0;
 		}
 
 		echo '<div class="wp-mcp-ai-user-chats">';
@@ -292,6 +327,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 
 		$config = array(
 			'userId'           => $user_id,
+			'assistantId'      => $assistant_id,
 			'maxSessions'      => $max_sessions,
 			'targetChatWidget' => $target_chat_widget,
 			'strings'          => array(
