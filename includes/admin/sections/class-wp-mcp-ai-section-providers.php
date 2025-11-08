@@ -85,6 +85,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			return array(
+				// Provider Priority List.
+				'provider_priority_list' => array(
+					'type'        => 'custom',
+					'label'       => __( 'Provider Priority Order', 'wp-mcp-ai' ),
+					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
+					'default'     => array( 'openai', 'gemini', 'ollama', 'lm_studio' ),
+				),
+				
 				// OpenAI Settings.
 				'openai_api_key'        => array(
 					'type'        => 'password',
@@ -196,6 +204,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		public function render() {
 			$fields = $this->get_fields();
 
+			// First, render the provider priority list.
+			if ( isset( $fields['provider_priority_list'] ) ) {
+				$this->render_provider_priority_list( $fields['provider_priority_list'] );
+			}
+
 			// Group fields by provider.
 			$providers = array(
 				'OpenAI'      => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
@@ -213,6 +226,143 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					}
 				}
 			}
+		}
+
+		/**
+		 * Render the provider priority list field.
+		 *
+		 * @param array $field Field configuration.
+		 */
+		private function render_provider_priority_list( $field ) {
+			$label       = isset( $field['label'] ) ? $field['label'] : '';
+			$description = isset( $field['description'] ) ? $field['description'] : '';
+			$value       = WP_MCP_AI_Settings_Registry::get_setting( 'provider_priority_list', isset( $field['default'] ) ? $field['default'] : array() );
+
+			$provider_labels = array(
+				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+			);
+			?>
+			<tr>
+				<th scope="row">
+					<label><?php echo esc_html( $label ); ?></label>
+				</th>
+				<td>
+					<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
+						<ul id="wp-mcp-ai-provider-sortable">
+							<?php foreach ( $value as $provider ) : ?>
+								<?php if ( isset( $provider_labels[ $provider ] ) ) : ?>
+									<li class="wp-mcp-ai-provider-item" data-provider="<?php echo esc_attr( $provider ); ?>">
+										<span class="dashicons dashicons-menu"></span>
+										<span class="provider-label"><?php echo esc_html( $provider_labels[ $provider ] ); ?></span>
+										<input type="hidden" name="wp_mcp_ai_settings[provider_priority_list][]" value="<?php echo esc_attr( $provider ); ?>">
+									</li>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+					<?php if ( $description ) : ?>
+						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
+					<?php endif; ?>
+					<style>
+						#wp-mcp-ai-provider-sortable {
+							list-style: none;
+							margin: 0;
+							padding: 0;
+						}
+						.wp-mcp-ai-provider-item {
+							background: #fff;
+							border: 1px solid #ddd;
+							padding: 10px 15px;
+							margin: 5px 0;
+							cursor: move;
+							display: flex;
+							align-items: center;
+							gap: 10px;
+							border-radius: 3px;
+							transition: box-shadow 0.2s ease;
+							max-width: 400px;
+						}
+						.wp-mcp-ai-provider-item:hover {
+							box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+						}
+						.wp-mcp-ai-provider-item .dashicons {
+							color: #999;
+							flex-shrink: 0;
+						}
+						.wp-mcp-ai-provider-item.ui-sortable-helper {
+							background: #f0f0f0;
+							border-color: #0073aa;
+							box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+						}
+						.wp-mcp-ai-provider-item.ui-sortable-placeholder {
+							background: #f9f9f9;
+							border: 2px dashed #ddd;
+							visibility: visible !important;
+							height: 42px;
+						}
+						.wp-mcp-ai-provider-item .provider-label {
+							flex: 1;
+							font-weight: 500;
+						}
+					</style>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Sanitize input for this section.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input.
+		 */
+		public function sanitize( $input ) {
+			$sanitized = array();
+
+			// Handle provider_priority_list separately.
+			if ( isset( $input['provider_priority_list'] ) && is_array( $input['provider_priority_list'] ) ) {
+				$sanitized['provider_priority_list'] = $this->sanitize_provider_priority_list( $input['provider_priority_list'] );
+			}
+
+			// Call parent sanitization for other fields.
+			$parent_sanitized = parent::sanitize( $input );
+			$sanitized        = array_merge( $parent_sanitized, $sanitized );
+
+			return $sanitized;
+		}
+
+		/**
+		 * Sanitize provider priority list.
+		 *
+		 * @param array $priority_list The provider priority list to sanitize.
+		 * @return array Sanitized provider priority list.
+		 */
+		private function sanitize_provider_priority_list( $priority_list ) {
+			$valid_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			$sanitized       = array();
+
+			if ( ! is_array( $priority_list ) ) {
+				return $valid_providers;
+			}
+
+			foreach ( $priority_list as $provider ) {
+				$provider = sanitize_text_field( $provider );
+				if ( in_array( $provider, $valid_providers, true ) && ! in_array( $provider, $sanitized, true ) ) {
+					$sanitized[] = $provider;
+				}
+			}
+
+			// Ensure all providers are included (add any missing ones at the end).
+			foreach ( $valid_providers as $provider ) {
+				if ( ! in_array( $provider, $sanitized, true ) ) {
+					$sanitized[] = $provider;
+				}
+			}
+
+			return $sanitized;
 		}
 
 		/**

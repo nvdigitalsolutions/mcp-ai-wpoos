@@ -16,6 +16,7 @@
 			this.bindEvents();
 			this.initTooltips();
 			this.initTokenManager();
+			this.initProviderPriorityList();
 		},
 
 		/**
@@ -224,6 +225,32 @@
 					position: {
 						my: 'center bottom-5',
 						at: 'center top'
+					}
+				});
+			}
+		},
+
+		/**
+		 * Initialize provider priority list sortable.
+		 */
+		initProviderPriorityList: function() {
+			const $sortable = $('#wp-mcp-ai-provider-sortable');
+
+			if ($sortable.length && typeof $sortable.sortable === 'function') {
+				$sortable.sortable({
+					axis: 'y',
+					handle: '.dashicons-menu',
+					cursor: 'move',
+					placeholder: 'ui-sortable-placeholder',
+					opacity: 0.8,
+					tolerance: 'pointer',
+					update: function() {
+						// Update hidden input values to maintain order
+						$sortable.find('li').each(function() {
+							const $item = $(this);
+							const provider = $item.data('provider');
+							$item.find('input[type="hidden"]').val(provider);
+						});
 					}
 				});
 			}
