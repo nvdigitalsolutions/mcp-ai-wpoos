@@ -181,8 +181,10 @@ class Test_REST_Validator extends WP_UnitTestCase {
 		$result = $this->validator->sanitize_messages( $messages );
 
 		$this->assertIsArray( $result );
-		$this->assertNotEmpty( $result );
-		$this->assertEquals( 'user', $result[0]['role'] );
+		$this->assertArrayHasKey( 'messages', $result );
+		$this->assertArrayHasKey( 'attachments', $result );
+		$this->assertNotEmpty( $result['messages'] );
+		$this->assertEquals( 'user', $result['messages'][0]['role'] );
 	}
 
 	/**
