@@ -65,7 +65,10 @@ if [[ ! -f "$WP_PATH/wp-config.php" ]]; then
     --skip-check \
     --extra-php <<'PHP'
 define( 'DB_TYPE', 'sqlite' );
-define( 'WP_DEBUG', false );
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_DISPLAY', false );
+define( 'WP_DEBUG_LOG', __DIR__ . '/wp-content/debug.log' );
+@ini_set( 'display_errors', '0' );
 PHP
 
   wp config shuffle-salts
