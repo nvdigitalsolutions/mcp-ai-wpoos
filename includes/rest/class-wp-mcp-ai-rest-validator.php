@@ -418,7 +418,11 @@ class WP_MCP_AI_REST_Validator {
 			);
 		}
 
-		return $sanitized;
+		// Return both sanitized messages and any extracted attachments.
+		return array(
+			'messages'    => $sanitized,
+			'attachments' => array(), // Attachments are embedded in message content, not separate.
+		);
 	}
 
 	/**
