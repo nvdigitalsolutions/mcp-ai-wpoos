@@ -578,19 +578,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 						'callback'            => array( $this, 'handle_chat_transcripts' ),
 						'args'                => array(
-							'user_id'     => array(
+							'user_id'      => array(
 								'description'       => __( 'User ID to retrieve transcripts for. Defaults to current user.', 'wp-mcp-ai' ),
 								'type'              => 'integer',
 								'required'          => false,
 								'sanitize_callback' => 'absint',
 							),
-							'session_key' => array(
+							'assistant_id' => array(
+								'description'       => __( 'Optional assistant ID to filter transcripts by.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+							'session_key'  => array(
 								'description'       => __( 'Optional session key to retrieve a specific transcript.', 'wp-mcp-ai' ),
 								'type'              => 'string',
 								'required'          => false,
 								'sanitize_callback' => 'sanitize_text_field',
 							),
-							'per_page'    => array(
+							'per_page'     => array(
 								'description'       => __( 'Number of transcripts to return per page.', 'wp-mcp-ai' ),
 								'type'              => 'integer',
 								'required'          => false,
@@ -599,7 +605,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'maximum'           => 100,
 								'sanitize_callback' => 'absint',
 							),
-							'page'        => array(
+							'page'         => array(
 								'description'       => __( 'Page number for paginated results.', 'wp-mcp-ai' ),
 								'type'              => 'integer',
 								'required'          => false,
@@ -1169,10 +1175,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			$session_key = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+			$session_key  = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 
 			if ( '' !== $session_key ) {
-				$session = $this->get_transcript_session( $user_id, $session_key );
+				$session = $this->get_transcript_session( $user_id, $session_key, $assistant_id );
 
 				if ( is_wp_error( $session ) ) {
 					if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
@@ -1204,7 +1211,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$page = 1;
 			}
 
-			$sessions = $this->get_transcript_sessions( $user_id, $per_page, $page );
+			$sessions = $this->get_transcript_sessions( $user_id, $per_page, $page, $assistant_id );
 
 			if ( is_wp_error( $sessions ) ) {
 				if ( 'wp_mcp_ai_transcripts_unavailable' === $sessions->get_error_code() ) {
@@ -6524,12 +6531,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Retrieve chat transcript session summaries for a user.
 		 *
-		 * @param int $user_id  User identifier.
-		 * @param int $per_page Number of sessions to return.
-		 * @param int $page     Results page.
+		 * @param int $user_id      User identifier.
+		 * @param int $per_page     Number of sessions to return.
+		 * @param int $page         Results page.
+		 * @param int $assistant_id Optional assistant ID to filter by.
 		 * @return array|WP_Error
 		 */
-		protected function get_transcript_sessions( $user_id, $per_page, $page ) {
+		protected function get_transcript_sessions( $user_id, $per_page, $page, $assistant_id = 0 ) {
 			global $wpdb;
 
 			if ( ! $this->transcript_table_exists() ) {
@@ -6540,14 +6548,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			$table    = $this->get_transcript_table_name();
-			$user_id  = absint( $user_id );
-			$per_page = max( 1, (int) $per_page );
-			$page     = max( 1, (int) $page );
-			$offset   = ( $page - 1 ) * $per_page;
+			$table        = $this->get_transcript_table_name();
+			$user_id      = absint( $user_id );
+			$assistant_id = absint( $assistant_id );
+			$per_page     = max( 1, (int) $per_page );
+			$page         = max( 1, (int) $page );
+			$offset       = ( $page - 1 ) * $per_page;
 
-			$query = $wpdb->prepare(
-				"SELECT session_key,
+			$where_clauses = array( 'user_id = %d' );
+			$where_values  = array( $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$where_clauses[] = 'assistant_id = %d';
+				$where_values[]  = $assistant_id;
+			}
+
+			$where_sql = implode( ' AND ', $where_clauses );
+
+			$query_values   = array_merge( $where_values, array( $per_page, $offset ) );
+			$query_template = "SELECT session_key,
                     MIN(request_started_at) AS started_at,
                     MAX(response_completed_at) AS completed_at,
                     MIN(cct_created) AS first_created,
@@ -6556,14 +6575,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
                     MAX(assistant_model) AS assistant_model,
                     COUNT(*) AS turn_count
              FROM {$table}
-             WHERE user_id = %d
+             WHERE {$where_sql}
              GROUP BY session_key
              ORDER BY COALESCE(MAX(CASE WHEN response_completed_at > 0 THEN response_completed_at END), MAX(cct_created), MAX(request_started_at)) DESC, session_key ASC
-             LIMIT %d OFFSET %d",
-				$user_id,
-				$per_page,
-				$offset
-			);
+             LIMIT %d OFFSET %d";
+
+			$query = $wpdb->prepare( $query_template, $query_values );
 
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
@@ -6571,10 +6588,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$rows = array();
 			}
 
-			$total_query = $wpdb->prepare(
-				"SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE user_id = %d",
-				$user_id
-			);
+			$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
+			$total_query          = $wpdb->prepare( $total_query_template, $where_values );
 
 			$total = (int) $wpdb->get_var( $total_query );
 
@@ -6593,11 +6608,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Retrieve the full transcript for a specific session.
 		 *
-		 * @param int    $user_id     User identifier.
-		 * @param string $session_key Session key string.
+		 * @param int    $user_id      User identifier.
+		 * @param string $session_key  Session key string.
+		 * @param int    $assistant_id Optional assistant ID to filter by.
 		 * @return array|WP_Error
 		 */
-		protected function get_transcript_session( $user_id, $session_key ) {
+		protected function get_transcript_session( $user_id, $session_key, $assistant_id = 0 ) {
 			global $wpdb;
 
 			WP_MCP_AI_Logger::log_event(
@@ -6640,21 +6656,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			$table   = $this->get_transcript_table_name();
-			$user_id = absint( $user_id );
+			$table        = $this->get_transcript_table_name();
+			$user_id      = absint( $user_id );
+			$assistant_id = absint( $assistant_id );
 
 			WP_MCP_AI_Logger::log_event(
 				'debug',
 				'get_transcript_session: database query parameters',
 				array(
-					'table'       => $table,
-					'user_id'     => $user_id,
-					'session_key' => $session_key,
+					'table'        => $table,
+					'user_id'      => $user_id,
+					'session_key'  => $session_key,
+					'assistant_id' => $assistant_id,
 				)
 			);
 
-			$query = $wpdb->prepare(
-				"SELECT request_payload,
+			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
+			$where_values  = array( $session_key, $user_id );
+
+			if ( $assistant_id > 0 ) {
+				$where_clauses[] = 'assistant_id = %d';
+				$where_values[]  = $assistant_id;
+			}
+
+			$where_sql = implode( ' AND ', $where_clauses );
+
+			$query_template = "SELECT request_payload,
                     response_payload,
                     metadata,
                     request_started_at,
@@ -6664,11 +6691,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
                     assistant_model,
                     latency_ms
              FROM {$table}
-             WHERE session_key = %s AND user_id = %d
-             ORDER BY cct_created ASC, id ASC",
-				$session_key,
-				$user_id
-			);
+             WHERE {$where_sql}
+             ORDER BY cct_created ASC, id ASC";
+
+			$query = $wpdb->prepare( $query_template, $where_values );
 
 			$rows = $wpdb->get_results( $query, ARRAY_A );
 
