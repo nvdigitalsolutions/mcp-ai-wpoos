@@ -388,7 +388,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<h3><?php esc_html_e( 'Useful Links:', 'wp-mcp-ai' ); ?></h3>
 					<ul>
 						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'wp-mcp-ai' ); ?></a></li>
-						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>"><?php esc_html_e( 'MCP Server Diagnostic', 'wp-mcp-ai' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>"><?php esc_html_e( 'MCP Server Diagnostic', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://platform.openai.com/api-keys" target="_blank"><?php esc_html_e( 'OpenAI API Keys', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://aistudio.google.com/app/apikey" target="_blank"><?php esc_html_e( 'Google AI Studio', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="https://ollama.com/" target="_blank"><?php esc_html_e( 'Ollama Documentation', 'wp-mcp-ai' ); ?></a></li>

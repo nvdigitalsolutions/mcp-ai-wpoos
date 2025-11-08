@@ -614,7 +614,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					<ul>
 						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'wp-mcp-ai' ); ?></a></li>
 						<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>"><?php esc_html_e( 'Manage Assistants', 'wp-mcp-ai' ); ?></a></li>
-						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'wp-mcp-ai' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'wp-mcp-ai' ); ?></a></li>
 					</ul>
 				</div>
 			</div>
