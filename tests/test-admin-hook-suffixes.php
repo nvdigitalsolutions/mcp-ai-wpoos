@@ -188,4 +188,49 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 			'Auth0 Setup scripts should be enqueued on the correct page'
 		);
 	}
+
+	/**
+	 * Test that MCP Diagnostic page properly localizes script data.
+	 */
+	public function test_mcp_diagnostic_localizes_script_data() {
+		global $wp_scripts;
+
+		// Trigger the admin_menu action to register menus.
+		do_action( 'admin_menu' );
+
+		// Get the hook suffix.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_MCP_Server_Diagnostic' );
+		$property   = $reflection->getProperty( 'page_hook' );
+		$property->setAccessible( true );
+		$actual_hook = $property->getValue();
+
+		// Reset scripts.
+		$wp_scripts = null;
+
+		// Trigger enqueue with the correct hook.
+		do_action( 'admin_enqueue_scripts', $actual_hook );
+
+		// Verify the script is enqueued.
+		$this->assertTrue(
+			isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline'] ),
+			'MCP Diagnostic inline script should be enqueued'
+		);
+
+		// Verify localized data is present.
+		$this->assertNotEmpty(
+			$wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra,
+			'Localized script data should be present'
+		);
+
+		// Get the localized data.
+		$localized_data = null;
+		if ( isset( $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'] ) ) {
+			$localized_data = $wp_scripts->registered['wp-mcp-ai-mcp-diagnostic-inline']->extra['data'];
+		}
+
+		$this->assertNotNull( $localized_data, 'Localized data should exist' );
+		$this->assertStringContainsString( 'wpMcpAiMcpDiagnostic', $localized_data, 'Localized object name should be present' );
+		$this->assertStringContainsString( 'ajaxUrl', $localized_data, 'Ajax URL should be localized' );
+		$this->assertStringContainsString( 'nonce', $localized_data, 'Nonce should be localized' );
+	}
 }
