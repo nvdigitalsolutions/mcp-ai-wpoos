@@ -1,0 +1,405 @@
+<?php
+/**
+ * Chat Service
+ *
+ * Handles chat message processing and orchestration.
+ * Extracted from WP_MCP_AI_REST as part of service layer refactoring.
+ *
+ * @package WP_MCP_AI
+ * @since 1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Chat Service class
+ *
+ * Responsible for:
+ * - Processing chat messages and responses
+ * - Orchestrating agentic tool execution loops
+ * - Managing chat transcripts
+ * - Coordinating with rate limiting and token budgets
+ *
+ * @since 1.0.0
+ */
+class WP_MCP_AI_Chat_Service {
+
+	/**
+	 * Language Model Router instance
+	 *
+	 * @var WP_MCP_AI_Language_Model_Router
+	 */
+	private $router;
+
+	/**
+	 * Rate Limit Manager instance
+	 *
+	 * @var WP_MCP_AI_Rate_Limit_Manager
+	 */
+	private $rate_limiter;
+
+	/**
+	 * Token Budget Manager instance
+	 *
+	 * @var WP_MCP_AI_Token_Budget_Manager
+	 */
+	private $token_budget_manager;
+
+	/**
+	 * Tool Registry instance
+	 *
+	 * @var WP_MCP_AI_Tool_Registry
+	 */
+	private $tool_registry;
+
+	/**
+	 * Constructor
+	 *
+	 * @param WP_MCP_AI_Language_Model_Router  $router                Language model router.
+	 * @param WP_MCP_AI_Rate_Limit_Manager     $rate_limiter          Rate limit manager.
+	 * @param WP_MCP_AI_Token_Budget_Manager   $token_budget_manager  Token budget manager.
+	 * @param WP_MCP_AI_Tool_Registry          $tool_registry         Tool registry.
+	 */
+	public function __construct(
+		WP_MCP_AI_Language_Model_Router $router,
+		WP_MCP_AI_Rate_Limit_Manager $rate_limiter,
+		WP_MCP_AI_Token_Budget_Manager $token_budget_manager,
+		WP_MCP_AI_Tool_Registry $tool_registry
+	) {
+		$this->router               = $router;
+		$this->rate_limiter         = $rate_limiter;
+		$this->token_budget_manager = $token_budget_manager;
+		$this->tool_registry        = $tool_registry;
+	}
+
+	/**
+	 * Process a chat request
+	 *
+	 * Main entry point for chat processing. Handles:
+	 * - Validation
+	 * - Rate limiting
+	 * - Token budget checking
+	 * - Message processing
+	 * - Agentic tool execution loops
+	 * - Transcript recording
+	 *
+	 * @param int    $assistant_id       Assistant post ID.
+	 * @param array  $messages           Chat messages.
+	 * @param array  $options            Chat options.
+	 * @param array  $assistant_config   Assistant configuration.
+	 * @param array  $transcript_context Transcript recording context.
+	 * @param int    $user_id            Current user ID.
+	 * @param int    $max_iterations     Maximum agentic loop iterations.
+	 * @return array|WP_Error Chat response or error.
+	 */
+	public function process_chat_request(
+		$assistant_id,
+		$messages,
+		$options,
+		$assistant_config,
+		$transcript_context,
+		$user_id,
+		$max_iterations = 5
+	) {
+		// Apply filters to options before processing.
+		$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, null );
+
+		// Fire action before chat request.
+		do_action( 'wp_mcp_ai_before_chat_request', $assistant_id, $messages, $options, null );
+
+		// Get language model client.
+		$client = $this->router->get_client( $assistant_config );
+		if ( is_wp_error( $client ) ) {
+			return $client;
+		}
+
+		// Track timing for transcripts.
+		$transcript_context['request_started_at'] = microtime( true );
+
+		// Send initial chat request.
+		$response = $client->create_chat_completion( $messages, $options );
+
+		$transcript_context['response_completed_at'] = microtime( true );
+
+		// Handle errors.
+		if ( is_wp_error( $response ) ) {
+			$this->log_chat_error( $response, $assistant_id, $user_id );
+			return $response;
+		}
+
+		// Check for failed response that needs conversion.
+		$response = $this->maybe_convert_failed_chat_response( $response );
+		if ( is_wp_error( $response ) ) {
+			$this->log_chat_error( $response, $assistant_id, $user_id );
+			return $response;
+		}
+
+		// Execute agentic loop if tools are requested.
+		$iteration            = 0;
+		$tool_result_messages = array();
+
+		while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
+			$tool_calls = $this->extract_tool_calls_from_response( $response );
+
+			if ( empty( $tool_calls ) ) {
+				break; // No more tools, final response ready.
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'agentic_tool_execution',
+				'Executing tools automatically in chat',
+				array(
+					'iteration'    => $iteration,
+					'tool_count'   => count( $tool_calls ),
+					'assistant_id' => $assistant_id,
+				)
+			);
+
+			// Add assistant message with tool_calls to conversation.
+			$messages[] = array(
+				'role'       => 'assistant',
+				'content'    => isset( $response['choices'][0]['message']['content'] ) ? $response['choices'][0]['message']['content'] : '',
+				'tool_calls' => $tool_calls,
+			);
+
+			// Execute each tool.
+			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config );
+
+			// Add tool results to conversation.
+			foreach ( $tool_results as $tool_result ) {
+				$messages[]             = $tool_result;
+				$tool_result_messages[] = $tool_result;
+			}
+
+			++$iteration;
+
+			// Send follow-up request with tool results.
+			$response = $client->create_chat_completion( $messages, $options );
+
+			if ( is_wp_error( $response ) ) {
+				$this->log_chat_error( $response, $assistant_id, $user_id );
+				return $response;
+			}
+
+			$response = $this->maybe_convert_failed_chat_response( $response );
+			if ( is_wp_error( $response ) ) {
+				$this->log_chat_error( $response, $assistant_id, $user_id );
+				return $response;
+			}
+		}
+
+		// Add tool results to response for frontend display.
+		if ( ! empty( $tool_result_messages ) ) {
+			$response['tool_results'] = $tool_result_messages;
+		}
+
+		// Record transcript if needed.
+		if ( ! empty( $transcript_context['save_transcript'] ) ) {
+			$this->save_chat_transcript(
+				$assistant_id,
+				$messages,
+				$response,
+				$transcript_context
+			);
+		}
+
+		// Fire action after successful chat.
+		do_action( 'wp_mcp_ai_after_chat_request', $assistant_id, $messages, $response, null );
+
+		return $response;
+	}
+
+	/**
+	 * Extract tool calls from LLM response
+	 *
+	 * @param array $response LLM response.
+	 * @return array Tool calls.
+	 */
+	private function extract_tool_calls_from_response( $response ) {
+		if ( empty( $response['choices'][0]['message']['tool_calls'] ) ) {
+			return array();
+		}
+
+		return $response['choices'][0]['message']['tool_calls'];
+	}
+
+	/**
+	 * Execute tool calls
+	 *
+	 * @param array $tool_calls       Tool calls from LLM.
+	 * @param int   $assistant_id     Assistant ID.
+	 * @param array $assistant_config Assistant configuration.
+	 * @return array Tool result messages.
+	 */
+	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config ) {
+		$results = array();
+
+		foreach ( $tool_calls as $tool_call ) {
+			$tool_name = $tool_call['function']['name'] ?? '';
+			$tool_id   = $tool_call['id'] ?? '';
+
+			// Parse arguments.
+			$arguments_json = $tool_call['function']['arguments'] ?? '{}';
+			$arguments      = json_decode( $arguments_json, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				$results[] = array(
+					'role'         => 'tool',
+					'tool_call_id' => $tool_id,
+					'content'      => wp_json_encode(
+						array(
+							'error' => 'Invalid tool arguments JSON',
+						)
+					),
+				);
+				continue;
+			}
+
+			// Execute tool via registry.
+			$tool_result = $this->tool_registry->execute_tool(
+				$tool_name,
+				$arguments,
+				array(
+					'assistant_id'     => $assistant_id,
+					'assistant_config' => $assistant_config,
+				)
+			);
+
+			// Format result.
+			$result_content = is_wp_error( $tool_result )
+				? wp_json_encode( array( 'error' => $tool_result->get_error_message() ) )
+				: wp_json_encode( $tool_result );
+
+			$results[] = array(
+				'role'         => 'tool',
+				'tool_call_id' => $tool_id,
+				'content'      => $result_content,
+			);
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Convert failed chat response to WP_Error
+	 *
+	 * @param array $response LLM response.
+	 * @return array|WP_Error Response or error.
+	 */
+	private function maybe_convert_failed_chat_response( $response ) {
+		// Check for error indicators in response.
+		if ( isset( $response['error'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_chat_error',
+				$response['error']['message'] ?? __( 'Chat request failed', 'wp-mcp-ai' ),
+				array(
+					'status'             => 500,
+					'provider_error'     => $response['error'],
+					'provider_error_code' => $response['error']['code'] ?? '',
+				)
+			);
+		}
+
+		return $response;
+	}
+
+	/**
+	 * Log chat error
+	 *
+	 * @param WP_Error $error        Error object.
+	 * @param int      $assistant_id Assistant ID.
+	 * @param int      $user_id      User ID.
+	 */
+	private function log_chat_error( $error, $assistant_id, $user_id ) {
+		$context = array(
+			'assistant_id' => $assistant_id,
+			'user_id'      => $user_id,
+			'error_code'   => $error->get_error_code(),
+			'error'        => $error->get_error_message(),
+		);
+
+		$error_data = $error->get_error_data();
+		if ( is_array( $error_data ) && isset( $error_data['provider_error_code'] ) ) {
+			$context['provider_error_code'] = $error_data['provider_error_code'];
+		}
+
+		WP_MCP_AI_Logger::log_error(
+			sprintf(
+				'Chat request failed: %s',
+				$error->get_error_message()
+			),
+			$context
+		);
+	}
+
+	/**
+	 * Save chat transcript
+	 *
+	 * @param int   $assistant_id       Assistant ID.
+	 * @param array $messages           Chat messages.
+	 * @param array $response           LLM response.
+	 * @param array $transcript_context Transcript context.
+	 */
+	private function save_chat_transcript( $assistant_id, $messages, $response, $transcript_context ) {
+		// Check if chat transcript recorder is available.
+		if ( ! class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+			return;
+		}
+
+		$recorder = new WP_MCP_AI_Chat_Transcript_Recorder();
+
+		$session_key = $transcript_context['session_key'] ?? '';
+		$duration    = 0;
+
+		if ( isset( $transcript_context['request_started_at'], $transcript_context['response_completed_at'] ) ) {
+			$duration = $transcript_context['response_completed_at'] - $transcript_context['request_started_at'];
+		}
+
+		$recorder->record_transcript(
+			$assistant_id,
+			$messages,
+			$response,
+			$session_key,
+			$duration
+		);
+	}
+
+	/**
+	 * Check rate limits for chat request
+	 *
+	 * @param int   $assistant_id Assistant ID.
+	 * @param int   $user_id      User ID.
+	 * @param array $options      Chat options.
+	 * @return true|WP_Error True if allowed, WP_Error if rate limited.
+	 */
+	public function check_rate_limits( $assistant_id, $user_id, $options ) {
+		return $this->rate_limiter->check_rate_limit(
+			$user_id,
+			'chat',
+			array(
+				'assistant_id' => $assistant_id,
+				'options'      => $options,
+			)
+		);
+	}
+
+	/**
+	 * Check token budget for chat request
+	 *
+	 * @param int   $assistant_id Assistant ID.
+	 * @param int   $user_id      User ID.
+	 * @param array $messages     Chat messages.
+	 * @param array $options      Chat options.
+	 * @return true|WP_Error True if within budget, WP_Error if exceeded.
+	 */
+	public function check_token_budget( $assistant_id, $user_id, $messages, $options ) {
+		return $this->token_budget_manager->check_budget(
+			$user_id,
+			$assistant_id,
+			$messages,
+			$options
+		);
+	}
+}
