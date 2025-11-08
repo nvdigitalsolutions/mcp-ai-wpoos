@@ -2322,8 +2322,9 @@
             })
             .catch(function (error) {
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
-                setStatus(state.container, message);
                 appendMessage(state.messagesEl, 'system', { text: message });
+                // Clear status after showing error message in chat
+                clearStatus(state.container);
             });
     }
 
