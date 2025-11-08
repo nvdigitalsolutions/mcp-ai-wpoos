@@ -167,6 +167,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			}
 		}
 
+	/**
+	 * Sanitize section input.
+	 *
+	 * @param array $input Raw input from form.
+	 * @return array Sanitized input.
+	 */
+	public function sanitize( $input ) {
+		// Call parent sanitization first.
+		$sanitized = parent::sanitize( $input );
+
+		// Special handling for default_assistant: convert to integer.
+		if ( isset( $sanitized['default_assistant'] ) ) {
+			$sanitized['default_assistant'] = absint( $sanitized['default_assistant'] );
+		}
+
+		return $sanitized;
+	}
+
 		/**
 		 * Validate section input.
 		 *
