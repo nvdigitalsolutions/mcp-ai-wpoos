@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure API keys and settings for AI providers (OpenAI, Google Gemini, Ollama, LM Studio).', 'wp-mcp-ai' );
+			return __( 'Configure API keys and settings for AI providers (OpenAI, Anthropic, Google Gemini, Ollama, LM Studio).', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'wp-mcp-ai' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
-					'default'     => array( 'openai', 'gemini', 'ollama', 'lm_studio' ),
+					'default'     => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
 				),
 				
 				// OpenAI Settings.
@@ -127,6 +127,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
 					'placeholder' => 'org-...',
+				),
+
+				// Anthropic Settings.
+				'anthropic_api_key'     => array(
+					'type'        => 'password',
+					'label'       => __( 'Anthropic API Key', 'wp-mcp-ai' ),
+					'description' => sprintf(
+						/* translators: %s: Anthropic Console URL */
+						__( 'Your Anthropic API key. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'wp-mcp-ai' ),
+						'https://console.anthropic.com/'
+					),
+					'placeholder' => 'sk-ant-...',
+				),
+				'anthropic_model'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Default Anthropic Model', 'wp-mcp-ai' ),
+					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
+						'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+						'claude-3-opus-20240229'     => 'Claude 3 Opus',
+						'claude-3-sonnet-20240229'   => 'Claude 3 Sonnet',
+						'claude-3-haiku-20240307'    => 'Claude 3 Haiku',
+					),
+					'default'     => 'claude-3-5-sonnet-20241022',
 				),
 
 				// Google Gemini Settings.
@@ -212,6 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Group fields by provider.
 			$providers = array(
 				'OpenAI'      => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
+			'Anthropic'          => array( 'anthropic_api_key', 'anthropic_model' ),
 				'Google Gemini' => array( 'gemini_api_key', 'default_gemini_model' ),
 				'Ollama (Local)' => array( 'ollama_endpoint_url', 'ollama_model' ),
 				'LM Studio (Local)' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
@@ -240,6 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			$provider_labels = array(
 				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+			'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
 				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
 				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
 				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
@@ -341,7 +368,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			$valid_providers = array( 'openai', 'gemini', 'ollama', 'lm_studio' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
 			$sanitized       = array();
 
 			if ( ! is_array( $priority_list ) ) {
