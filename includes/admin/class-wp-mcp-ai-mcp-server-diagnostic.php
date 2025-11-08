@@ -56,6 +56,9 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				array(),
 				WP_MCP_AI_VERSION
 			);
+
+			// Ensure jQuery is loaded for the inline scripts.
+			wp_enqueue_script( 'jquery' );
 		}
 
 		/**
@@ -348,11 +351,15 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<tbody>
 								<?php foreach ( $assistants as $assistant ) : ?>
 									<?php
-									$config      = get_post_meta( $assistant->ID, '_mcp_ai_assistant_config', true );
-									$provider    = isset( $config['provider'] ) ? $config['provider'] : 'openai';
-									$model       = isset( $config['model'] ) ? $config['model'] : 'N/A';
-									$tools       = isset( $config['tools'] ) ? $config['tools'] : array();
-									$tools_count = is_array( $tools ) ? count( $tools ) : 0;
+									$provider    = get_post_meta( $assistant->ID, '_wp_mcp_ai_provider', true );
+									$model       = get_post_meta( $assistant->ID, '_wp_mcp_ai_model', true );
+									$tools       = get_post_meta( $assistant->ID, '_wp_mcp_ai_tools', true );
+									
+									// Fallback to default values if not set.
+									$provider    = ! empty( $provider ) ? $provider : 'openai';
+									$model       = ! empty( $model ) ? $model : 'N/A';
+									$tools       = is_array( $tools ) ? $tools : array();
+									$tools_count = count( $tools );
 									?>
 									<tr>
 										<td><strong><?php echo esc_html( $assistant->post_title ); ?></strong></td>
@@ -575,7 +582,11 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			</div>
 
 			<script type="text/javascript">
+			/* global ajaxurl */
 			jQuery(document).ready(function($) {
+				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
+				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				
 				// Test MCP endpoint connectivity.
 				$('#test-mcp-endpoint').on('click', function() {
 					var button = $(this);
@@ -585,7 +596,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					resultDiv.html('<p><?php esc_html_e( 'Testing MCP endpoint...', 'wp-mcp-ai' ); ?></p>');
 
 					$.ajax({
-						url: ajaxurl,
+						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_mcp_endpoint',
@@ -633,7 +644,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					resultDiv.html('<p><?php esc_html_e( 'Testing method...', 'wp-mcp-ai' ); ?></p>');
 
 					$.ajax({
-						url: ajaxurl,
+						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_test_mcp_method',
