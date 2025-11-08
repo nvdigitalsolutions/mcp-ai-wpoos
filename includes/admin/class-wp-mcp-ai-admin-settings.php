@@ -12,6 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	/**
 	 * Handles registration and rendering of the plugin's settings page.
+	 *
+	 * This class now delegates to specialized component classes for better maintainability:
+	 * - WP_MCP_AI_Admin_Settings_Base: Core settings registration and defaults
+	 * - WP_MCP_AI_Admin_AJAX_Handlers: All AJAX request handlers
+	 * - WP_MCP_AI_Admin_Settings_Renderer: UI rendering logic
+	 * - WP_MCP_AI_Settings_Validator: Input validation
 	 */
 	class WP_MCP_AI_Admin_Settings {
 		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
@@ -32,27 +38,56 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		private static $settings_cache = null;
 
 		/**
+		 * Settings base component.
+		 *
+		 * @var WP_MCP_AI_Admin_Settings_Base
+		 */
+		private $settings_base;
+
+		/**
+		 * AJAX handlers component.
+		 *
+		 * @var WP_MCP_AI_Admin_AJAX_Handlers
+		 */
+		private $ajax_handlers;
+
+		/**
+		 * Settings renderer component.
+		 *
+		 * @var WP_MCP_AI_Admin_Settings_Renderer
+		 */
+		private $renderer;
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
+			// Initialize component classes.
+			$this->settings_base  = new WP_MCP_AI_Admin_Settings_Base();
+			$this->ajax_handlers  = new WP_MCP_AI_Admin_AJAX_Handlers();
+			$this->renderer       = new WP_MCP_AI_Admin_Settings_Renderer( $this->settings_base );
+
 			add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this, 'handle_gmail_oauth_start' ) );
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this, 'handle_gmail_oauth_callback' ) );
-			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this, 'filter_memory_max_file_bytes' ), 10, 2 );
+			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this, 'safe_ajax_handler' ) );
-			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this, 'safe_ajax_handler' ) );
+			
+			// Delegate AJAX handlers to the AJAX component.
+			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) ) ) {
 				add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
 			}
@@ -135,85 +170,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array
 		 */
 		public static function get_default_settings() {
-			return array(
-				'openai_api_key'                    => '',
-				'gemini_api_key'                    => '',
-				'ollama_endpoint_url'               => '',
-				'ollama_model'                      => '',
-				'lm_studio_endpoint_url'            => '',
-				'lm_studio_model'                   => '',
-				'default_assistant'                 => 0,
-				'enable_logging'                    => false,
-				'default_model'                     => 'gpt-4o-mini',
-				'default_gemini_model'              => 'gemini-1.5-flash',
-				'default_provider'                  => 'openai',
-				'web_search_provider'               => 'duckduckgo',
-				'brave_search_api_key'              => '',
-				'ita_tariff_api_key'                => '',
-				'request_timeout'                   => 30,
-				'memory_max_file_bytes'             => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
-				'auth0_domain'                      => '',
-				'auth0_audience'                    => '',
-				'auth0_required_scope'              => '',
-				'enable_auth0_github_bridge'        => false,
-				'auth0_management_client_id'        => '',
-				'auth0_management_client_secret'    => '',
-				'enable_wordpress_gravatar_bridge'  => false,
-				'wordpress_gravatar_userinfo_endpoint' => '',
-				'enable_simple_jwt_login'           => false,
-				'delete_on_uninstall'               => false,
-				'crawl4ai_base_url'                 => '',
-				'crawl4ai_api_key'                  => '',
-				'cloudflare_api_token'              => '',
-				'cloudflare_zone_id'                => '',
-				'enable_varnish_purge'              => false,
-				'cloudways_email'                   => '',
-				'cloudways_api_key'                 => '',
-				'cloudways_server_id'               => '',
-				'cloudways_app_id'                  => '',
-				'mailjet_api_key'                   => '',
-				'mailjet_api_secret'                => '',
-				'mailjet_from_email'                => '',
-				'mailjet_from_name'                 => '',
-				'quickbooks_company_id'             => '',
-				'quickbooks_api_key'                => '',
-				'google_analytics_property_id'      => '',
-				'google_analytics_credentials_json' => '',
-				'gmail_client_id'                   => '',
-				'gmail_client_secret'               => '',
-				'gmail_refresh_token'               => '',
-				'gmail_user_email'                  => '',
-				'group_email_capability'            => 'publish_posts',
-				'group_email_max_recipients'        => 100,
-				'openai_image_model'                => 'gpt-image-1',
-				'openai_image_size'                 => '1024x1024',
-				'openai_image_quality'              => 'standard',
-				'openai_image_response_format'      => 'b64_json',
-				'openai_speech_model'               => 'gpt-4o-mini-tts',
-				'openai_speech_voice'               => 'alloy',
-				'openai_speech_format'              => 'mp3',
-				'openai_embedding_model'            => 'text-embedding-3-small',
-				'max_history_messages'              => 8,
-				'chat_colors'                       => self::get_default_chat_colors(),
-				'allowed_image_mimes'               => array(),
-				'allowed_file_mimes'                => array(),
-				'rest_enable_assistant_create'      => false,
-				'rest_enable_assistant_delete'      => false,
-				'sse_enable_post_method'            => false,
-				'enable_high_token_model_switch'    => true,
-				'high_token_fallback_model'         => 'gemini-2.0-flash-exp',
-				'enable_mesh'                       => false,
-				'mesh_inbound_api_key'              => '',
-				'mesh_peer_sites'                   => array(),
-				'enable_federation'                 => false,
-				'enable_federation_directory'       => false,
-				'federation_regions'                => 'global',
-				'federation_data_tags'              => '',
-				'federation_qps'                    => 5,
-				'federation_burst'                  => 10,
-				'federation_jwks_keys'              => array(),
-				'federation_price_hints'            => array(),
-			);
+			// Delegate to the settings base class.
+			return WP_MCP_AI_Admin_Settings_Base::get_default_settings();
 		}
 
 		/**
@@ -1122,36 +1080,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array
 		 */
 		public static function get_settings() {
-			// Return cached settings if available.
-			if ( null !== self::$settings_cache ) {
-				return self::$settings_cache;
-			}
-
-			$saved = get_option( self::OPTION_NAME, array() );
-
-			if ( ! is_array( $saved ) ) {
-				$saved = array();
-			}
-			
-
-			$settings = wp_parse_args( $saved, self::get_default_settings() );
-
-			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
-				$settings['chat_colors'] = self::get_default_chat_colors();
-			} else {
-				$settings['chat_colors'] = array_merge( self::get_default_chat_colors(), $settings['chat_colors'] );
-			}
-
-			// Cache the settings for subsequent calls.
-			self::$settings_cache = $settings;
-
-			return $settings;
+			// Delegate to the settings base class.
+			return WP_MCP_AI_Admin_Settings_Base::get_settings();
 		}
 
 		/**
 		 * Clear the cached settings so subsequent calls fetch fresh values.
 		 */
 		public static function reset_settings_cache() {
+			// Delegate to the settings base class.
+			WP_MCP_AI_Admin_Settings_Base::reset_settings_cache();
 			self::$settings_cache = null;
 		}
 
@@ -1348,7 +1286,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Register the settings, sections, and fields exposed in the admin UI.
 		 */
 		public function register_settings() {
-			register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this, 'sanitize_settings' ) );
+			// Delegate settings registration to the base component.
+			$this->settings_base->register_settings();
+			
+			// Keep existing field registrations for backward compatibility.
+			register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',

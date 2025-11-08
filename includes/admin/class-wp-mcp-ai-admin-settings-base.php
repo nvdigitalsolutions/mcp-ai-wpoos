@@ -1,0 +1,349 @@
+<?php
+/**
+ * Admin Settings Base for WP oOS.
+ *
+ * Handles core settings registration and management.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
+	/**
+	 * Core settings registration and management.
+	 */
+	class WP_MCP_AI_Admin_Settings_Base {
+		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
+		const OPTION_NAME                    = 'wp_mcp_ai_settings';
+		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
+		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
+		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
+		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
+		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
+		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+
+		/**
+		 * Cached settings for the current request.
+		 *
+		 * @var array|null
+		 */
+		private static $settings_cache = null;
+
+		/**
+		 * Register settings with WordPress Settings API.
+		 */
+		public function register_settings() {
+			register_setting(
+				self::SETTINGS_GROUP,
+				self::OPTION_NAME,
+				array(
+					'sanitize_callback' => array( $this, 'sanitize_settings' ),
+				)
+			);
+		}
+
+		/**
+		 * Sanitize settings before saving.
+		 *
+		 * @param array $settings Raw settings input.
+		 * @return array Sanitized settings.
+		 */
+		public function sanitize_settings( $settings ) {
+			if ( ! is_array( $settings ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+			$defaults  = self::get_default_settings();
+
+			foreach ( $defaults as $key => $default_value ) {
+				if ( ! isset( $settings[ $key ] ) ) {
+					continue;
+				}
+
+				$value = $settings[ $key ];
+
+				// Sanitize based on key patterns and types.
+				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
+				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) ) {
+					$sanitized[ $key ] = sanitize_text_field( $value );
+				} elseif ( false !== strpos( $key, '_email' ) ) {
+					$sanitized[ $key ] = sanitize_email( $value );
+				} elseif ( false !== strpos( $key, '_url' ) || false !== strpos( $key, '_endpoint' ) ) {
+					$sanitized[ $key ] = esc_url_raw( $value );
+				} elseif ( false !== strpos( $key, '_model' ) ) {
+					$sanitized[ $key ] = sanitize_text_field( $value );
+				} elseif ( is_bool( $default_value ) ) {
+					$sanitized[ $key ] = ! empty( $value );
+				} elseif ( is_int( $default_value ) ) {
+					$sanitized[ $key ] = absint( $value );
+				} elseif ( is_array( $default_value ) ) {
+					$sanitized[ $key ] = is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : array();
+				} else {
+					$sanitized[ $key ] = sanitize_text_field( $value );
+				}
+			}
+
+			// Mesh peer sites special handling.
+			if ( isset( $settings['mesh_peer_sites'] ) ) {
+				$sanitized['mesh_peer_sites'] = $this->sanitize_mesh_peer_sites( $settings['mesh_peer_sites'] );
+			}
+
+			// Generate mesh API key if needed.
+			if ( isset( $settings['enable_mesh'] ) && ! empty( $settings['enable_mesh'] ) ) {
+				if ( empty( $sanitized['mesh_inbound_api_key'] ) ) {
+					$sanitized['mesh_inbound_api_key'] = $this->generate_mesh_api_key();
+				}
+			}
+
+			/**
+			 * Filter sanitized settings before saving.
+			 *
+			 * Allows third-party plugins and extensions to modify or inject settings.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array $sanitized Sanitized settings array.
+			 * @param array $settings  Raw input settings array.
+			 */
+			$sanitized = apply_filters( 'wp_mcp_ai_admin_settings_sanitize', $sanitized, $settings );
+
+			// Clear settings cache.
+			self::reset_settings_cache();
+
+			return $sanitized;
+		}
+
+		/**
+		 * Generate a secure random API key for mesh networking.
+		 *
+		 * @return string
+		 */
+		private function generate_mesh_api_key() {
+			return 'mesh_' . bin2hex( random_bytes( 32 ) );
+		}
+
+		/**
+		 * Sanitize mesh peer sites array.
+		 *
+		 * @param array $peer_sites Raw peer sites data.
+		 * @return array Sanitized peer sites.
+		 */
+		private function sanitize_mesh_peer_sites( $peer_sites ) {
+			if ( ! is_array( $peer_sites ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+
+			foreach ( $peer_sites as $peer ) {
+				if ( ! is_array( $peer ) ) {
+					continue;
+				}
+
+				$sanitized_peer = array(
+					'url'     => isset( $peer['url'] ) ? esc_url_raw( $peer['url'] ) : '',
+					'api_key' => isset( $peer['api_key'] ) ? sanitize_text_field( $peer['api_key'] ) : '',
+					'name'    => isset( $peer['name'] ) ? sanitize_text_field( $peer['name'] ) : '',
+					'enabled' => ! empty( $peer['enabled'] ),
+				);
+
+				if ( ! empty( $sanitized_peer['url'] ) && ! empty( $sanitized_peer['api_key'] ) ) {
+					$sanitized[] = $sanitized_peer;
+				}
+			}
+
+			return $sanitized;
+		}
+
+		/**
+		 * Get all settings with defaults.
+		 *
+		 * @return array
+		 */
+		public static function get_settings() {
+			if ( null !== self::$settings_cache ) {
+				return self::$settings_cache;
+			}
+
+			$defaults  = self::get_default_settings();
+			$saved     = get_option( self::OPTION_NAME, array() );
+			
+			if ( ! is_array( $saved ) ) {
+				$saved = array();
+			}
+			
+			$settings  = wp_parse_args( $saved, $defaults );
+
+			// Ensure chat_colors is properly merged.
+			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
+				$settings['chat_colors'] = self::get_default_chat_colors();
+			} else {
+				$settings['chat_colors'] = array_merge( self::get_default_chat_colors(), $settings['chat_colors'] );
+			}
+
+			self::$settings_cache = $settings;
+
+			return $settings;
+		}
+
+		/**
+		 * Reset the settings cache.
+		 */
+		public static function reset_settings_cache() {
+			self::$settings_cache = null;
+		}
+
+		/**
+		 * Returns the option defaults.
+		 *
+		 * @return array
+		 */
+		public static function get_default_settings() {
+			return array(
+				'openai_api_key'                    => '',
+				'gemini_api_key'                    => '',
+				'ollama_endpoint_url'               => '',
+				'ollama_model'                      => '',
+				'lm_studio_endpoint_url'            => '',
+				'lm_studio_model'                   => '',
+				'default_assistant'                 => 0,
+				'enable_logging'                    => false,
+				'default_model'                     => 'gpt-4o-mini',
+				'default_gemini_model'              => 'gemini-1.5-flash',
+				'default_provider'                  => 'openai',
+				'web_search_provider'               => 'duckduckgo',
+				'brave_search_api_key'              => '',
+				'ita_tariff_api_key'                => '',
+				'request_timeout'                   => 30,
+				'memory_max_file_bytes'             => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
+				'auth0_domain'                      => '',
+				'auth0_audience'                    => '',
+				'auth0_required_scope'              => '',
+				'enable_auth0_github_bridge'        => false,
+				'auth0_management_client_id'        => '',
+				'auth0_management_client_secret'    => '',
+				'enable_wordpress_gravatar_bridge'  => false,
+				'wordpress_gravatar_userinfo_endpoint' => '',
+				'enable_simple_jwt_login'           => false,
+				'delete_on_uninstall'               => false,
+				'crawl4ai_base_url'                 => '',
+				'crawl4ai_api_key'                  => '',
+				'cloudflare_api_token'              => '',
+				'cloudflare_zone_id'                => '',
+				'enable_varnish_purge'              => false,
+				'cloudways_email'                   => '',
+				'cloudways_api_key'                 => '',
+				'cloudways_server_id'               => '',
+				'cloudways_app_id'                  => '',
+				'mailjet_api_key'                   => '',
+				'mailjet_api_secret'                => '',
+				'mailjet_from_email'                => '',
+				'mailjet_from_name'                 => '',
+				'quickbooks_company_id'             => '',
+				'quickbooks_api_key'                => '',
+				'google_analytics_property_id'      => '',
+				'google_analytics_credentials_json' => '',
+				'gmail_client_id'                   => '',
+				'gmail_client_secret'               => '',
+				'gmail_refresh_token'               => '',
+				'gmail_user_email'                  => '',
+				'group_email_capability'            => 'publish_posts',
+				'group_email_max_recipients'        => 100,
+				'openai_image_model'                => 'gpt-image-1',
+				'openai_image_size'                 => '1024x1024',
+				'openai_image_quality'              => 'standard',
+				'openai_image_response_format'      => 'b64_json',
+				'openai_speech_model'               => 'gpt-4o-mini-tts',
+				'openai_speech_voice'               => 'alloy',
+				'openai_speech_format'              => 'mp3',
+				'openai_embedding_model'            => 'text-embedding-3-small',
+				'max_history_messages'              => 8,
+				'chat_colors'                       => self::get_default_chat_colors(),
+				'allowed_image_mimes'               => array(),
+				'allowed_file_mimes'                => array(),
+				'rest_enable_assistant_create'      => false,
+				'rest_enable_assistant_delete'      => false,
+				'sse_enable_post_method'            => false,
+				'enable_high_token_model_switch'    => true,
+				'high_token_fallback_model'         => 'gemini-2.0-flash-exp',
+				'enable_mesh'                       => false,
+				'mesh_inbound_api_key'              => '',
+				'mesh_peer_sites'                   => array(),
+				'enable_federation'                 => false,
+				'enable_federation_directory'       => false,
+				'federation_regions'                => 'global',
+				'federation_data_tags'              => '',
+				'federation_qps'                    => 5,
+				'federation_burst'                  => 10,
+				'federation_jwks_keys'              => array(),
+				'federation_price_hints'            => array(),
+			);
+		}
+
+		/**
+		 * Get default chat colors configuration.
+		 *
+		 * @return array
+		 */
+		public static function get_default_chat_colors() {
+			$color_definitions = self::get_chat_color_definitions();
+			$defaults          = array();
+
+			foreach ( $color_definitions as $key => $definition ) {
+				$defaults[ $key ] = $definition['default'];
+			}
+
+			return $defaults;
+		}
+
+		/**
+		 * Returns metadata about configurable chat colors.
+		 *
+		 * @return array
+		 */
+		public static function get_chat_color_definitions() {
+			// Delegate to main admin settings class if it exists and has the full definitions.
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'get_chat_color_definitions' ) ) {
+				return WP_MCP_AI_Admin_Settings::get_chat_color_definitions();
+			}
+			
+			// Fallback to basic definitions (this should not happen in practice).
+			return array(
+				'container-border'                    => array(
+					'label'       => __( 'Container border', 'wp-mcp-ai' ),
+					'group'       => 'container',
+					'default'     => '#d5d5d5',
+					'format'      => 'hex',
+					'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
+				),
+				'container-background'                => array(
+					'label'       => __( 'Container background', 'wp-mcp-ai' ),
+					'group'       => 'container',
+					'default'     => '#fff',
+					'format'      => 'hex',
+					'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
+				),
+			);
+		}
+
+		/**
+		 * Apply memory max file bytes filter.
+		 *
+		 * @param int $max_bytes Current max bytes.
+		 * @param int $attachment_id Attachment ID.
+		 * @return int Filtered max bytes.
+		 */
+		public function filter_memory_max_file_bytes( $max_bytes, $attachment_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+			$settings = self::get_settings();
+			if ( isset( $settings['memory_max_file_bytes'] ) && $settings['memory_max_file_bytes'] > 0 ) {
+				return absint( $settings['memory_max_file_bytes'] );
+			}
+			return $max_bytes;
+		}
+	}
+}
