@@ -65,6 +65,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
+			// Get dynamic model choices (from CCT if available, or fallback).
+			$model_choices = array();
+			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+				$model_choices = WP_MCP_AI_Admin_Settings::get_openai_default_model_choices_static();
+			}
+
+			// Fallback to minimal hardcoded list if static method unavailable.
+			if ( empty( $model_choices ) ) {
+				$model_choices = array(
+					'gpt-4o'         => 'GPT-4o',
+					'gpt-4o-mini'    => 'GPT-4o Mini',
+					'gpt-4-turbo'    => 'GPT-4 Turbo',
+					'gpt-4'          => 'GPT-4',
+					'gpt-3.5-turbo'  => 'GPT-3.5 Turbo',
+					'o1-preview'     => 'o1 Preview',
+					'o1-mini'        => 'o1 Mini',
+				);
+			}
+
 			return array(
 				// OpenAI Settings.
 				'openai_api_key'        => array(
@@ -81,15 +100,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for OpenAI requests.', 'wp-mcp-ai' ),
-					'options'     => array(
-						'gpt-4o'         => 'GPT-4o',
-						'gpt-4o-mini'    => 'GPT-4o Mini',
-						'gpt-4-turbo'    => 'GPT-4 Turbo',
-						'gpt-4'          => 'GPT-4',
-						'gpt-3.5-turbo'  => 'GPT-3.5 Turbo',
-						'o1-preview'     => 'o1 Preview',
-						'o1-mini'        => 'o1 Mini',
-					),
+					'options'     => $model_choices,
 					'default'     => 'gpt-4o',
 				),
 				'openai_embedding_model' => array(

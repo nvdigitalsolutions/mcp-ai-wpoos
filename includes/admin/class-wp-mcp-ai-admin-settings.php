@@ -4995,6 +4995,183 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Static wrapper to get OpenAI models from CCT.
+		 *
+		 * @return array<string, string> Associative array of model slugs mapped to display labels.
+		 */
+		public static function get_openai_models_from_cct_static() {
+			// Check if the Model Rate Limits CCT class exists.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+				return array();
+			}
+
+			$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+			if ( ! $handler ) {
+				return array();
+			}
+
+			$factory = $handler->get_factory();
+
+			if ( ! $factory || empty( $factory->db ) ) {
+				return array();
+			}
+
+			// Query for all OpenAI models.
+			$items = $factory->db->query(
+				array(
+					'provider' => 'openai',
+				)
+			);
+
+			if ( empty( $items ) || ! is_array( $items ) ) {
+				return array();
+			}
+
+			$models = array();
+
+			foreach ( $items as $item ) {
+				if ( ! isset( $item['model_name'] ) ) {
+					continue;
+				}
+
+				$model_name = sanitize_text_field( $item['model_name'] );
+
+				if ( empty( $model_name ) ) {
+					continue;
+				}
+
+				// Create a human-readable label from the model name.
+				$label = self::format_model_label_static( $model_name );
+
+				$models[ $model_name ] = $label;
+			}
+
+			// Sort models alphabetically by label for better UX.
+			asort( $models );
+
+			return $models;
+		}
+
+		/**
+		 * Static wrapper to format a model name into a human-readable label.
+		 *
+		 * @param string $model_name Model identifier (e.g., 'gpt-4o-mini').
+		 * @return string Human-readable label (e.g., 'GPT-4o Mini').
+		 */
+		public static function format_model_label_static( $model_name ) {
+			// Handle special cases first.
+			$special_cases = array(
+				'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
+				'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+				'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
+				'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+				'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
+				'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
+				'gpt-4.1-nano'            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
+				'gpt-4-turbo'             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
+				'gpt-4'                   => __( 'GPT-4', 'wp-mcp-ai' ),
+				'gpt-3.5-turbo'           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
+				'gpt-3.5-turbo-16k'       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
+				'gpt-3.5-turbo-instruct'  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
+				'o1-preview'              => __( 'O1 Preview', 'wp-mcp-ai' ),
+				'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
+				'o4-mini'                 => __( 'O4 Mini', 'wp-mcp-ai' ),
+				'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
+			);
+
+			if ( isset( $special_cases[ $model_name ] ) ) {
+				return $special_cases[ $model_name ];
+			}
+
+			// Generic formatting: replace hyphens with spaces and capitalize words.
+			$label = str_replace( array( '-', '_' ), ' ', $model_name );
+			$label = ucwords( $label );
+
+			// Handle common patterns.
+			$label = str_replace( 'Gpt ', 'GPT-', $label );
+			$label = str_replace( 'Turbo', 'Turbo', $label );
+			$label = preg_replace( '/\s+/', ' ', $label );
+
+			return trim( $label );
+		}
+
+		/**
+		 * Static wrapper to get all OpenAI model choices (CCT or fallback).
+		 *
+		 * @return array<string, string> Associative array of model slugs mapped to display labels.
+		 */
+		public static function get_openai_default_model_choices_static() {
+			// Try to get models from CCT if JetEngine is active.
+			$cct_models = self::get_openai_models_from_cct_static();
+
+			// Fallback to hardcoded choices if CCT is not available or empty.
+			if ( empty( $cct_models ) ) {
+				$choices = array(
+					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
+					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
+					'gpt-4o-mini'             => __( 'GPT-4o mini', 'wp-mcp-ai' ),
+					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
+					'gpt-4.1-mini'            => __( 'GPT-4.1 mini', 'wp-mcp-ai' ),
+					'gpt-4.1-nano'            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
+					'gpt-4-turbo'             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
+					'gpt-4'                   => __( 'GPT-4', 'wp-mcp-ai' ),
+					'gpt-3.5-turbo'           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
+					'gpt-3.5-turbo-16k'       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
+					'gpt-3.5-turbo-instruct'  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
+					'o1-preview'              => __( 'O1 Preview', 'wp-mcp-ai' ),
+					'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
+					'o4-mini'                 => __( 'o4 mini', 'wp-mcp-ai' ),
+					'gpt-4o-audio-preview'    => __( 'GPT-4o audio preview', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview' => __( 'GPT-4o realtime preview', 'wp-mcp-ai' ),
+				);
+			} else {
+				$choices = $cct_models;
+			}
+
+			/**
+			 * Filter the default OpenAI model choices displayed in the settings UI.
+			 *
+			 * @param array<string, string> $choices Associative array of model values mapped to human-readable labels.
+			 */
+			$choices = apply_filters( 'wp_mcp_ai_default_openai_model_choices', $choices );
+
+			if ( ! is_array( $choices ) ) {
+				return array();
+			}
+
+			$sanitized = array();
+
+			foreach ( $choices as $value => $label ) {
+				$value = sanitize_text_field( (string) $value );
+
+				if ( '' === $value ) {
+					continue;
+				}
+
+				if ( is_object( $label ) && method_exists( $label, '__toString' ) ) {
+					$label = (string) $label;
+				} elseif ( is_scalar( $label ) ) {
+					$label = (string) $label;
+				} else {
+					$label = $value;
+				}
+
+				$label = wp_strip_all_tags( $label );
+
+				if ( '' === $label ) {
+					$label = $value;
+				}
+
+				$sanitized[ $value ] = $label;
+			}
+
+			return $sanitized;
+		}
+
+		/**
 		 * Render the timeout field.
 		 */
 		public function render_timeout_field() {

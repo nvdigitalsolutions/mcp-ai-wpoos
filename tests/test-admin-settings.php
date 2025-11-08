@@ -791,6 +791,48 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test static method for getting OpenAI models from CCT.
+	 */
+	public function test_get_openai_models_from_cct_static_returns_empty_without_jetengine() {
+		// Without JetEngine, should return empty array.
+		$models = WP_MCP_AI_Admin_Settings::get_openai_models_from_cct_static();
+
+		$this->assertIsArray( $models );
+		$this->assertEmpty( $models );
+	}
+
+	/**
+	 * Test static method for formatting model labels.
+	 */
+	public function test_format_model_label_static_handles_common_patterns() {
+		// Test special cases.
+		$this->assertSame( 'GPT-5', WP_MCP_AI_Admin_Settings::format_model_label_static( 'gpt-5' ) );
+		$this->assertSame( 'GPT-4o', WP_MCP_AI_Admin_Settings::format_model_label_static( 'gpt-4o' ) );
+		$this->assertSame( 'GPT-4o Mini', WP_MCP_AI_Admin_Settings::format_model_label_static( 'gpt-4o-mini' ) );
+		$this->assertSame( 'GPT-4.1', WP_MCP_AI_Admin_Settings::format_model_label_static( 'gpt-4.1' ) );
+		$this->assertSame( 'GPT-4 Turbo', WP_MCP_AI_Admin_Settings::format_model_label_static( 'gpt-4-turbo' ) );
+		$this->assertSame( 'O1 Preview', WP_MCP_AI_Admin_Settings::format_model_label_static( 'o1-preview' ) );
+		$this->assertSame( 'O1 Mini', WP_MCP_AI_Admin_Settings::format_model_label_static( 'o1-mini' ) );
+	}
+
+	/**
+	 * Test static method for getting all OpenAI model choices.
+	 */
+	public function test_get_openai_default_model_choices_static_returns_fallback_without_cct() {
+		// Without CCT, should return fallback hardcoded list.
+		$choices = WP_MCP_AI_Admin_Settings::get_openai_default_model_choices_static();
+
+		$this->assertIsArray( $choices );
+		$this->assertGreaterThanOrEqual( 15, count( $choices ) );
+
+		// Verify key models are present in fallback.
+		$this->assertArrayHasKey( 'gpt-5', $choices );
+		$this->assertArrayHasKey( 'gpt-4o', $choices );
+		$this->assertArrayHasKey( 'gpt-4o-mini', $choices );
+		$this->assertArrayHasKey( 'o1-preview', $choices );
+	}
+
+	/**
 	 * Test that settings cache is properly cleared when temporarily updating settings.
 	 *
 	 * This test verifies the fix for the issue where test connection handlers
