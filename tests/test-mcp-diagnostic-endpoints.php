@@ -261,7 +261,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that jQuery is enqueued on the diagnostic page.
+	 * Test that jQuery and diagnostic script are enqueued on the diagnostic page.
 	 */
 	public function test_jquery_is_enqueued_on_diagnostic_page() {
 		global $wp_scripts;
@@ -282,8 +282,11 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		// Trigger the enqueue_assets method.
 		do_action( 'admin_enqueue_scripts', $page_hook );
 
-		// Verify jQuery is enqueued.
+		// Verify jQuery is enqueued (as a dependency).
 		$this->assertTrue( wp_script_is( 'jquery', 'enqueued' ), 'jQuery should be enqueued on diagnostic page' );
+
+		// Verify the diagnostic script is enqueued.
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-mcp-diagnostic', 'enqueued' ), 'Diagnostic script should be enqueued' );
 	}
 
 	/**
@@ -308,14 +311,15 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		// Trigger the enqueue_assets method.
 		do_action( 'admin_enqueue_scripts', $page_hook );
 
-		// Verify localized script data is available.
-		$this->assertTrue( wp_script_is( 'jquery', 'enqueued' ), 'jQuery should be enqueued' );
+		// Verify the diagnostic script is enqueued.
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-mcp-diagnostic', 'enqueued' ), 'Diagnostic script should be enqueued' );
 
-		// Get the localized data.
-		$jquery_data = $wp_scripts->get_data( 'jquery', 'data' );
-		$this->assertNotEmpty( $jquery_data, 'jQuery should have localized data' );
-		$this->assertStringContainsString( 'wpMcpAiMcpDiagnostic', $jquery_data, 'Localized data should contain wpMcpAiMcpDiagnostic' );
-		$this->assertStringContainsString( 'ajaxUrl', $jquery_data, 'Localized data should contain ajaxUrl' );
-		$this->assertStringContainsString( 'nonce', $jquery_data, 'Localized data should contain nonce' );
+		// Get the localized data from the diagnostic script handle.
+		$script_data = $wp_scripts->get_data( 'wp-mcp-ai-mcp-diagnostic', 'data' );
+		$this->assertNotEmpty( $script_data, 'Diagnostic script should have localized data' );
+		$this->assertStringContainsString( 'wpMcpAiMcpDiagnostic', $script_data, 'Localized data should contain wpMcpAiMcpDiagnostic' );
+		$this->assertStringContainsString( 'ajaxUrl', $script_data, 'Localized data should contain ajaxUrl' );
+		$this->assertStringContainsString( 'nonce', $script_data, 'Localized data should contain nonce' );
+		$this->assertStringContainsString( 'i18n', $script_data, 'Localized data should contain i18n' );
 	}
 }
