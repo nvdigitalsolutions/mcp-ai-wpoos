@@ -109,15 +109,13 @@ class Test_WP_MCP_AI_Tool_Generate_Auth0_Token extends WP_UnitTestCase {
 		$result = $this->tool->execute( array(), array() );
 
 		$this->assertWPError( $result );
-		$this->assertSame( 'wp_mcp_ai_auth0_token_requires_auth', $result->get_error_code() );
+		$this->assertSame( 'wp_mcp_ai_auth0_token_forbidden', $result->get_error_code() );
 	}
 
 	/**
 	 * Test execution without manage_options capability.
 	 */
 	public function test_execute_requires_manage_options() {
-		wp_set_current_user( $this->subscriber_user_id );
-
 		$result = $this->tool->execute(
 			array(),
 			array( 'user_id' => $this->subscriber_user_id )

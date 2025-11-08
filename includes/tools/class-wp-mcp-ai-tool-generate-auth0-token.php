@@ -91,15 +91,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 		// Verify user has manage_options capability.
 		$acting_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		if ( ! $acting_user_id ) {
-			return new WP_Error(
-				'wp_mcp_ai_auth0_token_requires_auth',
-				__( 'You must be logged in to generate Auth0 tokens.', 'wp-mcp-ai' ),
-				array( 'status' => 401 )
-			);
-		}
-
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! $acting_user_id || ! user_can( $acting_user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_token_forbidden',
 				__( 'You do not have permission to generate Auth0 tokens.', 'wp-mcp-ai' ),
