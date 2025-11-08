@@ -92,6 +92,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 	}
 }
 
-// Hook into admin initialization.
+// Initialize immediately when this file is loaded.
+// This ensures the dashboard is instantiated before the admin_menu hook fires.
 // This file is only loaded when is_admin() is true, so we don't need to check again.
-add_action( 'admin_init', 'wp_mcp_ai_init_settings_dashboard', 1 );
+wp_mcp_ai_init_settings_dashboard();
