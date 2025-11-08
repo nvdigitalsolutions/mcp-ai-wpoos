@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -54,6 +55,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected $client;
 
+	/**
+	 * Authentication handler.
+	 *
+	 * @var WP_MCP_AI_REST_Authenticator
+	 */
+	protected $authenticator;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -78,6 +86,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->registry = $registry;
 			$this->client   = $client;
 
+			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
