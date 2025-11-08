@@ -183,27 +183,53 @@ class WP_MCP_AI_Model_Selector {
 			)
 		);
 
-		// Check if auto-switching to high-capacity model is enabled and use configured fallback.
+		// Check if auto-switching to high-capacity model is enabled.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		if ( ! empty( $settings['enable_high_token_model_switch'] ) && ! empty( $settings['high_token_fallback_model'] ) ) {
-			$high_capacity_model = sanitize_text_field( $settings['high_token_fallback_model'] );
+		if ( ! empty( $settings['enable_high_token_model_switch'] ) ) {
+			// First, try to get per-model fallback from settings.
+			$high_capacity_model = null;
+			$fallback_source     = 'global';
 			
-			// Verify the high-capacity model can handle the token requirement.
-			$fallback_tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $high_capacity_model );
-			
-			// If the high-capacity model has no limit or a higher limit, use it.
-			if ( null === $fallback_tpm_limit || 0 === $fallback_tpm_limit || $total_tokens <= $fallback_tpm_limit ) {
-				WP_MCP_AI_Logger::log_event(
-					'model_switched_to_high_capacity',
-					'Automatically switched to configured high-capacity fallback model.',
-					array(
-						'original_model'      => $model,
-						'fallback_model'      => $high_capacity_model,
-						'required_tokens'     => $total_tokens,
-						'fallback_tpm_limit'  => $fallback_tpm_limit,
-					)
-				);
-				return $high_capacity_model;
+			if ( ! empty( $settings['per_model_fallback'][ $model ] ) ) {
+				$high_capacity_model = sanitize_text_field( $settings['per_model_fallback'][ $model ] );
+				$fallback_source     = 'settings_per_model';
+			}
+
+			// Second, try to get per-model fallback from CCT if available.
+			if ( empty( $high_capacity_model ) && class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+				$cct_fallback = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $model );
+				if ( ! empty( $cct_fallback ) ) {
+					$high_capacity_model = $cct_fallback;
+					$fallback_source     = 'cct_per_model';
+				}
+			}
+
+			// Fall back to global setting if no per-model fallback is configured.
+			if ( empty( $high_capacity_model ) && ! empty( $settings['high_token_fallback_model'] ) ) {
+				$high_capacity_model = sanitize_text_field( $settings['high_token_fallback_model'] );
+				$fallback_source     = 'global';
+			}
+
+			// If we have a fallback model, verify it can handle the token requirement.
+			if ( ! empty( $high_capacity_model ) ) {
+				// Verify the high-capacity model can handle the token requirement.
+				$fallback_tpm_limit = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $high_capacity_model );
+
+				// If the high-capacity model has no limit or a higher limit, use it.
+				if ( null === $fallback_tpm_limit || 0 === $fallback_tpm_limit || $total_tokens <= $fallback_tpm_limit ) {
+					WP_MCP_AI_Logger::log_event(
+						'model_switched_to_high_capacity',
+						'Automatically switched to configured high-capacity fallback model.',
+						array(
+							'original_model'      => $model,
+							'fallback_model'      => $high_capacity_model,
+							'required_tokens'     => $total_tokens,
+							'fallback_tpm_limit'  => $fallback_tpm_limit,
+							'fallback_source'     => $fallback_source,
+						)
+					);
+					return $high_capacity_model;
+				}
 			}
 		}
 
@@ -219,7 +245,7 @@ class WP_MCP_AI_Model_Selector {
 
 			// For very large requests (> 30k tokens), fallback to configured high-capacity model or Gemini.
 			if ( $total_tokens > 30000 ) {
-				return self::get_high_capacity_fallback_model();
+				return self::get_high_capacity_fallback_model( $model );
 			}
 
 			// Otherwise, fallback to gpt-4o.
@@ -240,14 +266,14 @@ class WP_MCP_AI_Model_Selector {
 				);
 			}
 
-			return self::get_high_capacity_fallback_model();
+			return self::get_high_capacity_fallback_model( $model );
 		}
 
 		// Claude models - try higher tier or fallback to high-capacity model.
 		if ( false !== strpos( $model_lower, 'claude' ) ) {
 			// If on claude-3-haiku or claude-3.5-sonnet and request is too large, try high-capacity model.
 			if ( $total_tokens > 50000 ) {
-				return self::get_high_capacity_fallback_model();
+				return self::get_high_capacity_fallback_model( $model );
 			}
 
 			// Otherwise, try claude-3-haiku.
@@ -255,20 +281,36 @@ class WP_MCP_AI_Model_Selector {
 		}
 
 		// Default fallback for unknown models - use configured high-capacity model.
-		return self::get_high_capacity_fallback_model();
+		return self::get_high_capacity_fallback_model( $model );
 	}
 
 	/**
 	 * Get the configured high-capacity fallback model.
 	 *
 	 * Returns the model configured in settings for handling high token volumes,
-	 * or a sensible default if not configured.
+	 * or a sensible default if not configured. Checks per-model settings first,
+	 * then falls back to global settings.
 	 *
+	 * @param string $original_model Optional. The model that needs a fallback.
 	 * @return string Model identifier for high-capacity fallback.
 	 */
-	protected static function get_high_capacity_fallback_model() {
+	protected static function get_high_capacity_fallback_model( $original_model = '' ) {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		
+
+		// First, try to get per-model fallback from settings if a model is specified.
+		if ( ! empty( $original_model ) && ! empty( $settings['per_model_fallback'][ $original_model ] ) ) {
+			return sanitize_text_field( $settings['per_model_fallback'][ $original_model ] );
+		}
+
+		// Second, try to get per-model fallback from CCT if available.
+		if ( ! empty( $original_model ) && class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$per_model_fallback = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $original_model );
+			if ( ! empty( $per_model_fallback ) ) {
+				return sanitize_text_field( $per_model_fallback );
+			}
+		}
+
+		// Fall back to global settings.
 		// Use configured high-capacity fallback model if available.
 		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );

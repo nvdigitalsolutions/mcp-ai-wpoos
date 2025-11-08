@@ -1608,8 +1608,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'high_token_fallback_model',
-				__( 'High-Capacity Fallback Model', 'wp-mcp-ai' ),
+				__( 'High-Capacity Fallback Model (Global)', 'wp-mcp-ai' ),
 				array( $this, 'render_high_token_fallback_model_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_high_token_section'
+			);
+
+			add_settings_field(
+				'per_model_fallbacks',
+				__( 'Per-Model Fallback Configuration', 'wp-mcp-ai' ),
+				array( $this, 'render_per_model_fallbacks_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_high_token_section'
 			);
@@ -2433,6 +2441,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['high_token_fallback_model'] ) ) {
 				$clean['high_token_fallback_model'] = sanitize_text_field( $settings['high_token_fallback_model'] );
+			}
+
+			// Per-model fallback settings.
+			if ( isset( $settings['per_model_fallback'] ) && is_array( $settings['per_model_fallback'] ) ) {
+				$clean['per_model_fallback'] = array();
+				foreach ( $settings['per_model_fallback'] as $model => $fallback ) {
+					$model_key    = sanitize_key( $model );
+					$fallback_val = sanitize_text_field( $fallback );
+					// Only store non-empty fallback values.
+					if ( ! empty( $fallback_val ) ) {
+						$clean['per_model_fallback'][ $model_key ] = $fallback_val;
+					}
+				}
 			}
 
 			// Mesh networking settings.
@@ -5681,7 +5702,95 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		</select>
-		<p class="description"><?php esc_html_e( 'The model to use when the current model cannot handle the token volume. Gemini models are recommended as they have very high token limits (1-2 million tokens).', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'The default fallback model to use when the current model cannot handle the token volume. This is used when no per-model fallback is configured below. Gemini models are recommended as they have very high token limits (1-2 million tokens).', 'wp-mcp-ai' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the per-model fallback configuration field.
+		 */
+		public function render_per_model_fallbacks_field() {
+			$settings = self::get_settings();
+			
+			// Get available fallback models.
+			$model_options = array(
+				''                     => __( '— Use Global Fallback —', 'wp-mcp-ai' ),
+				'gemini-2.0-flash-exp' => __( 'Gemini 2.0 Flash (Experimental) - 1M tokens', 'wp-mcp-ai' ),
+				'gemini-1.5-flash'     => __( 'Gemini 1.5 Flash - 1M tokens', 'wp-mcp-ai' ),
+				'gemini-1.5-pro'       => __( 'Gemini 1.5 Pro - 2M tokens', 'wp-mcp-ai' ),
+				'gpt-4o'               => __( 'GPT-4o - 128k tokens', 'wp-mcp-ai' ),
+				'gpt-4o-mini'          => __( 'GPT-4o Mini - 128k tokens', 'wp-mcp-ai' ),
+				'gpt-4-turbo'          => __( 'GPT-4 Turbo - 128k tokens', 'wp-mcp-ai' ),
+			);
+
+			/**
+			 * Filter available high-capacity fallback models for per-model configuration.
+			 *
+			 * @param array $model_options Available model options with labels.
+			 */
+			$model_options = apply_filters( 'wp_mcp_ai_per_model_fallback_models', $model_options );
+
+			// Define models to configure.
+			$models_to_configure = array(
+				'gpt-4o-mini' => array(
+					'label'       => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+					'description' => __( 'Tier 1: 200k TPM', 'wp-mcp-ai' ),
+				),
+				'gpt-4o'      => array(
+					'label'       => __( 'GPT-4o', 'wp-mcp-ai' ),
+					'description' => __( 'Tier 1: 30k TPM / Tier 5: 800k TPM', 'wp-mcp-ai' ),
+				),
+				'gpt-4-turbo' => array(
+					'label'       => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
+					'description' => __( 'Tier 1: 80k TPM', 'wp-mcp-ai' ),
+				),
+				'o1-preview'  => array(
+					'label'       => __( 'O1 Preview', 'wp-mcp-ai' ),
+					'description' => __( 'Tier 1: 200k TPM', 'wp-mcp-ai' ),
+				),
+				'o1-mini'     => array(
+					'label'       => __( 'O1 Mini', 'wp-mcp-ai' ),
+					'description' => __( 'Tier 1: 200k TPM', 'wp-mcp-ai' ),
+				),
+			);
+
+			?>
+		<p class="description" style="margin-bottom: 15px;">
+			<?php esc_html_e( 'Configure specific fallback models for individual AI models. When a model exceeds its token limit, it will use the configured fallback instead of the global fallback. Leave blank to use the global fallback setting.', 'wp-mcp-ai' ); ?>
+		</p>
+		<table class="form-table" style="margin-top: 0;">
+			<?php foreach ( $models_to_configure as $model_key => $model_config ) : ?>
+				<?php
+				$current_value = isset( $settings['per_model_fallback'][ $model_key ] ) 
+					? sanitize_text_field( $settings['per_model_fallback'][ $model_key ] ) 
+					: '';
+				?>
+				<tr>
+					<th scope="row">
+						<label for="wp-mcp-ai-fallback-<?php echo esc_attr( $model_key ); ?>">
+							<?php echo esc_html( $model_config['label'] ); ?>
+						</label>
+					</th>
+					<td>
+						<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[per_model_fallback][<?php echo esc_attr( $model_key ); ?>]" id="wp-mcp-ai-fallback-<?php echo esc_attr( $model_key ); ?>" class="regular-text">
+							<?php foreach ( $model_options as $value => $label ) : ?>
+								<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_value, $value ); ?>><?php echo esc_html( $label ); ?></option>
+							<?php endforeach; ?>
+						</select>
+						<p class="description"><?php echo esc_html( $model_config['description'] ); ?></p>
+					</td>
+				</tr>
+			<?php endforeach; ?>
+		</table>
+		<p class="description">
+			<?php
+			printf(
+				/* translators: %s: Link to JetEngine Model Rate Limits */
+				esc_html__( 'Note: If you have JetEngine installed, you can also configure per-model fallbacks in %s for additional models.', 'wp-mcp-ai' ),
+				'<a href="' . esc_url( admin_url( 'edit.php?post_type=ai_model_rate_limits' ) ) . '">Model Rate Limits</a>'
+			);
+			?>
+		</p>
 			<?php
 		}
 
