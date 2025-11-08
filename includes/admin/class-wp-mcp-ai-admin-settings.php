@@ -2511,7 +2511,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			wp_enqueue_script(
 				'wp-mcp-ai-admin-settings',
 				WP_MCP_AI_URL . 'assets/js/admin-settings.js',
-				array( 'wp-color-picker', 'jquery' ),
+				array( 'wp-color-picker', 'jquery', 'jquery-ui-sortable' ),
 				WP_MCP_AI_VERSION,
 				true
 			);
