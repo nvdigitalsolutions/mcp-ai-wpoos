@@ -91,8 +91,9 @@ Three "monolithic" files were identified with multiple responsibilities:
 
 ### 1. WP_MCP_AI_REST
 - **Size:** 8,066 lines, 123 methods
-- **Issues:** Handles authentication, validation, routing, SSE, business logic
+- **Issues:** Handles authentication, validation, routing, SSE, business logic orchestration
 - **Plan:** Extract into 3 focused classes + keep core controller
+- **Note:** Rate limiting & token management already well-separated (no extraction needed)
 
 ### 2. WP_MCP_AI_Admin_Settings  
 - **Size:** 6,753 lines, 139 methods (88 render methods!)
@@ -160,9 +161,14 @@ After full implementation (12 weeks):
 - Week 8: Extract metabox renderers
 
 ### Phase 4: Architecture (4 weeks)
-- Week 9-10: Implement service layer
+- Week 9-10: Implement service layer (chat, tools, files)
 - Week 11: Implement repository pattern
 - Week 12: Add dependency injection
+
+**Important Note on Business Logic:**
+- **Rate Limiting & Token Management**: Already well-separated into manager classes (`WP_MCP_AI_Rate_Limit_Manager`, `WP_MCP_AI_Token_Budget_Manager`)—no extraction needed
+- **Chat/Tool/File Logic**: Will move to service layer in Phase 4
+- **Manager classes**: Will be injected into services instead of being called directly from REST controller
 
 ## Safety Mechanisms
 

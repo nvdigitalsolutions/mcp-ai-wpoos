@@ -183,6 +183,70 @@ $this->validator = new WP_MCP_AI_REST_Validator();
 - Reduced complexity in main REST class
 - Reduced REST class size by ~200 lines
 
+#### 1.4 What Stays in the REST Class?
+
+After Phase 1 extraction, the `WP_MCP_AI_REST` class will remain responsible for:
+
+**Core Routing & Orchestration:**
+- Route registration (`register_routes()`)
+- Request dispatching to appropriate handlers
+- Response formatting and error handling
+- High-level chat/tool/file endpoint coordination
+
+**Business Logic Calls:**
+The REST class will continue to orchestrate business logic by calling existing manager classes:
+- **Rate Limiting**: Already delegated to `WP_MCP_AI_Rate_Limit_Manager` class (no extraction needed)
+- **Token Budget**: Already delegated to `WP_MCP_AI_Token_Budget_Manager` class (no extraction needed)
+- **Tool Execution**: Calls `WP_MCP_AI_Tool_Registry` (no extraction needed)
+- **Model Routing**: Calls `WP_MCP_AI_Language_Model_Router` (no extraction needed)
+
+**What Gets Moved to Service Layer (Phase 4):**
+- Chat message processing logic → `WP_MCP_AI_Chat_Service`
+- File upload/download orchestration → `WP_MCP_AI_File_Service`
+- Tool execution workflows → `WP_MCP_AI_Tool_Service`
+
+**Example: Before vs After**
+
+Before Phase 1:
+```php
+class WP_MCP_AI_REST {
+    // 123 methods including:
+    // - Authentication (10+ methods) ← Extract to Authenticator
+    // - Validation (7+ methods) ← Extract to Validator
+    // - SSE streaming (5+ methods) ← Extract to SSE_Handler
+    // - Chat orchestration (20+ methods) ← Move to Chat_Service in Phase 4
+    // - Rate limiting calls (kept, already delegated)
+    // - Token budget calls (kept, already delegated)
+}
+```
+
+After Phase 1:
+```php
+class WP_MCP_AI_REST {
+    // ~70 methods:
+    // - Route registration
+    // - Chat endpoint handlers (orchestration only)
+    // - Tool endpoint handlers
+    // - File endpoint handlers
+    // - Uses: Authenticator, Validator, SSE_Handler
+    // - Calls: Rate_Limit_Manager, Token_Budget_Manager, Tool_Registry
+}
+```
+
+After Phase 4 (Service Layer):
+```php
+class WP_MCP_AI_REST {
+    // ~50 methods:
+    // - Route registration
+    // - Request/response handling
+    // - Uses: Authenticator, Validator, SSE_Handler
+    // - Uses: Chat_Service, File_Service, Tool_Service
+    // - Services internally use: Rate_Limit_Manager, Token_Budget_Manager
+}
+```
+
+**Key Point**: Rate limiting and token management are already well-separated into their own manager classes. They don't need extraction—they just need to be called from the appropriate service layer classes instead of directly from the REST controller.
+
 ### Phase 2: Admin Settings Refactoring
 
 #### 2.1 Extract UI Section Renderers

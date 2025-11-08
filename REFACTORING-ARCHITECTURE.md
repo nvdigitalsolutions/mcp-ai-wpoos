@@ -210,6 +210,14 @@ IMPROVEMENTS:
 - Domain logic
 **Examples:** `WP_MCP_AI_Chat_Service`, `WP_MCP_AI_Assistant_Service`
 
+**Note on Rate Limiting & Token Management:**
+These are NOT extracted during refactoring because they already exist as separate, well-designed manager classes:
+- `WP_MCP_AI_Rate_Limit_Manager` - Already handles rate limiting
+- `WP_MCP_AI_Token_Budget_Manager` - Already handles token budgets
+- `WP_MCP_AI_Tool_Registry` - Already handles tool execution
+
+These managers will simply be called from the new service layer classes instead of directly from the REST controller. No extraction needed—just dependency injection.
+
 ### Repository Layer (Data Access)
 **What:** Abstract database operations
 **Responsibilities:**
