@@ -186,15 +186,28 @@ class WP_MCP_AI_Model_Selector {
 		// Check if auto-switching to high-capacity model is enabled.
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		if ( ! empty( $settings['enable_high_token_model_switch'] ) ) {
-			// First, try to get per-model fallback from CCT if available.
+			// First, try to get per-model fallback from settings.
 			$high_capacity_model = null;
-			if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
-				$high_capacity_model = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $model );
+			$fallback_source     = 'global';
+			
+			if ( ! empty( $settings['per_model_fallback'][ $model ] ) ) {
+				$high_capacity_model = sanitize_text_field( $settings['per_model_fallback'][ $model ] );
+				$fallback_source     = 'settings_per_model';
+			}
+
+			// Second, try to get per-model fallback from CCT if available.
+			if ( empty( $high_capacity_model ) && class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+				$cct_fallback = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $model );
+				if ( ! empty( $cct_fallback ) ) {
+					$high_capacity_model = $cct_fallback;
+					$fallback_source     = 'cct_per_model';
+				}
 			}
 
 			// Fall back to global setting if no per-model fallback is configured.
 			if ( empty( $high_capacity_model ) && ! empty( $settings['high_token_fallback_model'] ) ) {
 				$high_capacity_model = sanitize_text_field( $settings['high_token_fallback_model'] );
+				$fallback_source     = 'global';
 			}
 
 			// If we have a fallback model, verify it can handle the token requirement.
@@ -212,7 +225,7 @@ class WP_MCP_AI_Model_Selector {
 							'fallback_model'      => $high_capacity_model,
 							'required_tokens'     => $total_tokens,
 							'fallback_tpm_limit'  => $fallback_tpm_limit,
-							'fallback_source'     => class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) && WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $model ) ? 'per_model' : 'global',
+							'fallback_source'     => $fallback_source,
 						)
 					);
 					return $high_capacity_model;
@@ -282,7 +295,14 @@ class WP_MCP_AI_Model_Selector {
 	 * @return string Model identifier for high-capacity fallback.
 	 */
 	protected static function get_high_capacity_fallback_model( $original_model = '' ) {
-		// First, try to get per-model fallback from CCT if a model is specified.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		// First, try to get per-model fallback from settings if a model is specified.
+		if ( ! empty( $original_model ) && ! empty( $settings['per_model_fallback'][ $original_model ] ) ) {
+			return sanitize_text_field( $settings['per_model_fallback'][ $original_model ] );
+		}
+
+		// Second, try to get per-model fallback from CCT if available.
 		if ( ! empty( $original_model ) && class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 			$per_model_fallback = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_fallback( $original_model );
 			if ( ! empty( $per_model_fallback ) ) {
@@ -291,8 +311,6 @@ class WP_MCP_AI_Model_Selector {
 		}
 
 		// Fall back to global settings.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		
 		// Use configured high-capacity fallback model if available.
 		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
