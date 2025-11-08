@@ -32,12 +32,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * Register the settings page in WordPress admin menu.
 		 */
 		public function register_menu() {
-			add_options_page(
+			add_menu_page(
 				__( 'WP oOS Settings', 'wp-mcp-ai' ),
 				__( 'WP oOS', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
-				array( $this, 'render_dashboard' )
+				array( $this, 'render_dashboard' ),
+				'dashicons-admin-generic',
+				30
 			);
 		}
 
@@ -117,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public function enqueue_assets( $hook ) {
-			if ( 'settings_page_' . self::PAGE_SLUG !== $hook ) {
+			if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook ) {
 				return;
 			}
 
