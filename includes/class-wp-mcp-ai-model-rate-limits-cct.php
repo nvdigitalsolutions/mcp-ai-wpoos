@@ -878,6 +878,21 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'cost_per_1k_output_tokens' => 0.00125,
 				'notes'                     => 'Fast and economical. Scale tier: 400,000 TPM.',
 			),
+			array(
+				'model_name'                => 'claude-3-5-haiku-20241022',
+				'provider'                  => 'anthropic',
+				'tpm_limit'                 => 50000,
+				'rpm_limit'                 => 50,
+				'context_window'            => 200000,
+				'max_output_tokens'         => 8192,
+				'tier'                      => 'tier-1',
+				'supports_streaming'        => true,
+				'supports_function_calling' => true,
+				'supports_vision'           => true,
+				'cost_per_1k_input_tokens'  => 0.001,
+				'cost_per_1k_output_tokens' => 0.005,
+				'notes'                     => 'Claude 3.5 Haiku (October 2024). Fast and economical.',
+			),
 
 			// Azure OpenAI variants (examples).
 			array(
