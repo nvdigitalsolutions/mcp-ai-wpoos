@@ -29,14 +29,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		 * @var array
 		 */
 		private static $tabs = array(
-		'overview'       => array(
-			'title' => 'Overview',
-			'icon'  => 'dashicons-dashboard',
-		),
-
 			'general'        => array(
 				'title' => 'General',
 				'icon'  => 'dashicons-admin-settings',
+			),
+			'overview'       => array(
+				'title' => 'Overview',
+				'icon'  => 'dashicons-dashboard',
 			),
 			'providers'      => array(
 				'title' => 'AI Providers',
