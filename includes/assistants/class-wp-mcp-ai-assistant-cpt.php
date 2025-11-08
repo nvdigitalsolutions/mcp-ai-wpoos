@@ -2398,18 +2398,24 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
-				$memory_entries[] = array(
-					'id'    => $file_id,
-					'title' => get_the_title( $attachment ),
-				);
+				$file_size_bytes  = 0;
+				$file_size_label  = '';
+				$file_path        = get_attached_file( $file_id );
 
-				$file_path = get_attached_file( $file_id );
 				if ( $file_path && file_exists( $file_path ) ) {
 					$file_size = filesize( $file_path );
 					if ( false !== $file_size ) {
-						$memory_size_bytes += (int) $file_size;
+						$file_size_bytes  = (int) $file_size;
+						$file_size_label  = size_format( $file_size_bytes );
+						$memory_size_bytes += $file_size_bytes;
 					}
 				}
+
+				$memory_entries[] = array(
+					'id'    => $file_id,
+					'title' => get_the_title( $attachment ),
+					'size'  => $file_size_label,
+				);
 			}
 
 			$memory_size_label = size_format( $memory_size_bytes );
@@ -2421,6 +2427,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			foreach ( $memory_entries as $entry ) :
 				$file_id = $entry['id'];
 				$title   = $entry['title'];
+				$size    = isset( $entry['size'] ) ? $entry['size'] : '';
 				?>
 				<li data-id="<?php echo esc_attr( $file_id ); ?>">
 					<span class="wp-mcp-ai-memory-file-title">
@@ -2429,6 +2436,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo esc_html( $title ? $title : sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id ) );
 					?>
 				</span>
+					<?php if ( '' !== $size ) : ?>
+						<span class="wp-mcp-ai-memory-file-size">(<?php echo esc_html( $size ); ?>)</span>
+					<?php endif; ?>
 					<button type="button" class="button-link wp-mcp-ai-remove-memory"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 					<input type="hidden" name="wp_mcp_ai_memory_files[]" value="<?php echo esc_attr( $file_id ); ?>" />
 				</li>
@@ -2453,6 +2463,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			<input type="text" id="wp-mcp-ai-vector-store-id" name="wp_mcp_ai_vector_store_id" value="<?php echo esc_attr( $vector_store_id ); ?>" class="widefat" />
 			<span class="description"><?php esc_html_e( 'Optional identifier for an external vector store that should be associated with this assistant.', 'wp-mcp-ai' ); ?></span>
 		</p>
+		<style type="text/css">
+			.wp-mcp-ai-memory-file-size {
+				color: #646970;
+				font-size: 0.9em;
+				margin-left: 0.5em;
+			}
+		</style>
 		<script type="text/javascript">
 		jQuery( function( $ ) {
 			var frame;
@@ -2470,9 +2487,13 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 				var title = attachment.title || attachment.filename || attachment.name || '<?php echo esc_js( __( 'Attachment', 'wp-mcp-ai' ) ); ?>';
 				var label = title + ' (ID: ' + id + ')';
+				var filesize = attachment.filesizeHumanReadable || '';
 
 				var item = $( '<li />', { 'data-id': id } );
 				item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-title', 'text': label } ) );
+				if ( filesize ) {
+					item.append( $( '<span />', { 'class': 'wp-mcp-ai-memory-file-size', 'text': '(' + filesize + ')' } ) );
+				}
 				item.append( $( '<button />', { 'type': 'button', 'class': 'button-link wp-mcp-ai-remove-memory', 'text': '<?php echo esc_js( __( 'Remove', 'wp-mcp-ai' ) ); ?>' } ) );
 				item.append( $( '<input />', { 'type': 'hidden', 'name': 'wp_mcp_ai_memory_files[]', 'value': id } ) );
 
