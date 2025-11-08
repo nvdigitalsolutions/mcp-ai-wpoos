@@ -73,11 +73,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * Sanitize settings before saving.
 		 *
 		 * @param array $input Raw settings input.
+		 * @param string $active_tab Optional. The active tab to process. If not provided, processes all tabs.
 		 * @return array Sanitized settings.
 		 */
-		public function sanitize_settings( $input ) {
+		public function sanitize_settings( $input, $active_tab = '' ) {
 			$sanitized = array();
-			$sections  = WP_MCP_AI_Settings_Registry::get_sections();
+			
+			// Get sections to process - either from a specific tab or all sections.
+			if ( ! empty( $active_tab ) ) {
+				$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
+			} else {
+				$sections = WP_MCP_AI_Settings_Registry::get_sections();
+			}
 
 			foreach ( $sections as $section ) {
 				$section_input = $section->sanitize( $input );
@@ -113,21 +120,32 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
 
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
-			$sanitized_new   = $this->sanitize_settings( $posted_settings );
+			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
+			
+			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
+			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
 
-		// Merge with existing settings to avoid wiping unrelated fields.
-		// This is critical for display-only sections (like Overview) that have no editable fields.
-		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+			// Merge with existing settings to avoid wiping unrelated fields.
+			// This is critical for display-only sections (like Overview) that have no editable fields,
+			// and for preserving settings from other tabs.
+			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
 
+			// Redirect back to the same tab that was being edited.
+			$redirect_args = array(
+				'page'    => self::PAGE_SLUG,
+				'updated' => 'true',
+			);
+			
+			if ( ! empty( $active_tab ) ) {
+				$redirect_args['tab'] = $active_tab;
+			}
+
 			wp_safe_redirect(
 				add_query_arg(
-					array(
-						'page'    => self::PAGE_SLUG,
-						'updated' => 'true',
-					),
+					$redirect_args,
 					admin_url( 'admin.php' )
 				)
 			);
@@ -236,6 +254,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wp_mcp_ai_save_settings' ); ?>
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
+					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 
 					<div class="tab-content">
 						<?php if ( empty( $sections ) ) : ?>

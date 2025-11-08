@@ -168,4 +168,90 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 			$this->assertIsArray( $sanitized['chat_colors'] );
 		}
 	}
+
+	/**
+	 * Test that saving settings from one tab doesn't clear checkboxes from another tab.
+	 * This is the key test for the issue described in the problem statement.
+	 */
+	public function test_saving_advanced_tab_preserves_general_tab_checkboxes() {
+		// First, set up initial settings with enable_logging turned on.
+		$initial_settings = array(
+			'enable_logging'          => true,
+			'enable_extended_logging' => false,
+			'openai_api_key'          => 'test-key',
+		);
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
+
+		// Now simulate saving the Advanced tab with enable_extended_logging turned on.
+		// The key here is that enable_logging is NOT in the posted settings because
+		// it's on a different tab (General tab).
+		$dashboard     = new WP_MCP_AI_Settings_Dashboard();
+		$posted_settings = array(
+			'enable_extended_logging' => '1', // From Advanced tab.
+			// Note: enable_logging is NOT here because we're on the Advanced tab.
+		);
+
+		// Sanitize only the advanced tab settings.
+		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'advanced' );
+
+		// Get the existing settings from the database.
+		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		
+		// Merge as the dashboard does.
+		$merged = array_merge( $existing_settings, $sanitized );
+
+		// The critical assertion: enable_logging should still be true.
+		// It should NOT have been cleared just because we saved the Advanced tab.
+		$this->assertTrue( 
+			$merged['enable_logging'], 
+			'enable_logging from General tab should remain true when saving Advanced tab' 
+		);
+
+		// And enable_extended_logging should now be true.
+		$this->assertTrue( 
+			$merged['enable_extended_logging'], 
+			'enable_extended_logging should be true after saving Advanced tab' 
+		);
+	}
+
+	/**
+	 * Test that saving settings from general tab preserves advanced tab checkboxes.
+	 */
+	public function test_saving_general_tab_preserves_advanced_tab_checkboxes() {
+		// First, set up initial settings with enable_extended_logging turned on.
+		$initial_settings = array(
+			'enable_logging'          => false,
+			'enable_extended_logging' => true,
+			'openai_api_key'          => 'test-key',
+		);
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
+
+		// Now simulate saving the General tab with enable_logging turned on.
+		$dashboard     = new WP_MCP_AI_Settings_Dashboard();
+		$posted_settings = array(
+			'enable_logging' => '1', // From General tab.
+			// Note: enable_extended_logging is NOT here because we're on the General tab.
+		);
+
+		// Sanitize only the general tab settings.
+		$sanitized = $dashboard->sanitize_settings( $posted_settings, 'general' );
+
+		// Get the existing settings from the database.
+		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		
+		// Merge as the dashboard does.
+		$merged = array_merge( $existing_settings, $sanitized );
+
+		// The critical assertion: enable_extended_logging should still be true.
+		$this->assertTrue( 
+			$merged['enable_extended_logging'], 
+			'enable_extended_logging from Advanced tab should remain true when saving General tab' 
+		);
+
+		// And enable_logging should now be true.
+		$this->assertTrue( 
+			$merged['enable_logging'], 
+			'enable_logging should be true after saving General tab' 
+		);
+	}
 }
