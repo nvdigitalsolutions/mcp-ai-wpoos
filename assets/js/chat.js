@@ -3923,7 +3923,7 @@
             formatValue = nestedImage.format.trim();
         }
 
-        if (toolName === 'generate_openai_image' || toolName === 'generate_perfume_lifestyle_image') {
+        if (toolName === 'generate_openai_image') {
             if (sizeValue) {
                 metaParts.push(sizeValue);
             }
@@ -3989,8 +3989,6 @@
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
         } else if (toolName === 'generate_gemini_image') {
             text = getString('geminiImageToolSuccess', 'Gemini image saved to the Media Library.');
-        } else if (toolName === 'generate_perfume_lifestyle_image') {
-            text = getString('perfumeLifestyleImageToolSuccess', 'Lifestyle image saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
         }
