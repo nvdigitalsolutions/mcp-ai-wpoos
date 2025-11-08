@@ -543,7 +543,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			WP_MCP_AI_Tool_Token_Limits::init();
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
-				WP_MCP_AI_Elementor_Integration::maybe_init();
+				// Check if Elementor widgets are enabled in settings.
+				// Defaults to true for backward compatibility.
+				$settings        = get_option( 'wp_mcp_ai_settings', array() );
+				$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
+
+				if ( $widgets_enabled ) {
+					WP_MCP_AI_Elementor_Integration::maybe_init();
+				}
 			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
