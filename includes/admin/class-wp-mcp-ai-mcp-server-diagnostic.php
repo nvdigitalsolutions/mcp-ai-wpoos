@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		 * @param string $hook Current admin page hook.
 		 */
 		public static function enqueue_assets( $hook ) {
-			if ( 'wp-oos_page_wp-mcp-ai-mcp-diagnostic' !== $hook ) {
+			if ( 'wp-mcp-ai-dashboard_page_wp-mcp-ai-mcp-diagnostic' !== $hook ) {
 				return;
 			}
 

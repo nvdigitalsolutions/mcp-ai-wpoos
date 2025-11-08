@@ -48,7 +48,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'wp-oos_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'wp-mcp-ai-dashboard_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
