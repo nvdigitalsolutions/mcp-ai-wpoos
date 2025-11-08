@@ -42,7 +42,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				30
 			);
 
-			// Add submenu item for General Settings (this makes the first submenu item link to the main page).
+			// Remove the auto-generated submenu item (has same title as top-level menu).
+			remove_submenu_page( self::PAGE_SLUG, self::PAGE_SLUG );
+
+			// Add submenu item for General Settings with proper label.
 			add_submenu_page(
 				self::PAGE_SLUG,
 				__( 'General Settings', 'wp-mcp-ai' ),
