@@ -70,19 +70,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				'auth0_domain'                     => array(
 					'type'        => 'text',
 					'label'       => __( 'Auth0 Domain', 'wp-mcp-ai' ),
-					'description' => __( 'Your Auth0 domain (e.g., your-domain.auth0.com)', 'wp-mcp-ai' ),
+					'description' => __( 'Your Auth0 tenant domain. You can find this in your Auth0 dashboard under Settings → General (e.g., your-domain.auth0.com or your-domain.us.auth0.com for US region).', 'wp-mcp-ai' ),
 					'placeholder' => 'your-domain.auth0.com',
 				),
 				'auth0_audience'                   => array(
 					'type'        => 'text',
 					'label'       => __( 'Auth0 API Audience', 'wp-mcp-ai' ),
-					'description' => __( 'The API identifier/audience for your Auth0 API', 'wp-mcp-ai' ),
+					'description' => __( 'The unique identifier for your Auth0 API, configured in the Auth0 Dashboard under APIs. This is typically a URL-like identifier (e.g., https://api.yourapp.com or urn:yourapp:api).', 'wp-mcp-ai' ),
 					'placeholder' => 'https://your-api.example.com',
 				),
 				'auth0_required_scope'             => array(
 					'type'        => 'text',
 					'label'       => __( 'Required Access Scope', 'wp-mcp-ai' ),
-					'description' => __( 'Scope required in Auth0 tokens (e.g., read:mcp)', 'wp-mcp-ai' ),
+					'description' => __( 'Optional scope that must be present in Auth0 access tokens to use the API. Leave empty to allow any valid token. Multiple scopes can be space-separated (e.g., read:mcp write:mcp).', 'wp-mcp-ai' ),
 					'placeholder' => 'read:mcp',
 				),
 
@@ -97,13 +97,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				'auth0_management_client_id'       => array(
 					'type'        => 'text',
 					'label'       => __( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
-					'description' => __( 'Client ID for Auth0 Management API', 'wp-mcp-ai' ),
+					'description' => __( 'Client ID for Auth0 Management API. Required for GitHub Bridge feature to resolve user identities from GitHub accounts via Auth0.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 				'auth0_management_client_secret'   => array(
 					'type'        => 'password',
 					'label'       => __( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
-					'description' => __( 'Client Secret for Auth0 Management API', 'wp-mcp-ai' ),
+					'description' => __( 'Client Secret for Auth0 Management API. Keep this secure as it grants administrative access to your Auth0 tenant.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 

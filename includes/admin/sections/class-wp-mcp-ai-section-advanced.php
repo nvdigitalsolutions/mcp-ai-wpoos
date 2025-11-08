@@ -68,14 +68,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Extended Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'wp-mcp-ai' ),
-					'description'    => __( 'Requires "Enable Logging" to be active. Logs complete API request/response payloads, context data, and detailed execution traces. Warning: Can generate large log files and impact performance.', 'wp-mcp-ai' ),
+					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 				'enable_opcache_reset'    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Auto OPcache Reset', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'wp-mcp-ai' ),
-					'description'    => __( 'Helps ensure code changes take effect immediately.', 'wp-mcp-ai' ),
+					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 			);
@@ -242,7 +242,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					104857600
 				);
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Memory File Size must be between 1 KB and 100 MB.', 'wp-mcp-ai' );
+					$errors[] = __( 'Max Memory File Size must be between 1 MB (1048576 bytes) and 50 MB (52428800 bytes).', 'wp-mcp-ai' );
 				}
 			}
 
