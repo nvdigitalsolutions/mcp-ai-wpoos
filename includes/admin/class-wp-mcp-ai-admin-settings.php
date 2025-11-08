@@ -6263,7 +6263,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php endif; ?>
 
 			<script type="text/javascript">
+			/* global ajaxurl */
 			jQuery(document).ready(function($) {
+				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
+				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+				
 				$('#wp-mcp-ai-save-tool-limits').on('click', function() {
 					var button = $(this);
 					var limits = {};
@@ -6279,7 +6283,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					button.prop('disabled', true).text('<?php esc_attr_e( 'Saving...', 'wp-mcp-ai' ); ?>');
 
 					$.ajax({
-						url: ajaxurl,
+						url: ajaxUrl,
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_save_tool_limits',
