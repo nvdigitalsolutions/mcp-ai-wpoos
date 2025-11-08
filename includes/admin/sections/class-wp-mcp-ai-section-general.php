@@ -69,8 +69,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				'enable_logging'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable detailed logging for debugging', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs errors and activity to help troubleshoot issues. View logs in the Advanced tab.', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable basic error and activity logging', 'wp-mcp-ai' ),
+					'description'    => __( 'Records errors, warnings, and key activity (tool executions, API requests) to help troubleshoot issues. View logs in the Advanced tab.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 				'delete_on_uninstall'  => array(
