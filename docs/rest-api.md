@@ -4,12 +4,12 @@ The plugin exposes its REST surface at `/wp-json/mcp-ai/v1` for both chat comple
 
 ## Authentication recap
 
-All endpoints honour the authentication modes described in [docs/mcp-server-authentication.md](mcp-server-authentication.md) and [docs/authentication.md](authentication.md):
+All endpoints honour the authentication modes described in [docs/mcp-server-authentication.md](mcp-server-authentication.md):
 
 - **Auth0 bearer tokens** – Supply `Authorization: Bearer <token>` with an access token whose issuer, audience, and scopes match the plugin settings.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L520-L823】
 - **Assistant-issued credentials** – Pass the one-time token generated in the assistant editor (`cred_xxxxx.SECRET`). The REST controller hashes and validates the credential, scopes the request to the issuing assistant, and records an audit log entry for successful usage.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L426-L520】
 - **WordPress REST nonces** – Same-origin clients (dashboard UI, shortcodes) may send the `X-WP-Nonce` header tied to the authenticated session. Capabilities are enforced after nonce verification.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L360-L401】
-- **Guest tokens** – Temporary tokens for public chat surfaces. Shortcodes and the Elementor widget automatically generate guest tokens when `allow_guests="true"` is enabled. Include the token via the `X-WP-MCP-AI-Guest` header or `guest_token` parameter. Guest tokens are scoped to specific assistants and have configurable lifetimes (default: 24 hours, range: 60 seconds to 7 days). See the [Guest Token Authentication](authentication.md#guest-token-authentication) section for complete documentation including security model, access restrictions, and best practices.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】【F:includes/class-wp-mcp-ai-shortcode.php†L567-L623】
+- **Guest tokens** – Shortcodes and the Elementor widget mint one-hour guest tokens when `allow_guests="true"` is enabled. Include the token via the `X-WP-MCP-AI-Guest` header or `guest_token` parameter to bypass the default `edit_posts` requirement safely.【F:includes/class-wp-mcp-ai-rest.php†L289-L343】【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
 
 ## GET `/assistants`
 
