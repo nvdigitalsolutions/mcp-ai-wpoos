@@ -5190,8 +5190,17 @@
             .then(function (streamResult) {
                 streamCompleted = true;
 
+                // Debug logging for SSE completion
+                if (window.console && console.log) {
+                    console.log('[WP oOS SSE] Stream completed:', streamResult);
+                }
+
                 // Handle final message if available
                 if (streamResult && streamResult.finalData) {
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Processing final data:', streamResult.finalData);
+                    }
+
                     // Remove temporary streaming message
                     if (streamingMessageElement && streamingMessageElement.parentNode) {
                         streamingMessageElement.parentNode.removeChild(streamingMessageElement);
@@ -5200,6 +5209,9 @@
 
                     // Process the final response data using standard handler
                     return handleChatResponse(state, streamResult.finalData).then(function() {
+                        if (window.console && console.log) {
+                            console.log('[WP oOS SSE] Response handled, saving and finalizing');
+                        }
                         saveConversationToStorage(state);
                         finalize();
                         clearStatus(state.container);
@@ -5263,6 +5275,9 @@
                 const events = buffer.split('\n\n');
                 buffer = events.pop() || ''; // Keep incomplete event in buffer
 
+                // Variable to store final result if we encounter it
+                let finalResult = null;
+
                 for (let i = 0; i < events.length; i++) {
                     const eventBlock = events[i];
                     if (!eventBlock.trim()) {
@@ -5296,6 +5311,11 @@
                     try {
                         const data = JSON.parse(eventData);
 
+                        // Debug logging for SSE events
+                        if (window.console && console.log) {
+                            console.log('[WP oOS SSE Event]', eventType, ':', data);
+                        }
+
                         // Handle different event types
                         if (eventType === 'status') {
                             handleStatusEvent(state, data);
@@ -5313,12 +5333,28 @@
                                 }
                             } else if (data.data) {
                                 // Final response with complete data
-                                return { content: fullContent, finalData: data };
+                                if (window.console && console.log) {
+                                    console.log('[WP oOS SSE] Received final message event, will return finalData');
+                                }
+                                finalResult = { content: fullContent, finalData: data };
+                                // Break out of the loop to return the result
+                                break;
                             }
                         }
                     } catch (parseError) {
                         // Ignore malformed JSON chunks
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS SSE] Failed to parse event data:', eventData, parseError);
+                        }
                     }
+                }
+
+                // If we found final data, return it immediately
+                if (finalResult) {
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Returning final result:', finalResult);
+                    }
+                    return finalResult;
                 }
 
                 // Continue reading
@@ -5513,12 +5549,24 @@
     }
 
     function handleChatResponse(state, data) {
+        // Debug logging
+        if (window.console && console.log) {
+            console.log('[WP oOS] handleChatResponse called with data:', data);
+        }
+
         const chatData = data && data.data ? data.data : null;
         const choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
         const choice = choices.length ? choices[0] : null;
         const message = choice && choice.message ? choice.message : null;
 
+        if (window.console && console.log) {
+            console.log('[WP oOS] Extracted message:', message, 'from chatData:', chatData);
+        }
+
         if (!message) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] No message found in response data:', data);
+            }
             setStatus(state.container, getString('error', 'Something went wrong.'));
             return Promise.resolve();
         }
@@ -5609,6 +5657,9 @@
         }
 
         if (hasDisplayContent) {
+            if (window.console && console.log) {
+                console.log('[WP oOS] Appending assistant message:', assistantDisplay);
+            }
             appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
@@ -5616,6 +5667,10 @@
                 },
             });
             assistantMessage.content = assistantDisplay.text || '';
+        } else {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] No display content found. hasDisplayText:', hasDisplayText, 'hasDisplayAttachments:', hasDisplayAttachments);
+            }
         }
 
         if (!hasDisplayContent && !hasToolCalls) {
