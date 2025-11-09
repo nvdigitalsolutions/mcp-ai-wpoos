@@ -219,6 +219,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
+
+// Load enhanced security and operational features.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-siem-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-correlation-tracker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credential-encryption.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-pii-detector.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-progressive-rate-limiter.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-file-scanner.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
@@ -358,6 +366,9 @@ WP_MCP_AI_Message_Attachments::init();
 WP_MCP_AI_Response_Attachments::init();
 
 WP_MCP_AI_HTTP::bootstrap();
+
+// Initialize enhanced security and operational features.
+WP_MCP_AI_Correlation_Tracker::init();
 
 // Initialize third-party plugin integrations only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
