@@ -5074,6 +5074,14 @@
             return sendChatStreaming(state, payload, submissionContext, finalize);
         }
 
+        // Validate endpoint URL before making request
+        if (!state.config.messagesEndpoint) {
+            handleError(state, new Error('Chat endpoint not configured'));
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Chat endpoint not configured'));
+        }
+
         // Non-streaming request (original implementation)
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
@@ -5173,6 +5181,18 @@
             restoreSubmissionState(state, submissionContext);
             finalize();
             return Promise.reject(error);
+        }
+
+        // Validate endpoint URL before making request
+        if (!state.config.messagesEndpoint) {
+            // Clean up any streaming message element
+            if (streamingMessageElement && streamingMessageElement.parentNode) {
+                streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+            }
+            handleError(state, new Error('Chat endpoint not configured'));
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Chat endpoint not configured'));
         }
 
         return fetch(state.config.messagesEndpoint, {
