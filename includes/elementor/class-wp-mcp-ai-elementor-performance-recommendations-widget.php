@@ -226,7 +226,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			'limit' => 20, // Get more tests to find enough recommendations.
 		);
 
-		$tests = $handler->query_items( $args );
+		$tests = $this->query_items_safe( $handler, $args );
 		$all_recommendations = array();
 
 		foreach ( $tests as $test ) {
@@ -278,6 +278,30 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 */
 	protected function get_recommendations_fallback( $severity_filter, $limit ) {
 		// Similar logic to above but using WordPress options.
+		return array();
+	}
+
+	/**
+	 * Safely query items with fallback for older JetEngine versions.
+	 *
+	 * @param object $handler JetEngine item handler.
+	 * @param array  $args    Query arguments.
+	 * @return array Query results.
+	 */
+	protected function query_items_safe( $handler, $args ) {
+		// Try the query_items method first (newer JetEngine versions).
+		if ( method_exists( $handler, 'query_items' ) ) {
+			return $handler->query_items( $args );
+		}
+
+		// Fallback: Use the factory->db->query API (older JetEngine versions).
+		$factory = method_exists( $handler, 'get_factory' ) ? $handler->get_factory() : null;
+
+		if ( $factory && ! empty( $factory->db ) && method_exists( $factory->db, 'query' ) ) {
+			return $factory->db->query( $args );
+		}
+
+		// If neither method works, return empty array.
 		return array();
 	}
 

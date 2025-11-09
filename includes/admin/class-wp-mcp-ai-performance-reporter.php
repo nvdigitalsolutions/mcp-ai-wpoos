@@ -300,7 +300,7 @@ class WP_MCP_AI_Performance_Reporter {
 			),
 		);
 
-		$items = $handler->query_items( $args );
+		$items = self::query_items_safe( $handler, $args );
 
 		$chart_data = array(
 			'labels' => array(),
@@ -359,5 +359,29 @@ class WP_MCP_AI_Performance_Reporter {
 		}
 
 		return $baselines;
+	}
+
+	/**
+	 * Safely query items with fallback for older JetEngine versions.
+	 *
+	 * @param object $handler JetEngine item handler.
+	 * @param array  $args    Query arguments.
+	 * @return array Query results.
+	 */
+	protected static function query_items_safe( $handler, $args ) {
+		// Try the query_items method first (newer JetEngine versions).
+		if ( method_exists( $handler, 'query_items' ) ) {
+			return $handler->query_items( $args );
+		}
+
+		// Fallback: Use the factory->db->query API (older JetEngine versions).
+		$factory = method_exists( $handler, 'get_factory' ) ? $handler->get_factory() : null;
+
+		if ( $factory && ! empty( $factory->db ) && method_exists( $factory->db, 'query' ) ) {
+			return $factory->db->query( $args );
+		}
+
+		// If neither method works, return empty array.
+		return array();
 	}
 }

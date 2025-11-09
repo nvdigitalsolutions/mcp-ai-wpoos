@@ -259,7 +259,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			$args['test_status'] = sanitize_key( $status_filter );
 		}
 
-		return $handler->query_items( $args );
+		return $this->query_items_safe( $handler, $args );
 	}
 
 	/**
@@ -298,6 +298,30 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 		}
 
 		return $filtered;
+	}
+
+	/**
+	 * Safely query items with fallback for older JetEngine versions.
+	 *
+	 * @param object $handler JetEngine item handler.
+	 * @param array  $args    Query arguments.
+	 * @return array Query results.
+	 */
+	protected function query_items_safe( $handler, $args ) {
+		// Try the query_items method first (newer JetEngine versions).
+		if ( method_exists( $handler, 'query_items' ) ) {
+			return $handler->query_items( $args );
+		}
+
+		// Fallback: Use the factory->db->query API (older JetEngine versions).
+		$factory = method_exists( $handler, 'get_factory' ) ? $handler->get_factory() : null;
+
+		if ( $factory && ! empty( $factory->db ) && method_exists( $factory->db, 'query' ) ) {
+			return $factory->db->query( $args );
+		}
+
+		// If neither method works, return empty array.
+		return array();
 	}
 
 	/**
