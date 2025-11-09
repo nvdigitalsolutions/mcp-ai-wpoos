@@ -44,8 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Displays_Dashboard' ) ) {
 				__( 'Displays Dashboard', 'wp-mcp-ai' ),
 				'manage_options',
 				self::PAGE_SLUG,
-				array( $this, 'render_page' ),
-				1 // Position before JetEngine.
+				array( $this, 'render_page' )
 			);
 		}
 
