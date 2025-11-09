@@ -449,6 +449,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 									),
 								),
 							),
+							'save_transcript' => array(
+								'description'       => __( 'Whether to save the chat transcript. Defaults to true.', 'wp-mcp-ai' ),
+								'type'              => 'boolean',
+								'required'          => false,
+								'sanitize_callback' => 'rest_sanitize_boolean',
+							),
+							'session_key'     => array(
+								'description'       => __( 'Optional session key for grouping related chat messages.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'sanitize_callback' => 'sanitize_text_field',
+							),
 						),
 					),
 					array(
@@ -559,6 +571,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 										),
 									),
 								),
+							),
+							'save_transcript' => array(
+								'description'       => __( 'Whether to save the chat transcript. Defaults to true.', 'wp-mcp-ai' ),
+								'type'              => 'boolean',
+								'required'          => false,
+								'sanitize_callback' => 'rest_sanitize_boolean',
+							),
+							'session_key'     => array(
+								'description'       => __( 'Optional session key for grouping related chat messages.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => false,
+								'sanitize_callback' => 'sanitize_text_field',
 							),
 						),
 					),
