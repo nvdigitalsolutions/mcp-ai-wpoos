@@ -2210,7 +2210,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 *
 		 * Browser-based chat UI gets higher limits than MCP protocol clients.
 		 *
-		 * @param int   $default_max      Default max iterations.
+		 * Priority order:
+		 * 1. Per-assistant config (highest priority)
+		 * 2. Admin setting (filter_max_agentic_iterations)
+		 * 3. Chat client default (15 iterations)
+		 *
+		 * @param int   $default_max      Default max iterations (may include admin setting if applied).
 		 * @param array $assistant_config Assistant configuration.
 		 * @return int
 		 */
@@ -2218,6 +2223,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Allow per-assistant override.
 			if ( ! empty( $assistant_config['max_agentic_iterations'] ) ) {
 				return absint( $assistant_config['max_agentic_iterations'] );
+			}
+
+			// If admin setting was applied by custom filters applicator (priority 5),
+			// it will be in $default_max. Only use chat client default if $default_max
+			// is still the base default (5 for /chat endpoint).
+			// This allows admin setting to override the chat client default.
+			if ( $default_max > 5 ) {
+				// Admin setting or another filter has already increased the limit.
+				return $default_max;
 			}
 
 			// Chat client default: 15 iterations (vs 5 for MCP protocol).
