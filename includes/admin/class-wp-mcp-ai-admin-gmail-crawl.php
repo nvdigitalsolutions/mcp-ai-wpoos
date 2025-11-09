@@ -108,7 +108,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 			<div class="wrap">
 				<h1><?php esc_html_e( 'Gmail & Crawl4AI Integration', 'wp-mcp-ai' ); ?></h1>
 
-				<?php if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) : ?>
+				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
+					?>
 					<div class="notice notice-success is-dismissible">
 						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
 					</div>

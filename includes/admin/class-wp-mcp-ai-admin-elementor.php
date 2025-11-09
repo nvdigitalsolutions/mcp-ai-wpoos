@@ -89,13 +89,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 			<div class="wrap">
 				<h1><?php esc_html_e( 'Elementor Integration', 'wp-mcp-ai' ); ?></h1>
 
-				<?php if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) : ?>
+				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
+					?>
 					<div class="notice notice-success is-dismissible">
 						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
 					</div>
 				<?php endif; ?>
 
-				<div style="background: <?php echo $elementor_active ? '#d5f0db' : '#f0f0f1'; ?>; border-left: 4px solid <?php echo $elementor_active ? '#0a5f1a' : '#646970'; ?>; padding: 1.5rem; margin: 1.5rem 0;">
+				<div style="background: <?php echo esc_attr( $elementor_active ? '#d5f0db' : '#f0f0f1' ); ?>; border-left: 4px solid <?php echo esc_attr( $elementor_active ? '#0a5f1a' : '#646970' ); ?>; padding: 1.5rem; margin: 1.5rem 0;">
 					<?php if ( $elementor_active ) : ?>
 						<h2 style="margin-top: 0; color: #0a5f1a;">✓ <?php esc_html_e( 'Elementor Active', 'wp-mcp-ai' ); ?></h2>
 						<p><?php esc_html_e( 'Elementor is installed and active. AI Chat widgets are available.', 'wp-mcp-ai' ); ?></p>
