@@ -42,7 +42,7 @@
         }
     },
     "require": {
-        "notifylk/notify-php": "dev-master",
+        "notifylk/notify-php": "dev-master#d231064001a33ea1365864dba4d67c9b5fbab985",
         "rahul900day/tiktoken-php": "^1.0",
         "symfony/http-client": "^7.3",
         "nyholm/psr7": "^1.8"
