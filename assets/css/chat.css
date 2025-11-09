@@ -596,6 +596,16 @@
     border-left: 4px solid var(--wp-mcp-ai-color-status-border, #3b82f6);
 }
 
+.wp-mcp-ai-chat__status--loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.wp-mcp-ai-chat__status--loading .wp-mcp-ai-chat__loading-spinner {
+    flex-shrink: 0;
+}
+
 .wp-mcp-ai-chat__label {
     display: block;
     font-weight: 600;
@@ -1062,4 +1072,211 @@
 
 .wp-mcp-ai-chat__editor-notice strong {
     font-weight: 600;
+}
+
+/* Typing indicator for streaming messages */
+.wp-mcp-ai-chat__message--streaming .wp-mcp-ai-chat__bubble::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-left: 4px;
+    background: currentColor;
+    border-radius: 50%;
+    animation: wp-mcp-ai-typing-pulse 1.4s infinite ease-in-out;
+    opacity: 0.6;
+}
+
+@keyframes wp-mcp-ai-typing-pulse {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Loading spinner */
+.wp-mcp-ai-chat__loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--wp-mcp-ai-color-shortcut-text, #64748b);
+    font-size: 14px;
+    padding: 8px 12px;
+    margin: 4px 0;
+}
+
+.wp-mcp-ai-chat__loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: wp-mcp-ai-spin 0.6s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design - Mobile First Approach */
+
+/* Small mobile devices (< 480px) */
+@media (max-width: 479px) {
+    .wp-mcp-ai-chat {
+        padding: 12px;
+        border-radius: 8px;
+        margin: 0 0 1rem;
+    }
+
+    .wp-mcp-ai-chat__messages {
+        max-height: 280px;
+        gap: 0.75rem;
+    }
+
+    .wp-mcp-ai-chat__input {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 10px 12px;
+    }
+
+    .wp-mcp-ai-chat__button {
+        min-height: 44px; /* Touch-friendly size */
+        min-width: 44px;
+        padding: 10px 16px;
+    }
+
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat,
+    .wp-mcp-ai-chat__attach,
+    .wp-mcp-ai-chat__transcribe {
+        width: 44px;
+        height: 44px;
+    }
+
+    .wp-mcp-ai-chat__transcript-toggle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .wp-mcp-ai-chat__bubble {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .wp-mcp-ai-chat__label {
+        font-size: 16px;
+    }
+}
+
+/* Mobile devices (480px - 639px) */
+@media (min-width: 480px) and (max-width: 639px) {
+    .wp-mcp-ai-chat {
+        padding: 16px;
+        margin: 0 0 1.5rem;
+    }
+
+    .wp-mcp-ai-chat__messages {
+        max-height: 320px;
+    }
+
+    .wp-mcp-ai-chat__input {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+
+    .wp-mcp-ai-chat__button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat,
+    .wp-mcp-ai-chat__attach,
+    .wp-mcp-ai-chat__transcribe {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* Tablet devices (640px - 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+    .wp-mcp-ai-chat {
+        max-width: 640px;
+        padding: 18px;
+    }
+
+    .wp-mcp-ai-chat__messages {
+        max-height: 340px;
+    }
+}
+
+/* Large tablets and small desktops (1024px+) */
+@media (min-width: 1024px) {
+    .wp-mcp-ai-chat {
+        max-width: 720px;
+    }
+
+    .wp-mcp-ai-chat__messages {
+        max-height: 400px;
+    }
+}
+
+/* High contrast mode support for accessibility */
+@media (prefers-contrast: high) {
+    .wp-mcp-ai-chat {
+        border-width: 2px;
+    }
+
+    .wp-mcp-ai-chat__button,
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat,
+    .wp-mcp-ai-chat__attach,
+    .wp-mcp-ai-chat__transcribe {
+        border-width: 2px;
+    }
+
+    .wp-mcp-ai-chat__input {
+        border-width: 2px;
+    }
+}
+
+/* Reduced motion support for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .wp-mcp-ai-chat__message--streaming .wp-mcp-ai-chat__bubble::after,
+    .wp-mcp-ai-chat__loading-spinner,
+    .wp-mcp-ai-chat__button,
+    .wp-mcp-ai-chat__history-toggle,
+    .wp-mcp-ai-chat__new-chat {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+.wp-mcp-ai-chat__button:focus-visible,
+.wp-mcp-ai-chat__history-toggle:focus-visible,
+.wp-mcp-ai-chat__new-chat:focus-visible,
+.wp-mcp-ai-chat__attach:focus-visible,
+.wp-mcp-ai-chat__transcribe:focus-visible,
+.wp-mcp-ai-chat__transcript-toggle:focus-visible,
+.wp-mcp-ai-chat__input:focus-visible {
+    outline: 2px solid var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.6));
+    outline-offset: 2px;
+}
+
+/* Screen reader only text */
+.screen-reader-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
