@@ -567,12 +567,13 @@ class WP_MCP_AI_Federation_Directory_REST {
 	 * Ranking algorithm:
 	 * 1. Prefer matching region/data tags (filter already applied)
 	 * 2. Prefer lowest latency
-	 * 3. Prefer lowest price
+	 *
+	 * Note: Price-based scoring is not currently implemented.
 	 *
 	 * @param array  $peer_data Peer data.
 	 * @param string $region Requested region.
 	 * @param string $data_tag Requested data tag.
-	 * @param float  $max_price Max price threshold.
+	 * @param float  $max_price Max price threshold (reserved for future use).
 	 * @return float Score (0-100).
 	 */
 	protected function calculate_peer_score( $peer_data, $region, $data_tag, $max_price ) {
@@ -594,9 +595,6 @@ class WP_MCP_AI_Federation_Directory_REST {
 			$latency_score = max( 0, 20 - ( $latency / 50 ) ); // 1000ms = 0 points, 0ms = 20 points.
 			$score += $latency_score;
 		}
-
-		// Price score (lower is better).
-		// TODO: Implement price comparison when price_hints structure is defined.
 
 		return min( 100.0, $score );
 	}
