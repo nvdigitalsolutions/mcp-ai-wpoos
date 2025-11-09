@@ -80,10 +80,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Elementor_Integration' ) ) {
 
 			if ( $elementor_active ) {
 				$fields['enable_elementor_widgets'] = array(
-					'type'        => 'checkbox',
-					'label'       => __( 'Enable Elementor Widgets', 'wp-mcp-ai' ),
-					'description' => __( 'Activate AI Chat widget for Elementor page builder with SSE streaming support.', 'wp-mcp-ai' ),
-					'default'     => true,
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Elementor Widgets', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Elementor widgets', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate AI Chat widget for Elementor page builder with SSE streaming support.', 'wp-mcp-ai' ),
+					'default'        => true,
 				);
 
 				$fields['elementor_widgets_list'] = array(
