@@ -14,6 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-security-validator.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -3383,6 +3384,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( empty( $prepared_arguments['identifier'] ) && ! empty( $assistant_config['external_action_identifier'] ) ) {
 					$prepared_arguments['identifier'] = $assistant_config['external_action_identifier'];
 				}
+			}
+
+			// Perform centralized security validation before tool execution.
+			$security_check = WP_MCP_AI_Tool_Security_Validator::validate_tool_execution( $tool, $prepared_arguments, $context );
+			if ( is_wp_error( $security_check ) ) {
+				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $security_check, $context );
+				return $security_check;
 			}
 
 			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
