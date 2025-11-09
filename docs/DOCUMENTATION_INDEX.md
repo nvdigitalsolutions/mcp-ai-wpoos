@@ -101,6 +101,8 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [mcp-server-authentication.md](mcp-server-authentication.md) | Authentication methods and setup (13KB) | Admins/Devs |
 | [authentication.md](authentication.md) | Authentication overview | Admins |
 | [rate-limit-protection.md](rate-limit-protection.md) | Rate limiting configuration | Admins |
+| [privacy-policy-guide.md](privacy-policy-guide.md) | **NEW:** Privacy compliance guide (GDPR, CCPA) with data handling policies (22KB) | Admins/Legal |
+| [data-egress-guide.md](data-egress-guide.md) | **NEW:** Data egress and AI provider routing guide (local vs cloud) (23KB) | Admins/Security |
 | [../SECURITY.md](../SECURITY.md) | Security policies and vulnerability reporting | Everyone |
 
 ### Mesh Networking

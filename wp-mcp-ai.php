@@ -219,6 +219,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy-controls.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
