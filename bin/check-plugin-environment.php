@@ -19,7 +19,7 @@ if ( ! function_exists( 'esc_html' ) ) {
 	}
 }
 
-$min_php_version     = '7.4.0';
+$min_php_version     = '8.1.0';
 $current_php_version = PHP_VERSION;
 
 printf( "PHP version: %s\n", $current_php_version );

@@ -495,13 +495,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<tr>
 								<td><strong><?php esc_html_e( 'PHP Version', 'wp-mcp-ai' ); ?></strong></td>
 								<td>
-									<?php if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) : ?>
+									<?php if ( version_compare( PHP_VERSION, '8.1', '>=' ) ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'OK', 'wp-mcp-ai' ); ?></span>
 									<?php else : ?>
 										<span style="color: red;">✗ <?php esc_html_e( 'Update Required', 'wp-mcp-ai' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td><?php echo esc_html( PHP_VERSION ); ?> (<?php esc_html_e( 'Minimum: 7.4', 'wp-mcp-ai' ); ?>)</td>
+								<td><?php echo esc_html( PHP_VERSION ); ?> (<?php esc_html_e( 'Minimum: 8.1', 'wp-mcp-ai' ); ?>)</td>
 							</tr>
 							<tr>
 								<td><strong><?php esc_html_e( 'REST API', 'wp-mcp-ai' ); ?></strong></td>

@@ -24,7 +24,7 @@ wp-mcp-ai/
 
 ## Key Technologies
 
-- **WordPress Plugin** (PHP 7.4+, WordPress 6.0+)
+- **WordPress Plugin** (PHP 8.1+, WordPress 6.0+)
 - **AI Providers**: OpenAI, Google Gemini, Ollama (local AI)
 - **MCP Protocol**: Server-Sent Events, REST API
 - **Optional Integrations**: JetEngine, WooCommerce, Elementor, Rank Math, WPCode
@@ -67,7 +67,7 @@ composer run lint
 # Auto-fix PHP code style issues
 composer run format
 
-# PHP compatibility check (PHP 7.4-8.3)
+# PHP compatibility check (PHP 8.1-8.3)
 composer run lint:compat
 
 # JavaScript linting

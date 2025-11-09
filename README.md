@@ -4,7 +4,7 @@
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wp-oos)**  
 **License:** GPLv3 or later  
-**Requires:** WordPress 6.0+, PHP 7.4+
+**Requires:** WordPress 6.0+, PHP 8.1+
 
 ## 📑 Table of Contents
 
@@ -1579,7 +1579,7 @@ The script runs `composer install` and makes the following Composer scripts avai
 | Purpose | Command |
 | --- | --- |
 | WordPress coding standards lint | `composer run lint` |
-| PHP compatibility checks (PHP 7.4–8.3) | `composer run lint:compat` |
+| PHP compatibility checks (PHP 8.1–8.3) | `composer run lint:compat` |
 | Auto-fix coding standards violations | `composer run format` |
 | Generate the translation template | `composer run pot` |
 | Install the WordPress unit test scaffolding | `composer run test:install` |
@@ -1600,7 +1600,7 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ### Coding standards & static analysis
 - Enforce the WordPress Coding Standards with `composer run lint`; auto-fix what you can with `composer run format`.【F:composer.json†L16-L23】
-- Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
+- Validate cross-version compatibility (PHP 8.1–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
 - Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.

@@ -5,7 +5,7 @@
  * Description: Core AI Assistant framework for WordPress and JetEngine, using OpenAI GPT models.
  * Version: 1.0.0
  * Requires at least: 6.0
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -25,12 +25,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check PHP version compatibility before loading any classes.
  * 
- * This plugin requires PHP 7.4 or later. On older PHP versions, class files
+ * This plugin requires PHP 8.1 or later. On older PHP versions, class files
  * will fail to parse with syntax errors like "unexpected token 'private'".
  * We check the version early to provide a clear error message instead of
  * cryptic parse errors.
  */
-if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+if ( version_compare( PHP_VERSION, '8.1.0', '<' ) ) {
 	/**
 	 * Display admin notice for PHP version incompatibility.
 	 */
@@ -39,7 +39,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 			/* translators: 1: Current PHP version, 2: Required PHP version */
 			__( '<strong>WP Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.', 'wp-mcp-ai' ),
 			PHP_VERSION,
-			'7.4.0'
+			'8.1.0'
 		);
 		printf(
 			'<div class="notice notice-error"><p>%s</p></div>',

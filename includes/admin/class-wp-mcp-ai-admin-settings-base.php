@@ -76,7 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				$value = $settings[ $key ];
 
 				// Sanitize based on key patterns and types.
-				// Note: Using strpos() for PHP 7.4 compatibility (str_contains() requires PHP 8.0+).
+				// Note: Using strpos() for better performance and code clarity.
 				if ( false !== strpos( $key, '_api_key' ) || false !== strpos( $key, '_api_token' ) || false !== strpos( $key, '_secret' ) ) {
 					$sanitized[ $key ] = sanitize_text_field( $value );
 				} elseif ( false !== strpos( $key, '_email' ) ) {
