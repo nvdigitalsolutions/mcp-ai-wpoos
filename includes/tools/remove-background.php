@@ -16,32 +16,125 @@ if ( ! defined( 'ABSPATH' ) ) {
  * and saves the processed image (with background removed) to the WordPress
  * uploads directory.
  *
- * @param string $image_path Full path to the image file.
+ * @param int|string $image_reference Attachment ID or media library URL.
  * @return string|WP_Error Path to the new image file on success, WP_Error on failure.
  */
-function wp_mcp_ai_remove_image_background( $image_path ) {
-	// Validate input.
-	if ( empty( $image_path ) ) {
-		return new WP_Error(
-			'wp_mcp_ai_invalid_image_path',
-			__( 'Image path is required.', 'wp-mcp-ai' )
-		);
-	}
+function wp_mcp_ai_remove_image_background( $image_reference ) {
+        // Validate input.
+        if ( empty( $image_reference ) && 0 !== $image_reference && '0' !== $image_reference ) {
+                return new WP_Error(
+                        'wp_mcp_ai_invalid_attachment_reference',
+                        __( 'Image reference is required.', 'wp-mcp-ai' ),
+                        array( 'status' => 400 )
+                );
+        }
 
-	// Check if file exists.
-	if ( ! file_exists( $image_path ) ) {
-		return new WP_Error(
-			'wp_mcp_ai_image_not_found',
-			__( 'Image file not found.', 'wp-mcp-ai' )
-		);
-	}
+        if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+                require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
+        }
 
-	// Get API key from settings.
-	if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-		return new WP_Error(
-			'wp_mcp_ai_settings_not_available',
-			__( 'Plugin settings are not available.', 'wp-mcp-ai' )
-		);
+        $attachment_id = 0;
+
+        if ( is_numeric( $image_reference ) ) {
+                $attachment_id = absint( $image_reference );
+        } elseif ( is_string( $image_reference ) ) {
+                $image_reference = trim( $image_reference );
+
+                if ( '' === $image_reference ) {
+                        return new WP_Error(
+                                'wp_mcp_ai_invalid_attachment_reference',
+                                __( 'Image reference is required.', 'wp-mcp-ai' ),
+                                array( 'status' => 400 )
+                        );
+                }
+
+                if ( filter_var( $image_reference, FILTER_VALIDATE_URL ) ) {
+                        $attachment_id = attachment_url_to_postid( $image_reference );
+
+                        if ( ! $attachment_id ) {
+                                return new WP_Error(
+                                        'wp_mcp_ai_invalid_attachment_reference',
+                                        __( 'The provided media URL could not be resolved to an attachment.', 'wp-mcp-ai' ),
+                                        array( 'status' => 400 )
+                                );
+                        }
+                } else {
+                        return new WP_Error(
+                                'wp_mcp_ai_invalid_attachment_reference',
+                                __( 'Only attachment IDs or media library URLs may be processed.', 'wp-mcp-ai' ),
+                                array( 'status' => 400 )
+                        );
+                }
+        } else {
+                return new WP_Error(
+                        'wp_mcp_ai_invalid_attachment_reference',
+                        __( 'Only attachment IDs or media library URLs may be processed.', 'wp-mcp-ai' ),
+                        array( 'status' => 400 )
+                );
+        }
+
+        if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) ) {
+                return new WP_Error(
+                        'wp_mcp_ai_invalid_attachment_reference',
+                        __( 'A valid media attachment is required.', 'wp-mcp-ai' ),
+                        array( 'status' => 400 )
+                );
+        }
+
+        $can_access = WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id );
+        $can_access = apply_filters( 'wp_mcp_ai_remove_background_can_access_attachment', $can_access, $attachment_id );
+
+        if ( ! $can_access ) {
+                return new WP_Error(
+                        'wp_mcp_ai_attachment_forbidden',
+                        __( 'You do not have permission to access this attachment.', 'wp-mcp-ai' ),
+                        array( 'status' => 403 )
+                );
+        }
+
+        $file_path = get_attached_file( $attachment_id );
+
+        if ( ! $file_path || ! file_exists( $file_path ) ) {
+                return new WP_Error(
+                        'wp_mcp_ai_image_not_found',
+                        __( 'Image file not found.', 'wp-mcp-ai' )
+                );
+        }
+
+        $realpath = realpath( $file_path );
+        if ( false === $realpath ) {
+                return new WP_Error(
+                        'wp_mcp_ai_invalid_image_path',
+                        __( 'Invalid image path provided.', 'wp-mcp-ai' )
+                );
+        }
+
+        $uploads = wp_get_upload_dir();
+
+        if ( empty( $uploads['basedir'] ) ) {
+                return new WP_Error(
+                        'wp_mcp_ai_upload_dir_unavailable',
+                        __( 'The uploads directory could not be determined.', 'wp-mcp-ai' )
+                );
+        }
+
+        $normalized_path   = wp_normalize_path( $realpath );
+        $normalized_upload = trailingslashit( wp_normalize_path( $uploads['basedir'] ) );
+
+        if ( 0 !== strpos( $normalized_path, $normalized_upload ) ) {
+                return new WP_Error(
+                        'wp_mcp_ai_attachment_outside_uploads',
+                        __( 'Only attachments stored in the uploads directory can be processed.', 'wp-mcp-ai' ),
+                        array( 'status' => 400 )
+                );
+        }
+
+        // Get API key from settings.
+        if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+                return new WP_Error(
+                        'wp_mcp_ai_settings_not_available',
+                        __( 'Plugin settings are not available.', 'wp-mcp-ai' )
+                );
 	}
 
 	$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -57,20 +150,11 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 	// Prepare the API request.
 	$api_url = 'https://api.remove.bg/v1.0/removebg';
 
-	// Validate that the image path is safe to read.
-	$realpath = realpath( $image_path );
-	if ( false === $realpath ) {
-		return new WP_Error(
-			'wp_mcp_ai_invalid_image_path',
-			__( 'Invalid image path provided.', 'wp-mcp-ai' )
-		);
-	}
-
-	// Read image file.
-	$image_data = file_get_contents( $realpath );
-	if ( false === $image_data ) {
-		return new WP_Error(
-			'wp_mcp_ai_image_read_failed',
+        // Read image file.
+        $image_data = file_get_contents( $realpath );
+        if ( false === $image_data ) {
+                return new WP_Error(
+                        'wp_mcp_ai_image_read_failed',
 			__( 'Failed to read the image file.', 'wp-mcp-ai' )
 		);
 	}
@@ -81,7 +165,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 
 	// Add image file to multipart body.
 	$body .= "--{$boundary}\r\n";
-	$body .= 'Content-Disposition: form-data; name="image_file"; filename="' . wp_basename( $image_path ) . "\"\r\n";
+        $body .= 'Content-Disposition: form-data; name="image_file"; filename="' . wp_basename( $realpath ) . "\"\r\n";
 	$body .= "Content-Type: application/octet-stream\r\n\r\n";
 	$body .= $image_data . "\r\n";
 
@@ -157,7 +241,7 @@ function wp_mcp_ai_remove_image_background( $image_path ) {
 		);
 	}
 
-	$original_filename = wp_basename( $image_path );
+        $original_filename = wp_basename( $realpath );
 	$pathinfo          = pathinfo( $original_filename );
 	$filename_base     = isset( $pathinfo['filename'] ) ? $pathinfo['filename'] : 'image';
 	$new_filename      = $filename_base . '-no-bg-' . time() . '.png';

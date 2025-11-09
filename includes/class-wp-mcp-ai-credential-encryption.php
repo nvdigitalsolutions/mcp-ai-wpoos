@@ -23,6 +23,13 @@ class WP_MCP_AI_Credential_Encryption {
 	const CIPHER_METHOD = 'aes-256-gcm';
 
 	/**
+	 * Optional encrypt override for testing scenarios.
+	 *
+	 * @var callable|null
+	 */
+	protected static $encrypt_override = null;
+
+	/**
 	 * Key derivation iterations (PBKDF2).
 	 */
 	const PBKDF2_ITERATIONS = 10000;
@@ -129,6 +136,14 @@ class WP_MCP_AI_Credential_Encryption {
 	 * @return string|false Encrypted credential (base64) or false on failure.
 	 */
 	public static function encrypt( $plaintext ) {
+		if ( is_callable( self::$encrypt_override ) ) {
+			$override_result = call_user_func( self::$encrypt_override, $plaintext );
+
+			if ( null !== $override_result ) {
+				return $override_result;
+			}
+		}
+
 		if ( ! self::is_available() ) {
 			// Fallback to base64 encoding if encryption not available.
 			return base64_encode( $plaintext );
@@ -179,6 +194,21 @@ class WP_MCP_AI_Credential_Encryption {
 			WP_MCP_AI_Logger::log_event( 'encryption_error', 'Failed to encrypt credential', array( 'error' => $e->getMessage() ) );
 			return false;
 		}
+	}
+
+
+
+	/**
+	 * Register an encrypt override callback for testing scenarios.
+	 *
+	 * When provided, the callback receives the plaintext. Returning `null`
+	 * defers to the default encryption logic. Any other return value will
+	 * be treated as the encryption result.
+	 *
+	 * @param callable|null $callback Optional callback to override encryption.
+	 */
+	public static function set_encrypt_override_for_testing( $callback = null ) {
+		self::$encrypt_override = $callback;
 	}
 
 	/**
@@ -275,38 +305,92 @@ class WP_MCP_AI_Credential_Encryption {
 		// Find all encrypted credentials.
 		$credentials = self::find_all_credentials();
 
-		// Re-encrypt with new key.
-		$old_option = get_option( self::MASTER_KEY_OPTION );
-		update_option( self::MASTER_KEY_OPTION, $new_master_key, false );
+		// Ensure the old key is active before attempting decryption.
+		update_option( self::MASTER_KEY_OPTION, $old_master_key, false );
 
-		$errors = array();
+		$processed_credentials = array();
+		$errors                 = array();
+
 		foreach ( $credentials as $cred ) {
-			// Temporarily restore old key to decrypt.
-			update_option( self::MASTER_KEY_OPTION, $old_option, false );
+			// Always use the original master key when decrypting stored credentials.
+			update_option( self::MASTER_KEY_OPTION, $old_master_key, false );
 			$plaintext = self::decrypt( $cred['value'] );
 
-			// Switch to new key to re-encrypt.
+			if ( false === $plaintext ) {
+				$errors[] = array_merge(
+					$cred,
+					array(
+						'error' => 'decrypt_failed',
+					)
+				);
+
+				break;
+			}
+
+			// Switch to the new key for encryption attempts.
 			update_option( self::MASTER_KEY_OPTION, $new_master_key, false );
 			$encrypted = self::encrypt( $plaintext );
 
 			if ( false === $encrypted ) {
-				$errors[] = $cred;
-				continue;
+				$errors[] = array_merge(
+					$cred,
+					array(
+						'error' => 'encrypt_failed',
+					)
+				);
+
+				break;
 			}
 
-			// Update credential.
+			$processed_credentials[] = array_merge(
+				$cred,
+				array(
+					'old_value' => $cred['value'],
+					'new_value' => $encrypted,
+				)
+			);
+
+			// Update stored credential with the new ciphertext immediately after confirmation.
 			if ( 'option' === $cred['type'] ) {
 				update_option( $cred['key'], $encrypted );
 			} elseif ( 'postmeta' === $cred['type'] ) {
 				update_post_meta( $cred['post_id'], $cred['key'], $encrypted );
 			}
+
+			// Restore the old key to prepare for the next credential decryption.
+			update_option( self::MASTER_KEY_OPTION, $old_master_key, false );
 		}
 
 		if ( ! empty( $errors ) ) {
-			// Rollback to old key.
-			update_option( self::MASTER_KEY_OPTION, $old_option, false );
-			return new WP_Error( 're_encryption_failed', __( 'Failed to re-encrypt some credentials.', 'wp-mcp-ai' ), $errors );
+			// Revert any credentials that were already updated to the new ciphertext.
+			foreach ( $processed_credentials as $processed ) {
+				if ( 'option' === $processed['type'] ) {
+					update_option( $processed['key'], $processed['old_value'] );
+				} elseif ( 'postmeta' === $processed['type'] ) {
+					update_post_meta( $processed['post_id'], $processed['key'], $processed['old_value'] );
+				}
+			}
+
+			// Restore the original master key.
+			update_option( self::MASTER_KEY_OPTION, $old_master_key, false );
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'encryption_error',
+					'Master key rotation failed during credential processing',
+					array( 'errors' => $errors )
+				);
+			}
+
+			return new WP_Error(
+				're_encryption_failed',
+				__( 'Failed to re-encrypt some credentials.', 'wp-mcp-ai' ),
+				array( 'failed' => $errors )
+			);
 		}
+
+		// Activate the new master key for all future operations.
+		update_option( self::MASTER_KEY_OPTION, $new_master_key, false );
 
 		// Track rotation.
 		self::track_key_rotation();
@@ -323,6 +407,7 @@ class WP_MCP_AI_Credential_Encryption {
 
 		return true;
 	}
+
 
 	/**
 	 * Find all encrypted credentials in the database.

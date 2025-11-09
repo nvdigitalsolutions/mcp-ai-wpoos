@@ -113,4 +113,68 @@ class Test_Credential_Encryption extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Credential_Encryption::decrypt( '' );
 		$this->assertFalse( $result );
 	}
+
+	/**
+	 * Ensure key rotation rolls back credentials on mid-rotation failures.
+	 */
+	public function test_master_key_rotation_rolls_back_on_mid_rotation_failure() {
+		if ( ! WP_MCP_AI_Credential_Encryption::is_available() ) {
+			$this->markTestSkipped( 'OpenSSL encryption not available' );
+		}
+
+		delete_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION );
+		delete_option( 'wp_mcp_ai_openai_api_key' );
+		delete_option( 'wp_mcp_ai_gemini_api_key' );
+
+		$old_master_key = WP_MCP_AI_Credential_Encryption::generate_key();
+		$this->assertNotFalse( $old_master_key, 'Failed to generate master key for test setup.' );
+
+		update_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION, $old_master_key, false );
+
+		$secrets = array(
+			'wp_mcp_ai_openai_api_key' => 'first-secret',
+			'wp_mcp_ai_gemini_api_key' => 'second-secret',
+		);
+
+		$original_ciphertexts = array();
+		foreach ( $secrets as $option_key => $plaintext ) {
+			$cipher = WP_MCP_AI_Credential_Encryption::encrypt( $plaintext );
+			$this->assertNotFalse( $cipher );
+
+			update_option( $option_key, $cipher );
+			$original_ciphertexts[ $option_key ] = $cipher;
+		}
+
+		$call_count = 0;
+
+		try {
+			WP_MCP_AI_Credential_Encryption::set_encrypt_override_for_testing(
+				function( $plaintext ) use ( &$call_count ) {
+					$call_count++;
+
+					if ( 2 === $call_count ) {
+						return false;
+					}
+
+					return null;
+				}
+			);
+
+			$result = WP_MCP_AI_Credential_Encryption::rotate_master_key();
+			$this->assertInstanceOf( WP_Error::class, $result );
+			$this->assertSame( 're_encryption_failed', $result->get_error_code() );
+		} finally {
+			WP_MCP_AI_Credential_Encryption::set_encrypt_override_for_testing();
+		}
+
+		$this->assertEquals( $old_master_key, get_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION ) );
+
+		update_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION, $old_master_key, false );
+
+		foreach ( $secrets as $option_key => $plaintext ) {
+			$stored_cipher = get_option( $option_key );
+			$this->assertSame( $original_ciphertexts[ $option_key ], $stored_cipher );
+			$this->assertSame( $plaintext, WP_MCP_AI_Credential_Encryption::decrypt( $stored_cipher ) );
+		}
+	}
 }
