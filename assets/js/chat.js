@@ -5334,7 +5334,7 @@
                         } else if (eventType === 'message' || !eventType) {
                             // Debug logging for message events
                             if (window.console && console.log) {
-                                console.log('[WP oOS SSE] Processing message event. Has choices:', !!data.choices, 'Has data:', !!data.data, 'Event type:', eventType);
+                                console.log('[WP oOS SSE] Processing message event. Has choices:', !!data.choices, 'Has data:', !!data.data, 'Event type:', eventType, 'Data keys:', Object.keys(data));
                             }
                             
                             // Final message or OpenAI format streaming response
@@ -5355,7 +5355,7 @@
                             } else {
                                 // Log when message event doesn't match expected structure
                                 if (window.console && console.warn) {
-                                    console.warn('[WP oOS SSE] Message event received but no recognizable structure:', data);
+                                    console.warn('[WP oOS SSE] Message event received but no recognizable structure. Full data:', JSON.stringify(data));
                                 }
                             }
                         }
