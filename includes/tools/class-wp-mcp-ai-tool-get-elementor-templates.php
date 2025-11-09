@@ -127,13 +127,15 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 		$statuses = $this->prepare_status_filters( $arguments );
 
 		$query_args = array(
-			'post_type'        => 'elementor_library',
-			'posts_per_page'   => $limit,
-			'post_status'      => ! empty( $statuses ) ? $statuses : array( 'publish', 'draft', 'pending', 'private' ),
-			'orderby'          => 'modified',
-			'order'            => 'DESC',
-			'no_found_rows'    => true,
-			'suppress_filters' => false,
+			'post_type'             => 'elementor_library',
+			'posts_per_page'        => $limit,
+			'post_status'           => ! empty( $statuses ) ? $statuses : array( 'publish', 'draft', 'pending', 'private' ),
+			'orderby'               => 'modified',
+			'order'                 => 'DESC',
+			'no_found_rows'         => true,
+			'suppress_filters'      => false,
+			'update_post_term_cache' => false, // Performance: Skip term cache for templates.
+			'update_post_meta_cache' => true,  // Keep meta cache as we use template type meta.
 		);
 
 		if ( ! empty( $arguments['search'] ) && is_string( $arguments['search'] ) ) {

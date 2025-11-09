@@ -647,9 +647,12 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Get all assistants as prompts.
 		$query = new WP_Query(
 			array(
-				'post_type'      => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'    => 'publish',
-				'posts_per_page' => -1,
+				'post_type'             => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'           => 'publish',
+				'posts_per_page'        => -1,
+				'no_found_rows'         => true,  // Performance: Skip counting total rows.
+				'update_post_term_cache' => false, // Performance: Skip term cache.
+				'update_post_meta_cache' => true,  // Keep meta cache for configs.
 			)
 		);
 

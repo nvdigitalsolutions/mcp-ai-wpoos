@@ -57,16 +57,30 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function find_all( $args = array() ) {
 		$defaults = array(
-			'post_type'      => $this->post_type,
-			'post_status'    => 'publish',
-			'posts_per_page' => -1,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'             => $this->post_type,
+			'post_status'           => 'publish',
+			'posts_per_page'        => -1,
+			'orderby'               => 'title',
+			'order'                 => 'ASC',
+			'no_found_rows'         => true,  // Performance: Skip counting total rows.
+			'update_post_term_cache' => false, // Performance: Skip term cache if not needed.
+			'update_post_meta_cache' => true,  // Keep meta cache for assistant configs.
 		);
 
 		$query_args = wp_parse_args( $args, $defaults );
-		$query      = new WP_Query( $query_args );
 
+		// Check cache only if caching is enabled and no custom args.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			return WP_MCP_AI_Cache_Helper::get_assistants_list(
+				$query_args,
+				function() use ( $query_args ) {
+					$query = new WP_Query( $query_args );
+					return $query->posts;
+				}
+			);
+		}
+
+		$query = new WP_Query( $query_args );
 		return $query->posts;
 	}
 
@@ -109,7 +123,14 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function update_meta( $assistant_id, $meta_key, $value ) {
 		$prefixed_key = $this->prefix_meta_key( $meta_key );
-		return update_post_meta( $assistant_id, $prefixed_key, $value );
+		$result       = update_post_meta( $assistant_id, $prefixed_key, $value );
+
+		// Invalidate cache on successful update.
+		if ( $result && class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::invalidate_assistant_cache( $assistant_id );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -131,6 +152,16 @@ class WP_MCP_AI_Assistant_Repository {
 	 * @return array Associative array of metadata (with prefixes stripped).
 	 */
 	public function get_all_meta( $assistant_id ) {
+		// Check cache first.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key = "assistant_meta_{$assistant_id}";
+			$cached    = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached ) {
+				return $cached;
+			}
+		}
+
 		$all_meta    = get_post_meta( $assistant_id );
 		$plugin_meta = array();
 
@@ -140,6 +171,11 @@ class WP_MCP_AI_Assistant_Repository {
 				$stripped_key              = str_replace( 'mcp_ai_', '', $key );
 				$plugin_meta[ $stripped_key ] = $values[0] ?? '';
 			}
+		}
+
+		// Cache the result.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			WP_MCP_AI_Cache_Helper::set( "assistant_meta_{$assistant_id}", $plugin_meta );
 		}
 
 		return $plugin_meta;
@@ -170,6 +206,11 @@ class WP_MCP_AI_Assistant_Repository {
 			foreach ( $data['meta'] as $key => $value ) {
 				$this->update_meta( $assistant_id, $key, $value );
 			}
+		}
+
+		// Invalidate assistant list caches.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::invalidate_assistant_caches();
 		}
 
 		return $assistant_id;
@@ -212,6 +253,11 @@ class WP_MCP_AI_Assistant_Repository {
 			}
 		}
 
+		// Invalidate caches.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::invalidate_assistant_cache( $assistant_id );
+		}
+
 		return $assistant_id;
 	}
 
@@ -223,7 +269,14 @@ class WP_MCP_AI_Assistant_Repository {
 	 * @return WP_Post|false|null Post data on success, false or null on failure.
 	 */
 	public function delete( $assistant_id, $force_delete = false ) {
-		return wp_delete_post( $assistant_id, $force_delete );
+		$result = wp_delete_post( $assistant_id, $force_delete );
+
+		// Invalidate caches on successful deletion.
+		if ( $result && class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+			WP_MCP_AI_Cache_Helper::invalidate_assistant_caches();
+		}
+
+		return $result;
 	}
 
 	/**
@@ -239,6 +292,7 @@ class WP_MCP_AI_Assistant_Repository {
 				'post_status'    => $status,
 				'posts_per_page' => -1,
 				'fields'         => 'ids',
+				'no_found_rows'  => false, // Need found_posts for counting.
 			)
 		);
 
@@ -254,10 +308,12 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function search( $search_term, $args = array() ) {
 		$defaults = array(
-			'post_type'      => $this->post_type,
-			'post_status'    => 'publish',
-			's'              => $search_term,
-			'posts_per_page' => -1,
+			'post_type'             => $this->post_type,
+			'post_status'           => 'publish',
+			's'                     => $search_term,
+			'posts_per_page'        => -1,
+			'no_found_rows'         => true,  // Performance: Skip counting for search.
+			'update_post_term_cache' => false, // Performance: Skip term cache.
 		);
 
 		$query_args = wp_parse_args( $args, $defaults );

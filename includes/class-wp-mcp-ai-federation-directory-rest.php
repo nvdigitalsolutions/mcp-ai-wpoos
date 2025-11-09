@@ -356,15 +356,17 @@ class WP_MCP_AI_Federation_Directory_REST {
 	protected function find_peer_by_wellknown_url( $wellknown_url ) {
 		$query = new WP_Query(
 			array(
-				'post_type'      => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page' => 1,
-				'meta_query'     => array(
+				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'        => 1,
+				'meta_query'            => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_WELLKNOWN_URL,
 						'value' => $wellknown_url,
 					),
 				),
-				'fields'         => 'ids',
+				'fields'                => 'ids',
+				'no_found_rows'         => true,  // Performance: Skip counting.
+				'update_post_term_cache' => false, // Performance: Skip term cache.
 			)
 		);
 
@@ -387,11 +389,13 @@ class WP_MCP_AI_Federation_Directory_REST {
 		$status   = $request->get_param( 'status' );
 
 		$query_args = array(
-			'post_type'      => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-			'posts_per_page' => $per_page,
-			'paged'          => $page,
-			'orderby'        => 'title',
-			'order'          => 'ASC',
+			'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+			'posts_per_page'        => $per_page,
+			'paged'                 => $page,
+			'orderby'               => 'title',
+			'order'                 => 'ASC',
+			'update_post_term_cache' => false, // Performance: Skip term cache for peers.
+			'update_post_meta_cache' => true,  // Keep meta cache as we use meta data.
 		);
 
 		if ( 'all' !== $status ) {
@@ -463,14 +467,17 @@ class WP_MCP_AI_Federation_Directory_REST {
 		// Get all healthy peers.
 		$query = new WP_Query(
 			array(
-				'post_type'      => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page' => -1,
-				'meta_query'     => array(
+				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'        => -1,
+				'meta_query'            => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_HEALTH_STATUS,
 						'value' => 'healthy',
 					),
 				),
+				'no_found_rows'         => true,  // Performance: Skip counting.
+				'update_post_term_cache' => false, // Performance: Skip term cache.
+				'update_post_meta_cache' => true,  // Keep meta cache for peer data.
 			)
 		);
 

@@ -1,12 +1,12 @@
 # WP oOS Documentation Index
 
-**Last Updated:** November 8, 2025  
+**Last Updated:** November 9, 2025  
 **Plugin Version:** 1.0.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 50+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 51+ files (all in docs/ folder, 5+ key files in root)
 
 **📋 Note:** As of November 8, 2025, 107 audit reports and summaries have been consolidated into two organized reference documents:
 - [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Chronological development history
@@ -131,6 +131,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [PERFORMANCE-OPTIMIZATION.md](PERFORMANCE-OPTIMIZATION.md) | **NEW:** Comprehensive guide to caching system and database optimizations (Phase 1) | Developers/Admins |
 | [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) | WordPress filters for dynamic configuration (18 filters) | Developers |
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |

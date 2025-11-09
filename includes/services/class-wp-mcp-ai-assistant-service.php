@@ -84,11 +84,21 @@ class WP_MCP_AI_Assistant_Service {
 	 * @return array Assistant configuration.
 	 */
 	public function get_assistant_configuration( $assistant_id ) {
-		if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
-			return WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return array();
 		}
 
-		return array();
+		// Use cache helper if available.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			return WP_MCP_AI_Cache_Helper::get_assistant_config(
+				$assistant_id,
+				function( $id ) {
+					return WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $id );
+				}
+			);
+		}
+
+		return WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 	}
 
 	/**
