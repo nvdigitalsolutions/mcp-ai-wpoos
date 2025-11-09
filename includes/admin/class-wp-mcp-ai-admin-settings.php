@@ -5071,16 +5071,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_quality_choices() {
 			$qualities = array(
-				'standard' => __( 'Standard', 'wp-mcp-ai' ),
-				'hd'       => __( 'HD (High Definition)', 'wp-mcp-ai' ),
+				'low'    => __( 'Low', 'wp-mcp-ai' ),
+				'medium' => __( 'Medium', 'wp-mcp-ai' ),
+				'high'   => __( 'High', 'wp-mcp-ai' ),
+				'auto'   => __( 'Auto', 'wp-mcp-ai' ),
 			);
 
 			$qualities = apply_filters( 'wp_mcp_ai_openai_image_qualities', $qualities );
 
 			if ( ! is_array( $qualities ) || empty( $qualities ) ) {
 				$qualities = array(
-					'standard' => __( 'Standard', 'wp-mcp-ai' ),
-					'hd'       => __( 'HD (High Definition)', 'wp-mcp-ai' ),
+					'low'    => __( 'Low', 'wp-mcp-ai' ),
+					'medium' => __( 'Medium', 'wp-mcp-ai' ),
+					'high'   => __( 'High', 'wp-mcp-ai' ),
+					'auto'   => __( 'Auto', 'wp-mcp-ai' ),
 				);
 			}
 
