@@ -86,7 +86,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new WP_MCP_AI_Settings_Dashboard();
 
 		// Initialize integration admin pages.
-		$GLOBALS['wp_mcp_ai_admin_displays_dashboard'] = new WP_MCP_AI_Admin_Displays_Dashboard();
+		// Displays Dashboard has been removed from the menu as per issue requirements.
+		// $GLOBALS['wp_mcp_ai_admin_displays_dashboard'] = new WP_MCP_AI_Admin_Displays_Dashboard();
 		$GLOBALS['wp_mcp_ai_admin_jetengine'] = new WP_MCP_AI_Admin_JetEngine_Integration();
 		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = new WP_MCP_AI_Admin_WooCommerce_Integration();
 		$GLOBALS['wp_mcp_ai_admin_elementor'] = new WP_MCP_AI_Admin_Elementor_Integration();
