@@ -214,6 +214,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-resource-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
