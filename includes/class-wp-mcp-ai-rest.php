@@ -830,7 +830,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					array(
 						'methods'             => WP_REST_Server::CREATABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
+						'permission_callback' => array( $this, 'permissions_check_mcp' ),
 						'callback'            => array( $this, 'handle_mcp_request' ),
 						'args'                => array(
 							'jsonrpc' => array(
@@ -1686,6 +1686,68 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Permission check for MCP endpoint - requires bearer token or mesh API key only.
+		 *
+		 * Enforces bearer-only authentication for remote MCP access.
+		 * WordPress nonce authentication is NOT permitted for the /mcp endpoint.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_mcp( WP_REST_Request $request ) {
+			$this->reset_auth_context();
+
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			if ( ! empty( $mesh_key ) ) {
+				$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+				if ( true === $mesh_validated ) {
+					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+					return true;
+				} elseif ( is_wp_error( $mesh_validated ) ) {
+					return $mesh_validated;
+				}
+			}
+
+			// Check for bearer token authentication.
+			$bearer = $request->get_header( 'Authorization' );
+			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+				$token = trim( $matches[1] );
+
+				// Validate local credential token.
+				$local = $this->validate_local_token( $token, $request );
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				// Validate Auth0 or other bearer token.
+				$validated = $this->validate_bearer_token( $token, $request );
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				return true;
+			}
+
+			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted.
+			return new WP_Error(
+				'wp_mcp_ai_mcp_bearer_required',
+				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+						'supply_mesh_key'     => __( 'Alternatively, use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'wp-mcp-ai' ),
+						'issue_credential'    => __( 'To obtain a bearer token, issue an assistant credential via the WordPress admin.', 'wp-mcp-ai' ),
+					),
+				)
+			);
 		}
 
 		/**
