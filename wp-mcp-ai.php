@@ -208,6 +208,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-ren
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
+// Load cache helper early for performance optimization.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
@@ -1109,3 +1112,82 @@ if ( ! function_exists( 'wp_mcp_ai_extend_upload_mimes' ) ) {
 if ( ! has_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' ) ) {
 	add_filter( 'upload_mimes', 'wp_mcp_ai_extend_upload_mimes' );
 }
+
+/**
+ * Setup cache invalidation hooks for assistant changes.
+ *
+ * Ensures caches are cleared when assistants are created, updated, or deleted.
+ *
+ * @since 1.0.0
+ */
+function wp_mcp_ai_setup_cache_invalidation_hooks() {
+	if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+		return;
+	}
+
+	// Invalidate caches when assistant posts are saved or deleted.
+	add_action( 'save_post_mcp_ai_assistant', 'wp_mcp_ai_invalidate_assistant_cache_on_save', 10, 1 );
+	add_action( 'delete_post', 'wp_mcp_ai_invalidate_assistant_cache_on_delete', 10, 1 );
+	add_action( 'wp_trash_post', 'wp_mcp_ai_invalidate_assistant_cache_on_delete', 10, 1 );
+	add_action( 'untrash_post', 'wp_mcp_ai_invalidate_assistant_cache_on_save', 10, 1 );
+
+	// Invalidate when assistant meta is updated.
+	add_action( 'updated_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
+	add_action( 'added_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
+	add_action( 'deleted_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
+}
+
+/**
+ * Invalidate cache when assistant is saved.
+ *
+ * @param int $post_id Post ID.
+ */
+function wp_mcp_ai_invalidate_assistant_cache_on_save( $post_id ) {
+	if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+		return;
+	}
+
+	WP_MCP_AI_Cache_Helper::invalidate_assistant_cache( $post_id );
+}
+
+/**
+ * Invalidate cache when assistant is deleted.
+ *
+ * @param int $post_id Post ID.
+ */
+function wp_mcp_ai_invalidate_assistant_cache_on_delete( $post_id ) {
+	if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+		return;
+	}
+
+	$post = get_post( $post_id );
+	if ( $post && 'mcp_ai_assistant' === $post->post_type ) {
+		WP_MCP_AI_Cache_Helper::invalidate_assistant_caches();
+	}
+}
+
+/**
+ * Invalidate cache when assistant meta is updated.
+ *
+ * @param int    $meta_id    Meta ID.
+ * @param int    $object_id  Post ID.
+ * @param string $meta_key   Meta key.
+ * @param mixed  $meta_value Meta value.
+ */
+function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_id, $meta_key, $meta_value ) {
+	if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+		return;
+	}
+
+	// Only invalidate for assistant meta keys.
+	if ( 0 === strpos( $meta_key, 'mcp_ai_' ) ) {
+		$post = get_post( $object_id );
+		if ( $post && 'mcp_ai_assistant' === $post->post_type ) {
+			WP_MCP_AI_Cache_Helper::invalidate_assistant_cache( $object_id );
+		}
+	}
+}
+
+// Initialize cache invalidation hooks.
+add_action( 'init', 'wp_mcp_ai_setup_cache_invalidation_hooks', 20 );
+

@@ -1028,6 +1028,20 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * @return array
 	 */
 	protected function get_assistant_options() {
+		// Use cache helper if available.
+		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			return WP_MCP_AI_Cache_Helper::get_elementor_options( array( $this, 'build_assistant_options' ) );
+		}
+
+		return $this->build_assistant_options();
+	}
+
+	/**
+	 * Build assistant options array (extracted for caching)
+	 *
+	 * @return array Assistant options for dropdown.
+	 */
+	public function build_assistant_options() {
 		$options = array( '' => __( 'Default Assistant', 'wp-mcp-ai' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
@@ -1042,14 +1056,15 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$assistants = get_posts(
 			array(
-				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'      => 'publish',
-				'numberposts'      => -1,
-				'orderby'          => 'title',
-				'order'            => 'ASC',
-				'suppress_filters' => true,
-				'fields'           => 'ids',
-				'no_found_rows'    => true,
+				'post_type'             => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'           => 'publish',
+				'numberposts'           => -1,
+				'orderby'               => 'title',
+				'order'                 => 'ASC',
+				'suppress_filters'      => true,
+				'fields'                => 'ids',
+				'no_found_rows'         => true,
+				'update_post_term_cache' => false,  // Performance: Skip term cache.
 			)
 		);
 
