@@ -148,7 +148,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	protected function mcp_initialize( $params, WP_REST_Request $request ) {
 		$site_name = get_bloginfo( 'name' );
 		$site_desc = get_bloginfo( 'description' );
-		
+
 		// Build instructions dynamically based on site info.
 		if ( ! empty( $site_desc ) ) {
 			$instructions = sprintf(
@@ -201,7 +201,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( $include_tools ) {
 			// Get tools using the same logic as tools/list for consistency.
 			$tools_result = $this->mcp_tools_list( $params, $request );
-			
+
 			if ( ! is_wp_error( $tools_result ) && isset( $tools_result['tools'] ) ) {
 				$response['tools'] = $tools_result['tools'];
 			}
@@ -334,7 +334,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		}
 
 		$tool_name = sanitize_text_field( $params['name'] );
-		
+
 		// Validate arguments is an object/array if provided.
 		if ( isset( $params['arguments'] ) && ! is_array( $params['arguments'] ) ) {
 			return new WP_Error(
@@ -348,7 +348,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 				)
 			);
 		}
-		
+
 		$arguments = isset( $params['arguments'] ) ? $params['arguments'] : array();
 
 		// Use existing tool execution infrastructure.
@@ -516,11 +516,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		if ( is_array( $tool_result ) || is_object( $tool_result ) ) {
 			// Try pretty printing first for better readability.
 			$text_content = wp_json_encode( $tool_result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-			
+
 			if ( false === $text_content ) {
 				// Fallback to basic encoding.
 				$text_content = wp_json_encode( $tool_result );
-				
+
 				if ( false === $text_content ) {
 					// Encoding failed completely - return structured error.
 					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
@@ -533,7 +533,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 							)
 						);
 					}
-					
+
 					return new WP_Error(
 						'wp_mcp_ai_encoding_failed',
 						__( 'Unable to encode tool result to JSON. The tool may have returned circular references or invalid data.', 'wp-mcp-ai' ),
@@ -547,7 +547,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 					);
 				}
 			}
-			
+
 			return $text_content;
 		}
 
@@ -647,10 +647,10 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		// Get all assistants as prompts.
 		$query = new WP_Query(
 			array(
-				'post_type'             => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'           => 'publish',
-				'posts_per_page'        => -1,
-				'no_found_rows'         => true,  // Performance: Skip counting total rows.
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'no_found_rows'          => true,  // Performance: Skip counting total rows.
 				'update_post_term_cache' => false, // Performance: Skip term cache.
 				'update_post_meta_cache' => true,  // Keep meta cache for configs.
 			)

@@ -329,7 +329,10 @@ class WP_MCP_AI_MCP_Client_Compatibility_Test extends WP_UnitTestCase {
 			array(
 				'jsonrpc' => '2.0',
 				'method'  => 'logging/message',
-				'params'  => array( 'level' => 'info', 'message' => 'test' ),
+				'params'  => array(
+					'level'   => 'info',
+					'message' => 'test',
+				),
 			)
 		);
 

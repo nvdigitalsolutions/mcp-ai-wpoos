@@ -77,7 +77,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 				return;
 			}
 
-			$section_id                 = $section->get_id();
+			$section_id                    = $section->get_id();
 			self::$sections[ $section_id ] = $section;
 		}
 

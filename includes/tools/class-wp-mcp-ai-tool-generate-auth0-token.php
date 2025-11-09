@@ -59,19 +59,19 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'auth0_domain'      => array(
+				'auth0_domain'  => array(
 					'type'        => 'string',
 					'description' => __( 'Auth0 domain (e.g., example.us.auth0.com)', 'wp-mcp-ai' ),
 				),
-				'client_id'         => array(
+				'client_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Auth0 Management API Client ID', 'wp-mcp-ai' ),
 				),
-				'client_secret'     => array(
+				'client_secret' => array(
 					'type'        => 'string',
 					'description' => __( 'Auth0 Management API Client Secret', 'wp-mcp-ai' ),
 				),
-				'audience'          => array(
+				'audience'      => array(
 					'type'        => 'string',
 					'description' => __( 'Auth0 audience (optional, defaults to Management API audience)', 'wp-mcp-ai' ),
 				),
@@ -100,8 +100,8 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 		}
 
 		// Validate required parameters.
-		$auth0_domain = isset( $arguments['auth0_domain'] ) ? trim( sanitize_text_field( $arguments['auth0_domain'] ) ) : '';
-		$client_id    = isset( $arguments['client_id'] ) ? trim( sanitize_text_field( $arguments['client_id'] ) ) : '';
+		$auth0_domain  = isset( $arguments['auth0_domain'] ) ? trim( sanitize_text_field( $arguments['auth0_domain'] ) ) : '';
+		$client_id     = isset( $arguments['client_id'] ) ? trim( sanitize_text_field( $arguments['client_id'] ) ) : '';
 		$client_secret = isset( $arguments['client_secret'] ) ? trim( $arguments['client_secret'] ) : '';
 
 		if ( empty( $auth0_domain ) || empty( $client_id ) || empty( $client_secret ) ) {
@@ -182,9 +182,9 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 			);
 		}
 
-		$code = (int) wp_remote_retrieve_response_code( $response );
+		$code         = (int) wp_remote_retrieve_response_code( $response );
 		$body_content = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body_content, true );
+		$data         = json_decode( $body_content, true );
 
 		if ( 200 !== $code ) {
 			$error_message = __( 'Auth0 rejected the token request.', 'wp-mcp-ai' );

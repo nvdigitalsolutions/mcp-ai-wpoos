@@ -72,13 +72,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Sanitize settings before saving.
 		 *
-		 * @param array $input Raw settings input.
+		 * @param array  $input Raw settings input.
 		 * @param string $active_tab Optional. The active tab to process. If not provided, processes all tabs.
 		 * @return array Sanitized settings.
 		 */
 		public function sanitize_settings( $input, $active_tab = '' ) {
 			$sanitized = array();
-			
+
 			// Get sections to process - either from a specific tab or all sections.
 			if ( ! empty( $active_tab ) ) {
 				$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			
+
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
 			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
 
@@ -139,7 +139,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'page'    => self::PAGE_SLUG,
 				'updated' => 'true',
 			);
-			
+
 			if ( ! empty( $active_tab ) ) {
 				$redirect_args['tab'] = $active_tab;
 			}
@@ -163,7 +163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				return;
 			}
 
-			$plugin_url = plugin_dir_url( dirname( dirname( __FILE__ ) ) );
+			$plugin_url = plugin_dir_url( dirname( __DIR__ ) );
 
 			// Enqueue dashboard styles.
 			wp_enqueue_style(

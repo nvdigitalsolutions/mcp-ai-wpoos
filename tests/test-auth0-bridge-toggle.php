@@ -108,7 +108,7 @@ class Test_Auth0_Bridge_Toggle extends WP_UnitTestCase {
 		wp_set_current_user( $user_id );
 
 		// First, enable the bridge.
-		$settings                              = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$settings                               = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$settings['enable_auth0_github_bridge'] = true;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

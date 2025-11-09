@@ -434,7 +434,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			array(
 				'message' => sprintf(
 					/* translators: %s: test type */
-					__( 'To run %s tests, use: ./bin/run-performance-tests.sh --suite=%s', 'wp-mcp-ai' ),
+					__( 'To run %1$s tests, use: ./bin/run-performance-tests.sh --suite=%2$s', 'wp-mcp-ai' ),
 					$test_type,
 					$test_type
 				),

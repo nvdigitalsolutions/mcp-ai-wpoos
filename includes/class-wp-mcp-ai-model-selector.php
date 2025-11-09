@@ -189,7 +189,7 @@ class WP_MCP_AI_Model_Selector {
 			// First, try to get per-model fallback from settings.
 			$high_capacity_model = null;
 			$fallback_source     = 'global';
-			
+
 			if ( ! empty( $settings['per_model_fallback'][ $model ] ) ) {
 				$high_capacity_model = sanitize_text_field( $settings['per_model_fallback'][ $model ] );
 				$fallback_source     = 'settings_per_model';
@@ -221,11 +221,11 @@ class WP_MCP_AI_Model_Selector {
 						'model_switched_to_high_capacity',
 						'Automatically switched to configured high-capacity fallback model.',
 						array(
-							'original_model'      => $model,
-							'fallback_model'      => $high_capacity_model,
-							'required_tokens'     => $total_tokens,
-							'fallback_tpm_limit'  => $fallback_tpm_limit,
-							'fallback_source'     => $fallback_source,
+							'original_model'     => $model,
+							'fallback_model'     => $high_capacity_model,
+							'required_tokens'    => $total_tokens,
+							'fallback_tpm_limit' => $fallback_tpm_limit,
+							'fallback_source'    => $fallback_source,
 						)
 					);
 					return $high_capacity_model;
@@ -315,7 +315,7 @@ class WP_MCP_AI_Model_Selector {
 		if ( ! empty( $settings['high_token_fallback_model'] ) ) {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
 		}
-		
+
 		// Default to gemini-2.0-flash-exp which has high token capacity.
 		return 'gemini-2.0-flash-exp';
 	}

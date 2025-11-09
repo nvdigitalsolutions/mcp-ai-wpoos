@@ -125,15 +125,15 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 
 		do {
 			$query_args = array(
-				'post_type'             => 'attachment',
-				'post_status'           => 'any',
-				'posts_per_page'        => $batch_size,
-				'offset'                => $query_offset,
-				'orderby'               => 'date',
-				'order'                 => 'DESC',
-				'fields'                => 'ids',
-				'no_found_rows'         => true,  // Performance: Skip counting, we paginate manually.
-				'suppress_filters'      => false,
+				'post_type'              => 'attachment',
+				'post_status'            => 'any',
+				'posts_per_page'         => $batch_size,
+				'offset'                 => $query_offset,
+				'orderby'                => 'date',
+				'order'                  => 'DESC',
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,  // Performance: Skip counting, we paginate manually.
+				'suppress_filters'       => false,
 				'update_post_term_cache' => false, // Performance: Attachments don't use taxonomies.
 				'update_post_meta_cache' => true,  // Keep meta cache for attachment metadata.
 			);

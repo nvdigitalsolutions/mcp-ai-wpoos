@@ -44,7 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_WooCommerce_Integration' ) ) {
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 			$settings['enable_woocommerce_tools'] = isset( $_POST['enable_woocommerce_tools'] ) ? true : false;
-			$settings['enable_woo_analytics'] = isset( $_POST['enable_woo_analytics'] ) ? true : false;
+			$settings['enable_woo_analytics']     = isset( $_POST['enable_woo_analytics'] ) ? true : false;
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -82,9 +82,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_WooCommerce_Integration' ) ) {
 				return;
 			}
 
-			$woo_active = class_exists( 'WooCommerce' );
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$tools_enabled = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
+			$woo_active        = class_exists( 'WooCommerce' );
+			$settings          = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$tools_enabled     = isset( $settings['enable_woocommerce_tools'] ) ? (bool) $settings['enable_woocommerce_tools'] : true;
 			$analytics_enabled = isset( $settings['enable_woo_analytics'] ) ? (bool) $settings['enable_woo_analytics'] : true;
 
 			?>

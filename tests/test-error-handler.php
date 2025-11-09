@@ -274,13 +274,13 @@ class WP_MCP_AI_Error_Handler_Test extends WP_UnitTestCase {
 	 */
 	public function test_api_response_sanitization() {
 		$response_with_secrets = array(
-			'error'       => array(
+			'error'        => array(
 				'message' => 'Invalid API key',
 				'type'    => 'auth_error',
 			),
-			'api_key'     => 'sk-secret-key-1234',
+			'api_key'      => 'sk-secret-key-1234',
 			'access_token' => 'secret-token',
-			'message'     => 'Error message',
+			'message'      => 'Error message',
 		);
 
 		$error = WP_MCP_AI_Error_Handler::create_api_error(
@@ -323,7 +323,7 @@ class WP_MCP_AI_Error_Handler_Test extends WP_UnitTestCase {
 
 		add_filter( 'wp_mcp_ai_skip_error_logging', $filter );
 
-		$error = new WP_Error( 'custom_skip_code', 'Should be skipped' );
+		$error      = new WP_Error( 'custom_skip_code', 'Should be skipped' );
 		$should_log = WP_MCP_AI_Error_Handler::should_log_error( $error );
 
 		remove_filter( 'wp_mcp_ai_skip_error_logging', $filter );

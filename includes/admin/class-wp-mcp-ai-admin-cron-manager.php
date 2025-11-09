@@ -132,25 +132,25 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		foreach ( $jobs as $job ) {
 			$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
 			if ( $event ) {
-				$active_jobs++;
+				++$active_jobs;
 			} else {
-				$inactive_jobs++;
+				++$inactive_jobs;
 			}
 
 			$schedule = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
 			if ( 'single' === $schedule || '' === $schedule ) {
-				$one_off++;
+				++$one_off;
 			} else {
-				$recurring++;
+				++$recurring;
 			}
 		}
 
 		return array(
-			'total'    => $total_jobs,
-			'active'   => $active_jobs,
-			'inactive' => $inactive_jobs,
+			'total'     => $total_jobs,
+			'active'    => $active_jobs,
+			'inactive'  => $inactive_jobs,
 			'recurring' => $recurring,
-			'one_off'  => $one_off,
+			'one_off'   => $one_off,
 		);
 	}
 
@@ -164,7 +164,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs  = WP_MCP_AI_Cron_Manager::get_jobs();
 		$stats = $this->get_statistics( $jobs );
 		?>
 		<div class="wrap">
@@ -248,13 +248,13 @@ class WP_MCP_AI_Admin_Cron_Manager {
 					<tbody>
 						<?php foreach ( $jobs as $job ) : ?>
 							<?php
-							$event      = wp_get_scheduled_event( $job['hook'], $job['args'] );
-							$next_run   = $event ? $event->timestamp : false;
-							$schedule   = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
-							$is_active  = (bool) $event;
+							$event        = wp_get_scheduled_event( $job['hook'], $job['args'] );
+							$next_run     = $event ? $event->timestamp : false;
+							$schedule     = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
+							$is_active    = (bool) $event;
 							$is_recurring = ! ( 'single' === $schedule || '' === $schedule );
-							$creator    = '';
-							$created_by = isset( $job['created_by'] ) ? (int) $job['created_by'] : 0;
+							$creator      = '';
+							$created_by   = isset( $job['created_by'] ) ? (int) $job['created_by'] : 0;
 
 							if ( $created_by > 0 ) {
 								$user = get_userdata( $created_by );

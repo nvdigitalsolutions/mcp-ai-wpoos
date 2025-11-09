@@ -89,7 +89,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return false;
 		}
 
-		$limits                = self::get_all_limits();
+		$limits               = self::get_all_limits();
 		$limits[ $tool_slug ] = $limit;
 
 		return update_option( self::LIMITS_OPTION, $limits, false );
@@ -148,14 +148,14 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		$timestamp = current_time( 'mysql', true );
-		$date_key  = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$date_key  = gmdate( 'Y-m-d', time() );
 
 		// Update totals.
-		$usage[ $tool_slug ]['total_tokens'] = isset( $usage[ $tool_slug ]['total_tokens'] ) ? (int) $usage[ $tool_slug ]['total_tokens'] : 0;
+		$usage[ $tool_slug ]['total_tokens']  = isset( $usage[ $tool_slug ]['total_tokens'] ) ? (int) $usage[ $tool_slug ]['total_tokens'] : 0;
 		$usage[ $tool_slug ]['total_tokens'] += $tokens;
 
 		$usage[ $tool_slug ]['requests'] = isset( $usage[ $tool_slug ]['requests'] ) ? (int) $usage[ $tool_slug ]['requests'] : 0;
-		$usage[ $tool_slug ]['requests']++;
+		++$usage[ $tool_slug ]['requests'];
 
 		$usage[ $tool_slug ]['last_used'] = $timestamp;
 
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$usage[ $tool_slug ]['daily'][ $date_key ] = (int) $usage[ $tool_slug ]['daily'][ $date_key ] + $tokens;
 
 		// Clean up old daily entries (keep only last 30 days).
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp', true ) ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 		foreach ( $usage[ $tool_slug ]['daily'] as $date => $count ) {
 			if ( $date < $cutoff_date ) {
 				unset( $usage[ $tool_slug ]['daily'][ $date ] );
@@ -222,11 +222,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 				'tool_token_limit_exceeded',
 				'User exceeded daily token limit for tool.',
 				array(
-					'user_id'     => $user_id,
-					'tool_slug'   => $tool_slug,
-					'usage'       => $daily_usage,
-					'limit'       => $limit,
-					'reset_time'  => $reset_time,
+					'user_id'    => $user_id,
+					'tool_slug'  => $tool_slug,
+					'usage'      => $daily_usage,
+					'limit'      => $limit,
+					'reset_time' => $reset_time,
 				)
 			);
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return 0;
 		}
 
-		$date_key = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$date_key = gmdate( 'Y-m-d', time() );
 
 		return isset( $usage[ $tool_slug ]['daily'][ $date_key ] ) ? (int) $usage[ $tool_slug ]['daily'][ $date_key ] : 0;
 	}
@@ -323,7 +323,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		global $wpdb;
 
 		$meta_key    = self::USAGE_META_KEY;
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp', true ) ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 
 		// Get all users with tool usage data.
 		$user_ids = $wpdb->get_col(
@@ -340,7 +340,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$cleaned = 0;
 
 		foreach ( $user_ids as $user_id ) {
-			$usage  = self::get_user_tool_usage( $user_id );
+			$usage   = self::get_user_tool_usage( $user_id );
 			$updated = false;
 
 			foreach ( $usage as $tool_slug => $tool_data ) {
@@ -398,7 +398,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 * @return string Formatted time string.
 	 */
 	protected static function get_daily_reset_time() {
-		$tomorrow = strtotime( 'tomorrow midnight', current_time( 'timestamp', true ) );
+		$tomorrow = strtotime( 'tomorrow midnight', time() );
 		return gmdate( 'Y-m-d H:i:s', $tomorrow );
 	}
 
@@ -416,8 +416,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		if ( '' === $tool_slug ) {
 			return array(
-				'total_users'   => 0,
-				'total_tokens'  => 0,
+				'total_users'    => 0,
+				'total_tokens'   => 0,
 				'total_requests' => 0,
 			);
 		}
@@ -438,8 +438,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 			);
 		}
 
-		$total_users   = 0;
-		$total_tokens  = 0;
+		$total_users    = 0;
+		$total_tokens   = 0;
 		$total_requests = 0;
 
 		foreach ( $user_ids as $user_id ) {

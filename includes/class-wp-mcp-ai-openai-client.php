@@ -31,15 +31,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-		// The gpt-image-1 model does NOT support the response_format parameter.
-		// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
-		// Default to true for backward compatibility, but explicitly block gpt-image-1.
-		$supported = true;
+			// The gpt-image-1 model does NOT support the response_format parameter.
+			// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
+			// Default to true for backward compatibility, but explicitly block gpt-image-1.
+			$supported = true;
 
-		// Check if this is the gpt-image-1 model (case-insensitive).
-		if ( 'gpt-image-1' === strtolower( $model ) ) {
-			$supported = false;
-		}
+			// Check if this is the gpt-image-1 model (case-insensitive).
+			if ( 'gpt-image-1' === strtolower( $model ) ) {
+				$supported = false;
+			}
 			/**
 			 * Filter whether the supplied image model supports the response_format parameter.
 			 *
@@ -1600,7 +1600,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				}
 				// Always run conversion to handle input_image segments from conversation history
-				$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
+				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 

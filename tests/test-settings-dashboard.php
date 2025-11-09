@@ -232,7 +232,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$input_checked = array(
 			'enable_auth0_github_bridge' => '1',
 		);
-		$sanitized = $section->sanitize( $input_checked );
+		$sanitized     = $section->sanitize( $input_checked );
 		$this->assertTrue( $sanitized['enable_auth0_github_bridge'] );
 
 		// Simulate form submission where checkbox is unchecked (not in POST data).
@@ -247,7 +247,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	public function test_new_dashboard_loads_by_default() {
 		// By default, WP_MCP_AI_USE_OLD_SETTINGS should be false.
 		$this->assertFalse( WP_MCP_AI_USE_OLD_SETTINGS );
-		
+
 		// The settings dashboard should be initialized.
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ) );

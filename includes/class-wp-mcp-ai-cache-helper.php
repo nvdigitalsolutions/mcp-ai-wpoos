@@ -105,7 +105,7 @@ class WP_MCP_AI_Cache_Helper {
 	public static function delete_pattern( $pattern ) {
 		global $wpdb;
 
-		$cache_pattern = self::CACHE_PREFIX . $pattern;
+		$cache_pattern  = self::CACHE_PREFIX . $pattern;
 		$option_pattern = '_transient_' . $wpdb->esc_like( $cache_pattern ) . '%';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching

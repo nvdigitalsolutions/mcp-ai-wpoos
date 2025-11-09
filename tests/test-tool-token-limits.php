@@ -157,7 +157,7 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		$event_fired = false;
 		add_action(
 			'wp_mcp_ai_tool_token_limit_exceeded',
-			function() use ( &$event_fired ) {
+			function () use ( &$event_fired ) {
 				$event_fired = true;
 			}
 		);
@@ -288,8 +288,8 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		WP_MCP_AI_Tool_Token_Limits::record_tool_usage( $tool_slug, array(), $context, $result );
 
 		// Manually add old daily entry.
-		$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $this->test_user_id );
-		$old_date = gmdate( 'Y-m-d', strtotime( '-35 days', current_time( 'timestamp', true ) ) );
+		$usage                                     = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $this->test_user_id );
+		$old_date                                  = gmdate( 'Y-m-d', strtotime( '-35 days', time() ) );
 		$usage[ $tool_slug ]['daily'][ $old_date ] = 100;
 		update_user_meta( $this->test_user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage );
 

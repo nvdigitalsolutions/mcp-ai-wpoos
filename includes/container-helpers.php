@@ -33,11 +33,11 @@ function wp_mcp_ai_container() {
  */
 function wp_mcp_ai( $id = null ) {
 	$container = wp_mcp_ai_container();
-	
+
 	if ( null === $id ) {
 		return $container;
 	}
-	
+
 	return $container->get( $id );
 }
 

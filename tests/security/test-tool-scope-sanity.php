@@ -122,7 +122,7 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		// Configure minimal Gmail settings to avoid missing config error.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                        = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['gmail_client_id']     = 'test-client-id';
 		$settings['gmail_client_secret'] = 'test-client-secret';
 		$settings['gmail_refresh_token'] = 'test-refresh-token';
@@ -274,7 +274,7 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 
 		// Configure minimal settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                        = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['gmail_client_id']     = 'test';
 		$settings['gmail_client_secret'] = 'test';
 		$settings['gmail_refresh_token'] = 'test';
@@ -345,7 +345,7 @@ class WP_MCP_AI_Tool_Scope_Sanity_Test extends WP_UnitTestCase {
 	 */
 	public function test_oauth_scopes_are_minimal() {
 		// This is a documentation test to ensure developers review scopes.
-		
+
 		// Gmail should use readonly scope when possible.
 		$gmail_recommended_scopes = array(
 			'https://www.googleapis.com/auth/gmail.readonly',

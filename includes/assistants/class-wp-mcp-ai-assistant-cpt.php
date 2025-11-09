@@ -2422,15 +2422,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
-				$file_size_bytes  = 0;
-				$file_size_label  = '';
-				$file_path        = get_attached_file( $file_id );
+				$file_size_bytes = 0;
+				$file_size_label = '';
+				$file_path       = get_attached_file( $file_id );
 
 				if ( $file_path && file_exists( $file_path ) ) {
 					$file_size = filesize( $file_path );
 					if ( false !== $file_size ) {
-						$file_size_bytes  = (int) $file_size;
-						$file_size_label  = size_format( $file_size_bytes );
+						$file_size_bytes    = (int) $file_size;
+						$file_size_label    = size_format( $file_size_bytes );
 						$memory_size_bytes += $file_size_bytes;
 					}
 				}
@@ -3014,7 +3014,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Routing strategy.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) ) {
-						$strategy = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) );
+						$strategy           = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) );
 						$allowed_strategies = array( 'ai_optimized', 'round_robin', 'least_loaded', 'preferred_with_fallback' );
 						if ( in_array( $strategy, $allowed_strategies, true ) ) {
 							$mesh_config['routing_strategy'] = $strategy;
@@ -3023,7 +3023,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Compute hubs.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) && is_array( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) ) {
-						$compute_hubs = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) );
+						$compute_hubs                = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) );
 						$mesh_config['compute_hubs'] = array_filter( $compute_hubs );
 					} else {
 						$mesh_config['compute_hubs'] = array();
@@ -3031,7 +3031,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Preferred peers.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) && is_array( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) ) {
-						$preferred_peers = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) );
+						$preferred_peers                = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) );
 						$mesh_config['preferred_peers'] = array_filter( $preferred_peers );
 					} else {
 						$mesh_config['preferred_peers'] = array();
@@ -3042,7 +3042,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Max retries.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) ) {
-						$max_retries = absint( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) );
+						$max_retries                = absint( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) );
 						$mesh_config['max_retries'] = min( max( 1, $max_retries ), 10 );
 					}
 
@@ -3659,7 +3659,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			$hub_config = WP_MCP_AI_Mesh_Router::get_hub_config( $post->ID );
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
 			$peer_sites = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] )
 				? $settings['mesh_peer_sites']
 				: array();
@@ -3741,7 +3741,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							<div id="wp-mcp-ai-preferred-peers-list">
 								<?php
 								$preferred_peers = isset( $hub_config['preferred_peers'] ) ? $hub_config['preferred_peers'] : array();
-								$peer_index = 0;
+								$peer_index      = 0;
 								foreach ( $preferred_peers as $preferred ) {
 									?>
 									<div class="wp-mcp-ai-preferred-peer-row" style="margin-bottom: 10px;">
@@ -3764,7 +3764,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 										<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 									</div>
 									<?php
-									$peer_index++;
+									++$peer_index;
 								}
 								?>
 							</div>

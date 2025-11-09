@@ -279,7 +279,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		$jwks_reachable = ! is_wp_error( $jwks_response ) && 200 === wp_remote_retrieve_response_code( $jwks_response );
 
 		// Create or update the peer post.
-		$site_url = isset( $data['site_url'] ) ? $data['site_url'] : '';
+		$site_url  = isset( $data['site_url'] ) ? $data['site_url'] : '';
 		$site_name = isset( $data['site_name'] ) ? $data['site_name'] : parse_url( $wellknown_url, PHP_URL_HOST );
 
 		// Check if peer already exists.
@@ -294,7 +294,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 
 		if ( $existing_peer ) {
 			$post_data['ID'] = $existing_peer;
-			$peer_id = wp_update_post( $post_data );
+			$peer_id         = wp_update_post( $post_data );
 		} else {
 			$peer_id = wp_insert_post( $post_data );
 		}
@@ -356,16 +356,16 @@ class WP_MCP_AI_Federation_Directory_REST {
 	protected function find_peer_by_wellknown_url( $wellknown_url ) {
 		$query = new WP_Query(
 			array(
-				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page'        => 1,
-				'meta_query'            => array(
+				'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'         => 1,
+				'meta_query'             => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_WELLKNOWN_URL,
 						'value' => $wellknown_url,
 					),
 				),
-				'fields'                => 'ids',
-				'no_found_rows'         => true,  // Performance: Skip counting.
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,  // Performance: Skip counting.
 				'update_post_term_cache' => false, // Performance: Skip term cache.
 			)
 		);
@@ -389,11 +389,11 @@ class WP_MCP_AI_Federation_Directory_REST {
 		$status   = $request->get_param( 'status' );
 
 		$query_args = array(
-			'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-			'posts_per_page'        => $per_page,
-			'paged'                 => $page,
-			'orderby'               => 'title',
-			'order'                 => 'ASC',
+			'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+			'posts_per_page'         => $per_page,
+			'paged'                  => $page,
+			'orderby'                => 'title',
+			'order'                  => 'ASC',
 			'update_post_term_cache' => false, // Performance: Skip term cache for peers.
 			'update_post_meta_cache' => true,  // Keep meta cache as we use meta data.
 		);
@@ -416,10 +416,10 @@ class WP_MCP_AI_Federation_Directory_REST {
 
 		return new WP_REST_Response(
 			array(
-				'peers'      => $peers,
-				'total'      => $query->found_posts,
-				'page'       => $page,
-				'per_page'   => $per_page,
+				'peers'       => $peers,
+				'total'       => $query->found_posts,
+				'page'        => $page,
+				'per_page'    => $per_page,
 				'total_pages' => $query->max_num_pages,
 			),
 			200
@@ -467,15 +467,15 @@ class WP_MCP_AI_Federation_Directory_REST {
 		// Get all healthy peers.
 		$query = new WP_Query(
 			array(
-				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page'        => -1,
-				'meta_query'            => array(
+				'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'         => -1,
+				'meta_query'             => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_HEALTH_STATUS,
 						'value' => 'healthy',
 					),
 				),
-				'no_found_rows'         => true,  // Performance: Skip counting.
+				'no_found_rows'          => true,  // Performance: Skip counting.
 				'update_post_term_cache' => false, // Performance: Skip term cache.
 				'update_post_meta_cache' => true,  // Keep meta cache for peer data.
 			)
@@ -593,7 +593,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		$latency = $peer_data['latency_p50'];
 		if ( $latency > 0 ) {
 			$latency_score = max( 0, 20 - ( $latency / 50 ) ); // 1000ms = 0 points, 0ms = 20 points.
-			$score += $latency_score;
+			$score        += $latency_score;
 		}
 
 		return min( 100.0, $score );
@@ -733,8 +733,8 @@ class WP_MCP_AI_Federation_Directory_REST {
 		}
 
 		$reports[] = array(
-			'reason'     => $reason,
-			'details'    => $details,
+			'reason'      => $reason,
+			'details'     => $details,
 			'reported_at' => current_time( 'mysql', true ),
 			'reported_by' => get_current_user_id(),
 		);

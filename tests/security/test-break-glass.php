@@ -22,7 +22,7 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Clear any existing shutdown state.
 		delete_option( 'wp_mcp_ai_emergency_shutdown' );
 		delete_option( 'wp_mcp_ai_root_key_required' );
@@ -39,7 +39,7 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 		delete_option( 'wp_mcp_ai_root_key_required' );
 		delete_option( 'wp_mcp_ai_root_key_failed_attempts' );
 		delete_transient( 'wp_mcp_ai_root_key_rate_limit' );
-		
+
 		parent::tearDown();
 	}
 
@@ -214,7 +214,7 @@ class WP_MCP_AI_Break_Glass_Test extends WP_UnitTestCase {
 	 */
 	public function test_shutdown_creates_log_trail() {
 		// Enable logging.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                   = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_logging'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
