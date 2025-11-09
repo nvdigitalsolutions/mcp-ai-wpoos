@@ -224,6 +224,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-circuit-breaker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-metrics.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-budget-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
