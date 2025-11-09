@@ -1,16 +1,36 @@
 # Gutenberg Blocks Reference
 
+**Last Updated:** November 9, 2025  
+**Total Blocks:** 21  
+**Implementation Files:** 3 PHP classes, 3 JavaScript files
+
 This document provides a comprehensive reference for all Gutenberg blocks available in the WP Open Operator System (WP oOS) plugin.
 
 ## Overview
 
-WP oOS provides **19 Gutenberg blocks** that correspond to the Elementor widgets, allowing users to build AI-powered interfaces using either the Gutenberg block editor or Elementor page builder.
+WP oOS provides **21 Gutenberg blocks** that offer complete feature parity with Elementor widgets, allowing users to build AI-powered interfaces using either the Gutenberg block editor or Elementor page builder.
 
-All blocks are server-side rendered for consistency and security, with proper capability checks, sanitization, and escaping.
+All blocks are server-side rendered for consistency, security, and optimal SEO performance, with proper capability checks, sanitization, and escaping throughout.
+
+### Implementation Architecture
+
+- **Server-Rendered**: All blocks use server-side rendering for performance and SEO
+- **JavaScript Enhanced**: Interactive features enhanced with JavaScript where needed
+- **Automatic Registration**: Blocks register automatically when plugin is activated
+- **Namespace**: All blocks use the `wp-mcp-ai` namespace
+- **PHP Classes**: 3 main block class files in `includes/blocks/`
+- **JavaScript Files**: 3 registration files in `assets/js/`
+
+### Block Categories
+
+1. **Chat Interface Blocks** (4 blocks) - User-facing chat surfaces
+2. **Assistant Configuration Blocks** (7 blocks) - Assistant setup and management
+3. **Dashboard & Operations Blocks** (5 blocks) - Administrative dashboards
+4. **Performance Monitoring Blocks** (5 blocks) - System performance metrics (previously 6, consolidated to 5)
 
 ## Block Categories
 
-### Performance Blocks (6 blocks)
+### Chat Interface Blocks (4 blocks)
 
 These blocks provide performance monitoring and testing capabilities.
 
