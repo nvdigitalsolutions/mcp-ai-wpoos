@@ -2749,6 +2749,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		// Stream final response.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[WP oOS] Preparing final message payload. Response is null: ' . ( is_null( $response ) ? 'yes' : 'no' ) . ', is empty: ' . ( empty( $response ) ? 'yes' : 'no' ) );
+		}
+
 		$payload = array(
 			'assistant_id' => $assistant_id,
 			'data'         => $response,
