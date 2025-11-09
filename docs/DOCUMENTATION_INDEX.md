@@ -98,6 +98,8 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [cors-policy.md](cors-policy.md) | **NEW:** Comprehensive CORS policy documentation and configuration guide | Admins/Devs |
+| [SECURITY_HARDENING.md](SECURITY_HARDENING.md) | Security hardening guide and audit results | Admins/Devs |
 | [mcp-server-authentication.md](mcp-server-authentication.md) | Authentication methods and setup (13KB) | Admins/Devs |
 | [authentication.md](authentication.md) | Authentication overview | Admins |
 | [rate-limit-protection.md](rate-limit-protection.md) | Rate limiting configuration | Admins |
