@@ -317,6 +317,7 @@ The REST API extracts guest tokens from:
 - `X-WP-MCP-AI-Guest` header (preferred)
 - `guest_token` request parameter (fallback)
 
+**Chat Endpoint** (`/chat`):
 ```bash
 curl \
   -H "X-WP-MCP-AI-Guest: <guest-token>" \
@@ -327,6 +328,10 @@ curl \
 
 When a valid guest token is present, the capability requirement is set to `'public'`, bypassing standard authentication checks. 【F:includes/class-wp-mcp-ai-rest.php†L1720-L1731】【F:includes/class-wp-mcp-ai-shortcode.php†L303-L307】
 
+**Direct Tool Execution** (`/tools`):
+
+❌ Guest tokens do NOT authorize direct tool execution. Requests to `/tools` with a guest token will return a 401 error with code `wp_mcp_ai_anonymous_user`. This is a security feature that ensures tools can only be invoked through the AI assistant's decision-making process during chat conversations, not arbitrarily by unauthenticated users. 【F:tests/test-shortcodes.php†L310-L323】
+
 ## Security Model
 
 ### Access Scope
@@ -334,17 +339,20 @@ When a valid guest token is present, the capability requirement is set to `'publ
 Guest tokens provide limited access:
 
 **What Guests CAN Do:**
-- Send chat messages to the associated assistant
+- Send chat messages to the associated assistant via the `/chat` endpoint
 - Receive AI responses using the assistant's configured model
 - Access publicly available attachments (files with public post status or inherited from public parents)
-- Execute tools that don't require elevated capabilities (tools should implement their own capability checks)
+- Have the assistant execute tools on their behalf through natural conversation (tools are invoked by the AI, not directly by the guest)
 
 **What Guests CANNOT Do:**
 - Access private or draft attachments
 - Switch to different assistants (tokens are scoped to a single assistant ID)
 - Access administrative functions
 - Upload files (requires `upload_files` capability)
-- Execute tools that require specific WordPress capabilities
+- Execute tools directly via the `/tools` endpoint (guest tokens only work with `/chat`)
+- Execute tools that require specific WordPress capabilities beyond the assistant's configuration
+
+**Important**: Guest tokens only authorize access to the `/chat` endpoint. Direct tool execution via the `/tools` endpoint requires authenticated user credentials. This ensures tools are only invoked through the AI assistant's decision-making process, not arbitrarily by unauthenticated users. 【F:tests/test-shortcodes.php†L245-L326】
 
 【F:includes/class-wp-mcp-ai-message-attachments.php†L585-L604】【F:includes/class-wp-mcp-ai-message-attachments.php†L790-L828】
 
