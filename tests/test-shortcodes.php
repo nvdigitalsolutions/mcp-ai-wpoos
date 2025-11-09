@@ -324,4 +324,71 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
 		wp_set_current_user( $this->admin_id );
 	}
+
+	/**
+	 * Ensure the chat shortcode renders with proper ARIA attributes for accessibility.
+	 */
+	public function test_chat_shortcode_has_accessibility_attributes() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Accessible Assistant',
+			)
+		);
+
+		$chat_markup = do_shortcode( sprintf( '[%s assistant="%d" allow_guests="1"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+
+		$xpath = $this->get_dom_xpath( $chat_markup );
+
+		// Verify messages container has proper ARIA attributes.
+		$messages_nodes = $xpath->query( '//div[contains(@class, "wp-mcp-ai-chat__messages")]' );
+		$this->assertSame( 1, $messages_nodes->length, 'Expected a single messages container to be rendered.' );
+
+		$messages = $messages_nodes->item( 0 );
+		$this->assertTrue( $messages->hasAttribute( 'role' ), 'Messages container should have a role attribute.' );
+		$this->assertSame( 'log', $messages->getAttribute( 'role' ), 'Messages container should have role="log".' );
+		$this->assertTrue( $messages->hasAttribute( 'aria-live' ), 'Messages container should have aria-live attribute.' );
+		$this->assertSame( 'polite', $messages->getAttribute( 'aria-live' ), 'Messages container should have aria-live="polite".' );
+		$this->assertTrue( $messages->hasAttribute( 'aria-atomic' ), 'Messages container should have aria-atomic attribute.' );
+		$this->assertSame( 'false', $messages->getAttribute( 'aria-atomic' ), 'Messages container should have aria-atomic="false".' );
+		$this->assertTrue( $messages->hasAttribute( 'aria-relevant' ), 'Messages container should have aria-relevant attribute.' );
+		$this->assertSame( 'additions', $messages->getAttribute( 'aria-relevant' ), 'Messages container should have aria-relevant="additions".' );
+
+		// Verify status area has proper ARIA attributes.
+		$status_nodes = $xpath->query( '//div[contains(@class, "wp-mcp-ai-chat__status")]' );
+		$this->assertSame( 1, $status_nodes->length, 'Expected a single status area to be rendered.' );
+
+		$status = $status_nodes->item( 0 );
+		$this->assertTrue( $status->hasAttribute( 'role' ), 'Status area should have a role attribute.' );
+		$this->assertSame( 'status', $status->getAttribute( 'role' ), 'Status area should have role="status".' );
+		$this->assertTrue( $status->hasAttribute( 'aria-live' ), 'Status area should have aria-live attribute.' );
+		$this->assertSame( 'polite', $status->getAttribute( 'aria-live' ), 'Status area should have aria-live="polite".' );
+
+		// Verify transcript toggle has proper ARIA attributes.
+		$toggle_nodes = $xpath->query( '//button[contains(@class, "wp-mcp-ai-chat__transcript-toggle")]' );
+		$this->assertSame( 1, $toggle_nodes->length, 'Expected a single transcript toggle to be rendered.' );
+
+		$toggle = $toggle_nodes->item( 0 );
+		$this->assertTrue( $toggle->hasAttribute( 'aria-expanded' ), 'Transcript toggle should have aria-expanded attribute.' );
+		$this->assertSame( 'false', $toggle->getAttribute( 'aria-expanded' ), 'Transcript toggle should have aria-expanded="false" initially.' );
+		$this->assertTrue( $toggle->hasAttribute( 'aria-label' ), 'Transcript toggle should have aria-label attribute.' );
+
+		// Verify input has proper attributes.
+		$input_nodes = $xpath->query( '//textarea[contains(@class, "wp-mcp-ai-chat__input")]' );
+		$this->assertSame( 1, $input_nodes->length, 'Expected a single input textarea to be rendered.' );
+
+		$input = $input_nodes->item( 0 );
+		$this->assertTrue( $input->hasAttribute( 'id' ), 'Input should have an id attribute.' );
+		$this->assertTrue( $input->hasAttribute( 'placeholder' ), 'Input should have a placeholder attribute.' );
+
+		// Verify tool shortcuts container has proper ARIA attributes.
+		$shortcuts_nodes = $xpath->query( '//div[contains(@class, "wp-mcp-ai-chat__tool-shortcuts")]' );
+		$this->assertSame( 1, $shortcuts_nodes->length, 'Expected a single tool shortcuts container to be rendered.' );
+
+		$shortcuts = $shortcuts_nodes->item( 0 );
+		$this->assertTrue( $shortcuts->hasAttribute( 'role' ), 'Tool shortcuts container should have a role attribute.' );
+		$this->assertSame( 'group', $shortcuts->getAttribute( 'role' ), 'Tool shortcuts container should have role="group".' );
+		$this->assertTrue( $shortcuts->hasAttribute( 'aria-label' ), 'Tool shortcuts container should have aria-label attribute.' );
+	}
 }

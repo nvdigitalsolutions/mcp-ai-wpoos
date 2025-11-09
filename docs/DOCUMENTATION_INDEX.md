@@ -85,6 +85,12 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
 
+### Frontend & User Experience
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [FRONTEND-ACCESSIBILITY.md](FRONTEND-ACCESSIBILITY.md) | **NEW:** Comprehensive accessibility (ARIA, WCAG 2.1), responsive design, and user feedback patterns | Developers/Designers |
+
 ### Remote Client Setup
 
 | Document | Description | Audience |

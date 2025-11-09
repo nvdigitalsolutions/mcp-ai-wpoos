@@ -5157,8 +5157,6 @@
             if (streamingMessageElement && content) {
                 streamingMessageElement.setAttribute('aria-label', getString('assistantMessage', 'Assistant message'));
             }
-                bubble.textContent = content;
-            }
         }
 
         return fetch(state.config.messagesEndpoint, {
