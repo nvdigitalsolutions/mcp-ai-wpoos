@@ -40,7 +40,7 @@ Composer provides helper scripts aligned with WordPress coding standards:
 
 ```bash
 composer run lint        # Runs phpcs with the WordPress ruleset
-composer run lint:compat # Runs PHPCompatibilityWP against PHP 7.4–8.3
+composer run lint:compat # Runs PHPCompatibilityWP against PHP 8.1–8.3
 composer run format      # Attempts to autofix coding standards violations
 composer run pot         # Generates/updates languages/wp-mcp-ai.pot
 ```
