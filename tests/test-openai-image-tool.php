@@ -465,4 +465,250 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 			wp_delete_attachment( $result['attachment_id'], true );
 		}
 	}
+
+	/**
+	 * Test that gpt-image-1 model accepts 'medium' quality (its default).
+	 */
+	public function test_gpt_image_1_accepts_medium_quality() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 123,
+				'model'   => 'gpt-image-1',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A test image',
+				'model'   => 'gpt-image-1',
+				'quality' => 'medium',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertSame( 'medium', $payload['quality'] );
+		$this->assertSame( 'medium', $result['quality'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test that gpt-image-1 model accepts 'high' quality.
+	 */
+	public function test_gpt_image_1_accepts_high_quality() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 123,
+				'model'   => 'gpt-image-1',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A high quality test image',
+				'model'   => 'gpt-image-1',
+				'quality' => 'high',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertSame( 'high', $payload['quality'] );
+		$this->assertSame( 'high', $result['quality'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test that invalid quality for gpt-image-1 falls back to model default (medium).
+	 */
+	public function test_gpt_image_1_invalid_quality_falls_back_to_default() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 123,
+				'model'   => 'gpt-image-1',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Try to use 'standard' (valid for DALL-E) with gpt-image-1 (should fall back to 'medium').
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A test image with invalid quality',
+				'model'   => 'gpt-image-1',
+				'quality' => 'standard',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		// Should have fallen back to 'medium' (gpt-image-1's default).
+		$this->assertSame( 'medium', $payload['quality'] );
+		$this->assertSame( 'medium', $result['quality'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test that DALL-E 3 still accepts 'hd' quality.
+	 */
+	public function test_dalle_3_accepts_hd_quality() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool             = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$captured_request = null;
+		$png_base64       = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			$payload = array(
+				'created' => 123,
+				'model'   => 'dall-e-3',
+				'data'    => array(
+					array(
+						'b64_json' => $png_base64,
+					),
+				),
+			);
+
+			return array(
+				'body'     => wp_json_encode( $payload ),
+				'response' => array( 'code' => 200 ),
+				'headers'  => array( 'content-type' => 'application/json' ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'prompt'  => 'A high-def test image',
+				'model'   => 'dall-e-3',
+				'quality' => 'hd',
+			),
+			array( 'user_id' => $user_id )
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertNotNull( $captured_request );
+		$payload = json_decode( $captured_request['args']['body'], true );
+		$this->assertSame( 'hd', $payload['quality'] );
+		$this->assertSame( 'hd', $result['quality'] );
+
+		if ( ! empty( $result['attachment_id'] ) ) {
+			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
 }
