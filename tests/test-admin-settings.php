@@ -31,7 +31,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'openai_image_size', $defaults );
 		$this->assertSame( '1024x1024', $defaults['openai_image_size'] );
 		$this->assertArrayHasKey( 'openai_image_quality', $defaults );
-		$this->assertSame( 'standard', $defaults['openai_image_quality'] );
+		$this->assertSame( 'auto', $defaults['openai_image_quality'] );
 		$this->assertArrayHasKey( 'openai_image_response_format', $defaults );
 		$this->assertSame( 'b64_json', $defaults['openai_image_response_format'] );
 	}
@@ -276,14 +276,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 			array(
 				'openai_image_model'           => 'dall-e-3',
 				'openai_image_size'            => '1792x1024',
-				'openai_image_quality'         => 'hd',
+				'openai_image_quality'         => 'high',
 				'openai_image_response_format' => 'url',
 			)
 		);
 
 		$this->assertSame( 'dall-e-3', $sanitized['openai_image_model'] );
 		$this->assertSame( '1792x1024', $sanitized['openai_image_size'] );
-		$this->assertSame( 'hd', $sanitized['openai_image_quality'] );
+		$this->assertSame( 'high', $sanitized['openai_image_quality'] );
 		$this->assertSame( 'url', $sanitized['openai_image_response_format'] );
 	}
 

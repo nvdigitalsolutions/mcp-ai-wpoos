@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	const DEFAULT_MODEL           = 'gpt-image-1';
 	const DEFAULT_SIZE            = '1024x1024';
-	const DEFAULT_QUALITY         = 'standard';
+	const DEFAULT_QUALITY         = 'auto';
 	const DEFAULT_FORMAT          = 'png';
 	const DEFAULT_RESPONSE_FORMAT = 'b64_json';
 
@@ -331,8 +331,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected static function get_allowed_qualities() {
 		return array(
-			'standard',
-			'hd',
+			'low',
+			'medium',
+			'high',
+			'auto',
 		);
 	}
 
