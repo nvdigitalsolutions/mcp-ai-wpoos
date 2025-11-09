@@ -5193,7 +5193,9 @@
                 // Debug logging for SSE completion
                 if (window.console && console.log) {
                     console.log('[WP oOS SSE] Stream completed:', streamResult);
-                    console.log('[WP oOS SSE] Has finalData:', !!streamResult.finalData, 'Has content:', !!streamResult.content, 'Content length:', (streamResult.content || '').length);
+                    if (streamResult) {
+                        console.log('[WP oOS SSE] Has finalData:', !!streamResult.finalData, 'Has content:', !!streamResult.content, 'Content length:', (streamResult.content || '').length);
+                    }
                 }
 
                 // Handle final message if available

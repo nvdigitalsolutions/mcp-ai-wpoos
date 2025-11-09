@@ -2753,7 +2753,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$payload['tool_results'] = $tool_result_messages;
 		}
 
+		// Debug logging to help trace response flow.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[WP oOS] Sending final message event for assistant ' . $assistant_id . '. Response keys: ' . implode( ', ', array_keys( $response ) ) );
+		}
+
 		$this->send_sse_event( 'message', $payload );
+		
+		// Small delay to ensure message event is flushed before DONE marker.
+		usleep( 10000 ); // 10ms delay.
+		
 		$this->send_sse_done();
 
 		exit;

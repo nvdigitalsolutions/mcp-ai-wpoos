@@ -85,9 +85,14 @@ class WP_MCP_AI_SSE_Handler {
 		echo 'event: ' . esc_html( $event ) . "\n";
 		echo 'data: ' . wp_json_encode( $data ) . "\n\n";
 
+		// Aggressive flushing to ensure events are sent immediately.
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+		if ( function_exists( 'wp_ob_end_flush_all' ) ) {
+			wp_ob_end_flush_all();
+		}
+		@ob_flush(); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	}
 
 	/**
@@ -100,9 +105,14 @@ class WP_MCP_AI_SSE_Handler {
 	public function send_sse_done() {
 		echo "data: [DONE]\n\n";
 
+		// Aggressive flushing to ensure done marker is sent.
 		if ( function_exists( 'flush' ) ) {
 			flush();
 		}
+		if ( function_exists( 'wp_ob_end_flush_all' ) ) {
+			wp_ob_end_flush_all();
+		}
+		@ob_flush(); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	}
 
 	/**
