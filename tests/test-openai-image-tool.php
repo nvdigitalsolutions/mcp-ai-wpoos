@@ -85,7 +85,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 				'prompt'          => 'A friendly robot painting a portrait',
 				'model'           => 'gpt-image-test',
 				'size'            => '1024x1792',
-				'quality'         => 'hd',
+				'quality'         => 'high',
 				'format'          => 'png',
 				'response_format' => 'b64_json',
 				'file_name'       => 'robot-art',
@@ -108,7 +108,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'url', $result );
 		$this->assertSame( 'png', $result['format'] );
 		$this->assertSame( '1024x1792', $result['size'] );
-		$this->assertSame( 'hd', $result['quality'] );
+		$this->assertSame( 'high', $result['quality'] );
 		$this->assertSame( 'gpt-image-test', $result['model'] );
 		$this->assertSame( 'b64_json', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
@@ -130,12 +130,13 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 	/**
 	 * The tool should fall back to the configured image defaults when optional arguments are omitted.
+	 * Note: 'hd' quality will be sanitized to 'medium' as per the quality mapping patch.
 	 */
 	public function test_execute_uses_configured_defaults_when_arguments_missing() {
 		$settings                                 = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key']               = 'sk-test';
 		$settings['openai_image_size']            = '1792x1024';
-		$settings['openai_image_quality']         = 'hd';
+		$settings['openai_image_quality']         = 'high';
 		$settings['openai_image_response_format'] = 'url';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -186,7 +187,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$payload = json_decode( $captured_request['args']['body'], true );
 		$this->assertIsArray( $payload );
 		$this->assertSame( '1792x1024', $payload['size'] );
-		$this->assertSame( 'hd', $payload['quality'] );
+		$this->assertSame( 'high', $payload['quality'] );
 		$this->assertArrayHasKey( 'response_format', $payload );
 		$this->assertSame( 'url', $payload['response_format'] );
 
@@ -652,9 +653,9 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that DALL-E 3 still accepts 'hd' quality.
+	 * Test that DALL-E 3 'hd' quality is sanitized to 'medium' (quality mapping patch).
 	 */
-	public function test_dalle_3_accepts_hd_quality() {
+	public function test_dalle_3_hd_quality_sanitized_to_medium() {
 		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
 		$settings['openai_api_key'] = 'sk-test';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -691,6 +692,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
+		// Try to use 'hd' - it should be sanitized to 'medium'.
 		$result = $tool->execute(
 			array(
 				'prompt'  => 'A high-def test image',
@@ -704,11 +706,77 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertNotNull( $captured_request );
 		$payload = json_decode( $captured_request['args']['body'], true );
-		$this->assertSame( 'hd', $payload['quality'] );
-		$this->assertSame( 'hd', $result['quality'] );
+		// 'hd' should be sanitized to 'medium'.
+		$this->assertSame( 'medium', $payload['quality'] );
+		$this->assertSame( 'medium', $result['quality'] );
 
 		if ( ! empty( $result['attachment_id'] ) ) {
 			wp_delete_attachment( $result['attachment_id'], true );
+		}
+	}
+
+	/**
+	 * Test that quality sanitization guards against invalid values.
+	 */
+	public function test_quality_sanitization_guards_against_invalid_values() {
+		$settings                   = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$settings['openai_api_key'] = 'sk-test';
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$tool       = new WP_MCP_AI_Tool_Generate_OpenAI_Image();
+		$png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YwH0e0AAAAASUVORK5CYII=';
+
+		$invalid_qualities = array( 'standard', 'hd', 'ultra', 'best', '', null, 'invalid' );
+
+		foreach ( $invalid_qualities as $invalid_quality ) {
+			$captured_request = null;
+
+			$http_stub = function ( $preempt, $args, $url ) use ( &$captured_request, $png_base64 ) {
+				$captured_request = array(
+					'args' => $args,
+					'url'  => $url,
+				);
+
+				$payload = array(
+					'created' => time(),
+					'model'   => 'gpt-image-1',
+					'data'    => array(
+						array(
+							'b64_json' => $png_base64,
+						),
+					),
+				);
+
+				return array(
+					'body'     => wp_json_encode( $payload ),
+					'response' => array( 'code' => 200 ),
+					'headers'  => array( 'content-type' => 'application/json' ),
+				);
+			};
+
+			add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+			$result = $tool->execute(
+				array(
+					'prompt'  => 'Test image with invalid quality',
+					'quality' => $invalid_quality,
+				),
+				array( 'user_id' => $user_id )
+			);
+
+			remove_filter( 'pre_http_request', $http_stub, 10 );
+
+			$this->assertNotNull( $captured_request, "Request not captured for quality: " . var_export( $invalid_quality, true ) );
+			$payload = json_decode( $captured_request['args']['body'], true );
+			// All invalid qualities should fall back to 'medium'.
+			$this->assertSame( 'medium', $payload['quality'], "Quality should be 'medium' for invalid value: " . var_export( $invalid_quality, true ) );
+
+			if ( ! empty( $result['attachment_id'] ) ) {
+				wp_delete_attachment( $result['attachment_id'], true );
+			}
 		}
 	}
 }
