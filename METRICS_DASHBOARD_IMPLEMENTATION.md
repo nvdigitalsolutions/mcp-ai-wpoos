@@ -87,18 +87,19 @@ Parameters:
 
 Returns: Formatted metrics data for download
 
-## Filter Hooks Added
+## Action Hooks
 
-### For Usage Tracking Integration
+### Automatic Usage Tracking
+
+The usage tracker automatically hooks into the existing `wp_mcp_ai_after_chat_response` action that is already fired in the REST controller.
+
+**Action Hook Signature:**
 ```php
-// Start tracking
-apply_filters( 'wp_mcp_ai_before_chat_request', $data, $assistant_id );
-
-// Complete tracking
-apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, $context );
+// Already exists in includes/class-wp-mcp-ai-rest.php (lines 2390, 2744)
+do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 ```
 
-These hooks should be added to the chat handler in `includes/class-wp-mcp-ai-rest.php` to enable automatic usage tracking.
+The tracker listens for this action and automatically records usage metrics. No additional integration code is needed.
 
 ## Dashboard Features
 
@@ -112,28 +113,19 @@ These hooks should be added to the chat handler in `includes/class-wp-mcp-ai-res
 
 ## Integration Requirements
 
-### Required for Full Functionality
+### Automatic Integration
 
-1. **Add Filter Hooks to Chat Handler**
-   In `includes/class-wp-mcp-ai-rest.php`, add these hooks to `handle_chat_request()`:
+The usage tracker automatically hooks into the existing `wp_mcp_ai_after_chat_response` action that's already fired in the REST controller. **No manual integration is required.**
 
-   ```php
-   // Before chat execution
-   $start_data = apply_filters( 'wp_mcp_ai_before_chat_request', null, $assistant_id );
-   
-   // After chat completion (where $response is the chat result)
-   $response = apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array( 'operation_type' => 'chat' ) );
-   ```
+### Chart.js Library
+- Already included via CDN in admin page
+- Loads Chart.js 4.4.0 from jsdelivr.net
+- Falls back gracefully if CDN unavailable
 
-2. **Chart.js Library**
-   - Already included via CDN in admin page
-   - Loads Chart.js 4.4.0 from jsdelivr.net
-   - Falls back gracefully if CDN unavailable
-
-3. **Browser Requirements**
-   - Modern browser with JavaScript enabled
-   - Chart.js requires ES6 support
-   - Works on Chrome, Firefox, Safari, Edge (latest versions)
+### Browser Requirements
+- Modern browser with JavaScript enabled
+- Chart.js requires ES6 support
+- Works on Chrome, Firefox, Safari, Edge (latest versions)
 
 ## Security
 
@@ -164,7 +156,7 @@ Test files:
 
 ## Next Steps
 
-1. **Add Filter Hooks** - Integrate tracking hooks into chat handler
+1. ~~**Add Action Hooks** - Integrate tracking hooks into chat handler~~ ✅ Already exists, tracker uses it automatically
 2. **Test UI** - Verify dashboard renders correctly in WordPress
 3. **Documentation** - Add user guide for metrics dashboard
 4. **Alerting** - Add configuration panel for threshold alerts
