@@ -83,6 +83,12 @@ class WP_MCP_AI_Elementor_Integration {
 			'class-wp-mcp-ai-elementor-dashboard-theme-preview-widget.php',
 			'class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php',
 			'class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php',
+			'class-wp-mcp-ai-elementor-performance-test-runner-widget.php',
+			'class-wp-mcp-ai-elementor-performance-metrics-widget.php',
+			'class-wp-mcp-ai-elementor-performance-trends-widget.php',
+			'class-wp-mcp-ai-elementor-test-results-table-widget.php',
+			'class-wp-mcp-ai-elementor-performance-recommendations-widget.php',
+			'class-wp-mcp-ai-elementor-system-health-status-widget.php',
 		);
 
 		foreach ( $widget_files as $file ) {
@@ -109,6 +115,12 @@ class WP_MCP_AI_Elementor_Integration {
 			'WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget',
 			'WP_MCP_AI_Elementor_Dashboard_Provider_Links_Widget',
 			'WP_MCP_AI_Elementor_Dashboard_Activity_Feed_Widget',
+			'WP_MCP_AI_Elementor_Performance_Test_Runner_Widget',
+			'WP_MCP_AI_Elementor_Performance_Metrics_Widget',
+			'WP_MCP_AI_Elementor_Performance_Trends_Widget',
+			'WP_MCP_AI_Elementor_Test_Results_Table_Widget',
+			'WP_MCP_AI_Elementor_Performance_Recommendations_Widget',
+			'WP_MCP_AI_Elementor_System_Health_Status_Widget',
 		);
 
 		foreach ( $widget_classes as $widget_class ) {
