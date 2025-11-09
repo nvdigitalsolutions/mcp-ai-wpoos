@@ -5275,6 +5275,9 @@
                 const events = buffer.split('\n\n');
                 buffer = events.pop() || ''; // Keep incomplete event in buffer
 
+                // Variable to store final result if we encounter it
+                let finalResult = null;
+
                 for (let i = 0; i < events.length; i++) {
                     const eventBlock = events[i];
                     if (!eventBlock.trim()) {
@@ -5331,9 +5334,11 @@
                             } else if (data.data) {
                                 // Final response with complete data
                                 if (window.console && console.log) {
-                                    console.log('[WP oOS SSE] Received final message event, returning finalData');
+                                    console.log('[WP oOS SSE] Received final message event, will return finalData');
                                 }
-                                return { content: fullContent, finalData: data };
+                                finalResult = { content: fullContent, finalData: data };
+                                // Break out of the loop to return the result
+                                break;
                             }
                         }
                     } catch (parseError) {
@@ -5342,6 +5347,14 @@
                             console.warn('[WP oOS SSE] Failed to parse event data:', eventData, parseError);
                         }
                     }
+                }
+
+                // If we found final data, return it immediately
+                if (finalResult) {
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Returning final result:', finalResult);
+                    }
+                    return finalResult;
                 }
 
                 // Continue reading
