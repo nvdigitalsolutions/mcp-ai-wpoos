@@ -6,11 +6,12 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 51+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 52+ files (all in docs/ folder, 5+ key files in root)
 
-**📋 Note:** As of November 8, 2025, 107 audit reports and summaries have been consolidated into two organized reference documents:
-- [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Chronological development history
-- [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) - Technical fixes and implementations
+**📋 Note:** As of November 9, 2025, all implementation summaries and security reports have been consolidated into centralized reference documents:
+- Implementation summaries moved to [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md)
+- Security summaries integrated into [SECURITY_INDEX.md](SECURITY_INDEX.md)
+- Root-level summary files removed for cleaner repository structure
 
 ---
 
@@ -46,17 +47,28 @@ This document provides a comprehensive index of all documentation available for 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) | Consolidated chronological history of all development milestones, code reviews, refactoring sessions, and major changes (consolidates 107 documents) | Developers |
+| [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) | Consolidated chronological history of all development milestones, code reviews, refactoring sessions, and major changes. **Updated Nov 9, 2025** with orchestration enhancements, Gutenberg blocks, security gap closure, and performance optimizations. | Developers |
 | [TECHNICAL-REFERENCE.md](TECHNICAL-REFERENCE.md) | Consolidated technical documentation for bug fixes, troubleshooting, architecture decisions, and implementation details (consolidates 107 documents) | Developers |
 
-**What was consolidated:**
-These two documents replace 107 individual audit reports, summaries, and status documents that were previously in the repository root. They provide:
-- Complete development timeline and history
-- All bug fixes and their technical solutions
-- Implementation guides for all features
-- Troubleshooting procedures
-- Security audit results
-- Architecture decisions and rationale
+**What was consolidated (Nov 9, 2025 update):**
+These documents now include the following root-level files that have been integrated:
+- `AGENTIC_WORKFLOW_IMPLEMENTATION_SUMMARY.md` - Agentic workflow tests and implementation
+- `IMPLEMENTATION_SUMMARY.md` - Gutenberg blocks implementation (21 blocks)
+- `PHASE-1-COMPLETE.md` - Performance optimization phase 1
+- `GAP_CLOSURE_COMPLETE.md` - Security gap closure (5.00/5 score)
+- `IMPLEMENTATION-VERIFICATION.md` - Token budget & governance implementation
+- `SECURITY_AUDIT_COMPLETION.md` - Security audit summary
+- `SECURITY_CHECKS.md` - Security test implementation
+- `SECURITY_IMPLEMENTATION_SUMMARY.md` - Security test coverage
+- `TOOL_EXECUTION_SECURITY_SUMMARY.md` - Tool security enhancements
+- `TOOL_SYSTEM_ROBUSTNESS_SUMMARY.md` - Tool system improvements
+
+**Benefits of consolidation:**
+- Single source of truth for development history
+- Cleaner repository root structure
+- Easier to find and navigate documentation
+- Reduced documentation redundancy
+- Comprehensive chronological record
 
 ### Getting Started
 
@@ -83,12 +95,14 @@ These two documents replace 107 individual audit reports, summaries, and status 
 |----------|-------------|----------|
 | [chatkit-integration.md](chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
+| [blocks-reference.md](blocks-reference.md) | **NEW:** Gutenberg blocks documentation - 21 blocks for chat, assistant config, and dashboards | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
 
 ### Frontend & User Experience
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [DISPLAYS-DASHBOARD.md](DISPLAYS-DASHBOARD.md) | **NEW:** Displays Dashboard page - Centralized view of all Elementor widgets and Gutenberg blocks | Users/Admins |
 | [FRONTEND-ACCESSIBILITY.md](FRONTEND-ACCESSIBILITY.md) | **NEW:** Comprehensive accessibility (ARIA, WCAG 2.1), responsive design, and user feedback patterns | Developers/Designers |
 
 ### Remote Client Setup
