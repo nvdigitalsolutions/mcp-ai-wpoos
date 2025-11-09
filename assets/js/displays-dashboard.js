@@ -125,7 +125,8 @@
 			if (navigator.clipboard) {
 				navigator.clipboard.writeText(slug).then(function() {
 					// Show a temporary notification.
-					const $notification = $('<div class="notice notice-success is-dismissible" style="position: fixed; top: 32px; right: 20px; z-index: 9999;"><p>Slug copied to clipboard: <code>' + slug + '</code></p></div>');
+					const $notification = $('<div class="notice notice-success is-dismissible" style="position: fixed; top: 32px; right: 20px; z-index: 9999;"><p>Slug copied to clipboard: <code></code></p></div>');
+					$notification.find('code').text(slug);
 					$('body').append($notification);
 
 					setTimeout(function() {
