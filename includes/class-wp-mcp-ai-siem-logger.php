@@ -28,6 +28,37 @@ if ( ! class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
 		const FORMAT_CUSTOM = 'custom';
 
 		/**
+		 * Security event types.
+		 */
+		const EVENT_AUTH_SUCCESS      = 'auth_success';
+		const EVENT_AUTH_FAILURE      = 'auth_failure';
+		const EVENT_AUTH_LOGOUT       = 'auth_logout';
+		const EVENT_ACCESS_DENIED     = 'access_denied';
+		const EVENT_PRIVILEGE_CHANGE  = 'privilege_change';
+		const EVENT_API_KEY_CREATED   = 'api_key_created';
+		const EVENT_API_KEY_ROTATED   = 'api_key_rotated';
+		const EVENT_API_KEY_REVOKED   = 'api_key_revoked';
+		const EVENT_DATA_ACCESS       = 'data_access';
+		const EVENT_DATA_MODIFIED     = 'data_modified';
+		const EVENT_DATA_DELETED      = 'data_deleted';
+		const EVENT_CONFIG_CHANGE     = 'config_change';
+		const EVENT_RATE_LIMIT        = 'rate_limit';
+		const EVENT_SUSPICIOUS        = 'suspicious';
+		const EVENT_FILE_SCAN         = 'file_scan';
+
+		/**
+		 * Severity levels (RFC 5424).
+		 */
+		const SEVERITY_EMERGENCY = 0; // System is unusable.
+		const SEVERITY_ALERT     = 1; // Action must be taken immediately.
+		const SEVERITY_CRITICAL  = 2; // Critical conditions.
+		const SEVERITY_ERROR     = 3; // Error conditions.
+		const SEVERITY_WARNING   = 4; // Warning conditions.
+		const SEVERITY_NOTICE    = 5; // Normal but significant.
+		const SEVERITY_INFO      = 6; // Informational messages.
+		const SEVERITY_DEBUG     = 7; // Debug-level messages.
+
+		/**
 		 * Singleton instance.
 		 *
 		 * @var WP_MCP_AI_SIEM_Logger|null
@@ -70,6 +101,8 @@ if ( ! class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
 				'enabled'         => false,
 				'format'          => self::FORMAT_JSON,
 				'endpoint'        => '',
+				'endpoint_type'   => 'http',
+				'endpoint_url'    => '',
 				'facility'        => LOG_USER,
 				'severity_map'    => $this->get_default_severity_map(),
 				'batch_size'      => 100,
@@ -106,6 +139,140 @@ if ( ! class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
 		 */
 		public function is_enabled() {
 			return ! empty( $this->config['enabled'] );
+		}
+
+		/**
+		 * Check if SIEM export is enabled (static wrapper).
+		 *
+		 * @return bool
+		 */
+		public static function is_enabled_static() {
+			/**
+			 * Filter to enable/disable SIEM logging.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param bool $enabled Whether SIEM logging is enabled. Default false.
+			 */
+			return apply_filters( 'wp_mcp_ai_siem_enabled', false );
+		}
+
+		/**
+		 * Log a security event (static wrapper for external callers).
+		 *
+		 * This is the public API that other classes should use.
+		 *
+		 * @param string $event_type Event type (use EVENT_* constants).
+		 * @param string $message    Event message.
+		 * @param array  $context    Event context data.
+		 * @param int    $severity   Event severity (use SEVERITY_* constants).
+		 * @return bool True on success, false on failure.
+		 */
+		public static function log_security_event( $event_type, $message, $context = array(), $severity = self::SEVERITY_INFO ) {
+			if ( ! self::is_enabled_static() ) {
+				return false;
+			}
+
+			$instance = self::get_instance();
+			
+			// Convert severity int to string for internal API.
+			$severity_string = self::severity_to_string( $severity );
+			
+			return $instance->export_event( $event_type, $message, $context, $severity_string );
+		}
+
+		/**
+		 * Convert severity integer to string.
+		 *
+		 * @param int $severity Severity level constant.
+		 * @return string Severity string.
+		 */
+		private static function severity_to_string( $severity ) {
+			$map = array(
+				self::SEVERITY_EMERGENCY => 'emergency',
+				self::SEVERITY_ALERT     => 'alert',
+				self::SEVERITY_CRITICAL  => 'critical',
+				self::SEVERITY_ERROR     => 'error',
+				self::SEVERITY_WARNING   => 'warning',
+				self::SEVERITY_NOTICE    => 'notice',
+				self::SEVERITY_INFO      => 'info',
+				self::SEVERITY_DEBUG     => 'debug',
+			);
+
+			return isset( $map[ $severity ] ) ? $map[ $severity ] : 'info';
+		}
+
+		/**
+		 * Get severity label for a severity level (for tests).
+		 *
+		 * @param int $severity Severity level constant.
+		 * @return string Severity label.
+		 */
+		private static function get_severity_label( $severity ) {
+			$labels = array(
+				self::SEVERITY_EMERGENCY => 'EMERGENCY',
+				self::SEVERITY_ALERT     => 'ALERT',
+				self::SEVERITY_CRITICAL  => 'CRITICAL',
+				self::SEVERITY_ERROR     => 'ERROR',
+				self::SEVERITY_WARNING   => 'WARNING',
+				self::SEVERITY_NOTICE    => 'NOTICE',
+				self::SEVERITY_INFO      => 'INFO',
+				self::SEVERITY_DEBUG     => 'DEBUG',
+			);
+
+			return isset( $labels[ $severity ] ) ? $labels[ $severity ] : 'INFO';
+		}
+
+		/**
+		 * Generate a correlation ID (static wrapper for tests).
+		 *
+		 * @return string Correlation ID.
+		 */
+		public static function generate_correlation_id() {
+			return sprintf(
+				'wpmcp-%s-%s',
+				time(),
+				wp_generate_password( 12, false, false )
+			);
+		}
+
+		/**
+		 * Get SIEM configuration (static wrapper for tests).
+		 *
+		 * @return array Configuration array.
+		 */
+		public static function get_config() {
+			$instance = self::get_instance();
+			return $instance->config;
+		}
+
+		/**
+		 * Anonymize an IP address (static wrapper for tests).
+		 *
+		 * @param string $ip IP address to anonymize.
+		 * @return string Anonymized IP address.
+		 */
+		private static function anonymize_ip( $ip ) {
+			// IPv4.
+			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				$parts = explode( '.', $ip );
+				$parts[3] = '0';
+				return implode( '.', $parts );
+			}
+
+			// IPv6.
+			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+				$parts = explode( ':', $ip );
+				// Zero out the last 4 groups.
+				for ( $i = count( $parts ) - 4; $i < count( $parts ); $i++ ) {
+					if ( isset( $parts[ $i ] ) ) {
+						$parts[ $i ] = '0';
+					}
+				}
+				return implode( ':', $parts );
+			}
+
+			return $ip;
 		}
 
 		/**
