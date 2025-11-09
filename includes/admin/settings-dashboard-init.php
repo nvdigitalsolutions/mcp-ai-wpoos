@@ -36,6 +36,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-w
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-security.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
 
 // Load integration admin pages.
@@ -75,6 +76,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Elementor_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Token_Manager() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Performance() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );
 
 		// Initialize the dashboard controller.
