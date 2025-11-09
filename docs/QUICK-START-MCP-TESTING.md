@@ -5,7 +5,7 @@ If you're unable to run tests from the WP oOS MCP Diagnostic page, follow these 
 ## 1. Verify System Requirements
 
 - ✅ WordPress 6.0 or later
-- ✅ PHP 7.4 or later  
+- ✅ PHP 8.1 or later  
 - ✅ Permalinks NOT set to "Plain" (Settings → Permalinks)
 - ✅ User has Administrator role
 

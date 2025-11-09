@@ -42,6 +42,7 @@
         }
     },
     "require": {
+        "php": ">=8.1",
         "notifylk/notify-php": "dev-master",
         "rahul900day/tiktoken-php": "^1.0",
         "symfony/http-client": "^7.3",

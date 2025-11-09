@@ -545,9 +545,13 @@ public function render_diagnostic_buttons() {
 
 ### Compatibility Fixes
 
-#### PHP 7.4 Compatibility
+**Note:** As of version 1.0.0, the plugin requires PHP 8.1+. The following sections document historical compatibility efforts for PHP 7.4 support.
+
+#### PHP 7.4 Compatibility (Historical - No Longer Supported)
 **Issue:** Plugin not working on PHP 7.4  
 **Symptoms:** Parse errors, fatal errors on activation
+
+**Current Status:** PHP 7.4 support has been discontinued. The plugin now requires PHP 8.1 or later.
 
 **Root Causes:**
 - Using PHP 8.0+ features (named arguments, union types)

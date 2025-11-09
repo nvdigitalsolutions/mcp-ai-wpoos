@@ -551,7 +551,7 @@ includes/
 ```json
 {
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.1",
         "notifylk/notify-php": "^1.0"
     },
     "require-dev": {

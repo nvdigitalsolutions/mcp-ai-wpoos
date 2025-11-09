@@ -163,12 +163,12 @@ This document provides a detailed comparison between the Base Version and Full V
 ## Configuration Requirements
 
 ### Base Version (Default)
-1. WordPress 6.0+ with PHP 7.4+
+1. WordPress 6.0+ with PHP 8.1+
 2. OpenAI API key OR Gemini API key OR Ollama/LM Studio
 3. **No configuration needed** - Base version is enabled by default
 
 ### Full Version
-1. WordPress 6.0+ with PHP 7.4+
+1. WordPress 6.0+ with PHP 8.1+
 2. OpenAI API key OR Gemini API key OR Ollama/LM Studio
 3. Define constant in wp-config.php: `define( 'WP_MCP_AI_BASE_VERSION', false );`
 4. Optional: WooCommerce, JetEngine, Elementor, etc.
