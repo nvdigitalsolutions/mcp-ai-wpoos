@@ -117,7 +117,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					case 'number':
-					case 'range':
 						$sanitized[ $key ] = absint( $value );
 						break;
 
@@ -251,19 +250,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							</select>
 							<?php
 							break;
-
-case 'range':
-$min  = isset( $field['min'] ) ? absint( $field['min'] ) : 0;
-$max  = isset( $field['max'] ) ? absint( $field['max'] ) : 100;
-$step = isset( $field['step'] ) ? absint( $field['step'] ) : 1;
-$unit = isset( $field['unit'] ) ? esc_html( $field['unit'] ) : '';
-?>
-<div class="wp-mcp-ai-range-wrapper" style="display:flex;align-items:center;gap:15px;max-width:500px;">
-<input type="range" id="<?php echo esc_attr( $key ); ?>" name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]" value="<?php echo esc_attr( $value ); ?>" min="<?php echo esc_attr( $min ); ?>" max="<?php echo esc_attr( $max ); ?>" step="<?php echo esc_attr( $step ); ?>" style="flex:1;height:6px;cursor:pointer;" oninput="document.getElementById('<?php echo esc_attr( $key ); ?>_val').textContent=this.value" <?php echo $required ? 'required' : ''; ?> />
-<span style="min-width:80px;text-align:right;"><strong id="<?php echo esc_attr( $key ); ?>_val" style="color:#2271b1;font-size:16px;"><?php echo esc_html( $value ); ?></strong><?php echo esc_html( $unit ); ?></span>
-</div>
-<?php
-break;
 					}
 
 					if ( $description ) :

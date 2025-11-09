@@ -14,7 +14,6 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-security-validator.php';
 
 if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	/**
@@ -878,166 +877,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				),
 				true
-			);
-
-			// Health check and metrics endpoints.
-			register_rest_route(
-				self::REST_NAMESPACE,
-				'/health',
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => '__return_true',
-					'callback'            => array( $this, 'handle_health_check' ),
-				),
-				true
-			);
-
-			register_rest_route(
-				self::REST_NAMESPACE,
-				'/health/providers',
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'admin_permissions_check' ),
-					'callback'            => array( $this, 'handle_providers_health' ),
-				),
-				true
-			);
-
-			register_rest_route(
-				self::REST_NAMESPACE,
-				'/metrics',
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'admin_permissions_check' ),
-					'callback'            => array( $this, 'handle_metrics' ),
-				),
-				true
-			);
-
-			register_rest_route(
-				self::REST_NAMESPACE,
-				'/metrics/reset',
-				array(
-					'methods'             => WP_REST_Server::CREATABLE,
-					'permission_callback' => array( $this, 'admin_permissions_check' ),
-					'callback'            => array( $this, 'handle_metrics_reset' ),
-					'args'                => array(
-						'category' => array(
-							'description'       => __( 'Metrics category to reset. If empty, resets all.', 'wp-mcp-ai' ),
-							'type'              => 'string',
-							'required'          => false,
-							'sanitize_callback' => 'sanitize_key',
-						),
-					),
-				),
-				true
-			);
-		}
-
-		/**
-		 * Admin permission callback.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return bool|WP_Error True if authorized, WP_Error otherwise.
-		 */
-		public function admin_permissions_check( WP_REST_Request $request ) {
-			if ( ! current_user_can( 'manage_options' ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to access this endpoint.', 'wp-mcp-ai' ),
-					array( 'status' => 403 )
-				);
-			}
-
-			return true;
-		}
-
-		/**
-		 * Handle health check request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_health_check( WP_REST_Request $request ) {
-			$health = array(
-				'status'    => 'healthy',
-				'timestamp' => current_time( 'c', true ),
-				'version'   => WP_MCP_AI_VERSION,
-			);
-
-			return rest_ensure_response( $health );
-		}
-
-		/**
-		 * Handle providers health check request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_providers_health( WP_REST_Request $request ) {
-			if ( ! class_exists( 'WP_MCP_AI_Circuit_Breaker' ) ) {
-				return rest_ensure_response( array( 'error' => 'Circuit breaker not available' ) );
-			}
-
-			$providers = array( 'openai', 'gemini', 'anthropic', 'ollama', 'lm_studio' );
-			$health    = array();
-
-			foreach ( $providers as $provider ) {
-				$health[ $provider ] = WP_MCP_AI_Circuit_Breaker::get_health_metrics( $provider );
-			}
-
-			return rest_ensure_response(
-				array(
-					'timestamp' => current_time( 'c', true ),
-					'providers' => $health,
-				)
-			);
-		}
-
-		/**
-		 * Handle metrics request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_metrics( WP_REST_Request $request ) {
-			if ( ! class_exists( 'WP_MCP_AI_Metrics' ) ) {
-				return rest_ensure_response( array( 'error' => 'Metrics system not available' ) );
-			}
-
-			$summary = WP_MCP_AI_Metrics::get_metrics_summary();
-
-			return rest_ensure_response(
-				array(
-					'timestamp' => current_time( 'c', true ),
-					'metrics'   => $summary,
-				)
-			);
-		}
-
-		/**
-		 * Handle metrics reset request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_metrics_reset( WP_REST_Request $request ) {
-			if ( ! class_exists( 'WP_MCP_AI_Metrics' ) ) {
-				return rest_ensure_response( array( 'error' => 'Metrics system not available' ) );
-			}
-
-			$category = $request->get_param( 'category' );
-
-			WP_MCP_AI_Metrics::reset( $category ? $category : '' );
-
-			return rest_ensure_response(
-				array(
-					'success'   => true,
-					'message'   => $category 
-						? sprintf( 'Metrics category "%s" reset successfully.', $category )
-						: 'All metrics reset successfully.',
-					'timestamp' => current_time( 'c', true ),
-				)
 			);
 		}
 
@@ -3384,13 +3223,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( empty( $prepared_arguments['identifier'] ) && ! empty( $assistant_config['external_action_identifier'] ) ) {
 					$prepared_arguments['identifier'] = $assistant_config['external_action_identifier'];
 				}
-			}
-
-			// Perform centralized security validation before tool execution.
-			$security_check = WP_MCP_AI_Tool_Security_Validator::validate_tool_execution( $tool, $prepared_arguments, $context );
-			if ( is_wp_error( $security_check ) ) {
-				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $security_check, $context );
-				return $security_check;
 			}
 
 			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );

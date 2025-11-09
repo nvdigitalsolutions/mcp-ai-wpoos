@@ -122,14 +122,6 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			}
 		}
 
-		// Check if user has opted out of transcript recording.
-		if ( class_exists( 'WP_MCP_AI_Privacy_Controls' ) ) {
-			$user_id = get_current_user_id();
-			if ( $user_id && WP_MCP_AI_Privacy_Controls::has_user_opted_out( $user_id ) ) {
-				$save_transcript = false;
-			}
-		}
-
 		/**
 		 * Filter whether the current chat transcript should be saved.
 		 *

@@ -171,35 +171,11 @@ The plugin exposes MCP-compliant REST endpoints at `/wp-json/mcp-ai/v1/`:
 
 ### Authentication
 
-Four authentication methods are supported:
+Three authentication methods are supported:
 1. **WordPress Nonce**: For same-origin requests (`X-WP-Nonce` header)
 2. **Assistant Credentials**: Plugin-issued bearer tokens (`Authorization: Bearer cred_xxxxx.SECRET`)
 3. **Auth0 Tokens**: For enterprise integrations (`Authorization: Bearer <Auth0-token>`)
 4. **Guest Tokens**: Temporary tokens for public chat surfaces (`X-WP-MCP-AI-Guest` header)
-
-#### Guest Token Security Model
-
-Guest tokens provide limited, time-bound access for unauthenticated users:
-
-**Token Characteristics:**
-- **Lifetime**: Configurable from 60 seconds to 7 days (default: 24 hours)
-- **Scope**: Each token is tied to a specific assistant ID
-- **Storage**: Tokens are stored as transients with MD5-hashed keys
-- **Generation**: Automatically created when `allow_guests="true"` is set on chat shortcodes/widgets
-- **Validation**: Tokens are validated against the assistant ID and refresh their TTL on each valid use
-
-**Access Restrictions:**
-- **Capability Level**: Guest tokens set the capability to 'public', bypassing normal authentication
-- **File Access**: Guests can only access publicly accessible attachments (those with public post status or inherited from public parent posts)
-- **Tool Execution**: All tools execute with guest context; tools should implement their own capability checks
-- **Rate Limiting**: Subject to standard WordPress rate limiting and can be monitored via audit logs
-
-**Security Measures:**
-- Tokens cannot be used across different assistants
-- Expired tokens are automatically purged from transients
-- All guest activity is logged for audit purposes
-- Administrators can configure token lifetime in Settings → WP oOS → Authentication
-- Guest access is opt-in per assistant via shortcode/widget attributes
 
 ### Data Storage
 

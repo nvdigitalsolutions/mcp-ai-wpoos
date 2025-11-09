@@ -29,14 +29,11 @@
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
 - [🧊 Elementor Widgets](#-elementor-widgets)
-- [🧩 Gutenberg Blocks](#-gutenberg-blocks)
 
 ### Performance & Optimization
 - [⚡ Message Bundling](#-message-bundling)
 - [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
-- [💰 Per-Assistant Token Budgets](#-per-assistant-token-budgets)
 - [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
-- [🏥 SIEM-Integrated Health Monitoring](#-siem-integrated-health-monitoring)
 - [🌐 Mesh Compute Routing](#-mesh-compute-routing)
 - [🔗 Federation & Discovery System](#-federation--discovery-system)
 
@@ -164,9 +161,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
 - 🔄 Automatic synchronization to JetEngine Custom Content Types when available (CPT → CCT)
 - 💬 Chat interface via `[mcp_ai_chat assistant="ID"]`
-- 🧱 **21 Gutenberg blocks** for chat interfaces, assistant configuration, and operational dashboards - complete parity with Elementor widgets for block editor users【F:includes/blocks/†L1-L1098】
 - 🧰 Per-assistant defaults for model, temperature, and system prompt baked into every chat request
-- 💰 **Per-assistant token budgets** with configurable time windows (60s-24h) and graceful HTTP 429 limit handling. Set 0-10M token quotas that automatically reset, with comprehensive audit logging【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L17-L34】【F:includes/class-wp-mcp-ai-token-budget-manager.php†L660-L769】
 - 🔍 Search Media Library knowledge attachments with permission-aware download URLs
 - ⚡ Build reusable prompt shortcuts with optional tool targeting and inline descriptions so operators can trigger common tasks with one click.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L893-L1048】【F:includes/class-wp-mcp-ai-shortcode.php†L430-L693】【F:assets/js/chat.js†L600-L666】
 - 🧊 Elementor widgets for embedding chat surfaces, onboarding content, and MCP dashboards inside Elementor
@@ -215,13 +210,11 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 ### Performance & reliability
 - ⚡ Client-side message bundling (800ms window) to reduce API calls and server load【F:docs/message-bundling-feature.md†L1-L80】
 - 🎯 Intelligent token overflow handling with automatic model switching (gpt-4o-mini → Gemini 2.0 Flash)【F:docs/high-token-tool-handling.md†L1-L80】
-- 🏥 **SIEM-integrated health monitoring** with predictive resource management, ML-based forecasting, and 12 configuration presets for common scenarios. Real-time resource allocation adjustments with comprehensive logging【F:docs/ORCHESTRATION-LAYER-ARCHITECTURE.md†L1-L100】【F:docs/orchestration-token-manager-enhancements.md†L1-L100】
 - 📡 **Server-Sent Events (SSE) support** for real-time streaming responses and job notifications【F:docs/ENABLE-SSE-STREAMING.md†L1-L100】
 - 🌊 Real-time job status updates via SSE streaming and webhook notifications for async operations【F:docs/job-notification-system.md†L1-L100】
 - 🔄 Server-side WP-Cron polling for long-running tasks (Crawl4AI, background jobs)
 - 💾 Chat history persistence with localStorage (24h) and optional JetEngine CCT storage【F:docs/chat-history-persistence.md†L1-L50】
 - ⚙️ **Optimized settings page** with external CSS stylesheet (240 lines added to admin-settings.css) and request-level caching for improved admin performance【F:assets/css/admin-settings.css†L1-L984】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L27-L32】
-- 🗄️ **REST API caching system** with transient-based response caching (5-30 min) and HTTP cache headers, delivering 50-70% reduction in database queries and 15-30% faster page loads【F:includes/class-wp-mcp-ai-rest-cache.php†L1-L200】
 
 ## 🧠 Memory & Tool Stack Overview
 
@@ -843,38 +836,6 @@ Sites running Elementor automatically register a suite of MCP blocks so you can 
 - **WP oOS Provider Quick Links** – Reuses the OpenAI usage/log tools to populate external billing and telemetry shortcuts that open in new tabs for rapid debugging.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-provider-links-widget.php†L48-L166】
 - **WP oOS Activity Feed** – Streams the latest MCP log entries (tool runs, chat interactions, and optional provider requests), collapsing raw context into expandable JSON blocks for deeper analysis.【F:includes/elementor/class-wp-mcp-ai-elementor-dashboard-activity-feed-widget.php†L48-L210】
 
-## 🧩 Gutenberg Blocks
-
-For sites using the WordPress Block Editor (Gutenberg), WP oOS provides **21 native blocks** that offer complete feature parity with the Elementor widgets. All blocks are automatically registered when the plugin is activated, requiring no additional configuration.【F:includes/blocks/†L1-L1098】
-
-### Chat Interface Blocks
-- **WP oOS Chat** – Full-featured chat interface with assistant selection, guest access toggle, and all shortcode capabilities【F:includes/blocks/class-wp-mcp-ai-chat-blocks.php†L1-L265】【F:assets/js/chat-blocks.js†L1-L191】
-- **WP oOS Chat Intro** – Configurable hero section with headings, talking points, and call-to-action button【F:includes/blocks/class-wp-mcp-ai-chat-blocks.php†L1-L265】
-- **WP oOS Chat FAQ** – FAQ repeater for documenting policies and best practices in context【F:includes/blocks/class-wp-mcp-ai-chat-blocks.php†L1-L265】
-- **WP oOS Chat Usage Timer** – Focus timer with per-user token consumption tracking【F:includes/blocks/class-wp-mcp-ai-chat-blocks.php†L1-L265】
-
-### Assistant Configuration Blocks
-- **WP oOS Assistant Defaults** – Display and configure assistant default settings【F:includes/blocks/class-wp-mcp-ai-assistant-blocks.php†L1-L496】【F:assets/js/assistant-blocks.js†L1-L324】
-- **WP oOS Assistant Base Knowledge** – Manage assistant knowledge base and vector stores【F:includes/blocks/class-wp-mcp-ai-assistant-blocks.php†L1-L496】
-- **WP oOS Assistant Prompt Shortcuts** – Configure reusable prompt shortcuts with tool targeting【F:includes/blocks/class-wp-mcp-ai-assistant-blocks.php†L1-L496】
-- **WP oOS Assistant Tools** – Manage which tools are available to the assistant【F:includes/blocks/class-wp-mcp-ai-assistant-blocks.php†L1-L496】
-
-### Dashboard & Operations Blocks
-- **WP oOS Dashboard Tool Matrix** – Visual matrix of all tools with capability requirements【F:includes/blocks/class-wp-mcp-ai-dashboard-blocks.php†L1-L337】【F:assets/js/dashboard-blocks.js†L1-L115】
-- **WP oOS User Capability Snapshot** – Current user's capabilities and permissions summary
-- **WP oOS Theme Preview** – Preview chat interface with current color scheme
-- **WP oOS Provider Quick Links** – Quick access to provider dashboards and billing
-- **WP oOS Activity Feed** – Live stream of MCP operations and tool executions
-
-### Performance Monitoring Blocks
-- **WP oOS Performance Overview** – System performance metrics and statistics【F:includes/blocks/class-wp-mcp-ai-performance-blocks.php†L1-L600】【F:assets/js/performance-blocks.js†L1-L400】
-- **WP oOS Cache Stats** – REST API cache hit rates and performance
-- **WP oOS Database Query Stats** – Database query optimization metrics
-- **WP oOS Memory Usage** – PHP memory consumption tracking
-- **WP oOS API Response Times** – Provider API latency monitoring
-
-**Implementation:** All blocks are server-rendered for optimal performance and SEO, with JavaScript enhancements for interactive features. Block registration is automatic and requires no manual initialization.
-
 ## 🧮 Usage Tracking
 
 The plugin records aggregate token usage per user, provider, and model whenever responses include usage metadata, simplifying internal reconciliation or billing workflows. Usage data is stored as user meta and automatically purged when accounts are deleted, and hooks are exposed for custom reporting pipelines.【F:includes/class-wp-mcp-ai-usage-tracker.php†L12-L119】
@@ -985,70 +946,6 @@ Automatic model switching is enabled by default. Configure fallback model under 
 
 ➡️ See [docs/high-token-tool-handling.md](docs/high-token-tool-handling.md) for complete technical details and examples.
 
-## 💰 Per-Assistant Token Budgets
-
-WP oOS provides granular token budget controls at the assistant level, allowing administrators to set per-assistant quotas with configurable time windows and graceful limit handling.【F:includes/assistants/class-wp-mcp-ai-assistant-cpt.php†L17-L34】【F:includes/class-wp-mcp-ai-token-budget-manager.php†L660-L769】
-
-### Key Features
-
-- **Configurable Quotas**: Set token budgets from 0 to 10 million tokens per assistant (0 = unlimited)
-- **Flexible Time Windows**: Budget reset periods from 60 seconds to 24 hours (default: 1 hour)
-- **Per-User Tracking**: Budgets tracked separately for each user via WordPress transients
-- **Automatic Reset**: Budgets automatically reset when time window expires
-- **Graceful Degradation**: HTTP 429 responses with clear user-facing messages when limits exceeded
-- **Comprehensive Logging**: All budget events logged for audit and compliance
-
-### Configuration
-
-Configure per-assistant budgets in the assistant editor:
-
-1. **Token Budget** (`_wp_mcp_ai_token_budget` meta field)
-   - Range: 0-10,000,000 tokens
-   - Default: 0 (unlimited)
-   - Example: 100,000 tokens = ~75,000 words
-
-2. **Budget Window** (`_wp_mcp_ai_budget_window` meta field)
-   - Range: 60-86,400 seconds
-   - Default: 3,600 seconds (1 hour)
-   - Options: Hourly, daily, custom intervals
-
-### How It Works
-
-1. User sends message → System checks current token usage
-2. If under budget → Request proceeds normally
-3. If over budget → Returns HTTP 429 with helpful error:
-   ```json
-   {
-     "code": "budget_exceeded",
-     "message": "Token budget exceeded. Limit: 100,000 tokens. Used: 105,234 tokens. Resets in 45 minutes.",
-     "data": {
-       "limit": 100000,
-       "used": 105234,
-       "window": 3600,
-       "reset_time": "2025-11-09T15:30:00Z"
-     }
-   }
-   ```
-
-### Use Cases
-
-- **Free Tier Limits**: Set 10,000 token/hour budgets for guest users
-- **Department Quotas**: Allocate 500,000 tokens/day to specific teams
-- **Cost Control**: Prevent runaway API costs with hard limits
-- **Fair Usage**: Ensure equitable resource distribution across users
-- **Testing**: Small budgets for development/staging environments
-
-### Audit & Compliance
-
-All budget-related events are logged with:
-- User ID and assistant ID
-- Token consumption amounts
-- Budget limit and window
-- Timestamp and request details
-- Available for compliance reporting and forensic analysis
-
-➡️ See [IMPLEMENTATION-VERIFICATION.md](IMPLEMENTATION-VERIFICATION.md) for implementation details and testing results.
-
 ## 🔄 Chat Performance Optimizations
 
 WP oOS includes several performance optimizations to enhance the chat experience:
@@ -1060,82 +957,6 @@ WP oOS includes several performance optimizations to enhance the chat experience
 - **Rate limit protection** - Intelligent retry with exponential backoff【F:docs/rate-limit-protection.md†L1-L50】
 
 ➡️ See [docs/chat-performance-optimizations.md](docs/chat-performance-optimizations.md) for detailed performance tuning guide.
-
-## 🏥 SIEM-Integrated Health Monitoring
-
-WP oOS v1.0.0 introduces enterprise-grade health monitoring with SIEM integration, predictive resource management, and 12 pre-configured deployment presets.【F:docs/ORCHESTRATION-LAYER-ARCHITECTURE.md†L1-L100】【F:docs/orchestration-token-manager-enhancements.md†L1-L100】
-
-### Key Features
-
-#### Real-Time Health Monitoring
-- **System Metrics**: CPU, memory, disk I/O, network latency tracking
-- **Application Performance**: API response times, token consumption rates, error rates
-- **Resource Utilization**: Database query performance, cache hit rates, PHP memory usage
-- **SIEM Integration**: Export metrics to enterprise SIEM platforms (Splunk, ELK, DataDog)
-
-#### Predictive Resource Management
-- **ML-Based Forecasting**: Predict resource needs based on historical patterns
-- **Automatic Scaling**: Dynamic resource allocation based on demand
-- **Proactive Alerting**: Warnings before resource exhaustion occurs
-- **Capacity Planning**: Historical trend analysis for infrastructure planning
-
-#### 12 Configuration Presets
-Pre-configured profiles for common deployment scenarios:
-
-1. **Development** - Verbose logging, relaxed limits, local-first routing
-2. **Staging** - Production-like with enhanced debugging
-3. **Production** - Optimized for performance and reliability
-4. **High-Traffic** - Maximum throughput with aggressive caching
-5. **Cost-Optimized** - Minimize API costs with intelligent routing
-6. **Privacy-First** - Route sensitive data to local Ollama instances
-7. **Multi-Tenant** - Isolation and quotas for shared hosting
-8. **Enterprise** - Full SIEM integration with audit trails
-9. **E-Commerce** - Optimized for WooCommerce workloads
-10. **Content Hub** - Publishing-focused with SEO tools prioritized
-11. **Customer Support** - Chat-optimized with low latency
-12. **Custom** - Build your own configuration profile
-
-### Configurable Slider Controls
-
-All orchestration parameters feature slider controls in the admin interface:
-
-- **Token Budget Allocation** (0-100%): Percentage of model limits to utilize
-- **Memory Safety Margin** (10-50%): PHP memory headroom for safety
-- **Cache TTL** (5-3600s): REST API cache lifetime
-- **Request Timeout** (10-300s): Maximum API request duration
-- **Concurrent Requests** (1-20): Parallel API call limit
-- **Retry Attempts** (0-5): Automatic retry on transient failures
-- **Backoff Multiplier** (1.0-3.0): Exponential backoff scaling
-
-### Real-Time Dashboard
-
-Access health metrics at **Settings → WP oOS → Health Monitoring**:
-
-- Live resource utilization graphs
-- API latency histograms
-- Token consumption trends
-- Error rate tracking
-- Cache performance metrics
-- Database query analysis
-
-### SIEM Export Formats
-
-Export monitoring data in multiple formats:
-- **Syslog**: RFC 5424 compliant messages
-- **JSON**: Structured logging for Elasticsearch
-- **CEF**: Common Event Format for Splunk/ArcSight
-- **StatsD**: Metrics for Grafana/Prometheus
-- **Webhook**: Custom HTTP endpoints
-
-### Use Cases
-
-- **Production Monitoring**: Real-time visibility into system health
-- **Cost Management**: Track and optimize API spending
-- **Capacity Planning**: Historical analysis for infrastructure decisions
-- **Compliance Reporting**: Audit trails for security compliance
-- **Performance Tuning**: Identify and resolve bottlenecks
-
-➡️ See [docs/ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/ORCHESTRATION-LAYER-ARCHITECTURE.md) for complete architectural details and [docs/orchestration-token-manager-enhancements.md](docs/orchestration-token-manager-enhancements.md) for implementation guide.
 
 ## 🌐 Mesh Compute Routing
 
@@ -1806,7 +1627,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
 - Multiple shortcodes can be added to the same page; each chat instance maintains its own conversation context on the client.
-- Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a time-limited guest token (default 24 hours, configurable) that authorises REST requests without a WordPress login. See [Guest Token Authentication](docs/authentication.md#guest-token-authentication) for complete security details.
+- Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a short-lived guest token that authorises REST requests without a WordPress login.
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ### Elementor widget

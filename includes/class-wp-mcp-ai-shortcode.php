@@ -161,11 +161,6 @@ class WP_MCP_AI_Shortcode {
 						'system'    => __( 'System', 'wp-mcp-ai' ),
 						'tool'      => __( 'Tool', 'wp-mcp-ai' ),
 					),
-					'userMessage'               => __( 'User message', 'wp-mcp-ai' ),
-					'assistantMessage'          => __( 'Assistant message', 'wp-mcp-ai' ),
-					'systemMessage'             => __( 'System message', 'wp-mcp-ai' ),
-					'processingResponse'        => __( 'Processing response…', 'wp-mcp-ai' ),
-					'typingIndicator'           => __( 'Assistant is typing…', 'wp-mcp-ai' ),
 				),
 			)
 		);
@@ -440,7 +435,7 @@ class WP_MCP_AI_Shortcode {
 					<span class="screen-reader-text"><?php esc_html_e( 'Expand conversation', 'wp-mcp-ai' ); ?></span>
 				</button>
 			</div>
-			<div class="wp-mcp-ai-chat__messages" role="log" aria-live="polite" aria-atomic="false" aria-relevant="additions"></div>
+			<div class="wp-mcp-ai-chat__messages" aria-live="polite"></div>
 			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>

@@ -274,14 +274,14 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 
 		$sanitized = $admin_settings->sanitize_settings(
 			array(
-				'openai_image_model'           => 'dall-e-3',
+				'openai_image_model'           => 'gpt-image-1',
 				'openai_image_size'            => '1792x1024',
 				'openai_image_quality'         => 'hd',
 				'openai_image_response_format' => 'url',
 			)
 		);
 
-		$this->assertSame( 'dall-e-3', $sanitized['openai_image_model'] );
+		$this->assertSame( 'gpt-image-1', $sanitized['openai_image_model'] );
 		$this->assertSame( '1792x1024', $sanitized['openai_image_size'] );
 		$this->assertSame( 'hd', $sanitized['openai_image_quality'] );
 		$this->assertSame( 'url', $sanitized['openai_image_response_format'] );
