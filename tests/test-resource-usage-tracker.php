@@ -52,7 +52,10 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 			),
 		);
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array( 'operation_type' => 'chat' ) );
+		// Mock request object.
+		$request = new WP_REST_Request();
+
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		// Verify data was recorded.
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
@@ -79,7 +82,9 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 			),
 		);
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array() );
+		$request = new WP_REST_Request();
+
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 1 );
@@ -101,8 +106,9 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 		usleep( 100000 ); // 0.1 seconds.
 
 		$response = array();
+		$request  = new WP_REST_Request();
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array() );
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 1 );
@@ -122,8 +128,9 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 
 		// Simulate error response.
 		$response = new WP_Error( 'test_error', 'Test error message' );
+		$request  = new WP_REST_Request();
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array() );
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 1 );
@@ -150,8 +157,9 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 				),
 			),
 		);
+		$request  = new WP_REST_Request();
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array() );
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 1 );
@@ -170,28 +178,31 @@ class WP_MCP_AI_Resource_Usage_Tracker_Test extends WP_UnitTestCase {
 		apply_filters( 'wp_mcp_ai_before_chat_request', null, $assistant_id );
 
 		$response = array();
+		$request  = new WP_REST_Request();
 
-		apply_filters( 'wp_mcp_ai_after_chat_response', $response, $assistant_id, array( 'operation_type' => 'test_operation' ) );
+		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 1 );
 
 		$latest_entry = end( $history );
 		$this->assertArrayHasKey( 'operation_type', $latest_entry );
-		$this->assertEquals( 'test_operation', $latest_entry['operation_type'] );
+		$this->assertEquals( 'chat', $latest_entry['operation_type'] );
 	}
 
 	/**
 	 * Test that multiple operations are tracked separately.
 	 */
 	public function test_tracks_multiple_operations() {
+		$request = new WP_REST_Request();
+
 		// First operation.
 		apply_filters( 'wp_mcp_ai_before_chat_request', null, 1 );
-		apply_filters( 'wp_mcp_ai_after_chat_response', array( 'usage' => array( 'total_tokens' => 100 ) ), 1, array() );
+		do_action( 'wp_mcp_ai_after_chat_response', 1, array( 'usage' => array( 'total_tokens' => 100 ) ), $request );
 
 		// Second operation.
 		apply_filters( 'wp_mcp_ai_before_chat_request', null, 2 );
-		apply_filters( 'wp_mcp_ai_after_chat_response', array( 'usage' => array( 'total_tokens' => 200 ) ), 2, array() );
+		do_action( 'wp_mcp_ai_after_chat_response', 2, array( 'usage' => array( 'total_tokens' => 200 ) ), $request );
 
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$history          = $resource_manager->get_usage_history( 24 );

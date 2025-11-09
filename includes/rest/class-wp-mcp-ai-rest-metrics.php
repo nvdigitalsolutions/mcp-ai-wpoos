@@ -19,7 +19,7 @@ class WP_MCP_AI_REST_Metrics {
 	 *
 	 * @var string
 	 */
-	const NAMESPACE = 'mcp-ai/v1';
+	const REST_NAMESPACE = 'mcp-ai/v1';
 
 	/**
 	 * Register REST API routes.
@@ -27,7 +27,7 @@ class WP_MCP_AI_REST_Metrics {
 	public static function register_routes() {
 		// Overview metrics endpoint.
 		register_rest_route(
-			self::NAMESPACE,
+			self::REST_NAMESPACE,
 			'/metrics/overview',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -38,7 +38,7 @@ class WP_MCP_AI_REST_Metrics {
 
 		// Trends data endpoint.
 		register_rest_route(
-			self::NAMESPACE,
+			self::REST_NAMESPACE,
 			'/metrics/trends',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -63,7 +63,7 @@ class WP_MCP_AI_REST_Metrics {
 
 		// Assistants metrics endpoint.
 		register_rest_route(
-			self::NAMESPACE,
+			self::REST_NAMESPACE,
 			'/metrics/assistants',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -82,7 +82,7 @@ class WP_MCP_AI_REST_Metrics {
 
 		// Cost analysis endpoint.
 		register_rest_route(
-			self::NAMESPACE,
+			self::REST_NAMESPACE,
 			'/metrics/cost',
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -93,7 +93,7 @@ class WP_MCP_AI_REST_Metrics {
 
 		// Export endpoint.
 		register_rest_route(
-			self::NAMESPACE,
+			self::REST_NAMESPACE,
 			'/metrics/export',
 			array(
 				'methods'             => WP_REST_Server::READABLE,

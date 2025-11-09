@@ -34,11 +34,11 @@ class WP_MCP_AI_Resource_Usage_Tracker {
 	 * Initialize the usage tracker.
 	 */
 	public static function init() {
-		// Hook into chat request start.
+		// Hook into chat request start (filter).
 		add_filter( 'wp_mcp_ai_before_chat_request', array( __CLASS__, 'start_tracking' ), 10, 2 );
 
-		// Hook into chat response completion.
-		add_filter( 'wp_mcp_ai_after_chat_response', array( __CLASS__, 'record_tracking' ), 10, 3 );
+		// Hook into chat response completion (action).
+		add_action( 'wp_mcp_ai_after_chat_response', array( __CLASS__, 'record_tracking' ), 10, 3 );
 	}
 
 	/**
@@ -57,12 +57,12 @@ class WP_MCP_AI_Resource_Usage_Tracker {
 	/**
 	 * Record tracking data after chat completion.
 	 *
-	 * @param mixed $response     Chat response data.
-	 * @param int   $assistant_id Assistant ID.
-	 * @param array $context      Additional context.
+	 * @param int             $assistant_id Assistant ID.
+	 * @param mixed           $response     Chat response data.
+	 * @param WP_REST_Request $request      REST request object.
 	 * @return mixed Unmodified response.
 	 */
-	public static function record_tracking( $response, $assistant_id, $context = array() ) {
+	public static function record_tracking( $assistant_id, $response, $request ) {
 		if ( ! self::$start_time ) {
 			return $response;
 		}
@@ -91,7 +91,7 @@ class WP_MCP_AI_Resource_Usage_Tracker {
 		$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 		$resource_manager->record_usage(
 			array(
-				'operation_type' => isset( $context['operation_type'] ) ? $context['operation_type'] : 'chat',
+				'operation_type' => 'chat',
 				'assistant_id'   => $assistant_id,
 				'tokens_used'    => $tokens_used,
 				'execution_time' => round( $execution_time, 2 ),
