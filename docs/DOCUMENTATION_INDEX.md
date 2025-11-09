@@ -6,7 +6,7 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 51+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 52+ files (all in docs/ folder, 5+ key files in root)
 
 **📋 Note:** As of November 8, 2025, 107 audit reports and summaries have been consolidated into two organized reference documents:
 - [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Chronological development history
@@ -89,6 +89,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [DISPLAYS-DASHBOARD.md](DISPLAYS-DASHBOARD.md) | **NEW:** Displays Dashboard page - Centralized view of all Elementor widgets and Gutenberg blocks | Users/Admins |
 | [FRONTEND-ACCESSIBILITY.md](FRONTEND-ACCESSIBILITY.md) | **NEW:** Comprehensive accessibility (ARIA, WCAG 2.1), responsive design, and user feedback patterns | Developers/Designers |
 
 ### Remote Client Setup
