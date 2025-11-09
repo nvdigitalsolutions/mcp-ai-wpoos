@@ -194,6 +194,139 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			return array_values( $this->tools );
 		}
 
+/**
+ * Check if a tool is registered.
+ *
+ * @param string $slug Tool slug.
+ * @return bool True if registered, false otherwise.
+ */
+public function is_tool_registered( $slug ) {
+$slug = sanitize_key( $slug );
+
+return isset( $this->tools[ $slug ] );
+}
+
+/**
+ * Execute a tool with the given arguments.
+ *
+ * @param string $tool_name Tool slug.
+ * @param array  $arguments Tool arguments.
+ * @param array  $context   Execution context.
+ * @return mixed|WP_Error Tool result or error.
+ */
+public function execute_tool( $tool_name, array $arguments = array(), array $context = array() ) {
+$slug = sanitize_key( $tool_name );
+
+$tool = $this->get_tool( $slug );
+
+if ( ! $tool ) {
+return new WP_Error(
+'wp_mcp_ai_tool_not_found',
+sprintf(
+/* translators: %s: tool slug */
+__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+$tool_name
+),
+array( 'status' => 404 )
+);
+}
+
+try {
+$result = $tool->execute( $arguments, $context );
+
+// If tool returned an error, ensure it's a WP_Error.
+if ( is_wp_error( $result ) ) {
+return $result;
+}
+
+return $result;
+
+} catch ( Exception $e ) {
+return new WP_Error(
+'wp_mcp_ai_tool_execution_exception',
+sprintf(
+/* translators: 1: tool slug, 2: error message */
+__( 'Tool "%1$s" threw an exception: %2$s', 'wp-mcp-ai' ),
+$tool_name,
+$e->getMessage()
+),
+array(
+'status'    => 500,
+'exception' => $e->getMessage(),
+'trace'     => $e->getTraceAsString(),
+)
+);
+}
+}
+
+/**
+ * Get tool definition for a specific tool.
+ *
+ * Returns tool metadata formatted for LLM function calling.
+ *
+ * @param string $slug Tool slug.
+ * @return array|null Tool definition or null if not found.
+ */
+public function get_tool_definition( $slug ) {
+$slug = sanitize_key( $slug );
+$tool = $this->get_tool( $slug );
+
+if ( ! $tool ) {
+return null;
+}
+
+return array(
+'slug'        => $tool->get_slug(),
+'name'        => $tool->get_name(),
+'description' => $tool->get_description(),
+'parameters'  => $tool->get_parameters_schema(),
+);
+}
+
+/**
+ * Get required capability for a tool.
+ *
+ * Checks if the tool class has a get_required_capability method
+ * or extracts it from the parameters schema.
+ *
+ * @param string $slug Tool slug.
+ * @return string|null Required capability or null if none.
+ */
+public function get_tool_capability( $slug ) {
+$slug = sanitize_key( $slug );
+$tool = $this->get_tool( $slug );
+
+if ( ! $tool ) {
+return null;
+}
+
+// Check if tool has a get_required_capability method.
+if ( method_exists( $tool, 'get_required_capability' ) ) {
+return $tool->get_required_capability();
+}
+
+// Default capability for tools.
+return 'read';
+}
+
+/**
+ * Get all registered tools as an associative array.
+ *
+ * Returns tools with their definitions for use in admin UI
+ * and API endpoints.
+ *
+ * @return array<string, array> Tool definitions keyed by slug.
+ */
+public function get_registered_tools() {
+$tools = array();
+
+foreach ( $this->tools as $slug => $tool ) {
+$tools[ $slug ] = $this->get_tool_definition( $slug );
+}
+
+return $tools;
+}
+
 		/**
 		 * Retrieve the default tool grouping map keyed by tool slug.
 		 *
