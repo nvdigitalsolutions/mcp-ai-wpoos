@@ -210,6 +210,7 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manag
 
 // Load cache helper early for performance optimization.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
@@ -1135,6 +1136,13 @@ function wp_mcp_ai_setup_cache_invalidation_hooks() {
 	add_action( 'updated_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
 	add_action( 'added_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
 	add_action( 'deleted_post_meta', 'wp_mcp_ai_invalidate_assistant_cache_on_meta_update', 10, 4 );
+
+	// REST API cache invalidation hooks.
+	if ( class_exists( 'WP_MCP_AI_REST_Cache' ) ) {
+		add_action( 'save_post_mcp_ai_assistant', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_save' ), 10, 1 );
+		add_action( 'delete_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
+		add_action( 'wp_trash_post', array( 'WP_MCP_AI_REST_Cache', 'invalidate_on_assistant_delete' ), 10, 1 );
+	}
 }
 
 /**

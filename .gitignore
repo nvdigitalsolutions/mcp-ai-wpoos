@@ -12,3 +12,9 @@ opcache-reset.php
 *.zip
 *.tar.gz
 *.rar
+
+# Minified assets (generated during build)
+*.min.css
+*.min.js
+*.min.css.map
+*.min.js.map

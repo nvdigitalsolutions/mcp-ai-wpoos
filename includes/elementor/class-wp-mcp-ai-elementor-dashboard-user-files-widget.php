@@ -314,12 +314,15 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		}
 
 		$query_args = array(
-			'post_type'      => 'attachment',
-			'post_status'    => 'inherit',
-			'author'         => $user_id,
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-			'posts_per_page' => -1,
+			'post_type'              => 'attachment',
+			'post_status'            => 'inherit',
+			'author'                 => $user_id,
+			'orderby'                => 'date',
+			'order'                  => 'DESC',
+			'posts_per_page'         => -1,
+			'no_found_rows'          => true,  // Performance: Skip counting total rows.
+			'update_post_term_cache' => false, // Performance: Skip term cache.
+			'update_post_meta_cache' => true,  // Keep meta cache for attachment data.
 		);
 
 		if ( $max > 0 ) {
