@@ -2028,7 +2028,7 @@ class WP_MCP_AI_OpenAI_Client_Test extends WP_UnitTestCase {
 			array(
 				'model'   => 'gpt-image-test',
 				'size'    => '1024x1792',
-				'quality' => 'hd',
+				'quality' => 'high',
 			)
 		);
 

@@ -307,7 +307,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'group_email_max_recipients'        => 100,
 				'openai_image_model'                => 'gpt-image-1',
 				'openai_image_size'                 => '1024x1024',
-				'openai_image_quality'              => 'standard',
+				'openai_image_quality'              => 'auto',
 				'openai_image_response_format'      => 'b64_json',
 				'openai_speech_model'               => 'gpt-4o-mini-tts',
 				'openai_speech_voice'               => 'alloy',

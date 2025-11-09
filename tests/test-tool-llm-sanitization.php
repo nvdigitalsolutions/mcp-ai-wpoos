@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 			'mime_type'     => 'image/png',
 			'bytes'         => 50000,
 			'size'          => '1024x1024',
-			'quality'       => 'hd',
+			'quality'       => 'high',
 			'format'        => 'png',
 			'prompt'        => 'A beautiful landscape',
 			'content'       => array(
