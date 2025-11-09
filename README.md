@@ -1627,7 +1627,7 @@ Embed a published assistant anywhere on the site with the shortcode. Replace `12
 ### Tips
 - Omit the `assistant` attribute to fall back to the default assistant configured in the settings screen.
 - Multiple shortcodes can be added to the same page; each chat instance maintains its own conversation context on the client.
-- Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a short-lived guest token that authorises REST requests without a WordPress login.
+- Use `allow_guests="true"` to expose the chat UI to logged-out visitors. Each render issues a time-limited guest token (default 24 hours, configurable) that authorises REST requests without a WordPress login. See [Guest Token Authentication](docs/authentication.md#guest-token-authentication) for complete security details.
 - REST interactions rely on the `[wp_rest]` nonce, so caching plugins should avoid caching pages for logged-in editors running the chat.
 
 ### Elementor widget
