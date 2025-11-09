@@ -13,11 +13,10 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 
-use NotifyLk\Api\SmsApi;
-use NotifyLk\ApiException;
-
 /**
  * Provides a tool for scheduling Notify.lk SMS messages.
+ *
+ * Note: This tool requires the notifylk/notify-php package to be installed via Composer.
  */
 class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 	const CRON_HOOK = 'wp_mcp_ai_notifylk_send_scheduled_sms';
@@ -27,6 +26,24 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function __construct() {
 		add_action( self::CRON_HOOK, array( __CLASS__, 'process_scheduled_sms' ), 10, 1 );
+	}
+
+	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool True if the NotifyLk SDK is installed.
+	 */
+	public static function is_available() {
+		return class_exists( 'NotifyLk\Api\SmsApi' );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @return string
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The Schedule Notify.lk SMS tool is disabled because the notifylk/notify-php package is not installed. Install it via Composer to enable this tool.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -270,7 +287,7 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 			return;
 		}
 
-		$api = new SmsApi();
+		$api = new \NotifyLk\Api\SmsApi();
 
 		$contact_fname   = isset( $payload['contact_fname'] ) ? (string) $payload['contact_fname'] : null;
 		$contact_lname   = isset( $payload['contact_lname'] ) ? (string) $payload['contact_lname'] : null;
@@ -303,7 +320,7 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 					'sender_id' => $sender_id,
 				)
 			);
-		} catch ( ApiException $exception ) {
+		} catch ( \NotifyLk\ApiException $exception ) {
 			WP_MCP_AI_Logger::log_error(
 				'Notify.lk API error while sending scheduled SMS.',
 				array(
