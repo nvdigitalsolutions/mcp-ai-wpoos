@@ -5193,6 +5193,9 @@
                 // Debug logging for SSE completion
                 if (window.console && console.log) {
                     console.log('[WP oOS SSE] Stream completed:', streamResult);
+                    if (streamResult) {
+                        console.log('[WP oOS SSE] Has finalData:', !!streamResult.finalData, 'Has content:', !!streamResult.content, 'Content length:', (streamResult.content || '').length);
+                    }
                 }
 
                 // Handle final message if available
@@ -5298,6 +5301,11 @@
                         }
                     }
 
+                    // Log raw event data for debugging
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Raw event - Type:', eventType || '(none)', 'Data preview:', eventData.substring(0, 100));
+                    }
+
                     // Handle [DONE] marker
                     if (eventData.trim() === '[DONE]') {
                         return { content: fullContent };
@@ -5324,6 +5332,11 @@
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {
+                            // Debug logging for message events
+                            if (window.console && console.log) {
+                                console.log('[WP oOS SSE] Processing message event. Has choices:', !!data.choices, 'Has data:', !!data.data, 'Event type:', eventType, 'Data keys:', Object.keys(data));
+                            }
+                            
                             // Final message or OpenAI format streaming response
                             if (data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
@@ -5339,6 +5352,11 @@
                                 finalResult = { content: fullContent, finalData: data };
                                 // Break out of the loop to return the result
                                 break;
+                            } else {
+                                // Log when message event doesn't match expected structure
+                                if (window.console && console.warn) {
+                                    console.warn('[WP oOS SSE] Message event received but no recognizable structure. Full data:', JSON.stringify(data));
+                                }
                             }
                         }
                     } catch (parseError) {

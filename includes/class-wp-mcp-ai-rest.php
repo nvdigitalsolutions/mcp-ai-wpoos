@@ -2527,6 +2527,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tool_calls = $this->extract_tool_calls_from_response( $response );
 
 			if ( empty( $tool_calls ) ) {
+				// Debug logging for no tool calls case.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( '[WP oOS] No tool calls found, will send final message. Iteration: ' . $iteration );
+				}
 				break; // No more tools to execute.
 			}
 
@@ -2744,6 +2749,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
 		// Stream final response.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[WP oOS] Preparing final message payload. Response is null: ' . ( is_null( $response ) ? 'yes' : 'no' ) . ', is empty: ' . ( empty( $response ) ? 'yes' : 'no' ) );
+		}
+
 		$payload = array(
 			'assistant_id' => $assistant_id,
 			'data'         => $response,
@@ -2753,8 +2763,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$payload['tool_results'] = $tool_result_messages;
 		}
 
-		$this->send_sse_event( 'message', $payload );
-		$this->send_sse_done();
+		// Debug logging to help trace response flow.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( '[WP oOS] About to send final message event for assistant ' . $assistant_id . '. Response type: ' . gettype( $response ) . ', is array: ' . (is_array( $response ) ? 'yes' : 'no') );
+			if ( is_array( $response ) ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[WP oOS] Response keys: ' . implode( ', ', array_keys( $response ) ) );
+			}
+		}
+
+		try {
+			$this->send_sse_event( 'message', $payload );
+			
+			// Debug logging to confirm message was sent.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[WP oOS] Message event sent successfully' );
+			}
+			
+			// Small delay to ensure message event is flushed before DONE marker.
+			usleep( 10000 ); // 10ms delay.
+			
+			$this->send_sse_done();
+			
+			// Debug logging to confirm DONE was sent.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[WP oOS] DONE marker sent successfully' );
+			}
+		} catch ( Exception $e ) {
+			// Log any exception that occurs.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( '[WP oOS] Exception while sending SSE events: ' . $e->getMessage() );
+			}
+			// Still try to send DONE marker.
+			$this->send_sse_done();
+		}
 
 		exit;
 	}
