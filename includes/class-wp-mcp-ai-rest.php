@@ -3968,6 +3968,83 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$context['provider']     = isset( $context['provider'] ) ? sanitize_key( $context['provider'] ) : '';
 			$context['model']        = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
 
+			// Pre-flight token count validation using resource manager budget.
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$max_input_tokens = $resource_mgr->get_max_input_tokens();
+
+			// Estimate current token count.
+			$estimated_tokens = 0;
+			foreach ( $messages as $message ) {
+				if ( isset( $message['content'] ) ) {
+					if ( is_string( $message['content'] ) ) {
+						$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $message['content'] );
+					} elseif ( is_array( $message['content'] ) ) {
+						foreach ( $message['content'] as $segment ) {
+							if ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment['text'] );
+							} elseif ( is_string( $segment ) ) {
+								$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment );
+							}
+						}
+					}
+				}
+			}
+
+			// Check if request exceeds budget.
+			if ( $estimated_tokens > $max_input_tokens ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_request_token_budget_exceeded',
+					'Request exceeded maximum input token budget.',
+					array(
+						'estimated_tokens' => $estimated_tokens,
+						'max_input_tokens' => $max_input_tokens,
+						'message_count'    => count( $messages ),
+					)
+				);
+
+				// Attempt to trim to budget using text chunker.
+				$messages = $this->trim_messages_to_token_budget( $messages, $max_input_tokens );
+
+				// Re-estimate after trimming.
+				$estimated_tokens_after = 0;
+				foreach ( $messages as $message ) {
+					if ( isset( $message['content'] ) ) {
+						if ( is_string( $message['content'] ) ) {
+							$estimated_tokens_after += WP_MCP_AI_Text_Chunker::estimate_tokens( $message['content'] );
+						}
+					}
+				}
+
+				// If still over budget, return error.
+				if ( $estimated_tokens_after > $max_input_tokens ) {
+					return new WP_Error(
+						'wp_mcp_ai_token_budget_exceeded',
+						sprintf(
+							/* translators: 1: Token count, 2: Maximum allowed tokens */
+							__( 'Request token count (%1$d) exceeds maximum allowed (%2$d) even after trimming. Please reduce message length.', 'wp-mcp-ai' ),
+							$estimated_tokens_after,
+							$max_input_tokens
+						),
+						array(
+							'status'                => 413,
+							'estimated_tokens'      => $estimated_tokens,
+							'max_input_tokens'      => $max_input_tokens,
+							'trimmed_tokens'        => $estimated_tokens_after,
+						)
+					);
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'chat_request_trimmed_to_budget',
+					'Messages trimmed to fit token budget.',
+					array(
+						'original_tokens' => $estimated_tokens,
+						'trimmed_tokens'  => $estimated_tokens_after,
+						'max_tokens'      => $max_input_tokens,
+					)
+				);
+			}
+
 			// Apply message count limit before token-based trimming.
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
 			$max_message_count = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
@@ -4432,6 +4509,55 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$message['content'] = array_values( $kept );
 
 			return $message;
+		}
+
+		/**
+		 * Trim messages to fit within a token budget.
+		 *
+		 * @param array $messages     Array of messages to trim.
+		 * @param int   $max_tokens   Maximum token budget.
+		 * @return array Trimmed messages.
+		 */
+		protected function trim_messages_to_token_budget( array $messages, $max_tokens ) {
+			$max_tokens = max( 100, absint( $max_tokens ) );
+
+			// Separate system messages from other messages.
+			$system_messages = array();
+			$other_messages  = array();
+
+			foreach ( $messages as $message ) {
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+				if ( 'system' === $role ) {
+					$system_messages[] = $message;
+				} else {
+					$other_messages[] = $message;
+				}
+			}
+
+			// Trim each message content using the text chunker.
+			$trimmed_messages = array();
+
+			foreach ( $system_messages as $message ) {
+				if ( isset( $message['content'] ) && is_string( $message['content'] ) ) {
+					$message['content'] = WP_MCP_AI_Text_Chunker::trim_to_token_budget(
+						$message['content'],
+						(int) ( $max_tokens * 0.2 ) // Reserve 20% for system messages.
+					);
+				}
+				$trimmed_messages[] = $message;
+			}
+
+			foreach ( $other_messages as $message ) {
+				if ( isset( $message['content'] ) && is_string( $message['content'] ) ) {
+					$message['content'] = WP_MCP_AI_Text_Chunker::trim_to_token_budget(
+						$message['content'],
+						(int) ( $max_tokens * 0.8 / max( 1, count( $other_messages ) ) )
+					);
+				}
+				$trimmed_messages[] = $message;
+			}
+
+			return $trimmed_messages;
 		}
 
 		/**
@@ -5217,6 +5343,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$length = $this->mb_strlen( $text );
 			$limit  = min( $available_total, min( $length, self::MEMORY_MAX_DOCUMENT_CHARS ) );
 
+			// If the document is significantly larger than limit, summarize instead of truncate.
+			if ( $length > $limit * 2 && $limit > 500 ) {
+				WP_MCP_AI_Logger::log_event(
+					'memory_document_summarization',
+					'Summarizing large memory document to fit budget.',
+					array(
+						'original_length' => $length,
+						'target_length'   => $limit,
+					)
+				);
+
+				$text = WP_MCP_AI_Document_Summarizer::summarize_if_needed(
+					$text,
+					array(
+						'force_summarize' => true,
+						'target_chars'    => $limit,
+					)
+				);
+				$length = $this->mb_strlen( $text );
+				$limit  = min( $available_total, $length );
+			}
+
 			$chunks = array();
 
 			for ( $offset = 0; $offset < $limit; $offset += self::MEMORY_CHUNK_CHARS ) {
@@ -5229,7 +5377,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			$truncated = $limit < $length;
+			$truncated = $limit < $this->mb_strlen( $text );
 
 			if ( $truncated && ! empty( $chunks ) ) {
 				$chunks[ count( $chunks ) - 1 ] .= "\n\n[" . __( 'Truncated', 'wp-mcp-ai' ) . ']';
