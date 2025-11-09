@@ -61,6 +61,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_intro_content(),
 				),
+				'orchestration_presets'          => array(
+					'type'    => 'html',
+					'content' => $this->get_presets_selector(),
+				),
 				'enable_budget_management'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
@@ -283,6 +287,290 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			
 			return $content;
 		}
+
+/**
+ * Get configuration presets for quick setup.
+ *
+ * @return array Preset configurations.
+ */
+private function get_presets() {
+return array(
+'custom'            => array(
+'name'        => __( 'Custom', 'wp-mcp-ai' ),
+'description' => __( 'Your current customized settings - manually adjust individual parameters below', 'wp-mcp-ai' ),
+'values'      => array(), // Empty - uses current settings.
+),
+'auto'              => array(
+'name'        => __( 'Auto (Recommended)', 'wp-mcp-ai' ),
+'description' => __( 'Automatically detects server capabilities and applies optimal configuration', 'wp-mcp-ai' ),
+'values'      => 'auto', // Special value to trigger auto-detection.
+),
+'default'           => array(
+'name'        => __( 'Balanced (Default)', 'wp-mcp-ai' ),
+'description' => __( 'Recommended for most production sites with moderate traffic', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 75,
+'memory_critical_threshold'       => 90,
+'error_rate_warning_threshold'    => 10,
+'error_rate_critical_threshold'   => 20,
+'budget_high_priority_percent'    => 100,
+'budget_medium_priority_percent'  => 80,
+'budget_low_priority_percent'     => 50,
+'budget_critical_health_percent'  => 50,
+'budget_warning_health_percent'   => 75,
+'max_tokens_low_tier'             => 1000,
+'max_tokens_medium_tier'          => 4000,
+'max_tokens_high_tier'            => 16000,
+'prediction_confidence_threshold' => 30,
+'prediction_buffer_percent'       => 20,
+),
+),
+'conservative'      => array(
+'name'        => __( 'Conservative', 'wp-mcp-ai' ),
+'description' => __( 'Strict limits for resource-constrained environments or shared hosting', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 60,
+'memory_critical_threshold'       => 80,
+'error_rate_warning_threshold'    => 5,
+'error_rate_critical_threshold'   => 15,
+'budget_high_priority_percent'    => 80,
+'budget_medium_priority_percent'  => 60,
+'budget_low_priority_percent'     => 30,
+'budget_critical_health_percent'  => 30,
+'budget_warning_health_percent'   => 60,
+'max_tokens_low_tier'             => 500,
+'max_tokens_medium_tier'          => 2000,
+'max_tokens_high_tier'            => 8000,
+'prediction_confidence_threshold' => 50,
+'prediction_buffer_percent'       => 30,
+),
+),
+'aggressive'        => array(
+'name'        => __( 'Aggressive', 'wp-mcp-ai' ),
+'description' => __( 'Maximum performance for dedicated servers with ample resources', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 85,
+'memory_critical_threshold'       => 95,
+'error_rate_warning_threshold'    => 15,
+'error_rate_critical_threshold'   => 30,
+'budget_high_priority_percent'    => 100,
+'budget_medium_priority_percent'  => 100,
+'budget_low_priority_percent'     => 80,
+'budget_critical_health_percent'  => 70,
+'budget_warning_health_percent'   => 90,
+'max_tokens_low_tier'             => 2000,
+'max_tokens_medium_tier'          => 8000,
+'max_tokens_high_tier'            => 32000,
+'prediction_confidence_threshold' => 20,
+'prediction_buffer_percent'       => 10,
+),
+),
+'development'       => array(
+'name'        => __( 'Development', 'wp-mcp-ai' ),
+'description' => __( 'Relaxed limits for development and testing environments', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 90,
+'memory_critical_threshold'       => 98,
+'error_rate_warning_threshold'    => 20,
+'error_rate_critical_threshold'   => 40,
+'budget_high_priority_percent'    => 100,
+'budget_medium_priority_percent'  => 100,
+'budget_low_priority_percent'     => 80,
+'budget_critical_health_percent'  => 80,
+'budget_warning_health_percent'   => 100,
+'max_tokens_low_tier'             => 2000,
+'max_tokens_medium_tier'          => 6000,
+'max_tokens_high_tier'            => 24000,
+'prediction_confidence_threshold' => 10,
+'prediction_buffer_percent'       => 10,
+),
+),
+'high_traffic'      => array(
+'name'        => __( 'High Traffic', 'wp-mcp-ai' ),
+'description' => __( 'Optimized for high-volume sites with predictable load patterns', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 70,
+'memory_critical_threshold'       => 85,
+'error_rate_warning_threshold'    => 8,
+'error_rate_critical_threshold'   => 18,
+'budget_high_priority_percent'    => 90,
+'budget_medium_priority_percent'  => 70,
+'budget_low_priority_percent'     => 40,
+'budget_critical_health_percent'  => 40,
+'budget_warning_health_percent'   => 70,
+'max_tokens_low_tier'             => 800,
+'max_tokens_medium_tier'          => 3000,
+'max_tokens_high_tier'            => 12000,
+'prediction_confidence_threshold' => 40,
+'prediction_buffer_percent'       => 25,
+),
+),
+'burst_workload'    => array(
+'name'        => __( 'Burst Workload', 'wp-mcp-ai' ),
+'description' => __( 'Handles sudden spikes with dynamic resource allocation', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 80,
+'memory_critical_threshold'       => 92,
+'error_rate_warning_threshold'    => 12,
+'error_rate_critical_threshold'   => 25,
+'budget_high_priority_percent'    => 100,
+'budget_medium_priority_percent'  => 85,
+'budget_low_priority_percent'     => 60,
+'budget_critical_health_percent'  => 60,
+'budget_warning_health_percent'   => 80,
+'max_tokens_low_tier'             => 1500,
+'max_tokens_medium_tier'          => 6000,
+'max_tokens_high_tier'            => 20000,
+'prediction_confidence_threshold' => 25,
+'prediction_buffer_percent'       => 30,
+),
+),
+'cost_optimized'    => array(
+'name'        => __( 'Cost Optimized', 'wp-mcp-ai' ),
+'description' => __( 'Minimizes API token usage while maintaining functionality', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 65,
+'memory_critical_threshold'       => 85,
+'error_rate_warning_threshold'    => 7,
+'error_rate_critical_threshold'   => 15,
+'budget_high_priority_percent'    => 75,
+'budget_medium_priority_percent'  => 50,
+'budget_low_priority_percent'     => 25,
+'budget_critical_health_percent'  => 25,
+'budget_warning_health_percent'   => 50,
+'max_tokens_low_tier'             => 600,
+'max_tokens_medium_tier'          => 2500,
+'max_tokens_high_tier'            => 10000,
+'prediction_confidence_threshold' => 60,
+'prediction_buffer_percent'       => 15,
+),
+),
+'enterprise'        => array(
+'name'        => __( 'Enterprise', 'wp-mcp-ai' ),
+'description' => __( 'Fine-tuned for enterprise deployments with SLA requirements', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 70,
+'memory_critical_threshold'       => 88,
+'error_rate_warning_threshold'    => 5,
+'error_rate_critical_threshold'   => 12,
+'budget_high_priority_percent'    => 100,
+'budget_medium_priority_percent'  => 75,
+'budget_low_priority_percent'     => 50,
+'budget_critical_health_percent'  => 45,
+'budget_warning_health_percent'   => 70,
+'max_tokens_low_tier'             => 1200,
+'max_tokens_medium_tier'          => 5000,
+'max_tokens_high_tier'            => 18000,
+'prediction_confidence_threshold' => 35,
+'prediction_buffer_percent'       => 22,
+),
+),
+'failsafe'          => array(
+'name'        => __( 'Failsafe', 'wp-mcp-ai' ),
+'description' => __( 'Maximum protection against resource exhaustion and cascading failures', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 55,
+'memory_critical_threshold'       => 75,
+'error_rate_warning_threshold'    => 5,
+'error_rate_critical_threshold'   => 10,
+'budget_high_priority_percent'    => 70,
+'budget_medium_priority_percent'  => 50,
+'budget_low_priority_percent'     => 25,
+'budget_critical_health_percent'  => 20,
+'budget_warning_health_percent'   => 50,
+'max_tokens_low_tier'             => 500,
+'max_tokens_medium_tier'          => 2000,
+'max_tokens_high_tier'            => 8000,
+'prediction_confidence_threshold' => 70,
+'prediction_buffer_percent'       => 40,
+),
+),
+'predictive_first'  => array(
+'name'        => __( 'Predictive-First', 'wp-mcp-ai' ),
+'description' => __( 'Emphasizes machine learning predictions for proactive resource management', 'wp-mcp-ai' ),
+'values'      => array(
+'memory_warning_threshold'        => 75,
+'memory_critical_threshold'       => 90,
+'error_rate_warning_threshold'    => 10,
+'error_rate_critical_threshold'   => 20,
+'budget_high_priority_percent'    => 95,
+'budget_medium_priority_percent'  => 75,
+'budget_low_priority_percent'     => 50,
+'budget_critical_health_percent'  => 50,
+'budget_warning_health_percent'   => 75,
+'max_tokens_low_tier'             => 1000,
+'max_tokens_medium_tier'          => 4000,
+'max_tokens_high_tier'            => 16000,
+'prediction_confidence_threshold' => 15,
+'prediction_buffer_percent'       => 35,
+),
+),
+);
+}
+
+/**
+ * Get presets selector HTML.
+ *
+ * @return string
+ */
+private function get_presets_selector() {
+$presets = $this->get_presets();
+
+$content  = '<div class="wp-mcp-ai-preset-selector" style="background: #fff; border: 1px solid #c3c4c7; border-radius: 4px; padding: 1.5rem; margin: 1rem 0;">';
+$content .= '<h3 style="margin-top: 0;">' . esc_html__( 'Quick Configuration Presets', 'wp-mcp-ai' ) . '</h3>';
+$content .= '<p>' . esc_html__( 'Start with a pre-configured template optimized for common scenarios. You can fine-tune individual settings after applying a preset.', 'wp-mcp-ai' ) . '</p>';
+
+$content .= '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin: 1.5rem 0;">';
+
+foreach ( $presets as $preset_key => $preset ) {
+$is_custom = 'custom' === $preset_key;
+$is_auto = 'auto' === $preset_key;
+$border_color = $is_custom ? '#2271b1' : ( $is_auto ? '#00a32a' : '#dcdcde' );
+$content   .= '<div class="preset-card" style="border: 2px solid ' . $border_color . '; border-radius: 4px; padding: 1rem; cursor: pointer; transition: all 0.2s;" onclick="wpMcpAiApplyPreset(\'' . esc_js( $preset_key ) . '\')">';
+$content   .= '<h4 style="margin: 0 0 0.5rem 0; color: #2271b1;">' . esc_html( $preset['name'] ) . '</h4>';
+$content   .= '<p style="margin: 0; font-size: 0.9em; color: #646970;">' . esc_html( $preset['description'] ) . '</p>';
+if ( $is_custom ) {
+$content .= '<span style="display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #2271b1; color: #fff; font-size: 0.75em; border-radius: 3px;">' . esc_html__( 'DEFAULT', 'wp-mcp-ai' ) . '</span>';
+} elseif ( $is_auto ) {
+$content .= '<span style="display: inline-block; margin-top: 0.5rem; padding: 0.25rem 0.5rem; background: #00a32a; color: #fff; font-size: 0.75em; border-radius: 3px;">' . esc_html__( 'RECOMMENDED', 'wp-mcp-ai' ) . '</span>';
+}
+$content .= '</div>';
+}
+
+$content .= '</div>';
+
+// Add JavaScript for preset application.
+$content .= '<script>';
+$content .= 'var wpMcpAiPresets = ' . wp_json_encode( $presets ) . ';';
+$content .= 'function wpMcpAiApplyPreset(presetKey) {';
+$content .= '  if (!wpMcpAiPresets[presetKey]) return;';
+$content .= '  var preset = wpMcpAiPresets[presetKey];';
+$content .= '  var values = preset.values;';
+$content .= '  if (confirm("Apply preset: " + preset.name + "?\\n\\n" + preset.description + "\\n\\nThis will update all orchestration settings.")) {';
+$content .= '    for (var key in values) {';
+$content .= '      var input = document.getElementById(key);';
+$content .= '      if (input) {';
+$content .= '        input.value = values[key];';
+$content .= '        var display = document.getElementById(key + "_display");';
+$content .= '        if (display) display.textContent = values[key];';
+$content .= '        var val = document.getElementById(key + "_val");';
+$content .= '        if (val) val.textContent = values[key];';
+$content .= '      }';
+$content .= '    }';
+$content .= '    alert("Preset applied! Click \'Save Changes\' at the bottom to persist these settings.");';
+$content .= '  }';
+$content .= '}';
+$content .= '</script>';
+
+$content .= '<style>';
+$content .= '.preset-card:hover { border-color: #2271b1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transform: translateY(-2px); }';
+$content .= '.preset-card h4 { font-size: 1em; }';
+$content .= '</style>';
+
+$content .= '</div>';
+
+return $content;
+}
 
 /**
  * Get statistics content HTML.
