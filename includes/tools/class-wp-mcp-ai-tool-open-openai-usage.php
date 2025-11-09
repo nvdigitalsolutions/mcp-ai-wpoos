@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
+			'summary'     => __( 'OpenAI Usage Dashboard', 'wp-mcp-ai' ),
 			'label'       => __( 'OpenAI Usage Dashboard', 'wp-mcp-ai' ),
 			'url'         => 'https://platform.openai.com/usage',
 			'description' => __( 'Visit the OpenAI platform usage dashboard to review billing, quotas, and consumption analytics.', 'wp-mcp-ai' ),

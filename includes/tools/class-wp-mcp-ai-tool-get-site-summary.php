@@ -68,6 +68,7 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface {
 		$users       = count_users();
 
 		return array(
+			'summary'          => sprintf( __( 'Site: %s', 'wp-mcp-ai' ), get_bloginfo( 'name' ) ),
 			'site_name'        => get_bloginfo( 'name' ),
 			'site_description' => get_bloginfo( 'description' ),
 			'site_url'         => home_url(),

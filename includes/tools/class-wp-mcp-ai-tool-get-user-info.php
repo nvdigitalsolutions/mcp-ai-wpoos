@@ -96,6 +96,7 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
+			'summary'      => sprintf( __( 'User: %s', 'wp-mcp-ai' ), $user->display_name ),
 			'ID'           => $user->ID,
 			'display_name' => $user->display_name,
 			'user_login'   => $user->user_login,

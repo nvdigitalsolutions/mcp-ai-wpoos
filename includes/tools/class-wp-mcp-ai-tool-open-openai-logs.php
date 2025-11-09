@@ -64,6 +64,7 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
+			'summary'     => __( 'OpenAI Logs Dashboard', 'wp-mcp-ai' ),
 			'label'       => __( 'OpenAI Logs Dashboard', 'wp-mcp-ai' ),
 			'url'         => 'https://platform.openai.com/logs',
 			'description' => __( 'Visit the OpenAI platform logs dashboard to review recent API requests, usage details, and error messages.', 'wp-mcp-ai' ),

@@ -149,6 +149,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface {
 		$args = $this->prepare_arguments( $arguments );
 
 		$result = array(
+			'summary'     => __( 'System logs retrieved successfully', 'wp-mcp-ai' ),
 			'wp_mcp_ai'   => $this->get_mcp_ai_logs( $args ),
 			'wordpress'   => $this->get_wordpress_logs( $args ),
 			'plugin_logs' => $args['include_plugin_logs'] ? $this->get_plugin_logs( $args ) : array(
