@@ -830,7 +830,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					array(
 						'methods'             => WP_REST_Server::CREATABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
+						'permission_callback' => array( $this, 'permissions_check_mcp' ),
 						'callback'            => array( $this, 'handle_mcp_request' ),
 						'args'                => array(
 							'jsonrpc' => array(
@@ -877,6 +877,166 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				),
 				true
+			);
+
+			// Health check and metrics endpoints.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/health',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => '__return_true',
+					'callback'            => array( $this, 'handle_health_check' ),
+				),
+				true
+			);
+
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/health/providers',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'admin_permissions_check' ),
+					'callback'            => array( $this, 'handle_providers_health' ),
+				),
+				true
+			);
+
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/metrics',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'admin_permissions_check' ),
+					'callback'            => array( $this, 'handle_metrics' ),
+				),
+				true
+			);
+
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/metrics/reset',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'admin_permissions_check' ),
+					'callback'            => array( $this, 'handle_metrics_reset' ),
+					'args'                => array(
+						'category' => array(
+							'description'       => __( 'Metrics category to reset. If empty, resets all.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+				true
+			);
+		}
+
+		/**
+		 * Admin permission callback.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return bool|WP_Error True if authorized, WP_Error otherwise.
+		 */
+		public function admin_permissions_check( WP_REST_Request $request ) {
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to access this endpoint.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Handle health check request.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_health_check( WP_REST_Request $request ) {
+			$health = array(
+				'status'    => 'healthy',
+				'timestamp' => current_time( 'c', true ),
+				'version'   => WP_MCP_AI_VERSION,
+			);
+
+			return rest_ensure_response( $health );
+		}
+
+		/**
+		 * Handle providers health check request.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_providers_health( WP_REST_Request $request ) {
+			if ( ! class_exists( 'WP_MCP_AI_Circuit_Breaker' ) ) {
+				return rest_ensure_response( array( 'error' => 'Circuit breaker not available' ) );
+			}
+
+			$providers = array( 'openai', 'gemini', 'anthropic', 'ollama', 'lm_studio' );
+			$health    = array();
+
+			foreach ( $providers as $provider ) {
+				$health[ $provider ] = WP_MCP_AI_Circuit_Breaker::get_health_metrics( $provider );
+			}
+
+			return rest_ensure_response(
+				array(
+					'timestamp' => current_time( 'c', true ),
+					'providers' => $health,
+				)
+			);
+		}
+
+		/**
+		 * Handle metrics request.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_metrics( WP_REST_Request $request ) {
+			if ( ! class_exists( 'WP_MCP_AI_Metrics' ) ) {
+				return rest_ensure_response( array( 'error' => 'Metrics system not available' ) );
+			}
+
+			$summary = WP_MCP_AI_Metrics::get_metrics_summary();
+
+			return rest_ensure_response(
+				array(
+					'timestamp' => current_time( 'c', true ),
+					'metrics'   => $summary,
+				)
+			);
+		}
+
+		/**
+		 * Handle metrics reset request.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_metrics_reset( WP_REST_Request $request ) {
+			if ( ! class_exists( 'WP_MCP_AI_Metrics' ) ) {
+				return rest_ensure_response( array( 'error' => 'Metrics system not available' ) );
+			}
+
+			$category = $request->get_param( 'category' );
+
+			WP_MCP_AI_Metrics::reset( $category ? $category : '' );
+
+			return rest_ensure_response(
+				array(
+					'success'   => true,
+					'message'   => $category 
+						? sprintf( 'Metrics category "%s" reset successfully.', $category )
+						: 'All metrics reset successfully.',
+					'timestamp' => current_time( 'c', true ),
+				)
 			);
 		}
 
@@ -1686,6 +1846,68 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Permission check for MCP endpoint - requires bearer token or mesh API key only.
+		 *
+		 * Enforces bearer-only authentication for remote MCP access.
+		 * WordPress nonce authentication is NOT permitted for the /mcp endpoint.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_mcp( WP_REST_Request $request ) {
+			$this->reset_auth_context();
+
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			if ( ! empty( $mesh_key ) ) {
+				$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+				if ( true === $mesh_validated ) {
+					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+					return true;
+				} elseif ( is_wp_error( $mesh_validated ) ) {
+					return $mesh_validated;
+				}
+			}
+
+			// Check for bearer token authentication.
+			$bearer = $request->get_header( 'Authorization' );
+			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+				$token = trim( $matches[1] );
+
+				// Validate local credential token.
+				$local = $this->validate_local_token( $token, $request );
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				// Validate Auth0 or other bearer token.
+				$validated = $this->validate_bearer_token( $token, $request );
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				return true;
+			}
+
+			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted.
+			return new WP_Error(
+				'wp_mcp_ai_mcp_bearer_required',
+				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 401,
+					'actions' => array(
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+						'supply_mesh_key'     => __( 'Alternatively, use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'wp-mcp-ai' ),
+						'issue_credential'    => __( 'To obtain a bearer token, issue an assistant credential via the WordPress admin.', 'wp-mcp-ai' ),
+					),
+				)
+			);
 		}
 
 		/**

@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 
 			// If provider is explicitly specified, use it directly without fallback.
 			if ( ! empty( $provider ) ) {
-				return $this->route_to_provider( $provider, $messages, $options );
+				return $this->route_to_provider_with_tracking( $provider, $messages, $options, false );
 			}
 
 			// No provider specified - use priority list with fallback.
@@ -91,7 +91,8 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 				? $settings['provider_priority_list']
 				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
 
-			$last_error = null;
+			$last_error        = null;
+			$skipped_providers = array();
 
 			// Try providers in priority order.
 			foreach ( $priority_list as $try_provider ) {
@@ -101,7 +102,17 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 					continue;
 				}
 
-				$result = $this->route_to_provider( $try_provider, $messages, $options );
+				// Check circuit breaker before attempting.
+				if ( class_exists( 'WP_MCP_AI_Circuit_Breaker' ) && ! WP_MCP_AI_Circuit_Breaker::is_available( $try_provider ) ) {
+					$skipped_providers[] = $try_provider;
+					WP_MCP_AI_Logger::log_debug(
+						sprintf( 'Skipping provider %s due to circuit breaker.', $try_provider ),
+						array( 'provider' => $try_provider )
+					);
+					continue;
+				}
+
+				$result = $this->route_to_provider_with_tracking( $try_provider, $messages, $options, true );
 
 				// If successful, return the result.
 				if ( ! is_wp_error( $result ) ) {
@@ -111,10 +122,21 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 							'provider_fallback_success',
 							sprintf( 'Successfully used fallback provider: %s', $try_provider ),
 							array(
-								'provider' => $try_provider,
-								'previous_errors' => count( (array) $last_error ),
+								'provider'          => $try_provider,
+								'previous_errors'   => count( (array) $last_error ),
+								'skipped_providers' => $skipped_providers,
 							)
 						);
+
+						// Record metrics.
+						if ( class_exists( 'WP_MCP_AI_Metrics' ) ) {
+							WP_MCP_AI_Metrics::increment(
+								WP_MCP_AI_Metrics::CATEGORY_API_CALLS,
+								'fallback_success',
+								1,
+								array( 'provider' => $try_provider )
+							);
+						}
 					}
 					return $result;
 				}
@@ -132,10 +154,74 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			}
 
 			// All providers failed, return the last error.
+			if ( ! empty( $skipped_providers ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'All providers failed or were skipped by circuit breaker.',
+					array(
+						'skipped_providers' => $skipped_providers,
+						'last_error'        => $last_error ? $last_error->get_error_message() : 'None',
+					)
+				);
+			}
+
 			return $last_error ? $last_error : new WP_Error(
 				'no_providers_available',
 				__( 'No AI providers are available or configured.', 'wp-mcp-ai' )
 			);
+		}
+
+		/**
+		 * Route a request to a specific provider with health tracking.
+		 *
+		 * @param string $provider       Provider key.
+		 * @param array  $messages       Messages array.
+		 * @param array  $options        Request options.
+		 * @param bool   $track_circuit  Whether to track circuit breaker state.
+		 * @return array|WP_Error
+		 */
+		protected function route_to_provider_with_tracking( $provider, array $messages, array $options, $track_circuit = true ) {
+			$start_time = microtime( true );
+
+			$result = $this->route_to_provider( $provider, $messages, $options );
+
+			$duration = microtime( true ) - $start_time;
+
+			// Track metrics and circuit breaker state.
+			if ( $track_circuit ) {
+				$success = ! is_wp_error( $result );
+
+				// Record API call metrics.
+				$error_info = array();
+				if ( ! $success ) {
+					$error_data = $result->get_error_data();
+					$error_info = array(
+						'type'   => $result->get_error_code(),
+						'status' => isset( $error_data['status'] ) ? $error_data['status'] : 0,
+					);
+
+					// Check if this was a timeout.
+					if ( in_array( $result->get_error_code(), array( 'http_request_timeout', 'wp_mcp_ai_wordpress_timeout' ), true ) ) {
+						if ( class_exists( 'WP_MCP_AI_Metrics' ) ) {
+							WP_MCP_AI_Metrics::record_timeout( $provider, 'chat_completion' );
+						}
+					}
+				}
+
+				if ( class_exists( 'WP_MCP_AI_Metrics' ) ) {
+					WP_MCP_AI_Metrics::record_api_call( $provider, 'chat_completion', $success, $duration, $error_info );
+				}
+
+				// Update circuit breaker.
+				if ( class_exists( 'WP_MCP_AI_Circuit_Breaker' ) ) {
+					if ( $success ) {
+						WP_MCP_AI_Circuit_Breaker::record_success( $provider );
+					} else {
+						WP_MCP_AI_Circuit_Breaker::record_failure( $provider, $error_info );
+					}
+				}
+			}
+
+			return $result;
 		}
 
 		/**

@@ -7,6 +7,23 @@
 
 ## [Unreleased]
 ### Added
+- **Per-Assistant Token Budgets**: Administrators can now set token budgets for individual assistants with configurable time windows (1 minute to 24 hours). Budgets are tracked per user-assistant pair and automatically reset when the window expires.
+- **Budget Enforcement**: Token budget violations return graceful 429 errors with user-friendly messages including time until budget reset
+- **Comprehensive Budget Logging**: All budget checks (success and failure) are logged with detailed information for monitoring and troubleshooting
+- **SDK Version Pinning**: Pinned notifylk/notify-php dependency to specific commit hash for reproducible builds
+- **Release Process Documentation**: Added comprehensive release process and upgrade testing guide (`docs/RELEASE-PROCESS.md`)
+- **Per-Assistant Budget Documentation**: Complete guide with examples and troubleshooting (`docs/per-assistant-budgets.md`)
+- **Test Coverage**: Added 15 new tests for per-assistant budgets and rate limit user messaging
+
+### Changed
+- **Dependency Management**: Updated composer.json to pin dev-master dependencies to specific commit hashes
+- **Error Messages**: Enhanced 429 error messages to include budget limits, current usage, and time until reset
+
+### Security
+- **Reproducible Builds**: All dependencies now pinned to specific versions or commit hashes via composer.lock and package-lock.json
+
+## [Unreleased - Previous]
+### Added
 - **MCP 2024-11-05 Specification Support**: Updated documentation to align with the latest Model Context Protocol specification
   - OAuth 2.1 security enhancements (PKCE, token rotation, mandatory HTTPS)
   - Streamable HTTP transport for better reconnection and bidirectional communication
