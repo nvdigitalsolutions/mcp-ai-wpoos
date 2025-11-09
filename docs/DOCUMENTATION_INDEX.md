@@ -102,7 +102,7 @@ These documents now include the following root-level files that have been integr
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [DISPLAYS-DASHBOARD.md](DISPLAYS-DASHBOARD.md) | **NEW:** Displays Dashboard page - Centralized view of all Elementor widgets and Gutenberg blocks | Users/Admins |
+| [DISPLAYS-DASHBOARD.md](DISPLAYS-DASHBOARD.md) | **HISTORICAL:** Displays Dashboard page (removed from menu) - Reference for Elementor widgets and Gutenberg blocks | Users/Admins |
 | [FRONTEND-ACCESSIBILITY.md](FRONTEND-ACCESSIBILITY.md) | **NEW:** Comprehensive accessibility (ARIA, WCAG 2.1), responsive design, and user feedback patterns | Developers/Designers |
 
 ### Remote Client Setup

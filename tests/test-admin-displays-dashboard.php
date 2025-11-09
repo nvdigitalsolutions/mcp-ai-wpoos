@@ -2,8 +2,8 @@
 /**
  * Tests for Displays Dashboard Admin Page
  *
- * Verifies that the Displays Dashboard page is properly registered,
- * appears in the correct menu position, and functions correctly.
+ * NOTE: Displays Dashboard has been removed from the admin menu as per issue requirements.
+ * These tests are kept for historical reference but are marked as skipped.
  *
  * @package WP_MCP_AI
  */
@@ -19,9 +19,8 @@ class Test_Admin_Displays_Dashboard extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		// Set up an admin user.
-		wp_set_current_user( $this->factory->user->create( array( 'role' => 'administrator' ) ) );
-		set_current_screen( 'dashboard' );
+		// Mark all tests as skipped since Displays Dashboard has been removed from the menu.
+		$this->markTestSkipped( 'Displays Dashboard has been removed from the admin menu as per issue requirements.' );
 	}
 
 	/**

@@ -1,10 +1,12 @@
 # Displays Dashboard
 
-## Overview
-The Displays Dashboard is a new admin page in WP oOS that provides a centralized location to view and manage all available Elementor widgets and Gutenberg blocks. It appears in the admin menu above the JetEngine integration page.
+> **NOTE:** As of the latest version, the Displays Dashboard has been removed from the admin menu. This documentation is kept for historical reference. The functionality for viewing Elementor widgets and Gutenberg blocks is still available through the respective plugin interfaces (Elementor page builder and Gutenberg block editor).
 
-## Location
-**WP oOS → Displays Dashboard**
+## Overview
+The Displays Dashboard was an admin page in WP oOS that provided a centralized location to view and manage all available Elementor widgets and Gutenberg blocks.
+
+## Location (Historical)
+**WP oOS → Displays Dashboard** (Removed from menu)
 
 The menu item is positioned first in the submenu (before JetEngine, WooCommerce, Elementor, etc.) by using priority 5 on the `admin_menu` hook.
 

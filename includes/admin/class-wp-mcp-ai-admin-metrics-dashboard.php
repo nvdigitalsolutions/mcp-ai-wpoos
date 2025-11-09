@@ -28,7 +28,7 @@ class WP_MCP_AI_Admin_Metrics_Dashboard {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'register_page' ), 20 );
+		add_action( 'admin_menu', array( $this, 'register_page' ), 3 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 	}
 
