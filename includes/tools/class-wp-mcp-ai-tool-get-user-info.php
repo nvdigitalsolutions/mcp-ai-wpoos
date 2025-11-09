@@ -39,15 +39,14 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
+			'type'       => 'object',
+			'properties' => array(
 				'user_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'The ID of the user to inspect. Defaults to the current user.', 'wp-mcp-ai' ),
 					'minimum'     => 1,
 				),
 			),
-			'additionalProperties' => false,
 		);
 	}
 
