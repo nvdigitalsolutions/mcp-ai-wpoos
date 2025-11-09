@@ -39,6 +39,7 @@
 - SSE endpoint modernized with automatic reconnection, event IDs, and HTTP/2 compatibility
 
 ### Fixed
+- **PHP Version Compatibility**: Added defensive PHP version checks to all WooCommerce-related files to prevent parse errors on PHP < 7.4. This ensures that if any WooCommerce logging or error handling mechanism attempts to load plugin files directly, they will gracefully exit instead of causing "unexpected token private/protected" fatal errors on older PHP versions.
 - JavaScript lint errors: Fixed 6 linting errors including unused function parameters in admin-settings.js and camelcase identifier warnings in settings-dashboard.js
 - JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
 - 164 PHP coding standard violations auto-fixed across 19 files
