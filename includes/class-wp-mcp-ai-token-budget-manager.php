@@ -723,6 +723,25 @@ class WP_MCP_AI_Token_Budget_Manager {
 				)
 			);
 
+			// Log to SIEM.
+			if ( class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
+				$siem = WP_MCP_AI_SIEM_Logger::get_instance();
+				$siem->export_event(
+					'token_budget_exceeded',
+					'User exceeded token budget for assistant',
+					array(
+						'user_id'            => $user_id,
+						'assistant_id'       => $assistant_id,
+						'budget_limit'       => $budget_limit,
+						'current_usage'      => $usage_data['total_tokens'],
+						'estimated_request'  => $estimated_tokens,
+						'overage_amount'     => $projected_total - $budget_limit,
+						'window_seconds'     => $budget_window,
+					),
+					'warning'
+				);
+			}
+
 			return new WP_Error(
 				'wp_mcp_ai_budget_exceeded',
 				sprintf(
@@ -754,15 +773,225 @@ class WP_MCP_AI_Token_Budget_Manager {
 			'token_budget_check_passed',
 			'Token budget check passed for assistant.',
 			array(
-				'user_id'          => $user_id,
-				'assistant_id'     => $assistant_id,
-				'budget_limit'     => $budget_limit,
-				'current_usage'    => $usage_data['total_tokens'],
+				'user_id'           => $user_id,
+				'assistant_id'      => $assistant_id,
+				'budget_limit'      => $budget_limit,
+				'current_usage'     => $usage_data['total_tokens'],
 				'estimated_request' => $estimated_tokens,
-				'remaining_budget' => $budget_limit - $usage_data['total_tokens'],
+				'remaining_budget'  => $budget_limit - $usage_data['total_tokens'],
 			)
 		);
 
+		// Log to SIEM for analytics (at info level for successful checks).
+		if ( class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
+			$siem = WP_MCP_AI_SIEM_Logger::get_instance();
+			$siem->export_event(
+				'token_budget_usage',
+				'Token budget check passed',
+				array(
+					'user_id'          => $user_id,
+					'assistant_id'     => $assistant_id,
+					'model'            => $model,
+					'estimated_tokens' => $estimated_tokens,
+					'current_usage'    => $usage_data['total_tokens'],
+					'budget_limit'     => $budget_limit,
+					'utilization_pct'  => round( ( $usage_data['total_tokens'] / $budget_limit ) * 100, 2 ),
+				),
+				'info'
+			);
+		}
+
 		return true;
+	}
+
+	/**
+	 * Get token usage analytics for a user.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $period  Period to analyze: '1h', '24h', '7d', '30d'.
+	 * @return array Usage analytics.
+	 */
+	public static function get_usage_analytics( $user_id, $period = '24h' ) {
+		$periods = array(
+			'1h'  => HOUR_IN_SECONDS,
+			'24h' => DAY_IN_SECONDS,
+			'7d'  => 7 * DAY_IN_SECONDS,
+			'30d' => 30 * DAY_IN_SECONDS,
+		);
+
+		$seconds = isset( $periods[ $period ] ) ? $periods[ $period ] : DAY_IN_SECONDS;
+
+		// Get historical usage data.
+		$analytics_data = get_option( 'wp_mcp_ai_token_analytics', array() );
+
+		if ( ! is_array( $analytics_data ) || ! isset( $analytics_data[ $user_id ] ) ) {
+			return array(
+				'total_tokens'     => 0,
+				'total_requests'   => 0,
+				'avg_tokens_per_request' => 0,
+				'peak_usage'       => 0,
+				'period'           => $period,
+				'trend'            => 'insufficient_data',
+			);
+		}
+
+		$user_data   = $analytics_data[ $user_id ];
+		$cutoff_time = time() - $seconds;
+
+		$total_tokens   = 0;
+		$total_requests = 0;
+		$peak_usage     = 0;
+		$hourly_usage   = array();
+
+		foreach ( $user_data as $timestamp => $data ) {
+			if ( $timestamp < $cutoff_time ) {
+				continue;
+			}
+
+			$total_tokens   += isset( $data['tokens'] ) ? $data['tokens'] : 0;
+			$total_requests += isset( $data['requests'] ) ? $data['requests'] : 1;
+
+			// Track hourly usage for trend analysis.
+			$hour = floor( $timestamp / HOUR_IN_SECONDS );
+			if ( ! isset( $hourly_usage[ $hour ] ) ) {
+				$hourly_usage[ $hour ] = 0;
+			}
+			$hourly_usage[ $hour ] += isset( $data['tokens'] ) ? $data['tokens'] : 0;
+
+			$peak_usage = max( $peak_usage, isset( $data['tokens'] ) ? $data['tokens'] : 0 );
+		}
+
+		$avg_tokens_per_request = $total_requests > 0 ? $total_tokens / $total_requests : 0;
+
+		// Calculate trend.
+		$trend = 'stable';
+		if ( count( $hourly_usage ) >= 2 ) {
+			$hourly_values = array_values( $hourly_usage );
+			$first_half    = array_slice( $hourly_values, 0, floor( count( $hourly_values ) / 2 ) );
+			$second_half   = array_slice( $hourly_values, floor( count( $hourly_values ) / 2 ) );
+
+			$first_avg  = array_sum( $first_half ) / count( $first_half );
+			$second_avg = array_sum( $second_half ) / count( $second_half );
+
+			if ( $second_avg > $first_avg * 1.2 ) {
+				$trend = 'increasing';
+			} elseif ( $second_avg < $first_avg * 0.8 ) {
+				$trend = 'decreasing';
+			}
+		}
+
+		return array(
+			'total_tokens'           => $total_tokens,
+			'total_requests'         => $total_requests,
+			'avg_tokens_per_request' => round( $avg_tokens_per_request, 2 ),
+			'peak_usage'             => $peak_usage,
+			'period'                 => $period,
+			'trend'                  => $trend,
+			'hourly_breakdown'       => $hourly_usage,
+		);
+	}
+
+	/**
+	 * Record token usage for analytics.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param int   $tokens  Tokens used.
+	 * @param array $context Additional context.
+	 */
+	public static function record_analytics( $user_id, $tokens, $context = array() ) {
+		$analytics_data = get_option( 'wp_mcp_ai_token_analytics', array() );
+
+		if ( ! is_array( $analytics_data ) ) {
+			$analytics_data = array();
+		}
+
+		if ( ! isset( $analytics_data[ $user_id ] ) ) {
+			$analytics_data[ $user_id ] = array();
+		}
+
+		$timestamp = time();
+
+		$analytics_data[ $user_id ][ $timestamp ] = array(
+			'tokens'   => $tokens,
+			'requests' => 1,
+			'context'  => $context,
+		);
+
+		// Clean up old data (keep only 30 days).
+		$cutoff_time = time() - ( 30 * DAY_IN_SECONDS );
+		foreach ( $analytics_data as $uid => $data ) {
+			foreach ( $data as $ts => $entry ) {
+				if ( $ts < $cutoff_time ) {
+					unset( $analytics_data[ $uid ][ $ts ] );
+				}
+			}
+			// Remove user entry if empty.
+			if ( empty( $analytics_data[ $uid ] ) ) {
+				unset( $analytics_data[ $uid ] );
+			}
+		}
+
+		update_option( 'wp_mcp_ai_token_analytics', $analytics_data, false );
+	}
+
+	/**
+	 * Get token usage forecast based on historical patterns.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $period  Period to forecast: '1h', '24h', '7d'.
+	 * @return array Forecast data.
+	 */
+	public static function forecast_usage( $user_id, $period = '24h' ) {
+		$analytics = self::get_usage_analytics( $user_id, '7d' ); // Use 7 days for forecasting.
+
+		if ( $analytics['total_requests'] < 10 ) {
+			return array(
+				'forecasted_tokens'   => 0,
+				'confidence'          => 0,
+				'recommendation'      => 'insufficient_data',
+				'alert_threshold_met' => false,
+			);
+		}
+
+		$periods = array(
+			'1h'  => 1,
+			'24h' => 24,
+			'7d'  => 168,
+		);
+
+		$hours = isset( $periods[ $period ] ) ? $periods[ $period ] : 24;
+
+		// Calculate average tokens per hour.
+		$total_hours      = 7 * 24; // 7 days.
+		$tokens_per_hour  = $analytics['total_tokens'] / $total_hours;
+		$forecasted_tokens = $tokens_per_hour * $hours;
+
+		// Apply trend multiplier.
+		if ( 'increasing' === $analytics['trend'] ) {
+			$forecasted_tokens *= 1.2;
+		} elseif ( 'decreasing' === $analytics['trend'] ) {
+			$forecasted_tokens *= 0.8;
+		}
+
+		// Calculate confidence.
+		$confidence = min( 1, $analytics['total_requests'] / 100 );
+
+		// Determine recommendation.
+		$recommendation = 'normal';
+		$alert_threshold_met = false;
+
+		if ( 'increasing' === $analytics['trend'] && $forecasted_tokens > $analytics['avg_tokens_per_request'] * 100 ) {
+			$recommendation = 'consider_budget_increase';
+			$alert_threshold_met = true;
+		}
+
+		return array(
+			'forecasted_tokens'   => (int) $forecasted_tokens,
+			'confidence'          => $confidence,
+			'period'              => $period,
+			'trend'               => $analytics['trend'],
+			'recommendation'      => $recommendation,
+			'alert_threshold_met' => $alert_threshold_met,
+		);
 	}
 }
