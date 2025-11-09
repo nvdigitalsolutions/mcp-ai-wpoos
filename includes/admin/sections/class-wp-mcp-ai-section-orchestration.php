@@ -57,11 +57,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'orchestration_intro'       => array(
-					'type'        => 'html',
-					'content'     => $this->get_intro_content(),
+				'orchestration_intro'            => array(
+					'type'    => 'html',
+					'content' => $this->get_intro_content(),
 				),
-				'enable_budget_management'  => array(
+				'enable_budget_management'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable dynamic budget management', 'wp-mcp-ai' ),
@@ -75,23 +75,179 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_capability_gating'  => array(
+				'enable_capability_gating'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Capability-Based Tool Gating', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable capability-based tool gating', 'wp-mcp-ai' ),
 					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_cron_orchestration' => array(
+				'enable_cron_orchestration'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cron-Based Task Orchestration', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable cron-based task orchestration', 'wp-mcp-ai' ),
 					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'orchestration_stats'       => array(
-					'type'        => 'html',
-					'content'     => $this->get_stats_content(),
+				'orchestration_divider_health'   => array(
+					'type'    => 'html',
+					'content' => '<h3 style="margin-top:2rem;border-top:1px solid #ddd;padding-top:1.5rem;">' . esc_html__( 'Health Monitoring Thresholds', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'memory_warning_threshold'       => array(
+					'type'        => 'range',
+					'label'       => __( 'Memory Warning Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'System health shows warning when memory usage exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 95,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 75,
+				),
+				'memory_critical_threshold'      => array(
+					'type'        => 'range',
+					'label'       => __( 'Memory Critical Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'System health becomes critical when memory usage exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 75,
+					'max'         => 99,
+					'step'        => 1,
+					'unit'        => '%',
+					'default'     => 90,
+				),
+				'error_rate_warning_threshold'   => array(
+					'type'        => 'range',
+					'label'       => __( 'Error Rate Warning Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'System health shows warning when error rate exceeds this percentage (last hour).', 'wp-mcp-ai' ),
+					'min'         => 5,
+					'max'         => 25,
+					'step'        => 1,
+					'unit'        => '%',
+					'default'     => 10,
+				),
+				'error_rate_critical_threshold'  => array(
+					'type'        => 'range',
+					'label'       => __( 'Error Rate Critical Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'System health becomes critical when error rate exceeds this percentage (last hour).', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 50,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 20,
+				),
+				'orchestration_divider_budget'   => array(
+					'type'    => 'html',
+					'content' => '<h3 style="margin-top:2rem;border-top:1px solid #ddd;padding-top:1.5rem;">' . esc_html__( 'Adaptive Budget Allocation', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'budget_high_priority_percent'   => array(
+					'type'        => 'range',
+					'label'       => __( 'High Priority Budget Allocation', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of max tokens allocated to high priority requests.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 100,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 100,
+				),
+				'budget_medium_priority_percent' => array(
+					'type'        => 'range',
+					'label'       => __( 'Medium Priority Budget Allocation', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of max tokens allocated to medium priority requests.', 'wp-mcp-ai' ),
+					'min'         => 30,
+					'max'         => 100,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 80,
+				),
+				'budget_low_priority_percent'    => array(
+					'type'        => 'range',
+					'label'       => __( 'Low Priority Budget Allocation', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of max tokens allocated to low priority requests.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 80,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 50,
+				),
+				'budget_critical_health_percent' => array(
+					'type'        => 'range',
+					'label'       => __( 'Critical Health Budget Reduction', 'wp-mcp-ai' ),
+					'description' => __( 'Reduce token budget to this percentage when system health is critical.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 80,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 50,
+				),
+				'budget_warning_health_percent'  => array(
+					'type'        => 'range',
+					'label'       => __( 'Warning Health Budget Reduction', 'wp-mcp-ai' ),
+					'description' => __( 'Reduce token budget to this percentage when system health shows warning.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 100,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 75,
+				),
+				'orchestration_divider_tokens'   => array(
+					'type'    => 'html',
+					'content' => '<h3 style="margin-top:2rem;border-top:1px solid #ddd;padding-top:1.5rem;">' . esc_html__( 'Token Limits by Tier', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'max_tokens_low_tier'            => array(
+					'type'        => 'range',
+					'label'       => __( 'Low Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for low tier servers (< 128MB memory).', 'wp-mcp-ai' ),
+					'min'         => 500,
+					'max'         => 5000,
+					'step'        => 100,
+					'unit'        => ' tokens',
+					'default'     => 1000,
+				),
+				'max_tokens_medium_tier'         => array(
+					'type'        => 'range',
+					'label'       => __( 'Medium Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for medium tier servers (128MB - 512MB memory).', 'wp-mcp-ai' ),
+					'min'         => 2000,
+					'max'         => 10000,
+					'step'        => 500,
+					'unit'        => ' tokens',
+					'default'     => 4000,
+				),
+				'max_tokens_high_tier'           => array(
+					'type'        => 'range',
+					'label'       => __( 'High Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for high tier servers (> 512MB memory).', 'wp-mcp-ai' ),
+					'min'         => 8000,
+					'max'         => 32000,
+					'step'        => 1000,
+					'unit'        => ' tokens',
+					'default'     => 16000,
+				),
+				'orchestration_divider_predict'  => array(
+					'type'    => 'html',
+					'content' => '<h3 style="margin-top:2rem;border-top:1px solid #ddd;padding-top:1.5rem;">' . esc_html__( 'Predictive Analytics', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'prediction_confidence_threshold' => array(
+					'type'        => 'range',
+					'label'       => __( 'Prediction Display Confidence Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Only show predictions when confidence exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 90,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 30,
+				),
+				'prediction_buffer_percent'      => array(
+					'type'        => 'range',
+					'label'       => __( 'Prediction Safety Buffer', 'wp-mcp-ai' ),
+					'description' => __( 'Add this percentage as safety buffer to predicted resource needs.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 50,
+					'step'        => 5,
+					'unit'        => '%',
+					'default'     => 20,
+				),
+				'orchestration_stats'            => array(
+					'type'    => 'html',
+					'content' => $this->get_stats_content(),
 				),
 			);
 		}
@@ -220,7 +376,7 @@ $content .= '</div>';
 
 // Predictive Insights.
 $prediction = $resource_manager->predict_requirements( 'chat' );
-if ( $prediction['confidence'] > 0.3 ) {
+if ( $prediction['confidence'] > WP_MCP_AI_Settings_Registry::get_setting( 'prediction_confidence_threshold', 30 ) / 100.0 ) {
 $content .= '<div style="margin-top: 1.5rem;">';
 $content .= '<h4>' . esc_html__( 'Predictive Insights', 'wp-mcp-ai' ) . '</h4>';
 $content .= '<div style="background: #f0f6fc; border: 1px solid #c3e4ff; padding: 1rem; border-radius: 4px;">';

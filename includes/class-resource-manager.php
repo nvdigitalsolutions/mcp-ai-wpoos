@@ -170,9 +170,9 @@ private $health_status = null;
 			$tier = $this->get_workload_tier();
 
 			$max_tokens_map = array(
-				'low'    => 1000,
-				'medium' => 4000,
-				'high'   => 16000,
+				'low'    => WP_MCP_AI_Settings_Registry::get_setting( 'max_tokens_low_tier', 1000 ),
+				'medium' => WP_MCP_AI_Settings_Registry::get_setting( 'max_tokens_medium_tier', 4000 ),
+				'high'   => WP_MCP_AI_Settings_Registry::get_setting( 'max_tokens_high_tier', 16000 ),
 			);
 
 			$max_tokens = isset( $max_tokens_map[ $tier ] ) ? $max_tokens_map[ $tier ] : 4000;
@@ -402,10 +402,11 @@ private $health_status = null;
 		$avg_memory = ! empty( $memory_usage ) ? array_sum( $memory_usage ) / count( $memory_usage ) : 0;
 		$avg_time   = ! empty( $time_usage ) ? array_sum( $time_usage ) / count( $time_usage ) : 0;
 
-		// Add 20% buffer for prediction.
-		$predicted_tokens = $avg_tokens * 1.2;
-		$predicted_memory = $avg_memory * 1.2;
-		$predicted_time   = $avg_time * 1.2;
+		// Add safety buffer for prediction (configurable via settings).
+		$buffer_multiplier = 1.0 + ( WP_MCP_AI_Settings_Registry::get_setting( 'prediction_buffer_percent', 20 ) / 100.0 );
+		$predicted_tokens  = $avg_tokens * $buffer_multiplier;
+		$predicted_memory  = $avg_memory * $buffer_multiplier;
+		$predicted_time    = $avg_time * $buffer_multiplier;
 
 		// Calculate confidence based on sample size.
 		$sample_size = count( $relevant_history );
@@ -480,18 +481,23 @@ private $health_status = null;
 		$health = 'healthy';
 		$issues = array();
 
-		if ( $memory_percent > 90 ) {
+		$memory_critical_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 90 );
+		$memory_warning_threshold  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 75 );
+		$error_critical_threshold  = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 20 );
+		$error_warning_threshold   = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 10 );
+
+		if ( $memory_percent > $memory_critical_threshold ) {
 			$health   = 'critical';
 			$issues[] = 'memory_critical';
-		} elseif ( $memory_percent > 75 ) {
+		} elseif ( $memory_percent > $memory_warning_threshold ) {
 			$health   = 'warning';
 			$issues[] = 'memory_high';
 		}
 
-		if ( $error_rate > 20 ) {
+		if ( $error_rate > $error_critical_threshold ) {
 			$health   = 'critical';
 			$issues[] = 'high_error_rate';
-		} elseif ( $error_rate > 10 ) {
+		} elseif ( $error_rate > $error_warning_threshold ) {
 			if ( 'healthy' === $health ) {
 				$health = 'warning';
 			}
@@ -550,20 +556,20 @@ private $health_status = null;
 		$health   = $this->get_health_status();
 		$base_max = $this->get_max_tokens();
 
-		// Adjust based on health status.
+		// Adjust based on health status (settings are percentages, convert to decimal).
 		$multiplier = 1.0;
 
 		if ( 'critical' === $health['overall_health'] ) {
-			$multiplier = 0.5; // Reduce to 50% under critical load.
+			$multiplier = WP_MCP_AI_Settings_Registry::get_setting( 'budget_critical_health_percent', 50 ) / 100.0;
 		} elseif ( 'warning' === $health['overall_health'] ) {
-			$multiplier = 0.75; // Reduce to 75% under warning.
+			$multiplier = WP_MCP_AI_Settings_Registry::get_setting( 'budget_warning_health_percent', 75 ) / 100.0;
 		}
 
-		// Adjust based on priority.
+		// Adjust based on priority (settings are percentages, convert to decimal).
 		$priority_multipliers = array(
-			'high'   => 1.0,   // High priority gets full allocation.
-			'medium' => 0.8,   // Medium gets 80%.
-			'low'    => 0.5,   // Low gets 50%.
+			'high'   => WP_MCP_AI_Settings_Registry::get_setting( 'budget_high_priority_percent', 100 ) / 100.0,
+			'medium' => WP_MCP_AI_Settings_Registry::get_setting( 'budget_medium_priority_percent', 80 ) / 100.0,
+			'low'    => WP_MCP_AI_Settings_Registry::get_setting( 'budget_low_priority_percent', 50 ) / 100.0,
 		);
 
 		$priority_mult = isset( $priority_multipliers[ $priority ] ) ? $priority_multipliers[ $priority ] : 0.8;
