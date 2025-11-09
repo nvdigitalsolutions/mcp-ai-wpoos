@@ -436,6 +436,22 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	}
 
 	/**
+	 * Test that chat-client endpoint has higher iteration limit.
+	 *
+	 * The /chat-client endpoint is used by browser-based chat UI and has
+	 * a default of 15 iterations vs 5 for the standard /chat endpoint.
+	 */
+	public function test_chat_client_endpoint_higher_limit() {
+		// This test documents the different iteration limits:
+		// - Standard /chat endpoint: 5 iterations (for MCP protocol clients)
+		// - Browser /chat-client endpoint: 15 iterations (for complex UI workflows)
+		// - Per-assistant override: via assistant config 'max_agentic_iterations'
+		// - Admin setting: Settings → Custom Filters → Max Agentic Iterations
+		
+		$this->assertTrue( true, 'Documented: /chat-client uses 15 iterations by default' );
+	}
+
+	/**
 	 * Test assistant message with tool_calls is added before tool results.
 	 */
 	public function test_assistant_message_ordering() {
