@@ -35,14 +35,7 @@
             "php-http/discovery": true
         }
     },
-    "repositories": {
-        "notifylk": {
-            "type": "vcs",
-            "url": "https://github.com/notifylk/notify-php"
-        }
-    },
     "require": {
-        "notifylk/notify-php": "dev-master",
         "rahul900day/tiktoken-php": "^1.0",
         "symfony/http-client": "^7.3",
         "nyholm/psr7": "^1.8"
