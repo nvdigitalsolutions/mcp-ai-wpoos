@@ -229,6 +229,7 @@ class WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
+			'summary'  => sprintf( __( 'Published to %s', 'wp-mcp-ai' ), 'Facebook' ),
 			'platform' => 'facebook',
 			'post_id'  => $decoded['id'],
 		);
@@ -390,6 +391,7 @@ class WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
+			'summary'  => sprintf( __( 'Published to %s', 'wp-mcp-ai' ), 'Instagram' ),
 			'platform' => 'instagram',
 			'post_id'  => $publish_decoded['id'],
 		);

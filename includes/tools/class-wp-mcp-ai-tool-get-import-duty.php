@@ -227,6 +227,7 @@ class WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
+			'summary' => sprintf( __( 'Found %d import duty results', 'wp-mcp-ai' ), count( $normalized ) ),
 			'query'   => array(
 				'country'     => $country_map[ $country_key ],
 				'hs_code'     => $hs_code,
