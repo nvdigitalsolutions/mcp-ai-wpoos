@@ -3583,38 +3583,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php
 		}
 
-/**
- * Kick off the Gmail OAuth consent flow.
- *
- * @deprecated Delegated to WP_MCP_AI_OAuth_Manager.
- */
-public function handle_gmail_oauth_start() {
-ager->handle_gmail_oauth_start();
-}
-
-/**
- * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
- *
- * @param string[] $allowed_hosts Existing list of allowed hosts.
- * @param string   $redirect      Requested redirect destination.
- * @return string[]
- *
- * @deprecated Delegated to WP_MCP_AI_OAuth_Manager.
- */
-public function allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
- $this->oauth_manager->allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect );
-}
-
-/**
- * Handle the OAuth callback from Google and persist the refresh token.
- *
- * @deprecated Delegated to WP_MCP_AI_OAuth_Manager.
- */
-public function handle_gmail_oauth_callback() {
-ager->handle_gmail_oauth_callback();
-}
-
-
 		/**
 		 * Render the tools section description.
 		 */

@@ -350,9 +350,9 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	 * Ensure the Google OAuth authorize host is whitelisted for safe redirects.
 	 */
 	public function test_allow_gmail_oauth_redirect_host_whitelists_google_accounts_domain() {
-		$admin_settings = new WP_MCP_AI_Admin_Settings();
+		$oauth_manager = new WP_MCP_AI_OAuth_Manager();
 
-		$hosts = $admin_settings->allow_gmail_oauth_redirect_host( array( 'example.com' ) );
+		$hosts = $oauth_manager->allow_gmail_oauth_redirect_host( array( 'example.com' ) );
 
 		$this->assertContains( 'accounts.google.com', $hosts );
 	}
