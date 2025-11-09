@@ -125,9 +125,11 @@ class WP_MCP_AI_Federation_Peer_Verifier {
 	public static function verify_all_peers() {
 		$query = new WP_Query(
 			array(
-				'post_type'      => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
+				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'        => -1,
+				'fields'                => 'ids',
+				'no_found_rows'         => true,  // Performance: Skip counting.
+				'update_post_term_cache' => false, // Performance: Skip term cache.
 			)
 		);
 
