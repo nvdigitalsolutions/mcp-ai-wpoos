@@ -19,38 +19,76 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Performance Admin Section class.
  */
-class WP_MCP_AI_Section_Performance {
+class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 	/**
 	 * Initialize the section.
 	 */
-	public static function init() {
-		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_run_performance_test', array( __CLASS__, 'ajax_run_test' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics', array( __CLASS__, 'ajax_get_metrics' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_export_test_results', array( __CLASS__, 'ajax_export_results' ) );
+	public function __construct() {
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_run_performance_test', array( $this, 'ajax_run_test' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics', array( $this, 'ajax_get_metrics' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_export_test_results', array( $this, 'ajax_export_results' ) );
 	}
 
 	/**
-	 * Get section configuration.
+	 * Get the section ID.
 	 *
-	 * @return array Section configuration.
+	 * @return string
 	 */
-	public static function get_config() {
-		return array(
-			'id'          => 'performance',
-			'title'       => __( 'Performance Monitoring', 'wp-mcp-ai' ),
-			'description' => __( 'Monitor plugin performance, run tests, and view diagnostics.', 'wp-mcp-ai' ),
-			'icon'        => 'dashicons-performance',
-			'priority'    => 60,
-			'capability'  => 'manage_options',
-		);
+	public function get_id() {
+		return 'performance';
+	}
+
+	/**
+	 * Get the section title.
+	 *
+	 * @return string
+	 */
+	public function get_title() {
+		return __( 'Performance Monitoring', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get the tab this section belongs to.
+	 *
+	 * @return string
+	 */
+	public function get_tab() {
+		return 'advanced';
+	}
+
+	/**
+	 * Get section description.
+	 *
+	 * @return string
+	 */
+	public function get_description() {
+		return __( 'Monitor plugin performance, run tests, and view diagnostics.', 'wp-mcp-ai' );
+	}
+
+	/**
+	 * Get section priority.
+	 *
+	 * @return int
+	 */
+	public function get_priority() {
+		return 60;
+	}
+
+	/**
+	 * Get field definitions for this section.
+	 *
+	 * @return array
+	 */
+	public function get_fields() {
+		return array(); // No settings fields, just display content.
 	}
 
 	/**
 	 * Render the section.
 	 */
-	public static function render() {
+	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
 		}
@@ -78,7 +116,7 @@ class WP_MCP_AI_Section_Performance {
 			<div class="wp-mcp-ai-performance-dashboard">
 				<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
 				<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
-					<span class="health-icon dashicons dashicons-<?php echo esc_attr( self::get_health_icon( $report['overall_health'] ) ); ?>"></span>
+					<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
 					<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
 				</div>
 
@@ -144,7 +182,7 @@ class WP_MCP_AI_Section_Performance {
 					<tbody>
 						<?php foreach ( $report['components'] as $component_id => $component_data ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( self::format_component_name( $component_id ) ); ?></strong></td>
+								<td><strong><?php echo esc_html( $this->format_component_name( $component_id ) ); ?></strong></td>
 								<td>
 									<span class="health-badge health-badge-<?php echo esc_attr( $component_data['health_status'] ); ?>">
 										<?php echo esc_html( ucfirst( $component_data['health_status'] ) ); ?>
@@ -168,7 +206,7 @@ class WP_MCP_AI_Section_Performance {
 										$first_trend = reset( $component_data['trends'] );
 										$trend       = isset( $first_trend['trend'] ) ? $first_trend['trend'] : 'stable';
 									}
-									echo esc_html( self::format_trend( $trend ) );
+									echo esc_html( $this->format_trend( $trend ) );
 									?>
 								</td>
 								<td>
@@ -351,7 +389,7 @@ class WP_MCP_AI_Section_Performance {
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
-	public static function enqueue_assets( $hook ) {
+	public function enqueue_assets( $hook ) {
 		// Only load on settings page.
 		if ( strpos( $hook, 'wp-mcp-ai' ) === false ) {
 			return;
@@ -378,7 +416,7 @@ class WP_MCP_AI_Section_Performance {
 	/**
 	 * AJAX handler for running performance tests.
 	 */
-	public static function ajax_run_test() {
+	public function ajax_run_test() {
 		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -407,7 +445,7 @@ class WP_MCP_AI_Section_Performance {
 	/**
 	 * AJAX handler for getting performance metrics.
 	 */
-	public static function ajax_get_metrics() {
+	public function ajax_get_metrics() {
 		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -424,7 +462,7 @@ class WP_MCP_AI_Section_Performance {
 	/**
 	 * AJAX handler for exporting test results.
 	 */
-	public static function ajax_export_results() {
+	public function ajax_export_results() {
 		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -449,7 +487,7 @@ class WP_MCP_AI_Section_Performance {
 	 * @param string $status Health status.
 	 * @return string Icon name.
 	 */
-	protected static function get_health_icon( $status ) {
+	protected function get_health_icon( $status ) {
 		$icons = array(
 			'good'     => 'yes-alt',
 			'fair'     => 'info',
@@ -466,7 +504,7 @@ class WP_MCP_AI_Section_Performance {
 	 * @param string $component_id Component ID.
 	 * @return string Formatted name.
 	 */
-	protected static function format_component_name( $component_id ) {
+	protected function format_component_name( $component_id ) {
 		$names = array(
 			'rest_api'      => 'REST API',
 			'chat_ui'       => 'Chat UI',
@@ -485,7 +523,7 @@ class WP_MCP_AI_Section_Performance {
 	 * @param string $trend Trend value.
 	 * @return string Formatted trend with icon.
 	 */
-	protected static function format_trend( $trend ) {
+	protected function format_trend( $trend ) {
 		$icons = array(
 			'improving' => '↗️ ' . __( 'Improving', 'wp-mcp-ai' ),
 			'stable'    => '→ ' . __( 'Stable', 'wp-mcp-ai' ),
@@ -496,6 +534,3 @@ class WP_MCP_AI_Section_Performance {
 		return isset( $icons[ $trend ] ) ? $icons[ $trend ] : $trend;
 	}
 }
-
-// Initialize the section.
-WP_MCP_AI_Section_Performance::init();
