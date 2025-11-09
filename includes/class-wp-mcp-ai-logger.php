@@ -20,6 +20,15 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		const PREFIX = '[WP oOS]';
 
 		/**
+		 * Log severity levels.
+		 */
+		const LEVEL_CRITICAL = 'critical';
+		const LEVEL_ERROR    = 'error';
+		const LEVEL_WARNING  = 'warning';
+		const LEVEL_INFO     = 'info';
+		const LEVEL_DEBUG    = 'debug';
+
+		/**
 		 * Option key for persisting recent error and warning entries.
 		 */
 		const RECENT_ERRORS_OPTION = 'wp_mcp_ai_recent_errors';
@@ -288,7 +297,65 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @param array  $context Optional context.
 		 */
 		public static function log_error( $message, $context = array() ) {
-			self::log_event( 'error', $message, $context );
+			self::log_event( self::LEVEL_ERROR, $message, $context );
+		}
+
+		/**
+		 * Log a critical error that requires immediate attention.
+		 *
+		 * Critical errors indicate system failures or security issues that
+		 * prevent core functionality from working.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Error message.
+		 * @param array  $context Optional context including suggested fixes.
+		 */
+		public static function log_critical( $message, $context = array() ) {
+			self::log_event( self::LEVEL_CRITICAL, $message, $context );
+		}
+
+		/**
+		 * Log a warning message.
+		 *
+		 * Warnings indicate potential issues that don't prevent functionality
+		 * but should be addressed.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Warning message.
+		 * @param array  $context Optional context.
+		 */
+		public static function log_warning( $message, $context = array() ) {
+			self::log_event( self::LEVEL_WARNING, $message, $context );
+		}
+
+		/**
+		 * Log an informational message.
+		 *
+		 * Info messages provide general information about plugin operations.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Info message.
+		 * @param array  $context Optional context.
+		 */
+		public static function log_info( $message, $context = array() ) {
+			self::log_event( self::LEVEL_INFO, $message, $context );
+		}
+
+		/**
+		 * Log a debug message.
+		 *
+		 * Debug messages provide detailed information for troubleshooting.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $message Debug message.
+		 * @param array  $context Optional context.
+		 */
+		public static function log_debug( $message, $context = array() ) {
+			self::log_event( self::LEVEL_DEBUG, $message, $context );
 		}
 
 		/**
@@ -554,6 +621,12 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			$type = sanitize_key( $entry['type'] );
 
+			// Store critical, error, and warning messages.
+			if ( in_array( $type, array( self::LEVEL_CRITICAL, self::LEVEL_ERROR, self::LEVEL_WARNING ), true ) ) {
+				return true;
+			}
+
+			// Legacy support for 'error' and 'warning' type.
 			if ( 'warning' === $type || 'error' === $type ) {
 				return true;
 			}
@@ -1023,6 +1096,143 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			return $result;
+		}
+
+		/**
+		 * Generate a user-friendly error message with recovery suggestions.
+		 *
+		 * This method translates technical error codes into actionable messages
+		 * for end users and administrators.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $error_code    Machine-readable error code.
+		 * @param string $error_message Technical error message.
+		 * @param array  $context       Additional context for error message generation.
+		 * @return array Array with 'message' and 'suggestions' keys.
+		 */
+		public static function get_user_friendly_error( $error_code, $error_message, $context = array() ) {
+			$friendly_message = '';
+			$suggestions      = array();
+
+			// Map common error scenarios to user-friendly messages.
+			switch ( $error_code ) {
+				case 'openai_api_error':
+				case 'gemini_api_error':
+				case 'anthropic_api_error':
+					$friendly_message = __( 'Unable to connect to the AI service. Please check your API credentials and try again.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Verify your API key is correctly entered in the plugin settings.', 'wp-mcp-ai' ),
+						__( 'Check that your API key has not expired or been revoked.', 'wp-mcp-ai' ),
+						__( 'Ensure your account has sufficient credits or quota remaining.', 'wp-mcp-ai' ),
+						__( 'Verify your server can make outbound HTTPS connections.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'rate_limit_exceeded':
+					$friendly_message = __( 'You have exceeded the rate limit for this service. Please wait before trying again.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Wait a few minutes before making another request.', 'wp-mcp-ai' ),
+						__( 'Consider upgrading your API plan for higher rate limits.', 'wp-mcp-ai' ),
+						__( 'Review the rate limit settings in the plugin configuration.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'network_error':
+				case 'connection_timeout':
+					$friendly_message = __( 'Network connection failed. Please check your internet connection and try again.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Verify your server has an active internet connection.', 'wp-mcp-ai' ),
+						__( 'Check if your firewall is blocking outbound connections.', 'wp-mcp-ai' ),
+						__( 'Contact your hosting provider if the issue persists.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'invalid_api_key':
+				case 'authentication_failed':
+					$friendly_message = __( 'API authentication failed. Your API key appears to be invalid.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Double-check the API key in your plugin settings.', 'wp-mcp-ai' ),
+						__( 'Ensure there are no extra spaces before or after the API key.', 'wp-mcp-ai' ),
+						__( 'Generate a new API key from your provider\'s dashboard.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'insufficient_quota':
+					$friendly_message = __( 'Your API quota has been exhausted. Please upgrade your plan or wait for the quota to reset.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Check your current usage in the AI provider\'s dashboard.', 'wp-mcp-ai' ),
+						__( 'Upgrade to a higher-tier plan if needed.', 'wp-mcp-ai' ),
+						__( 'Wait until the next billing cycle for quota to reset.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'invalid_model':
+					$friendly_message = __( 'The selected AI model is not available or invalid.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Verify the model name in your assistant settings.', 'wp-mcp-ai' ),
+						__( 'Check if the model is available for your API plan.', 'wp-mcp-ai' ),
+						__( 'Try selecting a different model from the available options.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'tool_execution_failed':
+					$tool_name        = isset( $context['tool_slug'] ) ? sanitize_text_field( $context['tool_slug'] ) : 'unknown';
+					$friendly_message = sprintf(
+						/* translators: %s: Tool name */
+						__( 'The tool "%s" failed to execute properly.', 'wp-mcp-ai' ),
+						$tool_name
+					);
+					$suggestions = array(
+						__( 'Check the tool configuration and try again.', 'wp-mcp-ai' ),
+						__( 'Verify required permissions for the tool are granted.', 'wp-mcp-ai' ),
+						__( 'Review the error log for more details.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				case 'file_upload_error':
+					$friendly_message = __( 'File upload failed. Please check the file and try again.', 'wp-mcp-ai' );
+					$suggestions      = array(
+						__( 'Ensure the file size is within the allowed limit.', 'wp-mcp-ai' ),
+						__( 'Verify the file type is supported.', 'wp-mcp-ai' ),
+						__( 'Check your server\'s upload_max_filesize setting.', 'wp-mcp-ai' ),
+					);
+					break;
+
+				default:
+					// Fallback for unknown errors.
+					$friendly_message = ! empty( $error_message ) ? 
+						$error_message : 
+						__( 'An unexpected error occurred. Please try again.', 'wp-mcp-ai' );
+					$suggestions = array(
+						__( 'Check the error log for more details.', 'wp-mcp-ai' ),
+						__( 'Contact support if the problem persists.', 'wp-mcp-ai' ),
+					);
+					break;
+			}
+
+			/**
+			 * Filter the user-friendly error message and suggestions.
+			 *
+			 * Allows third parties to customize error messages for specific scenarios.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param array  $result        Array with 'message' and 'suggestions'.
+			 * @param string $error_code    Original error code.
+			 * @param string $error_message Original error message.
+			 * @param array  $context       Additional context.
+			 */
+			return apply_filters(
+				'wp_mcp_ai_user_friendly_error',
+				array(
+					'message'     => $friendly_message,
+					'suggestions' => $suggestions,
+				),
+				$error_code,
+				$error_message,
+				$context
+			);
 		}
 
 		/**

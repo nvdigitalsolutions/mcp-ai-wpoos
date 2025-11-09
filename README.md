@@ -1412,7 +1412,17 @@ The MCP endpoint uses enhanced authentication aligned with MCP 2024-11-05 securi
 
 ### Error Handling
 
-Standard JSON-RPC 2.0 error codes:
+**Enhanced Error System** (Phase 3):
+- **Severity Levels**: CRITICAL, ERROR, WARNING, INFO, DEBUG for categorized logging
+- **User-Friendly Messages**: Automatic translation of technical errors into actionable guidance
+- **Recovery Suggestions**: Built-in troubleshooting steps for common failure scenarios
+- **Centralized Error Handler**: Consistent error creation with automatic logging
+- **Comprehensive Logging**: Track errors, tool executions, and chat interactions
+- **Sensitive Data Protection**: Automatic redaction of API keys and tokens in logs
+
+See [Error Handling Documentation](docs/ERROR_HANDLING.md) for detailed usage.
+
+**MCP Standard Error Codes**:
 - **-32700**: Parse error (invalid JSON)
 - **-32600**: Invalid Request (malformed JSON-RPC)
 - **-32601**: Method not found
