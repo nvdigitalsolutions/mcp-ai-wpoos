@@ -181,15 +181,14 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			// Nonce verification not required as this is a read-only display of status after redirect.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
 			if ( isset( $_GET['updated'] ) ) :
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
-				if ( '1' === $_GET['updated'] ) :
+				$updated = sanitize_key( wp_unslash( $_GET['updated'] ) );
+				if ( '1' === $updated ) :
 					?>
 					<div class="notice notice-success is-dismissible">
 						<p><?php esc_html_e( 'Cron event successfully removed and unscheduled from WordPress Cron.', 'wp-mcp-ai' ); ?></p>
 					</div>
 					<?php
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
-				elseif ( '0' === $_GET['updated'] ) :
+				elseif ( '0' === $updated ) :
 					?>
 					<div class="notice notice-error is-dismissible">
 						<p><?php esc_html_e( 'The cron event could not be removed. It may have already completed and been removed automatically, or it may not exist.', 'wp-mcp-ai' ); ?></p>

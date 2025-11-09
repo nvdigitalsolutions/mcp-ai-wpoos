@@ -119,7 +119,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
 
-			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? $_POST['wp_mcp_ai_settings'] : array();
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
+			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
@@ -226,7 +227,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				<?php settings_errors( 'wp_mcp_ai_settings' ); ?>
 
-				<?php if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) : ?>
+				<?php
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
+				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
+					?>
 					<div class="notice notice-success is-dismissible">
 						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
 					</div>
