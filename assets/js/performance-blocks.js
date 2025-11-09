@@ -4,14 +4,12 @@
  * Registers performance monitoring blocks in the block editor.
  */
 
-( function( blocks, element, editor, components ) {
-	var el = element.createElement;
-	var registerBlockType = blocks.registerBlockType;
-	var InspectorControls = editor.InspectorControls;
-	var TextControl = components.TextControl;
-	var SelectControl = components.SelectControl;
-	var ToggleControl = components.ToggleControl;
-	var PanelBody = components.PanelBody;
+( function( blocks, element ) {
+	const el = element.createElement;
+	const registerBlockType = blocks.registerBlockType;
+	// Note: InspectorControls, TextControl, SelectControl, ToggleControl, PanelBody
+	// are available from editor/components but not currently used in this implementation.
+	// They can be used in future enhancements for block configuration UI.
 
 	/**
 	 * Register Performance Test Runner Block.
