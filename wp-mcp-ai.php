@@ -214,6 +214,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-resource-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
@@ -331,6 +332,10 @@ if ( is_admin() ) {
 		// Load Auth0 Setup wizard only when using new dashboard (it's a submenu of wp-mcp-ai-dashboard).
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 		new WP_MCP_AI_Auth0_Setup();
+		
+		// Load Advanced Metrics Dashboard.
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-metrics-dashboard.php';
+		new WP_MCP_AI_Admin_Metrics_Dashboard();
 	}
 
 	/**
@@ -1219,4 +1224,8 @@ function wp_mcp_ai_invalidate_assistant_cache_on_meta_update( $meta_id, $object_
 
 // Initialize cache invalidation hooks.
 add_action( 'init', 'wp_mcp_ai_setup_cache_invalidation_hooks', 20 );
+
+// Load and register REST API endpoints for Advanced Metrics.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-metrics.php';
+add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Metrics', 'register_routes' ) );
 

@@ -328,6 +328,7 @@ private $health_status = null;
 		$history[ $timestamp ] = array_merge(
 			$usage_data,
 			array(
+				'timestamp'    => $timestamp,
 				'memory_used'  => memory_get_usage( true ),
 				'memory_peak'  => memory_get_peak_usage( true ),
 				'memory_limit' => $this->get_memory_limit(),
