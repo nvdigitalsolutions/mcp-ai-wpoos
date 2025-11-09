@@ -5265,11 +5265,128 @@
         const decoder = new TextDecoder();
         let buffer = '';
         let fullContent = '';
+        let finalData = null;
+
+        /**
+         * Process a single SSE event block.
+         * Returns an object with:
+         * - shouldReturn: boolean indicating if stream should end
+         * - finalData: final data if found
+         * - contentDelta: content to add to fullContent
+         */
+        function processSingleEvent(eventBlock) {
+            if (!eventBlock.trim()) {
+                return { shouldReturn: false };
+            }
+
+            // Parse SSE event block
+            const lines = eventBlock.split('\n');
+            let eventType = '';
+            let eventData = '';
+
+            for (let j = 0; j < lines.length; j++) {
+                const line = lines[j];
+                if (line.startsWith('event: ')) {
+                    eventType = line.substring(7).trim();
+                } else if (line.startsWith('data: ')) {
+                    eventData = line.substring(6);
+                }
+            }
+
+            // Log raw event data for debugging
+            if (window.console && console.log) {
+                console.log('[WP oOS SSE] Raw event - Type:', eventType || '(none)', 'Data preview:', eventData.substring(0, 100));
+            }
+
+            // Handle [DONE] marker
+            if (eventData.trim() === '[DONE]') {
+                return { shouldReturn: true };
+            }
+
+            // Skip empty event data
+            if (!eventData || !eventData.trim()) {
+                return { shouldReturn: false };
+            }
+
+            try {
+                const data = JSON.parse(eventData);
+
+                // Debug logging for SSE events
+                if (window.console && console.log) {
+                    console.log('[WP oOS SSE Event]', eventType, ':', data);
+                }
+
+                // Handle different event types
+                if (eventType === 'status') {
+                    handleStatusEvent(state, data);
+                } else if (eventType === 'tool_execution') {
+                    handleToolExecutionEvent(state, data);
+                } else if (eventType === 'error') {
+                    handleErrorEvent(state, data);
+                } else if (eventType === 'message' || !eventType) {
+                    // Debug logging for message events
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Processing message event. Has choices:', !!data.choices, 'Has data:', !!data.data, 'Event type:', eventType, 'Data keys:', Object.keys(data));
+                    }
+                    
+                    // Final message or OpenAI format streaming response
+                    if (data.choices && data.choices[0]) {
+                        const delta = data.choices[0].delta;
+                        if (delta && delta.content) {
+                            return { shouldReturn: false, contentDelta: delta.content };
+                        }
+                    } else if (data.data) {
+                        // Final response with complete data
+                        if (window.console && console.log) {
+                            console.log('[WP oOS SSE] Received final message event, will return finalData');
+                        }
+                        return { shouldReturn: true, finalData: data };
+                    } else {
+                        // Log when message event doesn't match expected structure
+                        if (window.console && console.warn) {
+                            console.warn('[WP oOS SSE] Message event received but no recognizable structure. Full data:', JSON.stringify(data));
+                        }
+                    }
+                }
+            } catch (parseError) {
+                // Ignore malformed JSON chunks
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS SSE] Failed to parse event data:', eventData, parseError);
+                }
+            }
+
+            return { shouldReturn: false };
+        }
 
         function readChunk() {
             return reader.read().then(function (result) {
+                // When done, process any remaining buffer before returning
                 if (result.done) {
-                    return { content: fullContent };
+                    // Process any remaining events in the buffer
+                    if (buffer.trim()) {
+                        const events = buffer.split('\n\n');
+                        for (let i = 0; i < events.length; i++) {
+                            const processResult = processSingleEvent(events[i]);
+                            if (processResult.finalData) {
+                                finalData = processResult.finalData;
+                            }
+                            if (processResult.contentDelta) {
+                                fullContent += processResult.contentDelta;
+                            }
+                        }
+                    }
+                    
+                    // Return final result
+                    const finalResult = { content: fullContent };
+                    if (finalData) {
+                        finalResult.finalData = finalData;
+                    }
+                    
+                    if (window.console && console.log) {
+                        console.log('[WP oOS SSE] Stream ended, returning:', finalResult);
+                    }
+                    
+                    return finalResult;
                 }
 
                 buffer += decoder.decode(result.value, { stream: true });
@@ -5278,101 +5395,33 @@
                 const events = buffer.split('\n\n');
                 buffer = events.pop() || ''; // Keep incomplete event in buffer
 
-                // Variable to store final result if we encounter it
-                let finalResult = null;
-
                 for (let i = 0; i < events.length; i++) {
-                    const eventBlock = events[i];
-                    if (!eventBlock.trim()) {
-                        continue;
+                    const processResult = processSingleEvent(events[i]);
+                    
+                    if (processResult.contentDelta) {
+                        fullContent += processResult.contentDelta;
+                        updateCallback(fullContent);
                     }
-
-                    // Parse SSE event block
-                    const lines = eventBlock.split('\n');
-                    let eventType = '';
-                    let eventData = '';
-
-                    for (let j = 0; j < lines.length; j++) {
-                        const line = lines[j];
-                        if (line.startsWith('event: ')) {
-                            eventType = line.substring(7).trim();
-                        } else if (line.startsWith('data: ')) {
-                            eventData = line.substring(6);
-                        }
-                    }
-
-                    // Log raw event data for debugging
-                    if (window.console && console.log) {
-                        console.log('[WP oOS SSE] Raw event - Type:', eventType || '(none)', 'Data preview:', eventData.substring(0, 100));
-                    }
-
-                    // Handle [DONE] marker
-                    if (eventData.trim() === '[DONE]') {
-                        return { content: fullContent };
-                    }
-
-                    // Skip empty event data
-                    if (!eventData || !eventData.trim()) {
-                        continue;
-                    }
-
-                    try {
-                        const data = JSON.parse(eventData);
-
-                        // Debug logging for SSE events
+                    
+                    if (processResult.finalData) {
+                        finalData = processResult.finalData;
+                        const result = { content: fullContent, finalData: finalData };
                         if (window.console && console.log) {
-                            console.log('[WP oOS SSE Event]', eventType, ':', data);
+                            console.log('[WP oOS SSE] Returning final result:', result);
                         }
-
-                        // Handle different event types
-                        if (eventType === 'status') {
-                            handleStatusEvent(state, data);
-                        } else if (eventType === 'tool_execution') {
-                            handleToolExecutionEvent(state, data);
-                        } else if (eventType === 'error') {
-                            handleErrorEvent(state, data);
-                        } else if (eventType === 'message' || !eventType) {
-                            // Debug logging for message events
-                            if (window.console && console.log) {
-                                console.log('[WP oOS SSE] Processing message event. Has choices:', !!data.choices, 'Has data:', !!data.data, 'Event type:', eventType, 'Data keys:', Object.keys(data));
-                            }
-                            
-                            // Final message or OpenAI format streaming response
-                            if (data.choices && data.choices[0]) {
-                                const delta = data.choices[0].delta;
-                                if (delta && delta.content) {
-                                    fullContent += delta.content;
-                                    updateCallback(fullContent);
-                                }
-                            } else if (data.data) {
-                                // Final response with complete data
-                                if (window.console && console.log) {
-                                    console.log('[WP oOS SSE] Received final message event, will return finalData');
-                                }
-                                finalResult = { content: fullContent, finalData: data };
-                                // Break out of the loop to return the result
-                                break;
-                            } else {
-                                // Log when message event doesn't match expected structure
-                                if (window.console && console.warn) {
-                                    console.warn('[WP oOS SSE] Message event received but no recognizable structure. Full data:', JSON.stringify(data));
-                                }
-                            }
-                        }
-                    } catch (parseError) {
-                        // Ignore malformed JSON chunks
-                        if (window.console && console.warn) {
-                            console.warn('[WP oOS SSE] Failed to parse event data:', eventData, parseError);
-                        }
+                        return result;
                     }
-                }
-
-                // If we found final data, return it immediately
-                if (finalResult) {
-                    if (window.console && console.log) {
-                        console.log('[WP oOS SSE] Returning final result:', finalResult);
+                    
+                    if (processResult.shouldReturn) {
+                        const result = { content: fullContent };
+                        if (finalData) {
+                            result.finalData = finalData;
+                        }
+                        if (window.console && console.log) {
+                            console.log('[WP oOS SSE] [DONE] marker received, returning:', result);
+                        }
+                        return result;
                     }
-                    return finalResult;
                 }
 
                 // Continue reading
