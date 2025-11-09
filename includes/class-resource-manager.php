@@ -43,6 +43,20 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		 */
 		private $workload_tier = null;
 
+/**
+ * Resource usage history for predictive forecasting.
+ *
+ * @var array|null
+ */
+private $usage_history = null;
+
+/**
+ * Health status cache.
+ *
+ * @var array|null
+ */
+private $health_status = null;
+
 		/**
 		 * Returns the singleton instance.
 		 *
@@ -260,5 +274,304 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 
 			return true;
 		}
+
+	/**
+	 * Get resource usage history for predictive forecasting.
+	 *
+	 * @param int $hours Number of hours of history to retrieve.
+	 * @return array Usage history data.
+	 */
+	public function get_usage_history( $hours = 24 ) {
+		$cache_key = 'wp_mcp_ai_resource_history_' . absint( $hours );
+		$history   = get_transient( $cache_key );
+
+		if ( false !== $history && is_array( $history ) ) {
+			return $history;
+		}
+
+		// Get historical usage data from WordPress options.
+		$history_data = get_option( 'wp_mcp_ai_resource_usage_history', array() );
+
+		if ( ! is_array( $history_data ) ) {
+			$history_data = array();
+		}
+
+		$cutoff_time = time() - ( $hours * HOUR_IN_SECONDS );
+		$filtered    = array();
+
+		foreach ( $history_data as $timestamp => $data ) {
+			if ( $timestamp >= $cutoff_time ) {
+				$filtered[ $timestamp ] = $data;
+			}
+		}
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $filtered, 5 * MINUTE_IN_SECONDS );
+
+		return $filtered;
+	}
+
+	/**
+	 * Record resource usage for historical tracking.
+	 *
+	 * @param array $usage_data Usage data to record.
+	 */
+	public function record_usage( $usage_data ) {
+		$history = get_option( 'wp_mcp_ai_resource_usage_history', array() );
+
+		if ( ! is_array( $history ) ) {
+			$history = array();
+		}
+
+		$timestamp = time();
+
+		$history[ $timestamp ] = array_merge(
+			$usage_data,
+			array(
+				'memory_used'  => memory_get_usage( true ),
+				'memory_peak'  => memory_get_peak_usage( true ),
+				'memory_limit' => $this->get_memory_limit(),
+				'tier'         => $this->get_workload_tier(),
+			)
+		);
+
+		// Keep only last 7 days of data.
+		$cutoff_time = time() - ( 7 * DAY_IN_SECONDS );
+		foreach ( $history as $ts => $data ) {
+			if ( $ts < $cutoff_time ) {
+				unset( $history[ $ts ] );
+			}
+		}
+
+		update_option( 'wp_mcp_ai_resource_usage_history', $history, false );
+
+		// Clear the cache.
+		delete_transient( 'wp_mcp_ai_resource_history_24' );
+	}
+
+	/**
+	 * Predict resource requirements based on historical data.
+	 *
+	 * @param string $operation_type Type of operation to predict for.
+	 * @return array Predicted resource requirements.
+	 */
+	public function predict_requirements( $operation_type = 'chat' ) {
+		$history = $this->get_usage_history( 24 );
+
+		if ( empty( $history ) ) {
+			// No history available, return default predictions.
+			return array(
+				'predicted_tokens'  => $this->get_max_tokens() * 0.5,
+				'predicted_memory'  => $this->get_memory_limit() * 0.3,
+				'predicted_time'    => 10,
+				'confidence'        => 0,
+				'recommendation'    => 'insufficient_data',
+			);
+		}
+
+		// Filter by operation type if available.
+		$relevant_history = array();
+		foreach ( $history as $timestamp => $data ) {
+			if ( isset( $data['operation_type'] ) && $data['operation_type'] === $operation_type ) {
+				$relevant_history[ $timestamp ] = $data;
+			}
+		}
+
+		if ( empty( $relevant_history ) ) {
+			$relevant_history = $history; // Use all data if no type-specific data.
+		}
+
+		// Calculate averages and trends.
+		$token_usage  = array();
+		$memory_usage = array();
+		$time_usage   = array();
+
+		foreach ( $relevant_history as $data ) {
+			if ( isset( $data['tokens_used'] ) ) {
+				$token_usage[] = $data['tokens_used'];
+			}
+			if ( isset( $data['memory_used'] ) ) {
+				$memory_usage[] = $data['memory_used'];
+			}
+			if ( isset( $data['execution_time'] ) ) {
+				$time_usage[] = $data['execution_time'];
+			}
+		}
+
+		$avg_tokens = ! empty( $token_usage ) ? array_sum( $token_usage ) / count( $token_usage ) : 0;
+		$avg_memory = ! empty( $memory_usage ) ? array_sum( $memory_usage ) / count( $memory_usage ) : 0;
+		$avg_time   = ! empty( $time_usage ) ? array_sum( $time_usage ) / count( $time_usage ) : 0;
+
+		// Add 20% buffer for prediction.
+		$predicted_tokens = $avg_tokens * 1.2;
+		$predicted_memory = $avg_memory * 1.2;
+		$predicted_time   = $avg_time * 1.2;
+
+		// Calculate confidence based on sample size.
+		$sample_size = count( $relevant_history );
+		$confidence  = min( 1, $sample_size / 50 ); // 100% confidence at 50+ samples.
+
+		// Determine recommendation.
+		$recommendation = 'proceed';
+		if ( $predicted_tokens > $this->get_max_tokens() * 0.9 ) {
+			$recommendation = 'consider_larger_tier';
+		} elseif ( $predicted_memory > $this->get_memory_limit() * 0.8 ) {
+			$recommendation = 'monitor_memory';
+		}
+
+		return array(
+			'predicted_tokens'  => (int) $predicted_tokens,
+			'predicted_memory'  => (int) $predicted_memory,
+			'predicted_time'    => (int) $predicted_time,
+			'confidence'        => $confidence,
+			'sample_size'       => $sample_size,
+			'recommendation'    => $recommendation,
+			'avg_tokens'        => (int) $avg_tokens,
+			'avg_memory'        => (int) $avg_memory,
+			'avg_time'          => (int) $avg_time,
+		);
+	}
+
+	/**
+	 * Get health status of resource management system.
+	 *
+	 * @return array Health status information.
+	 */
+	public function get_health_status() {
+		$cache_key = 'wp_mcp_ai_resource_health';
+		$cached    = get_transient( $cache_key );
+
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
+
+		$memory_limit     = $this->get_memory_limit();
+		$memory_used      = memory_get_usage( true );
+		$memory_peak      = memory_get_peak_usage( true );
+		$memory_available = $memory_limit - $memory_used;
+		$memory_percent   = ( $memory_used / $memory_limit ) * 100;
+
+		$tier       = $this->get_workload_tier();
+		$max_tokens = $this->get_max_tokens();
+
+		// Get recent usage history.
+		$history = $this->get_usage_history( 1 ); // Last hour.
+
+		$recent_failures = 0;
+		$recent_requests = count( $history );
+		$avg_response_time = 0;
+
+		foreach ( $history as $data ) {
+			if ( isset( $data['status'] ) && 'error' === $data['status'] ) {
+				$recent_failures++;
+			}
+			if ( isset( $data['execution_time'] ) ) {
+				$avg_response_time += $data['execution_time'];
+			}
+		}
+
+		if ( $recent_requests > 0 ) {
+			$avg_response_time = $avg_response_time / $recent_requests;
+		}
+
+		$error_rate = $recent_requests > 0 ? ( $recent_failures / $recent_requests ) * 100 : 0;
+
+		// Determine overall health.
+		$health = 'healthy';
+		$issues = array();
+
+		if ( $memory_percent > 90 ) {
+			$health   = 'critical';
+			$issues[] = 'memory_critical';
+		} elseif ( $memory_percent > 75 ) {
+			$health   = 'warning';
+			$issues[] = 'memory_high';
+		}
+
+		if ( $error_rate > 20 ) {
+			$health   = 'critical';
+			$issues[] = 'high_error_rate';
+		} elseif ( $error_rate > 10 ) {
+			if ( 'healthy' === $health ) {
+				$health = 'warning';
+			}
+			$issues[] = 'elevated_error_rate';
+		}
+
+		$status = array(
+			'overall_health'    => $health,
+			'issues'            => $issues,
+			'memory'            => array(
+				'limit'     => $memory_limit,
+				'used'      => $memory_used,
+				'peak'      => $memory_peak,
+				'available' => $memory_available,
+				'percent'   => round( $memory_percent, 2 ),
+			),
+			'tier'              => $tier,
+			'max_tokens'        => $max_tokens,
+			'metrics'           => array(
+				'recent_requests'   => $recent_requests,
+				'recent_failures'   => $recent_failures,
+				'error_rate'        => round( $error_rate, 2 ),
+				'avg_response_time' => round( $avg_response_time, 2 ),
+			),
+			'timestamp'         => time(),
+		);
+
+		// Log critical health issues to SIEM.
+		if ( 'critical' === $health && class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
+			$siem = WP_MCP_AI_SIEM_Logger::get_instance();
+			$siem->export_event(
+				'resource_health_critical',
+				'Resource manager health status is critical',
+				array(
+					'issues'         => $issues,
+					'memory_percent' => $memory_percent,
+					'error_rate'     => $error_rate,
+				),
+				'critical'
+			);
+		}
+
+		// Cache for 1 minute.
+		set_transient( $cache_key, $status, MINUTE_IN_SECONDS );
+
+		return $status;
+	}
+
+	/**
+	 * Get adaptive budget recommendation based on current load.
+	 *
+	 * @param string $priority Priority level: 'high', 'medium', 'low'.
+	 * @return int Recommended token budget.
+	 */
+	public function get_adaptive_budget( $priority = 'medium' ) {
+		$health   = $this->get_health_status();
+		$base_max = $this->get_max_tokens();
+
+		// Adjust based on health status.
+		$multiplier = 1.0;
+
+		if ( 'critical' === $health['overall_health'] ) {
+			$multiplier = 0.5; // Reduce to 50% under critical load.
+		} elseif ( 'warning' === $health['overall_health'] ) {
+			$multiplier = 0.75; // Reduce to 75% under warning.
+		}
+
+		// Adjust based on priority.
+		$priority_multipliers = array(
+			'high'   => 1.0,   // High priority gets full allocation.
+			'medium' => 0.8,   // Medium gets 80%.
+			'low'    => 0.5,   // Low gets 50%.
+		);
+
+		$priority_mult = isset( $priority_multipliers[ $priority ] ) ? $priority_multipliers[ $priority ] : 0.8;
+
+		$adaptive_budget = (int) ( $base_max * $multiplier * $priority_mult );
+
+		// Ensure minimum budget.
+		return max( 100, $adaptive_budget );
+	}
 	}
 }

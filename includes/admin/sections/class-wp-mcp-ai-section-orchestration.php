@@ -128,81 +128,136 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			return $content;
 		}
 
-		/**
-		 * Get statistics content HTML.
-		 *
-		 * @return string
-		 */
-		private function get_stats_content() {
-			// Get resource manager instance.
-			$resource_manager = WP_MCP_AI_Resource_Manager::instance();
-			
-			$content = '<div class="wp-mcp-ai-orchestration-stats" style="margin: 1.5rem 0;">';
-			$content .= '<h3>' . esc_html__( 'Current Orchestration Status', 'wp-mcp-ai' ) . '</h3>';
-			
-			$content .= '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">';
-			
-			// Memory tier.
-			$memory_limit = $resource_manager->get_memory_limit();
-			$memory_tier = 'Unknown';
-			if ( $memory_limit < 128 * 1024 * 1024 ) {
-				$memory_tier = 'Low';
-			} elseif ( $memory_limit < 512 * 1024 * 1024 ) {
-				$memory_tier = 'Medium';
-			} else {
-				$memory_tier = 'High';
-			}
-			
-			$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-			$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Workload Tier', 'wp-mcp-ai' ) . '</div>';
-			$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $memory_tier ) . '</div>';
-			$content .= '</div>';
-			
-			// Max tokens.
-			$max_tokens = $resource_manager->get_max_tokens();
-			$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-			$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Max Tokens', 'wp-mcp-ai' ) . '</div>';
-			$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( number_format( $max_tokens ) ) . '</div>';
-			$content .= '</div>';
-			
-			// Request timeout.
-			$timeout = $resource_manager->get_request_timeout();
-			$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-			$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Request Timeout', 'wp-mcp-ai' ) . '</div>';
-			$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $timeout ) . 's</div>';
-			$content .= '</div>';
-			
-			// Active cron jobs.
-			$cron_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-			$active_jobs = 0;
-			foreach ( $cron_jobs as $job ) {
-				$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
-				if ( $event ) {
-					$active_jobs++;
-				}
-			}
-			
-			$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-			$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Active Cron Jobs', 'wp-mcp-ai' ) . '</div>';
-			$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $active_jobs ) . '</div>';
-			$content .= '</div>';
-			
-			$content .= '</div>';
-			
-			// Quick actions.
-			$content .= '<div style="margin-top: 1.5rem;">';
-			$content .= '<h4>' . esc_html__( 'Quick Actions', 'wp-mcp-ai' ) . '</h4>';
-			$content .= '<p>';
-			$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ) . '" class="button button-secondary">' . esc_html__( 'Manage Cron Jobs', 'wp-mcp-ai' ) . '</a> ';
-			$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '" class="button button-secondary">' . esc_html__( 'View Token Manager', 'wp-mcp-ai' ) . '</a> ';
-			$content .= '<a href="' . esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ) . '" class="button button-secondary">' . esc_html__( 'Run Diagnostics', 'wp-mcp-ai' ) . '</a>';
-			$content .= '</p>';
-			$content .= '</div>';
-			
-			$content .= '</div>';
-			
-			return $content;
-		}
+/**
+ * Get statistics content HTML.
+ *
+ * @return string
+ */
+private function get_stats_content() {
+// Get resource manager instance.
+$resource_manager = WP_MCP_AI_Resource_Manager::instance();
+$health_status    = $resource_manager->get_health_status();
+
+$content = '<div class="wp-mcp-ai-orchestration-stats" style="margin: 1.5rem 0;">';
+
+// Health Status Banner.
+$health_class = 'healthy' === $health_status['overall_health'] ? 'success' : ( 'warning' === $health_status['overall_health'] ? 'warning' : 'error' );
+$health_icon  = 'healthy' === $health_status['overall_health'] ? 'yes-alt' : ( 'warning' === $health_status['overall_health'] ? 'warning' : 'dismiss' );
+
+$content .= '<div style="background: #f0f6fc; border-left: 4px solid ' . ( 'healthy' === $health_status['overall_health'] ? '#00a32a' : ( 'warning' === $health_status['overall_health'] ? '#dba617' : '#d63638' ) ) . '; padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">';
+$content .= '<div style="display: flex; align-items: center; gap: 0.5rem;">';
+$content .= '<span class="dashicons dashicons-' . esc_attr( $health_icon ) . '" style="color: ' . ( 'healthy' === $health_status['overall_health'] ? '#00a32a' : ( 'warning' === $health_status['overall_health'] ? '#dba617' : '#d63638' ) ) . ';"></span>';
+$content .= '<strong>' . esc_html__( 'System Health: ', 'wp-mcp-ai' ) . '</strong>';
+$content .= '<span>' . esc_html( ucfirst( $health_status['overall_health'] ) ) . '</span>';
+$content .= '</div>';
+if ( ! empty( $health_status['issues'] ) ) {
+$content .= '<div style="margin-top: 0.5rem; font-size: 0.875rem;">';
+$content .= '<strong>' . esc_html__( 'Issues:', 'wp-mcp-ai' ) . '</strong> ';
+$content .= esc_html( implode( ', ', array_map( 'ucwords', str_replace( '_', ' ', $health_status['issues'] ) ) ) );
+$content .= '</div>';
+}
+$content .= '</div>';
+
+$content .= '<h3>' . esc_html__( 'Current Orchestration Status', 'wp-mcp-ai' ) . '</h3>';
+
+$content .= '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">';
+
+// Memory tier.
+$memory_tier = ucfirst( $health_status['tier'] );
+
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Workload Tier', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $memory_tier ) . '</div>';
+$content .= '</div>';
+
+// Max tokens.
+$max_tokens = $health_status['max_tokens'];
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Max Tokens', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( number_format( $max_tokens ) ) . '</div>';
+$content .= '</div>';
+
+// Memory Usage.
+$memory_percent = $health_status['memory']['percent'];
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Memory Usage', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( round( $memory_percent, 1 ) ) . '%</div>';
+$content .= '<div style="background: #dcdcde; height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">';
+$content .= '<div style="background: ' . ( $memory_percent > 90 ? '#d63638' : ( $memory_percent > 75 ? '#dba617' : '#00a32a' ) ) . '; height: 100%; width: ' . esc_attr( $memory_percent ) . '%;"></div>';
+$content .= '</div>';
+$content .= '</div>';
+
+// Error Rate.
+$error_rate = $health_status['metrics']['error_rate'];
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Error Rate (1h)', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( round( $error_rate, 1 ) ) . '%</div>';
+$content .= '</div>';
+
+// Active cron jobs.
+$cron_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+$active_jobs = 0;
+foreach ( $cron_jobs as $job ) {
+$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
+if ( $event ) {
+$active_jobs++;
+}
+}
+
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Active Cron Jobs', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $active_jobs ) . '</div>';
+$content .= '</div>';
+
+// Avg Response Time.
+$avg_response = $health_status['metrics']['avg_response_time'];
+$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
+$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Avg Response (1h)', 'wp-mcp-ai' ) . '</div>';
+$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( round( $avg_response, 2 ) ) . 's</div>';
+$content .= '</div>';
+
+$content .= '</div>';
+
+// Predictive Insights.
+$prediction = $resource_manager->predict_requirements( 'chat' );
+if ( $prediction['confidence'] > 0.3 ) {
+$content .= '<div style="margin-top: 1.5rem;">';
+$content .= '<h4>' . esc_html__( 'Predictive Insights', 'wp-mcp-ai' ) . '</h4>';
+$content .= '<div style="background: #f0f6fc; border: 1px solid #c3e4ff; padding: 1rem; border-radius: 4px;">';
+$content .= '<p style="margin: 0;">';
+$content .= '<strong>' . esc_html__( 'Predicted Resource Needs:', 'wp-mcp-ai' ) . '</strong> ';
+$content .= sprintf(
+/* translators: %1$d: predicted tokens, %2$d: confidence percentage */
+esc_html__( 'Next operations will likely need ~%1$d tokens (%2$d%% confidence)', 'wp-mcp-ai' ),
+$prediction['predicted_tokens'],
+round( $prediction['confidence'] * 100 )
+);
+$content .= '</p>';
+if ( 'proceed' !== $prediction['recommendation'] ) {
+$content .= '<p style="margin: 0.5rem 0 0 0; color: #dba617;">';
+$content .= '<span class="dashicons dashicons-warning" style="vertical-align: text-bottom;"></span> ';
+$content .= '<strong>' . esc_html__( 'Recommendation:', 'wp-mcp-ai' ) . '</strong> ';
+$content .= esc_html( str_replace( '_', ' ', ucwords( $prediction['recommendation'], '_' ) ) );
+$content .= '</p>';
+}
+$content .= '</div>';
+$content .= '</div>';
+}
+
+// Quick actions.
+$content .= '<div style="margin-top: 1.5rem;">';
+$content .= '<h4>' . esc_html__( 'Quick Actions', 'wp-mcp-ai' ) . '</h4>';
+$content .= '<p>';
+$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ) . '" class="button button-secondary">' . esc_html__( 'Manage Cron Jobs', 'wp-mcp-ai' ) . '</a> ';
+$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '" class="button button-secondary">' . esc_html__( 'View Token Manager', 'wp-mcp-ai' ) . '</a> ';
+$content .= '<a href="' . esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ) . '" class="button button-secondary">' . esc_html__( 'Run Diagnostics', 'wp-mcp-ai' ) . '</a>';
+$content .= '</p>';
+$content .= '</div>';
+
+$content .= '</div>';
+
+return $content;
+}
 
 		/**
 		 * Render section fields.
