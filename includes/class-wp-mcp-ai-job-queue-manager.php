@@ -117,7 +117,9 @@ class WP_MCP_AI_Job_Queue_Manager {
 	 */
 	public static function process_queue( $max_concurrent = null ) {
 		if ( null === $max_concurrent ) {
-			$max_concurrent = self::DEFAULT_MAX_CONCURRENT;
+			// Use resource manager setting if available.
+			$resource_mgr   = WP_MCP_AI_Resource_Manager::instance();
+			$max_concurrent = $resource_mgr->get_max_concurrent_requests();
 		}
 
 		$max_concurrent = max( 1, absint( $max_concurrent ) );
