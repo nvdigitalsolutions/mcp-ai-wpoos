@@ -287,6 +287,9 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php';
 }
 
+// Load Gutenberg blocks integration.
+require_once WP_MCP_AI_PATH . 'includes/blocks-init.php';
+
 // Clean any output that may have been generated during includes.
 // Only clean the buffer if we started it (i.e., not during Elementor AJAX requests or editor page loads).
 if ( ! $skip_buffering ) {
