@@ -231,6 +231,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
+			'summary'      => __( 'Auth0 token generated successfully', 'wp-mcp-ai' ),
 			'access_token' => $token,
 			'token_type'   => $token_type,
 			'expires_in'   => $expires_in,
