@@ -1773,6 +1773,34 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 ## 🧪 Testing & QA
 
+### Base Functionality Testing
+
+To perform a **complete test of the base plugin functionality**:
+
+```bash
+# Run comprehensive base functionality tests (40+ tests)
+./bin/run-base-tests.sh
+
+# Run with verbose output for debugging
+./bin/run-base-tests.sh --verbose
+
+# Generate code coverage report
+./bin/run-base-tests.sh --coverage
+```
+
+This validates all core features without third-party dependencies:
+- ✅ Plugin initialization and constants
+- ✅ Base version detection
+- ✅ Assistant CPT registration
+- ✅ Tool registry (35+ base tools)
+- ✅ REST API endpoints
+- ✅ Authentication (WordPress, bearer tokens, guest tokens)
+- ✅ Security features and monitoring
+- ✅ Chat functionality and streaming
+- ✅ Rate limiting and token budgets
+
+**Manual testing scenarios**: See [`docs/BASE-FUNCTIONALITY-TEST-PLAN.md`](docs/BASE-FUNCTIONALITY-TEST-PLAN.md) for comprehensive manual QA procedures covering 20+ test scenarios including UI testing, error handling, performance testing, and accessibility.
+
 ### Automated test suite
 - `composer run test` executes the PHPUnit suite bundled with `wp-phpunit/wp-phpunit` and Yoast’s polyfills, covering REST, tooling, and helper contracts.【F:composer.json†L16-L23】
 - Run `composer run test:install` once per environment to provision the WordPress test scaffolding before the first test pass.【F:composer.json†L16-L23】

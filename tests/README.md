@@ -4,6 +4,36 @@ This directory contains the PHPUnit test suite for the WP Open Operator System (
 
 ## Quick Start
 
+### Base Functionality Testing
+
+To perform a **complete test of the base plugin functionality**:
+
+```bash
+# Run comprehensive base functionality tests
+./bin/run-base-tests.sh
+
+# Run with verbose output
+./bin/run-base-tests.sh --verbose
+
+# Run with code coverage report
+./bin/run-base-tests.sh --coverage
+```
+
+The base functionality test suite includes:
+- ✅ 40+ automated tests validating core features
+- ✅ Plugin initialization and constants
+- ✅ Base version detection
+- ✅ Assistant CPT registration
+- ✅ Tool registry (35+ base tools)
+- ✅ REST API endpoints
+- ✅ Authentication mechanisms
+- ✅ Security features
+- ✅ No third-party dependencies required
+
+**For manual testing scenarios**, see: [`docs/BASE-FUNCTIONALITY-TEST-PLAN.md`](../docs/BASE-FUNCTIONALITY-TEST-PLAN.md)
+
+### Full Test Suite
+
 ```bash
 # Install dependencies
 composer install
