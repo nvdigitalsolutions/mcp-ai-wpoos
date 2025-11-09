@@ -393,12 +393,15 @@ class WP_MCP_AI_REST_Metrics {
 		// Group by time intervals.
 		$interval = '24h' === $period ? 'hour' : 'day';
 
-		foreach ( $usage_history as $entry ) {
-			if ( ! isset( $entry['timestamp'] ) ) {
+		foreach ( $usage_history as $ts_key => $entry ) {
+			// Get timestamp from entry or fall back to array key for backwards compatibility.
+			$timestamp = isset( $entry['timestamp'] ) ? $entry['timestamp'] : $ts_key;
+			
+			if ( ! $timestamp ) {
 				continue;
 			}
 
-			$time_key = 'hour' === $interval ? gmdate( 'Y-m-d H:00', $entry['timestamp'] ) : gmdate( 'Y-m-d', $entry['timestamp'] );
+			$time_key = 'hour' === $interval ? gmdate( 'Y-m-d H:00', $timestamp ) : gmdate( 'Y-m-d', $timestamp );
 
 			if ( ! isset( $data_points[ $time_key ] ) ) {
 				$data_points[ $time_key ] = array(
@@ -509,10 +512,13 @@ class WP_MCP_AI_REST_Metrics {
 	private static function generate_csv( $usage_history ) {
 		$csv = "Timestamp,Operation Type,Tokens Used,Execution Time,Status\n";
 
-		foreach ( $usage_history as $entry ) {
+		foreach ( $usage_history as $ts_key => $entry ) {
+			// Get timestamp from entry or fall back to array key for backwards compatibility.
+			$timestamp = isset( $entry['timestamp'] ) ? $entry['timestamp'] : $ts_key;
+			
 			$csv .= sprintf(
 				"%s,%s,%d,%.2f,%s\n",
-				isset( $entry['timestamp'] ) ? gmdate( 'Y-m-d H:i:s', $entry['timestamp'] ) : '',
+				$timestamp ? gmdate( 'Y-m-d H:i:s', $timestamp ) : '',
 				isset( $entry['operation_type'] ) ? $entry['operation_type'] : '',
 				isset( $entry['tokens_used'] ) ? $entry['tokens_used'] : 0,
 				isset( $entry['execution_time'] ) ? $entry['execution_time'] : 0,
