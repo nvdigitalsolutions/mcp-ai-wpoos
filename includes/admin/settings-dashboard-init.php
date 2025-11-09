@@ -11,9 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load registry and base classes.
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
+// Load base classes for settings sections.
+// Note: Settings Registry and Validator are loaded in the main plugin file.
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 
 // Load custom filters applicator.
