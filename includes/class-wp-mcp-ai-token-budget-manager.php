@@ -648,4 +648,121 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		return $messages;
 	}
+
+	/**
+	 * Check if user and assistant are within token budget.
+	 *
+	 * @param int   $user_id      User ID.
+	 * @param int   $assistant_id Assistant ID.
+	 * @param array $messages     Chat messages.
+	 * @param array $options      Chat options (model, max_tokens, etc).
+	 * @return true|WP_Error True if within budget, WP_Error if exceeded.
+	 */
+	public static function check_budget( $user_id, $assistant_id, array $messages, array $options = array() ) {
+		// Get assistant budget configuration.
+		$budget_limit = absint( get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOKEN_BUDGET, true ) );
+
+		// If budget is 0 or not set, there is no limit.
+		if ( 0 === $budget_limit ) {
+			return true;
+		}
+
+		$budget_window = absint( get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_BUDGET_WINDOW, true ) );
+		if ( 0 === $budget_window ) {
+			$budget_window = 3600; // Default to 1 hour.
+		}
+
+		// Get current token usage within the window.
+		$transient_key = sprintf( 'wp_mcp_ai_budget_%d_%d', $user_id, $assistant_id );
+		$usage_data    = get_transient( $transient_key );
+
+		if ( false === $usage_data || ! is_array( $usage_data ) ) {
+			$usage_data = array(
+				'total_tokens'    => 0,
+				'window_start'    => time(),
+				'request_count'   => 0,
+				'last_reset'      => time(),
+			);
+		}
+
+		// Check if window has expired and reset if needed.
+		$current_time = time();
+		if ( ( $current_time - $usage_data['window_start'] ) >= $budget_window ) {
+			$usage_data = array(
+				'total_tokens'    => 0,
+				'window_start'    => $current_time,
+				'request_count'   => 0,
+				'last_reset'      => $current_time,
+			);
+		}
+
+		// Estimate tokens for current request.
+		$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+		$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+		$budget_info       = self::calculate_budget( $model, $messages, $max_output_tokens );
+		$estimated_tokens  = $budget_info['used'] + $budget_info['reserved'];
+
+		// Check if adding this request would exceed the budget.
+		$projected_total = $usage_data['total_tokens'] + $estimated_tokens;
+
+		if ( $projected_total > $budget_limit ) {
+			$time_until_reset = $budget_window - ( $current_time - $usage_data['window_start'] );
+			$minutes_until_reset = ceil( $time_until_reset / 60 );
+
+			WP_MCP_AI_Logger::log_error(
+				'Assistant token budget exceeded.',
+				array(
+					'user_id'            => $user_id,
+					'assistant_id'       => $assistant_id,
+					'budget_limit'       => $budget_limit,
+					'current_usage'      => $usage_data['total_tokens'],
+					'estimated_request'  => $estimated_tokens,
+					'projected_total'    => $projected_total,
+					'window_seconds'     => $budget_window,
+					'time_until_reset'   => $time_until_reset,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_budget_exceeded',
+				sprintf(
+					/* translators: %1$d: budget limit, %2$d: current usage, %3$d: minutes until reset */
+					__( 'Token budget exceeded. This assistant has a limit of %1$d tokens per hour. Current usage: %2$d tokens. Please try again in %3$d minutes.', 'wp-mcp-ai' ),
+					$budget_limit,
+					$usage_data['total_tokens'],
+					$minutes_until_reset
+				),
+				array(
+					'status'              => 429,
+					'budget_limit'        => $budget_limit,
+					'current_usage'       => $usage_data['total_tokens'],
+					'estimated_request'   => $estimated_tokens,
+					'time_until_reset'    => $time_until_reset,
+					'minutes_until_reset' => $minutes_until_reset,
+				)
+			);
+		}
+
+		// Update usage tracking.
+		$usage_data['total_tokens']  += $estimated_tokens;
+		$usage_data['request_count'] += 1;
+
+		// Store updated usage data.
+		set_transient( $transient_key, $usage_data, $budget_window );
+
+		WP_MCP_AI_Logger::log_event(
+			'token_budget_check_passed',
+			'Token budget check passed for assistant.',
+			array(
+				'user_id'          => $user_id,
+				'assistant_id'     => $assistant_id,
+				'budget_limit'     => $budget_limit,
+				'current_usage'    => $usage_data['total_tokens'],
+				'estimated_request' => $estimated_tokens,
+				'remaining_budget' => $budget_limit - $usage_data['total_tokens'],
+			)
+		);
+
+		return true;
+	}
 }

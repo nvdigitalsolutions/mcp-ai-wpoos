@@ -29,6 +29,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const META_TOKEN_BUDGET            = '_wp_mcp_ai_token_budget';
+		const META_BUDGET_WINDOW           = '_wp_mcp_ai_budget_window';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -772,6 +774,32 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_TOKEN_BUDGET,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_token_budget_meta' ),
+					'auth_callback'     => $auth_callback,
+					'default'           => 0,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_BUDGET_WINDOW,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_budget_window_meta' ),
+					'auth_callback'     => $auth_callback,
+					'default'           => 3600,
+				)
+			);
 		}
 
 		/**
@@ -965,6 +993,50 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return $action_type;
+		}
+
+		/**
+		 * Sanitize token budget meta value.
+		 *
+		 * @param mixed $budget Raw budget value.
+		 * @return int Sanitized token budget (0 means no limit).
+		 */
+		public static function sanitize_token_budget_meta( $budget ) {
+			$budget = absint( $budget );
+
+			/**
+			 * Filter the maximum allowed token budget for an assistant.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $max_budget Maximum token budget. Default 10000000 (10M).
+			 */
+			$max_budget = apply_filters( 'wp_mcp_ai_max_assistant_token_budget', 10000000 );
+
+			if ( $budget > $max_budget ) {
+				$budget = $max_budget;
+			}
+
+			return $budget;
+		}
+
+		/**
+		 * Sanitize budget window meta value.
+		 *
+		 * @param mixed $window Raw budget window value in seconds.
+		 * @return int Sanitized budget window in seconds.
+		 */
+		public static function sanitize_budget_window_meta( $window ) {
+			$window = absint( $window );
+
+			// Ensure window is between 60 seconds (1 minute) and 86400 seconds (24 hours).
+			if ( $window < 60 ) {
+				$window = 3600; // Default to 1 hour.
+			} elseif ( $window > 86400 ) {
+				$window = 86400; // Max 24 hours.
+			}
+
+			return $window;
 		}
 
 		/**
