@@ -29,6 +29,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const META_TOKEN_BUDGET            = '_wp_mcp_ai_token_budget';
+		const META_BUDGET_WINDOW           = '_wp_mcp_ai_budget_window';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -772,6 +774,32 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_TOKEN_BUDGET,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_token_budget_meta' ),
+					'auth_callback'     => $auth_callback,
+					'default'           => 0,
+				)
+			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_BUDGET_WINDOW,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_budget_window_meta' ),
+					'auth_callback'     => $auth_callback,
+					'default'           => 3600,
+				)
+			);
 		}
 
 		/**
@@ -965,6 +993,50 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return $action_type;
+		}
+
+		/**
+		 * Sanitize token budget meta value.
+		 *
+		 * @param mixed $budget Raw budget value.
+		 * @return int Sanitized token budget (0 means no limit).
+		 */
+		public static function sanitize_token_budget_meta( $budget ) {
+			$budget = absint( $budget );
+
+			/**
+			 * Filter the maximum allowed token budget for an assistant.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int $max_budget Maximum token budget. Default 10000000 (10M).
+			 */
+			$max_budget = apply_filters( 'wp_mcp_ai_max_assistant_token_budget', 10000000 );
+
+			if ( $budget > $max_budget ) {
+				$budget = $max_budget;
+			}
+
+			return $budget;
+		}
+
+		/**
+		 * Sanitize budget window meta value.
+		 *
+		 * @param mixed $window Raw budget window value in seconds.
+		 * @return int Sanitized budget window in seconds.
+		 */
+		public static function sanitize_budget_window_meta( $window ) {
+			$window = absint( $window );
+
+			// Ensure window is between 60 seconds (1 minute) and 86400 seconds (24 hours).
+			if ( $window < 60 ) {
+				$window = 3600; // Default to 1 hour.
+			} elseif ( $window > 86400 ) {
+				$window = 86400; // Max 24 hours.
+			}
+
+			return $window;
 		}
 
 		/**
@@ -1270,6 +1342,123 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Get predefined tool presets for common use cases.
+		 *
+		 * @return array Array of presets with label and tools.
+		 */
+		protected function get_tool_presets() {
+			$presets = array(
+				'content_creator' => array(
+					'label' => __( 'Content Creator', 'wp-mcp-ai' ),
+					'description' => __( 'Tools for creating and managing blog posts, pages, and media', 'wp-mcp-ai' ),
+					'tools' => array( 'submit_document_prompt', 'search_content', 'get_recent_posts', 'save_post', 'get_rankmath_seo', 'generate_openai_image', 'generate_gemini_image', 'get_elementor_templates' ),
+				),
+				'marketer' => array(
+					'label' => __( 'Digital Marketer', 'wp-mcp-ai' ),
+					'description' => __( 'Analytics, SEO, social media insights, and marketing automation', 'wp-mcp-ai' ),
+					'tools' => array( 'google_analytics_report', 'get_facebook_instagram_insights', 'get_rankmath_seo', 'web_search', 'create_google_calendar_event', 'generate_openai_image', 'save_post', 'search_content' ),
+				),
+				'ecommerce_manager' => array(
+					'label' => __( 'E-commerce Manager', 'wp-mcp-ai' ),
+					'description' => __( 'Product management, orders, and WooCommerce tools', 'wp-mcp-ai' ),
+					'tools' => array( 'create_woo_product', 'list_woo_orders', 'get_woo_product_stats', 'search_content', 'generate_openai_image', 'web_search', 'get_import_duty' ),
+				),
+				'it_manager' => array(
+					'label' => __( 'IT Manager / SysAdmin', 'wp-mcp-ai' ),
+					'description' => __( 'Site operations, security, monitoring, and system maintenance', 'wp-mcp-ai' ),
+					'tools' => array( 'get_site_health', 'get_environment_status', 'get_system_logs', 'get_update_status', 'check_site_security', 'check_wp_cli', 'purge_cache', 'purge_cloudflare_cache', 'create_cron_job', 'list_cron_jobs', 'get_cron_job', 'delete_cron_job', 'create_wpcode_snippet' ),
+				),
+				'developer' => array(
+					'label' => __( 'Developer / DevOps', 'wp-mcp-ai' ),
+					'description' => __( 'Code management, debugging, API integration, and development tools', 'wp-mcp-ai' ),
+					'tools' => array( 'check_wp_cli', 'create_wpcode_snippet', 'get_system_logs', 'get_environment_status', 'create_cron_job', 'list_cron_jobs', 'generate_simple_jwt_token', 'generate_auth0_token', 'probe_chat', 'probe_remote_mcp', 'get_jetengine_items', 'list_jetengine_rest_routes', 'invoke_jetengine_route' ),
+				),
+				'customer_support' => array(
+					'label' => __( 'Customer Support', 'wp-mcp-ai' ),
+					'description' => __( 'User management, help desk operations, and customer communications', 'wp-mcp-ai' ),
+					'tools' => array( 'get_user_info', 'search_content', 'get_recent_posts', 'web_search', 'create_google_calendar_event', 'send_email', 'get_site_summary' ),
+				),
+				'data_analyst' => array(
+					'label' => __( 'Data Analyst', 'wp-mcp-ai' ),
+					'description' => __( 'Analytics, reporting, and data insights', 'wp-mcp-ai' ),
+					'tools' => array( 'google_analytics_report', 'get_facebook_instagram_insights', 'get_woo_product_stats', 'list_woo_orders', 'get_site_summary', 'search_content', 'get_jetengine_items', 'count_tokens' ),
+				),
+				'seo_specialist' => array(
+					'label' => __( 'SEO Specialist', 'wp-mcp-ai' ),
+					'description' => __( 'Search optimization, content analysis, and SEO tools', 'wp-mcp-ai' ),
+					'tools' => array( 'get_rankmath_seo', 'save_post', 'search_content', 'get_recent_posts', 'web_search', 'submit_document_prompt', 'google_analytics_report' ),
+				),
+				'social_media_manager' => array(
+					'label' => __( 'Social Media Manager', 'wp-mcp-ai' ),
+					'description' => __( 'Social media insights, content scheduling, and engagement', 'wp-mcp-ai' ),
+					'tools' => array( 'get_facebook_instagram_insights', 'generate_openai_image', 'generate_gemini_image', 'save_post', 'create_google_calendar_event', 'web_search', 'search_content' ),
+				),
+				'project_manager' => array(
+					'label' => __( 'Project Manager', 'wp-mcp-ai' ),
+					'description' => __( 'Task scheduling, automation workflows, and coordination', 'wp-mcp-ai' ),
+					'tools' => array( 'create_google_calendar_event', 'create_cron_job', 'list_cron_jobs', 'get_cron_job', 'run_openai_external_action', 'send_email', 'get_user_info', 'get_site_summary' ),
+				),
+				'media_producer' => array(
+					'label' => __( 'Media Producer', 'wp-mcp-ai' ),
+					'description' => __( 'Image generation, audio transcription, and media management', 'wp-mcp-ai' ),
+					'tools' => array( 'generate_openai_image', 'generate_gemini_image', 'edit_gemini_image', 'generate_openai_speech', 'transcribe_openai_audio', 'search_attachments', 'save_post' ),
+				),
+				'automation_specialist' => array(
+					'label' => __( 'Automation Specialist', 'wp-mcp-ai' ),
+					'description' => __( 'Workflow automation, scheduled tasks, and integrations', 'wp-mcp-ai' ),
+					'tools' => array( 'run_openai_external_action', 'run_crawl4ai_job', 'create_cron_job', 'list_cron_jobs', 'get_cron_job', 'delete_cron_job', 'create_google_calendar_event', 'create_wpcode_snippet', 'probe_remote_mcp', 'query_remote_site' ),
+				),
+				'research_analyst' => array(
+					'label' => __( 'Research Analyst', 'wp-mcp-ai' ),
+					'description' => __( 'Web research, data gathering, and external data sources', 'wp-mcp-ai' ),
+					'tools' => array( 'web_search', 'crawl4ai_price_lookup', 'run_crawl4ai_job', 'get_gdacs_events', 'get_open_meteo_forecast', 'reliefweb_reports', 'search_content', 'submit_document_prompt' ),
+				),
+				'security_specialist' => array(
+					'label' => __( 'Security Specialist', 'wp-mcp-ai' ),
+					'description' => __( 'Security monitoring, threat detection, and compliance', 'wp-mcp-ai' ),
+					'tools' => array( 'check_site_security', 'get_site_health', 'get_system_logs', 'get_environment_status', 'get_update_status', 'generate_simple_jwt_token', 'generate_auth0_token' ),
+				),
+				'api_integrator' => array(
+					'label' => __( 'API Integration Specialist', 'wp-mcp-ai' ),
+					'description' => __( 'REST API management, JetEngine, and external integrations', 'wp-mcp-ai' ),
+					'tools' => array( 'list_jetengine_rest_routes', 'invoke_jetengine_route', 'get_jetengine_items', 'probe_chat', 'probe_remote_mcp', 'query_remote_site', 'generate_simple_jwt_token', 'generate_auth0_token' ),
+				),
+				'emergency_responder' => array(
+					'label' => __( 'Emergency/Crisis Responder', 'wp-mcp-ai' ),
+					'description' => __( 'Real-time alerts, weather, and emergency data monitoring', 'wp-mcp-ai' ),
+					'tools' => array( 'get_gdacs_events', 'get_nhc_active_storms', 'get_open_meteo_forecast', 'reliefweb_reports', 'web_search', 'send_email', 'save_post' ),
+				),
+				'general_assistant' => array(
+					'label' => __( 'General Purpose Assistant', 'wp-mcp-ai' ),
+					'description' => __( 'Balanced set of tools for general website management', 'wp-mcp-ai' ),
+					'tools' => array( 'search_content', 'get_recent_posts', 'save_post', 'get_user_info', 'get_site_summary', 'web_search', 'generate_openai_image', 'send_email' ),
+				),
+				'communication_manager' => array(
+					'label' => __( 'Communication Manager', 'wp-mcp-ai' ),
+					'description' => __( 'Email campaigns, notifications, and user communications', 'wp-mcp-ai' ),
+					'tools' => array( 'send_email', 'get_user_info', 'search_content', 'save_post', 'create_google_calendar_event', 'web_search' ),
+				),
+				'site_administrator' => array(
+					'label' => __( 'Site Administrator', 'wp-mcp-ai' ),
+					'description' => __( 'Full site management with comprehensive access', 'wp-mcp-ai' ),
+					'tools' => array( 'get_site_health', 'get_site_summary', 'get_environment_status', 'get_system_logs', 'get_update_status', 'get_user_info', 'save_post', 'search_content', 'purge_cache', 'create_cron_job', 'list_cron_jobs' ),
+				),
+				'local_business_owner' => array(
+					'label' => __( 'Local Business Owner', 'wp-mcp-ai' ),
+					'description' => __( 'Simple content management, customer service, and basic operations', 'wp-mcp-ai' ),
+					'tools' => array( 'save_post', 'search_content', 'get_recent_posts', 'generate_openai_image', 'send_email', 'create_google_calendar_event', 'web_search' ),
+				),
+			);
+
+			/**
+			 * Filter the available tool presets.
+			 *
+			 * @param array $presets Array of preset configurations.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_presets', $presets );
+		}
+
+		/**
 		 * Render the tools meta box content.
 		 *
 		 * @param WP_Post $post Post object.
@@ -1325,6 +1514,34 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			echo '<p>' . esc_html__( 'Select the tools this assistant is permitted to invoke.', 'wp-mcp-ai' ) . '</p>';
 			echo '<p class="description">' . esc_html__( 'Expand a group to review related capabilities. You can optionally limit who can call each tool by assigning WordPress roles.', 'wp-mcp-ai' ) . '</p>';
+
+			// Render tool presets selector.
+			$presets = $this->get_tool_presets();
+			if ( ! empty( $presets ) ) {
+				echo '<fieldset class="wp-mcp-ai-tools__presets">';
+				echo '<legend>' . esc_html__( 'Quick Setup with Presets', 'wp-mcp-ai' ) . '</legend>';
+				echo '<p class="description">' . esc_html__( 'Select a preset to quickly enable a curated set of tools for common use cases. This will automatically check the appropriate tools below.', 'wp-mcp-ai' ) . '</p>';
+				echo '<div class="wp-mcp-ai-tools__presets-select-wrapper">';
+				echo '<label for="wp-mcp-ai-tool-preset" class="screen-reader-text">' . esc_html__( 'Select tool preset', 'wp-mcp-ai' ) . '</label>';
+				echo '<select id="wp-mcp-ai-tool-preset" class="regular-text">';
+				echo '<option value="">' . esc_html__( '-- Select a preset --', 'wp-mcp-ai' ) . '</option>';
+				foreach ( $presets as $preset_id => $preset_data ) {
+					$label = isset( $preset_data['label'] ) ? $preset_data['label'] : ucwords( str_replace( '_', ' ', $preset_id ) );
+					$description = isset( $preset_data['description'] ) ? $preset_data['description'] : '';
+					printf(
+						'<option value="%s" data-tools="%s" title="%s">%s</option>',
+						esc_attr( $preset_id ),
+						esc_attr( wp_json_encode( isset( $preset_data['tools'] ) ? $preset_data['tools'] : array() ) ),
+						esc_attr( $description ),
+						esc_html( $label )
+					);
+				}
+				echo '</select>';
+				echo '<button type="button" id="wp-mcp-ai-apply-preset" class="button button-secondary" style="margin-left: 0.5rem;">' . esc_html__( 'Apply Preset', 'wp-mcp-ai' ) . '</button>';
+				echo '</div>';
+				echo '<p class="wp-mcp-ai-tools__preset-description" style="margin-top: 0.5rem; color: #646970; font-size: 13px;"></p>';
+				echo '</fieldset>';
+			}
 
 			echo '<fieldset class="wp-mcp-ai-tools__shortcuts-toggle">';
 			echo '<legend class="screen-reader-text">' . esc_html__( 'Tool shortcut options', 'wp-mcp-ai' ) . '</legend>';
@@ -1465,6 +1682,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			.wp-mcp-ai-tools__extra{margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid #dcdcde}
 			.wp-mcp-ai-tools__item[data-tool-selected="false"]{opacity:0.75}
 			.wp-mcp-ai-tools__item[data-tool-selected="false"] .wp-mcp-ai-tools__extra{display:none}
+			.wp-mcp-ai-tools__presets{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#f0f6fc;display:flex;flex-direction:column;gap:0.75rem}
+			.wp-mcp-ai-tools__presets legend{font-weight:600;font-size:14px;padding:0 0.25rem;color:#2c3338}
+			.wp-mcp-ai-tools__presets .description{margin:0;font-size:13px;color:#50575e}
+			.wp-mcp-ai-tools__presets-select-wrapper{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
+			.wp-mcp-ai-tools__preset-description{margin:0;font-style:italic}
 			.wp-mcp-ai-tools__shortcuts-toggle{margin:1rem 0 0;padding:1rem;border:1px solid #dcdcde;border-radius:4px;background:#fff;display:flex;flex-direction:column;gap:0.5rem}
 			.wp-mcp-ai-tools__shortcuts-toggle-label{font-weight:600;display:flex;align-items:center;gap:0.5rem;font-size:14px}
 			.wp-mcp-ai-tools__shortcuts-toggle .description{margin:0;font-size:13px;color:#50575e}
@@ -1541,6 +1763,91 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				document.addEventListener( 'DOMContentLoaded', function() {
 					var toolItems = document.querySelectorAll( '.wp-mcp-ai-tools__item' );
 					var prebuiltTemplate = document.getElementById( 'wp-mcp-ai-prebuilt-shortcut-template' );
+
+					// Handle tool preset selection.
+					var presetSelect = document.getElementById( 'wp-mcp-ai-tool-preset' );
+					var applyPresetButton = document.getElementById( 'wp-mcp-ai-apply-preset' );
+					var presetDescriptionEl = document.querySelector( '.wp-mcp-ai-tools__preset-description' );
+
+					if ( presetSelect && applyPresetButton ) {
+						// Update description when preset selection changes.
+						presetSelect.addEventListener( 'change', function() {
+							var selectedOption = presetSelect.options[ presetSelect.selectedIndex ];
+							if ( selectedOption && selectedOption.value && presetDescriptionEl ) {
+								presetDescriptionEl.textContent = selectedOption.getAttribute( 'title' ) || '';
+							} else if ( presetDescriptionEl ) {
+								presetDescriptionEl.textContent = '';
+							}
+						} );
+
+						// Apply preset when button clicked.
+						applyPresetButton.addEventListener( 'click', function() {
+							var selectedOption = presetSelect.options[ presetSelect.selectedIndex ];
+							if ( ! selectedOption || ! selectedOption.value ) {
+								alert( 'Please select a preset first.' );
+								return;
+							}
+
+							var toolsData = selectedOption.getAttribute( 'data-tools' );
+							if ( ! toolsData ) {
+								return;
+							}
+
+							try {
+								var toolSlugs = JSON.parse( toolsData );
+								if ( ! Array.isArray( toolSlugs ) ) {
+									return;
+								}
+
+								// First, uncheck all tools.
+								var allCheckboxes = document.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
+								allCheckboxes.forEach( function( checkbox ) {
+									if ( checkbox.checked ) {
+										checkbox.checked = false;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Then, check the tools in the preset.
+								toolSlugs.forEach( function( toolSlug ) {
+									var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+									if ( checkbox && ! checkbox.checked ) {
+										checkbox.checked = true;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Show confirmation.
+								var presetLabel = selectedOption.textContent;
+								var message = 'Applied preset: ' + presetLabel + ' (' + toolSlugs.length + ' tools enabled)';
+								
+								// Create a temporary notification.
+								var notification = document.createElement( 'div' );
+								notification.className = 'notice notice-success is-dismissible';
+								notification.style.cssText = 'margin: 1rem 0; padding: 0.75rem 1rem;';
+								notification.innerHTML = '<p><strong>' + message + '</strong></p>';
+								
+								var presetsFieldset = document.querySelector( '.wp-mcp-ai-tools__presets' );
+								if ( presetsFieldset && presetsFieldset.parentNode ) {
+									presetsFieldset.parentNode.insertBefore( notification, presetsFieldset.nextSibling );
+									
+									// Auto-dismiss after 3 seconds.
+									setTimeout( function() {
+										if ( notification.parentNode ) {
+											notification.parentNode.removeChild( notification );
+										}
+									}, 3000 );
+								}
+
+							} catch ( error ) {
+								console.error( 'Error applying preset:', error );
+							}
+						} );
+					}
 
 					toolItems.forEach( function( item ) {
 						var checkbox = item.querySelector( '.wp-mcp-ai-tools__checkbox' );

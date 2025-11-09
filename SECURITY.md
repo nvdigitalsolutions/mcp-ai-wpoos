@@ -184,6 +184,11 @@ Choose the authentication method appropriate for your security requirements.
 - [ ] CORS policy configured restrictively
 - [ ] Error reporting disabled in production
 - [ ] Debug mode disabled (`WP_DEBUG = false`)
+- [ ] SIEM integration configured (optional, for enterprise)
+- [ ] PII redaction enabled for logs (optional, for compliance)
+- [ ] File content scanning enabled (optional, for high-security)
+- [ ] Progressive rate limiting enabled (optional, for API protection)
+- [ ] Credential encryption rotation scheduled (optional, 90-day intervals)
 
 ## Security Audit History
 
@@ -197,6 +202,9 @@ Choose the authentication method appropriate for your security requirements.
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [OpenAI Security Best Practices](https://platform.openai.com/docs/guides/safety-best-practices)
 - [WP oOS Documentation](https://github.com/nvdigitalsolutions/wp-mcp-ai)
+- [CORS Policy Guide](docs/cors-policy.md)
+- [Security and Operational Enhancements](docs/security-operational-enhancements.md)
+- [Security Hardening Documentation](docs/SECURITY_HARDENING.md)
 
 ## Contact
 

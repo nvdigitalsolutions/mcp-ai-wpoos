@@ -31,6 +31,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_SSE_Handler {
 
 	/**
+	 * Transient prefix for storing SSE session state.
+	 */
+	const SESSION_STATE_PREFIX = 'wp_mcp_ai_sse_session_';
+
+	/**
+	 * Session state expiration time in seconds (1 hour).
+	 */
+	const SESSION_STATE_EXPIRATION = 3600;
+
+	/**
 	 * Send SSE headers for streaming response.
 	 *
 	 * Sets up HTTP headers required for Server-Sent Events streaming.
@@ -295,5 +305,102 @@ class WP_MCP_AI_SSE_Handler {
 		$chunk .= "\n";
 
 		return $chunk;
+	}
+
+	/**
+	 * Get the last event ID from the request (for SSE reconnection).
+	 *
+	 * Checks the Last-Event-ID header sent by the client when reconnecting
+	 * to an SSE stream. This allows resuming from the last received event.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return string Last event ID, or empty string if not present.
+	 */
+	public function get_last_event_id( WP_REST_Request $request ) {
+		$last_event_id = $request->get_header( 'Last-Event-ID' );
+
+		if ( is_string( $last_event_id ) && '' !== $last_event_id ) {
+			return sanitize_text_field( $last_event_id );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Store SSE session state for reconnection tracking.
+	 *
+	 * Stores the current event ID and prevents duplicate tool execution
+	 * when clients reconnect after network interruption.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $session_id  Unique session identifier.
+	 * @param string $event_id    Current event ID.
+	 * @param array  $state_data  Additional state data to preserve.
+	 * @return bool True on success, false on failure.
+	 */
+	public function store_session_state( $session_id, $event_id, $state_data = array() ) {
+		$transient_key = self::SESSION_STATE_PREFIX . md5( $session_id );
+
+		$state = array(
+			'last_event_id' => sanitize_text_field( $event_id ),
+			'timestamp'     => time(),
+			'data'          => $state_data,
+		);
+
+		return set_transient( $transient_key, $state, self::SESSION_STATE_EXPIRATION );
+	}
+
+	/**
+	 * Retrieve SSE session state for reconnection.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $session_id Unique session identifier.
+	 * @return array|null Session state array, or null if not found.
+	 */
+	public function get_session_state( $session_id ) {
+		$transient_key = self::SESSION_STATE_PREFIX . md5( $session_id );
+		$state         = get_transient( $transient_key );
+
+		if ( false === $state || ! is_array( $state ) ) {
+			return null;
+		}
+
+		return $state;
+	}
+
+	/**
+	 * Check if an event has already been sent (for duplicate prevention).
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $session_id Unique session identifier.
+	 * @param string $event_id   Event ID to check.
+	 * @return bool True if event was already sent, false otherwise.
+	 */
+	public function is_duplicate_event( $session_id, $event_id ) {
+		$state = $this->get_session_state( $session_id );
+
+		if ( null === $state ) {
+			return false;
+		}
+
+		return isset( $state['last_event_id'] ) && $state['last_event_id'] === $event_id;
+	}
+
+	/**
+	 * Clear SSE session state.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $session_id Unique session identifier.
+	 * @return bool True on success, false on failure.
+	 */
+	public function clear_session_state( $session_id ) {
+		$transient_key = self::SESSION_STATE_PREFIX . md5( $session_id );
+		return delete_transient( $transient_key );
 	}
 }

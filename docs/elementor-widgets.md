@@ -13,7 +13,7 @@ The integration only spins up once Elementor finishes loading, ensuring the addi
 ### WP oOS Chat
 - Mirrors the `[mcp_ai_chat]` shortcode in Elementor, including assistant selection, guest access, and upload controls.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L60-L92】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L428-L474】
 - Toggle optional panels to surface the assistant's saved defaults, memory files, tool assignments, and prompt shortcuts directly above the chat interface with per-section empty states and formatting controls.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L95-L845】
-- Use the **Allow Guest Access** switcher to mint one-hour guest tokens for public visitors; the widget automatically forwards those tokens to the REST layer just like the shortcode.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L80-L92】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L441-L444】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
+- Use the **Allow Guest Access** switcher to mint guest tokens (default 24-hour lifetime, configurable in Settings → WP oOS → Authentication) for public visitors; the widget automatically forwards those tokens to the REST layer just like the shortcode. See [Guest Token Authentication](authentication.md#guest-token-authentication) for complete details.【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L80-L92】【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L441-L444】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
 
 ### WP oOS Chat Intro
 - Provides a headline, descriptive copy, and repeater-driven talking points to set expectations above the chat UI.【F:includes/elementor/class-wp-mcp-ai-elementor-chat-intro-widget.php†L47-L126】

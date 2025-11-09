@@ -28,6 +28,10 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Performance Monitor CCT class not available.' );
 		}
 
+		// Initialize REST API.
+		rest_get_server();
+		do_action( 'rest_api_init' );
+
 		$concurrent_requests = 50;
 		$start_time          = microtime( true );
 		$start_memory        = memory_get_usage();
@@ -91,6 +95,10 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
 			$this->markTestSkipped( 'Performance Monitor CCT class not available.' );
 		}
+
+		// Initialize REST API.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$session_count = 10;
 		$start_time    = microtime( true );
@@ -316,6 +324,10 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->markTestSkipped( 'Tool Registry class not available.' );
 		}
+
+		// Initialize REST API.
+		rest_get_server();
+		do_action( 'rest_api_init' );
 
 		$tool_count   = 20;
 		$start_time   = microtime( true );

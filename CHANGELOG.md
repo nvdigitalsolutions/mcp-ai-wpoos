@@ -5,7 +5,67 @@
 ```markdown
 # WP oOS – Changelog
 
-## [Unreleased]
+## [1.0.0] - 2025-11-09
+
+### Added - November 9, 2025
+- **Orchestration Layer Enhancements (PR #852)**: SIEM-integrated health monitoring with predictive resource management
+  - Real-time system metrics tracking (CPU, memory, disk I/O, network latency)
+  - ML-based forecasting for resource needs
+  - 12 configuration presets for common deployment scenarios (Development, Production, High-Traffic, Cost-Optimized, etc.)
+  - Configurable slider controls for all orchestration parameters
+  - SIEM export in multiple formats (Syslog, JSON, CEF, StatsD, Webhook)
+  - Real-time health monitoring dashboard in admin interface
+- **Gutenberg Blocks (21 blocks)**: Complete feature parity with Elementor widgets for block editor users
+  - 4 Chat Interface blocks (Chat, Intro, FAQ, Usage Timer)
+  - 4 Assistant Configuration blocks (Defaults, Base Knowledge, Prompt Shortcuts, Tools)
+  - 5 Dashboard & Operations blocks (Tool Matrix, User Capability, Theme Preview, Provider Links, Activity Feed)
+  - 6 Performance Monitoring blocks (Overview, Cache Stats, Database Stats, Memory Usage, API Response Times)
+  - Server-rendered for optimal SEO with JavaScript enhancements
+  - Automatic registration with no manual initialization required
+- **Agentic Workflow Implementation**: Comprehensive test coverage and performance optimizations
+  - 30+ test cases covering all workflow scenarios
+  - Performance optimizations for token management
+  - Configuration fixes for agentic loops
+  - Complete documentation guide for developers
+- **Security Gap Closure**: Perfect 5.00/5 security score achieved (up from 4.73/5)
+  - Break-glass emergency shutdown with Root Security Key
+  - Rate limiting with exponential backoff and audit trails
+  - OAuth scope enforcement with capability validation
+  - SSE authentication and CORS policy enforcement
+  - MCP endpoint bearer-only authentication
+  - Input sanitization across all tool arguments
+  - 37 new security tests (1,550 lines)
+- **Tool System Robustness**: Enhanced tool execution reliability
+  - 5 new registry methods for robust tool execution
+  - 30+ test cases covering edge cases and failures
+  - Graceful handling of missing optional integrations
+  - Clean error messages to AI for better recovery
+  - Comprehensive dependency validation
+- **Performance Optimization (Phase 1)**: 15-30% faster page loads
+  - REST API caching system with transient-based response caching
+  - HTTP cache headers for browser caching
+  - Database query optimizations across 8 files
+  - 50-70% reduction in database queries for cached data
+  - Selective script/style enqueuing
+  - Asset loading strategy improvements
+
+### Added - Previous
+- **Per-Assistant Token Budgets**: Administrators can now set token budgets for individual assistants with configurable time windows (1 minute to 24 hours). Budgets are tracked per user-assistant pair and automatically reset when the window expires.
+- **Budget Enforcement**: Token budget violations return graceful 429 errors with user-friendly messages including time until budget reset
+- **Comprehensive Budget Logging**: All budget checks (success and failure) are logged with detailed information for monitoring and troubleshooting
+- **SDK Version Pinning**: Pinned notifylk/notify-php dependency to specific commit hash for reproducible builds
+- **Release Process Documentation**: Added comprehensive release process and upgrade testing guide (`docs/RELEASE-PROCESS.md`)
+- **Per-Assistant Budget Documentation**: Complete guide with examples and troubleshooting (`docs/per-assistant-budgets.md`)
+- **Test Coverage**: Added 15 new tests for per-assistant budgets and rate limit user messaging
+
+### Changed
+- **Dependency Management**: Updated composer.json to pin dev-master dependencies to specific commit hashes
+- **Error Messages**: Enhanced 429 error messages to include budget limits, current usage, and time until reset
+
+### Security
+- **Reproducible Builds**: All dependencies now pinned to specific versions or commit hashes via composer.lock and package-lock.json
+
+## [Unreleased - Previous]
 ### Added
 - **MCP 2024-11-05 Specification Support**: Updated documentation to align with the latest Model Context Protocol specification
   - OAuth 2.1 security enhancements (PKCE, token rotation, mandatory HTTPS)
