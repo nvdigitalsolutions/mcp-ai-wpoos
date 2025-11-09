@@ -5038,6 +5038,11 @@
         state.busy = true;
         disableForm(state, true);
         setStatus(state.container, getString('sending', 'Sending…'));
+        
+        // Add aria-busy state for screen readers
+        if (state.form) {
+            state.form.setAttribute('aria-busy', 'true');
+        }
 
         const payload = {
             assistant_id: state.config.assistantId,
@@ -5052,6 +5057,11 @@
         function finalize() {
             state.busy = false;
             disableForm(state, false);
+            
+            // Remove aria-busy state
+            if (state.form) {
+                state.form.removeAttribute('aria-busy');
+            }
         }
 
         // Check if streaming is enabled
@@ -5117,6 +5127,13 @@
                         text: '',
                     },
                 });
+                
+                // Add typing indicator class and aria-live for streaming
+                if (streamingMessageElement) {
+                    streamingMessageElement.classList.add('wp-mcp-ai-chat__message--streaming');
+                    streamingMessageElement.setAttribute('aria-live', 'polite');
+                    streamingMessageElement.setAttribute('aria-label', getString('typingIndicator', 'Assistant is typing…'));
+                }
             }
             return streamingMessageElement;
         }
@@ -5133,6 +5150,13 @@
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 // Content will be properly formatted when finalized
+                bubble.textContent = content;
+            }
+            
+            // Update aria-label as content arrives
+            if (streamingMessageElement && content) {
+                streamingMessageElement.setAttribute('aria-label', getString('assistantMessage', 'Assistant message'));
+            }
                 bubble.textContent = content;
             }
         }
@@ -5782,10 +5806,28 @@
         if (!message) {
             statusEl.textContent = '';
             statusEl.hidden = true;
+            statusEl.classList.remove('wp-mcp-ai-chat__status--loading');
             return;
         }
 
-        statusEl.textContent = message;
+        // Add loading indicator if message indicates processing
+        const isLoadingMessage = message && (
+            message.includes('…') || 
+            message.toLowerCase().includes('sending') ||
+            message.toLowerCase().includes('waiting') ||
+            message.toLowerCase().includes('processing') ||
+            message.toLowerCase().includes('loading')
+        );
+
+        if (isLoadingMessage) {
+            statusEl.classList.add('wp-mcp-ai-chat__status--loading');
+            statusEl.innerHTML = '<span class="wp-mcp-ai-chat__loading-spinner" aria-hidden="true"></span>' + 
+                                '<span>' + escapeHtml(message) + '</span>';
+        } else {
+            statusEl.classList.remove('wp-mcp-ai-chat__status--loading');
+            statusEl.textContent = message;
+        }
+        
         statusEl.hidden = false;
     }
 
@@ -5859,6 +5901,13 @@
 
         const entry = document.createElement('div');
         entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__message--' + role;
+        entry.setAttribute('role', 'article');
+        
+        // Add accessible label for screen readers
+        const roleLabel = role === 'user' ? getString('userMessage', 'User message') : 
+                         role === 'assistant' ? getString('assistantMessage', 'Assistant message') : 
+                         getString('systemMessage', 'System message');
+        entry.setAttribute('aria-label', roleLabel);
 
         const bubble = document.createElement('div');
         bubble.className = 'wp-mcp-ai-chat__bubble';
