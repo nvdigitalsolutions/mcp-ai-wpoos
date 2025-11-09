@@ -1,11 +1,85 @@
 <?xml version="1.0"?>
-<phpunit bootstrap="tests/bootstrap.php"
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
          colors="true"
          backupGlobals="false"
-         backupStaticAttributes="false">
+         backupStaticAttributes="false"
+         beStrictAboutOutputDuringTests="true"
+         beStrictAboutTestsThatDoNotTestAnything="false"
+         beStrictAboutTodoAnnotatedTests="false"
+         convertDeprecationsToExceptions="false"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         stopOnError="false"
+         stopOnFailure="false"
+         stopOnIncomplete="false"
+         stopOnSkipped="false"
+         verbose="false">
+    
     <testsuites>
-        <testsuite name="WP MCP AI Plugin Test Suite">
+        <!-- Main test suite - all tests -->
+        <testsuite name="all">
             <directory suffix=".php">tests</directory>
+            <exclude>tests/helpers</exclude>
+            <exclude>tests/bootstrap.php</exclude>
+        </testsuite>
+        
+        <!-- Unit tests - core functionality -->
+        <testsuite name="unit">
+            <directory suffix=".php">tests</directory>
+            <exclude>tests/helpers</exclude>
+            <exclude>tests/bootstrap.php</exclude>
+            <exclude>tests/rest</exclude>
+            <exclude>tests/rest-api</exclude>
+            <exclude>tests/performance</exclude>
+            <exclude>tests/security</exclude>
+            <exclude>tests/crawler</exclude>
+            <exclude>tests/memory</exclude>
+        </testsuite>
+        
+        <!-- REST API tests -->
+        <testsuite name="rest-api">
+            <directory suffix=".php">tests/rest</directory>
+            <directory suffix=".php">tests/rest-api</directory>
+        </testsuite>
+        
+        <!-- Performance tests -->
+        <testsuite name="performance">
+            <directory suffix=".php">tests/performance</directory>
+        </testsuite>
+        
+        <!-- Security tests -->
+        <testsuite name="security">
+            <directory suffix=".php">tests/security</directory>
+        </testsuite>
+        
+        <!-- Crawler tests -->
+        <testsuite name="crawler">
+            <directory suffix=".php">tests/crawler</directory>
+        </testsuite>
+        
+        <!-- Memory tests -->
+        <testsuite name="memory">
+            <directory suffix=".php">tests/memory</directory>
         </testsuite>
     </testsuites>
+    
+    <coverage processUncoveredFiles="false">
+        <include>
+            <directory suffix=".php">includes</directory>
+        </include>
+        <exclude>
+            <directory suffix=".php">includes/tools/examples</directory>
+            <directory suffix=".php">includes/vendor</directory>
+        </exclude>
+    </coverage>
+    
+    <php>
+        <ini name="error_reporting" value="-1"/>
+        <ini name="display_errors" value="1"/>
+        <ini name="display_startup_errors" value="1"/>
+        <ini name="memory_limit" value="512M"/>
+    </php>
 </phpunit>
