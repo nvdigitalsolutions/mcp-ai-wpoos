@@ -156,6 +156,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
+| [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
 | [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Known minor issues | Developers |
 
