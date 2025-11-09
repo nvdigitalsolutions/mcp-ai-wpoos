@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	const DEFAULT_MODEL           = 'gpt-image-1';
 	const DEFAULT_SIZE            = '1024x1024';
-	const DEFAULT_QUALITY         = 'standard';
+	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1. DALL-E uses 'standard'.
 	const DEFAULT_FORMAT          = 'png';
 	const DEFAULT_RESPONSE_FORMAT = 'b64_json';
 
@@ -155,11 +155,17 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		if ( ! empty( $settings['openai_image_quality'] ) ) {
-			$quality = $this->normalise_image_quality( $settings['openai_image_quality'] );
+			$quality = $this->normalise_quality_for_model( $settings['openai_image_quality'], $defaults['model'] );
 
 			if ( '' !== $quality ) {
 				$defaults['quality'] = $quality;
+			} else {
+				// If configured quality is not valid for the model, use model's default.
+				$defaults['quality'] = $this->get_model_default_quality( $defaults['model'] );
 			}
+		} else {
+			// No quality configured, use model's default.
+			$defaults['quality'] = $this->get_model_default_quality( $defaults['model'] );
 		}
 
 		if ( isset( $settings['openai_image_response_format'] ) ) {
@@ -211,6 +217,12 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		$defaults = $this->get_configured_defaults();
 
+		// Process model first, as quality validation depends on it.
+		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
+		if ( '' === $model ) {
+			$model = $defaults['model'];
+		}
+
 		$size = isset( $arguments['size'] ) ? sanitize_text_field( $arguments['size'] ) : $defaults['size'];
 		$size = $this->normalise_image_size( $size );
 
@@ -218,11 +230,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$size = $defaults['size'];
 		}
 
+		// Validate quality for the selected model.
 		$quality = isset( $arguments['quality'] ) ? sanitize_key( $arguments['quality'] ) : $defaults['quality'];
-		$quality = $this->normalise_image_quality( $quality );
+		$quality = $this->normalise_quality_for_model( $quality, $model );
 
 		if ( '' === $quality ) {
-			$quality = $defaults['quality'];
+			// Invalid quality for this model, use model's default.
+			$quality = $this->get_model_default_quality( $model );
 		}
 
 		$response_format = isset( $arguments['response_format'] ) ? sanitize_key( $arguments['response_format'] ) : $defaults['response_format'];
@@ -230,11 +244,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		if ( '' === $response_format ) {
 			$response_format = $defaults['response_format'];
-		}
-
-		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
-		if ( '' === $model ) {
-			$model = $defaults['model'];
 		}
 
 		if ( ! WP_MCP_AI_OpenAI_Client::image_model_supports_response_format( $model ) ) {
@@ -331,8 +340,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected static function get_allowed_qualities() {
 		return array(
+			// DALL-E 2 and DALL-E 3 quality values.
 			'standard',
 			'hd',
+			// gpt-image-1 quality values.
+			'low',
+			'medium',
+			'high',
+			'auto',
 		);
 	}
 
@@ -420,6 +435,62 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$formats         = self::get_allowed_response_formats();
 
 		return in_array( $response_format, $formats, true ) ? $response_format : '';
+	}
+
+	/**
+	 * Get allowed quality values for a specific image model.
+	 *
+	 * Different OpenAI image models support different quality parameter values:
+	 * - DALL-E 2 and DALL-E 3 use: 'standard', 'hd'
+	 * - gpt-image-1 uses: 'low', 'medium', 'high', 'auto'
+	 *
+	 * @param string $model Image model identifier.
+	 * @return array Array of allowed quality values for the model.
+	 */
+	protected function get_model_allowed_qualities( $model ) {
+		$model = strtolower( sanitize_text_field( $model ) );
+
+		// gpt-image-1 uses a different set of quality values.
+		if ( 'gpt-image-1' === $model ) {
+			return array( 'low', 'medium', 'high', 'auto' );
+		}
+
+		// DALL-E 2, DALL-E 3, and other models use standard/hd.
+		return array( 'standard', 'hd' );
+	}
+
+	/**
+	 * Get the default quality value for a specific image model.
+	 *
+	 * @param string $model Image model identifier.
+	 * @return string Default quality value for the model.
+	 */
+	protected function get_model_default_quality( $model ) {
+		$model = strtolower( sanitize_text_field( $model ) );
+
+		// gpt-image-1 defaults to 'medium' quality.
+		if ( 'gpt-image-1' === $model ) {
+			return 'medium';
+		}
+
+		// DALL-E models default to 'standard' quality.
+		return 'standard';
+	}
+
+	/**
+	 * Normalise quality value for a specific model.
+	 *
+	 * If the quality value is not valid for the model, returns empty string.
+	 *
+	 * @param string $quality Raw quality input.
+	 * @param string $model   Image model identifier.
+	 * @return string Normalized quality value or empty string if invalid.
+	 */
+	protected function normalise_quality_for_model( $quality, $model ) {
+		$quality         = sanitize_key( $quality );
+		$allowed_for_model = $this->get_model_allowed_qualities( $model );
+
+		return in_array( $quality, $allowed_for_model, true ) ? $quality : '';
 	}
 
 	/**
