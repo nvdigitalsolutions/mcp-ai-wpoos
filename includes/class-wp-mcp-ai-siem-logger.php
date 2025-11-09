@@ -101,6 +101,8 @@ if ( ! class_exists( 'WP_MCP_AI_SIEM_Logger' ) ) {
 				'enabled'         => false,
 				'format'          => self::FORMAT_JSON,
 				'endpoint'        => '',
+				'endpoint_type'   => 'http',
+				'endpoint_url'    => '',
 				'facility'        => LOG_USER,
 				'severity_map'    => $this->get_default_severity_map(),
 				'batch_size'      => 100,
