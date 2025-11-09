@@ -5159,11 +5159,27 @@
             }
         }
 
+        // Safely serialize payload to catch any JSON.stringify errors
+        let serializedPayload;
+        try {
+            serializedPayload = JSON.stringify(payload);
+        } catch (error) {
+            // Clean up any streaming message element
+            if (streamingMessageElement && streamingMessageElement.parentNode) {
+                streamingMessageElement.parentNode.removeChild(streamingMessageElement);
+            }
+            // Handle serialization error
+            handleError(state, new Error('Failed to serialize chat payload: ' + (error.message || 'Unknown error')));
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(error);
+        }
+
         return fetch(state.config.messagesEndpoint, {
             method: 'POST',
             headers: headers,
             credentials: 'same-origin',
-            body: JSON.stringify(payload),
+            body: serializedPayload,
         })
             .then(function (response) {
                 if (!response.ok) {
