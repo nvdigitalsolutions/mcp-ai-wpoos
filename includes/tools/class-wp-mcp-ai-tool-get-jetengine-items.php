@@ -118,11 +118,14 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
 
 		$items = get_posts(
 			array(
-				'post_type'      => $post_type,
-				'post_status'    => 'publish',
-				'posts_per_page' => $limit,
-				'orderby'        => 'date',
-				'order'          => 'DESC',
+				'post_type'              => $post_type,
+				'post_status'            => 'publish',
+				'posts_per_page'         => $limit,
+				'orderby'                => 'date',
+				'order'                  => 'DESC',
+				'no_found_rows'          => true,  // Performance: Skip counting total rows.
+				'update_post_term_cache' => false, // Performance: Skip term cache if not needed.
+				'update_post_meta_cache' => true,  // Keep meta cache for JetEngine data.
 			)
 		);
 

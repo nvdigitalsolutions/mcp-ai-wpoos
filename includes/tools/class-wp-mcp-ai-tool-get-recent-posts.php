@@ -82,12 +82,15 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface {
 
 		$posts = get_posts(
 			array(
-				'post_type'        => $post_type,
-				'post_status'      => 'publish',
-				'numberposts'      => $limit,
-				'orderby'          => 'date',
-				'order'            => 'DESC',
-				'suppress_filters' => false,
+				'post_type'              => $post_type,
+				'post_status'            => 'publish',
+				'numberposts'            => $limit,
+				'orderby'                => 'date',
+				'order'                  => 'DESC',
+				'suppress_filters'       => false,
+				'no_found_rows'          => true,  // Performance: Skip counting total rows.
+				'update_post_term_cache' => false, // Performance: Skip term cache if not needed.
+				'update_post_meta_cache' => true,  // Keep meta cache for post data.
 			)
 		);
 

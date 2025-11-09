@@ -228,14 +228,15 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 
 		$assistants = get_posts(
 			array(
-				'post_type'        => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'      => 'publish',
-				'numberposts'      => -1,
-				'orderby'          => 'title',
-				'order'            => 'ASC',
-				'suppress_filters' => true,
-				'fields'           => 'ids',
-				'no_found_rows'    => true,
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'numberposts'            => -1,
+				'orderby'                => 'title',
+				'order'                  => 'ASC',
+				'suppress_filters'       => true,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,  // Performance: Skip counting total rows.
+				'update_post_term_cache' => false, // Performance: Skip term cache.
 			)
 		);
 
