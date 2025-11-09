@@ -238,51 +238,86 @@ class WP_MCP_AI_Shortcode {
 	 *
 	 * @return string
 	 */
+	/**
+	 * Render the shortcode output.
+	 *
+	 * @param array|string $atts    Shortcode attributes.
+	 * @param string       $content Shortcode content.
+	 * @param string       $tag     Shortcode tag name.
+	 * @return string Rendered HTML output.
+	 */
 	public function render_shortcode( $atts, $content = '', $tag = '' ) {
-		$atts = shortcode_atts(
-			array(
-				'assistant'        => '',
-				'allow_guests'     => 'false',
-				'save_transcript'  => 'true',
-				'enable_streaming' => 'false',
-			),
-			$atts,
-			$tag
-		);
+		try {
+			$atts = shortcode_atts(
+				array(
+					'assistant'        => '',
+					'allow_guests'     => 'false',
+					'save_transcript'  => 'true',
+					'enable_streaming' => 'false',
+				),
+				$atts,
+				$tag
+			);
 
-		$assistant_id     = self::resolve_assistant_id( $atts['assistant'] );
-		$allow_guests     = wp_validate_boolean( $atts['allow_guests'] );
-		$save_transcript  = wp_validate_boolean( $atts['save_transcript'] );
-		$enable_streaming = wp_validate_boolean( $atts['enable_streaming'] );
+			$assistant_id     = self::resolve_assistant_id( $atts['assistant'] );
+			$allow_guests     = wp_validate_boolean( $atts['allow_guests'] );
+			$save_transcript  = wp_validate_boolean( $atts['save_transcript'] );
+			$enable_streaming = wp_validate_boolean( $atts['enable_streaming'] );
 
-		if ( ! $assistant_id ) {
-			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-			$assistant_id = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
-		}
+			if ( ! $assistant_id ) {
+				$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+				$assistant_id = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+			}
 
-		if ( ! $assistant_id ) {
-			return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'No assistant has been selected. Please provide an assistant attribute or configure a default.', 'wp-mcp-ai' ) . '</div>';
-		}
+			if ( ! $assistant_id ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Shortcode rendered without valid assistant ID',
+					array(
+						'attributes' => $atts,
+						'context'    => 'shortcode_rendering',
+					)
+				);
+				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'No assistant has been selected. Please provide an assistant attribute or configure a default.', 'wp-mcp-ai' ) . '</div>';
+			}
 
-		$assistant = get_post( $assistant_id );
-		if ( ! $assistant || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant->post_type || 'publish' !== $assistant->post_status ) {
-			return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
-		}
+			$assistant = get_post( $assistant_id );
+			if ( ! $assistant || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant->post_type || 'publish' !== $assistant->post_status ) {
+				WP_MCP_AI_Logger::log_error(
+					'Shortcode attempted to render unavailable assistant',
+					array(
+						'assistant_id'     => $assistant_id,
+						'assistant_exists' => ! ! $assistant,
+						'post_type'        => $assistant ? $assistant->post_type : null,
+						'post_status'      => $assistant ? $assistant->post_status : null,
+						'attributes'       => $atts,
+					)
+				);
+				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'The requested assistant is not available.', 'wp-mcp-ai' ) . '</div>';
+			}
 
-		$guest_token = '';
-		if ( $allow_guests ) {
-			$guest_token = self::generate_guest_token( $assistant_id );
-		}
+			$guest_token = '';
+			if ( $allow_guests ) {
+				$guest_token = self::generate_guest_token( $assistant_id );
+			}
 
-		$capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
+			$capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
 
-		if ( $guest_token ) {
-			$capability = 'public';
-		}
+			if ( $guest_token ) {
+				$capability = 'public';
+			}
 
-		if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
-			return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
-		}
+			if ( $capability && 'public' !== $capability && ! current_user_can( $capability ) ) {
+				WP_MCP_AI_Logger::log_warning(
+					'Shortcode access denied due to insufficient capability',
+					array(
+						'assistant_id'        => $assistant_id,
+						'required_capability' => $capability,
+						'user_id'             => get_current_user_id(),
+						'user_capabilities'   => wp_get_current_user()->allcaps ?? array(),
+					)
+				);
+				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
+			}
 
 		// Render the actual widget in Elementor editor for better preview.
 		// The WP_DEBUG fix in the main plugin class ensures debug output
@@ -459,6 +494,25 @@ class WP_MCP_AI_Shortcode {
 		</div>
 		<?php
 		return ob_get_clean();
+
+		} catch ( Exception $e ) {
+			// Catch any unexpected errors during shortcode rendering.
+			WP_MCP_AI_Logger::log_critical(
+				'Unexpected error rendering chat shortcode',
+				array(
+					'exception_message' => $e->getMessage(),
+					'exception_code'    => $e->getCode(),
+					'exception_file'    => $e->getFile(),
+					'exception_line'    => $e->getLine(),
+					'attributes'        => $atts,
+				)
+			);
+
+			// Return user-friendly error message.
+			return '<div class="wp-mcp-ai-chat__notice wp-mcp-ai-chat__error">' . 
+				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'wp-mcp-ai' ) . 
+				'</div>';
+		}
 	}
 
 	/**
