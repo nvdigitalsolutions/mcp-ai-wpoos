@@ -229,3 +229,423 @@ Enable `WP_DEBUG` logging to capture detailed integration activity including sub
 * **Metadata storage.** Subject identifiers and WordPress IDs are stored in user meta. Ensure your privacy policy covers OAuth identity mapping and metadata retention.
 
 【F:includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php†L175-L201】
+
+# Guest Token Authentication
+
+Guest tokens provide time-limited, unauthenticated access to specific chat assistants. This authentication method is designed for public-facing chat widgets and shortcodes where requiring user authentication would create friction for visitors.
+
+## Overview
+
+Guest tokens are temporary credentials that:
+- Allow unauthenticated users to interact with specific assistants
+- Are scoped to a single assistant ID
+- Expire after a configurable time period
+- Provide limited access to publicly available resources
+- Are automatically generated when guest access is enabled
+
+## Enabling Guest Access
+
+### Via Shortcode
+
+Enable guest access on the chat shortcode by setting the `allow_guests` parameter:
+
+```php
+[mcp_ai_chat assistant_id="123" allow_guests="true"]
+```
+
+When enabled, the shortcode automatically generates a guest token for the specified assistant and includes it in the chat interface configuration. 【F:includes/class-wp-mcp-ai-shortcode.php†L294-L307】
+
+### Via Elementor Widget
+
+The Elementor chat widget includes an "Allow Guests" toggle in its settings panel. When enabled, guest tokens are generated and passed to the chat interface. 【F:includes/elementor/class-wp-mcp-ai-elementor-widget.php†L1-L300】
+
+### Via Gutenberg Block
+
+The chat block includes an `allowGuests` attribute that controls guest token generation. 【F:includes/blocks/class-wp-mcp-ai-chat-blocks.php†L1-L300】
+
+## Token Lifecycle
+
+### Generation
+
+Guest tokens are generated via `WP_MCP_AI_Shortcode::generate_guest_token()`:
+
+```php
+$guest_token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+```
+
+The function:
+1. Validates the assistant ID
+2. Generates a 32-character random token using `wp_generate_password()`
+3. Stores the token in a transient with the assistant ID and creation timestamp
+4. Returns the token string or empty string on failure
+
+【F:includes/class-wp-mcp-ai-shortcode.php†L567-L592】
+
+### Storage
+
+Guest tokens are stored as WordPress transients with:
+- **Key**: `wp_mcp_ai_guest_access_` + MD5 hash of the token
+- **Value**: Array containing `assistant_id` and `created` timestamp
+- **Expiration**: Configurable lifetime (default: 24 hours, range: 60 seconds to 7 days)
+
+The transient approach ensures:
+- Automatic cleanup of expired tokens
+- No database pollution from long-term storage
+- Easy invalidation by clearing transients
+
+【F:includes/class-wp-mcp-ai-shortcode.php†L625-L633】
+
+### Validation
+
+Guest tokens are validated via `WP_MCP_AI_Shortcode::validate_guest_token()`:
+
+```php
+$assistant_id = WP_MCP_AI_Shortcode::validate_guest_token( $token, $assistant_id );
+```
+
+Validation checks:
+1. Token format and presence
+2. Transient exists and contains valid data
+3. Assistant ID matches (when provided)
+4. Refreshes the transient TTL on successful validation
+
+Returns the assistant ID on success or `false` on failure. 【F:includes/class-wp-mcp-ai-shortcode.php†L594-L623】
+
+### Usage in REST API
+
+The REST API extracts guest tokens from:
+- `X-WP-MCP-AI-Guest` header (preferred)
+- `guest_token` request parameter (fallback)
+
+```bash
+curl \
+  -H "X-WP-MCP-AI-Guest: <guest-token>" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id":123,"messages":[{"role":"user","content":"Hello"}]}' \
+  https://example.com/wp-json/mcp-ai/v1/chat
+```
+
+When a valid guest token is present, the capability requirement is set to `'public'`, bypassing standard authentication checks. 【F:includes/class-wp-mcp-ai-rest.php†L1720-L1731】【F:includes/class-wp-mcp-ai-shortcode.php†L303-L307】
+
+## Security Model
+
+### Access Scope
+
+Guest tokens provide limited access:
+
+**What Guests CAN Do:**
+- Send chat messages to the associated assistant
+- Receive AI responses using the assistant's configured model
+- Access publicly available attachments (files with public post status or inherited from public parents)
+- Execute tools that don't require elevated capabilities (tools should implement their own capability checks)
+
+**What Guests CANNOT Do:**
+- Access private or draft attachments
+- Switch to different assistants (tokens are scoped to a single assistant ID)
+- Access administrative functions
+- Upload files (requires `upload_files` capability)
+- Execute tools that require specific WordPress capabilities
+
+【F:includes/class-wp-mcp-ai-message-attachments.php†L585-L604】【F:includes/class-wp-mcp-ai-message-attachments.php†L790-L828】
+
+### File Access Control
+
+Guest users can only access attachments that are publicly accessible. The plugin determines public accessibility by checking:
+
+1. **Direct public status**: Attachment has a public post status
+2. **Inherited status**: Attachment has `inherit` status and its parent post is public
+3. **Filter override**: Attachments allowed via the `wp_mcp_ai_can_use_attachment` filter
+
+Example of checking attachment access:
+```php
+if ( WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
+    // Guest can access this attachment
+}
+```
+
+【F:includes/class-wp-mcp-ai-message-attachments.php†L771-L780】【F:includes/tools/class-wp-mcp-ai-tool-search-attachments.php†L161-L163】
+
+### Token Configuration
+
+Administrators can configure guest token behavior in **Settings → WP oOS → Authentication**:
+
+- **Guest Token Lifetime**: How long tokens remain valid (60 seconds to 7 days)
+- Default: 86400 seconds (24 hours)
+
+【F:includes/admin/sections/class-wp-mcp-ai-section-authentication.php†L142-L149】
+
+The lifetime is validated to ensure it falls within acceptable bounds:
+```php
+// Minimum: 60 seconds
+// Maximum: 604800 seconds (7 days)
+```
+
+【F:includes/admin/sections/class-wp-mcp-ai-section-authentication.php†L230-L239】
+
+### Rate Limiting and Abuse Prevention
+
+Guest token requests are subject to:
+
+1. **Standard WordPress rate limiting**: Applies to all REST API requests
+2. **Audit logging**: All guest activity is logged for monitoring
+3. **Token scoping**: Each token works only with its designated assistant
+4. **Automatic expiration**: Tokens are automatically cleaned up after expiration
+5. **No token reuse**: Tokens cannot be transferred between assistants
+
+### CORS Configuration
+
+Guest token requests include proper CORS headers to support cross-origin requests from embedded chat widgets:
+
+```
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Guest
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+```
+
+【F:includes/class-wp-mcp-ai-rest.php†L6850-L6854】
+
+## Best Practices
+
+### When to Use Guest Tokens
+
+✅ **Good use cases:**
+- Public-facing FAQ chatbots
+- Customer support chat widgets
+- Product information assistants
+- General inquiry forms with AI assistance
+- Public knowledge base assistants
+
+❌ **Avoid guest tokens for:**
+- Administrative assistants
+- Assistants with access to sensitive data
+- Assistants that execute privileged operations
+- Internal-only chat interfaces
+- Assistants requiring user attribution
+
+### Security Recommendations
+
+1. **Limit token lifetime**: Use shorter lifetimes (1-6 hours) for public-facing assistants
+2. **Review assistant capabilities**: Ensure guest-accessible assistants don't expose sensitive tools
+3. **Monitor usage**: Regularly review audit logs for suspicious guest activity
+4. **Use HTTPS**: Always serve guest-accessible chat widgets over HTTPS
+5. **Content filtering**: Implement content moderation for public-facing assistants
+6. **Rate limiting**: Consider additional rate limiting for guest endpoints if abuse is detected
+7. **Assistant scoping**: Create dedicated assistants for public use with limited tool access
+
+### Privacy Considerations
+
+- **No user tracking**: Guest tokens don't create WordPress user accounts or persistent tracking
+- **Transient storage**: Token data is automatically purged after expiration
+- **Anonymous usage**: Guest interactions are not linked to identifiable user data
+- **Audit trails**: Admin logs may contain IP addresses and request metadata for security purposes
+
+Ensure your privacy policy covers:
+- Collection of guest chat messages for AI processing
+- Temporary token storage
+- Audit logging practices
+- Third-party AI provider data handling (OpenAI, Gemini, etc.)
+
+## Troubleshooting
+
+### Token Generation Fails
+
+**Symptom**: Guest access enabled but tokens aren't generated
+
+**Possible causes:**
+- Invalid assistant ID
+- Transient storage issues
+- Database connection problems
+- Insufficient permissions
+
+**Solutions:**
+```php
+// Verify assistant exists
+$assistant = get_post( $assistant_id );
+if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
+    // Assistant not found
+}
+
+// Check transient storage
+$test_key = 'wp_mcp_ai_test_' . time();
+set_transient( $test_key, 'test', 60 );
+$test_value = get_transient( $test_key );
+if ( false === $test_value ) {
+    // Transient storage not working
+}
+```
+
+### Token Validation Fails
+
+**Symptom**: Guest token provided but REST API returns 401/403
+
+**Possible causes:**
+- Token expired
+- Wrong assistant ID
+- Token malformed
+- Transient cache cleared
+
+**Solutions:**
+1. Check token hasn't expired by reviewing the configured lifetime
+2. Ensure the token is sent via `X-WP-MCP-AI-Guest` header or `guest_token` parameter
+3. Verify the assistant ID in the request matches the token's scope
+4. Generate a new token if cache was cleared
+
+### Guest Access Denied
+
+**Symptom**: Valid token but access still denied
+
+**Possible causes:**
+- Assistant-specific capability requirements
+- Plugin configuration issue
+- Filter overriding guest access
+
+**Debugging:**
+```php
+// Check capability requirement
+$capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+// Should return 'public' for valid guest tokens
+
+// Enable debug logging
+define( 'WP_MCP_AI_DEBUG', true );
+// Review logs in Settings → WP oOS → Debug Logs
+```
+
+## Code Examples
+
+### Manual Token Generation
+
+```php
+// Generate token for assistant ID 123
+$assistant_id = 123;
+$token = WP_MCP_AI_Shortcode::generate_guest_token( $assistant_id );
+
+if ( $token ) {
+    // Token generated successfully
+    // Pass to frontend: data-guest-token="<?php echo esc_attr( $token ); ?>"
+} else {
+    // Token generation failed
+}
+```
+
+### Manual Token Validation
+
+```php
+// Validate token
+$token = sanitize_text_field( $_GET['guest_token'] ?? '' );
+$assistant_id = absint( $_GET['assistant_id'] ?? 0 );
+
+$validated_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $token, $assistant_id );
+
+if ( $validated_assistant ) {
+    // Token is valid for assistant ID $validated_assistant
+} else {
+    // Token invalid or expired
+}
+```
+
+### Custom Guest Token Lifetime
+
+```php
+// Filter token lifetime (in seconds)
+add_filter( 'option_wp_mcp_ai_settings', function( $settings ) {
+    if ( ! is_array( $settings ) ) {
+        $settings = array();
+    }
+    
+    // Set 2-hour lifetime for guest tokens
+    $settings['guest_token_lifetime'] = 7200; // 2 hours
+    
+    return $settings;
+} );
+```
+
+### Restricting Guest File Access
+
+```php
+// Only allow guests to access specific attachments
+add_filter( 'wp_mcp_ai_can_use_attachment', function( $can_access, $attachment_id ) {
+    // If already has access, don't restrict
+    if ( $can_access ) {
+        return $can_access;
+    }
+    
+    // Check if current request is using guest token
+    // (You'd need to track this in your implementation)
+    $is_guest = /* your logic to detect guest requests */;
+    
+    if ( ! $is_guest ) {
+        return $can_access;
+    }
+    
+    // Allow guests to access attachments in a specific category
+    $allowed_category = 'public-knowledge';
+    $categories = wp_get_object_terms( $attachment_id, 'category' );
+    
+    foreach ( $categories as $category ) {
+        if ( $category->slug === $allowed_category ) {
+            return true;
+        }
+    }
+    
+    return false;
+}, 10, 2 );
+```
+
+## Testing Guest Token Flow
+
+### Via WP-CLI
+
+```bash
+# Test token generation
+wp eval "echo WP_MCP_AI_Shortcode::generate_guest_token(123);"
+
+# Test token validation
+wp eval "var_dump(WP_MCP_AI_Shortcode::validate_guest_token('TOKEN_HERE', 123));"
+```
+
+### Via REST API
+
+```bash
+# Generate token (via shortcode or manual method)
+TOKEN="your-generated-token"
+
+# Test chat endpoint
+curl -X POST \
+  -H "X-WP-MCP-AI-Guest: $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"assistant_id":123,"messages":[{"role":"user","content":"Test message"}]}' \
+  https://example.com/wp-json/mcp-ai/v1/chat
+```
+
+### Via Browser Console
+
+```javascript
+// Test guest token in chat widget
+const testGuestChat = async (token, assistantId) => {
+    const response = await fetch('/wp-json/mcp-ai/v1/chat', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-WP-MCP-AI-Guest': token
+        },
+        body: JSON.stringify({
+            assistant_id: assistantId,
+            messages: [
+                { role: 'user', content: 'Hello from guest' }
+            ]
+        })
+    });
+    
+    return await response.json();
+};
+
+// Usage
+testGuestChat('your-token-here', 123).then(console.log);
+```
+
+## Related Documentation
+
+- [REST API Documentation](rest-api.md) - Complete REST API reference including guest token usage
+- [Chat Shortcode](../README.md#-frontend-shortcode) - Shortcode parameters and guest access
+- [Elementor Widgets](elementor-widgets.md) - Guest access in Elementor chat widgets
+- [Security Audit Report](SECURITY_AUDIT_REPORT.md) - Security considerations and audit findings
