@@ -958,49 +958,63 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request REST request instance.
 		 * @return WP_REST_Response|WP_Error
 		 */
-		public function handle_health_check( WP_REST_Request $request ) {
-			$health = array(
-				'status'    => 'healthy',
+	public function handle_health_check( WP_REST_Request $request ) {
+		$health = array(
+			'status'    => 'healthy',
+			'timestamp' => current_time( 'c', true ),
+			'version'   => WP_MCP_AI_VERSION,
+		);
+
+		$issues = array();
+		if ( ! WP_MCP_AI_Credential_Encryption::is_available() ) {
+			$issues[] = array(
+				'code'     => 'credential_encryption_unavailable',
+				'message'  => __( 'Credential encryption prerequisites are missing. Enable the PHP OpenSSL extension to secure stored secrets.', 'wp-mcp-ai' ),
+				'severity' => 'critical',
+			);
+		}
+
+		if ( ! empty( $issues ) ) {
+			$health['status'] = 'critical';
+			$health['issues'] = $issues;
+		}
+
+		return rest_ensure_response( $health );
+	}
+
+	/**
+	 * Handle providers health check request.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_providers_health( WP_REST_Request $request ) {
+		if ( ! class_exists( 'WP_MCP_AI_Circuit_Breaker' ) ) {
+			return rest_ensure_response( array( 'error' => 'Circuit breaker not available' ) );
+		}
+
+		$providers = array( 'openai', 'gemini', 'anthropic', 'ollama', 'lm_studio' );
+		$health    = array();
+
+		foreach ( $providers as $provider ) {
+			$health[ $provider ] = WP_MCP_AI_Circuit_Breaker::get_health_metrics( $provider );
+		}
+
+		return rest_ensure_response(
+			array(
 				'timestamp' => current_time( 'c', true ),
-				'version'   => WP_MCP_AI_VERSION,
-			);
+				'providers' => $health,
+			)
+		);
+	}
 
-			return rest_ensure_response( $health );
-		}
-
-		/**
-		 * Handle providers health check request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_providers_health( WP_REST_Request $request ) {
-			if ( ! class_exists( 'WP_MCP_AI_Circuit_Breaker' ) ) {
-				return rest_ensure_response( array( 'error' => 'Circuit breaker not available' ) );
-			}
-
-			$providers = array( 'openai', 'gemini', 'anthropic', 'ollama', 'lm_studio' );
-			$health    = array();
-
-			foreach ( $providers as $provider ) {
-				$health[ $provider ] = WP_MCP_AI_Circuit_Breaker::get_health_metrics( $provider );
-			}
-
-			return rest_ensure_response(
-				array(
-					'timestamp' => current_time( 'c', true ),
-					'providers' => $health,
-				)
-			);
-		}
-
-		/**
-		 * Handle metrics request.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response|WP_Error
-		 */
-		public function handle_metrics( WP_REST_Request $request ) {
+	/**
+	 * Handle metrics request.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_metrics( WP_REST_Request $request ) {
 			if ( ! class_exists( 'WP_MCP_AI_Metrics' ) ) {
 				return rest_ensure_response( array( 'error' => 'Metrics system not available' ) );
 			}

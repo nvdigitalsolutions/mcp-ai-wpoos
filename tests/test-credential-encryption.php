@@ -113,4 +113,34 @@ class Test_Credential_Encryption extends WP_UnitTestCase {
 		$result = WP_MCP_AI_Credential_Encryption::decrypt( '' );
 		$this->assertFalse( $result );
 	}
+
+	/**
+	 * Ensure credentials are not saved when prerequisites are missing.
+	 */
+	public function test_encryption_unavailable_returns_error_and_skips_storage() {
+		add_filter( 'wp_mcp_ai_credential_encryption_available', '__return_false' );
+
+		delete_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION );
+
+		$updates = 0;
+		$tracker = function ( $value, $old_value, $option ) use ( &$updates ) {
+			$updates++;
+			return $value;
+		};
+		add_filter(
+			'pre_update_option_' . WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION,
+			$tracker,
+			10,
+			3
+		);
+
+		$result = WP_MCP_AI_Credential_Encryption::encrypt( 'sensitive-secret' );
+
+		remove_filter( 'pre_update_option_' . WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION, $tracker, 10 );
+		remove_filter( 'wp_mcp_ai_credential_encryption_available', '__return_false' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 0, $updates, 'Encryption prerequisites failure should not persist master key changes.' );
+		$this->assertFalse( get_option( WP_MCP_AI_Credential_Encryption::MASTER_KEY_OPTION ) );
+	}
 }

@@ -221,11 +221,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
 			$sections   = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
 
-			?>
-			<div class="wrap wp-mcp-ai-settings-dashboard">
-				<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+		?>
+		<div class="wrap wp-mcp-ai-settings-dashboard">
+			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 
-				<?php settings_errors( 'wp_mcp_ai_settings' ); ?>
+			<?php if ( ! WP_MCP_AI_Credential_Encryption::is_available() ) : ?>
+				<div class="notice notice-error">
+					<p><?php esc_html_e( 'Credential encryption prerequisites are missing. Enable the PHP OpenSSL extension to securely store API keys and assistant credentials.', 'wp-mcp-ai' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php settings_errors( 'wp_mcp_ai_settings' ); ?>
 
 				<?php
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.

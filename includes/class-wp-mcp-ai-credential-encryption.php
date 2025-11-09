@@ -48,9 +48,20 @@ class WP_MCP_AI_Credential_Encryption {
 	 * @return bool
 	 */
 	public static function is_available() {
-		return function_exists( 'openssl_encrypt' ) &&
-			function_exists( 'openssl_decrypt' ) &&
-			in_array( self::CIPHER_METHOD, openssl_get_cipher_methods(), true );
+		$available = function_exists( 'openssl_encrypt' )
+			&& function_exists( 'openssl_decrypt' )
+			&& in_array( self::CIPHER_METHOD, openssl_get_cipher_methods(), true );
+
+		/**
+		 * Filter the availability of credential encryption support.
+		 *
+		 * Allows tests and edge cases to override the OpenSSL availability check.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param bool $available Whether credential encryption prerequisites are met.
+		 */
+		return (bool) apply_filters( 'wp_mcp_ai_credential_encryption_available', $available );
 	}
 
 	/**
@@ -126,12 +137,14 @@ class WP_MCP_AI_Credential_Encryption {
 	 * Encrypt a credential.
 	 *
 	 * @param string $plaintext Plaintext credential to encrypt.
-	 * @return string|false Encrypted credential (base64) or false on failure.
+	 * @return string|false|WP_Error Encrypted credential (base64) on success, WP_Error when unavailable.
 	 */
 	public static function encrypt( $plaintext ) {
 		if ( ! self::is_available() ) {
-			// Fallback to base64 encoding if encryption not available.
-			return base64_encode( $plaintext );
+			return new WP_Error(
+				'wp_mcp_ai_encryption_unavailable',
+				__( 'Credential encryption prerequisites are missing. Enable the PHP OpenSSL extension to secure stored secrets.', 'wp-mcp-ai' )
+			);
 		}
 
 		try {
@@ -263,6 +276,13 @@ class WP_MCP_AI_Credential_Encryption {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function rotate_master_key() {
+		if ( ! self::is_available() ) {
+			return new WP_Error(
+				'wp_mcp_ai_encryption_unavailable',
+				__( 'Credential encryption prerequisites are missing. Enable the PHP OpenSSL extension to rotate stored secrets.', 'wp-mcp-ai' )
+			);
+		}
+
 		// Generate new master key.
 		$new_master_key = self::generate_key();
 		if ( false === $new_master_key ) {
@@ -289,8 +309,11 @@ class WP_MCP_AI_Credential_Encryption {
 			update_option( self::MASTER_KEY_OPTION, $new_master_key, false );
 			$encrypted = self::encrypt( $plaintext );
 
-			if ( false === $encrypted ) {
-				$errors[] = $cred;
+			if ( is_wp_error( $encrypted ) || false === $encrypted ) {
+				$errors[] = array(
+					'credential' => $cred,
+					'error'      => is_wp_error( $encrypted ) ? $encrypted->get_error_message() : __( 'Encryption failed.', 'wp-mcp-ai' ),
+				);
 				continue;
 			}
 
