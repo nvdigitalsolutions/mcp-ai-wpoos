@@ -5668,7 +5668,14 @@
                     }
 
                     const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
-                    const normalized = normaliseToolResultForDisplay(toolName, matchingResult.content);
+                    
+                    // Parse the tool result content (it's a JSON string from the backend)
+                    const parsedContent = parseToolMessagePayload(matchingResult.content);
+                    if (!parsedContent) {
+                        return;
+                    }
+                    
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
                     if (normalized && normalized.attachments && normalized.attachments.length > 0) {
                         // Add attachments to the assistant display.
