@@ -5,8 +5,23 @@
 WP oOS maintains comprehensive test coverage across all major components to ensure reliability, security, and backward compatibility.
 
 **Generated**: November 9, 2024  
-**Total Test Files**: 167  
-**Test Framework**: PHPUnit 9.6 with WordPress test suite
+**Total Test Files**: 206 PHP files  
+**Total Test Methods**: 1,754+ tests  
+**Test Framework**: PHPUnit 9.6 with WordPress test suite  
+**Optimization Guide**: See `docs/PHPUNIT-OPTIMIZATION-GUIDE.md` for performance and best practices
+
+## Test Suite Organization (Optimized Nov 2024)
+
+Tests are now organized into logical suites:
+
+- **unit** - Core functionality tests (fastest)
+- **rest-api** - REST API endpoint tests  
+- **performance** - Performance benchmarks
+- **security** - Security validation tests
+- **crawler** - Crawl4AI integration tests
+- **memory** - Memory usage tests
+
+Run specific suites with: `vendor/bin/phpunit --testsuite <name>`
 
 ## Test Statistics by Category
 
@@ -149,7 +164,34 @@ composer run test:install
 # Run all tests
 composer run test
 
-# Expected output: 165+ tests, 0 failures
+# Expected output: 1700+ tests, 0 failures
+```
+
+### Organized Test Suites (Optimized - Nov 2024)
+
+The test suite is now organized into logical test suites for faster, targeted testing:
+
+```bash
+# Run all tests (default)
+vendor/bin/phpunit
+
+# Run only unit tests (fastest - excludes integration, performance, security)
+vendor/bin/phpunit --testsuite unit
+
+# Run REST API tests
+vendor/bin/phpunit --testsuite rest-api
+
+# Run performance tests
+vendor/bin/phpunit --testsuite performance
+
+# Run security tests
+vendor/bin/phpunit --testsuite security
+
+# Run crawler tests
+vendor/bin/phpunit --testsuite crawler
+
+# Run memory tests
+vendor/bin/phpunit --testsuite memory
 ```
 
 ### Specific Test Categories
@@ -167,8 +209,8 @@ vendor/bin/phpunit tests/test-rate-limit-user-messaging.php
 # Tool tests
 vendor/bin/phpunit tests/test-tool-*.php
 
-# REST API tests
-vendor/bin/phpunit tests/test-rest-*.php
+# REST API tests (using test suite for better organization)
+vendor/bin/phpunit --testsuite rest-api
 ```
 
 ### Running with Coverage
@@ -206,11 +248,20 @@ All tests run automatically on:
 - Release tags
 
 **Test Matrix:**
-- PHP versions: 7.4, 8.0, 8.1, 8.2, 8.3
-- WordPress versions: 6.0, 6.4, latest
+- PHP version: 8.1
+- WordPress version: latest
 - MySQL version: 8.0
 
+**Optimizations (Nov 2024):**
+- ✅ Organized test suites for selective execution
+- ✅ Composer dependency caching
+- ✅ Dedicated MySQL service
+- ✅ Optimized PHPUnit configuration
+- ⏳ Future: Parallel test suite execution
+
 See `.github/workflows/phpunit.yml` for configuration.
+
+**For detailed optimization information**, see `docs/PHPUNIT-OPTIMIZATION-GUIDE.md`.
 
 ## Test Quality Standards
 
