@@ -124,6 +124,9 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 
 				$current_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'custom' );
 
+				// Get the current preset name for display.
+				$current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : __( 'Unknown', 'wp-mcp-ai' );
+
 				ob_start();
 				?>
 				<div class="wp-mcp-ai-presets-section">
@@ -131,6 +134,11 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Choose a preset configuration or customize your own settings. Clicking a preset will apply its settings immediately.', 'wp-mcp-ai' ); ?>
 					</p>
+					<div class="wp-mcp-ai-current-preset-indicator">
+						<span class="dashicons dashicons-admin-settings"></span>
+						<strong><?php esc_html_e( 'Currently Active:', 'wp-mcp-ai' ); ?></strong>
+						<span class="current-preset-name"><?php echo esc_html( $current_preset_name ); ?></span>
+					</div>
 					<div class="wp-mcp-ai-presets-grid">
 						<?php foreach ( $presets as $preset_id => $preset_config ) : ?>
 							<?php
@@ -158,7 +166,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 									<?php echo esc_html( isset( $preset_config['description'] ) ? $preset_config['description'] : '' ); ?>
 								</p>
 								<?php if ( $is_active ) : ?>
-									<div class="preset-status">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
+									<div class="preset-status"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
 								<?php else : ?>
 									<button type="button" class="button button-secondary apply-preset" 
 										data-preset="<?php echo esc_attr( $preset_id ); ?>"

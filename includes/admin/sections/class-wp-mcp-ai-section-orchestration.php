@@ -269,8 +269,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$doc_path   = WP_MCP_AI_PATH . 'docs/ORCHESTRATION-LAYER-ARCHITECTURE.md';
 			$doc_exists = file_exists( $doc_path );
 
-			$content  = '<div class="wp-mcp-ai-orchestration-intro" style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1.5rem; margin: 1rem 0;">';
-			$content .= '<h3 style="margin-top: 0;">' . esc_html__( 'About the Orchestration Layer', 'wp-mcp-ai' ) . '</h3>';
+			$content  = '<div class="wp-mcp-ai-orchestration-intro">';
+			$content .= '<h3>' . esc_html__( 'About the Orchestration Layer', 'wp-mcp-ai' ) . '</h3>';
 			$content .= '<p>' . esc_html__( 'The WP oOS Dynamic AI Orchestration Layer extends standard SSE and MCP implementations with sophisticated resource management, security enforcement, and predictive optimization. This overcomes PHP\'s architectural limitations to provide Node.js-level orchestration capabilities within WordPress.', 'wp-mcp-ai' ) . '</p>';
 
 			$content .= '<h4>' . esc_html__( 'Key Features:', 'wp-mcp-ai' ) . '</h4>';
@@ -388,10 +388,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				// Get resource manager instance.
 				$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 
-				$content  = '<div class="wp-mcp-ai-orchestration-stats" style="margin: 1.5rem 0;">';
+				$content  = '<div class="wp-mcp-ai-orchestration-stats">';
 				$content .= '<h3>' . esc_html__( 'Current Orchestration Status', 'wp-mcp-ai' ) . '</h3>';
 
-				$content .= '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">';
+				$content .= '<div class="wp-mcp-ai-stats-grid">';
 
 				// Memory tier.
 				$memory_limit = $resource_manager->get_memory_limit();
@@ -404,23 +404,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					$memory_tier = 'High';
 				}
 
-				$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-				$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Workload Tier', 'wp-mcp-ai' ) . '</div>';
-				$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $memory_tier ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card">';
+				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-performance"></span></div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__content">';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Workload Tier', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $memory_tier ) . '</div>';
+				$content .= '</div>';
 				$content .= '</div>';
 
 				// Max tokens.
 				$max_tokens = $resource_manager->get_max_tokens();
-				$content   .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-				$content   .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Max Tokens', 'wp-mcp-ai' ) . '</div>';
-				$content   .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( number_format( $max_tokens ) ) . '</div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card">';
+				$content   .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-chart-bar"></span></div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card__content">';
+				$content   .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Max Tokens', 'wp-mcp-ai' ) . '</div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( number_format( $max_tokens ) ) . '</div>';
+				$content   .= '</div>';
 				$content   .= '</div>';
 
 				// Request timeout.
 				$timeout  = $resource_manager->get_request_timeout();
-				$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-				$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Request Timeout', 'wp-mcp-ai' ) . '</div>';
-				$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $timeout ) . 's</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card">';
+				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-clock"></span></div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__content">';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Request Timeout', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $timeout ) . 's</div>';
+				$content .= '</div>';
 				$content .= '</div>';
 
 				// Active cron jobs - use cached count for performance.
@@ -459,15 +468,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					$active_jobs = 0;
 				}
 
-				$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
-				$content .= '<div style="font-size: 0.875rem; color: #646970; margin-bottom: 0.5rem;">' . esc_html__( 'Active Cron Jobs', 'wp-mcp-ai' ) . '</div>';
-				$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $active_jobs ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card">';
+				$content .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-calendar-alt"></span></div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__content">';
+				$content .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Active Cron Jobs', 'wp-mcp-ai' ) . '</div>';
+				$content .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( $active_jobs ) . '</div>';
+				$content .= '</div>';
 				$content .= '</div>';
 
 				$content .= '</div>';
 
 				// Quick actions.
-				$content .= '<div style="margin-top: 1.5rem;">';
+				$content .= '<div>';
 				$content .= '<h4>' . esc_html__( 'Quick Actions', 'wp-mcp-ai' ) . '</h4>';
 				$content .= '<p>';
 				$content .= '<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' ) ) . '" class="button button-secondary">' . esc_html__( 'Manage Cron Jobs', 'wp-mcp-ai' ) . '</a> ';
