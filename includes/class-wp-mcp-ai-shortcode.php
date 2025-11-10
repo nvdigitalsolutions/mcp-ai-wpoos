@@ -250,19 +250,21 @@ class WP_MCP_AI_Shortcode {
 		try {
 			$atts = shortcode_atts(
 				array(
-					'assistant'        => '',
-					'allow_guests'     => 'false',
-					'save_transcript'  => 'true',
-					'enable_streaming' => 'false',
+					'assistant'             => '',
+					'allow_guests'          => 'false',
+					'save_transcript'       => 'true',
+					'enable_streaming'      => 'false',
+					'allow_sensitive_tools' => 'false',
 				),
 				$atts,
 				$tag
 			);
 
-			$assistant_id     = self::resolve_assistant_id( $atts['assistant'] );
-			$allow_guests     = wp_validate_boolean( $atts['allow_guests'] );
-			$save_transcript  = wp_validate_boolean( $atts['save_transcript'] );
-			$enable_streaming = wp_validate_boolean( $atts['enable_streaming'] );
+			$assistant_id          = self::resolve_assistant_id( $atts['assistant'] );
+			$allow_guests          = wp_validate_boolean( $atts['allow_guests'] );
+			$save_transcript       = wp_validate_boolean( $atts['save_transcript'] );
+			$enable_streaming      = wp_validate_boolean( $atts['enable_streaming'] );
+			$allow_sensitive_tools = wp_validate_boolean( $atts['allow_sensitive_tools'] );
 
 			if ( ! $assistant_id ) {
 				$settings     = WP_MCP_AI_Admin_Settings::get_settings();
@@ -362,6 +364,7 @@ class WP_MCP_AI_Shortcode {
 			'canUploadAttachments'  => (bool) $can_upload_attachments,
 			'saveTranscript'        => (bool) $save_transcript,
 			'enableStreaming'       => (bool) $enable_streaming,
+			'allowSensitiveTools'   => (bool) $allow_sensitive_tools,
 			'sessionKey'            => $session_key,
 			'historyPerPage'        => 20,
 		);

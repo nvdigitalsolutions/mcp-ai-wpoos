@@ -195,6 +195,114 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Execute a tool.
+		 *
+		 * @param string $slug      Tool slug.
+		 * @param array  $arguments Tool arguments.
+		 * @param array  $context   Execution context.
+		 * @return mixed|WP_Error Tool result or error.
+		 */
+		public function execute_tool( $slug, $arguments = array(), $context = array() ) {
+			$slug = sanitize_key( $slug );
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return new WP_Error(
+					'wp_mcp_ai_tool_not_found',
+					sprintf(
+						/* translators: %s: tool slug */
+						__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+						$slug
+					)
+				);
+			}
+
+			// Validate flow stage eligibility.
+			$flow_stage_validation = $this->validate_tool_flow_stage( $slug, $context );
+			if ( is_wp_error( $flow_stage_validation ) ) {
+				return $flow_stage_validation;
+			}
+
+			// Validate context restrictions (e.g., chat-client vs MCP endpoint).
+			$context_validation = $this->validate_tool_context( $slug, $context );
+			if ( is_wp_error( $context_validation ) ) {
+				return $context_validation;
+			}
+
+			// Execute the tool.
+			return $tool->execute( $arguments, $context );
+		}
+
+		/**
+		 * Validate tool execution against context restrictions.
+		 *
+		 * Checks if the tool can be executed in the current context (e.g., chat-client).
+		 *
+		 * @param string $slug    Tool slug.
+		 * @param array  $context Execution context.
+		 * @return true|WP_Error True if valid, WP_Error if validation fails.
+		 */
+		public function validate_tool_context( $slug, $context = array() ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return true; // Tool not found, will be handled by execute_tool.
+			}
+
+			// Check if tool implements context restrictions interface.
+			if ( $tool instanceof WP_MCP_AI_Tool_Context_Restrictions_Interface ) {
+				$validation = $tool->is_allowed_in_context( $context );
+				if ( is_wp_error( $validation ) ) {
+					return $validation;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Check if a tool is registered.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return bool Whether the tool is registered.
+		 */
+		public function is_tool_registered( $slug ) {
+			$slug = sanitize_key( $slug );
+			return isset( $this->tools[ $slug ] );
+		}
+
+		/**
+		 * Get tool capability requirement.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return string|null Required capability or null.
+		 */
+		public function get_tool_capability( $slug ) {
+			// This method is referenced but not yet implemented.
+			// For now, return null to maintain compatibility.
+			return null;
+		}
+
+		/**
+		 * Get tool definition for LLM payload.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array|null Tool definition or null.
+		 */
+		public function get_tool_definition( $slug ) {
+			$tool = $this->get_tool( $slug );
+			if ( ! $tool ) {
+				return null;
+			}
+
+			return array(
+				'name'        => $tool->get_slug(),
+				'description' => $tool->get_description(),
+				'parameters'  => $tool->get_parameters_schema(),
+			);
+		}
+
+		/**
 		 * Retrieve the default tool grouping map keyed by tool slug.
 		 *
 		 * @return array<string, string>
@@ -426,6 +534,135 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 * @param array<string, array> $rules_map Associative array of tool slugs to rule arrays.
 			 */
 			return apply_filters( 'wp_mcp_ai_tool_rules', $rules_map );
+		}
+
+		/**
+		 * Retrieve flow stages for a specific tool.
+		 *
+		 * Flow stages define when a tool can be invoked during an agentic workflow.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array<string> Array of eligible stage identifiers, or array('anytime') if not defined.
+		 */
+		public function get_tool_flow_stages( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array( 'anytime' );
+			}
+
+			if ( $tool instanceof WP_MCP_AI_Tool_Flow_Stage_Interface ) {
+				$stages = $tool->get_flow_stages();
+				return is_array( $stages ) && ! empty( $stages ) ? $stages : array( 'anytime' );
+			}
+
+			return array( 'anytime' );
+		}
+
+		/**
+		 * Retrieve flow stages for all registered tools.
+		 *
+		 * Returns an associative array mapping tool slugs to their eligible stages.
+		 *
+		 * @return array<string, array<string>> Associative array of tool slugs to stage arrays.
+		 */
+		public function get_all_tool_flow_stages() {
+			$stages_map = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$stages = $this->get_tool_flow_stages( $slug );
+				if ( ! in_array( 'anytime', $stages, true ) ) {
+					// Only include tools with restricted stages.
+					$stages_map[ $slug ] = $stages;
+				}
+			}
+
+			/**
+			 * Filter the tool flow stages map used throughout the system.
+			 *
+			 * @param array<string, array<string>> $stages_map Associative array of tool slugs to stage arrays.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_flow_stages', $stages_map );
+		}
+
+		/**
+		 * Validate tool execution against its flow stage eligibility.
+		 *
+		 * Checks if the tool can be executed in the current flow stage.
+		 *
+		 * @param string $slug Tool slug.
+		 * @param array  $context Execution context with 'flow_stage' or 'iteration' and 'max_iterations'.
+		 * @return true|WP_Error True if valid, WP_Error if validation fails.
+		 */
+		public function validate_tool_flow_stage( $slug, $context = array() ) {
+			$eligible_stages = $this->get_tool_flow_stages( $slug );
+
+			// If tool is eligible anytime, no validation needed.
+			if ( in_array( 'anytime', $eligible_stages, true ) ) {
+				return true;
+			}
+
+			// Determine current flow stage from context.
+			$current_stage = $this->determine_flow_stage( $context );
+
+			// Check if tool is eligible for current stage.
+			if ( ! in_array( $current_stage, $eligible_stages, true ) ) {
+				return new WP_Error(
+					'tool_flow_stage_not_eligible',
+					sprintf(
+						/* translators: 1: tool slug, 2: current stage, 3: eligible stages */
+						__( 'Tool "%1$s" cannot be used in the "%2$s" stage. Eligible stages: %3$s', 'wp-mcp-ai' ),
+						$slug,
+						$current_stage,
+						implode( ', ', $eligible_stages )
+					),
+					array(
+						'tool'            => $slug,
+						'current_stage'   => $current_stage,
+						'eligible_stages' => $eligible_stages,
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Determine the current flow stage from execution context.
+		 *
+		 * @param array $context Execution context.
+		 * @return string Current flow stage: 'start', 'middle', 'end', or 'anytime'.
+		 */
+		protected function determine_flow_stage( $context ) {
+			// Check for explicit flow_stage in context.
+			if ( ! empty( $context['flow_stage'] ) ) {
+				$stage = sanitize_key( $context['flow_stage'] );
+				if ( in_array( $stage, array( 'start', 'middle', 'end', 'anytime' ), true ) ) {
+					return $stage;
+				}
+			}
+
+			// Determine stage from iteration context.
+			if ( isset( $context['iteration'] ) && isset( $context['max_iterations'] ) ) {
+				$iteration      = absint( $context['iteration'] );
+				$max_iterations = absint( $context['max_iterations'] );
+
+				if ( $max_iterations <= 1 ) {
+					// Single iteration workflow - consider it both start and end.
+					return 'start';
+				}
+
+				if ( 0 === $iteration ) {
+					return 'start';
+				} elseif ( $iteration >= $max_iterations - 1 ) {
+					return 'end';
+				} else {
+					return 'middle';
+				}
+			}
+
+			// Default to anytime if stage cannot be determined.
+			return 'anytime';
 		}
 
 		/**

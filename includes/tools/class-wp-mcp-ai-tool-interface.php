@@ -205,3 +205,52 @@ interface WP_MCP_AI_Tool_Rules_Interface {
 	 */
 	public function get_tool_rules();
 }
+
+/**
+ * Optional interface for tools that declare flow stage eligibility.
+ *
+ * Flow stage eligibility controls when a tool can be invoked during
+ * an agentic workflow based on the current stage of execution.
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Flow_Stage_Interface {
+	/**
+	 * Retrieve the eligible flow stages for this tool.
+	 *
+	 * Tools can be restricted to specific stages of an agentic workflow:
+	 * - 'anytime': Tool can be used at any stage (default)
+	 * - 'start': Tool can only be used in the first iteration (iteration 0)
+	 * - 'middle': Tool can only be used in middle iterations (1 to n-1)
+	 * - 'end': Tool can only be used in the final iteration
+	 *
+	 * Multiple stages can be specified, e.g., array('start', 'middle')
+	 *
+	 * @return array<string> Array of eligible stage identifiers.
+	 */
+	public function get_flow_stages();
+}
+
+/**
+ * Optional interface for tools that restrict access from certain contexts.
+ *
+ * Context restrictions control which endpoints or interfaces can invoke a tool.
+ * This is useful for preventing sensitive operations from public-facing interfaces.
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	/**
+	 * Determine if the tool can be used in the given context.
+	 *
+	 * Common contexts include:
+	 * - 'chat-client': Browser-based public chat interface
+	 * - 'chat': MCP protocol endpoint (more controlled)
+	 * - 'direct': Direct tool invocation via REST API
+	 * - 'shortcode': Shortcode-based invocation
+	 *
+	 * @param array $context Execution context with 'endpoint' or 'source' keys.
+	 * @return true|WP_Error True if allowed, WP_Error if restricted.
+	 */
+	public function is_allowed_in_context( $context );
+}

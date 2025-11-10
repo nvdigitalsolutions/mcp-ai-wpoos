@@ -2047,7 +2047,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Execute each tool and collect results.
 				foreach ( $tool_calls as $tool_call ) {
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
 					// Extract tool call metadata for message construction.
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
@@ -2406,7 +2406,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
+				$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
 				// Stream tool result event.
 				$this->send_sse_event(
@@ -6654,9 +6654,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param array           $assistant_config Assistant configuration.
 		 * @param int             $user_id          User ID.
 		 * @param WP_REST_Request $request          Original REST request.
+		 * @param int             $iteration        Current iteration number (default 0).
+		 * @param int             $max_iterations   Maximum iterations (default 5).
 		 * @return mixed Tool execution result.
 		 */
-		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request ) {
+		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5 ) {
 			if ( ! isset( $tool_call['function']['name'] ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'wp-mcp-ai' ) );
 			}
@@ -6743,6 +6745,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'request'          => $request,
 				'assistant_config' => $assistant_config,
 				'agentic_loop'     => true,
+				'iteration'        => $iteration,
+				'max_iterations'   => $max_iterations,
+				'endpoint'         => $request->get_route(),
+				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
 			// Special handling for run_openai_external_action tool.
