@@ -3282,7 +3282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$peer_sites  = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] ) ? $settings['mesh_peer_sites'] : array();
 			$option_name = self::OPTION_NAME;
 			?>
-		<div id="wp-mcp-ai-mesh-peers">
+		<div id="wp-mcp-ai-mesh-peers" data-peer-index="<?php echo esc_attr( count( $peer_sites ) ); ?>" data-option-name="<?php echo esc_attr( $option_name ); ?>">
 			<table class="widefat" style="margin-bottom: 15px;">
 				<thead>
 					<tr>
@@ -3312,30 +3312,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					?>
 				</tbody>
 			</table>
-			<button type="button" class="button" id="wp-mcp-ai-add-peer"><?php esc_html_e( 'Add Peer Site', 'wp-mcp-ai' ); ?></button>
+			<button type="button" class="button" id="wp-mcp-ai-add-peer" 
+				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" 
+				data-placeholder-url="https://example.com" 
+				data-placeholder-key="mesh_..." 
+				data-btn-remove="<?php esc_attr_e( 'Remove', 'wp-mcp-ai' ); ?>"><?php esc_html_e( 'Add Peer Site', 'wp-mcp-ai' ); ?></button>
 		</div>
 		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'wp-mcp-ai' ); ?></p>
-		<script type="text/javascript">
-		jQuery(document).ready(function($) {
-			var peerIndex = <?php echo count( $peer_sites ); ?>;
-			var optionName = '<?php echo esc_js( $option_name ); ?>';
-
-			$('#wp-mcp-ai-add-peer').on('click', function() {
-				var newRow = $('<tr class="wp-mcp-ai-mesh-peer-row">' +
-					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][name]" value="" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" /></td>' +
-					'<td><input type="url" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][url]" value="" class="regular-text" placeholder="https://example.com" /></td>' +
-					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][api_key]" value="" class="regular-text" placeholder="mesh_..." /></td>' +
-					'<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button></td>' +
-					'</tr>');
-				$('#wp-mcp-ai-mesh-peers tbody').append(newRow);
-				peerIndex++;
-			});
-
-			$(document).on('click', '.wp-mcp-ai-remove-peer', function() {
-				$(this).closest('tr').remove();
-			});
-		});
-		</script>
 			<?php
 		}
 
@@ -6175,7 +6158,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						<h3 style="margin-top: 0;"><?php echo esc_html( $tool_name ); ?></h3>
 						<div class="wp-mcp-ai-tool-limit-stat">
 							<label for="tool-limit-<?php echo esc_attr( $tool_slug ); ?>"><?php esc_html_e( 'Daily Token Limit:', 'wp-mcp-ai' ); ?></label>
-							<input type="number" id="tool-limit-<?php echo esc_attr( $tool_slug ); ?>" name="wp_mcp_ai_tool_limits[<?php echo esc_attr( $tool_slug ); ?>]" value="<?php echo esc_attr( $tool_limit ); ?>" min="0" step="1000" style="width: 100%; max-width: 200px;" />
+							<input type="number" id="tool-limit-<?php echo esc_attr( $tool_slug ); ?>" class="wp-mcp-ai-tool-limit-input" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" value="<?php echo esc_attr( $tool_limit ); ?>" min="0" step="1000" style="width: 100%; max-width: 200px;" />
 							<p class="description"><?php esc_html_e( 'Tokens per user, per 24 hours', 'wp-mcp-ai' ); ?></p>
 						</div>
 						<div class="wp-mcp-ai-tool-usage-today" style="margin-top: 15px;">
@@ -6194,7 +6177,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			</div>
 
 			<p class="submit">
-				<button type="button" id="wp-mcp-ai-save-tool-limits" class="button button-primary"><?php esc_html_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?></button>
+				<button type="button" id="wp-mcp-ai-save-all-tool-limits" class="button button-primary"><?php esc_html_e( 'Save All Tool Limits', 'wp-mcp-ai' ); ?></button>
 			</p>
 
 			<?php if ( ! empty( $user_tool_usage ) ) : ?>
@@ -6228,54 +6211,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					</table>
 				</div>
 			<?php endif; ?>
-
-			<script type="text/javascript">
-			/* global ajaxurl */
-			jQuery(document).ready(function($) {
-				// Ensure ajaxurl is defined (should be by WordPress, but adding as fallback).
-				var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
-				
-				$('#wp-mcp-ai-save-tool-limits').on('click', function() {
-					var button = $(this);
-					var limits = {};
-					
-					$('input[name^="wp_mcp_ai_tool_limits"]').each(function() {
-						var name = $(this).attr('name');
-						var match = name.match(/wp_mcp_ai_tool_limits\[(.*?)\]/);
-						if (match) {
-							limits[match[1]] = $(this).val();
-						}
-					});
-
-					button.prop('disabled', true).text('<?php esc_attr_e( 'Saving...', 'wp-mcp-ai' ); ?>');
-
-					$.ajax({
-						url: ajaxUrl,
-						type: 'POST',
-						data: {
-							action: 'wp_mcp_ai_save_tool_limits',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dashboard' ) ); ?>',
-							limits: limits
-						},
-						success: function(response) {
-							if (response.success) {
-								button.text('<?php esc_attr_e( 'Saved!', 'wp-mcp-ai' ); ?>');
-								setTimeout(function() {
-									button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
-								}, 2000);
-							} else {
-								alert(response.data.message || '<?php esc_attr_e( 'Failed to save settings.', 'wp-mcp-ai' ); ?>');
-								button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
-							}
-						},
-						error: function() {
-							alert('<?php esc_attr_e( 'An error occurred while saving.', 'wp-mcp-ai' ); ?>');
-							button.prop('disabled', false).text('<?php esc_attr_e( 'Save Tool Limits', 'wp-mcp-ai' ); ?>');
-						}
-					});
-				});
-			});
-			</script>
 		</div>
 			<?php
 		}

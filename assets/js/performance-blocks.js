@@ -5,13 +5,13 @@
  */
 
 ( function( blocks, element, editor, components ) {
-	var el = element.createElement;
-	var registerBlockType = blocks.registerBlockType;
-	var InspectorControls = editor.InspectorControls;
-	var TextControl = components.TextControl;
-	var SelectControl = components.SelectControl;
-	var ToggleControl = components.ToggleControl;
-	var PanelBody = components.PanelBody;
+	const el = element.createElement;
+	const registerBlockType = blocks.registerBlockType;
+	const InspectorControls = editor.InspectorControls;
+	const TextControl = components.TextControl;
+	const SelectControl = components.SelectControl;
+	const ToggleControl = components.ToggleControl;
+	const PanelBody = components.PanelBody;
 
 	/**
 	 * Register Performance Test Runner Block.
