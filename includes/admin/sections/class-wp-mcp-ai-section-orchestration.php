@@ -328,7 +328,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 *
 		 * @return string
 		 */
-		private function get_stats_content() {
+	private function get_stats_content() {
+		try {
+			// Check if Resource Manager is available.
+			if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				throw new Exception( 'Resource Manager not available' );
+			}
+
 			// Get resource manager instance.
 			$resource_manager = WP_MCP_AI_Resource_Manager::instance();
 			
@@ -368,13 +374,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$content .= '</div>';
 			
 			// Active cron jobs.
-			$cron_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
-			$active_jobs = 0;
-			foreach ( $cron_jobs as $job ) {
-				$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
-				if ( $event ) {
-					$active_jobs++;
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$cron_jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+				$active_jobs = 0;
+				if ( is_array( $cron_jobs ) ) {
+					foreach ( $cron_jobs as $job ) {
+						if ( ! is_array( $job ) || ! isset( $job['hook'], $job['args'] ) ) {
+							continue;
+						}
+						$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
+						if ( $event ) {
+							$active_jobs++;
+						}
+					}
 				}
+			} else {
+				$active_jobs = 0;
 			}
 			
 			$content .= '<div style="background: #fff; border: 1px solid #dcdcde; padding: 1rem; border-radius: 4px;">';
@@ -397,7 +412,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$content .= '</div>';
 			
 			return $content;
+
+		} catch ( Exception $e ) {
+			// Log the error for debugging.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Orchestration stats rendering failed: ' . $e->getMessage(),
+					array(
+						'component' => 'orchestration_section',
+						'method'    => 'get_stats_content',
+						'exception' => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+			}
+
+			// Return a safe fallback that doesn't break the page.
+			return sprintf(
+				'<div class="notice notice-warning inline"><p>%s</p></div>',
+				esc_html__( 'Orchestration statistics temporarily unavailable. Please refresh the page or contact support if this persists.', 'wp-mcp-ai' )
+			);
 		}
+	}
 
 		/**
 		 * Render section fields.
