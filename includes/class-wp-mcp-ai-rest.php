@@ -3225,28 +3225,53 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
+			try {
+				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
-			$result = $tool->execute( $prepared_arguments, $context );
+				$result = $tool->execute( $prepared_arguments, $context );
 
-			if ( is_wp_error( $result ) ) {
+				if ( is_wp_error( $result ) ) {
+					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
+					return $result;
+				}
+
+				$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
+
+				// Orchestration Layer: Adjust result to fit within budget constraints.
+				if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+					$result = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+				}
+
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
-				return $result;
+
+				/**
+				 * Fires after a registered tool has completed execution.
+				 *
+				 * @param string           $tool_slug Tool identifier.
+				 * @param array            $arguments Arguments passed in the request.
+				 * @param array            $context   Execution context including user_id and assistant_id.
+				 * @param mixed            $result    Tool result after filters have been applied.
+				 */
+				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+
+			} catch ( Exception $e ) {
+				// Orchestration Layer: Budget constraint violation.
+				WP_MCP_AI_Logger::log_error(
+					'Tool execution blocked by orchestration layer',
+					array(
+						'tool_slug' => $tool_slug,
+						'error'     => $e->getMessage(),
+						'context'   => $context,
+					)
+				);
+				
+				return new WP_Error(
+					'wp_mcp_ai_budget_exceeded',
+					$e->getMessage(),
+					array( 'status' => 429 )
+				);
 			}
-
-			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
-
-			WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
-
-			/**
-			 * Fires after a registered tool has completed execution.
-			 *
-			 * @param string           $tool_slug Tool identifier.
-			 * @param array            $arguments Arguments passed in the request.
-			 * @param array            $context   Execution context including user_id and assistant_id.
-			 * @param mixed            $result    Tool result after filters have been applied.
-			 */
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
 
 			return rest_ensure_response(
 				array(
@@ -6762,22 +6787,47 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
+			try {
+				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
-			$result = $tool->execute( $arguments, $context );
+				$result = $tool->execute( $arguments, $context );
 
-			if ( is_wp_error( $result ) ) {
+				if ( is_wp_error( $result ) ) {
+					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+					return $result->get_error_message();
+				}
+
+				$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
+
+				// Orchestration Layer: Adjust result to fit within budget constraints.
+				if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+					$result = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+				}
+
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
-				return $result->get_error_message();
+
+				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+
+				return $result;
+
+			} catch ( Exception $e ) {
+				// Orchestration Layer: Budget constraint violation.
+				WP_MCP_AI_Logger::log_error(
+					'Tool execution blocked by orchestration layer',
+					array(
+						'tool_slug' => $tool_slug,
+						'error'     => $e->getMessage(),
+						'context'   => $context,
+					)
+				);
+				
+				return new WP_Error(
+					'wp_mcp_ai_budget_exceeded',
+					$e->getMessage(),
+					array( 'status' => 429 )
+				)->get_error_message();
 			}
-
-			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
-
-			WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
-
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
-
-			return $result;
 		}
 
 		/**
