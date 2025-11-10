@@ -95,14 +95,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				
 				// OpenAI Settings.
 				'openai_api_key'        => array(
-					'type'        => 'password',
-					'label'       => __( 'OpenAI API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+					'type'         => 'password',
+					'label'        => __( 'OpenAI API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: OpenAI API keys URL */
 						__( 'Your OpenAI API key. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'wp-mcp-ai' ),
 						'https://platform.openai.com/api-keys'
 					),
-					'placeholder' => 'sk-...',
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
 				),
 				'default_model'         => array(
 					'type'        => 'select',
@@ -123,22 +124,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'text-embedding-3-small',
 				),
 				'openai_organization_id' => array(
-					'type'        => 'text',
-					'label'       => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
-					'placeholder' => 'org-...',
+					'type'         => 'text',
+					'label'        => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
+					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
+					'placeholder'  => 'org-...',
+					'autocomplete' => 'off',
 				),
 
 				// Anthropic Settings.
 				'anthropic_api_key'     => array(
-					'type'        => 'password',
-					'label'       => __( 'Anthropic API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+					'type'         => 'password',
+					'label'        => __( 'Anthropic API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: Anthropic Console URL */
 						__( 'Your Anthropic API key. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'wp-mcp-ai' ),
 						'https://console.anthropic.com/'
 					),
-					'placeholder' => 'sk-ant-...',
+					'placeholder'  => 'sk-ant-...',
+					'autocomplete' => 'new-password',
 				),
 				'anthropic_model'       => array(
 					'type'        => 'select',
@@ -156,14 +159,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 				// Google Gemini Settings.
 				'gemini_api_key'        => array(
-					'type'        => 'password',
-					'label'       => __( 'Gemini API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+					'type'         => 'password',
+					'label'        => __( 'Gemini API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: Google AI Studio URL */
 						__( 'Your Google Gemini API key. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'wp-mcp-ai' ),
 						'https://aistudio.google.com/app/apikey'
 					),
-					'placeholder' => 'AIza...',
+					'placeholder'  => 'AIza...',
+					'autocomplete' => 'new-password',
 				),
 				'default_gemini_model'  => array(
 					'type'        => 'select',
