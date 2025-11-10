@@ -436,55 +436,61 @@
 	color: #1d2327;
 }
 
+/* Preset Grid - Lightweight and Flexible */
 .wp-mcp-ai-presets-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-	gap: 15px;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
 	margin-top: 15px;
 }
 
 .preset-card {
 	background: #fff;
-	border: 2px solid #dcdcde;
-	border-radius: 8px;
-	padding: 15px;
-	transition: all 0.2s ease;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 12px;
+	transition: all 0.15s ease;
 	cursor: pointer;
 	position: relative;
 }
 
 .preset-card:hover {
 	border-color: #2271b1;
-	box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+	box-shadow: 0 1px 4px rgba(34, 113, 177, 0.08);
+	transform: translateY(-1px);
 }
 
 .preset-card.active {
 	border-color: #00a32a;
-	background: #f0f6fc;
+	background: #f6f7f7;
 }
 
 .preset-header {
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-start;
-	margin-bottom: 10px;
+	margin-bottom: 8px;
+	gap: 8px;
 }
 
 .preset-header h4 {
 	margin: 0;
-	font-size: 15px;
+	font-size: 14px;
 	font-weight: 600;
 	color: #1d2327;
+	line-height: 1.4;
 }
 
 .preset-badge {
 	display: inline-block;
-	padding: 2px 8px;
-	font-size: 10px;
+	padding: 2px 6px;
+	font-size: 9px;
 	font-weight: 700;
 	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	letter-spacing: 0.3px;
 	border-radius: 3px;
+	white-space: nowrap;
+	flex-shrink: 0;
 }
 
 .preset-badge.default {
@@ -498,32 +504,36 @@
 }
 
 .preset-description {
-	margin: 10px 0;
-	font-size: 13px;
+	margin: 8px 0;
+	font-size: 12px;
 	color: #646970;
 	line-height: 1.5;
 }
 
 .preset-status {
-	margin-top: 10px;
-	padding: 8px;
+	margin-top: 8px;
+	padding: 6px;
 	background: #00a32a;
 	color: #fff;
 	text-align: center;
-	border-radius: 4px;
+	border-radius: 3px;
 	font-weight: 600;
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .preset-card .apply-preset {
 	width: 100%;
-	margin-top: 10px;
+	margin-top: 8px;
+	padding: 6px 12px;
+	font-size: 13px;
+	height: auto;
+	line-height: 1.4;
 }
 
-/* Slider Controls */
+/* Slider Controls - Lightweight and Flexible */
 .wp-mcp-ai-slider-control {
-	margin: 20px 0;
-	padding: 15px;
+	margin: 16px 0;
+	padding: 12px;
 	background: #f9f9f9;
 	border: 1px solid #dcdcde;
 	border-radius: 4px;
@@ -531,71 +541,91 @@
 
 .wp-mcp-ai-slider-control .slider-label {
 	display: block;
-	margin-bottom: 10px;
+	margin-bottom: 8px;
 	font-weight: 600;
-	font-size: 14px;
+	font-size: 13px;
 	color: #1d2327;
 }
 
 .slider-wrapper {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	margin-bottom: 5px;
+	gap: 8px;
+	margin-bottom: 4px;
 }
 
 .slider-min,
 .slider-max {
-	font-size: 12px;
+	font-size: 11px;
 	color: #646970;
-	min-width: 40px;
+	min-width: 36px;
 	text-align: center;
 }
 
 .wp-mcp-ai-slider {
 	flex: 1;
-	height: 6px;
+	height: 4px;
 	-webkit-appearance: none;
 	appearance: none;
 	background: #dcdcde;
-	border-radius: 3px;
+	border-radius: 2px;
 	outline: none;
 }
 
 .wp-mcp-ai-slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	background: #2271b1;
 	border-radius: 50%;
 	cursor: pointer;
-	transition: background 0.2s;
+	transition: all 0.15s ease;
 }
 
 .wp-mcp-ai-slider::-webkit-slider-thumb:hover {
 	background: #135e96;
+	transform: scale(1.1);
 }
 
 .wp-mcp-ai-slider::-moz-range-thumb {
-	width: 18px;
-	height: 18px;
+	width: 16px;
+	height: 16px;
 	background: #2271b1;
 	border: none;
 	border-radius: 50%;
 	cursor: pointer;
-	transition: background 0.2s;
+	transition: all 0.15s ease;
 }
 
 .wp-mcp-ai-slider::-moz-range-thumb:hover {
 	background: #135e96;
+	transform: scale(1.1);
 }
 
 .slider-value {
 	font-weight: 600;
 	color: #2271b1;
-	min-width: 60px;
-	text-align: center;
+	min-width: 50px;
+	text-align: right;
+	font-size: 12px;
+}
+
+/* Responsive Design - Mobile-first */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-presets-grid {
+		grid-template-columns: 1fr;
+	}
+	
+	.slider-wrapper {
+		flex-wrap: wrap;
+	}
+	
+	.slider-min,
+	.slider-max {
+		min-width: 30px;
+		font-size: 10px;
+	}
 }
 
 /* Health Status Banner */
