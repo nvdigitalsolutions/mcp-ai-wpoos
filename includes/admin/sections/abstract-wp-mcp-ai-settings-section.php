@@ -88,6 +88,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
+				// Skip display-only field types (html, custom) as they don't have user input.
+				if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
+					continue;
+				}
+
 				// Special handling for checkboxes: if not present in input, set to false.
 				if ( 'checkbox' === $type ) {
 					$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
