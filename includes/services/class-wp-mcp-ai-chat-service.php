@@ -164,8 +164,8 @@ class WP_MCP_AI_Chat_Service {
 				'tool_calls' => $tool_calls,
 			);
 
-			// Execute each tool.
-			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config );
+			// Execute each tool with iteration context for flow stage validation.
+			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
 
 			// Add tool results to conversation.
 			foreach ( $tool_results as $tool_result ) {
@@ -231,9 +231,11 @@ class WP_MCP_AI_Chat_Service {
 	 * @param array $tool_calls       Tool calls from LLM.
 	 * @param int   $assistant_id     Assistant ID.
 	 * @param array $assistant_config Assistant configuration.
+	 * @param int   $iteration        Current iteration number.
+	 * @param int   $max_iterations   Maximum iterations.
 	 * @return array Tool result messages.
 	 */
-	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config ) {
+	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration = 0, $max_iterations = 5 ) {
 		$results = array();
 
 		foreach ( $tool_calls as $tool_call ) {
@@ -257,13 +259,15 @@ class WP_MCP_AI_Chat_Service {
 				continue;
 			}
 
-			// Execute tool via registry.
+			// Execute tool via registry with iteration context.
 			$tool_result = $this->tool_registry->execute_tool(
 				$tool_name,
 				$arguments,
 				array(
 					'assistant_id'     => $assistant_id,
 					'assistant_config' => $assistant_config,
+					'iteration'        => $iteration,
+					'max_iterations'   => $max_iterations,
 				)
 			);
 
