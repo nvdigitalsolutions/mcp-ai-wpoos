@@ -5,28 +5,27 @@
 class WP_MCP_AI_I18N_Test extends WP_UnitTestCase {
 
 	/**
-	 * Ensure the textdomain loader is registered on plugins_loaded.
+	 * Ensure the textdomain loader is registered on init.
 	 *
-	 * As of WordPress 6.7+, translations must be loaded before any translation
-	 * functions are called. The plugins_loaded hook ensures the textdomain is
-	 * available before plugin initialization and post type registration.
+	 * As of WordPress 6.7+, translations must be loaded at the init action or later.
+	 * This prevents the "Translation loading... was triggered too early" notice.
+	 *
+	 * @see https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
 	 */
 	public function test_textdomain_loader_is_registered() {
-		$this->assertNotFalse( has_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain' ), 'Textdomain loader should be registered on plugins_loaded hook' );
+		$this->assertNotFalse( has_action( 'init', 'wp_mcp_ai_load_textdomain' ), 'Textdomain loader should be registered on init hook' );
 	}
 
 	/**
-	 * Ensure the textdomain loader runs before plugin bootstrap.
+	 * Ensure the textdomain loader runs early in the init hook.
 	 *
-	 * The textdomain must be loaded (priority 1) before the plugin bootstrap
-	 * (priority 20) to prevent WordPress 6.7+ deprecation notices.
+	 * The textdomain should be loaded with priority 1 to ensure it's available
+	 * before other init hooks that may use translation functions.
 	 */
-	public function test_textdomain_loads_before_bootstrap() {
-		$textdomain_priority = has_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain' );
-		$bootstrap_priority  = has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' );
+	public function test_textdomain_loads_early() {
+		$textdomain_priority = has_action( 'init', 'wp_mcp_ai_load_textdomain' );
 
 		$this->assertNotFalse( $textdomain_priority, 'Textdomain loader should be registered' );
-		$this->assertNotFalse( $bootstrap_priority, 'Bootstrap function should be registered' );
-		$this->assertLessThan( $bootstrap_priority, $textdomain_priority, 'Textdomain should load before bootstrap' );
+		$this->assertEquals( 1, $textdomain_priority, 'Textdomain should load with priority 1 on init' );
 	}
 }

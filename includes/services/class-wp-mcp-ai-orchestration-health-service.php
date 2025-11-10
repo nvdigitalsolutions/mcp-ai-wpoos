@@ -64,7 +64,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			// Return safe defaults.
 			return array(
 				'status'  => 'unknown',
-				'label'   => __( 'Unknown', 'wp-mcp-ai' ),
+				'label'   => self::get_translated_label( 'unknown' ),
 				'icon'    => '○',
 				'metrics' => self::get_default_metrics(),
 			);
@@ -219,7 +219,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		if ( $memory_percent >= $memory_critical || $error_rate >= $error_critical ) {
 			return array(
 				'level' => 'critical',
-				'label' => __( 'Critical', 'wp-mcp-ai' ),
+				'label' => self::get_translated_label( 'critical' ),
 				'icon'  => '✖',
 			);
 		}
@@ -228,7 +228,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		if ( $memory_percent >= $memory_warning || $error_rate >= $error_warning ) {
 			return array(
 				'level' => 'warning',
-				'label' => __( 'Warning', 'wp-mcp-ai' ),
+				'label' => self::get_translated_label( 'warning' ),
 				'icon'  => '⚠',
 			);
 		}
@@ -236,7 +236,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		// Healthy state.
 		return array(
 			'level' => 'healthy',
-			'label' => __( 'Healthy', 'wp-mcp-ai' ),
+			'label' => self::get_translated_label( 'healthy' ),
 			'icon'  => '●',
 		);
 	}
@@ -358,5 +358,24 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	public static function clear_health_data() {
 		delete_option( 'wp_mcp_ai_recent_activity' );
 		delete_option( 'wp_mcp_ai_recent_errors' );
+	}
+
+	/**
+	 * Get translated label for a status level.
+	 *
+	 * This method provides lazy translation to avoid loading translations too early.
+	 *
+	 * @param string $level Status level (critical, warning, healthy, unknown).
+	 * @return string Translated label.
+	 */
+	private static function get_translated_label( $level ) {
+		$labels = array(
+			'critical' => __( 'Critical', 'wp-mcp-ai' ),
+			'warning'  => __( 'Warning', 'wp-mcp-ai' ),
+			'healthy'  => __( 'Healthy', 'wp-mcp-ai' ),
+			'unknown'  => __( 'Unknown', 'wp-mcp-ai' ),
+		);
+
+		return isset( $labels[ $level ] ) ? $labels[ $level ] : $labels['unknown'];
 	}
 }
