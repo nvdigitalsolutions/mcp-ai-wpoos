@@ -423,20 +423,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '<div style="font-size: 1.5rem; font-weight: 600;">' . esc_html( $timeout ) . 's</div>';
 				$content .= '</div>';
 
-				// Active cron jobs.
+				// Active cron jobs - use cached count for performance.
 				if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-					$cron_jobs   = WP_MCP_AI_Cron_Manager::get_jobs();
-					$active_jobs = 0;
-					if ( is_array( $cron_jobs ) ) {
-						foreach ( $cron_jobs as $job ) {
-							if ( ! is_array( $job ) || ! isset( $job['hook'], $job['args'] ) ) {
-								continue;
+					// Use transient cache to avoid expensive lookups on every page load.
+					$active_jobs = get_transient( 'wp_mcp_ai_active_cron_count' );
+
+					if ( false === $active_jobs ) {
+						$cron_jobs   = WP_MCP_AI_Cron_Manager::get_jobs();
+						$active_jobs = 0;
+
+						if ( is_array( $cron_jobs ) && ! empty( $cron_jobs ) ) {
+							// Limit to first 50 jobs to prevent performance issues.
+							$cron_jobs_slice = array_slice( $cron_jobs, 0, 50 );
+
+							foreach ( $cron_jobs_slice as $job ) {
+								if ( ! is_array( $job ) || ! isset( $job['hook'], $job['args'] ) ) {
+									continue;
+								}
+								$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
+								if ( $event ) {
+									++$active_jobs;
+								}
 							}
-							$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
-							if ( $event ) {
-								++$active_jobs;
+
+							// Add indicator if there are more jobs.
+							if ( count( $cron_jobs ) > 50 ) {
+								$active_jobs .= '+';
 							}
 						}
+
+						// Cache for 5 minutes.
+						set_transient( 'wp_mcp_ai_active_cron_count', $active_jobs, 5 * MINUTE_IN_SECONDS );
 					}
 				} else {
 					$active_jobs = 0;
