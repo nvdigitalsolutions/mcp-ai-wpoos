@@ -120,6 +120,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						$sanitized[ $key ] = absint( $value );
 						break;
 
+					case 'range':
+						$min             = isset( $field['min'] ) ? (int) $field['min'] : 0;
+						$max             = isset( $field['max'] ) ? (int) $field['max'] : 100;
+						$sanitized_value = absint( $value );
+						$sanitized[ $key ] = max( $min, min( $max, $sanitized_value ) );
+						break;
+
 					case 'select':
 						$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
 						// Convert value to match the type of option keys for proper comparison.
