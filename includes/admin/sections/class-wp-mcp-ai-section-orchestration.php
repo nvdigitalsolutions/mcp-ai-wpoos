@@ -57,11 +57,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'orchestration_intro'       => array(
-					'type'        => 'html',
-					'content'     => $this->get_intro_content(),
+				'orchestration_intro'            => array(
+					'type'    => 'html',
+					'content' => $this->get_intro_content(),
 				),
-				'enable_budget_management'  => array(
+				'health_status'                  => array(
+					'type'    => 'html',
+					'content' => $this->get_health_status_content(),
+				),
+				'configuration_presets'          => array(
+					'type'    => 'html',
+					'content' => $this->get_presets_content(),
+				),
+				'enable_budget_management'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable dynamic budget management', 'wp-mcp-ai' ),
@@ -75,23 +83,179 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_capability_gating'  => array(
+				'enable_capability_gating'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Capability-Based Tool Gating', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable capability-based tool gating', 'wp-mcp-ai' ),
 					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'enable_cron_orchestration' => array(
+				'enable_cron_orchestration'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cron-Based Task Orchestration', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable cron-based task orchestration', 'wp-mcp-ai' ),
 					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'orchestration_stats'       => array(
-					'type'        => 'html',
-					'content'     => $this->get_stats_content(),
+				'slider_section_health'          => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'memory_warning_threshold'       => array(
+					'type'        => 'slider',
+					'label'       => __( 'Memory Warning Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Trigger warnings when memory usage exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 95,
+					'step'        => 5,
+					'default'     => 75,
+					'suffix'      => '%',
+				),
+				'memory_critical_threshold'      => array(
+					'type'        => 'slider',
+					'label'       => __( 'Memory Critical Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Trigger critical alerts when memory usage exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 75,
+					'max'         => 99,
+					'step'        => 1,
+					'default'     => 90,
+					'suffix'      => '%',
+				),
+				'error_rate_warning_threshold'   => array(
+					'type'        => 'slider',
+					'label'       => __( 'Error Rate Warning Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Trigger warnings when error rate exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 5,
+					'max'         => 25,
+					'step'        => 1,
+					'default'     => 10,
+					'suffix'      => '%',
+				),
+				'error_rate_critical_threshold'  => array(
+					'type'        => 'slider',
+					'label'       => __( 'Error Rate Critical Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Trigger critical alerts when error rate exceeds this percentage.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 50,
+					'step'        => 5,
+					'default'     => 20,
+					'suffix'      => '%',
+				),
+				'slider_section_budget'          => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Adaptive Budget Allocation', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'high_priority_budget'           => array(
+					'type'        => 'slider',
+					'label'       => __( 'High Priority Budget', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of available budget allocated to high-priority tasks.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 100,
+					'step'        => 5,
+					'default'     => 100,
+					'suffix'      => '%',
+				),
+				'medium_priority_budget'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Medium Priority Budget', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of available budget allocated to medium-priority tasks.', 'wp-mcp-ai' ),
+					'min'         => 30,
+					'max'         => 100,
+					'step'        => 5,
+					'default'     => 80,
+					'suffix'      => '%',
+				),
+				'low_priority_budget'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Low Priority Budget', 'wp-mcp-ai' ),
+					'description' => __( 'Percentage of available budget allocated to low-priority tasks.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 80,
+					'step'        => 5,
+					'default'     => 50,
+					'suffix'      => '%',
+				),
+				'critical_health_reduction'      => array(
+					'type'        => 'slider',
+					'label'       => __( 'Critical Health Budget Reduction', 'wp-mcp-ai' ),
+					'description' => __( 'Reduce budgets to this percentage when system health is critical.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 80,
+					'step'        => 5,
+					'default'     => 50,
+					'suffix'      => '%',
+				),
+				'warning_health_reduction'       => array(
+					'type'        => 'slider',
+					'label'       => __( 'Warning Health Budget Reduction', 'wp-mcp-ai' ),
+					'description' => __( 'Reduce budgets to this percentage when system health shows warnings.', 'wp-mcp-ai' ),
+					'min'         => 50,
+					'max'         => 100,
+					'step'        => 5,
+					'default'     => 75,
+					'suffix'      => '%',
+				),
+				'slider_section_tokens'          => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Token Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'low_tier_max_tokens'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Low Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for low-tier workloads (< 128MB memory).', 'wp-mcp-ai' ),
+					'min'         => 500,
+					'max'         => 5000,
+					'step'        => 100,
+					'default'     => 1000,
+					'suffix'      => '',
+				),
+				'medium_tier_max_tokens'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Medium Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for medium-tier workloads (128-512MB memory).', 'wp-mcp-ai' ),
+					'min'         => 2000,
+					'max'         => 10000,
+					'step'        => 500,
+					'default'     => 4000,
+					'suffix'      => '',
+				),
+				'high_tier_max_tokens'           => array(
+					'type'        => 'slider',
+					'label'       => __( 'High Tier Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for high-tier workloads (> 512MB memory).', 'wp-mcp-ai' ),
+					'min'         => 8000,
+					'max'         => 32000,
+					'step'        => 1000,
+					'default'     => 16000,
+					'suffix'      => '',
+				),
+				'slider_section_predictive'      => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'wp-mcp-ai' ) . '</h3>',
+				),
+				'prediction_confidence_threshold' => array(
+					'type'        => 'slider',
+					'label'       => __( 'Prediction Confidence Threshold', 'wp-mcp-ai' ),
+					'description' => __( 'Minimum confidence level required to act on predictions.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 90,
+					'step'        => 5,
+					'default'     => 30,
+					'suffix'      => '%',
+				),
+				'prediction_safety_buffer'       => array(
+					'type'        => 'slider',
+					'label'       => __( 'Prediction Safety Buffer', 'wp-mcp-ai' ),
+					'description' => __( 'Extra safety margin when making predictive adjustments.', 'wp-mcp-ai' ),
+					'min'         => 10,
+					'max'         => 50,
+					'step'        => 5,
+					'default'     => 20,
+					'suffix'      => '%',
+				),
+				'orchestration_stats'            => array(
+					'type'    => 'html',
+					'content' => $this->get_stats_content(),
 				),
 			);
 		}
@@ -126,6 +290,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$content .= '</div>';
 			
 			return $content;
+		}
+
+		/**
+		 * Get health status content HTML.
+		 *
+		 * @return string
+		 */
+		private function get_health_status_content() {
+			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+				return '';
+			}
+			
+			return WP_MCP_AI_Orchestration_Renderer::render_health_status();
+		}
+
+		/**
+		 * Get presets content HTML.
+		 *
+		 * @return string
+		 */
+		private function get_presets_content() {
+			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
+				return '<p>' . esc_html__( 'Preset service not available.', 'wp-mcp-ai' ) . '</p>';
+			}
+			
+			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+				return '<p>' . esc_html__( 'Renderer not available.', 'wp-mcp-ai' ) . '</p>';
+			}
+			
+			$presets = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
+			return WP_MCP_AI_Orchestration_Renderer::render_presets_selector( $presets );
 		}
 
 		/**
@@ -212,8 +407,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			foreach ( $fields as $key => $field ) {
 				if ( 'html' === $field['type'] ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in get_intro_content() and get_stats_content().
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in getter methods.
 					echo $field['content'];
+				} elseif ( 'slider' === $field['type'] ) {
+					// Use orchestration renderer for sliders.
+					if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_slider method.
+						echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
+					}
 				} else {
 					$this->render_field( $key, $field );
 				}
@@ -227,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return array|WP_Error Validated input or error.
 		 */
 		public function validate( $input ) {
-			// All fields are boolean checkboxes, no special validation needed.
+			// All fields are boolean checkboxes or sliders, no special validation needed.
 			return $input;
 		}
 	}
