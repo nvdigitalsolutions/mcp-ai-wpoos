@@ -215,18 +215,15 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			return array();
 		}
 
-		$handler = WP_MCP_AI_Performance_Monitor_CCT::get_item_handler();
+		// Get recent test results with recommendations.
+		$args = array();
 
-		if ( ! $handler ) {
+		$tests = WP_MCP_AI_Performance_Monitor_CCT::query_items( $args, 20 );
+
+		if ( empty( $tests ) ) {
 			return $this->get_recommendations_fallback( $severity_filter, $limit );
 		}
 
-		// Get recent test results with recommendations.
-		$args = array(
-			'limit' => 20, // Get more tests to find enough recommendations.
-		);
-
-		$tests = $handler->query_items( $args );
 		$all_recommendations = array();
 
 		foreach ( $tests as $test ) {
