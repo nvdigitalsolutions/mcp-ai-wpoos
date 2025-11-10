@@ -134,6 +134,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
 
+			// Clear caches when settings are updated.
+			if ( 'orchestration' === $active_tab ) {
+				// Clear orchestration-related caches.
+				delete_transient( 'wp_mcp_ai_health_status' );
+				delete_transient( 'wp_mcp_ai_active_cron_count' );
+				
+				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
+				}
+			}
+
 			// Redirect back to the same tab that was being edited.
 			$redirect_args = array(
 				'page'    => self::PAGE_SLUG,

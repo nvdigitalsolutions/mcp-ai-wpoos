@@ -34,22 +34,37 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * Get current system health status.
 	 *
 	 * Returns health status with graceful degradation if components fail.
+	 * Uses transient caching for performance on admin pages.
 	 *
+	 * @param bool $force_refresh Force refresh of cached data. Default false.
 	 * @return array Health status array with 'status', 'label', 'icon', and 'metrics'.
 	 */
-	public static function get_health_status() {
+	public static function get_health_status( $force_refresh = false ) {
+		// Check cache first for performance.
+		if ( ! $force_refresh ) {
+			$cached = get_transient( 'wp_mcp_ai_health_status' );
+			if ( false !== $cached && is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
 		try {
 			$metrics = self::get_health_metrics();
 
 			// Determine overall health status based on thresholds.
 			$status = self::calculate_status( $metrics );
 
-			return array(
+			$health_status = array(
 				'status'  => $status['level'],
 				'label'   => $status['label'],
 				'icon'    => $status['icon'],
 				'metrics' => $metrics,
 			);
+
+			// Cache for 1 minute to reduce load on admin dashboard.
+			set_transient( 'wp_mcp_ai_health_status', $health_status, MINUTE_IN_SECONDS );
+
+			return $health_status;
 
 		} catch ( Exception $e ) {
 			// Log the error but don't break the plugin.
@@ -354,10 +369,21 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * Clear health monitoring data.
 	 *
 	 * Useful for troubleshooting or resetting metrics.
+	 * Also clears cached health status.
 	 */
 	public static function clear_health_data() {
 		delete_option( 'wp_mcp_ai_recent_activity' );
 		delete_option( 'wp_mcp_ai_recent_errors' );
+		delete_transient( 'wp_mcp_ai_health_status' );
+	}
+
+	/**
+	 * Clear cached health status.
+	 *
+	 * Call this when settings change to force refresh on next load.
+	 */
+	public static function clear_health_cache() {
+		delete_transient( 'wp_mcp_ai_health_status' );
 	}
 
 	/**
