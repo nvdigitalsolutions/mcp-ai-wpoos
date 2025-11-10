@@ -101,26 +101,26 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	private static function get_balanced_preset() {
 		return array(
 			'name'        => __( 'Balanced', 'wp-mcp-ai' ),
-			'description' => __( 'Balanced settings for most production sites with moderate traffic.', 'wp-mcp-ai' ),
+			'description' => __( 'Modern balanced settings for production sites with moderate traffic.', 'wp-mcp-ai' ),
 			'settings'    => array(
-				// Health monitoring.
-				'memory_warning_threshold'       => 75,
-				'memory_critical_threshold'      => 90,
-				'error_rate_warning_threshold'   => 10,
-				'error_rate_critical_threshold'  => 20,
-				// Budget allocation.
+				// Health monitoring - Cloud-native standards (2024).
+				'memory_warning_threshold'       => 70,
+				'memory_critical_threshold'      => 85,
+				'error_rate_warning_threshold'   => 5,
+				'error_rate_critical_threshold'  => 10,
+				// Budget allocation - Simplified tiers.
 				'high_priority_budget'           => 100,
-				'medium_priority_budget'         => 80,
+				'medium_priority_budget'         => 75,
 				'low_priority_budget'            => 50,
 				'critical_health_reduction'      => 50,
 				'warning_health_reduction'       => 75,
-				// Token limits.
-				'low_tier_max_tokens'            => 1000,
-				'medium_tier_max_tokens'         => 4000,
-				'high_tier_max_tokens'           => 16000,
-				// Predictive analytics.
-				'prediction_confidence_threshold' => 30,
-				'prediction_safety_buffer'       => 20,
+				// Token limits - Modern AI models (GPT-4, Claude 3, Gemini).
+				'low_tier_max_tokens'            => 2000,
+				'medium_tier_max_tokens'         => 8000,
+				'high_tier_max_tokens'           => 32000,
+				// Predictive analytics - Optimized confidence.
+				'prediction_confidence_threshold' => 40,
+				'prediction_safety_buffer'       => 15,
 			),
 		);
 	}
@@ -133,22 +133,22 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	private static function get_conservative_preset() {
 		return array(
 			'name'        => __( 'Conservative', 'wp-mcp-ai' ),
-			'description' => __( 'Strict limits for resource-constrained environments or shared hosting.', 'wp-mcp-ai' ),
+			'description' => __( 'Lightweight limits for resource-constrained environments or shared hosting.', 'wp-mcp-ai' ),
 			'settings'    => array(
 				'memory_warning_threshold'       => 60,
-				'memory_critical_threshold'      => 80,
+				'memory_critical_threshold'      => 75,
 				'error_rate_warning_threshold'   => 5,
-				'error_rate_critical_threshold'  => 10,
-				'high_priority_budget'           => 80,
-				'medium_priority_budget'         => 60,
-				'low_priority_budget'            => 30,
-				'critical_health_reduction'      => 30,
-				'warning_health_reduction'       => 60,
-				'low_tier_max_tokens'            => 500,
-				'medium_tier_max_tokens'         => 2000,
-				'high_tier_max_tokens'           => 8000,
+				'error_rate_critical_threshold'  => 8,
+				'high_priority_budget'           => 100,
+				'medium_priority_budget'         => 75,
+				'low_priority_budget'            => 50,
+				'critical_health_reduction'      => 40,
+				'warning_health_reduction'       => 65,
+				'low_tier_max_tokens'            => 1000,
+				'medium_tier_max_tokens'         => 4000,
+				'high_tier_max_tokens'           => 16000,
 				'prediction_confidence_threshold' => 50,
-				'prediction_safety_buffer'       => 30,
+				'prediction_safety_buffer'       => 20,
 			),
 		);
 	}
@@ -160,22 +160,22 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 */
 	private static function get_aggressive_preset() {
 		return array(
-			'name'        => __( 'Aggressive', 'wp-mcp-ai' ),
-			'description' => __( 'Maximum performance settings for dedicated or high-resource servers.', 'wp-mcp-ai' ),
+			'name'        => __( 'Performance', 'wp-mcp-ai' ),
+			'description' => __( 'High-performance settings for dedicated servers with ample resources.', 'wp-mcp-ai' ),
 			'settings'    => array(
-				'memory_warning_threshold'       => 85,
-				'memory_critical_threshold'      => 95,
-				'error_rate_warning_threshold'   => 15,
-				'error_rate_critical_threshold'  => 30,
+				'memory_warning_threshold'       => 80,
+				'memory_critical_threshold'      => 90,
+				'error_rate_warning_threshold'   => 8,
+				'error_rate_critical_threshold'  => 15,
 				'high_priority_budget'           => 100,
 				'medium_priority_budget'         => 100,
-				'low_priority_budget'            => 80,
-				'critical_health_reduction'      => 70,
-				'warning_health_reduction'       => 90,
-				'low_tier_max_tokens'            => 2000,
-				'medium_tier_max_tokens'         => 8000,
-				'high_tier_max_tokens'           => 32000,
-				'prediction_confidence_threshold' => 20,
+				'low_priority_budget'            => 75,
+				'critical_health_reduction'      => 65,
+				'warning_health_reduction'       => 85,
+				'low_tier_max_tokens'            => 4000,
+				'medium_tier_max_tokens'         => 16000,
+				'high_tier_max_tokens'           => 64000,
+				'prediction_confidence_threshold' => 30,
 				'prediction_safety_buffer'       => 10,
 			),
 		);
@@ -191,19 +191,19 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			'name'        => __( 'Development', 'wp-mcp-ai' ),
 			'description' => __( 'Relaxed limits for development and testing environments.', 'wp-mcp-ai' ),
 			'settings'    => array(
-				'memory_warning_threshold'       => 90,
-				'memory_critical_threshold'      => 98,
-				'error_rate_warning_threshold'   => 20,
-				'error_rate_critical_threshold'  => 40,
+				'memory_warning_threshold'       => 85,
+				'memory_critical_threshold'      => 95,
+				'error_rate_warning_threshold'   => 15,
+				'error_rate_critical_threshold'  => 25,
 				'high_priority_budget'           => 100,
 				'medium_priority_budget'         => 100,
 				'low_priority_budget'            => 100,
-				'critical_health_reduction'      => 80,
-				'warning_health_reduction'       => 95,
-				'low_tier_max_tokens'            => 5000,
-				'medium_tier_max_tokens'         => 10000,
-				'high_tier_max_tokens'           => 32000,
-				'prediction_confidence_threshold' => 10,
+				'critical_health_reduction'      => 75,
+				'warning_health_reduction'       => 90,
+				'low_tier_max_tokens'            => 4000,
+				'medium_tier_max_tokens'         => 16000,
+				'high_tier_max_tokens'           => 64000,
+				'prediction_confidence_threshold' => 20,
 				'prediction_safety_buffer'       => 10,
 			),
 		);
