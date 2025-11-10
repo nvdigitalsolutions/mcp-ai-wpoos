@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
+WORK_DIR="$ROOT_DIR/.codex-wordpress"
+mkdir -p "$WORK_DIR"
+
 for cmd in php curl unzip; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "The '$cmd' command is required to provision WordPress without Docker." >&2
@@ -11,23 +14,44 @@ for cmd in php curl unzip; do
   fi
 done
 
+COMPOSER_CMD=(composer)
 if command -v composer >/dev/null 2>&1; then
-  if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
-    echo "Installing Composer dependencies..."
-    composer install --no-interaction --prefer-dist --working-dir="$ROOT_DIR"
-  fi
+  :
 else
-  echo "Composer is not available; skipping development dependency installation." >&2
+  COMPOSER_PHAR="$WORK_DIR/composer.phar"
+  if [[ ! -f "$COMPOSER_PHAR" ]]; then
+    echo "Composer is not available; installing a local copy..."
+    INSTALLER="$WORK_DIR/composer-setup.php"
+    EXPECTED_SIGNATURE="$(curl -fsSL https://composer.github.io/installer.sig)"
+    if [[ -z "$EXPECTED_SIGNATURE" ]]; then
+      echo "Unable to retrieve Composer installer signature." >&2
+      exit 1
+    fi
+
+    php -r "copy('https://getcomposer.org/installer', '$INSTALLER');"
+    ACTUAL_SIGNATURE="$(php -r "echo hash_file('sha384', '$INSTALLER');")"
+    if [[ "$ACTUAL_SIGNATURE" != "$EXPECTED_SIGNATURE" ]]; then
+      echo "Composer installer signature mismatch." >&2
+      rm -f "$INSTALLER"
+      exit 1
+    fi
+
+    php "$INSTALLER" --install-dir="$WORK_DIR" --filename="composer.phar"
+    rm -f "$INSTALLER"
+  fi
+  COMPOSER_CMD=(php "$COMPOSER_PHAR")
 fi
 
-WORK_DIR="$ROOT_DIR/.codex-wordpress"
+if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
+  echo "Installing Composer dependencies..."
+  "${COMPOSER_CMD[@]}" install --no-interaction --prefer-dist --working-dir="$ROOT_DIR"
+fi
+
 WP_PATH="$WORK_DIR/wordpress"
 WP_CLI_PHAR="$WORK_DIR/wp-cli.phar"
 SERVER_PID_FILE="$WORK_DIR/server.pid"
 SERVER_LOG_FILE="$WORK_DIR/wp-server.log"
 PHP_MEMORY_LIMIT=${WORDPRESS_PHP_MEMORY_LIMIT:-512M}
-
-mkdir -p "$WORK_DIR"
 
 if [[ ! -f "$WP_CLI_PHAR" ]]; then
   echo "Downloading WP-CLI..."
