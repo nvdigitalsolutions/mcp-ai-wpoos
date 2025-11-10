@@ -6787,6 +6787,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
+			// Filter arguments to only include parameters defined in the tool's schema.
+			// This prevents "Invalid parameter(s)" errors when AI providers include extra
+			// parameters like 'messages' that aren't in the tool's schema.
+			$arguments = $this->filter_tool_arguments_by_schema( $tool, $arguments );
+
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
@@ -6824,6 +6829,54 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				
 				return $e->getMessage();
 			}
+		}
+
+		/**
+		 * Filter tool arguments to only include parameters defined in the tool's schema.
+		 *
+		 * When a tool's schema has 'additionalProperties' => false, this method removes
+		 * any extra parameters that aren't defined in the schema. This prevents errors
+		 * like "Invalid parameter(s): messages" when AI providers include extra parameters.
+		 *
+		 * @param WP_MCP_AI_Tool_Interface $tool      The tool instance.
+		 * @param array                    $arguments The tool arguments to filter.
+		 * @return array Filtered arguments.
+		 */
+		protected function filter_tool_arguments_by_schema( $tool, array $arguments ) {
+			// Get the tool's parameter schema.
+			$schema = $tool->get_parameters_schema();
+
+			// If no schema or schema doesn't restrict additional properties, return arguments as-is.
+			if ( ! is_array( $schema ) || ! isset( $schema['additionalProperties'] ) || false !== $schema['additionalProperties'] ) {
+				return $arguments;
+			}
+
+			// Get the allowed properties from the schema.
+			$allowed_properties = array();
+			if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
+				$allowed_properties = array_keys( $schema['properties'] );
+			}
+
+			// Filter arguments to only include allowed properties.
+			$filtered_arguments = array();
+			foreach ( $arguments as $key => $value ) {
+				if ( in_array( $key, $allowed_properties, true ) ) {
+					$filtered_arguments[ $key ] = $value;
+				} else {
+					// Log that we're dropping an extra parameter.
+					WP_MCP_AI_Logger::log_event(
+						'tool_argument_filtered',
+						'Dropped extra parameter not in tool schema',
+						array(
+							'tool_slug' => $tool->get_slug(),
+							'parameter' => $key,
+							'allowed'   => $allowed_properties,
+						)
+					);
+				}
+			}
+
+			return $filtered_arguments;
 		}
 
 		/**
