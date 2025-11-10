@@ -99,15 +99,30 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * Capability flags help orchestrate agentic workflows by providing
 	 * metadata about tool requirements and characteristics.
 	 *
-	 * Standard flags:
+	 * Standard flags (Requirement Flags):
 	 * - 'requires-credentials': Tool requires external API credentials
 	 * - 'requires-plugin': Tool requires a specific WordPress plugin
-	 * - 'local-only': Tool only works locally (no external API calls)
+	 * - 'requires-capability': Tool requires specific WordPress user capabilities
+	 *
+	 * Standard flags (Operational Characteristics):
 	 * - 'read-only': Tool only reads data, does not modify state
-	 * - 'write': Tool modifies data or state
+	 * - 'write': Tool creates or modifies data
+	 * - 'state-changing': Tool modifies database or site state
+	 * - 'reversible': Changes can be undone (e.g., via revisions)
+	 * - 'idempotent': Tool can be called multiple times safely with same result
+	 * - 'performance-impact': Tool may temporarily affect site performance
+	 *
+	 * Standard flags (Network & Performance):
+	 * - 'local-only': Tool works entirely locally (no external API calls)
+	 * - 'external-api': Tool makes external HTTP requests
+	 * - 'network-dependent': Tool requires internet connectivity
 	 * - 'async': Tool may take significant time to complete
 	 * - 'rate-limited': Tool is subject to rate limiting
+	 *
+	 * Standard flags (Data Characteristics):
 	 * - 'cacheable': Tool results can be cached
+	 * - 'non-deterministic': Results may vary over time for same inputs
+	 * - 'pii-data': Tool returns personally identifiable information
 	 *
 	 * @return array<string> Array of capability flag strings.
 	 */

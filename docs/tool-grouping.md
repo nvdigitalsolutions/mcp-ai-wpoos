@@ -264,6 +264,8 @@ While granular, this created confusion about what required what. The new 3-tier 
 - **`write`** - Tool creates or modifies data
 - **`state-changing`** - Tool modifies database or site state
 - **`reversible`** - Changes can be undone (e.g., via revisions)
+- **`idempotent`** - Tool can be called multiple times safely with same result
+- **`performance-impact`** - Tool may temporarily affect site performance
 
 #### Network & Performance
 - **`local-only`** - Tool works entirely locally, no external API calls
