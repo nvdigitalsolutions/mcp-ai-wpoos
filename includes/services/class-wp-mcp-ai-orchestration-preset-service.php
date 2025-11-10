@@ -71,14 +71,16 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 		$memory_limit     = $resource_manager->get_memory_limit();
 
 		// Auto-detect best preset based on server resources.
-		$detected_preset = 'balanced';
+		$detected_preset_id = 'balanced';
 		if ( $memory_limit >= 1024 * 1024 * 1024 ) { // 1GB+.
-			$detected_preset = 'aggressive';
+			$detected_preset_id = 'aggressive';
 		} elseif ( $memory_limit < 256 * 1024 * 1024 ) { // Less than 256MB.
-			$detected_preset = 'conservative';
+			$detected_preset_id = 'conservative';
 		}
 
-		$base_preset = self::get_presets()[ $detected_preset ];
+		// Call the specific preset method directly to avoid circular dependency.
+		$preset_method = 'get_' . $detected_preset_id . '_preset';
+		$base_preset   = call_user_func( array( self::class, $preset_method ) );
 
 		return array(
 			'name'        => __( 'Auto', 'wp-mcp-ai' ),
