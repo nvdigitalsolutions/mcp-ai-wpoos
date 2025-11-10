@@ -47,6 +47,10 @@ if [[ ! -f "$ROOT_DIR/vendor/autoload.php" ]]; then
   "${COMPOSER_CMD[@]}" install --no-interaction --prefer-dist --working-dir="$ROOT_DIR"
 fi
 
+if [[ -n "${WP_MCP_AI_STARTUP_EXIT_AFTER_COMPOSER:-}" ]]; then
+  exit 0
+fi
+
 WP_PATH="$WORK_DIR/wordpress"
 WP_CLI_PHAR="$WORK_DIR/wp-cli.phar"
 SERVER_PID_FILE="$WORK_DIR/server.pid"
