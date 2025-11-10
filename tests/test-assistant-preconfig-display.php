@@ -144,4 +144,37 @@ class WP_MCP_AI_Assistant_Preconfig_Display_Test extends WP_UnitTestCase {
 		// On non-singular pages, content should remain unchanged.
 		$this->assertSame( $content, $filtered );
 	}
+
+	/**
+	 * Test that tools are displayed when available.
+	 */
+	public function test_tools_display_in_preconfig() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$assistant_id = $this->factory->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Test Assistant with Tools',
+			)
+		);
+
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, 'openai' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, 'gpt-4' );
+		update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array( 'get_recent_posts', 'get_site_summary' ) );
+
+		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+		$cpt    = new WP_MCP_AI_Assistant_CPT( $registry );
+		$method = new ReflectionMethod( $cpt, 'render_preconfig_html' );
+		$method->setAccessible( true );
+
+		$html = $method->invoke( $cpt, $config );
+
+		// Check that tools section exists.
+		$this->assertStringContainsString( 'Available Tools', $html );
+		$this->assertStringContainsString( 'wp-mcp-ai-assistant-preconfig__tools', $html );
+		$this->assertStringContainsString( 'wp-mcp-ai-assistant-preconfig__tools-list', $html );
+	}
 }

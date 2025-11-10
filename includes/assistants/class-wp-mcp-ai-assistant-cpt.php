@@ -3891,6 +3891,29 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					margin: 0;
 					color: #333;
 				}
+				.wp-mcp-ai-assistant-preconfig__tools {
+					margin-top: 1.5em;
+				}
+				.wp-mcp-ai-assistant-preconfig__tools-heading {
+					margin: 0 0 0.5em 0;
+					font-size: 1.2em;
+					color: #333;
+				}
+				.wp-mcp-ai-assistant-preconfig__tools-list {
+					margin: 0;
+					padding: 0;
+					list-style: none;
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+					gap: 0.5em;
+				}
+				.wp-mcp-ai-assistant-preconfig__tool-item {
+					padding: 0.5em 0.75em;
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					font-size: 0.9em;
+				}
 				.wp-mcp-ai-assistant-preconfig__system-prompt {
 					margin-top: 1.5em;
 				}
@@ -3952,6 +3975,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$model          = isset( $config['model'] ) ? $config['model'] : '';
 			$temperature    = isset( $config['temperature'] ) ? $config['temperature'] : null;
 			$prompt         = isset( $config['system_prompt'] ) ? $config['system_prompt'] : '';
+			$tools          = isset( $config['tools'] ) && is_array( $config['tools'] ) ? $config['tools'] : array();
 
 			ob_start();
 			?>
@@ -3974,6 +3998,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						<dd class="wp-mcp-ai-assistant-preconfig__value"><?php echo esc_html( number_format_i18n( floatval( $temperature ), 2 ) ); ?></dd>
 					<?php endif; ?>
 				</dl>
+
+				<?php if ( ! empty( $tools ) ) : ?>
+					<div class="wp-mcp-ai-assistant-preconfig__tools">
+						<h4 class="wp-mcp-ai-assistant-preconfig__tools-heading"><?php esc_html_e( 'Available Tools', 'wp-mcp-ai' ); ?></h4>
+						<ul class="wp-mcp-ai-assistant-preconfig__tools-list">
+							<?php
+							foreach ( $tools as $tool_slug ) :
+								$tool_slug = sanitize_key( $tool_slug );
+								if ( '' === $tool_slug ) {
+									continue;
+								}
+								$tool = $this->registry->get_tool( $tool_slug );
+								if ( ! $tool ) {
+									continue;
+								}
+								$tool_name = $tool->get_name();
+								?>
+								<li class="wp-mcp-ai-assistant-preconfig__tool-item"><?php echo esc_html( $tool_name ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					</div>
+				<?php endif; ?>
 
 				<?php if ( '' !== $prompt ) : ?>
 					<div class="wp-mcp-ai-assistant-preconfig__system-prompt">
