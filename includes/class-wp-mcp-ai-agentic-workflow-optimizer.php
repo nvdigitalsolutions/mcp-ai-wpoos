@@ -4,6 +4,10 @@
  *
  * Provides performance optimizations and enhancements for the agentic tool execution workflow.
  *
+ * NOTE: This class is currently NOT loaded or used in the plugin. It represents planned
+ * optimization features that are documented in the architecture but not yet implemented.
+ * See docs/agentic-workflow-architecture.md for the planned feature set.
+ *
  * Optimizations include:
  * - Tool execution caching
  * - Parallel tool execution where safe

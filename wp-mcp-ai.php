@@ -257,7 +257,6 @@ require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
-require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
 // Load dependency injection container (Phase 4 refactoring - Milestone 10).
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
