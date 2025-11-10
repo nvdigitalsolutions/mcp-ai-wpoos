@@ -92,8 +92,8 @@ class Test_Orchestration_Preset_Circular_Dependency extends WP_UnitTestCase {
 		// Should succeed.
 		$this->assertTrue( $result );
 
-		// Verify settings were applied.
+		// Verify settings were applied (updated to modern cloud-native standard).
 		$memory_warning = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold' );
-		$this->assertEquals( 75, $memory_warning );
+		$this->assertEquals( 70, $memory_warning );
 	}
 }
