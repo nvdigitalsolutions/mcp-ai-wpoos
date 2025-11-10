@@ -96,6 +96,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			
 			// Delegate allowed redirect hosts to the OAuth manager component.
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this->oauth_manager, 'allow_gmail_oauth_redirect_host' ) ) ) {
