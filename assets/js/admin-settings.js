@@ -88,7 +88,8 @@ window.wpMcpAiSaveExpandedState = function() {
                 endpoint: endpointUrl
             });
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -96,19 +97,23 @@ window.wpMcpAiSaveExpandedState = function() {
                     nonce: wpMcpAiAdmin.nonce,
                     endpoint_url: endpointUrl
                 }
-            }).done(function (response) {
-                log('Ollama test response:', response);
-                if (response.success) {
-                    $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
-                } else {
-                    $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+            }, {
+                success: function (response) {
+                    log('Ollama test response:', response);
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                    }
+                },
+                error: function (error, jqXHR) {
+                    log('Ollama test error:', { error: error, status: jqXHR.status });
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+                },
+                complete: function () {
+                    log('Ollama test complete');
+                    $btn.prop('disabled', false).text('Test Connection');
                 }
-            }).fail(function (jqXHR, textStatus, errorThrown) {
-                log('Ollama test error:', { status: textStatus, error: errorThrown });
-                $result.html('<span style="color: #d63638;">✗ Connection failed</span>');
-            }).always(function () {
-                log('Ollama test complete');
-                $btn.prop('disabled', false).text('Test Connection');
             });
         });
         log('Ollama handlers initialized');
@@ -128,7 +133,8 @@ window.wpMcpAiSaveExpandedState = function() {
             $button.prop('disabled', true).text('Fetching...');
             $modelsList.html('<p>Loading models...</p>');
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -136,31 +142,35 @@ window.wpMcpAiSaveExpandedState = function() {
                     nonce: wpMcpAiAdmin.nonce,
                     endpoint_url: endpointUrl
                 }
-            }).done(function (response) {
-                if (response.success && response.data.models.length > 0) {
-                    let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
-                    response.data.models.forEach(function (model) {
-                        const sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
-                        html += '<li style="margin-bottom: 5px;">';
-                        html += '<a href="#" class="wp-mcp-ai-select-ollama-model" data-model="' + model.name + '">';
-                        html += model.name + sizeInfo;
-                        html += '</a>';
-                        if (model.family) {
-                            html += ' - ' + model.family;
-                        }
-                        html += '</li>';
-                    });
-                    html += '</ul>';
-                    $modelsList.html(html);
-                } else if (response.success && response.data.models.length === 0) {
-                    $modelsList.html('<p style="color: #d63638;">No models found. Make sure Ollama is running and has models installed.</p>');
-                } else {
-                    $modelsList.html('<p style="color: #d63638;">Error: ' + response.data.message + '</p>');
+            }, {
+                success: function (response) {
+                    if (response.success && response.data.models.length > 0) {
+                        let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                        response.data.models.forEach(function (model) {
+                            const sizeInfo = model.size ? ' (' + formatBytes(model.size) + ')' : '';
+                            html += '<li style="margin-bottom: 5px;">';
+                            html += '<a href="#" class="wp-mcp-ai-select-ollama-model" data-model="' + model.name + '">';
+                            html += model.name + sizeInfo;
+                            html += '</a>';
+                            if (model.family) {
+                                html += ' - ' + model.family;
+                            }
+                            html += '</li>';
+                        });
+                        html += '</ul>';
+                        $modelsList.html(html);
+                    } else if (response.success && response.data.models.length === 0) {
+                        $modelsList.html('<p style="color: #d63638;">No models found. Make sure Ollama is running and has models installed.</p>');
+                    } else {
+                        $modelsList.html('<p style="color: #d63638;">Error: ' + response.data.message + '</p>');
+                    }
+                },
+                error: function (error) {
+                    $modelsList.html('<p style="color: #d63638;">' + (error.userMessage || 'Failed to fetch models') + '</p>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Fetch Models');
                 }
-            }).fail(function () {
-                $modelsList.html('<p style="color: #d63638;">Failed to fetch models</p>');
-            }).always(function () {
-                $button.prop('disabled', false).text('Fetch Models');
             });
         });
 
@@ -189,7 +199,8 @@ window.wpMcpAiSaveExpandedState = function() {
             $button.prop('disabled', true).text('Testing...');
             $result.html('<span style="color: #3c434a;">Connecting...</span>');
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -197,16 +208,20 @@ window.wpMcpAiSaveExpandedState = function() {
                     nonce: wpMcpAiAdmin.nonce,
                     endpoint_url: endpointUrl
                 }
-            }).done(function (response) {
-                if (response.success) {
-                    $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
-                } else {
-                    $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                    }
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
                 }
-            }).fail(function () {
-                $result.html('<span style="color: #d63638;">✗ Connection failed</span>');
-            }).always(function () {
-                $button.prop('disabled', false).text('Test Connection');
             });
         });
 
@@ -225,7 +240,8 @@ window.wpMcpAiSaveExpandedState = function() {
             $button.prop('disabled', true).text('Fetching...');
             $modelsList.html('<p>Loading models...</p>');
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -233,27 +249,31 @@ window.wpMcpAiSaveExpandedState = function() {
                     nonce: wpMcpAiAdmin.nonce,
                     endpoint_url: endpointUrl
                 }
-            }).done(function (response) {
-                if (response.success && response.data.models.length > 0) {
-                    let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
-                    response.data.models.forEach(function (model) {
-                        html += '<li style="margin-bottom: 5px;">';
-                        html += '<a href="#" class="wp-mcp-ai-select-lm-studio-model" data-model="' + model.id + '">';
-                        html += model.id;
-                        html += '</a>';
-                        html += '</li>';
-                    });
-                    html += '</ul>';
-                    $modelsList.html(html);
-                } else if (response.success && response.data.models.length === 0) {
-                    $modelsList.html('<p style="color: #d63638;">No models found. Make sure LM Studio server is running and has models loaded.</p>');
-                } else {
-                    $modelsList.html('<p style="color: #d63638;">Error: ' + response.data.message + '</p>');
+            }, {
+                success: function (response) {
+                    if (response.success && response.data.models.length > 0) {
+                        let html = '<p><strong>Available models:</strong></p><ul style="list-style: disc; margin-left: 20px;">';
+                        response.data.models.forEach(function (model) {
+                            html += '<li style="margin-bottom: 5px;">';
+                            html += '<a href="#" class="wp-mcp-ai-select-lm-studio-model" data-model="' + model.id + '">';
+                            html += model.id;
+                            html += '</a>';
+                            html += '</li>';
+                        });
+                        html += '</ul>';
+                        $modelsList.html(html);
+                    } else if (response.success && response.data.models.length === 0) {
+                        $modelsList.html('<p style="color: #d63638;">No models found. Make sure LM Studio server is running and has models loaded.</p>');
+                    } else {
+                        $modelsList.html('<p style="color: #d63638;">Error: ' + response.data.message + '</p>');
+                    }
+                },
+                error: function (error) {
+                    $modelsList.html('<p style="color: #d63638;">' + (error.userMessage || 'Failed to fetch models') + '</p>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Fetch Models');
                 }
-            }).fail(function () {
-                $modelsList.html('<p style="color: #d63638;">Failed to fetch models</p>');
-            }).always(function () {
-                $button.prop('disabled', false).text('Fetch Models');
             });
         });
 
@@ -296,7 +316,8 @@ window.wpMcpAiSaveExpandedState = function() {
             $serversList.html('');
             $appsList.html('');
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -305,57 +326,61 @@ window.wpMcpAiSaveExpandedState = function() {
                     email: email,
                     api_key: apiKey
                 }
-            }).done(function (response) {
-                if (response.success) {
-                    $result.html('<span style="color: #00a32a;">✓ Successfully fetched Cloudways data</span>');
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ Successfully fetched Cloudways data</span>');
 
-                    // Display servers
-                    if (response.data.servers && response.data.servers.length > 0) {
-                        const $serversList = $('#wp-mcp-ai-cloudways-servers-list');
-                        $serversList.empty();
-                        
-                        const $serversTitle = $('<p><strong>Select a server:</strong></p>');
-                        const $serversUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
-                        
-                        response.data.servers.forEach(function (server) {
-                            const $li = $('<li style="margin-bottom: 5px;"></li>');
-                            const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
-                            $link.attr('data-server-id', server.id);
-                            $link.text(server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')');
-                            $li.append($link);
-                            $serversUl.append($li);
-                        });
-                        
-                        $serversList.append($serversTitle).append($serversUl);
-                    }
+                        // Display servers
+                        if (response.data.servers && response.data.servers.length > 0) {
+                            const $serversList = $('#wp-mcp-ai-cloudways-servers-list');
+                            $serversList.empty();
+                            
+                            const $serversTitle = $('<p><strong>Select a server:</strong></p>');
+                            const $serversUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            
+                            response.data.servers.forEach(function (server) {
+                                const $li = $('<li style="margin-bottom: 5px;"></li>');
+                                const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-server"></a>');
+                                $link.attr('data-server-id', server.id);
+                                $link.text(server.label + ' (ID: ' + server.id + ', Status: ' + server.status + ')');
+                                $li.append($link);
+                                $serversUl.append($li);
+                            });
+                            
+                            $serversList.append($serversTitle).append($serversUl);
+                        }
 
-                    // Display apps
-                    if (response.data.apps && response.data.apps.length > 0) {
-                        const $appsList = $('#wp-mcp-ai-cloudways-apps-list');
-                        $appsList.empty();
-                        
-                        const $appsTitle = $('<p><strong>Select an application:</strong></p>');
-                        const $appsUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
-                        
-                        response.data.apps.forEach(function (app) {
-                            const $li = $('<li style="margin-bottom: 5px;"></li>');
-                            const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
-                            $link.attr('data-app-id', app.id);
-                            $link.attr('data-server-id', app.server_id);
-                            $link.text(app.label + ' (ID: ' + app.id + ')');
-                            $li.append($link);
-                            $appsUl.append($li);
-                        });
-                        
-                        $appsList.append($appsTitle).append($appsUl);
+                        // Display apps
+                        if (response.data.apps && response.data.apps.length > 0) {
+                            const $appsList = $('#wp-mcp-ai-cloudways-apps-list');
+                            $appsList.empty();
+                            
+                            const $appsTitle = $('<p><strong>Select an application:</strong></p>');
+                            const $appsUl = $('<ul style="list-style: disc; margin-left: 20px;"></ul>');
+                            
+                            response.data.apps.forEach(function (app) {
+                                const $li = $('<li style="margin-bottom: 5px;"></li>');
+                                const $link = $('<a href="#" class="wp-mcp-ai-select-cloudways-app"></a>');
+                                $link.attr('data-app-id', app.id);
+                                $link.attr('data-server-id', app.server_id);
+                                $link.text(app.label + ' (ID: ' + app.id + ')');
+                                $li.append($link);
+                                $appsUl.append($li);
+                            });
+                            
+                            $appsList.append($appsTitle).append($appsUl);
+                        }
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
                     }
-                } else {
-                    $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Failed to connect to Cloudways') + '</span>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Fetch Cloudways Data');
                 }
-            }).fail(function () {
-                $result.html('<span style="color: #d63638;">✗ Failed to connect to Cloudways</span>');
-            }).always(function () {
-                $button.prop('disabled', false).text('Fetch Cloudways Data');
             });
         });
 
@@ -403,7 +428,8 @@ window.wpMcpAiSaveExpandedState = function() {
             $result.html('<span style="color: #3c434a;">Connecting to Cloudflare...</span>');
             $zoneInfo.html('');
 
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
@@ -412,37 +438,41 @@ window.wpMcpAiSaveExpandedState = function() {
                     zone_id: zoneId,
                     api_token: apiToken
                 }
-            }).done(function (response) {
-                if (response.success) {
-                    $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
-                    
-                    // Display zone information if available
-                    if (response.data.zone_info) {
-                        const info = response.data.zone_info;
-                        let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
-                        html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
-                        html += '<ul style="margin: 0; padding-left: 20px;">';
-                        if (info.name) {
-                            html += '<li><strong>Domain:</strong> ' + info.name + '</li>';
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                        
+                        // Display zone information if available
+                        if (response.data.zone_info) {
+                            const info = response.data.zone_info;
+                            let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+                            html += '<p style="margin: 0 0 5px 0;"><strong>Zone Information:</strong></p>';
+                            html += '<ul style="margin: 0; padding-left: 20px;">';
+                            if (info.name) {
+                                html += '<li><strong>Domain:</strong> ' + info.name + '</li>';
+                            }
+                            if (info.status) {
+                                html += '<li><strong>Status:</strong> ' + info.status + '</li>';
+                            }
+                            if (info.plan) {
+                                html += '<li><strong>Plan:</strong> ' + info.plan + '</li>';
+                            }
+                            html += '</ul></div>';
+                            $zoneInfo.html(html);
                         }
-                        if (info.status) {
-                            html += '<li><strong>Status:</strong> ' + info.status + '</li>';
-                        }
-                        if (info.plan) {
-                            html += '<li><strong>Plan:</strong> ' + info.plan + '</li>';
-                        }
-                        html += '</ul></div>';
-                        $zoneInfo.html(html);
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                        $zoneInfo.html('');
                     }
-                } else {
-                    $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
                     $zoneInfo.html('');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
                 }
-            }).fail(function () {
-                $result.html('<span style="color: #d63638;">✗ Connection failed</span>');
-                $zoneInfo.html('');
-            }).always(function () {
-                $button.prop('disabled', false).text('Test Connection');
             });
         });
     }
@@ -606,13 +636,15 @@ window.wpMcpAiSaveExpandedState = function() {
             
             $btn.prop('disabled', true).text('Resetting...');
             
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'wp_mcp_ai_reset_user_token_usage',
                     nonce: wpMcpAiAdmin.nonce
-                },
+                }
+            }, {
                 success: function(response) {
                     log('Reset user usage response:', response);
                     if (response.success) {
@@ -623,9 +655,9 @@ window.wpMcpAiSaveExpandedState = function() {
                         $btn.prop('disabled', false).text(originalText);
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(error) {
                     log('Reset user usage error:', error);
-                    alert('Error: ' + error);
+                    alert(error.userMessage || 'Error resetting token usage');
                     $btn.prop('disabled', false).text(originalText);
                 }
             });
@@ -647,13 +679,15 @@ window.wpMcpAiSaveExpandedState = function() {
             
             $btn.prop('disabled', true).text('Resetting...');
             
-            $.ajax({
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
                 url: wpMcpAiAdmin.ajaxUrl,
                 type: 'POST',
                 data: {
                     action: 'wp_mcp_ai_reset_all_token_usage',
                     nonce: wpMcpAiAdmin.nonce
-                },
+                }
+            }, {
                 success: function(response) {
                     log('Reset all usage response:', response);
                     if (response.success) {
@@ -664,9 +698,9 @@ window.wpMcpAiSaveExpandedState = function() {
                         $btn.prop('disabled', false).text(originalText);
                     }
                 },
-                error: function(xhr, status, error) {
+                error: function(error) {
                     log('Reset all usage error:', error);
-                    alert('Error: ' + error);
+                    alert(error.userMessage || 'Error resetting token usage');
                     $btn.prop('disabled', false).text(originalText);
                 }
             });
