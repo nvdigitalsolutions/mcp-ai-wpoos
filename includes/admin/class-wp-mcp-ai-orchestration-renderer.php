@@ -318,7 +318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							aria-valuemin="0" 
 							aria-valuemax="100">
 							<div class="progress-fill <?php echo esc_attr( $color_class ); ?>" 
-								style="width: <?php echo esc_attr( min( 100, $memory_percent ) ); %>%"></div>
+								style="width: <?php echo esc_attr( min( 100, $memory_percent ) ) . '%'; ?>"></div>
 						</div>
 						<span class="progress-value">
 							<?php echo esc_html( number_format( $memory_percent, 1 ) ); ?>%
