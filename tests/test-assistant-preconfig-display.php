@@ -121,6 +121,7 @@ class WP_MCP_AI_Assistant_Preconfig_Display_Test extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		$this->assertSame( 'OpenAI', $method->invoke( $cpt, 'openai' ) );
+		$this->assertSame( 'Anthropic', $method->invoke( $cpt, 'anthropic' ) );
 		$this->assertSame( 'Gemini', $method->invoke( $cpt, 'gemini' ) );
 		$this->assertSame( 'Ollama', $method->invoke( $cpt, 'ollama' ) );
 		$this->assertSame( 'LM Studio', $method->invoke( $cpt, 'lm_studio' ) );

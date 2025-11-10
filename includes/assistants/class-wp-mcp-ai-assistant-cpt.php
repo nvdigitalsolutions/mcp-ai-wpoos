@@ -4003,6 +4003,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			switch ( $provider ) {
 				case 'openai':
 					return __( 'OpenAI', 'wp-mcp-ai' );
+				case 'anthropic':
+					return __( 'Anthropic', 'wp-mcp-ai' );
 				case 'gemini':
 					return __( 'Gemini', 'wp-mcp-ai' );
 				case 'ollama':
