@@ -19,6 +19,7 @@
 			this.initProviderPriorityList();
 			this.initSliders();
 			this.initPresets();
+			this.initMeshPeers();
 		},
 
 		/**
@@ -385,6 +386,41 @@
 						$button.prop('disabled', false).text('Apply');
 					}
 				});
+			});
+		},
+
+		/**
+		 * Initialize mesh peer sites functionality.
+		 */
+		initMeshPeers: function() {
+			const $meshPeers = $('#wp-mcp-ai-mesh-peers');
+			if ($meshPeers.length === 0) {
+				return;
+			}
+
+			let peerIndex = parseInt($meshPeers.data('peer-index'), 10) || 0;
+			const $addButton = $('#wp-mcp-ai-add-peer');
+			const optionName = $meshPeers.data('option-name');
+			const placeholderName = $addButton.data('placeholder-name');
+			const placeholderUrl = $addButton.data('placeholder-url');
+			const placeholderKey = $addButton.data('placeholder-key');
+			const btnRemove = $addButton.data('btn-remove');
+
+			// Add peer site
+			$addButton.on('click', function() {
+				const newRow = $('<tr class="wp-mcp-ai-mesh-peer-row">' +
+					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][name]" value="" class="regular-text" placeholder="' + placeholderName + '" /></td>' +
+					'<td><input type="url" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][url]" value="" class="regular-text" placeholder="' + placeholderUrl + '" /></td>' +
+					'<td><input type="text" name="' + optionName + '[mesh_peer_sites][' + peerIndex + '][api_key]" value="" class="regular-text" placeholder="' + placeholderKey + '" /></td>' +
+					'<td><button type="button" class="button wp-mcp-ai-remove-peer">' + btnRemove + '</button></td>' +
+					'</tr>');
+				$meshPeers.find('tbody').append(newRow);
+				peerIndex++;
+			});
+
+			// Remove peer site (delegated event)
+			$meshPeers.on('click', '.wp-mcp-ai-remove-peer', function() {
+				$(this).closest('tr').remove();
 			});
 		}
 	};
