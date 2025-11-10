@@ -28,8 +28,9 @@ This document provides a comprehensive index of all documentation available for 
 3. [CODE_REVIEW.md](CODE_REVIEW.md) - Comprehensive code quality analysis
 4. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
 5. [tool-reference.md](tool-reference.md) - Complete tool catalog
-6. [rest-api.md](rest-api.md) - REST API reference
-7. [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) - Dynamic configuration via WordPress filters
+6. [tool-grouping.md](tool-grouping.md) - Tool categorization system (WordPress Core, Plugins, External)
+7. [rest-api.md](rest-api.md) - REST API reference
+8. [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) - Dynamic configuration via WordPress filters
 
 ### For System Administrators
 1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
@@ -115,6 +116,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 |----------|-------------|----------|
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
+| [tool-grouping.md](tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
 | [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |
