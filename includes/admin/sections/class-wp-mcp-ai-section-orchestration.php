@@ -476,9 +476,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								'trace'     => $e->getTraceAsString(),
 							)
 						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-						// Ignore logging errors to prevent cascading failures.
+					} catch ( Exception $log_error ) {
+						// Fallback to PHP error log if WP logger fails.
+						error_log( 'WP_MCP_AI: Failed to log stats error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 					}
+				} else {
+					// Logger not available, use PHP error log directly.
+					error_log( 'WP_MCP_AI: Orchestration stats rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				}
 
 				// Return a safe fallback that doesn't break the page.
