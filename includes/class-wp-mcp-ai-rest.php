@@ -6822,11 +6822,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 				
-				return new WP_Error(
-					'wp_mcp_ai_budget_exceeded',
-					$e->getMessage(),
-					array( 'status' => 429 )
-				)->get_error_message();
+				return $e->getMessage();
 			}
 		}
 
