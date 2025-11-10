@@ -385,14 +385,19 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 	/**
 	 * Load the plugin textdomain for localisation support.
+	 *
+	 * Changed to 'init' hook in WordPress 6.7 to comply with new translation loading requirements.
+	 * WordPress 6.7+ requires translations to be loaded at 'init' or later.
+	 *
+	 * @since 1.0.0
 	 */
 	function wp_mcp_ai_load_textdomain() {
 		load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 }
 
-if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain' ) ) {
-	add_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain', 1 );
+if ( ! has_action( 'init', 'wp_mcp_ai_load_textdomain' ) ) {
+	add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
 }
 
 if ( ! class_exists( 'WP_MCP_AI' ) ) {
