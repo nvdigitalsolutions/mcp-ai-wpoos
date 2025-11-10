@@ -312,6 +312,8 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
+	WP_MCP_AI_REST_Context_Diagnostic::init();
 
 	// Load new modular settings dashboard system by default.
 	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
