@@ -4,6 +4,186 @@ This guide captures the most common issues surfaced while testing the MCP REST
 layer and the JetEngine proxy tools. Use it during staging deployments and when
 triaging production incidents.
 
+## REST API Context Parameter Issues
+
+### Problem
+WordPress REST API `context` parameter (e.g., `?context=edit`) is not processed correctly, which can break:
+- Block editor (Gutenberg)
+- WooCommerce admin panels
+- Plugin operations that require edit context
+- Any WordPress core or plugin functionality relying on REST API context parameter
+
+### Root Causes
+1. **Caching layers** (Cloudflare, Nginx, Apache) caching REST API responses
+2. **WAF/Security plugins** stripping query strings from `/wp-json/` requests
+3. **Server configurations** not preserving query parameters in rewrites
+4. **CDN/Proxy** caching dynamic REST API responses
+
+### Diagnosis
+1. Check if REST API returns 200 OK with `?context=edit`:
+   ```bash
+   curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit" \
+     -H "Authorization: Bearer YOUR_TOKEN"
+   ```
+
+2. Verify query string is preserved:
+   ```bash
+   # Should show context=edit in request
+   curl -v "https://yoursite.com/wp-json/wp/v2/types?context=edit"
+   ```
+
+3. Check for caching headers:
+   ```bash
+   # Should see Cache-Control: no-store, no-cache
+   curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit"
+   ```
+
+### Server Configuration Fixes
+
+#### Cloudflare
+1. **Create Page Rule** for `/wp-json/*`:
+   - Cache Level: Bypass
+   - Disable Rocket Loader
+   - Disable Email Obfuscation
+   - Security Level: Medium or Low
+   - Browser Integrity Check: Off
+
+2. **Cache Settings**:
+   - Go to Caching → Configuration
+   - Add Cache Rule: `URI Path contains /wp-json/` → Bypass cache
+
+3. **Transform Rules** (ensure query strings preserved):
+   - Go to Rules → Transform Rules
+   - Verify no rules strip query parameters from `/wp-json/` paths
+
+4. **WAF Rules**:
+   - Go to Security → WAF
+   - Add Exception: Skip all rules for `/wp-json/*` paths
+
+#### Nginx
+Add this configuration block to your site's Nginx config:
+
+```nginx
+# WordPress REST API - no caching, preserve query strings
+location ~* ^/wp-json/ {
+    # Prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+    add_header Pragma "no-cache" always;
+    add_header Expires "0" always;
+    
+    # Preserve query strings in rewrites
+    try_files $uri $uri/ /index.php?$args;
+    
+    # Pass to PHP-FPM
+    fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;  # Adjust PHP version as needed
+    fastcgi_index index.php;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param QUERY_STRING $query_string;
+}
+```
+
+#### Apache (.htaccess)
+Ensure your `.htaccess` file preserves query strings:
+
+```apache
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# REST API - prevent caching
+<FilesMatch "^(wp-json)">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
+
+# Preserve query strings (QSA flag)
+RewriteRule ^wp-json/(.*)$ /index.php?rest_route=/$1 [QSA,L]
+
+# Standard WordPress rules
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+```
+
+**Important**: The `[QSA]` flag (Query String Append) is crucial to preserve query parameters.
+
+#### LiteSpeed
+Add to your `.htaccess`:
+
+```apache
+# LiteSpeed - no cache for REST API
+<IfModule LiteSpeed>
+    # Disable cache for /wp-json/ paths
+    RewriteCond %{REQUEST_URI} ^/wp-json/ [NC]
+    RewriteRule .* - [E=Cache-Control:no-cache]
+</IfModule>
+```
+
+### WordPress Plugin Configurations
+
+#### WP Rocket
+1. Go to Settings → WP Rocket → Advanced Rules
+2. Add to "Never Cache URL(s)":
+   ```
+   /wp-json/(.*)
+   ```
+3. Add to "Never Cache Cookies":
+   ```
+   wordpress_logged_in_
+   ```
+
+#### W3 Total Cache
+1. Go to Performance → Page Cache
+2. Add to "Never cache the following pages":
+   ```
+   /wp-json/
+   ```
+
+#### WP Super Cache
+1. Go to Settings → WP Super Cache → Advanced
+2. Add to "Rejected URLs":
+   ```
+   /wp-json/
+   ```
+
+#### LiteSpeed Cache
+1. Go to LiteSpeed Cache → Cache → Excludes
+2. Add to "Do Not Cache URIs":
+   ```
+   /wp-json/
+   ```
+
+### Verification
+
+After applying fixes, verify with:
+
+```bash
+# Test 1: Context parameter is processed
+curl "https://yoursite.com/wp-json/wp/v2/posts?context=edit" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  | jq '.[] | keys' | grep -E "(content|excerpt)"
+
+# Expected: Should show full content fields (content.raw, etc.)
+
+# Test 2: No caching headers present
+curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit" \
+  | grep -i "cache-control"
+
+# Expected: Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+# Test 3: Query string preserved in redirects
+curl -I -L "https://yoursite.com/wp-json/wp/v2/types?context=edit" \
+  | grep -E "(Location|HTTP)"
+
+# Expected: No redirects or redirects preserve ?context=edit
+```
+
 ## Connectivity health checks
 
 - Run `wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=...` from any WordPress instance with WP-CLI access to confirm the remote REST namespace is reachable. The command exercises the `/assistants` directory, issues a `/chat` probe, surfaces the assistant count, reports the detected token scope, and records any REST error codes returned by the remote server so you can distinguish connectivity issues from permission problems at a glance.【F:includes/class-wp-mcp-ai-cli-command.php†L137-L280】【F:includes/class-wp-mcp-ai-remote-tester.php†L29-L331】

@@ -213,6 +213,9 @@ require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manag
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 
+// Load REST API context parameter fix to prevent caching issues.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
+
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
@@ -309,6 +312,8 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
+	WP_MCP_AI_REST_Context_Diagnostic::init();
 
 	// Load new modular settings dashboard system by default.
 	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
@@ -357,6 +362,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 WP_MCP_AI_Message_Attachments::init();
 WP_MCP_AI_Response_Attachments::init();
+
+// Initialize REST API context parameter fix.
+WP_MCP_AI_REST_API_Context_Fix::init();
 
 WP_MCP_AI_HTTP::bootstrap();
 
