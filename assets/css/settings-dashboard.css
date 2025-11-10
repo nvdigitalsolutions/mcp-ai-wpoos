@@ -436,6 +436,36 @@
 	color: #1d2327;
 }
 
+/* Current Preset Indicator */
+.wp-mcp-ai-current-preset-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	margin: 15px 0;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+	color: #fff;
+	border-radius: 4px;
+	font-size: 14px;
+	box-shadow: 0 2px 6px rgba(0, 163, 42, 0.25);
+}
+
+.wp-mcp-ai-current-preset-indicator .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+}
+
+.wp-mcp-ai-current-preset-indicator strong {
+	font-weight: 600;
+}
+
+.wp-mcp-ai-current-preset-indicator .current-preset-name {
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
 /* Preset Grid - Lightweight and Flexible */
 .wp-mcp-ai-presets-grid {
 	display: grid;
@@ -446,7 +476,7 @@
 
 .preset-card {
 	background: #fff;
-	border: 1px solid #dcdcde;
+	border: 2px solid #dcdcde;
 	border-radius: 6px;
 	padding: 12px;
 	transition: all 0.15s ease;
@@ -456,13 +486,29 @@
 
 .preset-card:hover {
 	border-color: #2271b1;
-	box-shadow: 0 1px 4px rgba(34, 113, 177, 0.08);
+	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.12);
 	transform: translateY(-1px);
 }
 
 .preset-card.active {
 	border-color: #00a32a;
-	background: #f6f7f7;
+	border-width: 3px;
+	background: linear-gradient(135deg, #f0f9f1 0%, #f6f9f7 100%);
+	box-shadow: 0 3px 10px rgba(0, 163, 42, 0.15);
+	padding: 11px; /* Compensate for thicker border */
+}
+
+.preset-card.active::before {
+	content: '';
+	position: absolute;
+	top: -3px;
+	left: -3px;
+	right: -3px;
+	bottom: -3px;
+	border-radius: 6px;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+	opacity: 0.1;
+	z-index: -1;
 }
 
 .preset-header {
@@ -479,6 +525,11 @@
 	font-weight: 600;
 	color: #1d2327;
 	line-height: 1.4;
+}
+
+.preset-card.active .preset-header h4 {
+	color: #00a32a;
+	font-weight: 700;
 }
 
 .preset-badge {
@@ -512,13 +563,26 @@
 
 .preset-status {
 	margin-top: 8px;
-	padding: 6px;
-	background: #00a32a;
+	padding: 8px;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
 	color: #fff;
 	text-align: center;
-	border-radius: 3px;
-	font-weight: 600;
-	font-size: 12px;
+	border-radius: 4px;
+	font-weight: 700;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	box-shadow: 0 2px 4px rgba(0, 163, 42, 0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.preset-status::before {
+	content: '✓';
+	font-size: 16px;
+	font-weight: 900;
 }
 
 .preset-card .apply-preset {
