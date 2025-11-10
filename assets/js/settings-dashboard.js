@@ -66,14 +66,16 @@
 
 			$button.prop('disabled', true).text('Resetting...');
 
-			$.ajax({
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
 				url: wpMcpAiDashboard.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_reset_user_token_usage',
 					nonce: wpMcpAiDashboard.nonce,
 					user_id: userId
-				},
+				}
+			}, {
 				success: function(response) {
 					if (response.success) {
 						window.location.reload();
@@ -82,8 +84,8 @@
 						$button.prop('disabled', false).text('Reset');
 					}
 				},
-				error: function() {
-					alert('An error occurred while resetting user token usage.');
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while resetting user token usage.');
 					$button.prop('disabled', false).text('Reset');
 				}
 			});
@@ -104,13 +106,15 @@
 
 			$button.prop('disabled', true).text('Resetting...');
 
-			$.ajax({
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
 				url: wpMcpAiDashboard.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_reset_all_token_usage',
 					nonce: wpMcpAiDashboard.nonce
-				},
+				}
+			}, {
 				success: function(response) {
 					if (response.success) {
 						window.location.reload();
@@ -119,8 +123,8 @@
 						$button.prop('disabled', false).text('Reset All Users\' Token Usage');
 					}
 				},
-				error: function() {
-					alert('An error occurred while resetting token usage.');
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while resetting token usage.');
 					$button.prop('disabled', false).text('Reset All Users\' Token Usage');
 				}
 			});
@@ -163,14 +167,16 @@
 
 			$button.prop('disabled', true).text('Saving...');
 
-			$.ajax({
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
 				url: wpMcpAiDashboard.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_save_tool_limits',
 					nonce: wpMcpAiDashboard.nonce,
 					limits: limits
-				},
+				}
+			}, {
 				success: function(response) {
 					if (response.success) {
 						$button.text('Saved!');
@@ -182,8 +188,8 @@
 						$button.prop('disabled', false).text('Save All Tool Limits');
 					}
 				},
-				error: function() {
-					alert('An error occurred while saving tool limits.');
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while saving tool limits.');
 					$button.prop('disabled', false).text('Save All Tool Limits');
 				}
 			});
@@ -317,14 +323,16 @@
 
 				$button.prop('disabled', true).text('Applying...');
 
-				$.ajax({
+				// Use the error service for consistent error handling
+				$.wpMcpAiAjax({
 					url: wpMcpAiDashboard.ajaxUrl,
 					type: 'POST',
 					data: {
 						action: 'wp_mcp_ai_apply_orchestration_preset',
 						nonce: wpMcpAiDashboard.nonce,
 						preset_id: presetId
-					},
+					}
+				}, {
 					success: function(response) {
 						if (response.success) {
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
@@ -336,8 +344,8 @@
 							$button.prop('disabled', false).text('Apply');
 						}
 					},
-					error: function() {
-						self.showNotice('An error occurred while applying the preset.', 'error');
+					error: function(error) {
+						self.showNotice(error.userMessage || 'An error occurred while applying the preset.', 'error');
 						$button.prop('disabled', false).text('Apply');
 					}
 				});

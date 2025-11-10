@@ -2509,10 +2509,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				array(),
 				WP_MCP_AI_VERSION
 			);
+
+			// Enqueue AJAX error service (must be loaded before admin-settings.js).
+			wp_enqueue_script(
+				'wp-mcp-ai-ajax-error-service',
+				WP_MCP_AI_URL . 'assets/js/ajax-error-service.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
 			wp_enqueue_script(
 				'wp-mcp-ai-admin-settings',
 				WP_MCP_AI_URL . 'assets/js/admin-settings.js',
-				array( 'wp-color-picker', 'jquery', 'jquery-ui-sortable' ),
+				array( 'wp-color-picker', 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
 				WP_MCP_AI_VERSION,
 				true
 			);

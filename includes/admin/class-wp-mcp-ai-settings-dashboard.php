@@ -184,11 +184,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				WP_MCP_AI_VERSION
 			);
 
+			// Enqueue AJAX error service (must be loaded before other scripts).
+			wp_enqueue_script(
+				'wp-mcp-ai-ajax-error-service',
+				$plugin_url . 'assets/js/ajax-error-service.js',
+				array( 'jquery' ),
+				WP_MCP_AI_VERSION,
+				true
+			);
+
 			// Enqueue dashboard scripts with jQuery UI Sortable dependency.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/js/settings-dashboard.js',
-				array( 'jquery', 'jquery-ui-sortable' ),
+				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
 				WP_MCP_AI_VERSION,
 				true
 			);
