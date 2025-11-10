@@ -54,10 +54,11 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 	 * Test that sync doesn't run when base version is enabled.
 	 */
 	public function test_sync_skips_in_base_version() {
-		// Mock base version check by defining the constant.
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-			define( 'WP_MCP_AI_BASE_VERSION', true );
-		}
+		// Mock base version check using the filter.
+		$callback = function () {
+			return true;
+		};
+		add_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 
 		// Create a peer.
 		$peer_id = wp_insert_post(
@@ -79,6 +80,7 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $cct_item_id, 'CCT item ID should not be set in base version' );
 
 		// Clean up.
+		remove_filter( 'wp_mcp_ai_base_version', $callback, 999 );
 		wp_delete_post( $peer_id, true );
 	}
 
@@ -267,7 +269,7 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 	 */
 	public function test_cct_field_id_base_uniqueness() {
 		// Verify that AI Peers CCT uses a different field ID base than Assistants CCT.
-		$peers_field_base = WP_MCP_AI_JetEngine_AI_Peers_CCT::FIELD_ID_BASE;
+		$peers_field_base      = WP_MCP_AI_JetEngine_AI_Peers_CCT::FIELD_ID_BASE;
 		$assistants_field_base = WP_MCP_AI_JetEngine_Assistants_CCT::FIELD_ID_BASE;
 
 		$this->assertNotSame( $peers_field_base, $assistants_field_base, 'Field ID bases should be different' );

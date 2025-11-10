@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Check PHP version compatibility before loading any classes.
- * 
+ *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
  * will fail to parse with syntax errors like "unexpected token 'private'".
  * We check the version early to provide a clear error message instead of
@@ -47,7 +47,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 		);
 	}
 	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	
+
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
 	 */
@@ -55,7 +55,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 		deactivate_plugins( plugin_basename( __FILE__ ) );
 	}
 	add_action( 'admin_init', 'wp_mcp_ai_deactivate_self' );
-	
+
 	// Stop execution - don't load any class files that will cause parse errors.
 	return;
 }
@@ -173,9 +173,9 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
 // Skip buffering during Elementor AJAX requests and editor page loads to avoid interfering with Elementor operations.
-$is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+$is_ajax_request     = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-$is_elementor_ajax = false;
+$is_elementor_ajax   = false;
 $is_elementor_editor = false;
 
 // Check for Elementor AJAX requests.
@@ -189,7 +189,7 @@ if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
 if ( ! $is_ajax_request && isset( $_GET['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
-	$get_action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+	$get_action          = sanitize_text_field( wp_unslash( $_GET['action'] ) );
 	$is_elementor_editor = ( 'elementor' === $get_action );
 }
 
@@ -331,7 +331,7 @@ if ( is_admin() ) {
 	 */
 	function wp_mcp_ai_add_plugin_action_links( $links ) {
 		$settings_link = '';
-		
+
 		// Link to the appropriate settings page based on configuration.
 		if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
 			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-settings' );
@@ -391,8 +391,8 @@ if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 	}
 }
 
-if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain' ) ) {
-	add_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain', 1 );
+if ( ! has_action( 'init', 'wp_mcp_ai_load_textdomain' ) ) {
+	add_action( 'init', 'wp_mcp_ai_load_textdomain', 1 );
 }
 
 if ( ! class_exists( 'WP_MCP_AI' ) ) {
@@ -515,13 +515,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$anthropic_client = new WP_MCP_AI_Anthropic_Client();
 			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client, $anthropic_client );
 
-			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
-			
+			$this->resource_manager = WP_MCP_AI_Resource_Manager::instance();
+
 			// Only instantiate old admin settings if legacy mode is enabled.
 			if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
 				$this->admin_settings = new WP_MCP_AI_Admin_Settings();
 			}
-			
+
 			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
 			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
@@ -533,13 +533,13 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
-			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
-			
+			$GLOBALS['wp_mcp_ai_resource_manager'] = $this->resource_manager;
+
 			// Only set admin_settings global if using old settings.
 			if ( isset( $this->admin_settings ) ) {
 				$GLOBALS['wp_mcp_ai_admin_settings'] = $this->admin_settings;
 			}
-			
+
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
 			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
@@ -708,7 +708,7 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 		// Instantiate the main plugin singleton and bootstrap it.
 		$plugin = WP_MCP_AI::instance();
 		$plugin->bootstrap();
-		
+
 		/**
 		 * Fires after WP oOS has completed its bootstrap process.
 		 *
