@@ -59,6 +59,12 @@ triaging production incidents.
    If a route is missing it falls back to an HTTP request. Review the WordPress
    debug log for `wp_mcp_ai_jetengine_route_unavailable` notices when diagnosing
    connectivity problems.
+6. **JetEngine API compatibility (v3.3+)** – If you encounter the error
+   `Call to undefined method Jet_Engine\...\Item_Handler::query_items()`,
+   ensure you're using WP oOS version 1.0.0+ which includes the compatibility
+   layer for JetEngine 3.3+. The plugin automatically detects and uses the
+   correct API. See [jetengine-api-compatibility.md](jetengine-api-compatibility.md)
+   for details.
 
 ## Security recommendations
 

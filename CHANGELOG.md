@@ -26,6 +26,7 @@
 - **LM Studio Model Fetching**: Fixed data structure mismatch for "Fetch Models" feature
 - **CPT-CCT Synchronization**: Automatic bidirectional sync between WordPress CPT and JetEngine CCT for assistants
 - Automatic activation of JetEngine Data Stores module when JetEngine is installed and active
+- **JetEngine API Compatibility Layer**: Added backward-compatible query_items() implementation to support both JetEngine 3.3+ (new db->query() API) and older versions (Item_Handler->query_items())
 
 ### Changed
 - **Documentation Updates**: Comprehensive updates to MCP-related documentation files
@@ -34,11 +35,18 @@
   - `docs/mcp-server-authentication.md`: Added OAuth 2.1 security enhancements section
   - `docs/DOCUMENTATION_INDEX.md`: Updated with MCP version and enhanced documentation references
   - `README.md`: Added MCP version badge and enhanced MCP section with 2024-11-05 features
+  - `docs/jetengine-api-compatibility.md`: New comprehensive guide for JetEngine API compatibility
+  - `docs/deployment-troubleshooting.md`: Added JetEngine v3.3+ compatibility troubleshooting
 - Chat interface now provides visual feedback for message bundling ("Preparing to send…", "Sending…")
 - Token overflow scenarios automatically switch to higher-capacity models (gpt-4o-mini → Gemini 2.0 Flash)
 - SSE endpoint modernized with automatic reconnection, event IDs, and HTTP/2 compatibility
 
 ### Fixed
+- **JetEngine API Compatibility**: Fixed fatal error "Call to undefined method Item_Handler::query_items()" when using JetEngine 3.3+
+  - Updated Performance Monitor CCT to use new db->query() API with fallback to old Item_Handler API
+  - Updated Performance Reporter to use compatibility layer
+  - Updated Elementor performance widgets to use compatibility layer
+  - Added comprehensive test suite (12 tests) for query compatibility
 - **PHP Version Compatibility**: Added defensive PHP version checks to all WooCommerce-related files to prevent parse errors on PHP < 7.4. This ensures that if any WooCommerce logging or error handling mechanism attempts to load plugin files directly, they will gracefully exit instead of causing "unexpected token private/protected" fatal errors on older PHP versions.
 - JavaScript lint errors: Fixed 6 linting errors including unused function parameters in admin-settings.js and camelcase identifier warnings in settings-dashboard.js
 - JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
