@@ -132,16 +132,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Render per-user token usage view.
 		 */
 		private function render_per_user_view() {
-			global $wpdb;
+			// Get token management service.
+			$service = wp_mcp_ai_get_token_management_service();
 
 			// Get all users with usage data.
-			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-			$user_ids = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
-					$meta_key
-				)
-			);
+			$user_ids = $service->get_users_with_usage();
 
 			?>
 			<h3><?php esc_html_e( 'Token Usage by User', 'wp-mcp-ai' ); ?></h3>
@@ -172,8 +167,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								continue;
 							}
 
-							$usage  = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
-							$totals = $this->calculate_usage_totals( $usage );
+							$user_stats = $service->get_user_statistics( $user_id );
+							$totals     = $user_stats['totals'];
+							$usage      = $user_stats['usage'];
 							?>
 							<tr>
 								<td>
@@ -217,11 +213,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Render per-tool token limits view.
 		 */
 		private function render_per_tool_view() {
-			$current_user_id = get_current_user_id();
-			$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
+			// Get token management service.
+			$service = wp_mcp_ai_get_token_management_service();
 
 			// Get all available tools.
-			$all_tools = $this->get_all_available_tools();
+			$all_tools = $service->get_all_tools();
 
 			?>
 			<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
@@ -241,8 +237,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<tbody>
 					<?php
 					foreach ( $all_tools as $tool_slug => $tool_name ) :
-						$tool_limit = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
-						$tool_stats = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
+						$tool_limit = $service->get_tool_limit( $tool_slug );
+						$tool_stats = $service->get_tool_statistics( $tool_slug );
 						?>
 						<tr>
 							<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
@@ -271,7 +267,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Render per-site token statistics view.
 		 */
 		private function render_per_site_view() {
-			$site_stats = $this->get_site_wide_statistics();
+			// Get token management service.
+			$service = wp_mcp_ai_get_token_management_service();
+
+			$site_stats = $service->get_site_statistics();
 
 			?>
 			<h3><?php esc_html_e( 'Site-Wide Token Statistics', 'wp-mcp-ai' ); ?></h3>
@@ -445,194 +444,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</table>
 			</div>
 			<?php
-		}
-
-		/**
-		 * Calculate total usage from usage array.
-		 *
-		 * @param array $usage Usage data.
-		 * @return array Totals.
-		 */
-		private function calculate_usage_totals( $usage ) {
-			$totals = array(
-				'requests'          => 0,
-				'prompt_tokens'     => 0,
-				'completion_tokens' => 0,
-				'total_tokens'      => 0,
-				'cached_tokens'     => 0,
-			);
-
-			if ( ! is_array( $usage ) ) {
-				return $totals;
-			}
-
-			foreach ( $usage as $provider => $models ) {
-				if ( ! is_array( $models ) ) {
-					continue;
-				}
-
-				foreach ( $models as $model => $data ) {
-					if ( ! is_array( $data ) ) {
-						continue;
-					}
-
-					$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-					$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
-					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
-					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
-				}
-			}
-
-			return $totals;
-		}
-
-		/**
-		 * Get all available tools.
-		 *
-		 * @return array Tool slug => Tool name pairs.
-		 */
-		private function get_all_available_tools() {
-			$tools = array();
-
-			// Get all registered tools from the tool registry.
-			$registry = WP_MCP_AI_Tool_Registry::get_instance();
-			
-			if ( ! $registry ) {
-				// Fallback to hardcoded tools if registry is not available.
-				$tools = array(
-					'run_crawl4ai_job' => __( 'Crawl4AI Web Scraper', 'wp-mcp-ai' ),
-					'general_tools'    => __( 'General Tools (Default)', 'wp-mcp-ai' ),
-				);
-			} else {
-				// Ensure registry is initialized.
-				$registry->init();
-				
-				$registered_tools = $registry->get_tools();
-
-				// Build array of tool slug => name pairs.
-				foreach ( $registered_tools as $tool ) {
-					if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
-						$slug = $tool->get_slug();
-						$name = $tool->get_name();
-						
-						if ( ! empty( $slug ) && ! empty( $name ) ) {
-							$tools[ $slug ] = $name;
-						}
-					}
-				}
-
-				// Sort tools by name for better UI experience.
-				asort( $tools );
-			}
-
-			/**
-			 * Filter available tools for token limit configuration.
-			 *
-			 * @param array $tools Tool slug => Tool name pairs.
-			 */
-			return apply_filters( 'wp_mcp_ai_token_manager_tools', $tools );
-		}
-
-		/**
-		 * Get site-wide statistics.
-		 *
-		 * @return array Site statistics.
-		 */
-		private function get_site_wide_statistics() {
-			global $wpdb;
-
-			$meta_key = WP_MCP_AI_Usage_Tracker::USER_META_KEY;
-
-			// Get all user IDs with usage data.
-			$user_ids = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
-					$meta_key
-				)
-			);
-
-			$stats = array(
-				'total_users'    => count( $user_ids ),
-				'total_requests' => 0,
-				'total_tokens'   => 0,
-				'by_provider'    => array(),
-				'top_models'     => array(),
-				'tools_used'     => 0,
-			);
-
-			$all_models = array();
-
-			foreach ( $user_ids as $user_id ) {
-				$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
-
-				foreach ( $usage as $provider => $models ) {
-					if ( ! isset( $stats['by_provider'][ $provider ] ) ) {
-						$stats['by_provider'][ $provider ] = array(
-							'requests'          => 0,
-							'prompt_tokens'     => 0,
-							'completion_tokens' => 0,
-							'total_tokens'      => 0,
-							'cached_tokens'     => 0,
-						);
-					}
-
-					foreach ( $models as $model => $data ) {
-						$stats['total_requests'] += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-						$stats['total_tokens']   += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-
-						$stats['by_provider'][ $provider ]['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-						$stats['by_provider'][ $provider ]['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
-						$stats['by_provider'][ $provider ]['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
-						$stats['by_provider'][ $provider ]['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-						$stats['by_provider'][ $provider ]['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
-
-						$model_key = $provider . '|' . $model;
-						if ( ! isset( $all_models[ $model_key ] ) ) {
-							$all_models[ $model_key ] = array(
-								'provider'     => $provider,
-								'model'        => $model,
-								'requests'     => 0,
-								'total_tokens' => 0,
-							);
-						}
-
-						$all_models[ $model_key ]['requests']     += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-						$all_models[ $model_key ]['total_tokens'] += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-					}
-				}
-			}
-
-			// Sort models by total tokens and get top 10.
-			uasort(
-				$all_models,
-				function ( $a, $b ) {
-					return $b['total_tokens'] - $a['total_tokens'];
-				}
-			);
-
-			$stats['top_models'] = array_slice( $all_models, 0, 10 );
-
-			// Count tools used.
-			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
-			$tool_users    = $wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
-					$tool_meta_key
-				)
-			);
-
-			$tools_set = array();
-			foreach ( $tool_users as $user_id ) {
-				$tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
-				foreach ( array_keys( $tool_usage ) as $tool_slug ) {
-					$tools_set[ $tool_slug ] = true;
-				}
-			}
-
-			$stats['tools_used'] = count( $tools_set );
-
-			return $stats;
 		}
 
 		/**

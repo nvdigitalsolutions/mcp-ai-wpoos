@@ -18,6 +18,8 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-chat-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-assistant-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-management-service.php';
 
 /**
  * Initialize services
@@ -31,10 +33,12 @@ function wp_mcp_ai_init_services() {
 	$container = WP_MCP_AI_Container::get_instance();
 
 	return array(
-		'chat'      => $container->get( 'service.chat' ),
-		'assistant' => $container->get( 'service.assistant' ),
-		'tool'      => $container->get( 'service.tool' ),
-		'file'      => $container->get( 'service.file' ),
+		'chat'             => $container->get( 'service.chat' ),
+		'assistant'        => $container->get( 'service.assistant' ),
+		'tool'             => $container->get( 'service.tool' ),
+		'file'             => $container->get( 'service.file' ),
+		'performance'      => $container->get( 'service.performance' ),
+		'token_management' => $container->get( 'service.token_management' ),
 	);
 }
 
@@ -124,4 +128,24 @@ function wp_mcp_ai_get_token_budget_manager() {
 function wp_mcp_ai_get_tool_registry() {
 	$container = WP_MCP_AI_Container::get_instance();
 	return $container->get( 'tool_registry' );
+}
+
+/**
+ * Get performance service instance
+ *
+ * @return WP_MCP_AI_Performance_Service Performance service instance.
+ */
+function wp_mcp_ai_get_performance_service() {
+	$services = wp_mcp_ai_init_services();
+	return $services['performance'];
+}
+
+/**
+ * Get token management service instance
+ *
+ * @return WP_MCP_AI_Token_Management_Service Token management service instance.
+ */
+function wp_mcp_ai_get_token_management_service() {
+	$services = wp_mcp_ai_init_services();
+	return $services['token_management'];
 }

@@ -308,6 +308,20 @@ class WP_MCP_AI_Container {
 				return new WP_MCP_AI_File_Service();
 			}
 		);
+
+		$this->singleton(
+			'service.performance',
+			function () {
+				return new WP_MCP_AI_Performance_Service();
+			}
+		);
+
+		$this->singleton(
+			'service.token_management',
+			function () {
+				return new WP_MCP_AI_Token_Management_Service();
+			}
+		);
 	}
 
 	/**

@@ -93,13 +93,11 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
 		}
 
-		// Load performance reporter.
-		if ( ! class_exists( 'WP_MCP_AI_Performance_Reporter' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
-		}
+		// Get performance service.
+		$service = wp_mcp_ai_get_performance_service();
 
 		// Get current metrics.
-		$report = WP_MCP_AI_Performance_Reporter::generate_report(
+		$report = $service->get_report(
 			array(
 				'time_period' => '-7 days',
 			)
@@ -116,7 +114,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			<div class="wp-mcp-ai-performance-dashboard">
 				<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
 				<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
-					<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
+					<span class="health-icon dashicons dashicons-<?php echo esc_attr( $service->get_health_icon( $report['overall_health'] ) ); ?>"></span>
 					<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
 				</div>
 
@@ -182,7 +180,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 					<tbody>
 						<?php foreach ( $report['components'] as $component_id => $component_data ) : ?>
 							<tr>
-								<td><strong><?php echo esc_html( $this->format_component_name( $component_id ) ); ?></strong></td>
+								<td><strong><?php echo esc_html( $service->format_component_name( $component_id ) ); ?></strong></td>
 								<td>
 									<span class="health-badge health-badge-<?php echo esc_attr( $component_data['health_status'] ); ?>">
 										<?php echo esc_html( ucfirst( $component_data['health_status'] ) ); ?>
@@ -206,7 +204,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 										$first_trend = reset( $component_data['trends'] );
 										$trend       = isset( $first_trend['trend'] ) ? $first_trend['trend'] : 'stable';
 									}
-									echo esc_html( $this->format_trend( $trend ) );
+									echo esc_html( $service->format_trend( $trend ) );
 									?>
 								</td>
 								<td>
@@ -429,17 +427,15 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'wp-mcp-ai' ) ) );
 		}
 
-		// Return information about running tests via CLI.
-		wp_send_json_success(
-			array(
-				'message' => sprintf(
-					/* translators: %s: test type */
-					__( 'To run %s tests, use: ./bin/run-performance-tests.sh --suite=%s', 'wp-mcp-ai' ),
-					$test_type,
-					$test_type
-				),
-			)
-		);
+		// Get performance service and trigger test.
+		$service = wp_mcp_ai_get_performance_service();
+		$result  = $service->trigger_test( $test_type );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( array( 'message' => $result['message'] ) );
+		} else {
+			wp_send_json_error( array( 'message' => $result['message'] ) );
+		}
 	}
 
 	/**
@@ -454,7 +450,9 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : 'rest_api';
 
-		$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, '-7 days' );
+		// Get performance service and retrieve metrics.
+		$service = wp_mcp_ai_get_performance_service();
+		$trends  = $service->get_component_metrics( $component, '-7 days' );
 
 		wp_send_json_success( $trends );
 	}
@@ -471,66 +469,14 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 
 		$format = isset( $_POST['format'] ) ? sanitize_key( $_POST['format'] ) : 'json';
 
-		$report = WP_MCP_AI_Performance_Reporter::generate_report();
+		// Get performance service and export report.
+		$service = wp_mcp_ai_get_performance_service();
+		$result  = $service->export_report( $format );
 
-		if ( 'json' === $format ) {
-			wp_send_json_success( $report );
-		} else {
-			// CSV export would be implemented here.
-			wp_send_json_success( array( 'message' => __( 'CSV export coming soon.', 'wp-mcp-ai' ) ) );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
-	}
 
-	/**
-	 * Get health icon for status.
-	 *
-	 * @param string $status Health status.
-	 * @return string Icon name.
-	 */
-	protected function get_health_icon( $status ) {
-		$icons = array(
-			'good'     => 'yes-alt',
-			'fair'     => 'info',
-			'warning'  => 'warning',
-			'critical' => 'dismiss',
-		);
-
-		return isset( $icons[ $status ] ) ? $icons[ $status ] : 'info';
-	}
-
-	/**
-	 * Format component name for display.
-	 *
-	 * @param string $component_id Component ID.
-	 * @return string Formatted name.
-	 */
-	protected function format_component_name( $component_id ) {
-		$names = array(
-			'rest_api'      => 'REST API',
-			'chat_ui'       => 'Chat UI',
-			'mcp_core'      => 'MCP Core',
-			'elementor'     => 'Elementor',
-			'cpt_assistant' => 'CPT: Assistant',
-			'cpt_ai_peer'   => 'CPT: AI Peer',
-		);
-
-		return isset( $names[ $component_id ] ) ? $names[ $component_id ] : ucwords( str_replace( '_', ' ', $component_id ) );
-	}
-
-	/**
-	 * Format trend for display.
-	 *
-	 * @param string $trend Trend value.
-	 * @return string Formatted trend with icon.
-	 */
-	protected function format_trend( $trend ) {
-		$icons = array(
-			'improving' => '↗️ ' . __( 'Improving', 'wp-mcp-ai' ),
-			'stable'    => '→ ' . __( 'Stable', 'wp-mcp-ai' ),
-			'degrading' => '↘️ ' . __( 'Degrading', 'wp-mcp-ai' ),
-			'no_data'   => '— ' . __( 'No Data', 'wp-mcp-ai' ),
-		);
-
-		return isset( $icons[ $trend ] ) ? $icons[ $trend ] : $trend;
+		wp_send_json_success( $result );
 	}
 }
