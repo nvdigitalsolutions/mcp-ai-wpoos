@@ -143,6 +143,30 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that get_diagnostics() safely handles is_plugin_active() availability
+	 *
+	 * This test verifies the fix for the issue where get_diagnostics() would
+	 * cause a fatal error when called from WP-CLI or non-admin contexts where
+	 * wp-admin/includes/plugin.php is not loaded.
+	 */
+	public function test_get_diagnostics_loads_plugin_functions() {
+		// Call get_diagnostics() which should include plugin.php if needed.
+		$diagnostics = WP_MCP_AI_REST_API_Context_Fix::get_diagnostics();
+
+		// Verify the function executed successfully.
+		$this->assertIsArray( $diagnostics );
+
+		// After calling get_diagnostics(), is_plugin_active should be available.
+		$this->assertTrue( function_exists( 'is_plugin_active' ) );
+
+		// Verify caching_plugins key is present if any caching plugins are detected.
+		// Even if no caching plugins are active, the method should not throw an error.
+		if ( isset( $diagnostics['caching_plugins'] ) ) {
+			$this->assertIsArray( $diagnostics['caching_plugins'] );
+		}
+	}
+
+	/**
 	 * Test that Pragma header is added
 	 */
 	public function test_pragma_header_added() {
