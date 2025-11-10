@@ -5219,7 +5219,6 @@
                     }
                 }
                 finalize();
-                throw error;
             });
     }
 
