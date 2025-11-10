@@ -162,12 +162,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * @param array  $field Field configuration.
 		 */
 		protected function render_field( $key, $field ) {
-			$type        = isset( $field['type'] ) ? $field['type'] : 'text';
-			$label       = isset( $field['label'] ) ? $field['label'] : '';
-			$description = isset( $field['description'] ) ? $field['description'] : '';
-			$value       = WP_MCP_AI_Settings_Registry::get_setting( $key, isset( $field['default'] ) ? $field['default'] : '' );
-			$placeholder = isset( $field['placeholder'] ) ? $field['placeholder'] : '';
-			$required    = isset( $field['required'] ) ? $field['required'] : false;
+			$type         = isset( $field['type'] ) ? $field['type'] : 'text';
+			$label        = isset( $field['label'] ) ? $field['label'] : '';
+			$description  = isset( $field['description'] ) ? $field['description'] : '';
+			$value        = WP_MCP_AI_Settings_Registry::get_setting( $key, isset( $field['default'] ) ? $field['default'] : '' );
+			$placeholder  = isset( $field['placeholder'] ) ? $field['placeholder'] : '';
+			$required     = isset( $field['required'] ) ? $field['required'] : false;
+			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 
 			?>
 			<tr>
@@ -194,6 +195,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								value="<?php echo esc_attr( $value ); ?>"
 								class="regular-text"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( ! empty( $autocomplete ) ) : ?>
+									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
+								<?php endif; ?>
 								<?php echo $required ? 'required' : ''; ?>
 							/>
 							<?php
@@ -208,7 +212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								value="<?php echo esc_attr( $value ); ?>"
 								class="regular-text"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
-								autocomplete="new-password"
+								autocomplete="<?php echo esc_attr( ! empty( $autocomplete ) ? $autocomplete : 'new-password' ); ?>"
 								<?php echo $required ? 'required' : ''; ?>
 							/>
 							<?php

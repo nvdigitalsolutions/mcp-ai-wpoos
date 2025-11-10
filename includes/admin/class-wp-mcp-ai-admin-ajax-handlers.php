@@ -500,7 +500,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Verify nonce.
-			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
 				return;
 			}
@@ -533,7 +533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Verify nonce.
-			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
 				return;
 			}
@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Verify nonce.
-			if ( ! check_ajax_referer( 'wp-mcp-ai-settings', 'nonce', false ) ) {
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
 				return;
 			}
