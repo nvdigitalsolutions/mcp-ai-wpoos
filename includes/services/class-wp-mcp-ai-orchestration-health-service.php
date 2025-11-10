@@ -152,19 +152,19 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	private static function get_error_rate() {
 		// Get recent errors from the last hour.
 		$recent_errors = get_option( 'wp_mcp_ai_recent_errors', array() );
-		
+
 		if ( empty( $recent_errors ) ) {
 			return 0.0;
 		}
 
 		// Count errors in the last hour.
-		$one_hour_ago  = time() - HOUR_IN_SECONDS;
-		$error_count   = 0;
-		$total_count   = 0;
+		$one_hour_ago = time() - HOUR_IN_SECONDS;
+		$error_count  = 0;
+		$total_count  = 0;
 
 		foreach ( $recent_errors as $error ) {
 			if ( isset( $error['timestamp'] ) && $error['timestamp'] > $one_hour_ago ) {
-				$error_count++;
+				++$error_count;
 			}
 		}
 
@@ -172,7 +172,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 		foreach ( $recent_activity as $activity ) {
 			if ( isset( $activity['timestamp'] ) && $activity['timestamp'] > $one_hour_ago ) {
-				$total_count++;
+				++$total_count;
 			}
 		}
 
@@ -191,20 +191,20 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	private static function get_average_response_time() {
 		// Get recent activity from the last hour.
 		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
-		
+
 		if ( empty( $recent_activity ) ) {
 			return 0.0;
 		}
 
-		$one_hour_ago   = time() - HOUR_IN_SECONDS;
-		$total_time     = 0;
-		$count          = 0;
+		$one_hour_ago = time() - HOUR_IN_SECONDS;
+		$total_time   = 0;
+		$count        = 0;
 
 		foreach ( $recent_activity as $activity ) {
-			if ( isset( $activity['timestamp'], $activity['duration'] ) 
+			if ( isset( $activity['timestamp'], $activity['duration'] )
 				&& $activity['timestamp'] > $one_hour_ago ) {
 				$total_time += $activity['duration'];
-				$count++;
+				++$count;
 			}
 		}
 
@@ -222,10 +222,10 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * @return array Status information.
 	 */
 	private static function calculate_status( $metrics ) {
-		$memory_warning   = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 75 );
-		$memory_critical  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 90 );
-		$error_warning    = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 10 );
-		$error_critical   = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 20 );
+		$memory_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 75 );
+		$memory_critical = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 90 );
+		$error_warning   = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 10 );
+		$error_critical  = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 20 );
 
 		$memory_percent = isset( $metrics['memory']['percent'] ) ? $metrics['memory']['percent'] : 0;
 		$error_rate     = isset( $metrics['error_rate'] ) ? $metrics['error_rate'] : 0;
@@ -289,7 +289,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			}
 
 			$confidence_threshold = WP_MCP_AI_Settings_Registry::get_setting( 'prediction_confidence_threshold', 30 );
-			
+
 			// TODO: Implement actual predictive analytics.
 			// For now, return empty array - will be implemented in future enhancement.
 			$insights = array();
@@ -308,7 +308,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			// Filter insights by confidence threshold.
 			return array_filter(
 				$insights,
-				function( $insight ) use ( $confidence_threshold ) {
+				function ( $insight ) use ( $confidence_threshold ) {
 					return isset( $insight['confidence'] ) && $insight['confidence'] >= $confidence_threshold;
 				}
 			);
@@ -356,7 +356,6 @@ class WP_MCP_AI_Orchestration_Health_Service {
 				$recent_errors   = array_slice( $recent_errors, -50 );
 				update_option( 'wp_mcp_ai_recent_errors', $recent_errors, false );
 			}
-
 		} catch ( Exception $e ) {
 			// Silent fail - don't break plugin operations just for logging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
