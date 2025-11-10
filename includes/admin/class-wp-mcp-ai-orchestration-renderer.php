@@ -85,15 +85,22 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
-				WP_MCP_AI_Logger::log_error(
-					'Slider rendering failed: ' . $e->getMessage(),
-					array(
-						'component' => 'orchestration_renderer',
-						'method'    => 'render_slider',
-						'field_key' => $key,
-						'exception' => $e->getMessage(),
-					)
-				);
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Slider rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_slider',
+								'field_key' => $key,
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
 
 				// Return simple fallback.
 				return sprintf(
@@ -109,7 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * @param array $presets Available presets configuration.
 		 * @return string HTML output or fallback on error.
 		 */
-		public static function render_presets_selector( $presets ) {
+		public static function render_presets_selector( $presets ) { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
 			try {
 				if ( ! is_array( $presets ) || empty( $presets ) ) {
 					throw new Exception( 'Invalid presets array' );
@@ -155,10 +162,12 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								<?php else : ?>
 									<button type="button" class="button button-secondary apply-preset" 
 										data-preset="<?php echo esc_attr( $preset_id ); ?>"
-										aria-label="<?php
+										aria-label="
+										<?php
 										/* translators: %s: preset name */
 										echo esc_attr( sprintf( __( 'Apply %s preset', 'wp-mcp-ai' ), $preset_config['name'] ) );
-										?>">
+										?>
+										">
 										<?php esc_html_e( 'Apply', 'wp-mcp-ai' ); ?>
 									</button>
 								<?php endif; ?>
@@ -172,14 +181,21 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
-				WP_MCP_AI_Logger::log_error(
-					'Presets selector rendering failed: ' . $e->getMessage(),
-					array(
-						'component' => 'orchestration_renderer',
-						'method'    => 'render_presets_selector',
-						'exception' => $e->getMessage(),
-					)
-				);
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Presets selector rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_presets_selector',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
 
 				// Return simple fallback.
 				return sprintf(
@@ -252,14 +268,21 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
-				WP_MCP_AI_Logger::log_warning(
-					'Health status banner rendering failed: ' . $e->getMessage(),
-					array(
-						'component' => 'orchestration_renderer',
-						'method'    => 'render_health_status',
-						'exception' => $e->getMessage(),
-					)
-				);
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_warning(
+							'Health status banner rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_health_status',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
 
 				// Return a safe fallback banner - don't break the UI.
 				ob_start();
@@ -329,14 +352,21 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
-				WP_MCP_AI_Logger::log_warning(
-					'Memory progress rendering failed: ' . $e->getMessage(),
-					array(
-						'component' => 'orchestration_renderer',
-						'method'    => 'render_memory_progress',
-						'exception' => $e->getMessage(),
-					)
-				);
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_warning(
+							'Memory progress rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_memory_progress',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
 
 				// Return simple fallback.
 				return sprintf(
@@ -374,9 +404,11 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<p><?php esc_html_e( 'Based on current trends:', 'wp-mcp-ai' ); ?></p>
 						<ul class="insights-list">
 							<?php foreach ( $insights as $insight ) : ?>
-								<?php if ( ! is_array( $insight ) || ! isset( $insight['message'] ) ) {
+								<?php
+								if ( ! is_array( $insight ) || ! isset( $insight['message'] ) ) {
 									continue;
-} ?>
+								}
+								?>
 								<li>
 									<?php echo esc_html( $insight['message'] ); ?>
 									<?php if ( isset( $insight['confidence'] ) ) : ?>
@@ -398,14 +430,21 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				return ob_get_clean();
 
 			} catch ( Exception $e ) {
-				WP_MCP_AI_Logger::log_debug(
-					'Predictive insights rendering failed: ' . $e->getMessage(),
-					array(
-						'component' => 'orchestration_renderer',
-						'method'    => 'render_predictive_insights',
-						'exception' => $e->getMessage(),
-					)
-				);
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_debug' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_debug(
+							'Predictive insights rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_predictive_insights',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
 
 				// Return simple message - this is optional functionality.
 				return sprintf(
