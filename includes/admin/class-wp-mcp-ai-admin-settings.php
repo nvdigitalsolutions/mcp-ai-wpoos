@@ -6254,7 +6254,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						type: 'POST',
 						data: {
 							action: 'wp_mcp_ai_save_tool_limits',
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp-mcp-ai-settings' ) ); ?>',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dashboard' ) ); ?>',
 							limits: limits
 						},
 						success: function(response) {
