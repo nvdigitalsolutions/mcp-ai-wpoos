@@ -248,14 +248,161 @@ While granular, this created confusion about what required what. The new 3-tier 
 
 ---
 
+## Capability Flags
+
+**NEW:** In addition to grouping, tools can now expose **capability flags** that provide fine-grained metadata about their characteristics and requirements. This helps orchestrate agentic workflows by identifying potential issues before execution.
+
+### Standard Capability Flags
+
+#### Requirement Flags
+- **`requires-credentials`** - Tool requires external API credentials (e.g., OpenAI, Google)
+- **`requires-plugin`** - Tool requires a specific WordPress plugin (e.g., WooCommerce, JetEngine)
+- **`requires-capability`** - Tool requires specific WordPress user capabilities
+- **`requires-model`** - Tool requires AI model specification (e.g., GPT-4, Claude)
+- **`requires-vision-model`** - Tool requires vision-capable AI model
+- **`requires-multimodal-model`** - Tool requires multimodal AI model (text + images)
+
+#### Operational Characteristics
+- **`read-only`** - Tool only reads data, does not modify state
+- **`write`** - Tool creates or modifies data
+- **`state-changing`** - Tool modifies database or site state
+- **`reversible`** - Changes can be undone (e.g., via revisions)
+- **`idempotent`** - Tool can be called multiple times safely with same result
+- **`performance-impact`** - Tool may temporarily affect site performance
+- **`consumes-tokens`** - Tool uses AI model tokens/credits
+- **`model-dependent`** - Tool behavior varies by AI model selected
+
+#### Network & Performance
+- **`local-only`** - Tool works entirely locally, no external API calls
+- **`external-api`** - Tool makes external HTTP requests
+- **`network-dependent`** - Tool requires internet connectivity
+- **`async`** - Tool may take significant time to complete
+- **`rate-limited`** - Tool is subject to rate limiting
+- **`deferred-result`** - Result available later, not immediately (e.g., cron jobs)
+- **`requires-polling`** - May need to poll for completion status
+- **`supports-webhook`** - Can notify via webhook when complete
+- **`requires-callback`** - Needs callback URL for result delivery
+- **`long-running`** - Execution may take minutes or hours
+- **`may-timeout`** - May exceed typical HTTP request timeout (30-60s)
+- **`background-only`** - Must run in background to avoid timeouts
+- **`streaming-capable`** - Supports streaming responses to avoid timeouts
+
+#### Data Characteristics
+- **`cacheable`** - Tool results can be cached
+- **`non-deterministic`** - Results may vary over time for same inputs
+- **`pii-data`** - Tool returns personally identifiable information
+- **`large-response`** - May return large data sets (>1MB)
+- **`paginated`** - Supports pagination to manage response size
+- **`supports-compression`** - Can compress output to reduce size
+
+### Using Capability Flags
+
+#### In Code
+
+```php
+// Get flags for a specific tool
+$registry = WP_MCP_AI_Tool_Registry::get_instance();
+$flags = $registry->get_tool_capability_flags( 'search_content' );
+// Returns: array( 'read-only', 'local-only', 'cacheable' )
+
+// Get all tools with their flags
+$flags_map = $registry->get_all_tool_capability_flags();
+// Returns: array( 'tool_slug' => array( 'flag1', 'flag2' ), ... )
+
+// Filter tools by capability flag
+$readonly_tools = $registry->get_tools_by_capability_flag( 'read-only' );
+$external_tools = $registry->get_tools_by_capability_flag( 'external-api' );
+```
+
+#### Orchestration Examples
+
+**Safe Operations Mode** - Only allow read-only, local tools:
+```php
+$registry = WP_MCP_AI_Tool_Registry::get_instance();
+$safe_tools = array_filter( $registry->get_tools(), function( $tool ) use ( $registry ) {
+    $flags = $registry->get_tool_capability_flags( $tool->get_slug() );
+    return in_array( 'read-only', $flags, true ) 
+        && in_array( 'local-only', $flags, true );
+} );
+```
+
+**Offline Mode** - Exclude tools requiring network:
+```php
+$offline_tools = array_filter( $registry->get_tools(), function( $tool ) use ( $registry ) {
+    $flags = $registry->get_tool_capability_flags( $tool->get_slug() );
+    return ! in_array( 'external-api', $flags, true ) 
+        && ! in_array( 'network-dependent', $flags, true );
+} );
+```
+
+**Credential Check** - Validate before execution:
+```php
+$tool = $registry->get_tool( 'generate_openai_image' );
+$flags = $registry->get_tool_capability_flags( 'generate_openai_image' );
+
+if ( in_array( 'requires-credentials', $flags, true ) ) {
+    // Check if OpenAI API key is configured
+    $api_key = get_option( 'wp_mcp_ai_openai_api_key' );
+    if ( empty( $api_key ) ) {
+        return new WP_Error( 'missing_credentials', 'OpenAI API key required' );
+    }
+}
+```
+
+**Caching Strategy** - Cache only cacheable tools:
+```php
+$flags = $registry->get_tool_capability_flags( $tool_slug );
+
+if ( in_array( 'cacheable', $flags, true ) ) {
+    $cache_key = 'tool_result_' . md5( $tool_slug . serialize( $arguments ) );
+    $cached = wp_cache_get( $cache_key, 'wp_mcp_ai_tools' );
+    
+    if ( false !== $cached ) {
+        return $cached;
+    }
+}
+```
+
+#### Implementing Capability Flags in Custom Tools
+
+```php
+class My_Custom_Tool implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+    // ... other interface methods ...
+    
+    public function get_capability_flags() {
+        return array(
+            'read-only',            // Only retrieves data
+            'requires-credentials', // Needs API key
+            'external-api',         // Makes HTTP requests
+            'rate-limited',         // Subject to API limits
+            'cacheable',            // Results can be cached
+        );
+    }
+}
+```
+
+### Benefits for Agentic Workflows
+
+Capability flags enable smarter orchestration:
+
+1. **Pre-execution Validation** - Check if tool can run before attempting execution
+2. **Error Prevention** - Avoid tools that will fail due to missing credentials/plugins
+3. **Performance Optimization** - Prioritize cacheable, local tools
+4. **Security Policies** - Enforce read-only mode or prevent PII exposure
+5. **Network Resilience** - Fall back to local-only tools when offline
+6. **User Experience** - Show why a tool is unavailable ("requires WooCommerce")
+
+---
+
 ## Future Considerations
 
-The grouping system is extensible. Potential future additions:
+The grouping and capability flags system is extensible. Potential future additions:
 
 - **Sub-categories** - Each main category could have sub-groups for more granular organization
-- **Capability Flags** - Additional metadata beyond just grouping (e.g., "requires-credentials", "local-only")
+- **Additional Flags** - More specific flags as use cases emerge
 - **Dynamic Grouping** - Tools could report their own group membership
-- **UI Filters** - Filter tools by group in the admin interface
+- **UI Filters** - Filter tools by group or capability flag in the admin interface
+- **Smart Tool Selection** - AI agent automatically chooses tools based on flags
 
 ---
 

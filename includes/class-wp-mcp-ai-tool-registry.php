@@ -311,6 +311,282 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve capability flags for a specific tool.
+		 *
+		 * Capability flags provide metadata about tool requirements and
+		 * characteristics for orchestrating agentic workflows.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array<string> Array of capability flags, or empty array if tool not found or has no flags.
+		 */
+		public function get_tool_capability_flags( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array();
+			}
+
+			if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+				$flags = $tool->get_capability_flags();
+				return is_array( $flags ) ? $flags : array();
+			}
+
+			return array();
+		}
+
+		/**
+		 * Retrieve capability flags for all registered tools.
+		 *
+		 * Returns an associative array mapping tool slugs to their capability flags.
+		 *
+		 * @return array<string, array<string>> Associative array of tool slugs to capability flag arrays.
+		 */
+		public function get_all_tool_capability_flags() {
+			$flags_map = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( ! empty( $flags ) ) {
+					$flags_map[ $slug ] = $flags;
+				}
+			}
+
+			/**
+			 * Filter the tool capability flags map used throughout the system.
+			 *
+			 * @param array<string, array<string>> $flags_map Associative array of tool slugs to capability flag arrays.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_capability_flags', $flags_map );
+		}
+
+		/**
+		 * Filter tools by capability flag.
+		 *
+		 * Returns tools that have the specified capability flag.
+		 *
+		 * @param string $flag Capability flag to filter by.
+		 * @return WP_MCP_AI_Tool_Interface[] Array of tools with the specified flag.
+		 */
+		public function get_tools_by_capability_flag( $flag ) {
+			$filtered_tools = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( in_array( $flag, $flags, true ) ) {
+					$filtered_tools[] = $tool;
+				}
+			}
+
+			return $filtered_tools;
+		}
+
+		/**
+		 * Retrieve tool-specific rules for a tool.
+		 *
+		 * Tool rules provide detailed constraints and requirements beyond capability flags.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array Tool rules, or empty array if tool not found or has no rules.
+		 */
+		public function get_tool_rules( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array();
+			}
+
+			if ( $tool instanceof WP_MCP_AI_Tool_Rules_Interface ) {
+				$rules = $tool->get_tool_rules();
+				return is_array( $rules ) ? $rules : array();
+			}
+
+			return array();
+		}
+
+		/**
+		 * Retrieve rules for all registered tools.
+		 *
+		 * Returns an associative array mapping tool slugs to their rules.
+		 *
+		 * @return array<string, array> Associative array of tool slugs to rule arrays.
+		 */
+		public function get_all_tool_rules() {
+			$rules_map = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$rules = $this->get_tool_rules( $slug );
+				if ( ! empty( $rules ) ) {
+					$rules_map[ $slug ] = $rules;
+				}
+			}
+
+			/**
+			 * Filter the tool rules map used throughout the system.
+			 *
+			 * @param array<string, array> $rules_map Associative array of tool slugs to rule arrays.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_rules', $rules_map );
+		}
+
+		/**
+		 * Validate tool execution against its rules.
+		 *
+		 * Checks if the current environment and parameters meet the tool's requirements.
+		 *
+		 * @param string $slug Tool slug.
+		 * @param array  $arguments Tool arguments.
+		 * @param array  $context Execution context.
+		 * @return true|WP_Error True if valid, WP_Error if validation fails.
+		 */
+		public function validate_tool_execution( $slug, $arguments = array(), $context = array() ) {
+			$rules = $this->get_tool_rules( $slug );
+
+			if ( empty( $rules ) ) {
+				return true; // No rules to validate.
+			}
+
+			$errors = array();
+
+			// Validate model requirements.
+			if ( ! empty( $rules['model_requirements'] ) ) {
+				$model_error = $this->validate_model_requirements( $rules['model_requirements'], $arguments, $context );
+				if ( is_wp_error( $model_error ) ) {
+					$errors[] = $model_error->get_error_message();
+				}
+			}
+
+			// Validate parameter constraints.
+			if ( ! empty( $rules['parameter_constraints'] ) ) {
+				$param_error = $this->validate_parameter_constraints( $rules['parameter_constraints'], $arguments );
+				if ( is_wp_error( $param_error ) ) {
+					$errors[] = $param_error->get_error_message();
+				}
+			}
+
+			// Validate dependencies.
+			if ( ! empty( $rules['dependencies'] ) ) {
+				$dep_error = $this->validate_dependencies( $rules['dependencies'] );
+				if ( is_wp_error( $dep_error ) ) {
+					$errors[] = $dep_error->get_error_message();
+				}
+			}
+
+			if ( ! empty( $errors ) ) {
+				return new WP_Error( 'tool_validation_failed', implode( '; ', $errors ), array( 'errors' => $errors ) );
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate model requirements.
+		 *
+		 * @param array $requirements Model requirements.
+		 * @param array $arguments Tool arguments.
+		 * @param array $context Execution context.
+		 * @return true|WP_Error
+		 */
+		protected function validate_model_requirements( $requirements, $arguments, $context ) {
+			// Check if model is specified when required.
+			if ( ! empty( $requirements['required'] ) && empty( $arguments['model'] ) && empty( $context['model'] ) ) {
+				return new WP_Error( 'model_required', 'This tool requires a model to be specified' );
+			}
+
+			$model = $arguments['model'] ?? $context['model'] ?? '';
+
+			// Validate allowed providers.
+			if ( ! empty( $requirements['providers'] ) && ! empty( $model ) ) {
+				$provider = explode( ':', $model )[0] ?? '';
+				if ( ! in_array( $provider, $requirements['providers'], true ) ) {
+					return new WP_Error(
+						'invalid_provider',
+						sprintf( 'Model provider must be one of: %s', implode( ', ', $requirements['providers'] ) )
+					);
+				}
+			}
+
+			// Validate specific models.
+			if ( ! empty( $requirements['models'] ) && ! empty( $model ) ) {
+				if ( ! in_array( $model, $requirements['models'], true ) ) {
+					return new WP_Error(
+						'invalid_model',
+						sprintf( 'Model must be one of: %s', implode( ', ', $requirements['models'] ) )
+					);
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate parameter constraints.
+		 *
+		 * @param array $constraints Parameter constraints.
+		 * @param array $arguments Tool arguments.
+		 * @return true|WP_Error
+		 */
+		protected function validate_parameter_constraints( $constraints, $arguments ) {
+			// Check required fields.
+			if ( ! empty( $constraints['required_fields'] ) ) {
+				foreach ( $constraints['required_fields'] as $field ) {
+					if ( ! isset( $arguments[ $field ] ) || '' === $arguments[ $field ] ) {
+						return new WP_Error( 'missing_parameter', "Required parameter '{$field}' is missing" );
+					}
+				}
+			}
+
+			// Check max items constraint.
+			if ( ! empty( $constraints['max_items'] ) && isset( $arguments['items'] ) ) {
+				if ( is_array( $arguments['items'] ) && count( $arguments['items'] ) > $constraints['max_items'] ) {
+					return new WP_Error(
+						'too_many_items',
+						sprintf( 'Maximum %d items allowed, %d provided', $constraints['max_items'], count( $arguments['items'] ) )
+					);
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate dependencies.
+		 *
+		 * @param array $dependencies Dependency requirements.
+		 * @return true|WP_Error
+		 */
+		protected function validate_dependencies( $dependencies ) {
+			// Check required plugins.
+			if ( ! empty( $dependencies['required_plugins'] ) ) {
+				foreach ( $dependencies['required_plugins'] as $plugin ) {
+					if ( 'woocommerce' === $plugin && ! class_exists( 'WooCommerce' ) ) {
+						return new WP_Error( 'missing_plugin', 'WooCommerce plugin is required' );
+					}
+					// Add more plugin checks as needed.
+				}
+			}
+
+			// Check required PHP extensions.
+			if ( ! empty( $dependencies['required_extensions'] ) ) {
+				foreach ( $dependencies['required_extensions'] as $extension ) {
+					if ( ! extension_loaded( $extension ) ) {
+						return new WP_Error( 'missing_extension', "PHP extension '{$extension}' is required" );
+					}
+				}
+			}
+
+			// Check required settings.
+			if ( ! empty( $dependencies['required_settings'] ) ) {
+				foreach ( $dependencies['required_settings'] as $setting => $option_name ) {
+					if ( empty( get_option( $option_name ) ) ) {
+						return new WP_Error( 'missing_setting', "Required setting '{$setting}' is not configured" );
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
 		 * Determine if base version mode is enabled.
 		 *
 		 * Base version mode excludes tools that require third-party plugins or external API credentials.

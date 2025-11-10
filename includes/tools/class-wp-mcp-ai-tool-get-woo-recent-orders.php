@@ -17,7 +17,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Provides a summary of recent WooCommerce orders.
  */
-class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -136,5 +136,19 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-plugin',      // Requires WooCommerce plugin.
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'cacheable',            // Results can be cached.
+			'requires-capability',  // Requires 'manage_woocommerce' or 'view_woocommerce_reports' capability.
+			'pii-data',             // Returns personally identifiable information.
+		);
 	}
 }

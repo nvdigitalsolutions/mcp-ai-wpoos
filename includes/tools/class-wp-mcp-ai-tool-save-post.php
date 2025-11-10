@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new post or updates an existing one.
  */
-class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -301,5 +301,18 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return implode( "\n\n", $blocks );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Creates or updates posts.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires post editing capabilities.
+			'state-changing',       // Modifies database state.
+			'reversible',           // Can be undone via post revisions.
+		);
 	}
 }
