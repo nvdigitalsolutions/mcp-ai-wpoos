@@ -311,6 +311,76 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve capability flags for a specific tool.
+		 *
+		 * Capability flags provide metadata about tool requirements and
+		 * characteristics for orchestrating agentic workflows.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array<string> Array of capability flags, or empty array if tool not found or has no flags.
+		 */
+		public function get_tool_capability_flags( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array();
+			}
+
+			if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+				$flags = $tool->get_capability_flags();
+				return is_array( $flags ) ? $flags : array();
+			}
+
+			return array();
+		}
+
+		/**
+		 * Retrieve capability flags for all registered tools.
+		 *
+		 * Returns an associative array mapping tool slugs to their capability flags.
+		 *
+		 * @return array<string, array<string>> Associative array of tool slugs to capability flag arrays.
+		 */
+		public function get_all_tool_capability_flags() {
+			$flags_map = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( ! empty( $flags ) ) {
+					$flags_map[ $slug ] = $flags;
+				}
+			}
+
+			/**
+			 * Filter the tool capability flags map used throughout the system.
+			 *
+			 * @param array<string, array<string>> $flags_map Associative array of tool slugs to capability flag arrays.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_capability_flags', $flags_map );
+		}
+
+		/**
+		 * Filter tools by capability flag.
+		 *
+		 * Returns tools that have the specified capability flag.
+		 *
+		 * @param string $flag Capability flag to filter by.
+		 * @return WP_MCP_AI_Tool_Interface[] Array of tools with the specified flag.
+		 */
+		public function get_tools_by_capability_flag( $flag ) {
+			$filtered_tools = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( in_array( $flag, $flags, true ) ) {
+					$filtered_tools[] = $tool;
+				}
+			}
+
+			return $filtered_tools;
+		}
+
+		/**
 		 * Determine if base version mode is enabled.
 		 *
 		 * Base version mode excludes tools that require third-party plugins or external API credentials.

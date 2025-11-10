@@ -84,3 +84,32 @@ interface WP_MCP_AI_Tool_Fallback_Shortcut_Interface {
 	 */
 	public function should_register_fallback_shortcut( $assistant_id );
 }
+
+/**
+ * Optional interface for tools that expose capability flags for orchestration.
+ *
+ * Capability flags provide metadata beyond grouping to help orchestrate
+ * agentic workflows without errors by identifying tool requirements and
+ * characteristics.
+ */
+interface WP_MCP_AI_Tool_Capability_Flags_Interface {
+	/**
+	 * Retrieve capability flags for this tool.
+	 *
+	 * Capability flags help orchestrate agentic workflows by providing
+	 * metadata about tool requirements and characteristics.
+	 *
+	 * Standard flags:
+	 * - 'requires-credentials': Tool requires external API credentials
+	 * - 'requires-plugin': Tool requires a specific WordPress plugin
+	 * - 'local-only': Tool only works locally (no external API calls)
+	 * - 'read-only': Tool only reads data, does not modify state
+	 * - 'write': Tool modifies data or state
+	 * - 'async': Tool may take significant time to complete
+	 * - 'rate-limited': Tool is subject to rate limiting
+	 * - 'cacheable': Tool results can be cached
+	 *
+	 * @return array<string> Array of capability flag strings.
+	 */
+	public function get_capability_flags();
+}

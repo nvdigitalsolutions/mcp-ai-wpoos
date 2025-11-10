@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_MODEL           = 'gpt-image-1';
 	const DEFAULT_SIZE            = '1024x1024';
 	const DEFAULT_QUALITY         = 'medium'; // Default for gpt-image-1. DALL-E uses 'standard'.
@@ -766,5 +766,17 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return ! empty( $sanitized ) ? $sanitized : $result;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-credentials', // Requires OpenAI API credentials.
+			'write',                // Creates media files.
+			'async',                // May take significant time to generate images.
+			'rate-limited',         // Subject to OpenAI rate limits.
+		);
 	}
 }
