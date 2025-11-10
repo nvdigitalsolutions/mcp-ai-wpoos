@@ -204,6 +204,10 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'requires-capability',  // Requires 'manage_options' capability.
 			'state-changing',       // Modifies scheduled tasks.
 			'async',                // Scheduled tasks run asynchronously.
+			'deferred-result',      // Result available later, not immediately.
+			'requires-polling',     // May need to poll for completion status.
+			'may-timeout',          // Should not wait for cron execution in same request.
+			'background-only',      // Cron execution happens in background.
 		);
 	}
 }

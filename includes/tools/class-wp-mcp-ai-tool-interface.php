@@ -103,6 +103,9 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'requires-credentials': Tool requires external API credentials
 	 * - 'requires-plugin': Tool requires a specific WordPress plugin
 	 * - 'requires-capability': Tool requires specific WordPress user capabilities
+	 * - 'requires-model': Tool requires AI model specification
+	 * - 'requires-vision-model': Tool requires vision-capable AI model
+	 * - 'requires-multimodal-model': Tool requires multimodal AI model
 	 *
 	 * Standard flags (Operational Characteristics):
 	 * - 'read-only': Tool only reads data, does not modify state
@@ -111,6 +114,8 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'reversible': Changes can be undone (e.g., via revisions)
 	 * - 'idempotent': Tool can be called multiple times safely with same result
 	 * - 'performance-impact': Tool may temporarily affect site performance
+	 * - 'consumes-tokens': Tool uses AI model tokens/credits
+	 * - 'model-dependent': Tool behavior varies by AI model selected
 	 *
 	 * Standard flags (Network & Performance):
 	 * - 'local-only': Tool works entirely locally (no external API calls)
@@ -118,13 +123,85 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'network-dependent': Tool requires internet connectivity
 	 * - 'async': Tool may take significant time to complete
 	 * - 'rate-limited': Tool is subject to rate limiting
+	 * - 'deferred-result': Result available later, not immediately
+	 * - 'requires-polling': May need to poll for completion status
+	 * - 'supports-webhook': Can notify via webhook when complete
+	 * - 'requires-callback': Needs callback URL for result delivery
+	 * - 'long-running': Execution may take minutes or hours
+	 * - 'may-timeout': May exceed typical HTTP request timeout
+	 * - 'background-only': Must run in background to avoid timeouts
+	 * - 'streaming-capable': Supports streaming responses
 	 *
 	 * Standard flags (Data Characteristics):
 	 * - 'cacheable': Tool results can be cached
 	 * - 'non-deterministic': Results may vary over time for same inputs
 	 * - 'pii-data': Tool returns personally identifiable information
+	 * - 'large-response': May return large data sets (>1MB)
+	 * - 'paginated': Supports pagination to manage response size
+	 * - 'supports-compression': Can compress output to reduce size
 	 *
 	 * @return array<string> Array of capability flag strings.
 	 */
 	public function get_capability_flags();
+}
+
+/**
+ * Optional interface for tools that define specific execution rules.
+ *
+ * Tool-specific rules provide detailed constraints and requirements
+ * that go beyond capability flags, enabling precise orchestration control.
+ */
+interface WP_MCP_AI_Tool_Rules_Interface {
+	/**
+	 * Retrieve tool-specific execution rules.
+	 *
+	 * Rules define constraints, requirements, and behaviors that the
+	 * orchestrator should enforce before and during tool execution.
+	 *
+	 * Example rule structure:
+	 * array(
+	 *     'model_requirements' => array(
+	 *         'providers' => array( 'openai', 'anthropic' ),  // Allowed providers
+	 *         'models' => array( 'gpt-4', 'claude-3-opus' ),  // Specific models
+	 *         'min_context_window' => 8000,                   // Minimum context
+	 *         'capabilities' => array( 'vision', 'tools' ),   // Required capabilities
+	 *     ),
+	 *     'parameter_constraints' => array(
+	 *         'max_items' => 100,              // Maximum items to process
+	 *         'required_fields' => array( 'prompt', 'model' ),
+	 *         'optional_fields' => array( 'temperature', 'max_tokens' ),
+	 *     ),
+	 *     'rate_limits' => array(
+	 *         'requests_per_minute' => 20,
+	 *         'requests_per_hour' => 500,
+	 *         'concurrent_requests' => 5,
+	 *     ),
+	 *     'timeout_constraints' => array(
+	 *         'max_execution_time' => 120,     // seconds
+	 *         'recommended_timeout' => 60,
+	 *         'must_use_background' => true,
+	 *     ),
+	 *     'response_constraints' => array(
+	 *         'max_size' => 5242880,           // 5MB
+	 *         'supports_streaming' => true,
+	 *         'supports_pagination' => true,
+	 *         'default_page_size' => 20,
+	 *     ),
+	 *     'dependencies' => array(
+	 *         'required_plugins' => array( 'woocommerce' ),
+	 *         'required_extensions' => array( 'gd', 'imagick' ),
+	 *         'required_settings' => array( 'api_key' => 'wp_mcp_ai_openai_api_key' ),
+	 *     ),
+	 *     'orchestration_hints' => array(
+	 *         'can_run_parallel' => false,     // Can multiple instances run concurrently?
+	 *         'requires_lock' => true,         // Needs exclusive execution lock?
+	 *         'cache_ttl' => 300,              // Cache time-to-live in seconds
+	 *         'retry_strategy' => 'exponential_backoff',
+	 *         'max_retries' => 3,
+	 *     ),
+	 * )
+	 *
+	 * @return array Associative array of tool-specific rules.
+	 */
+	public function get_tool_rules();
 }

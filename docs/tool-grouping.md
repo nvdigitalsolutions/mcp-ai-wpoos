@@ -258,6 +258,9 @@ While granular, this created confusion about what required what. The new 3-tier 
 - **`requires-credentials`** - Tool requires external API credentials (e.g., OpenAI, Google)
 - **`requires-plugin`** - Tool requires a specific WordPress plugin (e.g., WooCommerce, JetEngine)
 - **`requires-capability`** - Tool requires specific WordPress user capabilities
+- **`requires-model`** - Tool requires AI model specification (e.g., GPT-4, Claude)
+- **`requires-vision-model`** - Tool requires vision-capable AI model
+- **`requires-multimodal-model`** - Tool requires multimodal AI model (text + images)
 
 #### Operational Characteristics
 - **`read-only`** - Tool only reads data, does not modify state
@@ -266,6 +269,8 @@ While granular, this created confusion about what required what. The new 3-tier 
 - **`reversible`** - Changes can be undone (e.g., via revisions)
 - **`idempotent`** - Tool can be called multiple times safely with same result
 - **`performance-impact`** - Tool may temporarily affect site performance
+- **`consumes-tokens`** - Tool uses AI model tokens/credits
+- **`model-dependent`** - Tool behavior varies by AI model selected
 
 #### Network & Performance
 - **`local-only`** - Tool works entirely locally, no external API calls
@@ -273,11 +278,22 @@ While granular, this created confusion about what required what. The new 3-tier 
 - **`network-dependent`** - Tool requires internet connectivity
 - **`async`** - Tool may take significant time to complete
 - **`rate-limited`** - Tool is subject to rate limiting
+- **`deferred-result`** - Result available later, not immediately (e.g., cron jobs)
+- **`requires-polling`** - May need to poll for completion status
+- **`supports-webhook`** - Can notify via webhook when complete
+- **`requires-callback`** - Needs callback URL for result delivery
+- **`long-running`** - Execution may take minutes or hours
+- **`may-timeout`** - May exceed typical HTTP request timeout (30-60s)
+- **`background-only`** - Must run in background to avoid timeouts
+- **`streaming-capable`** - Supports streaming responses to avoid timeouts
 
 #### Data Characteristics
 - **`cacheable`** - Tool results can be cached
 - **`non-deterministic`** - Results may vary over time for same inputs
 - **`pii-data`** - Tool returns personally identifiable information
+- **`large-response`** - May return large data sets (>1MB)
+- **`paginated`** - Supports pagination to manage response size
+- **`supports-compression`** - Can compress output to reduce size
 
 ### Using Capability Flags
 
