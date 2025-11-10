@@ -76,6 +76,8 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
+			add_filter( 'the_content', array( $this, 'add_preconfig_to_single_post' ), 10, 1 );
+			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_single_post_styles' ) );
 		}
 
 		/**
@@ -3847,6 +3849,169 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				</script>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Enqueue styles for the single assistant post page.
+		 *
+		 * @since 1.0.0
+		 * @return void
+		 */
+		public function enqueue_single_post_styles() {
+			if ( ! is_singular( self::POST_TYPE ) ) {
+				return;
+			}
+
+			$css = '
+				.wp-mcp-ai-assistant-preconfig {
+					margin: 2em 0;
+					padding: 1.5em;
+					background: #f9f9f9;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+				}
+				.wp-mcp-ai-assistant-preconfig__title {
+					margin: 0 0 1em 0;
+					font-size: 1.5em;
+					color: #333;
+				}
+				.wp-mcp-ai-assistant-preconfig__list {
+					margin: 0;
+					padding: 0;
+					display: grid;
+					grid-template-columns: auto 1fr;
+					gap: 0.5em 1em;
+				}
+				.wp-mcp-ai-assistant-preconfig__label {
+					font-weight: 600;
+					color: #666;
+					margin: 0;
+				}
+				.wp-mcp-ai-assistant-preconfig__value {
+					margin: 0;
+					color: #333;
+				}
+				.wp-mcp-ai-assistant-preconfig__system-prompt {
+					margin-top: 1.5em;
+				}
+				.wp-mcp-ai-assistant-preconfig__system-prompt-heading {
+					margin: 0 0 0.5em 0;
+					font-size: 1.2em;
+					color: #333;
+				}
+				.wp-mcp-ai-assistant-preconfig__system-prompt-content {
+					padding: 1em;
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					white-space: pre-wrap;
+					word-wrap: break-word;
+				}
+			';
+
+			wp_add_inline_style( 'wp-block-library', $css );
+		}
+
+		/**
+		 * Add preconfig display to the single assistant post content.
+		 *
+		 * @since 1.0.0
+		 * @param string $content Post content.
+		 * @return string Modified content.
+		 */
+		public function add_preconfig_to_single_post( $content ) {
+			if ( ! is_singular( self::POST_TYPE ) || ! is_main_query() || ! in_the_loop() ) {
+				return $content;
+			}
+
+			$post_id = get_the_ID();
+			if ( ! $post_id ) {
+				return $content;
+			}
+
+			$config = self::get_assistant_configuration( $post_id );
+
+			$preconfig_html = $this->render_preconfig_html( $config );
+
+			if ( '' === $preconfig_html ) {
+				return $content;
+			}
+
+			return $content . $preconfig_html;
+		}
+
+		/**
+		 * Render the preconfig HTML.
+		 *
+		 * @since 1.0.0
+		 * @param array $config Assistant configuration.
+		 * @return string HTML output.
+		 */
+		protected function render_preconfig_html( $config ) {
+			$provider_label = $this->get_provider_label( isset( $config['provider'] ) ? $config['provider'] : '' );
+			$model          = isset( $config['model'] ) ? $config['model'] : '';
+			$temperature    = isset( $config['temperature'] ) ? $config['temperature'] : null;
+			$prompt         = isset( $config['system_prompt'] ) ? $config['system_prompt'] : '';
+
+			ob_start();
+			?>
+			<div class="wp-mcp-ai-assistant-preconfig">
+				<h3 class="wp-mcp-ai-assistant-preconfig__title"><?php esc_html_e( 'Assistant Configuration', 'wp-mcp-ai' ); ?></h3>
+				
+				<dl class="wp-mcp-ai-assistant-preconfig__list">
+					<?php if ( '' !== $provider_label ) : ?>
+						<dt class="wp-mcp-ai-assistant-preconfig__label"><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></dt>
+						<dd class="wp-mcp-ai-assistant-preconfig__value"><?php echo esc_html( $provider_label ); ?></dd>
+					<?php endif; ?>
+
+					<?php if ( '' !== $model ) : ?>
+						<dt class="wp-mcp-ai-assistant-preconfig__label"><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></dt>
+						<dd class="wp-mcp-ai-assistant-preconfig__value"><?php echo esc_html( $model ); ?></dd>
+					<?php endif; ?>
+
+					<?php if ( null !== $temperature && '' !== $temperature ) : ?>
+						<dt class="wp-mcp-ai-assistant-preconfig__label"><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></dt>
+						<dd class="wp-mcp-ai-assistant-preconfig__value"><?php echo esc_html( number_format_i18n( floatval( $temperature ), 2 ) ); ?></dd>
+					<?php endif; ?>
+				</dl>
+
+				<?php if ( '' !== $prompt ) : ?>
+					<div class="wp-mcp-ai-assistant-preconfig__system-prompt">
+						<h4 class="wp-mcp-ai-assistant-preconfig__system-prompt-heading"><?php esc_html_e( 'System Prompt', 'wp-mcp-ai' ); ?></h4>
+						<div class="wp-mcp-ai-assistant-preconfig__system-prompt-content"><?php echo esc_html( $prompt ); ?></div>
+					</div>
+				<?php endif; ?>
+			</div>
+			<?php
+			return ob_get_clean();
+		}
+
+		/**
+		 * Convert the provider slug into a readable label.
+		 *
+		 * @since 1.0.0
+		 * @param string $provider Provider slug.
+		 * @return string
+		 */
+		protected function get_provider_label( $provider ) {
+			$provider = sanitize_key( $provider );
+
+			if ( '' === $provider ) {
+				return '';
+			}
+
+			switch ( $provider ) {
+				case 'openai':
+					return __( 'OpenAI', 'wp-mcp-ai' );
+				case 'gemini':
+					return __( 'Gemini', 'wp-mcp-ai' );
+				case 'ollama':
+					return __( 'Ollama', 'wp-mcp-ai' );
+				case 'lm_studio':
+					return __( 'LM Studio', 'wp-mcp-ai' );
+			}
+
+			return ucwords( str_replace( array( '-', '_' ), ' ', $provider ) );
 		}
 	}
 }
