@@ -84,6 +84,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [chatkit-integration.md](chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
+| [jetengine-api-compatibility.md](jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
 
 ### Remote Client Setup
 

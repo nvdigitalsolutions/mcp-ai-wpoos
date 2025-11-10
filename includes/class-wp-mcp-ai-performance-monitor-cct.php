@@ -68,6 +68,107 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	}
 
 	/**
+	 * Retrieve the JetEngine content type instance.
+	 *
+	 * This provides access to the type object which has the db property for querying.
+	 *
+	 * @return object|null
+	 */
+	protected static function get_content_type() {
+		$module = self::get_cct_module();
+
+		if ( ! $module ) {
+			return null;
+		}
+
+		if ( empty( $module->manager ) ) {
+			return null;
+		}
+
+		return $module->manager->get_content_types( self::SLUG );
+	}
+
+	/**
+	 * Query items from JetEngine CCT with compatibility for both old and new API.
+	 *
+	 * This method handles the API change in JetEngine where query_items() was removed
+	 * from Item_Handler and replaced with direct database queries.
+	 *
+	 * @param array $args Query arguments.
+	 * @param int   $limit Maximum number of items to return.
+	 * @param int   $offset Offset for pagination.
+	 * @return array Array of items.
+	 */
+	public static function query_items( $args, $limit = 100, $offset = 0 ) {
+		$type_object = self::get_content_type();
+
+		if ( ! $type_object ) {
+			return array();
+		}
+
+		// Try new API first (JetEngine 3.3+).
+		if ( ! empty( $type_object->db ) && method_exists( $type_object->db, 'query' ) ) {
+			// Convert simple args to JetEngine query format.
+			$query_args = self::prepare_jetengine_query_args( $args, $type_object );
+
+			// Set result format to associative array.
+			if ( method_exists( $type_object->db, 'set_format_flag' ) ) {
+				$type_object->db->set_format_flag( ARRAY_A );
+			}
+
+			// Execute query.
+			$items = $type_object->db->query( $query_args, $limit, $offset );
+
+			return is_array( $items ) ? $items : array();
+		}
+
+		// Fallback to old API (JetEngine < 3.3).
+		$handler = $type_object->get_item_handler();
+		if ( $handler && method_exists( $handler, 'query_items' ) ) {
+			$items = $handler->query_items( $args );
+			return is_array( $items ) ? $items : array();
+		}
+
+		return array();
+	}
+
+	/**
+	 * Prepare query arguments for JetEngine's new query format.
+	 *
+	 * Converts simple key-value pairs to JetEngine's query builder format.
+	 *
+	 * @param array  $args        Simple query arguments.
+	 * @param object $type_object JetEngine content type instance.
+	 * @return array Prepared query arguments.
+	 */
+	protected static function prepare_jetengine_query_args( $args, $type_object ) {
+		$query_args = array();
+
+		foreach ( $args as $field => $value ) {
+			// Handle date range queries.
+			if ( is_array( $value ) && isset( $value['type'] ) && 'DATE' === $value['type'] ) {
+				if ( isset( $value['value'] ) && is_array( $value['value'] ) && 2 === count( $value['value'] ) ) {
+					$query_args[] = array(
+						'field'    => $field,
+						'operator' => 'BETWEEN',
+						'value'    => $value['value'],
+						'type'     => 'DATE',
+					);
+				}
+			} else {
+				// Simple equality check.
+				$query_args[] = array(
+					'field'    => $field,
+					'operator' => '=',
+					'value'    => $value,
+				);
+			}
+		}
+
+		return $query_args;
+	}
+
+	/**
 	 * Store a test result for assistant-friendly diagnostics.
 	 *
 	 * This method stores performance test results in a format optimized for
@@ -270,12 +371,6 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	 * @return array Performance trends data.
 	 */
 	public static function get_performance_trends( $component, $since = '-7 days', $test_type = '' ) {
-		$handler = self::get_item_handler();
-
-		if ( ! $handler ) {
-			return self::get_performance_trends_fallback( $component, $since, $test_type );
-		}
-
 		$args = array(
 			'component' => sanitize_key( $component ),
 		);
@@ -292,7 +387,12 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			);
 		}
 
-		$items = $handler->query_items( $args );
+		$items = self::query_items( $args );
+
+		// Fallback to WordPress options if JetEngine is unavailable.
+		if ( empty( $items ) && ! self::get_content_type() ) {
+			return self::get_performance_trends_fallback( $component, $since, $test_type );
+		}
 
 		return self::analyze_trends( $items );
 	}

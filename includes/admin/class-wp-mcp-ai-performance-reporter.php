@@ -281,15 +281,6 @@ class WP_MCP_AI_Performance_Reporter {
 			);
 		}
 
-		$handler = WP_MCP_AI_Performance_Monitor_CCT::get_item_handler();
-
-		if ( ! $handler ) {
-			return array(
-				'labels' => array(),
-				'data'   => array(),
-			);
-		}
-
 		$since_timestamp = strtotime( $time_period );
 
 		$args = array(
@@ -300,7 +291,14 @@ class WP_MCP_AI_Performance_Reporter {
 			),
 		);
 
-		$items = $handler->query_items( $args );
+		$items = WP_MCP_AI_Performance_Monitor_CCT::query_items( $args );
+
+		if ( empty( $items ) ) {
+			return array(
+				'labels' => array(),
+				'data'   => array(),
+			);
+		}
 
 		$chart_data = array(
 			'labels' => array(),
