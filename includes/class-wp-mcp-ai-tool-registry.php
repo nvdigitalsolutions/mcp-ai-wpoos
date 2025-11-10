@@ -223,8 +223,41 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				return $flow_stage_validation;
 			}
 
+			// Validate context restrictions (e.g., chat-client vs MCP endpoint).
+			$context_validation = $this->validate_tool_context( $slug, $context );
+			if ( is_wp_error( $context_validation ) ) {
+				return $context_validation;
+			}
+
 			// Execute the tool.
 			return $tool->execute( $arguments, $context );
+		}
+
+		/**
+		 * Validate tool execution against context restrictions.
+		 *
+		 * Checks if the tool can be executed in the current context (e.g., chat-client).
+		 *
+		 * @param string $slug    Tool slug.
+		 * @param array  $context Execution context.
+		 * @return true|WP_Error True if valid, WP_Error if validation fails.
+		 */
+		public function validate_tool_context( $slug, $context = array() ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return true; // Tool not found, will be handled by execute_tool.
+			}
+
+			// Check if tool implements context restrictions interface.
+			if ( $tool instanceof WP_MCP_AI_Tool_Context_Restrictions_Interface ) {
+				$validation = $tool->is_allowed_in_context( $context );
+				if ( is_wp_error( $validation ) ) {
+					return $validation;
+				}
+			}
+
+			return true;
 		}
 
 		/**

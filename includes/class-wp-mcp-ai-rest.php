@@ -6747,6 +6747,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'agentic_loop'     => true,
 				'iteration'        => $iteration,
 				'max_iterations'   => $max_iterations,
+				'endpoint'         => $request->get_route(),
+				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
 			// Special handling for run_openai_external_action tool.

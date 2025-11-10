@@ -230,3 +230,27 @@ interface WP_MCP_AI_Tool_Flow_Stage_Interface {
 	 */
 	public function get_flow_stages();
 }
+
+/**
+ * Optional interface for tools that restrict access from certain contexts.
+ *
+ * Context restrictions control which endpoints or interfaces can invoke a tool.
+ * This is useful for preventing sensitive operations from public-facing interfaces.
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	/**
+	 * Determine if the tool can be used in the given context.
+	 *
+	 * Common contexts include:
+	 * - 'chat-client': Browser-based public chat interface
+	 * - 'chat': MCP protocol endpoint (more controlled)
+	 * - 'direct': Direct tool invocation via REST API
+	 * - 'shortcode': Shortcode-based invocation
+	 *
+	 * @param array $context Execution context with 'endpoint' or 'source' keys.
+	 * @return true|WP_Error True if allowed, WP_Error if restricted.
+	 */
+	public function is_allowed_in_context( $context );
+}

@@ -145,6 +145,10 @@ class WP_MCP_AI_Tool_Flow_Stages_Tests extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	// ===================
+	// Flow Stage Tests
+	// ===================
+
 	/**
 	 * Test get_tool_flow_stages for tool with stage restrictions.
 	 */
@@ -362,5 +366,20 @@ class WP_MCP_AI_Tool_Flow_Stages_Tests extends WP_UnitTestCase {
 
 		$this->assertIsArray( $result );
 		$this->assertEquals( 'start stage execution', $result['result'] );
+	}
+
+	// ===================
+	// Context Restriction Tests
+	// ===================
+
+	/**
+	 * Test validate_tool_context returns true for tools without restrictions.
+	 */
+	public function test_validate_tool_context_unrestricted_tool() {
+		$context = array( 'endpoint' => '/chat-client' );
+
+		$result = $this->registry->validate_tool_context( 'anytime_tool', $context );
+
+		$this->assertTrue( $result );
 	}
 }
