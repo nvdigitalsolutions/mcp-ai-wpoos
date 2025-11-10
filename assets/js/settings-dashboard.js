@@ -17,6 +17,8 @@
 			this.initTooltips();
 			this.initTokenManager();
 			this.initProviderPriorityList();
+			this.initSliders();
+			this.initPresets();
 		},
 
 		/**
@@ -278,6 +280,68 @@
 					$(this).remove();
 				});
 			}, 5000);
+		},
+
+		/**
+		 * Initialize range sliders.
+		 */
+		initSliders: function() {
+			$('.wp-mcp-ai-slider').on('input', function() {
+				const $slider = $(this);
+				const value = $slider.val();
+				const suffix = $slider.data('suffix') || '';
+				const valueId = $slider.attr('id') + '-value';
+				$('#' + valueId).text('[' + value + suffix + ']');
+			});
+		},
+
+		/**
+		 * Initialize preset selectors.
+		 */
+		initPresets: function() {
+			const self = this;
+
+			$('.apply-preset').on('click', function(e) {
+				e.preventDefault();
+				const $button = $(this);
+				const presetId = $button.data('preset');
+
+				if (!presetId) {
+					return;
+				}
+
+				// Confirm before applying (except for custom preset)
+				if (presetId !== 'custom' && !confirm('Apply the "' + $button.closest('.preset-card').find('h4').text() + '" preset? This will update all orchestration settings.')) {
+					return;
+				}
+
+				$button.prop('disabled', true).text('Applying...');
+
+				$.ajax({
+					url: wpMcpAiDashboard.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_apply_orchestration_preset',
+						nonce: wpMcpAiDashboard.nonce,
+						preset_id: presetId
+					},
+					success: function(response) {
+						if (response.success) {
+							self.showNotice('Preset applied successfully. Reloading page...', 'success');
+							setTimeout(function() {
+								window.location.reload();
+							}, 1000);
+						} else {
+							self.showNotice(response.data.message || 'Failed to apply preset.', 'error');
+							$button.prop('disabled', false).text('Apply');
+						}
+					},
+					error: function() {
+						self.showNotice('An error occurred while applying the preset.', 'error');
+						$button.prop('disabled', false).text('Apply');
+					}
+				});
+			});
 		}
 	};
 

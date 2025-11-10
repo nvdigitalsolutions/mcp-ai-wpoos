@@ -57,6 +57,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reset_user_token_usage' => 'handle_reset_user_token_usage',
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
+				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
 			);
 
 			$action         = current_action();
@@ -633,6 +634,49 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			} else {
 				wp_send_json_error( array( 'message' => __( 'Failed to save tool limits.', 'wp-mcp-ai' ) ) );
 			}
+		}
+
+		/**
+		 * Handle apply orchestration preset AJAX request.
+		 */
+		private function handle_apply_orchestration_preset() {
+			// Verify nonce.
+			check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce' );
+
+			// Check user permissions.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get preset ID.
+			$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
+
+			if ( empty( $preset_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'Missing preset ID.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check if preset service exists.
+			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Preset service not available.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Apply preset.
+			$result = WP_MCP_AI_Orchestration_Preset_Service::apply_preset( $preset_id );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message'   => __( 'Preset applied successfully.', 'wp-mcp-ai' ),
+					'preset_id' => $preset_id,
+				)
+			);
 		}
 	}
 }

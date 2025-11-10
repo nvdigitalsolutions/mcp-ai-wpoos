@@ -18,6 +18,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settin
 // Load custom filters applicator.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-custom-filters-applicator.php';
 
+// Load orchestration renderer.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-renderer.php';
+
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
