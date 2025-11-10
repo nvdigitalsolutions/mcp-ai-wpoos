@@ -123,8 +123,35 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			
+			// Check if logging is enabled for diagnostic purposes.
+			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
+			
+			// Log save attempt for debugging (only if logging enabled).
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						$active_tab,
+						count( $posted_settings ),
+						implode( ', ', array_keys( $posted_settings ) )
+					)
+				);
+			}
+			
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
 			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+			
+			// Log sanitization results.
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
+						count( $sanitized_new ),
+						implode( ', ', array_keys( $sanitized_new ) )
+					)
+				);
+			}
 
 			// Merge with existing settings to avoid wiping unrelated fields.
 			// This is critical for display-only sections (like Overview) that have no editable fields,
@@ -132,7 +159,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
 
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+			// Save to database and log result.
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+			
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
+						$update_result ? 'SUCCESS' : 'UNCHANGED',
+						count( $existing_settings ),
+						count( $merged_settings )
+					)
+				);
+			}
 
 			// Clear caches when settings are updated.
 			if ( 'orchestration' === $active_tab ) {
