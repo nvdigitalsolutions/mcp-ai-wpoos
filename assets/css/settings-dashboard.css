@@ -681,6 +681,60 @@
 	color: #646970;
 }
 
+/* Orchestration Intro Section */
+.wp-mcp-ai-orchestration-intro {
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	padding: 1.5rem;
+	margin: 1rem 0;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration-intro h3 {
+	margin-top: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-orchestration-intro h4 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-orchestration-intro ul {
+	margin: 0.5rem 0;
+	padding-left: 1.5rem;
+}
+
+.wp-mcp-ai-orchestration-intro li {
+	margin-bottom: 0.5rem;
+	line-height: 1.6;
+}
+
+/* Orchestration Stats Section */
+.wp-mcp-ai-orchestration-stats {
+	margin: 1.5rem 0;
+}
+
+.wp-mcp-ai-orchestration-stats h3 {
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-orchestration-stats h4 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-top: 1.5rem;
+	margin-bottom: 1rem;
+}
+
 @media screen and (max-width: 782px) {
 	.wp-mcp-ai-health-banner {
 		flex-direction: column;
