@@ -72,6 +72,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md) | Orchestration dashboard documentation search findings and PR #852 enhancements | Developers/Admins |
 | [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
 | [orchestration-budget-enforcement.md](orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
 | [assistant-storage-cpt-vs-cct.md](assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
