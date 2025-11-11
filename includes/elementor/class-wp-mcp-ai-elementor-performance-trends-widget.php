@@ -247,10 +247,9 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 */
 	protected function enqueue_chart_script( $trends, $chart_height ) {
 		// In a real implementation, you would enqueue Chart.js from CDN or local file.
-$chart_js_url = esc_url( WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js' );
-?>
-<script src="<?php echo $chart_js_url; ?>"></script>
-<script>
+		?>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+		<script>
 		(function() {
 			var ctx = document.getElementById('wp-mcp-ai-trends-chart');
 			if (!ctx) return;
