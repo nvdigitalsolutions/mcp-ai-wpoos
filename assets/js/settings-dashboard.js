@@ -48,6 +48,9 @@
 
 			// Save all tool limits
 			$('#wp-mcp-ai-save-all-tool-limits').on('click', this.handleSaveToolLimits.bind(this));
+
+			// Export token usage to CSV
+			$('#wp-mcp-ai-export-usage-csv').on('click', this.handleExportUsageCSV.bind(this));
 		},
 
 		/**
@@ -200,6 +203,50 @@
 					$button.prop('disabled', false).text('Save All Tool Limits');
 				}
 			});
+		},
+
+		/**
+		 * Handle export token usage to CSV.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleExportUsageCSV: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+
+			$button.prop('disabled', true).text('Exporting...');
+
+			// Create a form to submit the export request
+			const $form = $('<form>', {
+				method: 'POST',
+				action: wpMcpAiDashboard.ajaxUrl,
+				target: '_blank'
+			});
+
+			// Add hidden fields
+			$form.append($('<input>', {
+				type: 'hidden',
+				name: 'action',
+				value: 'wp_mcp_ai_export_token_usage_csv'
+			}));
+
+			$form.append($('<input>', {
+				type: 'hidden',
+				name: 'nonce',
+				value: wpMcpAiDashboard.nonce
+			}));
+
+			// TODO: Add filter inputs when filter UI is implemented
+			// For now, export all users
+
+			// Append form to body and submit
+			$form.appendTo('body').submit();
+
+			// Clean up and reset button
+			setTimeout(function() {
+				$form.remove();
+				$button.prop('disabled', false).text('Export to CSV');
+			}, 1000);
 		},
 
 		/**

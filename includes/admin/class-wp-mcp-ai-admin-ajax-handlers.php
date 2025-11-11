@@ -55,6 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
 				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
+				'wp_ajax_wp_mcp_ai_export_token_usage_csv' => 'handle_export_token_usage_csv',
 			);
 
 			$action         = current_action();
@@ -696,6 +697,52 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'preset_id' => $preset_id,
 				)
 			);
+		}
+
+		/**
+		 * Handle AJAX request to export token usage as CSV.
+		 *
+		 * Note: This doesn't use wp_send_json_* because it sends CSV data.
+		 */
+		public function handle_export_token_usage_csv() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_die( esc_html__( 'Invalid security token.', 'wp-mcp-ai' ) );
+			}
+
+			// Get filters from request.
+			$filters = array();
+			if ( isset( $_POST['tier'] ) && '' !== $_POST['tier'] ) {
+				$filters['tier'] = sanitize_key( $_POST['tier'] );
+			}
+			if ( isset( $_POST['tool'] ) && '' !== $_POST['tool'] ) {
+				$filters['tool'] = sanitize_key( $_POST['tool'] );
+			}
+
+			// Generate CSV content.
+			$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report( $filters );
+
+			if ( empty( $csv ) ) {
+				wp_die( esc_html__( 'Failed to generate CSV export.', 'wp-mcp-ai' ) );
+			}
+
+			// Set headers for file download.
+			$filename = 'token-usage-' . gmdate( 'Y-m-d-H-i-s' ) . '.csv';
+
+			header( 'Content-Type: text/csv; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+
+			// Output CSV content.
+			echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+			wp_die(); // Stop execution after sending file.
 		}
 	}
 }

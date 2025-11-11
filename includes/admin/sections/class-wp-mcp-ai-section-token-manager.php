@@ -220,6 +220,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</table>
 
 				<div style="margin-top: 20px;">
+					<button type="button" id="wp-mcp-ai-export-usage-csv" class="button button-primary">
+						<?php esc_html_e( 'Export to CSV', 'wp-mcp-ai' ); ?>
+					</button>
 					<button type="button" id="wp-mcp-ai-reset-all-usage" class="button button-secondary">
 						<?php esc_html_e( 'Reset All Users\' Token Usage', 'wp-mcp-ai' ); ?>
 					</button>

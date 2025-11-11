@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$tier_expires = get_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires', true );
 
 			if ( $tier_expires && is_numeric( $tier_expires ) ) {
-				if ( $tier_expires < current_time( 'timestamp', true ) ) {
+				if ( $tier_expires < time() ) {
 					// Tier has expired, delete custom tier and proceed to role-based detection.
 					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier' );
 					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires' );
@@ -331,7 +331,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return false;
 		}
 
-		$limits                = self::get_all_limits();
+		$limits               = self::get_all_limits();
 		$limits[ $tool_slug ] = $limit;
 
 		return update_option( self::LIMITS_OPTION, $limits, false );
@@ -391,15 +391,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		$timestamp = current_time( 'mysql', true );
-		$date_key  = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
-		$hour_key  = gmdate( 'Y-m-d-H', current_time( 'timestamp', true ) );
+		$date_key  = gmdate( 'Y-m-d', time() );
+		$hour_key  = gmdate( 'Y-m-d-H', time() );
 
 		// Update totals.
-		$usage[ $tool_slug ]['total_tokens'] = isset( $usage[ $tool_slug ]['total_tokens'] ) ? (int) $usage[ $tool_slug ]['total_tokens'] : 0;
+		$usage[ $tool_slug ]['total_tokens']  = isset( $usage[ $tool_slug ]['total_tokens'] ) ? (int) $usage[ $tool_slug ]['total_tokens'] : 0;
 		$usage[ $tool_slug ]['total_tokens'] += $tokens;
 
 		$usage[ $tool_slug ]['requests'] = isset( $usage[ $tool_slug ]['requests'] ) ? (int) $usage[ $tool_slug ]['requests'] : 0;
-		$usage[ $tool_slug ]['requests']++;
+		++$usage[ $tool_slug ]['requests'];
 
 		$usage[ $tool_slug ]['last_used'] = $timestamp;
 
@@ -430,7 +430,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$usage[ $tool_slug ]['hourly'][ $hour_key ] = (int) $usage[ $tool_slug ]['hourly'][ $hour_key ] + $tokens;
 
 		// Clean up old daily entries (keep only last 30 days).
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp', true ) ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 		foreach ( $usage[ $tool_slug ]['daily'] as $date => $count ) {
 			if ( $date < $cutoff_date ) {
 				unset( $usage[ $tool_slug ]['daily'][ $date ] );
@@ -438,7 +438,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Clean up old hourly entries (keep only last 7 days).
-		$cutoff_hour = gmdate( 'Y-m-d-H', strtotime( '-7 days', current_time( 'timestamp', true ) ) );
+		$cutoff_hour = gmdate( 'Y-m-d-H', strtotime( '-7 days', time() ) );
 		foreach ( $usage[ $tool_slug ]['hourly'] as $hour => $count ) {
 			if ( $hour < $cutoff_hour ) {
 				unset( $usage[ $tool_slug ]['hourly'][ $hour ] );
@@ -487,12 +487,12 @@ class WP_MCP_AI_Tool_Token_Limits {
 				'tool_token_limit_exceeded',
 				'User exceeded daily token limit for tool.',
 				array(
-					'user_id'     => $user_id,
-					'tool_slug'   => $tool_slug,
-					'usage'       => $daily_usage,
-					'limit'       => $limit,
-					'tier'        => $tier,
-					'reset_time'  => $reset_time,
+					'user_id'    => $user_id,
+					'tool_slug'  => $tool_slug,
+					'usage'      => $daily_usage,
+					'limit'      => $limit,
+					'tier'       => $tier,
+					'reset_time' => $reset_time,
 				)
 			);
 
@@ -550,7 +550,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return 0;
 		}
 
-		$date_key = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$date_key = gmdate( 'Y-m-d', time() );
 
 		return isset( $usage[ $tool_slug ]['daily'][ $date_key ] ) ? (int) $usage[ $tool_slug ]['daily'][ $date_key ] : 0;
 	}
@@ -616,7 +616,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		global $wpdb;
 
 		$meta_key    = self::USAGE_META_KEY;
-		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', current_time( 'timestamp', true ) ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( '-30 days', time() ) );
 
 		// Get all users with tool usage data.
 		$user_ids = $wpdb->get_col(
@@ -633,7 +633,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$cleaned = 0;
 
 		foreach ( $user_ids as $user_id ) {
-			$usage  = self::get_user_tool_usage( $user_id );
+			$usage   = self::get_user_tool_usage( $user_id );
 			$updated = false;
 
 			foreach ( $usage as $tool_slug => $tool_data ) {
@@ -691,7 +691,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 * @return string Formatted time string.
 	 */
 	protected static function get_daily_reset_time() {
-		$tomorrow = strtotime( 'tomorrow midnight', current_time( 'timestamp', true ) );
+		$tomorrow = strtotime( 'tomorrow midnight', time() );
 		return gmdate( 'Y-m-d H:i:s', $tomorrow );
 	}
 
@@ -711,13 +711,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// Get the resource manager to determine workload tier.
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 		$tier         = $resource_mgr->get_workload_tier();
-		
+
 		// Estimate tokens in the result.
 		$result_tokens = self::estimate_tokens( $result );
-		
+
 		// Get maximum allowed tokens for tool results based on workload tier.
 		$max_result_tokens = self::get_max_tool_result_tokens( $tier, $tool_slug );
-		
+
 		/**
 		 * Filter the maximum tokens allowed for a tool result.
 		 *
@@ -727,29 +727,29 @@ class WP_MCP_AI_Tool_Token_Limits {
 		 * @param array  $context    Execution context.
 		 */
 		$max_result_tokens = apply_filters( 'wp_mcp_ai_tool_result_max_tokens', $max_result_tokens, $tool_slug, $tier, $context );
-		
+
 		// If result is within budget, return as-is.
 		if ( $result_tokens <= $max_result_tokens ) {
 			return $result;
 		}
-		
+
 		// Orchestration Layer: Predict overflow and adjust.
 		WP_MCP_AI_Logger::log_event(
 			'tool_result_truncated',
 			'Tool result exceeded budget and was truncated by orchestration layer.',
 			array(
-				'tool_slug'         => $tool_slug,
-				'original_tokens'   => $result_tokens,
-				'max_tokens'        => $max_result_tokens,
-				'tier'              => $tier,
-				'truncation_ratio'  => round( $max_result_tokens / $result_tokens, 2 ),
+				'tool_slug'        => $tool_slug,
+				'original_tokens'  => $result_tokens,
+				'max_tokens'       => $max_result_tokens,
+				'tier'             => $tier,
+				'truncation_ratio' => round( $max_result_tokens / $result_tokens, 2 ),
 			)
 		);
-		
+
 		// Truncate the result to fit within budget.
 		return self::truncate_result( $result, $max_result_tokens );
 	}
-	
+
 	/**
 	 * Get maximum allowed tokens for tool results based on workload tier.
 	 *
@@ -764,26 +764,26 @@ class WP_MCP_AI_Tool_Token_Limits {
 			'medium' => 2000,   // Medium tier: moderate.
 			'high'   => 8000,   // High tier: generous.
 		);
-		
+
 		$base_limit = isset( $tier_limits[ $tier ] ) ? $tier_limits[ $tier ] : $tier_limits['medium'];
-		
+
 		// Special handling for known high-output tools.
 		$high_output_tools = array(
-			'run_crawl4ai_job'      => true,
-			'search_content'        => true,
-			'get_recent_posts'      => true,
-			'web_search'            => true,
+			'run_crawl4ai_job'       => true,
+			'search_content'         => true,
+			'get_recent_posts'       => true,
+			'web_search'             => true,
 			'submit_document_prompt' => true,
 		);
-		
+
 		// Allow 2x tokens for high-output tools.
 		if ( isset( $high_output_tools[ $tool_slug ] ) ) {
 			$base_limit *= 2;
 		}
-		
+
 		return $base_limit;
 	}
-	
+
 	/**
 	 * Truncate a result to fit within token budget.
 	 *
@@ -801,7 +801,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			}
 			return $result;
 		}
-		
+
 		// For array results, try to preserve structure.
 		if ( is_array( $result ) ) {
 			// If result has common fields, try intelligent truncation.
@@ -809,17 +809,17 @@ class WP_MCP_AI_Tool_Token_Limits {
 				// Markdown field is often the largest - truncate it.
 				$result['markdown'] = self::truncate_result( $result['markdown'], (int) ( $max_tokens * 0.7 ) );
 			}
-			
+
 			if ( isset( $result['html'] ) && is_string( $result['html'] ) ) {
 				// HTML field can also be large - truncate it.
 				$result['html'] = self::truncate_result( $result['html'], (int) ( $max_tokens * 0.7 ) );
 			}
-			
+
 			if ( isset( $result['content'] ) && is_string( $result['content'] ) ) {
 				// Content field - truncate it.
 				$result['content'] = self::truncate_result( $result['content'], (int) ( $max_tokens * 0.8 ) );
 			}
-			
+
 			// Check if truncation was enough.
 			$result_tokens = self::estimate_tokens( $result );
 			if ( $result_tokens > $max_tokens ) {
@@ -827,15 +827,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 				$json = wp_json_encode( $result );
 				return self::truncate_result( $json, $max_tokens );
 			}
-			
+
 			return $result;
 		}
-		
+
 		// For objects, convert to array and truncate.
 		if ( is_object( $result ) ) {
 			return self::truncate_result( (array) $result, $max_tokens );
 		}
-		
+
 		// For other types, return as-is.
 		return $result;
 	}
@@ -850,7 +850,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 */
 	public static function get_user_tool_hourly_usage( $user_id, $tool_slug, $hour_key = '' ) {
 		if ( empty( $hour_key ) ) {
-			$hour_key = gmdate( 'Y-m-d-H', current_time( 'timestamp', true ) );
+			$hour_key = gmdate( 'Y-m-d-H', time() );
 		}
 
 		$usage = self::get_user_tool_usage( $user_id );
@@ -877,7 +877,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return null;
 		}
 
-		$cutoff = gmdate( 'Y-m-d-H', strtotime( "-{$days} days", current_time( 'timestamp', true ) ) );
+		$cutoff = gmdate( 'Y-m-d-H', strtotime( "-{$days} days", time() ) );
 		$hourly = array_filter(
 			$usage[ $tool_slug ]['hourly'],
 			function ( $key ) use ( $cutoff ) {
@@ -917,7 +917,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		// Get last 7 days of hourly data.
-		$cutoff = gmdate( 'Y-m-d-H', strtotime( '-7 days', current_time( 'timestamp', true ) ) );
+		$cutoff = gmdate( 'Y-m-d-H', strtotime( '-7 days', time() ) );
 		$hourly = array_filter(
 			$usage[ $tool_slug ]['hourly'],
 			function ( $key ) use ( $cutoff ) {
@@ -934,15 +934,15 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$avg_hourly = array_sum( $hourly ) / count( $hourly );
 
 		// Get current daily usage.
-		$today_key   = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$today_key   = gmdate( 'Y-m-d', time() );
 		$today_usage = isset( $usage[ $tool_slug ]['daily'][ $today_key ] ) ? (int) $usage[ $tool_slug ]['daily'][ $today_key ] : 0;
 
 		// Get user's daily limit.
 		$limit = self::get_user_tool_limit( $user_id, $tool_slug );
 
 		// Calculate remaining tokens and hours.
-		$remaining_tokens   = $limit - $today_usage;
-		$hours_until_reset  = self::get_hours_until_daily_reset();
+		$remaining_tokens  = $limit - $today_usage;
+		$hours_until_reset = self::get_hours_until_daily_reset();
 
 		// Forecast.
 		$projected_usage = $today_usage + ( $avg_hourly * $hours_until_reset );
@@ -988,7 +988,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 * @return float Hours remaining.
 	 */
 	protected static function get_hours_until_daily_reset() {
-		$now      = current_time( 'timestamp', true );
+		$now      = time();
 		$tomorrow = strtotime( 'tomorrow midnight', $now );
 		return ( $tomorrow - $now ) / 3600;
 	}
@@ -1058,7 +1058,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 				"- Upgrading to a higher tier\n" .
 				"- Spreading usage throughout the day\n\n" .
 				"Thank you,\n" .
-				"WP oOS Team",
+				'WP oOS Team',
 				'wp-mcp-ai'
 			),
 			$user->display_name,
@@ -1154,8 +1154,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		if ( '' === $tool_slug ) {
 			return array(
-				'total_users'   => 0,
-				'total_tokens'  => 0,
+				'total_users'    => 0,
+				'total_tokens'   => 0,
 				'total_requests' => 0,
 			);
 		}
@@ -1176,8 +1176,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 			);
 		}
 
-		$total_users   = 0;
-		$total_tokens  = 0;
+		$total_users    = 0;
+		$total_tokens   = 0;
 		$total_requests = 0;
 
 		foreach ( $user_ids as $user_id ) {
@@ -1330,7 +1330,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 			++$migrated;
 		}
 
-		update_option( 'wp_mcp_ai_tiered_limits_migrated', current_time( 'timestamp', true ) );
+		update_option( 'wp_mcp_ai_tiered_limits_migrated', time() );
 
 		WP_MCP_AI_Logger::log_event(
 			'tiered_limits_migration',
@@ -1347,5 +1347,133 @@ class WP_MCP_AI_Tool_Token_Limits {
 			),
 			'count'   => $migrated,
 		);
+	}
+
+	/**
+	 * Export usage report as CSV.
+	 *
+	 * @param array $filters Report filters (date_range, tier, tool).
+	 * @return string CSV content.
+	 */
+	public static function export_usage_report( $filters = array() ) {
+		global $wpdb;
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return '';
+		}
+
+		// Get users matching filters.
+		$users = self::get_filtered_users( $filters );
+
+		$csv   = array();
+		$csv[] = array(
+			'User ID',
+			'Username',
+			'Email',
+			'Tier',
+			'Total Tokens',
+			'Total Requests',
+			'Last Used',
+			'Limit',
+			'Usage %',
+		);
+
+		foreach ( $users as $user_id ) {
+			$user = get_userdata( $user_id );
+			if ( ! $user ) {
+				continue;
+			}
+
+			$tier  = self::get_user_tier( $user_id );
+			$limit = self::get_user_tool_limit( $user_id, 'general_tools' );
+			$usage = self::get_user_tool_usage( $user_id );
+
+			$total_tokens   = 0;
+			$total_requests = 0;
+			$last_used      = '';
+
+			foreach ( $usage as $tool_data ) {
+				$total_tokens   += isset( $tool_data['total_tokens'] ) ? (int) $tool_data['total_tokens'] : 0;
+				$total_requests += isset( $tool_data['requests'] ) ? (int) $tool_data['requests'] : 0;
+
+				if ( isset( $tool_data['last_used'] ) && $tool_data['last_used'] > $last_used ) {
+					$last_used = $tool_data['last_used'];
+				}
+			}
+
+			$usage_pct = $limit > 0 ? round( ( $total_tokens / $limit ) * 100, 2 ) : 0;
+
+			$csv[] = array(
+				$user_id,
+				$user->user_login,
+				$user->user_email,
+				$tier,
+				$total_tokens,
+				$total_requests,
+				$last_used,
+				$limit,
+				$usage_pct . '%',
+			);
+		}
+
+		// Convert to CSV string.
+		ob_start();
+		$output = fopen( 'php://output', 'w' );
+		foreach ( $csv as $row ) {
+			fputcsv( $output, $row );
+		}
+		fclose( $output );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Get filtered users based on criteria.
+	 *
+	 * @param array $filters Filters (tier, tool, date_range).
+	 * @return array User IDs.
+	 */
+	protected static function get_filtered_users( $filters = array() ) {
+		global $wpdb;
+
+		$meta_key = self::USAGE_META_KEY;
+
+		// Start with all users who have usage data.
+		$user_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				$meta_key
+			)
+		);
+
+		// Filter by tier if specified.
+		if ( ! empty( $filters['tier'] ) ) {
+			$tier     = sanitize_key( $filters['tier'] );
+			$filtered = array();
+
+			foreach ( $user_ids as $user_id ) {
+				if ( self::get_user_tier( $user_id ) === $tier ) {
+					$filtered[] = $user_id;
+				}
+			}
+
+			$user_ids = $filtered;
+		}
+
+		// Filter by tool if specified.
+		if ( ! empty( $filters['tool'] ) ) {
+			$tool     = sanitize_key( $filters['tool'] );
+			$filtered = array();
+
+			foreach ( $user_ids as $user_id ) {
+				$usage = self::get_user_tool_usage( $user_id );
+				if ( isset( $usage[ $tool ] ) ) {
+					$filtered[] = $user_id;
+				}
+			}
+
+			$user_ids = $filtered;
+		}
+
+		return $user_ids;
 	}
 }
