@@ -334,6 +334,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'query_mesh_intelligent'           => 'wordpress-core',
 				'check_site_security'              => 'wordpress-core',
 				'count_tokens'                     => 'wordpress-core',
+				'npm_install_package'              => 'wordpress-core',
+				'npm_update_package'               => 'wordpress-core',
+				'npm_remove_package'               => 'wordpress-core',
 
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'          => 'wordpress-plugins',
@@ -893,6 +896,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Query_Remote_Site'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
 				'WP_MCP_AI_Tool_Query_Mesh_Intelligent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php',
 				'WP_MCP_AI_Tool_Check_Site_Security'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
+				'WP_MCP_AI_Tool_NPM_Install_Package'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-npm-install-package.php',
+				'WP_MCP_AI_Tool_NPM_Update_Package'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-npm-update-package.php',
+				'WP_MCP_AI_Tool_NPM_Remove_Package'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-npm-remove-package.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
