@@ -13,6 +13,12 @@ All hardcoded constants, timeouts, delays, and default URLs in the plugin can no
 
 ## Table of Contents
 
+- [Admin UI Custom Filters](#admin-ui-custom-filters)
+- [Model Selection Filters](#model-selection-filters)
+- [Agentic Loop Configuration](#agentic-loop-configuration)
+- [Resource Management Filters](#resource-management-filters)
+- [Retry and Error Handling](#retry-and-error-handling)
+- [File and Attachment Limits](#file-and-attachment-limits)
 - [SSE Stream Configuration](#sse-stream-configuration)
 - [Rate Limit Manager Configuration](#rate-limit-manager-configuration)
 - [Token Budget Manager Configuration](#token-budget-manager-configuration)
@@ -20,6 +26,226 @@ All hardcoded constants, timeouts, delays, and default URLs in the plugin can no
 - [Gmail OAuth Endpoints](#gmail-oauth-endpoints)
 - [Other Timing Filters](#other-timing-filters)
 - [Usage Examples](#usage-examples)
+
+---
+
+## Admin UI Custom Filters
+
+**NEW in 1.0.0:** The plugin provides an admin UI for configuring filters without writing code.
+
+Navigate to **Settings → WP oOS → Custom AI Settings (Filters)** to configure these filters through a user-friendly interface. This section allows you to override default values for the most commonly needed filters without writing any PHP code.
+
+### Supported Admin UI Filters
+
+The following filters can be configured through the admin interface:
+
+- `wp_mcp_ai_default_light_model` - Default AI model for simple tasks
+- `wp_mcp_ai_default_advanced_model` - Default AI model for complex tasks
+- `wp_mcp_ai_max_agentic_iterations` - Maximum tool execution loops per request
+- `wp_mcp_ai_resource_max_tokens` - Maximum tokens for AI responses
+- `wp_mcp_ai_resource_request_timeout` - Request timeout based on workload tier
+- `wp_mcp_ai_max_retries` - Maximum retry attempts for failed requests
+- `wp_mcp_ai_max_retry_delay` - Maximum delay between retries
+- `wp_mcp_ai_max_attachment_bytes` - Maximum file attachment size
+- `wp_mcp_ai_default_ollama_endpoint_url` - Default Ollama endpoint URL
+- `wp_mcp_ai_default_lm_studio_endpoint_url` - Default LM Studio endpoint URL
+
+**Note:** Settings configured in the admin UI take effect at priority 5, so programmatic filters at priority 1-4 will override them. Empty fields in the admin UI will use system defaults.
+
+### How It Works
+
+1. **Settings Section** (`class-wp-mcp-ai-section-custom-filters.php`) provides the admin UI
+2. **Filters Applicator** (`class-wp-mcp-ai-custom-filters-applicator.php`) applies saved settings at priority 5
+3. **Settings Registry** (`class-wp-mcp-ai-settings-registry.php`) retrieves values from the database
+
+This allows non-developers to customize AI behavior without touching code, while developers can still override these settings programmatically if needed.
+
+---
+
+## Model Selection Filters
+
+### `wp_mcp_ai_default_light_model`
+
+Filter the default AI model used for simple tasks.
+
+**Default:** `gpt-4o-mini`  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$model` (string) - Default light model identifier.
+
+**Example:**
+```php
+// Use a different light model
+add_filter( 'wp_mcp_ai_default_light_model', function( $model ) {
+    return 'gpt-3.5-turbo';
+} );
+```
+
+---
+
+### `wp_mcp_ai_default_advanced_model`
+
+Filter the default AI model used for complex tasks.
+
+**Default:** `gpt-4o`  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$model` (string) - Default advanced model identifier.
+
+**Example:**
+```php
+// Use a different advanced model
+add_filter( 'wp_mcp_ai_default_advanced_model', function( $model ) {
+    return 'gpt-4-turbo';
+} );
+```
+
+---
+
+## Agentic Loop Configuration
+
+### `wp_mcp_ai_max_agentic_iterations`
+
+Filter the maximum number of tool execution loops per chat request. This prevents infinite loops when the AI repeatedly calls tools.
+
+**Default:** `5`  
+**Range:** 1-50  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$max_iterations` (int) - Maximum iterations.
+- `$assistant_config` (array) - Assistant configuration.
+
+**Example:**
+```php
+// Allow more iterations for complex workflows
+add_filter( 'wp_mcp_ai_max_agentic_iterations', function( $iterations, $config ) {
+    return 10;
+}, 10, 2 );
+```
+
+---
+
+## Resource Management Filters
+
+### `wp_mcp_ai_resource_max_tokens`
+
+Filter the maximum tokens for AI responses based on workload tier.
+
+**Default:** Auto-detected based on tier  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$max_tokens` (int) - Recommended maximum tokens.
+- `$tier` (string) - Current workload tier ('low', 'medium', 'high').
+
+**Example:**
+```php
+// Set a custom token limit
+add_filter( 'wp_mcp_ai_resource_max_tokens', function( $tokens, $tier ) {
+    return 8000;
+}, 10, 2 );
+```
+
+---
+
+### `wp_mcp_ai_resource_request_timeout`
+
+Filter the request timeout based on workload tier.
+
+**Default:** 30-120 seconds based on tier  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$timeout` (int) - Recommended timeout in seconds.
+- `$tier` (string) - Current workload tier.
+- `$max_execution_time` (int) - PHP max_execution_time setting.
+
+**Example:**
+```php
+// Set a longer timeout for complex requests
+add_filter( 'wp_mcp_ai_resource_request_timeout', function( $timeout, $tier, $max_exec ) {
+    return 180;
+}, 10, 3 );
+```
+
+---
+
+## Retry and Error Handling
+
+### `wp_mcp_ai_max_retries`
+
+Filter the maximum number of retry attempts for failed API requests.
+
+**Default:** `3`  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$retries` (int) - Maximum retries.
+- `$options` (array) - Request options.
+
+**Example:**
+```php
+// Increase retries for better reliability
+add_filter( 'wp_mcp_ai_max_retries', function( $retries, $options ) {
+    return 5;
+}, 10, 2 );
+```
+
+---
+
+### `wp_mcp_ai_max_retry_delay`
+
+Filter the maximum delay between retry attempts.
+
+**Default:** `60` (60 seconds)  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$delay` (int) - Maximum delay in seconds.
+- `$options` (array) - Request options.
+
+**Example:**
+```php
+// Allow longer delays between retries
+add_filter( 'wp_mcp_ai_max_retry_delay', function( $delay, $options ) {
+    return 90;
+}, 10, 2 );
+```
+
+---
+
+## File and Attachment Limits
+
+### `wp_mcp_ai_max_attachment_bytes`
+
+Filter the maximum size for file attachments in chat messages.
+
+**Default:** `10485760` (10MB)  
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
+
+**Parameters:**
+- `$bytes` (int) - Maximum size in bytes.
+- `$attachment_id` (int) - Attachment post ID.
+- `$usage` (string) - Usage context ('chat', 'assistant', etc.).
+
+**Example:**
+```php
+// Allow larger attachments
+add_filter( 'wp_mcp_ai_max_attachment_bytes', function( $bytes, $attachment_id, $usage ) {
+    return 20971520; // 20MB
+}, 10, 3 );
+```
 
 ---
 
@@ -261,7 +487,8 @@ add_filter( 'wp_mcp_ai_token_budget_default_limit', function( $limit, $model ) {
 Filter the default Ollama endpoint URL.
 
 **Default:** `http://localhost:11434`  
-**Since:** 1.0.0
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
 
 **Parameters:**
 - `$url` (string) - Default URL.
@@ -281,7 +508,8 @@ add_filter( 'wp_mcp_ai_default_ollama_endpoint_url', function( $url ) {
 Filter the default LM Studio endpoint URL.
 
 **Default:** `http://localhost:1234/v1`  
-**Since:** 1.0.0
+**Since:** 1.0.0  
+**Admin UI:** Yes (Custom AI Settings tab)
 
 **Parameters:**
 - `$url` (string) - Default URL.
@@ -422,6 +650,22 @@ add_filter( 'wp_mcp_ai_federation_peer_verification_delay', function( $delay ) {
 
 ## Usage Examples
 
+### Using the Admin UI (Recommended for Non-Developers)
+
+Navigate to **Settings → WP oOS → Custom AI Settings (Filters)** and configure:
+- AI model selection (light/advanced)
+- Agentic iterations limit
+- Resource management (tokens, timeouts)
+- Retry settings
+- File attachment size limit
+- Local AI endpoint URLs (Ollama, LM Studio)
+
+**Advantages:**
+- No code required
+- User-friendly interface
+- Input validation included
+- Changes persist in database
+
 ### Environment-Specific Configuration
 
 ```php
@@ -500,6 +744,35 @@ add_filter( 'wp_mcp_ai_federation_peer_verification_delay', function() {
 } );
 ```
 
+### Overriding Admin UI Settings Programmatically
+
+Admin UI settings are applied at priority 5. To override them programmatically, use priority 1-4:
+
+```php
+// This will override admin UI settings
+add_filter( 'wp_mcp_ai_default_light_model', function( $model ) {
+    return 'gpt-3.5-turbo'; // Always use this model regardless of admin setting
+}, 1 ); // Priority 1 runs before admin UI's priority 5
+
+// This will NOT override admin UI settings (priority 10 is after priority 5)
+add_filter( 'wp_mcp_ai_default_advanced_model', function( $model ) {
+    return 'claude-3-opus'; // Will only apply if admin UI setting is empty
+}, 10 );
+```
+
+### Combining Admin UI with Programmatic Filters
+
+```php
+// Use admin UI for basic settings, code for complex logic
+add_filter( 'wp_mcp_ai_max_agentic_iterations', function( $iterations, $config ) {
+    // Admin UI provides default, but we adjust based on assistant type
+    if ( isset( $config['assistant_type'] ) && 'complex' === $config['assistant_type'] ) {
+        return max( $iterations, 15 ); // Ensure at least 15 iterations for complex assistants
+    }
+    return $iterations; // Use admin UI setting for normal assistants
+}, 20, 2 ); // Priority 20 runs after admin UI priority 5
+```
+
 ---
 
 ## Best Practices
@@ -541,4 +814,16 @@ add_filter( 'wp_mcp_ai_federation_peer_verification_delay', function() {
 
 ## Changelog
 
-- **1.0.0** - Initial release with 18 dynamic configuration filters
+- **1.0.0** - Initial release with 28+ dynamic configuration filters
+  - Added admin UI for 10 most common filters (Custom AI Settings section)
+  - Model selection filters (light/advanced models)
+  - Agentic loop configuration
+  - Resource management (tokens, timeouts)
+  - Retry and error handling
+  - File attachment limits
+  - SSE stream configuration
+  - Rate limit manager
+  - Token budget manager
+  - Default endpoint URLs (Ollama, LM Studio, WordPress.com)
+  - Gmail OAuth endpoints
+  - Timing filters
