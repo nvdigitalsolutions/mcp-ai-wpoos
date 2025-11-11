@@ -77,6 +77,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			. '.wp-mcp-ai-cron-manager__args{font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;}'
 			. '.wp-mcp-ai-cron-manager__status{display:inline-block;padding:0.25rem 0.5rem;border-radius:3px;font-size:0.75rem;font-weight:600;}'
 			. '.wp-mcp-ai-cron-manager__status--active{background:#d5f0db;color:#0a5f1a;}'
+			. '.wp-mcp-ai-cron-manager__status--executed{background:#e0f2ff;color:#0056a0;}'
 			. '.wp-mcp-ai-cron-manager__status--inactive{background:#f0f0f1;color:#50575e;}'
 			. '.wp-mcp-ai-cron-manager__status--recurring{background:#e5f2ff;color:#0c5ba0;}'
 			. '.wp-mcp-ai-cron-manager__status--oneoff{background:#fef7e0;color:#8b6c00;}';
@@ -253,6 +254,11 @@ class WP_MCP_AI_Admin_Cron_Manager {
 							$schedule   = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
 							$is_active  = (bool) $event;
 							$is_recurring = ! ( 'single' === $schedule || '' === $schedule );
+							$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
+							
+							// Determine if job was executed (not active but timestamp is in the past).
+							$was_executed = ! $is_active && $first_timestamp > 0 && $first_timestamp < time();
+							
 							$creator    = '';
 							$created_by = isset( $job['created_by'] ) ? (int) $job['created_by'] : 0;
 
@@ -275,6 +281,8 @@ class WP_MCP_AI_Admin_Cron_Manager {
 								<td>
 									<?php if ( $is_active ) : ?>
 										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--active"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+									<?php elseif ( $was_executed ) : ?>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--executed"><?php esc_html_e( 'Executed', 'wp-mcp-ai' ); ?></span>
 									<?php else : ?>
 										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--inactive"><?php esc_html_e( 'Inactive', 'wp-mcp-ai' ); ?></span>
 									<?php endif; ?>
@@ -291,6 +299,12 @@ class WP_MCP_AI_Admin_Cron_Manager {
 											echo esc_html( sprintf( __( '%s ago', 'wp-mcp-ai' ), $time_diff ) );
 										}
 										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $next_run ) ) . '</small>';
+									} elseif ( $was_executed && $first_timestamp > 0 ) {
+										// Show when the job was scheduled to run for executed jobs.
+										$time_diff = human_time_diff( $first_timestamp, time() );
+										/* translators: %s: human-readable time difference */
+										echo esc_html( sprintf( __( 'Ran %s ago', 'wp-mcp-ai' ), $time_diff ) );
+										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $first_timestamp ) ) . '</small>';
 									} else {
 										esc_html_e( 'Not scheduled', 'wp-mcp-ai' );
 									}
