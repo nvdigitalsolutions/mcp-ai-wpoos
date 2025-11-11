@@ -299,11 +299,93 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		private function get_health_status_content() {
 			try {
-				if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Health status monitoring is not available.', 'wp-mcp-ai' ) . '</p></div>';
+				// Load performance reporter.
+				if ( ! class_exists( 'WP_MCP_AI_Performance_Reporter' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 				}
 
-				return WP_MCP_AI_Orchestration_Renderer::render_health_status();
+				// Get current metrics.
+				$report = WP_MCP_AI_Performance_Reporter::generate_report(
+					array(
+						'time_period' => '-7 days',
+					)
+				);
+
+				ob_start();
+				?>
+				<!-- Overall Health Status -->
+				<div class="wp-mcp-ai-performance-dashboard">
+					<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
+					<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
+						<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
+						<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
+					</div>
+
+					<!-- Summary Stats -->
+					<div class="performance-summary">
+						<div class="stat-card">
+							<h3><?php esc_html_e( 'Components', 'wp-mcp-ai' ); ?></h3>
+							<div class="stat-value"><?php echo esc_html( $report['summary']['total_components'] ); ?></div>
+						</div>
+						<div class="stat-card">
+							<h3><?php esc_html_e( 'Alerts', 'wp-mcp-ai' ); ?></h3>
+							<div class="stat-value"><?php echo esc_html( $report['summary']['total_alerts'] ); ?></div>
+						</div>
+						<div class="stat-card">
+							<h3><?php esc_html_e( 'Recommendations', 'wp-mcp-ai' ); ?></h3>
+							<div class="stat-value"><?php echo esc_html( $report['summary']['total_recommendations'] ); ?></div>
+						</div>
+					</div>
+				</div>
+				
+				<style>
+					.wp-mcp-ai-performance-dashboard {
+						background: #fff;
+						padding: 20px;
+						margin: 20px 0;
+						border: 1px solid #ccd0d4;
+						box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					}
+					.health-status {
+						display: flex;
+						align-items: center;
+						font-size: 18px;
+						margin: 15px 0;
+					}
+					.health-status-good { color: #46b450; }
+					.health-status-fair { color: #ffb900; }
+					.health-status-warning { color: #f0b849; }
+					.health-status-critical { color: #dc3232; }
+					.health-icon {
+						font-size: 24px;
+						margin-right: 10px;
+					}
+					.performance-summary {
+						display: grid;
+						grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+						gap: 15px;
+						margin-top: 20px;
+					}
+					.stat-card {
+						background: #f8f9fa;
+						padding: 15px;
+						border-radius: 4px;
+						text-align: center;
+					}
+					.stat-card h3 {
+						margin: 0 0 10px;
+						font-size: 14px;
+						color: #666;
+					}
+					.stat-value {
+						font-size: 32px;
+						font-weight: bold;
+						color: #2271b1;
+					}
+				</style>
+				<?php
+				return ob_get_clean();
+
 			} catch ( Exception $e ) {
 				// Log error if logger is available.
 				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
@@ -553,6 +635,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		public function validate( $input ) {
 			// All fields are boolean checkboxes or sliders, no special validation needed.
 			return $input;
+		}
+
+		/**
+		 * Get health icon for status.
+		 *
+		 * @param string $status Health status.
+		 * @return string Icon name.
+		 */
+		protected function get_health_icon( $status ) {
+			$icons = array(
+				'good'     => 'yes-alt',
+				'fair'     => 'info',
+				'warning'  => 'warning',
+				'critical' => 'dismiss',
+			);
+
+			return isset( $icons[ $status ] ) ? $icons[ $status ] : 'info';
 		}
 	}
 }
