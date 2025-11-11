@@ -372,6 +372,14 @@
 				}, {
 					success: function(response) {
 						if (response.success) {
+							// Update the hidden field value immediately so if user clicks "Save Changes" 
+							// before reload, the correct preset will be saved
+							$('#orchestration_preset').val(presetId);
+							
+							// Update the active preset indicator text immediately
+							const presetName = $('.preset-card[data-preset="' + presetId + '"] h4').text();
+							$('.current-preset-name').text(presetName);
+							
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
 							setTimeout(function() {
 								window.location.reload();
