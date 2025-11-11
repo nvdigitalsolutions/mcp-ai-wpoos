@@ -97,6 +97,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
+				'cron_job_retention_period'       => array(
+					'type'        => 'select',
+					'label'       => __( 'Cron Job History Retention', 'wp-mcp-ai' ),
+					'description' => __( 'How long to keep executed cron jobs visible in the Cron Manager after they run. This allows you to verify test jobs and review execution history.', 'wp-mcp-ai' ),
+					'options'     => array(
+						'1'     => __( '1 hour - Quick tests only', 'wp-mcp-ai' ),
+						'6'     => __( '6 hours - Short-term testing', 'wp-mcp-ai' ),
+						'24'    => __( '24 hours - Standard (Recommended)', 'wp-mcp-ai' ),
+						'72'    => __( '3 days - Extended review', 'wp-mcp-ai' ),
+						'168'   => __( '1 week - Full audit trail', 'wp-mcp-ai' ),
+						'720'   => __( '30 days - Maximum retention', 'wp-mcp-ai' ),
+						'0'     => __( 'Never - Remove immediately', 'wp-mcp-ai' ),
+					),
+					'default'     => '24',
+				),
 				'slider_section_health'           => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Health Monitoring Thresholds', 'wp-mcp-ai' ) . '</h3>',
