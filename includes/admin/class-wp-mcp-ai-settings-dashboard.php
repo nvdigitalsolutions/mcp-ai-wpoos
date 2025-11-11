@@ -215,29 +215,29 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			$plugin_url = plugin_dir_url( dirname( dirname( __FILE__ ) ) );
 
-			// Enqueue dashboard styles.
+			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/css/settings-dashboard.css',
 				array(),
-				WP_MCP_AI_VERSION
+				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/css/settings-dashboard.css' )
 			);
 
-			// Enqueue AJAX error service (must be loaded before other scripts).
+			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-ajax-error-service',
 				$plugin_url . 'assets/js/ajax-error-service.js',
 				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
+				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/js/ajax-error-service.js' ),
 				true
 			);
 
-			// Enqueue dashboard scripts with jQuery UI Sortable dependency.
+			// Enqueue dashboard scripts with jQuery UI Sortable dependency and filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/js/settings-dashboard.js',
 				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
-				WP_MCP_AI_VERSION,
+				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/js/settings-dashboard.js' ),
 				true
 			);
 

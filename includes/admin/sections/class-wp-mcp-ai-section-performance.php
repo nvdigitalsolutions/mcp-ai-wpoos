@@ -105,6 +105,9 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			)
 		);
 
+		// Get orchestration health status for System Health display.
+		$orchestration_health = $this->get_orchestration_health_status();
+
 		?>
 		<div class="wrap wp-mcp-ai-performance-section">
 			<h1><?php esc_html_e( 'Performance Monitoring', 'wp-mcp-ai' ); ?></h1>
@@ -115,10 +118,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			<!-- Overall Health Status -->
 			<div class="wp-mcp-ai-performance-dashboard">
 				<h2><?php esc_html_e( 'System Health', 'wp-mcp-ai' ); ?></h2>
-				<div class="health-status health-status-<?php echo esc_attr( $report['overall_health'] ); ?>">
-					<span class="health-icon dashicons dashicons-<?php echo esc_attr( $this->get_health_icon( $report['overall_health'] ) ); ?>"></span>
-					<span class="health-label"><?php echo esc_html( ucfirst( $report['overall_health'] ) ); ?></span>
-				</div>
+				<?php $this->render_orchestration_health_status( $orchestration_health ); ?>
 
 				<!-- Summary Stats -->
 				<div class="performance-summary">
@@ -285,19 +285,58 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 				border: 1px solid #ccd0d4;
 				box-shadow: 0 1px 1px rgba(0,0,0,.04);
 			}
+			.wp-mcp-ai-orchestration-health-banner {
+				background: #f8f9fa;
+				padding: 15px;
+				margin: 15px 0;
+				border-radius: 4px;
+				border-left: 4px solid #ccd0d4;
+			}
+			.wp-mcp-ai-orchestration-health-banner.status-healthy {
+				border-left-color: #46b450;
+			}
+			.wp-mcp-ai-orchestration-health-banner.status-warning {
+				border-left-color: #f0b849;
+			}
+			.wp-mcp-ai-orchestration-health-banner.status-critical {
+				border-left-color: #dc3232;
+			}
+			.wp-mcp-ai-orchestration-health-banner.status-unknown {
+				border-left-color: #72aee6;
+			}
 			.health-status {
 				display: flex;
 				align-items: center;
 				font-size: 18px;
-				margin: 15px 0;
+				margin: 0 0 15px 0;
 			}
+			.health-status-healthy { color: #46b450; }
 			.health-status-good { color: #46b450; }
 			.health-status-fair { color: #ffb900; }
 			.health-status-warning { color: #f0b849; }
 			.health-status-critical { color: #dc3232; }
+			.health-status-unknown { color: #72aee6; }
 			.health-icon {
 				font-size: 24px;
 				margin-right: 10px;
+			}
+			.health-label {
+				font-weight: 600;
+			}
+			.health-metrics {
+				display: flex;
+				gap: 20px;
+				flex-wrap: wrap;
+				font-size: 14px;
+			}
+			.health-metrics .metric {
+				display: flex;
+				align-items: center;
+				gap: 5px;
+				color: #666;
+			}
+			.health-metrics .metric .dashicons {
+				font-size: 16px;
 			}
 			.performance-summary {
 				display: grid;
@@ -532,5 +571,121 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 		);
 
 		return isset( $icons[ $trend ] ) ? $icons[ $trend ] : $trend;
+	}
+
+	/**
+	 * Get orchestration health status with error handling.
+	 *
+	 * @return array Health status array with status, label, icon, and metrics.
+	 */
+	protected function get_orchestration_health_status() {
+		// Default fallback health status.
+		$default_health = array(
+			'status'  => 'unknown',
+			'label'   => __( 'Unknown', 'wp-mcp-ai' ),
+			'icon'    => '○',
+			'metrics' => array(
+				'memory'       => array(
+					'percent' => 0,
+					'usage'   => 0,
+					'limit'   => 0,
+				),
+				'error_rate'   => 0,
+				'avg_response' => 0,
+			),
+		);
+
+		try {
+			// Check if the Orchestration Health Service exists.
+			if ( ! class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+				return $default_health;
+			}
+
+			// Get health status from the orchestration service.
+			$health = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+
+			// Validate the response.
+			if ( ! is_array( $health ) || ! isset( $health['status'] ) ) {
+				return $default_health;
+			}
+
+			return $health;
+
+		} catch ( Exception $e ) {
+			// Log error if logging is available.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_warning' ) ) {
+				try {
+					WP_MCP_AI_Logger::log_warning(
+						'Failed to get orchestration health status: ' . $e->getMessage(),
+						array(
+							'component' => 'performance_section',
+							'method'    => 'get_orchestration_health_status',
+							'exception' => $e->getMessage(),
+						)
+					);
+				} catch ( Exception $log_error ) {
+					// Silently fail on logging errors.
+				}
+			}
+
+			return $default_health;
+		}
+	}
+
+	/**
+	 * Render orchestration health status display.
+	 *
+	 * @param array $health Health status array.
+	 */
+	protected function render_orchestration_health_status( $health ) {
+		$status  = isset( $health['status'] ) ? sanitize_key( $health['status'] ) : 'unknown';
+		$label   = isset( $health['label'] ) ? sanitize_text_field( $health['label'] ) : __( 'Unknown', 'wp-mcp-ai' );
+		$icon    = isset( $health['icon'] ) ? sanitize_text_field( $health['icon'] ) : '○';
+		$metrics = isset( $health['metrics'] ) && is_array( $health['metrics'] ) ? $health['metrics'] : array();
+
+		$memory_percent = isset( $metrics['memory']['percent'] ) ? floatval( $metrics['memory']['percent'] ) : 0;
+		$error_rate     = isset( $metrics['error_rate'] ) ? floatval( $metrics['error_rate'] ) : 0;
+		$avg_response   = isset( $metrics['avg_response'] ) ? floatval( $metrics['avg_response'] ) : 0;
+
+		// Map orchestration status to health icon.
+		$health_icon_map = array(
+			'healthy'  => 'yes-alt',
+			'warning'  => 'warning',
+			'critical' => 'dismiss',
+			'unknown'  => 'info',
+		);
+
+		$dashicon = isset( $health_icon_map[ $status ] ) ? $health_icon_map[ $status ] : 'info';
+		?>
+		<div class="wp-mcp-ai-orchestration-health-banner status-<?php echo esc_attr( $status ); ?>">
+			<div class="health-status health-status-<?php echo esc_attr( $status ); ?>">
+				<span class="health-icon dashicons dashicons-<?php echo esc_attr( $dashicon ); ?>"></span>
+				<span class="health-label"><?php echo esc_html( $label ); ?></span>
+			</div>
+			<div class="health-metrics">
+				<span class="metric">
+					<span class="dashicons dashicons-performance"></span>
+					<?php
+					/* translators: %s: memory usage percentage */
+					printf( esc_html__( 'Memory: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $memory_percent, 1 ) ) );
+					?>
+				</span>
+				<span class="metric">
+					<span class="dashicons dashicons-warning"></span>
+					<?php
+					/* translators: %s: error rate percentage */
+					printf( esc_html__( 'Errors: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $error_rate, 1 ) ) );
+					?>
+				</span>
+				<span class="metric">
+					<span class="dashicons dashicons-clock"></span>
+					<?php
+					/* translators: %s: average response time in seconds */
+					printf( esc_html__( 'Avg Response: %ss', 'wp-mcp-ai' ), esc_html( number_format( $avg_response, 1 ) ) );
+					?>
+				</span>
+			</div>
+		</div>
+		<?php
 	}
 }
