@@ -214,13 +214,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			$plugin_url = plugin_dir_url( dirname( dirname( __FILE__ ) ) );
+			$plugin_dir = dirname( dirname( dirname( __FILE__ ) ) ); // Go up from includes/admin/ to plugin root.
 
 			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/css/settings-dashboard.css',
 				array(),
-				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/css/settings-dashboard.css' )
+				file_exists( $plugin_dir . '/assets/css/settings-dashboard.css' ) ? filemtime( $plugin_dir . '/assets/css/settings-dashboard.css' ) : '1.0.0'
 			);
 
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
@@ -228,7 +229,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'wp-mcp-ai-ajax-error-service',
 				$plugin_url . 'assets/js/ajax-error-service.js',
 				array( 'jquery' ),
-				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/js/ajax-error-service.js' ),
+				file_exists( $plugin_dir . '/assets/js/ajax-error-service.js' ) ? filemtime( $plugin_dir . '/assets/js/ajax-error-service.js' ) : '1.0.0',
 				true
 			);
 
@@ -237,7 +238,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'wp-mcp-ai-dashboard',
 				$plugin_url . 'assets/js/settings-dashboard.js',
 				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
-				filemtime( dirname( dirname( __FILE__ ) ) . '/assets/js/settings-dashboard.js' ),
+				file_exists( $plugin_dir . '/assets/js/settings-dashboard.js' ) ? filemtime( $plugin_dir . '/assets/js/settings-dashboard.js' ) : '1.0.0',
 				true
 			);
 
