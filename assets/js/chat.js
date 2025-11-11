@@ -30,6 +30,16 @@
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
+    // Retry configuration for failed network requests
+    const MAX_RETRY_ATTEMPTS = 3;
+    const RETRY_DELAY_MS = 1000; // Initial retry delay
+    const RETRY_BACKOFF_MULTIPLIER = 2; // Exponential backoff multiplier
+
+    /**
+     * Get localStorage key for a specific assistant.
+     * @param {string} assistantId - The assistant ID.
+     * @return {string} The storage key.
+     */
     function getStorageKey(assistantId) {
         return STORAGE_KEY_PREFIX + assistantId;
     }
