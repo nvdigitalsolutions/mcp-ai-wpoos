@@ -164,6 +164,9 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 
 		/**
 		 * Remove entries for jobs that are no longer scheduled.
+		 *
+		 * Jobs are kept for 24 hours after their scheduled time to allow users
+		 * to see recently executed one-time jobs and verify test jobs ran successfully.
 		 */
 		public static function maybe_prune_jobs() {
 			$jobs    = self::load_jobs();
@@ -182,8 +185,15 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 
 				$event = wp_get_scheduled_event( $hook, $args );
 				if ( ! $event ) {
-					unset( $jobs[ $job_id ] );
-					$changed = true;
+					// Only remove the job if it's been more than 24 hours since its scheduled time.
+					// This allows users to see recently executed one-time jobs.
+					$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
+					$retention_period = 24 * HOUR_IN_SECONDS;
+					
+					if ( $first_timestamp > 0 && ( time() - $first_timestamp ) > $retention_period ) {
+						unset( $jobs[ $job_id ] );
+						$changed = true;
+					}
 				}
 			}
 
