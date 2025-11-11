@@ -84,8 +84,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				);
 			}
 
-			// Clean any leftover output buffer.
-			$this->clean_all_buffers();
+			// Note: No buffer cleanup here - if handler succeeded, wp_send_json_*()
+			// already called wp_die() and execution stopped. Cleaning buffers here
+			// would discard the JSON response, causing WordPress to return "0".
 		}
 
 		/**
