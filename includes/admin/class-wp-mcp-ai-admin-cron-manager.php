@@ -181,7 +181,56 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			<div class="wp-mcp-ai-cron-manager__intro">
 				<p><strong><?php esc_html_e( 'About Cron Manager', 'wp-mcp-ai' ); ?></strong></p>
 				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through WP oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Use the tools below to monitor active schedules, view task details, and remove events that are no longer needed. WordPress will automatically clean up completed one-time events.', 'wp-mcp-ai' ); ?></p>
+				<p><?php
+					/* translators: %s: retention period in hours */
+					$retention_hours = 24; // Default value.
+					if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+						$retention_hours = WP_MCP_AI_Settings_Registry::get_setting( 'cron_job_retention_period', 24 );
+					}
+					$retention_hours = absint( $retention_hours );
+					
+					if ( $retention_hours > 0 ) {
+						if ( $retention_hours < 24 ) {
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of hours */
+									_n(
+										'Test jobs and completed one-time events remain visible for %d hour after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+										'Test jobs and completed one-time events remain visible for %d hours after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+										$retention_hours,
+										'wp-mcp-ai'
+									),
+									$retention_hours
+								)
+							);
+						} elseif ( $retention_hours >= 24 && $retention_hours < 168 ) {
+							$retention_days = floor( $retention_hours / 24 );
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of days */
+									_n(
+										'Test jobs and completed one-time events remain visible for %d day after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+										'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+										$retention_days,
+										'wp-mcp-ai'
+									),
+									$retention_days
+								)
+							);
+						} else {
+							$retention_days = floor( $retention_hours / 24 );
+							echo esc_html(
+								sprintf(
+									/* translators: %d: number of days */
+									__( 'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.', 'wp-mcp-ai' ),
+									$retention_days
+								)
+							);
+						}
+					} else {
+						esc_html_e( 'Completed one-time events are removed immediately after execution. You can enable job retention in Settings → Orchestration Layer to keep them visible for testing and verification.', 'wp-mcp-ai' );
+					}
+				?></p>
 			</div>
 
 			<?php
@@ -237,7 +286,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 						<li><strong>get_cron_job</strong> - <?php esc_html_e( 'Get details about a specific scheduled task', 'wp-mcp-ai' ); ?></li>
 						<li><strong>delete_cron_job</strong> - <?php esc_html_e( 'Remove a scheduled task', 'wp-mcp-ai' ); ?></li>
 					</ul>
-					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here for monitoring and management.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here immediately for monitoring and management. Test jobs and completed one-time events will remain visible for the configured retention period, allowing you to verify successful execution.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php else : ?>
 				<table class="wp-mcp-ai-cron-manager__table">
