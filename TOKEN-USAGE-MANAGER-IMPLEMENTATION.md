@@ -74,18 +74,35 @@ Predictive capabilities have been added to prevent limit exhaustion:
 - Automatically registered on plugin init
 - Cleanup on plugin deactivation
 
-### Phase 4: Admin UI Enhancements 🔄 PARTIALLY COMPLETED
+### Phase 4: Admin UI Enhancements ✅ COMPLETED
 
 **Completed**
 - Tier badge display in per-user view
 - Color-coded tier indicators (free: gray, pro: blue, enterprise: green)
 - Bulk tier assignment functionality via `bulk_set_user_tiers()`
-
-**Pending**
 - CSV export for usage reports
-- AJAX handlers for user details expansion
-- AJAX handlers for usage reset operations
-- Advanced tier management UI
+- Bulk tier management UI with checkboxes and toolbar
+- AJAX handlers for user details expansion (client-side toggle)
+- AJAX handlers for usage reset operations (improved to accept user_id)
+
+**Features Implemented**
+- CSV Export:
+  - Export all users or filtered by tier/tool
+  - Includes: User ID, Username, Email, Tier, Total Tokens, Total Requests, Last Used, Limit, Usage %
+  - Download as timestamped CSV file
+  - Admin-only access with nonce verification
+
+- Bulk Tier Management:
+  - Select individual or all users via checkboxes
+  - Bulk assign Free, Pro, or Enterprise tier
+  - Confirmation dialog before applying
+  - Success/error feedback
+  - Automatic page reload after assignment
+
+- User Details:
+  - Expandable/collapsible per-user details
+  - Shows detailed breakdown by provider and model
+  - Client-side toggle (no AJAX required)
 
 ### Phase 5: REST API Endpoints ✅ COMPLETED
 
@@ -142,16 +159,40 @@ Four REST endpoints have been added for programmatic access:
    - Added hourly tracking support
    - Implemented forecasting and alert system
    - Added bulk operations and migration support
-   - ~500 lines of new code
+   - **NEW:** Added `export_usage_report()` method for CSV export
+   - **NEW:** Added `get_filtered_users()` helper method for filtering
+   - ~650 lines of new code
 
 2. **`includes/admin/sections/class-wp-mcp-ai-section-token-manager.php`**
    - Added tier column to user table
    - Added tier badge styling
    - Updated colspan for new column
+   - **NEW:** Added bulk tier management toolbar with checkbox column
+   - **NEW:** Added "Export to CSV" button
+   - **NEW:** Added "Select All" checkbox for bulk operations
 
 3. **`includes/class-wp-mcp-ai-rest.php`**
    - Added token manager REST endpoint registration
    - Loaded REST token manager class
+
+4. **`includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php`**
+   - **NEW:** Added `handle_export_token_usage_csv()` handler
+   - **NEW:** Added `handle_bulk_assign_tier()` handler
+   - **IMPROVED:** Updated `handle_reset_user_token_usage()` to accept user_id parameter
+   - ~100 lines of new code
+
+5. **`includes/admin/class-wp-mcp-ai-settings-dashboard.php`**
+   - **NEW:** Registered CSV export AJAX action
+   - **NEW:** Registered bulk tier assignment AJAX action
+
+6. **`assets/js/settings-dashboard.js`**
+   - **NEW:** Added `handleExportUsageCSV()` method for CSV downloads
+   - **NEW:** Added `handleSelectAllUsers()` for select all functionality
+   - **NEW:** Added `handleUserCheckboxChange()` for individual selections
+   - **NEW:** Added `handleBulkTierSelectorChange()` for tier selector
+   - **NEW:** Added `handleApplyBulkTier()` for bulk tier assignment
+   - **NEW:** Added `updateBulkActionButton()` for button state management
+   - ~150 lines of new code
 
 ### New Files
 
@@ -174,6 +215,13 @@ Four REST endpoints have been added for programmatic access:
    - User access restriction tests
    - ~190 lines
 
+4. **`tests/test-csv-export.php`**
+   - **NEW:** Comprehensive tests for CSV export functionality
+   - Tests export format, permissions, filtering
+   - Tests tier and tool filters
+   - Tests percentage calculations
+   - 8 test methods, ~270 lines
+
 ## Filter and Action Hooks
 
 ### New Filters
@@ -193,11 +241,14 @@ Four REST endpoints have been added for programmatic access:
 
 - `wp_mcp_ai_user_tier_changed` - Fires when user's tier changes
 - `wp_mcp_ai_limit_alert_sent` - Fires after limit alert email is sent
+- **NEW:** `wp_ajax_wp_mcp_ai_export_token_usage_csv` - AJAX action for CSV export
+- **NEW:** `wp_ajax_wp_mcp_ai_bulk_assign_tier` - AJAX action for bulk tier assignment
 
 ### Modified Actions
 
 - `wp_mcp_ai_tool_token_limit_exceeded` - Now includes `$tier` parameter
 - `wp_mcp_ai_hourly_forecast_check` - New cron hook
+- **IMPROVED:** `wp_ajax_wp_mcp_ai_reset_user_token_usage` - Now accepts user_id parameter
 
 ## Database Schema Changes
 
@@ -252,6 +303,31 @@ curl -X GET \
 ```
 
 ## PHP Usage Examples
+
+### CSV Export
+
+```php
+// Export all users (admin only)
+$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report();
+
+// Export users filtered by tier
+$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report(
+    array( 'tier' => 'pro' )
+);
+
+// Export users filtered by tool
+$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report(
+    array( 'tool' => 'run_crawl4ai_job' )
+);
+
+// Export with multiple filters
+$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report(
+    array(
+        'tier' => 'enterprise',
+        'tool' => 'search_content',
+    )
+);
+```
 
 ### Programmatic Tier Management
 
@@ -378,6 +454,12 @@ vendor/bin/phpunit tests/test-rest-token-manager.php
 - ✅ REST endpoints
 - ✅ Permission checks
 - ✅ User access restrictions
+- ✅ **NEW:** CSV export format validation
+- ✅ **NEW:** CSV export permissions
+- ✅ **NEW:** CSV tier filtering
+- ✅ **NEW:** CSV tool filtering
+- ✅ **NEW:** CSV percentage calculations
+- ✅ **NEW:** Multi-user CSV export
 
 ## Performance Considerations
 
@@ -449,12 +531,27 @@ Planned for future releases:
 
 1. **Caching Layer**: WP object caching for tier lookups
 2. **Anomaly Detection**: Flag unusual usage patterns
-3. **Advanced Analytics**: Charts, trends, comparisons
-4. **CSV Export**: Usage reports for billing
-5. **Multi-tenancy**: Organization-level token pools
-6. **Token Marketplace**: Buy/transfer tokens
-7. **Push Notifications**: Real-time limit alerts
-8. **Machine Learning**: AI-powered forecasting
+3. **Advanced Analytics**: Charts, trends, comparisons (Chart.js foundation ready)
+4. **Multi-tenancy**: Organization-level token pools
+5. **Token Marketplace**: Buy/transfer tokens
+6. **Push Notifications**: Real-time limit alerts
+7. **Machine Learning**: AI-powered forecasting
+8. **Advanced Filtering**: Date range filters for CSV export
+9. **Scheduled Exports**: Automated daily/weekly CSV reports
+10. **Usage Visualizations**: Dashboard charts using Chart.js integration
+
+## Completed Features (v1.1.0)
+
+✅ **Phase 1:** Core tiered limit system (Free, Pro, Enterprise)  
+✅ **Phase 2:** Hourly usage tracking with 7-day retention  
+✅ **Phase 3:** Usage forecasting and email alerts  
+✅ **Phase 4:** Complete admin UI enhancements:
+  - CSV export with filtering
+  - Bulk tier management UI
+  - User details expansion
+  - Enhanced AJAX handlers  
+✅ **Phase 5:** REST API endpoints for external integration  
+🔄 **Phase 6:** Performance & Security (partial - caching pending)
 
 ## Documentation
 
@@ -487,5 +584,5 @@ For issues or questions:
 
 ---
 
-**Status**: Core Implementation Complete (Phases 1-3, 5)  
-**Remaining**: Admin UI polish (Phase 4), Performance optimizations (Phase 6), Documentation (Phase 7)
+**Status**: Phase 4 Complete - Full Admin UI Implementation  
+**Remaining**: Performance optimizations (Phase 6), Documentation updates (Phase 7)

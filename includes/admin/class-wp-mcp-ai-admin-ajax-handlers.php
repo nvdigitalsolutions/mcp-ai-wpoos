@@ -55,6 +55,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reset_all_token_usage'  => 'handle_reset_all_token_usage',
 				'wp_ajax_wp_mcp_ai_save_tool_limits'       => 'handle_save_tool_limits',
 				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
+				'wp_ajax_wp_mcp_ai_export_token_usage_csv' => 'handle_export_token_usage_csv',
+				'wp_ajax_wp_mcp_ai_bulk_assign_tier'       => 'handle_bulk_assign_tier',
 			);
 
 			$action         = current_action();
@@ -498,7 +500,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		}
 
 		/**
-		 * Handle AJAX request to reset current user's token usage.
+		 * Handle AJAX request to reset user's token usage.
 		 */
 		public function handle_reset_user_token_usage() {
 			// Check capabilities.
@@ -513,10 +515,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			$user_id = get_current_user_id();
+			// Get user ID from request.
+			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : get_current_user_id();
 
 			if ( ! $user_id ) {
-				wp_send_json_error( array( 'message' => __( 'Unable to determine current user.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Invalid user ID.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify user exists.
+			if ( ! get_userdata( $user_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'User not found.', 'wp-mcp-ai' ) ) );
 				return;
 			}
 
@@ -525,7 +534,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Reset tool-specific token usage data.
 			WP_MCP_AI_Tool_Token_Limits::reset_user_tool_usage( $user_id );
 
-			wp_send_json_success( array( 'message' => __( 'Your token usage data has been reset.', 'wp-mcp-ai' ) ) );
+			wp_send_json_success( array( 'message' => __( 'Token usage data has been reset.', 'wp-mcp-ai' ) ) );
 		}
 
 		/**
@@ -706,6 +715,110 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'message'   => __( 'Preset applied successfully.', 'wp-mcp-ai' ),
 					'preset_id' => $preset_id,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to export token usage as CSV.
+		 *
+		 * Note: This doesn't use wp_send_json_* because it sends CSV data.
+		 */
+		public function handle_export_token_usage_csv() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_die( esc_html__( 'Invalid security token.', 'wp-mcp-ai' ) );
+			}
+
+			// Get filters from request.
+			$filters = array();
+			if ( isset( $_POST['tier'] ) && '' !== $_POST['tier'] ) {
+				$filters['tier'] = sanitize_key( $_POST['tier'] );
+			}
+			if ( isset( $_POST['tool'] ) && '' !== $_POST['tool'] ) {
+				$filters['tool'] = sanitize_key( $_POST['tool'] );
+			}
+
+			// Generate CSV content.
+			$csv = WP_MCP_AI_Tool_Token_Limits::export_usage_report( $filters );
+
+			if ( empty( $csv ) ) {
+				wp_die( esc_html__( 'Failed to generate CSV export.', 'wp-mcp-ai' ) );
+			}
+
+			// Set headers for file download.
+			$filename = 'token-usage-' . gmdate( 'Y-m-d-H-i-s' ) . '.csv';
+
+			header( 'Content-Type: text/csv; charset=utf-8' );
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+
+			// Output CSV content.
+			echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+
+			wp_die(); // Stop execution after sending file.
+		}
+
+		/**
+		 * Handle AJAX request to bulk assign tier to multiple users.
+		 */
+		public function handle_bulk_assign_tier() {
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get user IDs from request.
+			$user_ids = isset( $_POST['user_ids'] ) ? array_map( 'absint', (array) $_POST['user_ids'] ) : array();
+
+			if ( empty( $user_ids ) ) {
+				wp_send_json_error( array( 'message' => __( 'No users selected.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get tier from request.
+			$tier = isset( $_POST['tier'] ) ? sanitize_key( $_POST['tier'] ) : '';
+
+			if ( empty( $tier ) ) {
+				wp_send_json_error( array( 'message' => __( 'No tier specified.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Call bulk assignment method.
+			$results = WP_MCP_AI_Tool_Token_Limits::bulk_set_user_tiers( $user_ids, $tier );
+
+			if ( ! empty( $results['errors'] ) ) {
+				wp_send_json_error(
+					array(
+						'message' => implode( ' ', $results['errors'] ),
+						'results' => $results,
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: Number of users updated, 2: Tier name */
+						__( 'Successfully updated %1$d users to %2$s tier.', 'wp-mcp-ai' ),
+						$results['success'],
+						$tier
+					),
+					'results' => $results,
 				)
 			);
 		}

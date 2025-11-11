@@ -152,9 +152,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<p><?php esc_html_e( 'No token usage data has been recorded yet. Usage will appear here once users start interacting with AI assistants.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php else : ?>
+				<!-- Bulk Actions Toolbar -->
+				<div class="tablenav top" style="margin-bottom: 10px;">
+					<div class="alignleft actions bulkactions">
+						<label for="bulk-tier-selector" class="screen-reader-text"><?php esc_html_e( 'Select bulk tier action', 'wp-mcp-ai' ); ?></label>
+						<select name="bulk_tier" id="bulk-tier-selector">
+							<option value=""><?php esc_html_e( 'Bulk Tier Assignment', 'wp-mcp-ai' ); ?></option>
+							<option value="free"><?php esc_html_e( 'Set to Free Tier', 'wp-mcp-ai' ); ?></option>
+							<option value="pro"><?php esc_html_e( 'Set to Pro Tier', 'wp-mcp-ai' ); ?></option>
+							<option value="enterprise"><?php esc_html_e( 'Set to Enterprise Tier', 'wp-mcp-ai' ); ?></option>
+						</select>
+						<button type="button" id="wp-mcp-ai-apply-bulk-tier" class="button action" disabled>
+							<?php esc_html_e( 'Apply', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+				</div>
+
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
+							<th class="check-column">
+								<input type="checkbox" id="wp-mcp-ai-select-all-users" />
+							</th>
 							<th><?php esc_html_e( 'User', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Tier', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
@@ -183,9 +202,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								'pro'        => '#0073aa',
 								'enterprise' => '#46b450',
 							);
-							$tier_color = isset( $tier_colors[ $tier ] ) ? $tier_colors[ $tier ] : '#999';
+							$tier_color  = isset( $tier_colors[ $tier ] ) ? $tier_colors[ $tier ] : '#999';
 							?>
 							<tr>
+								<td class="check-column">
+									<input type="checkbox" class="wp-mcp-ai-user-checkbox" value="<?php echo esc_attr( $user_id ); ?>" />
+								</td>
 								<td>
 									<strong><?php echo esc_html( $user->display_name ); ?></strong>
 									<br>
@@ -211,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								</td>
 							</tr>
 							<tr class="wp-mcp-ai-user-details-row" id="user-details-<?php echo esc_attr( $user_id ); ?>" style="display: none;">
-								<td colspan="8">
+								<td colspan="9">
 									<?php $this->render_user_details( $user_id, $usage ); ?>
 								</td>
 							</tr>
@@ -220,6 +242,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</table>
 
 				<div style="margin-top: 20px;">
+					<button type="button" id="wp-mcp-ai-export-usage-csv" class="button button-primary">
+						<?php esc_html_e( 'Export to CSV', 'wp-mcp-ai' ); ?>
+					</button>
 					<button type="button" id="wp-mcp-ai-reset-all-usage" class="button button-secondary">
 						<?php esc_html_e( 'Reset All Users\' Token Usage', 'wp-mcp-ai' ); ?>
 					</button>
@@ -512,7 +537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			// Get all registered tools from the tool registry.
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
-			
+
 			if ( ! $registry ) {
 				// Fallback to hardcoded tools if registry is not available.
 				$tools = array(
@@ -522,7 +547,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			} else {
 				// Ensure registry is initialized.
 				$registry->init();
-				
+
 				$registered_tools = $registry->get_tools();
 
 				// Build array of tool slug => name pairs.
@@ -530,7 +555,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
 						$slug = $tool->get_slug();
 						$name = $tool->get_name();
-						
+
 						if ( ! empty( $slug ) && ! empty( $name ) ) {
 							$tools[ $slug ] = $name;
 						}
