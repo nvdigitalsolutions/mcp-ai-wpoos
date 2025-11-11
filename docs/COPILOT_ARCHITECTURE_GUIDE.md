@@ -18,16 +18,17 @@
 8. [Service Layer](#service-layer)
 9. [Repository Layer](#repository-layer)
 10. [REST API Architecture](#rest-api-architecture)
-11. [Tool System](#tool-system)
-12. [Admin Dashboard Architecture](#admin-dashboard-architecture)
-13. [AI Client Abstraction](#ai-client-abstraction)
-14. [Authentication System](#authentication-system)
-15. [Hooks and Filters](#hooks-and-filters)
-16. [Constants and Configuration](#constants-and-configuration)
-17. [Error Handling and Logging](#error-handling-and-logging)
-18. [Security Architecture](#security-architecture)
-19. [Data Flow Diagrams](#data-flow-diagrams)
-20. [Integration Points](#integration-points)
+11. [AJAX Architecture](#ajax-architecture)
+12. [Tool System](#tool-system)
+13. [Admin Dashboard Architecture](#admin-dashboard-architecture)
+14. [AI Client Abstraction](#ai-client-abstraction)
+15. [Authentication System](#authentication-system)
+16. [Error Handling and Logging](#error-handling-and-logging)
+17. [Hooks and Filters](#hooks-and-filters)
+18. [Constants and Configuration](#constants-and-configuration)
+19. [Security Architecture](#security-architecture)
+20. [Data Flow Diagrams](#data-flow-diagrams)
+21. [Integration Points](#integration-points)
 
 ---
 
@@ -941,18 +942,86 @@ public function cleanup_old_files( $days = 7 )
 
 ## Repository Layer
 
+### What are Repositories?
+
+**Repositories** are the **data access layer** of the plugin architecture. They provide an abstraction between the business logic (services) and the data storage mechanisms (WordPress database, options, post meta, etc.).
+
+**Purpose**: 
+- Isolate data access logic from business logic
+- Provide a consistent interface for data operations
+- Enable easier testing by mocking data layer
+- Allow changing data storage without affecting business logic
+- Centralize database query logic
+
+**The "3 Data Access Repositories"** refers to three specialized repository classes that handle different types of data:
+
+1. **Assistant Repository** - Manages assistant configuration data
+2. **Credential Repository** - Manages authentication credentials
+3. **Settings Repository** - Manages plugin settings and options
+
+**Pattern**: Repository Pattern (Data Access Object pattern)
+
+**Benefits**:
+- **Single Responsibility**: Each repository handles one entity type
+- **Testability**: Services can be tested with mocked repositories
+- **Maintainability**: Database changes isolated to repository layer
+- **Consistency**: All data access follows same patterns
+
 ### Repository Initialization
 
 **File**: `includes/repositories-init.php`
 
 Loaded during plugin bootstrap. No explicit initialization function needed as repositories are instantiated on-demand via DI container.
 
+**Container Registration**:
+
+```php
+// In WP_MCP_AI_Container
+$container->register( 'repository.assistant', function() {
+    return new WP_MCP_AI_Assistant_Repository();
+} );
+
+$container->register( 'repository.credential', function() {
+    return new WP_MCP_AI_Credential_Repository();
+} );
+
+$container->register( 'repository.settings', function() {
+    return new WP_MCP_AI_Settings_Repository();
+} );
+```
+
+**Usage from Services**:
+
+```php
+// Service receives repository via dependency injection
+class WP_MCP_AI_Assistant_Service {
+    protected $assistant_repository;
+    
+    public function __construct( $assistant_repository ) {
+        $this->assistant_repository = $assistant_repository;
+    }
+    
+    public function get_assistant( $id ) {
+        // Service uses repository for data access
+        return $this->assistant_repository->find( $id );
+    }
+}
+```
+
 ### Assistant Repository
 
 **Class**: `WP_MCP_AI_Assistant_Repository`  
 **File**: `includes/repositories/class-wp-mcp-ai-assistant-repository.php`
 
+**Purpose**: Manages assistant configuration data (AI assistant settings, models, tools, instructions)
+
 **Data Source**: Custom Post Type `mcp_ai_assistant`
+
+**Why a Repository?**:
+- Abstracts WordPress post type operations
+- Provides clean interface for assistant CRUD
+- Handles post meta serialization/deserialization
+- Enables changing storage mechanism (e.g., to custom tables) without breaking services
 
 **Schema** (Post Meta):
 - `_wp_mcp_ai_model` - AI model identifier
@@ -968,21 +1037,27 @@ Loaded during plugin bootstrap. No explicit initialization function needed as re
 ```php
 public function find( $assistant_id )
 // Returns: array|null with assistant data
+// Example: $assistant = $repo->find( 123 );
 
 public function find_all( $args = array() )
 // Returns: array of assistant arrays
+// Example: $assistants = $repo->find_all( array( 'status' => 'publish' ) );
 
 public function save( $data )
 // Returns: int|WP_Error (post ID or error)
+// Example: $id = $repo->save( array( 'title' => 'My Assistant', 'model' => 'gpt-4' ) );
 
 public function delete( $assistant_id )
 // Returns: bool|WP_Error
+// Example: $deleted = $repo->delete( 123 );
 
 public function get_meta( $assistant_id, $key, $single = true )
 // Returns: mixed
+// Example: $model = $repo->get_meta( 123, '_wp_mcp_ai_model' );
 
 public function update_meta( $assistant_id, $key, $value )
 // Returns: bool|int
+// Example: $repo->update_meta( 123, '_wp_mcp_ai_model', 'gpt-4' );
 ```
 
 **Query Arguments** (for `find_all`):
@@ -992,12 +1067,47 @@ public function update_meta( $assistant_id, $key, $value )
 - `orderby` - Sort field
 - `order` - 'ASC' or 'DESC'
 
+**Example Usage**:
+
+```php
+// Create new assistant
+$assistant_id = $assistant_repo->save( array(
+    'post_title' => 'Customer Support Bot',
+    'post_status' => 'publish',
+    'meta_input' => array(
+        '_wp_mcp_ai_model' => 'gpt-4',
+        '_wp_mcp_ai_provider' => 'openai',
+        '_wp_mcp_ai_temperature' => 0.7,
+    ),
+) );
+
+// Retrieve assistant
+$assistant = $assistant_repo->find( $assistant_id );
+
+// Update assistant
+$assistant_repo->update_meta( $assistant_id, '_wp_mcp_ai_model', 'gpt-4-turbo' );
+
+// List all assistants
+$all_assistants = $assistant_repo->find_all( array(
+    'status' => 'publish',
+    'per_page' => 20,
+) );
+```
+
 ### Credential Repository
 
 **Class**: `WP_MCP_AI_Credential_Repository`  
 **File**: `includes/repositories/class-wp-mcp-ai-credential-repository.php`
 
+**Purpose**: Manages authentication credentials for API access to assistants
+
 **Data Source**: Post meta + `WP_MCP_AI_Credentials` class
+
+**Why a Repository?**:
+- Abstracts credential storage and hashing
+- Provides secure credential generation
+- Handles token verification logic
+- Centralizes credential revocation
 
 **Schema**:
 - Stored in `_wp_mcp_ai_credentials` meta
@@ -1015,18 +1125,23 @@ public function update_meta( $assistant_id, $key, $value )
 ```php
 public function find_by_assistant( $assistant_id )
 // Returns: array of credential objects
+// Example: $credentials = $repo->find_by_assistant( 123 );
 
 public function generate( $assistant_id, $label = '' )
 // Returns: array with 'credential_id' and 'token' (plaintext, shown once)
+// Example: $new_cred = $repo->generate( 123, 'Mobile App Access' );
 
 public function verify( $token )
 // Returns: array|false with assistant_id and credential_id if valid
+// Example: $valid = $repo->verify( 'cred_abc123.secret_token' );
 
 public function revoke( $assistant_id, $credential_id )
 // Returns: bool
+// Example: $revoked = $repo->revoke( 123, 'abc123' );
 
 public function update_last_used( $assistant_id, $credential_id )
 // Returns: bool
+// Example: $repo->update_last_used( 123, 'abc123' );
 ```
 
 **Security**:
@@ -1476,6 +1591,520 @@ public function end_stream( $finish_reason = 'stop' )
 - Graceful degradation
 - Error events for failures
 - Connection keep-alive (heartbeat comments)
+
+---
+
+## AJAX Architecture
+
+### Overview
+
+The plugin uses WordPress AJAX API for asynchronous admin operations. AJAX handlers provide real-time feedback for settings operations, credential management, tool testing, and diagnostic checks.
+
+**Architecture Pattern**: Action-based routing with nonce verification
+
+**Key Components**:
+1. AJAX Handler Class
+2. JavaScript AJAX Client
+3. Nonce Security
+4. Response Standardization
+
+### AJAX Handler Class
+
+**Class**: `WP_MCP_AI_Admin_AJAX_Handlers`  
+**File**: `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php`
+
+**Responsibilities**:
+- Handle admin AJAX requests
+- Validate nonces and capabilities
+- Execute backend operations
+- Return standardized JSON responses
+- Log AJAX errors
+
+**Initialization**:
+
+The class is instantiated during admin initialization and hooks are registered automatically:
+
+```php
+// Initialization in admin context
+if ( is_admin() ) {
+    $ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+}
+```
+
+### Registered AJAX Actions
+
+**Provider Testing**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_test_provider', array( $this, 'handle_test_provider' ) );
+```
+- Tests AI provider API connection
+- Validates API keys
+- Returns connection status
+
+**Credential Management**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_generate_credential', array( $this, 'handle_generate_credential' ) );
+add_action( 'wp_ajax_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
+```
+- Generates new assistant credentials
+- Revokes existing credentials
+- Returns credential data (token shown once)
+
+**Tool Testing**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_test_tool', array( $this, 'handle_test_tool' ) );
+```
+- Tests tool execution in admin
+- Validates tool parameters
+- Returns tool execution result
+
+**System Diagnostics**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_get_diagnostics', array( $this, 'handle_get_diagnostics' ) );
+```
+- Retrieves system health information
+- Checks plugin dependencies
+- Returns diagnostic data
+
+**Cache Management**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_clear_cache', array( $this, 'handle_clear_cache' ) );
+```
+- Clears plugin cache
+- Refreshes transients
+- Returns cache clear confirmation
+
+**Settings Operations**:
+```php
+add_action( 'wp_ajax_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
+add_action( 'wp_ajax_wp_mcp_ai_reset_settings', array( $this, 'handle_reset_settings' ) );
+```
+- Saves plugin settings
+- Resets to defaults
+- Validates input before saving
+
+### AJAX Handler Pattern
+
+**Standard Handler Structure**:
+
+```php
+public function handle_action_name() {
+    // 1. Verify nonce
+    check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+    
+    // 2. Check capability
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Insufficient permissions', 'wp-mcp-ai' ),
+        ) );
+        return;
+    }
+    
+    // 3. Sanitize input
+    $param = isset( $_POST['param'] ) ? sanitize_text_field( wp_unslash( $_POST['param'] ) ) : '';
+    
+    // 4. Validate input
+    if ( empty( $param ) ) {
+        wp_send_json_error( array(
+            'message' => __( 'Missing required parameter', 'wp-mcp-ai' ),
+        ) );
+        return;
+    }
+    
+    // 5. Execute operation
+    $result = $this->perform_operation( $param );
+    
+    // 6. Handle errors
+    if ( is_wp_error( $result ) ) {
+        WP_MCP_AI_Logger::error( 'AJAX operation failed', array(
+            'action' => 'action_name',
+            'error' => $result->get_error_message(),
+        ) );
+        
+        wp_send_json_error( array(
+            'message' => $result->get_error_message(),
+            'code' => $result->get_error_code(),
+        ) );
+        return;
+    }
+    
+    // 7. Log success
+    WP_MCP_AI_Logger::info( 'AJAX operation completed', array(
+        'action' => 'action_name',
+    ) );
+    
+    // 8. Return success response
+    wp_send_json_success( array(
+        'message' => __( 'Operation completed successfully', 'wp-mcp-ai' ),
+        'data' => $result,
+    ) );
+}
+```
+
+### JavaScript AJAX Client
+
+**Location**: `assets/js/admin.js` (or inline in admin pages)
+
+**jQuery AJAX Call Pattern**:
+
+```javascript
+jQuery( document ).ready( function( $ ) {
+    $( '#test-provider-button' ).on( 'click', function( e ) {
+        e.preventDefault();
+        
+        var $button = $( this );
+        var provider = $( '#provider-select' ).val();
+        var apiKey = $( '#api-key-input' ).val();
+        
+        // Disable button during request
+        $button.prop( 'disabled', true );
+        
+        // Show loading indicator
+        $( '.status-indicator' ).addClass( 'loading' );
+        
+        $.ajax( {
+            url: ajaxurl,  // WordPress global
+            type: 'POST',
+            data: {
+                action: 'wp_mcp_ai_test_provider',
+                nonce: wpMcpAiAdmin.nonce,  // Localized nonce
+                provider: provider,
+                api_key: apiKey
+            },
+            success: function( response ) {
+                if ( response.success ) {
+                    // Handle success
+                    $( '.status-indicator' )
+                        .removeClass( 'loading' )
+                        .addClass( 'success' )
+                        .text( response.data.message );
+                } else {
+                    // Handle error
+                    $( '.status-indicator' )
+                        .removeClass( 'loading' )
+                        .addClass( 'error' )
+                        .text( response.data.message );
+                }
+            },
+            error: function( jqXHR, textStatus, errorThrown ) {
+                // Handle AJAX error
+                $( '.status-indicator' )
+                    .removeClass( 'loading' )
+                    .addClass( 'error' )
+                    .text( 'Request failed: ' + textStatus );
+            },
+            complete: function() {
+                // Re-enable button
+                $button.prop( 'disabled', false );
+            }
+        } );
+    } );
+} );
+```
+
+### Nonce Management
+
+**Nonce Generation** (server-side):
+
+```php
+wp_localize_script( 'wp-mcp-ai-admin', 'wpMcpAiAdmin', array(
+    'nonce' => wp_create_nonce( 'wp_mcp_ai_admin_nonce' ),
+    'ajaxurl' => admin_url( 'admin-ajax.php' ),
+) );
+```
+
+**Nonce Verification** (in AJAX handler):
+
+```php
+check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+```
+
+**Nonce in JavaScript**:
+
+```javascript
+data: {
+    action: 'wp_mcp_ai_action',
+    nonce: wpMcpAiAdmin.nonce,  // From localized script
+    // ... other data
+}
+```
+
+### Response Standardization
+
+**Success Response Format**:
+
+```php
+wp_send_json_success( array(
+    'message' => 'Human-readable success message',
+    'data' => array(
+        'key1' => 'value1',
+        'key2' => 'value2',
+    ),
+) );
+```
+
+Translates to JSON:
+
+```json
+{
+    "success": true,
+    "data": {
+        "message": "Human-readable success message",
+        "data": {
+            "key1": "value1",
+            "key2": "value2"
+        }
+    }
+}
+```
+
+**Error Response Format**:
+
+```php
+wp_send_json_error( array(
+    'message' => 'Human-readable error message',
+    'code' => 'error_code',
+    'details' => array(
+        'field' => 'field_name',
+        'issue' => 'validation_issue',
+    ),
+) );
+```
+
+Translates to JSON:
+
+```json
+{
+    "success": false,
+    "data": {
+        "message": "Human-readable error message",
+        "code": "error_code",
+        "details": {
+            "field": "field_name",
+            "issue": "validation_issue"
+        }
+    }
+}
+```
+
+### Error Handling in AJAX
+
+**Backend Error Handling**:
+
+1. **Validation Errors**:
+```php
+if ( empty( $required_param ) ) {
+    wp_send_json_error( array(
+        'message' => __( 'Required parameter missing', 'wp-mcp-ai' ),
+        'code' => 'missing_parameter',
+    ) );
+}
+```
+
+2. **Permission Errors**:
+```php
+if ( ! current_user_can( 'manage_options' ) ) {
+    wp_send_json_error( array(
+        'message' => __( 'Insufficient permissions', 'wp-mcp-ai' ),
+        'code' => 'insufficient_permissions',
+    ) );
+}
+```
+
+3. **Operation Errors**:
+```php
+if ( is_wp_error( $result ) ) {
+    WP_MCP_AI_Logger::error( 'Operation failed', array(
+        'error' => $result->get_error_message(),
+    ) );
+    
+    wp_send_json_error( array(
+        'message' => $result->get_error_message(),
+        'code' => $result->get_error_code(),
+    ) );
+}
+```
+
+**Frontend Error Handling**:
+
+```javascript
+success: function( response ) {
+    if ( response.success ) {
+        // Success path
+        showSuccessNotice( response.data.message );
+    } else {
+        // Error returned by handler
+        showErrorNotice( response.data.message );
+        logError( response.data.code, response.data );
+    }
+},
+error: function( jqXHR, textStatus, errorThrown ) {
+    // AJAX request failed (network error, 500, etc.)
+    showErrorNotice( 'Request failed: ' + textStatus );
+    logError( 'ajax_error', {
+        status: jqXHR.status,
+        error: errorThrown
+    } );
+}
+```
+
+### AJAX Security Best Practices
+
+**Implemented Security Measures**:
+
+1. **Nonce Verification**: Every AJAX request verified with `check_ajax_referer()`
+2. **Capability Checks**: User capabilities checked before operations
+3. **Input Sanitization**: All input sanitized with WordPress functions
+4. **Output Escaping**: Error messages and data escaped in responses
+5. **Rate Limiting**: Optional rate limiting on AJAX endpoints
+6. **Logging**: All AJAX operations logged for audit trail
+
+**Example: Complete Secure Handler**:
+
+```php
+public function handle_test_provider() {
+    // Nonce check
+    check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+    
+    // Capability check
+    if ( ! current_user_can( 'manage_options' ) ) {
+        wp_send_json_error( array(
+            'message' => esc_html__( 'Unauthorized', 'wp-mcp-ai' ),
+        ) );
+    }
+    
+    // Input sanitization
+    $provider = isset( $_POST['provider'] ) ? sanitize_text_field( wp_unslash( $_POST['provider'] ) ) : '';
+    $api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
+    
+    // Input validation
+    if ( empty( $provider ) || empty( $api_key ) ) {
+        wp_send_json_error( array(
+            'message' => esc_html__( 'Provider and API key are required', 'wp-mcp-ai' ),
+        ) );
+    }
+    
+    // Test connection with timeout
+    $result = $this->test_provider_connection( $provider, $api_key );
+    
+    // Error handling
+    if ( is_wp_error( $result ) ) {
+        WP_MCP_AI_Logger::error( 'Provider test failed', array(
+            'provider' => $provider,
+            'error' => $result->get_error_message(),
+        ) );
+        
+        wp_send_json_error( array(
+            'message' => esc_html( $result->get_error_message() ),
+        ) );
+    }
+    
+    // Success logging
+    WP_MCP_AI_Logger::info( 'Provider test successful', array(
+        'provider' => $provider,
+    ) );
+    
+    // Success response with escaped output
+    wp_send_json_success( array(
+        'message' => esc_html__( 'Connection successful', 'wp-mcp-ai' ),
+        'details' => array(
+            'provider' => esc_html( $provider ),
+            'status' => 'connected',
+        ),
+    ) );
+}
+```
+
+### AJAX Flow Diagram
+
+```
+User Action (Click Button)
+    ↓
+JavaScript Event Handler
+    ↓
+jQuery.ajax() Call
+    ├─> URL: admin-ajax.php
+    ├─> Data: { action, nonce, params }
+    └─> Type: POST
+    ↓
+WordPress AJAX Router
+    ↓
+Action Hook: wp_ajax_{action}
+    ↓
+AJAX Handler Method
+    ├─> 1. check_ajax_referer()
+    ├─> 2. current_user_can()
+    ├─> 3. Sanitize input
+    ├─> 4. Validate input
+    ├─> 5. Execute operation
+    ├─> 6. Log result
+    └─> 7. wp_send_json_*()
+    ↓
+JSON Response
+    ↓
+JavaScript Success/Error Handler
+    ↓
+Update UI (show message, update display)
+```
+
+### Common AJAX Use Cases
+
+**1. Testing API Connections**:
+- Provider credentials validation
+- Real-time connection testing
+- Error message display
+
+**2. Credential Management**:
+- Generate new credentials
+- Display plaintext token once
+- Revoke existing credentials
+
+**3. Tool Testing**:
+- Test tool execution
+- Validate tool parameters
+- Display tool results
+
+**4. Settings Management**:
+- Save settings asynchronously
+- Validate before save
+- Show save confirmation
+
+**5. Diagnostics**:
+- Fetch system health
+- Check dependencies
+- Display diagnostic info
+
+### AJAX Debugging
+
+**Enable Logging**:
+
+```php
+define( 'WP_MCP_AI_DEBUG', true );
+```
+
+**Check AJAX Logs**:
+
+```bash
+wp option get wp_mcp_ai_recent_activity --format=json | grep "AJAX"
+```
+
+**Browser Console**:
+
+```javascript
+// Log all AJAX requests
+jQuery( document ).ajaxComplete( function( event, xhr, settings ) {
+    if ( settings.url.indexOf( 'admin-ajax.php' ) !== -1 ) {
+        console.log( 'AJAX Complete:', settings.data, xhr.responseJSON );
+    }
+} );
+```
+
+**Common Issues**:
+
+1. **Nonce Failures**: Check nonce generation and verification
+2. **Permission Errors**: Verify user capabilities
+3. **Invalid Response**: Check for PHP errors before wp_send_json_*
+4. **Timeout**: Increase PHP max_execution_time for long operations
 
 ---
 
@@ -2924,6 +3553,365 @@ array(
         ),
     ),
 )
+```
+
+### Error Handling Patterns
+
+**Pattern 1: Service Layer Error Handling**
+
+Services should return `WP_Error` objects for errors:
+
+```php
+class WP_MCP_AI_Assistant_Service {
+    public function create_assistant( $data ) {
+        // Validate input
+        if ( empty( $data['name'] ) ) {
+            return new WP_Error(
+                'missing_required_field',
+                __( 'Assistant name is required', 'wp-mcp-ai' ),
+                array( 'field' => 'name' )
+            );
+        }
+        
+        // Attempt operation
+        $result = $this->assistant_repository->save( $data );
+        
+        // Check for errors from repository
+        if ( is_wp_error( $result ) ) {
+            WP_MCP_AI_Logger::error( 'Failed to create assistant', array(
+                'error' => $result->get_error_message(),
+                'data' => $data,
+            ) );
+            
+            return $result;
+        }
+        
+        // Success - return data
+        WP_MCP_AI_Logger::info( 'Assistant created', array(
+            'assistant_id' => $result,
+        ) );
+        
+        return $result;
+    }
+}
+```
+
+**Pattern 2: REST API Error Handling**
+
+REST controllers should handle errors and return appropriate HTTP status codes:
+
+```php
+public function handle_chat_request( $request ) {
+    // Validate request
+    $validation = $this->validator->validate_chat_request( $request );
+    
+    if ( is_wp_error( $validation ) ) {
+        WP_MCP_AI_Logger::warning( 'Invalid chat request', array(
+            'error' => $validation->get_error_message(),
+        ) );
+        
+        return new WP_Error(
+            $validation->get_error_code(),
+            $validation->get_error_message(),
+            array( 'status' => 400 )  // Bad Request
+        );
+    }
+    
+    // Process with service
+    $result = $this->chat_service->process_chat(
+        $request['messages'],
+        $request['assistant_id']
+    );
+    
+    // Handle service errors
+    if ( is_wp_error( $result ) ) {
+        $error_code = $result->get_error_code();
+        
+        // Map error codes to HTTP status codes
+        $status_map = array(
+            'unauthorized' => 401,
+            'insufficient_permissions' => 403,
+            'assistant_not_found' => 404,
+            'rate_limit_exceeded' => 429,
+            'provider_error' => 502,
+            'timeout' => 504,
+        );
+        
+        $status = isset( $status_map[ $error_code ] ) ? $status_map[ $error_code ] : 500;
+        
+        WP_MCP_AI_Logger::error( 'Chat request failed', array(
+            'error_code' => $error_code,
+            'error_message' => $result->get_error_message(),
+            'status' => $status,
+        ) );
+        
+        return new WP_Error(
+            $error_code,
+            $result->get_error_message(),
+            array( 'status' => $status )
+        );
+    }
+    
+    // Success
+    return rest_ensure_response( $result );
+}
+```
+
+**Pattern 3: Tool Execution Error Handling**
+
+Tools should handle errors gracefully and provide actionable error messages:
+
+```php
+public function execute( array $arguments = array(), array $context = array() ) {
+    try {
+        // Validate parameters
+        if ( ! isset( $arguments['post_id'] ) ) {
+            return new WP_Error(
+                'missing_parameter',
+                __( 'Post ID is required', 'wp-mcp-ai' ),
+                array( 'parameter' => 'post_id' )
+            );
+        }
+        
+        $post_id = absint( $arguments['post_id'] );
+        
+        // Check if post exists
+        $post = get_post( $post_id );
+        if ( ! $post ) {
+            return new WP_Error(
+                'post_not_found',
+                sprintf( __( 'Post with ID %d not found', 'wp-mcp-ai' ), $post_id )
+            );
+        }
+        
+        // Check permissions
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            return new WP_Error(
+                'insufficient_permissions',
+                __( 'You do not have permission to edit this post', 'wp-mcp-ai' )
+            );
+        }
+        
+        // Perform operation
+        $result = wp_update_post( array(
+            'ID' => $post_id,
+            'post_title' => sanitize_text_field( $arguments['title'] ),
+        ) );
+        
+        // Check for WordPress errors
+        if ( is_wp_error( $result ) ) {
+            WP_MCP_AI_Logger::error( 'Failed to update post', array(
+                'post_id' => $post_id,
+                'error' => $result->get_error_message(),
+            ) );
+            
+            return $result;
+        }
+        
+        // Success
+        return array(
+            'success' => true,
+            'post_id' => $post_id,
+            'message' => __( 'Post updated successfully', 'wp-mcp-ai' ),
+        );
+        
+    } catch ( Exception $e ) {
+        // Catch unexpected exceptions
+        WP_MCP_AI_Logger::error( 'Tool execution exception', array(
+            'tool' => $this->get_slug(),
+            'exception' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ) );
+        
+        return new WP_Error(
+            'tool_execution_error',
+            __( 'An unexpected error occurred while executing the tool', 'wp-mcp-ai' )
+        );
+    }
+}
+```
+
+**Pattern 4: AJAX Error Handling**
+
+AJAX handlers should use standardized response methods:
+
+```php
+public function handle_ajax_action() {
+    try {
+        // Nonce verification
+        check_ajax_referer( 'wp_mcp_ai_admin_nonce', 'nonce' );
+        
+        // Capability check
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_send_json_error( array(
+                'message' => __( 'Insufficient permissions', 'wp-mcp-ai' ),
+                'code' => 'insufficient_permissions',
+            ) );
+        }
+        
+        // Process request
+        $result = $this->perform_action();
+        
+        // Check for errors
+        if ( is_wp_error( $result ) ) {
+            WP_MCP_AI_Logger::error( 'AJAX action failed', array(
+                'action' => 'ajax_action',
+                'error' => $result->get_error_message(),
+            ) );
+            
+            wp_send_json_error( array(
+                'message' => $result->get_error_message(),
+                'code' => $result->get_error_code(),
+            ) );
+        }
+        
+        // Success
+        wp_send_json_success( array(
+            'message' => __( 'Action completed successfully', 'wp-mcp-ai' ),
+            'data' => $result,
+        ) );
+        
+    } catch ( Exception $e ) {
+        WP_MCP_AI_Logger::error( 'AJAX exception', array(
+            'exception' => $e->getMessage(),
+        ) );
+        
+        wp_send_json_error( array(
+            'message' => __( 'An unexpected error occurred', 'wp-mcp-ai' ),
+            'code' => 'internal_error',
+        ) );
+    }
+}
+```
+
+### Error Logging Best Practices
+
+**1. Log Appropriate Level**:
+
+```php
+// DEBUG - Detailed info for troubleshooting
+WP_MCP_AI_Logger::debug( 'API request details', array(
+    'endpoint' => $endpoint,
+    'parameters' => $params,
+) );
+
+// INFO - Normal operations
+WP_MCP_AI_Logger::info( 'Chat completed', array(
+    'tokens_used' => 150,
+) );
+
+// WARNING - Recoverable issues
+WP_MCP_AI_Logger::warning( 'API rate limit approaching', array(
+    'usage' => 90,
+    'limit' => 100,
+) );
+
+// ERROR - Failures that need attention
+WP_MCP_AI_Logger::error( 'API call failed', array(
+    'error' => $error_message,
+    'retries' => 3,
+) );
+```
+
+**2. Include Context**:
+
+```php
+WP_MCP_AI_Logger::error( 'Tool execution failed', array(
+    'tool' => 'save_post',
+    'post_id' => 123,
+    'user_id' => 456,
+    'error' => $error_message,
+    'timestamp' => time(),
+) );
+```
+
+**3. Don't Log Sensitive Data**:
+
+```php
+// BAD - Logs API key
+WP_MCP_AI_Logger::debug( 'API request', array(
+    'api_key' => $api_key,  // Never log credentials!
+) );
+
+// GOOD - Mask sensitive data
+WP_MCP_AI_Logger::debug( 'API request', array(
+    'api_key' => substr( $api_key, 0, 8 ) . '...',
+) );
+```
+
+### Error Monitoring
+
+**Enable Debug Mode**:
+
+```php
+// In wp-config.php
+define( 'WP_MCP_AI_DEBUG', true );
+```
+
+**Check Error Logs**:
+
+```bash
+# Via WP-CLI
+wp option get wp_mcp_ai_recent_errors --format=json | jq .
+
+# View specific error
+wp option get wp_mcp_ai_recent_errors --format=json | jq '.[0]'
+
+# Count errors
+wp option get wp_mcp_ai_recent_errors --format=json | jq 'length'
+```
+
+**Clear Error Logs**:
+
+```bash
+# Clear errors
+wp option delete wp_mcp_ai_recent_errors
+
+# Clear activity logs
+wp option delete wp_mcp_ai_recent_activity
+```
+
+### Exception Handling
+
+**Global Exception Handler**:
+
+The plugin includes a global exception handler for catching unexpected errors:
+
+```php
+class WP_MCP_AI_Error_Handler {
+    public static function handle_exception( Exception $e, $context = array() ) {
+        // Log exception
+        WP_MCP_AI_Logger::error( 'Uncaught exception', array(
+            'exception' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+            'context' => $context,
+        ) );
+        
+        // Create user-friendly error
+        return new WP_Error(
+            'internal_error',
+            __( 'An unexpected error occurred. Please try again.', 'wp-mcp-ai' ),
+            array(
+                'exception' => $e->getMessage(),
+                'debug' => WP_DEBUG,
+            )
+        );
+    }
+}
+```
+
+**Usage**:
+
+```php
+try {
+    $result = $risky_operation();
+} catch ( Exception $e ) {
+    return WP_MCP_AI_Error_Handler::handle_exception( $e, array(
+        'operation' => 'risky_operation',
+    ) );
+}
 ```
 
 ---
