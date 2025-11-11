@@ -146,8 +146,8 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	public function test_is_mcp_content_array_validates_image_content() {
 		$image_content = array(
 			array(
-				'type' => 'image',
-				'data' => 'base64data',
+				'type'     => 'image',
+				'data'     => 'base64data',
 				'mimeType' => 'image/png',
 			),
 		);
@@ -214,7 +214,7 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	public function test_is_mcp_content_array_rejects_image_without_data_or_url() {
 		$invalid_content = array(
 			array(
-				'type' => 'image',
+				'type'     => 'image',
 				'mimeType' => 'image/png',
 			),
 		);
@@ -262,9 +262,12 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	 * Test convert_to_text_content handles arrays correctly.
 	 */
 	public function test_convert_to_text_content_handles_arrays() {
-		$input  = array( 'key' => 'value', 'number' => 123 );
+		$input  = array(
+			'key'    => 'value',
+			'number' => 123,
+		);
 		$result = $this->call_protected_method( 'convert_to_text_content', array( $input ) );
-		
+
 		$this->assertIsString( $result );
 		$decoded = json_decode( $result, true );
 		$this->assertSame( $input, $decoded );
@@ -274,12 +277,21 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 	 * Test convert_to_text_content handles objects correctly.
 	 */
 	public function test_convert_to_text_content_handles_objects() {
-		$input  = (object) array( 'key' => 'value', 'number' => 123 );
+		$input  = (object) array(
+			'key'    => 'value',
+			'number' => 123,
+		);
 		$result = $this->call_protected_method( 'convert_to_text_content', array( $input ) );
-		
+
 		$this->assertIsString( $result );
 		$decoded = json_decode( $result, true );
-		$this->assertSame( array( 'key' => 'value', 'number' => 123 ), $decoded );
+		$this->assertSame(
+			array(
+				'key'    => 'value',
+				'number' => 123,
+			),
+			$decoded
+		);
 	}
 
 	/**
@@ -373,7 +385,7 @@ class WP_MCP_AI_MCP_Protocol_Fixes_Test extends WP_UnitTestCase {
 		$filename   = 'test-file.txt';
 		$upload_dir = wp_upload_dir();
 		$file_path  = $upload_dir['path'] . '/' . $filename;
-		
+
 		// Create a simple text file.
 		$written = file_put_contents( $file_path, 'Test content' );
 		if ( false === $written ) {

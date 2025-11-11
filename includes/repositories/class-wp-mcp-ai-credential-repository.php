@@ -248,7 +248,7 @@ class WP_MCP_AI_Credential_Repository {
 			$this->credentials_meta_key
 		);
 
-		$results        = $wpdb->get_results( $query );
+		$results         = $wpdb->get_results( $query );
 		$all_credentials = array();
 
 		foreach ( $results as $result ) {

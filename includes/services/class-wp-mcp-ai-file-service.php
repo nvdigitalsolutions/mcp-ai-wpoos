@@ -315,11 +315,11 @@ class WP_MCP_AI_File_Service {
 			}
 
 			$documents[] = array(
-				'id'       => $file_id,
-				'name'     => basename( $file_path ),
-				'type'     => get_post_mime_type( $file_id ),
-				'content'  => $content,
-				'size'     => strlen( $content ),
+				'id'      => $file_id,
+				'name'    => basename( $file_path ),
+				'type'    => get_post_mime_type( $file_id ),
+				'content' => $content,
+				'size'    => strlen( $content ),
 			);
 		}
 

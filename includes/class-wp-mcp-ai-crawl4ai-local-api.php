@@ -37,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 					'callback'            => array( $this, 'handle_crawl_request' ),
 					'permission_callback' => array( $this, 'check_permissions' ),
 					'args'                => array(
-						'urls'        => array(
+						'urls'                 => array(
 							'description' => __( 'Array of URLs to crawl.', 'wp-mcp-ai' ),
 							'type'        => 'array',
 							'required'    => true,
@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Crawl4AI_Local_API' ) ) {
 							'required'    => false,
 							'default'     => 50,
 						),
-						'extraction_strategy' => array(
+						'extraction_strategy'  => array(
 							'description' => __( 'Strategy for content extraction.', 'wp-mcp-ai' ),
 							'type'        => 'string',
 							'required'    => false,

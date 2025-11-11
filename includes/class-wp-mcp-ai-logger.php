@@ -1201,10 +1201,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 				default:
 					// Fallback for unknown errors.
-					$friendly_message = ! empty( $error_message ) ? 
-						$error_message : 
+					$friendly_message = ! empty( $error_message ) ?
+						$error_message :
 						__( 'An unexpected error occurred. Please try again.', 'wp-mcp-ai' );
-					$suggestions = array(
+					$suggestions      = array(
 						__( 'Check the error log for more details.', 'wp-mcp-ai' ),
 						__( 'Contact support if the problem persists.', 'wp-mcp-ai' ),
 					);

@@ -82,8 +82,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 			}
 
 			$elementor_active = defined( 'ELEMENTOR_VERSION' );
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$widgets_enabled = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
+			$settings         = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$widgets_enabled  = isset( $settings['enable_elementor_widgets'] ) ? (bool) $settings['enable_elementor_widgets'] : true;
 
 			?>
 			<div class="wrap">
@@ -171,9 +171,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Elementor_Integration' ) ) {
 
 						<?php
 						// Debug information to help diagnose configuration issues.
-						$is_base_version = wp_mcp_ai_is_base_version();
+						$is_base_version  = wp_mcp_ai_is_base_version();
 						$constant_defined = defined( 'WP_MCP_AI_BASE_VERSION' );
-						$constant_value = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
+						$constant_value   = $constant_defined ? WP_MCP_AI_BASE_VERSION : 'not defined';
 						?>
 
 						<div style="background: #f0f6fc; border-left: 4px solid #2271b1; padding: 1rem; margin-top: 1.5rem;">

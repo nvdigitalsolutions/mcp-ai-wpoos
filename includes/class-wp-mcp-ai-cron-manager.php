@@ -182,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				$retention_hours = isset( $settings['cron_job_retention_period'] ) ? $settings['cron_job_retention_period'] : 24;
 			}
 			$retention_hours = absint( $retention_hours );
-			
+
 			// If retention is 0, jobs are removed immediately when not scheduled.
 			$retention_period = $retention_hours > 0 ? $retention_hours * HOUR_IN_SECONDS : 0;
 
@@ -207,7 +207,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 					} else {
 						// Only remove if it's been longer than the retention period.
 						$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
-						
+
 						if ( $first_timestamp > 0 && ( time() - $first_timestamp ) > $retention_period ) {
 							unset( $jobs[ $job_id ] );
 							$changed = true;

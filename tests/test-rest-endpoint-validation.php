@@ -374,7 +374,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertSame( 400, $response->get_status(), 'tools/call without name should return 400' );
-		
+
 		// MCP returns JSON-RPC error format.
 		$this->assertArrayHasKey( 'error', $data, 'Response should include error object' );
 		$this->assertStringContainsString( 'name', $data['error']['message'], 'Error should mention missing name parameter' );
@@ -473,7 +473,7 @@ class WP_MCP_AI_REST_Endpoint_Validation_Test extends WP_UnitTestCase {
 							'content' => 'Response',
 						),
 						array(
-							'role' => 'invalid', // Invalid role in middle of array.
+							'role'    => 'invalid', // Invalid role in middle of array.
 							'content' => 'Should fail',
 						),
 					),

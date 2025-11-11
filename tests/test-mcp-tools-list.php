@@ -77,9 +77,9 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->getMock();
-		
+
 		$this->rest_controller = new WP_MCP_AI_REST( $this->registry, $mock_client );
-		
+
 		// Register routes.
 		rest_get_server();
 		do_action( 'rest_api_init' );
@@ -121,10 +121,10 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		
+
 		$this->assertArrayHasKey( 'jsonrpc', $data );
 		$this->assertSame( '2.0', $data['jsonrpc'] );
-		
+
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertArrayHasKey( 'capabilities', $data['result'] );
 		$this->assertArrayHasKey( 'tools', $data['result']['capabilities'] );
@@ -163,7 +163,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		
+
 		// Verify tools are included in the initialize response.
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertArrayHasKey( 'tools', $data['result'], 'Initialize response should include tools for agent builder compatibility' );
@@ -178,7 +178,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 
 		// Verify only configured tools are returned.
 		$tool_names = array_map(
-			function( $tool ) {
+			function ( $tool ) {
 				return $tool['name'];
 			},
 			$data['result']['tools']
@@ -219,10 +219,10 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		// Validate JSON-RPC response structure.
 		$this->assertArrayHasKey( 'jsonrpc', $data );
 		$this->assertSame( '2.0', $data['jsonrpc'] );
-		
+
 		$this->assertArrayHasKey( 'id', $data );
 		$this->assertSame( 2, $data['id'] );
-		
+
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertArrayHasKey( 'tools', $data['result'] );
 
@@ -266,10 +266,10 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$this->assertSame( 200, $response->get_status() );
 
 		$data = $response->get_data();
-		
+
 		$this->assertArrayHasKey( 'result', $data );
 		$this->assertArrayHasKey( 'tools', $data['result'] );
-		
+
 		// Should return more tools than the assistant-specific list.
 		$this->assertIsArray( $data['result']['tools'] );
 		$this->assertNotEmpty( $data['result']['tools'] );
@@ -299,7 +299,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$tool_names = array_map(
-			function( $tool ) {
+			function ( $tool ) {
 				return $tool['name'];
 			},
 			$data['result']['tools']
@@ -363,7 +363,7 @@ class WP_MCP_AI_MCP_Tools_List_Test extends WP_UnitTestCase {
 		$this->assertSame( 404, $response->get_status() );
 
 		$data = $response->get_data();
-		
+
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertArrayHasKey( 'code', $data['error'] );
 		$this->assertSame( -32601, $data['error']['code'] );

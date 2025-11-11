@@ -92,7 +92,7 @@ class WP_MCP_AI_Assistant_Service {
 		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			return WP_MCP_AI_Cache_Helper::get_assistant_config(
 				$assistant_id,
-				function( $id ) {
+				function ( $id ) {
 					return WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $id );
 				}
 			);

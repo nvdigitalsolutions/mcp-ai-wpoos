@@ -22,12 +22,12 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Ensure REST server is initialized.
 		global $wp_rest_server;
 		$wp_rest_server = new WP_REST_Server();
 		do_action( 'rest_api_init' );
-		
+
 		// Clear any existing rate limit data.
 		$this->clear_rate_limit_data();
 	}
@@ -37,10 +37,10 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		$this->clear_rate_limit_data();
-		
+
 		global $wp_rest_server;
 		$wp_rest_server = null;
-		
+
 		parent::tearDown();
 	}
 
@@ -49,7 +49,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 	 */
 	protected function clear_rate_limit_data() {
 		global $wpdb;
-		
+
 		// Delete all rate limit transients.
 		$wpdb->query(
 			"DELETE FROM {$wpdb->options} 
@@ -72,8 +72,8 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$nonce        = wp_create_nonce( 'wp_rest' );
 
 		// Enable rate limiting in settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']     = true;
+		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting']           = true;
 		$settings['rate_limit_requests_per_minute'] = 5; // Low limit for testing.
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -126,9 +126,9 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$nonce = wp_create_nonce( 'wp_rest' );
 
 		// Enable rate limiting and logging.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']     = true;
-		$settings['enable_logging']           = true;
+		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting']           = true;
+		$settings['enable_logging']                 = true;
 		$settings['rate_limit_requests_per_minute'] = 3;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -149,7 +149,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 
 		// Logs should contain rate limit events.
 		$has_rate_limit_log = false;
-		
+
 		if ( is_array( $recent_errors ) ) {
 			foreach ( $recent_errors as $error ) {
 				if ( isset( $error['message'] ) && stripos( $error['message'], 'rate' ) !== false ) {
@@ -192,8 +192,8 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$nonce = wp_create_nonce( 'wp_rest' );
 
 		// Enable rate limiting.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']     = true;
+		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting']           = true;
 		$settings['rate_limit_requests_per_minute'] = 2;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -234,15 +234,18 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$manager = WP_MCP_AI_Rate_Limit_Manager::get_instance();
 
 		// Test rate limit checking.
-		$context = array( 'user_id' => 1, 'endpoint' => 'test' );
-		
+		$context = array(
+			'user_id'  => 1,
+			'endpoint' => 'test',
+		);
+
 		// First few requests should be allowed.
 		$allowed_count = 0;
 		$denied_count  = 0;
 
 		for ( $i = 0; $i < 100; $i++ ) {
 			$check = $manager->check_rate_limit( $context );
-			
+
 			if ( true === $check ) {
 				++$allowed_count;
 			} elseif ( is_wp_error( $check ) ) {
@@ -277,8 +280,8 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 		$nonce = wp_create_nonce( 'wp_rest' );
 
 		// Enable strict rate limiting.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_rate_limiting']     = true;
+		$settings                                   = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['enable_rate_limiting']           = true;
 		$settings['rate_limit_requests_per_minute'] = 1;
 		update_option( 'wp_mcp_ai_settings', $settings );
 
@@ -297,7 +300,7 @@ class WP_MCP_AI_Rate_Limit_Backoff_Test extends WP_UnitTestCase {
 
 		if ( $rate_limited_response ) {
 			$data = $rate_limited_response->get_data();
-			
+
 			// Response should include helpful information about retry.
 			$this->assertArrayHasKey(
 				'code',

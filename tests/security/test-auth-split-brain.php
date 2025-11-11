@@ -22,7 +22,7 @@ class WP_MCP_AI_Auth_Split_Brain_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Ensure REST server is initialized.
 		global $wp_rest_server;
 		$wp_rest_server = new WP_REST_Server();
@@ -35,7 +35,7 @@ class WP_MCP_AI_Auth_Split_Brain_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
-		
+
 		parent::tearDown();
 	}
 
@@ -181,7 +181,7 @@ class WP_MCP_AI_Auth_Split_Brain_Test extends WP_UnitTestCase {
 	 */
 	public function test_mcp_endpoint_accepts_mesh_api_key() {
 		// Enable mesh networking and set an inbound key.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                         = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['enable_mesh']          = true;
 		$settings['mesh_inbound_api_key'] = 'test-mesh-key-123456';
 		update_option( 'wp_mcp_ai_settings', $settings );

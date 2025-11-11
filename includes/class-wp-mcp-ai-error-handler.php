@@ -360,13 +360,13 @@ if ( ! class_exists( 'WP_MCP_AI_Error_Handler' ) ) {
 			$data = $error->get_error_data();
 
 			// Use user-friendly message if available.
-			$message = ! empty( $data['user_message'] ) 
-				? $data['user_message'] 
+			$message = ! empty( $data['user_message'] )
+				? $data['user_message']
 				: $error->get_error_message();
 
 			// Get suggestions if available.
-			$suggestions = ! empty( $data['suggestions'] ) && is_array( $data['suggestions'] ) 
-				? $data['suggestions'] 
+			$suggestions = ! empty( $data['suggestions'] ) && is_array( $data['suggestions'] )
+				? $data['suggestions']
 				: array();
 
 			return array(

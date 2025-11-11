@@ -30,7 +30,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -55,7 +55,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$messages = array(
@@ -93,7 +93,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -139,7 +139,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -158,7 +158,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -185,7 +185,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -205,7 +205,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$result = $tool->execute(
@@ -226,7 +226,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		$messages = array(
@@ -260,7 +260,7 @@ class WP_MCP_AI_Count_Tokens_Tool_Test extends WP_UnitTestCase {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		$tool   = $registry->get_tool( 'count_tokens' );
+		$tool    = $registry->get_tool( 'count_tokens' );
 		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 
 		// Create a very long text to exceed safe limits.

@@ -232,7 +232,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$input_checked = array(
 			'enable_auth0_github_bridge' => '1',
 		);
-		$sanitized = $section->sanitize( $input_checked );
+		$sanitized     = $section->sanitize( $input_checked );
 		$this->assertTrue( $sanitized['enable_auth0_github_bridge'] );
 
 		// Simulate form submission where checkbox is unchecked (not in POST data).

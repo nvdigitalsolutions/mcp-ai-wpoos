@@ -22,6 +22,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  */
 class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
+
 	/**
 	 * Allowed code types that map to WPCode executor types.
 	 *

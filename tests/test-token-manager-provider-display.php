@@ -143,7 +143,7 @@ class WP_MCP_AI_Token_Manager_Provider_Display_Test extends WP_UnitTestCase {
 		foreach ( array_keys( $retrieved_usage ) as $provider ) {
 			$display_name = $method->invoke( $token_manager, $provider );
 			$this->assertNotEmpty( $display_name, "Provider {$provider} should have a display name" );
-			$this->assertNotEquals( $provider, $display_name, "Display name should be formatted, not raw key" );
+			$this->assertNotEquals( $provider, $display_name, 'Display name should be formatted, not raw key' );
 		}
 
 		// Clean up.

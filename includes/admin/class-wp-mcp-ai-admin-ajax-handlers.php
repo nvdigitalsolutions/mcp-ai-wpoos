@@ -105,10 +105,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
-			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
-			$timeout         = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout         = max( 5, $timeout );
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -155,10 +155,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
-			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
-			$timeout         = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout         = max( 5, $timeout );
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 5, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -604,7 +604,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		/**
 		 * Handle AJAX request to save tool token limits.
 		 */
-
 		public function handle_save_tool_limits() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -643,8 +642,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Check if any multipliers have changed.
 			$current_multipliers = WP_MCP_AI_Tool_Token_Limits::get_tool_multipliers();
 			foreach ( $multipliers as $tool_slug => $multiplier ) {
-				$tool_slug = sanitize_key( $tool_slug );
-				$multiplier = (float) $multiplier;
+				$tool_slug          = sanitize_key( $tool_slug );
+				$multiplier         = (float) $multiplier;
 				$current_multiplier = isset( $current_multipliers[ $tool_slug ] ) ? (float) $current_multipliers[ $tool_slug ] : 1.0;
 
 				if ( '' !== $tool_slug && abs( $current_multiplier - $multiplier ) > 0.01 ) {

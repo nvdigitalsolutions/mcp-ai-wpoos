@@ -524,7 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			try {
 				$client = new WP_MCP_AI_OpenAI_Client();
-				
+
 				// Simple test: list models.
 				$response = wp_remote_get(
 					'https://api.openai.com/v1/models',
@@ -565,7 +565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					return;
 				}
 
-				$body = json_decode( wp_remote_retrieve_body( $response ), true );
+				$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 				$model_count = isset( $body['data'] ) ? count( $body['data'] ) : 0;
 
 				wp_send_json_success(
@@ -645,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					return;
 				}
 
-				$body = json_decode( wp_remote_retrieve_body( $response ), true );
+				$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 				$model_count = isset( $body['models'] ) ? count( $body['models'] ) : 0;
 
 				wp_send_json_success(

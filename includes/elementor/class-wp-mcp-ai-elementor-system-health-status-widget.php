@@ -145,8 +145,8 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 
 		// Overall status.
 		$status_class = 'status-' . sanitize_html_class( $health['overall_status'] );
-		$status_icon = $this->get_status_icon( $health['overall_status'] );
-		
+		$status_icon  = $this->get_status_icon( $health['overall_status'] );
+
 		echo '<div class="wp-mcp-ai-system-health__overall ' . esc_attr( $status_class ) . '">';
 		echo '<div class="wp-mcp-ai-system-health__status-icon">';
 		echo '<span class="dashicons dashicons-' . esc_attr( $status_icon ) . '"></span>';
@@ -177,7 +177,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 
 			foreach ( $health['components'] as $component_key => $component_data ) {
 				$component_status_class = 'status-' . sanitize_html_class( $component_data['status'] );
-				
+
 				echo '<div class="wp-mcp-ai-system-health__component ' . esc_attr( $component_status_class ) . '">';
 				echo '<div class="wp-mcp-ai-system-health__component-name">' . esc_html( $component_data['name'] ) . '</div>';
 				echo '<div class="wp-mcp-ai-system-health__component-indicator"></div>';
@@ -202,30 +202,30 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 	protected function calculate_system_health() {
 		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
 			return array(
-				'overall_status'   => 'unknown',
-				'health_score'     => 0,
-				'critical_issues'  => 0,
-				'components'       => array(),
+				'overall_status'  => 'unknown',
+				'health_score'    => 0,
+				'critical_issues' => 0,
+				'components'      => array(),
 			);
 		}
 
 		$components = array(
-			'rest_api'     => __( 'REST API', 'wp-mcp-ai' ),
-			'chat_ui'      => __( 'Chat UI', 'wp-mcp-ai' ),
-			'mcp_core'     => __( 'MCP Core', 'wp-mcp-ai' ),
-			'elementor'    => __( 'Elementor', 'wp-mcp-ai' ),
-			'cpt_ai_peer'  => __( 'AI Peer CPT', 'wp-mcp-ai' ),
+			'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
+			'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
+			'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
+			'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
+			'cpt_ai_peer'   => __( 'AI Peer CPT', 'wp-mcp-ai' ),
 			'cpt_assistant' => __( 'Assistant CPT', 'wp-mcp-ai' ),
 		);
 
 		$component_health = array();
-		$total_score = 0;
-		$component_count = 0;
-		$critical_issues = 0;
+		$total_score      = 0;
+		$component_count  = 0;
+		$critical_issues  = 0;
 
 		foreach ( $components as $key => $name ) {
 			$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $key, '-24 hours' );
-			
+
 			if ( ! isset( $trends['status_distribution'] ) || empty( $trends['status_distribution'] ) ) {
 				$component_health[ $key ] = array(
 					'name'   => $name,
@@ -234,10 +234,10 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 				continue;
 			}
 
-			$passed = isset( $trends['status_distribution']['passed'] ) ? $trends['status_distribution']['passed'] : 0;
+			$passed  = isset( $trends['status_distribution']['passed'] ) ? $trends['status_distribution']['passed'] : 0;
 			$warning = isset( $trends['status_distribution']['warning'] ) ? $trends['status_distribution']['warning'] : 0;
-			$failed = isset( $trends['status_distribution']['failed'] ) ? $trends['status_distribution']['failed'] : 0;
-			$total = $passed + $warning + $failed;
+			$failed  = isset( $trends['status_distribution']['failed'] ) ? $trends['status_distribution']['failed'] : 0;
+			$total   = $passed + $warning + $failed;
 
 			if ( $total === 0 ) {
 				$component_health[ $key ] = array(
@@ -247,9 +247,9 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 				continue;
 			}
 
-			$score = ( ( $passed * 100 ) + ( $warning * 50 ) ) / $total;
+			$score        = ( ( $passed * 100 ) + ( $warning * 50 ) ) / $total;
 			$total_score += $score;
-			$component_count++;
+			++$component_count;
 
 			if ( $failed > 0 ) {
 				$critical_issues += $failed;

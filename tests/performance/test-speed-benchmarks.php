@@ -204,9 +204,9 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 				'iterations'            => $iterations,
 			),
 			array(
-				'total'              => $iterations,
-				'passed'             => $memory_growth_percent < 50 ? $iterations : 0,
-				'failed'             => $memory_growth_percent >= 50 ? $iterations : 0,
+				'total'                => $iterations,
+				'passed'               => $memory_growth_percent < 50 ? $iterations : 0,
+				'failed'               => $memory_growth_percent >= 50 ? $iterations : 0,
 				'memory_leak_detected' => $memory_growth_percent >= 50,
 			)
 		);
@@ -283,8 +283,8 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Performance Monitor CCT class not available.' );
 		}
 
-		$iterations  = 20;
-		$times       = array();
+		$iterations   = 20;
+		$times        = array();
 		$start_memory = memory_get_usage();
 
 		for ( $i = 0; $i < $iterations; $i++ ) {
@@ -306,7 +306,7 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 		$min_time = min( $times );
 
 		// Get historical baseline.
-		$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( 'rest_api', '-30 days', 'speed' );
+		$trends   = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( 'rest_api', '-30 days', 'speed' );
 		$baseline = isset( $trends['avg_response_time'] ) ? $trends['avg_response_time'] : 0;
 
 		$regression_percent = 0;

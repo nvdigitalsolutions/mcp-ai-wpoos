@@ -351,7 +351,7 @@ class WP_MCP_AI_REST_Tools_Error_Handling_Test extends WP_UnitTestCase {
 				$errors,
 				function ( $error ) {
 					return isset( $error['data']['tool_slug'] ) &&
-						   in_array( $error['data']['tool_slug'], array( 'broken_schema_tool', 'invalid_schema_tool' ), true );
+							in_array( $error['data']['tool_slug'], array( 'broken_schema_tool', 'invalid_schema_tool' ), true );
 				}
 			);
 

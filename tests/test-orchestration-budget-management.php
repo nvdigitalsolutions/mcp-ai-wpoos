@@ -37,7 +37,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Reset user tool usage before each test.
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			WP_MCP_AI_Tool_Token_Limits::reset_user_tool_usage( self::$user_id );
@@ -63,7 +63,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 
 		// Check should not throw exception when enforcement disabled.
 		$context = array( 'user_id' => self::$user_id );
-		
+
 		try {
 			WP_MCP_AI_Tool_Token_Limits::check_tool_limit( 'test_tool', array(), $context );
 			$exception_thrown = false;
@@ -85,7 +85,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 		$this->set_user_usage_above_limit( 'test_tool' );
 
 		$context = array( 'user_id' => self::$user_id );
-		
+
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessageMatches( '/Daily token limit exceeded/' );
 
@@ -112,7 +112,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 	public function test_adjust_tool_result_truncates_large_strings() {
 		// Create a large string that will exceed budget (simulate 10k tokens = 40k chars).
 		$large_result = str_repeat( 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. ', 800 );
-		
+
 		$adjusted = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget(
 			$large_result,
 			'test_tool',
@@ -121,7 +121,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 
 		// Adjusted result should be shorter.
 		$this->assertLessThan( strlen( $large_result ), strlen( $adjusted ) );
-		
+
 		// Should contain truncation notice.
 		$this->assertStringContainsString( 'truncated by orchestration layer', $adjusted );
 	}
@@ -147,11 +147,11 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 
 		// Should still be an array.
 		$this->assertIsArray( $adjusted );
-		
+
 		// URL and title should be preserved.
 		$this->assertEquals( 'https://example.com', $adjusted['url'] );
 		$this->assertEquals( 'Test Page', $adjusted['title'] );
-		
+
 		// Markdown should be truncated.
 		$this->assertLessThan( strlen( $large_markdown ), strlen( $adjusted['markdown'] ) );
 	}
@@ -164,9 +164,12 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 		$result = str_repeat( 'Test content. ', 400 ); // ~1600 chars = ~400 tokens.
 
 		// Regular tool should be truncated on low tier.
-		add_filter( 'wp_mcp_ai_workload_tier', function() {
-			return 'low';
-		} );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function () {
+				return 'low';
+			}
+		);
 
 		$adjusted_normal = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget(
 			$result,
@@ -196,9 +199,12 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 		$result = str_repeat( 'Test content. ', 200 ); // ~800 chars = ~200 tokens.
 
 		// Low tier should truncate.
-		add_filter( 'wp_mcp_ai_workload_tier', function() {
-			return 'low';
-		} );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function () {
+				return 'low';
+			}
+		);
 
 		$adjusted_low = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget(
 			$result,
@@ -209,9 +215,12 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 		remove_all_filters( 'wp_mcp_ai_workload_tier' );
 
 		// High tier should not truncate.
-		add_filter( 'wp_mcp_ai_workload_tier', function() {
-			return 'high';
-		} );
+		add_filter(
+			'wp_mcp_ai_workload_tier',
+			function () {
+				return 'high';
+			}
+		);
 
 		$adjusted_high = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget(
 			$result,
@@ -232,9 +241,12 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 		$result = str_repeat( 'Test. ', 1000 );
 
 		// Set a very low limit via filter.
-		add_filter( 'wp_mcp_ai_tool_result_max_tokens', function() {
-			return 10; // Very restrictive.
-		} );
+		add_filter(
+			'wp_mcp_ai_tool_result_max_tokens',
+			function () {
+				return 10; // Very restrictive.
+			}
+		);
 
 		$adjusted = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget(
 			$result,
@@ -276,7 +288,7 @@ class WP_MCP_AI_Orchestration_Budget_Test extends WP_UnitTestCase {
 	 */
 	protected function set_user_usage_above_limit( $tool_slug ) {
 		$limit    = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
-		$date_key = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$date_key = gmdate( 'Y-m-d', time() );
 
 		$usage = array(
 			$tool_slug => array(

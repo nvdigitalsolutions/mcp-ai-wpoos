@@ -189,10 +189,10 @@ class WP_MCP_AI_Document_Summarizer {
 				continue;
 			}
 
-			$content      = (string) $doc['content'];
-			$content_len  = strlen( $content );
-			$proportion   = $content_len / $total_chars;
-			$doc_budget   = max( 500, (int) ( $total_budget * $proportion ) );
+			$content     = (string) $doc['content'];
+			$content_len = strlen( $content );
+			$proportion  = $content_len / $total_chars;
+			$doc_budget  = max( 500, (int) ( $total_budget * $proportion ) );
 
 			$doc['content'] = self::summarize_if_needed(
 				$content,

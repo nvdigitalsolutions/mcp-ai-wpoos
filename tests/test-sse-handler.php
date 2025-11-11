@@ -190,7 +190,12 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 	 * Test build_event_stream_chunk with JSON data.
 	 */
 	public function test_build_event_stream_chunk_with_json() {
-		$data  = wp_json_encode( array( 'status' => 'success', 'count' => 42 ) );
+		$data  = wp_json_encode(
+			array(
+				'status' => 'success',
+				'count'  => 42,
+			)
+		);
 		$chunk = $this->handler->build_event_stream_chunk( 'result', $data );
 
 		$this->assertStringContainsString( 'event: result', $chunk );

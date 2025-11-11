@@ -173,13 +173,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					<div style="margin-top: 15px;">
 						<h3><?php esc_html_e( 'Expected Response Format (JSON-RPC 2.0)', 'wp-mcp-ai' ); ?></h3>
 						<pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;"><code>{
-  "jsonrpc": "2.0",
-  "id": 1,
-  "result": {
-    "protocolVersion": "2024-11-05",
-    "capabilities": { ... },
-    "serverInfo": { ... }
-  }
+	"jsonrpc": "2.0",
+	"id": 1,
+	"result": {
+	"protocolVersion": "2024-11-05",
+	"capabilities": { ... },
+	"serverInfo": { ... }
+	}
 }</code></pre>
 					</div>
 				</div>
@@ -387,10 +387,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<tbody>
 								<?php foreach ( $assistants as $assistant ) : ?>
 									<?php
-									$provider    = get_post_meta( $assistant->ID, '_wp_mcp_ai_provider', true );
-									$model       = get_post_meta( $assistant->ID, '_wp_mcp_ai_model', true );
-									$tools       = get_post_meta( $assistant->ID, '_wp_mcp_ai_tools', true );
-									
+									$provider = get_post_meta( $assistant->ID, '_wp_mcp_ai_provider', true );
+									$model    = get_post_meta( $assistant->ID, '_wp_mcp_ai_model', true );
+									$tools    = get_post_meta( $assistant->ID, '_wp_mcp_ai_tools', true );
+
 									// Fallback to default values if not set.
 									$provider    = ! empty( $provider ) ? $provider : 'openai';
 									$model       = ! empty( $model ) ? $model : 'N/A';
@@ -532,12 +532,12 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					<h2><?php esc_html_e( '9. Recent MCP Activity', 'wp-mcp-ai' ); ?></h2>
 					<?php
 					$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
-					
+
 					if ( ! empty( $recent_activity ) && is_array( $recent_activity ) ) {
 						// Filter for MCP-related activity.
 						$mcp_activity = array_filter(
 							$recent_activity,
-							function( $item ) {
+							function ( $item ) {
 								return isset( $item['context'] ) && strpos( $item['context'], 'mcp' ) !== false;
 							}
 						);

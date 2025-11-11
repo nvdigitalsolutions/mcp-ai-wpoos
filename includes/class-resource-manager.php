@@ -304,7 +304,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		public function set_max_concurrent_requests( $max ) {
 			$max = max( 1, min( 10, absint( $max ) ) );
 
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			$settings                            = get_option( 'wp_mcp_ai_settings', array() );
 			$settings['max_concurrent_requests'] = $max;
 
 			return update_option( 'wp_mcp_ai_settings', $settings );
@@ -339,7 +339,7 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		public function set_max_input_tokens( $max ) {
 			$max = max( 1000, min( 500000, absint( $max ) ) );
 
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
+			$settings                     = get_option( 'wp_mcp_ai_settings', array() );
 			$settings['max_input_tokens'] = $max;
 
 			return update_option( 'wp_mcp_ai_settings', $settings );

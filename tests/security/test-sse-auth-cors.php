@@ -22,7 +22,7 @@ class WP_MCP_AI_SSE_Auth_CORS_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Ensure REST server is initialized.
 		global $wp_rest_server;
 		$wp_rest_server = new WP_REST_Server();
@@ -35,7 +35,7 @@ class WP_MCP_AI_SSE_Auth_CORS_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
-		
+
 		parent::tearDown();
 	}
 
@@ -173,7 +173,7 @@ class WP_MCP_AI_SSE_Auth_CORS_Test extends WP_UnitTestCase {
 
 		// Test with trusted origin.
 		$_SERVER['HTTP_ORIGIN'] = home_url();
-		
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$request->set_header( 'Accept', 'text/event-stream' );
 		$request->set_header( 'X-WP-Nonce', $nonce );

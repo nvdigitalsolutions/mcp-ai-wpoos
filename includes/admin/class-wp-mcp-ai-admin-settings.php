@@ -70,10 +70,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function __construct() {
 			// Initialize component classes.
-			$this->settings_base  = new WP_MCP_AI_Admin_Settings_Base();
-			$this->ajax_handlers  = new WP_MCP_AI_Admin_AJAX_Handlers();
-			$this->renderer       = new WP_MCP_AI_Admin_Settings_Renderer( $this->settings_base );
-			$this->oauth_manager  = new WP_MCP_AI_OAuth_Manager();
+			$this->settings_base = new WP_MCP_AI_Admin_Settings_Base();
+			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+			$this->renderer      = new WP_MCP_AI_Admin_Settings_Renderer( $this->settings_base );
+			$this->oauth_manager = new WP_MCP_AI_OAuth_Manager();
 
 			add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
@@ -85,7 +85,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );
-			
+
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -97,7 +97,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
-			
+
 			// Delegate allowed redirect hosts to the OAuth manager component.
 			if ( ! has_filter( 'allowed_redirect_hosts', array( $this->oauth_manager, 'allow_gmail_oauth_redirect_host' ) ) ) {
 				add_filter( 'allowed_redirect_hosts', array( $this->oauth_manager, 'allow_gmail_oauth_redirect_host' ), 10, 2 );
@@ -1228,7 +1228,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function register_settings() {
 			// Delegate settings registration to the base component.
 			$this->settings_base->register_settings();
-			
+
 			// Keep existing field registrations for backward compatibility.
 			register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );
 
@@ -2099,7 +2099,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( isset( $settings['max_history_messages'] ) ) {
-				$max_messages = absint( $settings['max_history_messages'] );
+				$max_messages                  = absint( $settings['max_history_messages'] );
 				$clean['max_history_messages'] = max( 1, min( 50, $max_messages ) );
 			}
 
@@ -2464,7 +2464,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 				)
 			);
-
 		}
 
 		/**
@@ -4066,17 +4065,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * Render the provider priority list field.
 		 */
 		public function render_provider_priority_list_field() {
-			$settings       = self::get_settings();
-			$priority_list  = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] ) 
-				? $settings['provider_priority_list'] 
+			$settings      = self::get_settings();
+			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
+				? $settings['provider_priority_list']
 				: array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' );
-			
+
 			$provider_labels = array(
-				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
@@ -5151,7 +5150,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			return $max_bytes;
 		}
-
 	}
 }
 

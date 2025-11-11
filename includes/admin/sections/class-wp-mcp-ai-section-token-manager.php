@@ -256,17 +256,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		/**
 		 * Render per-tool token limits view.
 		 */
-	/**
-	 * Render per-tool token limits view.
-	 */
-	private function render_per_tool_view() {
-		$current_user_id = get_current_user_id();
-		$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
+		/**
+		 * Render per-tool token limits view.
+		 */
+		private function render_per_tool_view() {
+			$current_user_id = get_current_user_id();
+			$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
 
-		// Get all available tools.
-		$all_tools = $this->get_all_available_tools();
+			// Get all available tools.
+			$all_tools = $this->get_all_available_tools();
 
-		?>
+			?>
 		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
 		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
 
@@ -384,30 +384,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 		<p class="submit">
 			<button type="button" id="wp-mcp-ai-save-all-tool-settings" class="button button-primary">
-				<?php esc_html_e( 'Save All Tool Settings', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Save All Tool Settings', 'wp-mcp-ai' ); ?>
 			</button>
 			<span class="spinner" style="float: none; margin: 0 10px;"></span>
 			<span id="wp-mcp-ai-tool-settings-message" style="margin-left: 10px;"></span>
 		</p>
-		<?php
-	}
-
-	/**
-	 * Get tool multiplier for token limits.
-	 *
-	 * @param string $tool_slug Tool slug.
-	 * @return float Multiplier value.
-	 */
-	private function get_tool_multiplier( $tool_slug ) {
-		// Get multipliers from the WP_MCP_AI_Tool_Token_Limits class.
-		$multipliers = WP_MCP_AI_Tool_Token_Limits::get_tool_multipliers();
-		
-		if ( isset( $multipliers[ $tool_slug ] ) ) {
-			return (float) $multipliers[ $tool_slug ];
+			<?php
 		}
-		
-		return 1.0; // Default multiplier.
-	}
+
+		/**
+		 * Get tool multiplier for token limits.
+		 *
+		 * @param string $tool_slug Tool slug.
+		 * @return float Multiplier value.
+		 */
+		private function get_tool_multiplier( $tool_slug ) {
+			// Get multipliers from the WP_MCP_AI_Tool_Token_Limits class.
+			$multipliers = WP_MCP_AI_Tool_Token_Limits::get_tool_multipliers();
+
+			if ( isset( $multipliers[ $tool_slug ] ) ) {
+				return (float) $multipliers[ $tool_slug ];
+			}
+
+			return 1.0; // Default multiplier.
+		}
 
 
 		/**
@@ -788,11 +788,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$provider = sanitize_key( $provider );
 
 			$provider_labels = array(
-				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 
 			if ( isset( $provider_labels[ $provider ] ) ) {

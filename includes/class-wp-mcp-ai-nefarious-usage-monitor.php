@@ -119,13 +119,13 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 */
 		private function load_settings() {
 			$defaults = array(
-				'enabled'                    => true,
-				'auto_shutdown_enabled'      => true,
-				'max_requests_per_minute'    => self::DEFAULT_MAX_REQUESTS_PER_MINUTE,
-				'max_tools_per_hour'         => self::DEFAULT_MAX_TOOLS_PER_HOUR,
-				'suspicious_patterns'        => $this->get_default_suspicious_patterns(),
-				'violation_threshold'        => 5, // Auto-shutdown after this many violations.
-				'notify_admin_email'         => true,
+				'enabled'                 => true,
+				'auto_shutdown_enabled'   => true,
+				'max_requests_per_minute' => self::DEFAULT_MAX_REQUESTS_PER_MINUTE,
+				'max_tools_per_hour'      => self::DEFAULT_MAX_TOOLS_PER_HOUR,
+				'suspicious_patterns'     => $this->get_default_suspicious_patterns(),
+				'violation_threshold'     => 5, // Auto-shutdown after this many violations.
+				'notify_admin_email'      => true,
 			);
 
 			$saved_settings = get_option( self::SETTINGS_OPTION, array() );
@@ -280,8 +280,8 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 							'suspicious_chat_content',
 							'Suspicious content detected in chat message',
 							array(
-								'patterns'      => $suspicious_content,
-								'message_role'  => isset( $message['role'] ) ? $message['role'] : 'unknown',
+								'patterns'     => $suspicious_content,
+								'message_role' => isset( $message['role'] ) ? $message['role'] : 'unknown',
 							)
 						);
 					}
@@ -480,8 +480,8 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			update_option(
 				self::SHUTDOWN_OPTION,
 				array(
-					'active'              => true,
-					'triggered_at'        => current_time( 'mysql', true ),
+					'active'               => true,
+					'triggered_at'         => current_time( 'mysql', true ),
 					'triggering_violation' => $triggering_violation,
 				),
 				false

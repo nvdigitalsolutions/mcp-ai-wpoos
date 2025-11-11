@@ -196,8 +196,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings_Base::OPTION_NAME ); ?>[<?php echo esc_attr( $name ); ?>]" 
 				value="<?php echo esc_attr( $value ); ?>" 
 				class="<?php echo esc_attr( $class ); ?>"
-				<?php if ( '' !== $min ) : ?>min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
-				<?php if ( '' !== $max ) : ?>max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
+				<?php
+				if ( '' !== $min ) :
+					?>
+					min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
+				<?php
+				if ( '' !== $max ) :
+					?>
+					max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
 				step="<?php echo esc_attr( $step ); ?>"
 			/>
 			<?php if ( ! empty( $description ) ) : ?>

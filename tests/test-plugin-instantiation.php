@@ -79,7 +79,7 @@ class Test_Plugin_Instantiation extends WP_UnitTestCase {
 
 		add_action(
 			'wp_mcp_ai_bootstrapped',
-			function() use ( &$action_fired ) {
+			function () use ( &$action_fired ) {
 				$action_fired = true;
 			}
 		);

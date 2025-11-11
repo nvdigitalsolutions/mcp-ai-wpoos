@@ -487,7 +487,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 * @return string Normalized quality value or empty string if invalid.
 	 */
 	protected function normalise_quality_for_model( $quality, $model ) {
-		$quality         = sanitize_key( $quality );
+		$quality           = sanitize_key( $quality );
 		$allowed_for_model = $this->get_model_allowed_qualities( $model );
 
 		return in_array( $quality, $allowed_for_model, true ) ? $quality : '';
@@ -788,41 +788,41 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_tool_rules() {
 		return array(
-			'model_requirements'     => array(
-				'providers'  => array( 'openai' ),
-				'models'     => array( 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
-				'required'   => true,
+			'model_requirements'    => array(
+				'providers' => array( 'openai' ),
+				'models'    => array( 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
+				'required'  => true,
 			),
-			'parameter_constraints'  => array(
-				'required_fields' => array( 'prompt' ),
-				'optional_fields' => array( 'model', 'size', 'quality', 'response_format', 'file_name', 'timeout' ),
+			'parameter_constraints' => array(
+				'required_fields'   => array( 'prompt' ),
+				'optional_fields'   => array( 'model', 'size', 'quality', 'response_format', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
-			'rate_limits'            => array(
+			'rate_limits'           => array(
 				'requests_per_minute' => 5,
 				'requests_per_hour'   => 50,
 				'concurrent_requests' => 2,
 			),
-			'timeout_constraints'    => array(
+			'timeout_constraints'   => array(
 				'recommended_timeout' => 60,
 				'max_execution_time'  => 120,
 			),
-			'response_constraints'   => array(
-				'max_size'          => 5242880, // 5MB typical image size.
+			'response_constraints'  => array(
+				'max_size'           => 5242880, // 5MB typical image size.
 				'supports_streaming' => false,
 			),
-			'dependencies'           => array(
-				'required_settings' => array(
+			'dependencies'          => array(
+				'required_settings'   => array(
 					'api_key' => 'wp_mcp_ai_openai_api_key',
 				),
 				'required_extensions' => array( 'gd' ), // For image processing.
 			),
-			'orchestration_hints'    => array(
-				'can_run_parallel'  => true,
-				'requires_lock'     => false,
-				'cache_ttl'         => 0, // Don't cache - each generation unique.
-				'retry_strategy'    => 'exponential_backoff',
-				'max_retries'       => 3,
+			'orchestration_hints'   => array(
+				'can_run_parallel' => true,
+				'requires_lock'    => false,
+				'cache_ttl'        => 0, // Don't cache - each generation unique.
+				'retry_strategy'   => 'exponential_backoff',
+				'max_retries'      => 3,
 			),
 		);
 	}

@@ -24,8 +24,8 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 	 */
 	protected function enable_bridge() {
 		$settings = array(
-			'enable_wordpress_gravatar_bridge'        => true,
-			'wordpress_gravatar_userinfo_endpoint'    => 'https://public-api.wordpress.com/oauth2/v1/userinfo',
+			'enable_wordpress_gravatar_bridge'     => true,
+			'wordpress_gravatar_userinfo_endpoint' => 'https://public-api.wordpress.com/oauth2/v1/userinfo',
 		);
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -56,7 +56,7 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mock' );
 		$request->set_header( 'Authorization', 'Bearer sample-token' );
 
-		$payload  = array( 
+		$payload  = array(
 			'sub'   => 'gravatar|abc123',
 			'email' => 'test@example.com',
 		);
@@ -222,7 +222,7 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 		$request->set_header( 'Authorization', 'Bearer sample-token' );
 
 		$email   = 'test@example.com';
-		$payload = array( 
+		$payload = array(
 			'sub'   => 'gravatar|abc',
 			'email' => $email,
 		);
@@ -244,7 +244,7 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 		$request->set_header( 'Authorization', 'Bearer sample-token' );
 
 		$avatar_url = 'https://example.com/avatar.jpg';
-		$payload    = array( 
+		$payload    = array(
 			'sub'    => 'wordpress.com|123',
 			'avatar' => $avatar_url,
 		);
@@ -261,11 +261,11 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 	public function test_user_metadata_synchronization() {
 		$this->enable_bridge();
 
-		$user_id = self::factory()->user->create( 
-			array( 
+		$user_id = self::factory()->user->create(
+			array(
 				'role'         => 'subscriber',
 				'display_name' => 'Old Name',
-			) 
+			)
 		);
 		update_user_meta( $user_id, WP_MCP_AI_Integration_WordPress_Gravatar::META_SUBJECT, 'gravatar|test123' );
 
@@ -304,7 +304,7 @@ class WP_MCP_AI_WordPress_Gravatar_Integration_Test extends WP_UnitTestCase {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mock' );
 		$request->set_header( 'Authorization', 'Bearer sample-token' );
 
-		$payload = array( 'sub' => 'wordpress.com|12345' );
+		$payload  = array( 'sub' => 'wordpress.com|12345' );
 		$filtered = apply_filters( 'wp_mcp_ai_bearer_token_payload', $payload, $request );
 
 		// Should not enrich payload when disabled.

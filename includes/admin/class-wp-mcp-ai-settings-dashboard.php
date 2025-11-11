@@ -96,13 +96,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Sanitize settings before saving.
 		 *
-		 * @param array $input Raw settings input.
+		 * @param array  $input Raw settings input.
 		 * @param string $active_tab Optional. The active tab to process. If not provided, processes all tabs.
 		 * @return array Sanitized settings.
 		 */
 		public function sanitize_settings( $input, $active_tab = '' ) {
 			$sanitized = array();
-			
+
 			// Get sections to process - either from a specific tab or all sections.
 			if ( ! empty( $active_tab ) ) {
 				$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
@@ -146,11 +146,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			
+
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
-			
+
 			// Log save attempt for debugging (only if logging enabled).
 			if ( $enable_logging ) {
 				error_log(
@@ -162,10 +162,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					)
 				);
 			}
-			
+
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
 			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
-			
+
 			// Log sanitization results.
 			if ( $enable_logging ) {
 				error_log(
@@ -185,7 +185,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Save to database and log result.
 			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
-			
+
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
@@ -202,7 +202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// Clear orchestration-related caches.
 				delete_transient( 'wp_mcp_ai_health_status' );
 				delete_transient( 'wp_mcp_ai_active_cron_count' );
-				
+
 				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
 					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
 				}
@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'page'    => self::PAGE_SLUG,
 				'updated' => 'true',
 			);
-			
+
 			if ( ! empty( $active_tab ) ) {
 				$redirect_args['tab'] = $active_tab;
 			}

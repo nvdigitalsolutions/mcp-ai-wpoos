@@ -114,12 +114,18 @@ class WP_MCP_AI_Cache_Helper_Test extends WP_UnitTestCase {
 		);
 
 		$test_data = array(
-			array( 'id' => 1, 'title' => 'Assistant 1' ),
-			array( 'id' => 2, 'title' => 'Assistant 2' ),
+			array(
+				'id'    => 1,
+				'title' => 'Assistant 1',
+			),
+			array(
+				'id'    => 2,
+				'title' => 'Assistant 2',
+			),
 		);
 
 		$call_count = 0;
-		$callback   = function() use ( $test_data, &$call_count ) {
+		$callback   = function () use ( $test_data, &$call_count ) {
 			++$call_count;
 			return $test_data;
 		};
@@ -146,7 +152,7 @@ class WP_MCP_AI_Cache_Helper_Test extends WP_UnitTestCase {
 		);
 
 		$call_count = 0;
-		$callback   = function( $id ) use ( $config, &$call_count ) {
+		$callback   = function ( $id ) use ( $config, &$call_count ) {
 			++$call_count;
 			return $config;
 		};
@@ -173,7 +179,7 @@ class WP_MCP_AI_Cache_Helper_Test extends WP_UnitTestCase {
 		);
 
 		$call_count = 0;
-		$callback   = function() use ( $options, &$call_count ) {
+		$callback   = function () use ( $options, &$call_count ) {
 			++$call_count;
 			return $options;
 		};
