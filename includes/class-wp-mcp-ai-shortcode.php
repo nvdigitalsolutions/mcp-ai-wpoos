@@ -302,7 +302,10 @@ class WP_MCP_AI_Shortcode {
 				$guest_token = self::generate_guest_token( $assistant_id );
 			}
 
-			$capability = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
+			// Use the effective capability (per-assistant or global).
+			$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $assistant_id, 'shortcode' )
+				: wp_mcp_ai_get_required_chat_capability( $assistant_id, 'shortcode' );
 
 			if ( $guest_token ) {
 				$capability = 'public';
