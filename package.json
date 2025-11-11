@@ -18,7 +18,10 @@
 		"install:chartjs": "cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js"
 	},
 	"dependencies": {
-		"chart.js": "^4.4.1"
+		"chart.js": "^4.4.1",
+		"dompurify": "^3.3.0",
+		"ky": "^1.14.0",
+		"marked": "^17.0.0"
 	},
 	"devDependencies": {
 		"@wordpress/eslint-plugin": "^14.0.0",
@@ -35,10 +38,5 @@
 		"mcp"
 	],
 	"author": "NV Digital Solutions",
-	"license": "GPL-3.0-or-later",
-	"dependencies": {
-		"dompurify": "^3.3.0",
-		"ky": "^1.14.0",
-		"marked": "^17.0.0"
-	}
+	"license": "GPL-3.0-or-later"
 }
