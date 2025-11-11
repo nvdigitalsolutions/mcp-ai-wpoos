@@ -104,7 +104,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		add_action( 'wp_mcp_ai_hourly_forecast_check', array( __CLASS__, 'check_and_send_alerts' ) );
 
 		// Clean up cron on plugin deactivation.
-		register_deactivation_hook( WP_MCP_AI_PLUGIN_FILE, array( __CLASS__, 'deactivate' ) );
+		register_deactivation_hook( WP_MCP_AI_PATH . 'wp-mcp-ai.php', array( __CLASS__, 'deactivate' ) );
 	}
 
 	/**
