@@ -146,7 +146,7 @@ class WP_MCP_AI_AI_Peer_Error_Handler_Test extends WP_UnitTestCase {
 	 * Test that sync error context includes required fields.
 	 */
 	public function test_sync_error_context_structure() {
-		$peer_id = 456;
+		$peer_id           = 456;
 		$exception_message = 'Test exception message';
 
 		// Simulate the error context that would be created during sync.
@@ -174,7 +174,7 @@ class WP_MCP_AI_AI_Peer_Error_Handler_Test extends WP_UnitTestCase {
 	 * Test that delete error context includes required fields.
 	 */
 	public function test_delete_error_context_structure() {
-		$peer_id = 789;
+		$peer_id     = 789;
 		$cct_item_id = 12;
 
 		// Simulate the error context that would be created during delete.
