@@ -357,18 +357,11 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
 	WP_MCP_AI_REST_Context_Diagnostic::init();
 
-	// Load new modular settings dashboard system by default.
-	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
-	if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
-		define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
-	}
-
-	if ( ! WP_MCP_AI_USE_OLD_SETTINGS ) {
-		require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
-		// Load Auth0 Setup wizard only when using new dashboard (it's a submenu of wp-mcp-ai-dashboard).
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
-		new WP_MCP_AI_Auth0_Setup();
-	}
+	// Load new modular settings dashboard system.
+	require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+	// Load Auth0 Setup wizard (submenu of wp-mcp-ai-dashboard).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
+	new WP_MCP_AI_Auth0_Setup();
 
 	/**
 	 * Add plugin action links in the plugins list.
@@ -377,15 +370,7 @@ if ( is_admin() ) {
 	 * @return array Modified plugin action links.
 	 */
 	function wp_mcp_ai_add_plugin_action_links( $links ) {
-		$settings_link = '';
-		
-		// Link to the appropriate settings page based on configuration.
-		if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
-			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-settings' );
-		} else {
-			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
-		}
-
+		$settings_link   = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
@@ -572,11 +557,6 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
 			
-			// Only instantiate old admin settings if legacy mode is enabled.
-			if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
-				$this->admin_settings = new WP_MCP_AI_Admin_Settings();
-			}
-			
 			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
 			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
@@ -589,12 +569,6 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
 			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
-			
-			// Only set admin_settings global if using old settings.
-			if ( isset( $this->admin_settings ) ) {
-				$GLOBALS['wp_mcp_ai_admin_settings'] = $this->admin_settings;
-			}
-			
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
 			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;

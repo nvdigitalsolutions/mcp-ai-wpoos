@@ -36,9 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		/**
 		 * Register diagnostic page under Tools menu.
 		 *
-		 * Note: Changed from submenu of 'wp-mcp-ai-dashboard' to 'tools.php'
-		 * to ensure the diagnostic page is always accessible, even when the
-		 * main dashboard isn't loaded (e.g., when WP_MCP_AI_USE_OLD_SETTINGS is true).
+		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
 			self::$page_hook = add_submenu_page(

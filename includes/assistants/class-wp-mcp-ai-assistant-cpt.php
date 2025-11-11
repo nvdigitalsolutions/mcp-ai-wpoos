@@ -1235,6 +1235,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
+			// Only register metaboxes for assistant post type.
+			$screen = get_current_screen();
+			if ( ! $screen || self::POST_TYPE !== $screen->post_type ) {
+				return;
+			}
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'wp-mcp-ai' ),
