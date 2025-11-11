@@ -37,6 +37,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-j
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-woocommerce.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-npm-management.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-security.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
@@ -78,6 +79,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_WooCommerce_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Elementor_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Token_Manager() );
+		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_NPM_Management() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Performance() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );

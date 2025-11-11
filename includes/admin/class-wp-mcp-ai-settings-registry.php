@@ -57,6 +57,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 				'title' => 'Token Manager',
 				'icon'  => 'dashicons-chart-bar',
 			),
+			'npm_management' => array(
+				'title' => 'NPM Management',
+				'icon'  => 'dashicons-embed-generic',
+			),
 			'security'       => array(
 				'title' => 'Security',
 				'icon'  => 'dashicons-shield',
