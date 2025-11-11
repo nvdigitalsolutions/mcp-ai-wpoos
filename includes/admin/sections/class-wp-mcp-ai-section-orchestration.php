@@ -61,10 +61,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_intro_content(),
 				),
-				'health_status'                   => array(
-					'type'    => 'html',
-					'content' => $this->get_health_status_content(),
-				),
 				'configuration_presets'           => array(
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
