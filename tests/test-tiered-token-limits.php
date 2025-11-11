@@ -135,7 +135,7 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		$tool_slug = 'test_tool';
 
 		// Initially, hourly usage should be 0.
-		$hour_key = gmdate( 'Y-m-d-H', current_time( 'timestamp', true ) );
+		$hour_key = gmdate( 'Y-m-d-H', time() );
 		$usage    = WP_MCP_AI_Tool_Token_Limits::get_user_tool_hourly_usage( $user_id, $tool_slug, $hour_key );
 		$this->assertEquals( 0, $usage );
 
@@ -198,11 +198,11 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		);
 
 		for ( $i = 0; $i < 48; $i++ ) {
-			$hour_key                            = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
+			$hour_key                                   = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
 			$usage[ $tool_slug ]['hourly'][ $hour_key ] = 1000; // 1000 tokens per hour.
 		}
 
-		$date_key                                     = gmdate( 'Y-m-d', current_time( 'timestamp', true ) );
+		$date_key                                  = gmdate( 'Y-m-d', time() );
 		$usage[ $tool_slug ]['daily'][ $date_key ] = 10000; // 10k tokens used today.
 
 		update_user_meta( $user_id, '_wp_mcp_ai_tool_token_usage', $usage );
@@ -215,5 +215,204 @@ class WP_MCP_AI_Tiered_Token_Limits_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'projected_usage', $forecast );
 		$this->assertArrayHasKey( 'confidence', $forecast );
 		$this->assertGreaterThan( 70, $forecast['confidence'] ); // Should have high confidence with 48 hours of data.
+	}
+
+	/**
+	 * Test tier caching functionality.
+	 */
+	public function test_tier_caching() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// First call should cache the tier.
+		$tier1 = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+		$this->assertEquals( 'free', $tier1 );
+
+		// Verify cache is working.
+		$cached = wp_cache_get( "wp_mcp_ai_user_tier_{$user_id}", 'wp_mcp_ai' );
+		$this->assertEquals( 'free', $cached );
+
+		// Change tier without using set_user_tier (direct meta update).
+		update_user_meta( $user_id, '_wp_mcp_ai_token_tier', 'pro' );
+
+		// Cached version should still be 'free'.
+		$tier2 = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+		$this->assertEquals( 'free', $tier2 );
+
+		// Invalidate cache.
+		WP_MCP_AI_Tool_Token_Limits::invalidate_tier_cache( $user_id );
+
+		// Now it should return the new tier.
+		$tier3 = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+		$this->assertEquals( 'pro', $tier3 );
+	}
+
+	/**
+	 * Test cache invalidation on tier update.
+	 */
+	public function test_cache_invalidation_on_tier_update() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Cache the initial tier.
+		$tier1 = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+		$this->assertEquals( 'free', $tier1 );
+
+		// Update tier using set_user_tier (should auto-invalidate cache).
+		WP_MCP_AI_Tool_Token_Limits::set_user_tier( $user_id, 'enterprise' );
+
+		// Cache should be cleared.
+		$cached = wp_cache_get( "wp_mcp_ai_user_tier_{$user_id}", 'wp_mcp_ai' );
+		$this->assertFalse( $cached );
+
+		// Next call should get fresh data.
+		$tier2 = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+		$this->assertEquals( 'enterprise', $tier2 );
+	}
+
+	/**
+	 * Test anomaly detection with normal usage.
+	 */
+	public function test_anomaly_detection_normal_usage() {
+		$user_id   = $this->factory->user->create();
+		$tool_slug = 'test_tool';
+
+		// Generate 24 hours of normal usage (1000 tokens/hour).
+		$usage = array(
+			$tool_slug => array(
+				'total_tokens' => 24000,
+				'requests'     => 24,
+				'first_used'   => gmdate( 'Y-m-d H:i:s' ),
+				'last_used'    => gmdate( 'Y-m-d H:i:s' ),
+				'daily'        => array(),
+				'hourly'       => array(),
+			),
+		);
+
+		for ( $i = 0; $i < 24; $i++ ) {
+			$hour_key                                   = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
+			$usage[ $tool_slug ]['hourly'][ $hour_key ] = 1000;
+		}
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tool_token_usage', $usage );
+
+		// 1000 tokens is normal (1x average).
+		$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, $tool_slug, 1000 );
+		$this->assertFalse( $is_anomaly );
+
+		// 3000 tokens is elevated but not anomalous (3x average < 5x threshold).
+		$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, $tool_slug, 3000 );
+		$this->assertFalse( $is_anomaly );
+	}
+
+	/**
+	 * Test anomaly detection with unusual spike.
+	 */
+	public function test_anomaly_detection_spike() {
+		$user_id   = $this->factory->user->create();
+		$tool_slug = 'test_tool';
+
+		// Generate 24 hours of normal usage (1000 tokens/hour).
+		$usage = array(
+			$tool_slug => array(
+				'total_tokens' => 24000,
+				'requests'     => 24,
+				'first_used'   => gmdate( 'Y-m-d H:i:s' ),
+				'last_used'    => gmdate( 'Y-m-d H:i:s' ),
+				'daily'        => array(),
+				'hourly'       => array(),
+			),
+		);
+
+		for ( $i = 0; $i < 24; $i++ ) {
+			$hour_key                                   = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
+			$usage[ $tool_slug ]['hourly'][ $hour_key ] = 1000;
+		}
+
+		update_user_meta( $user_id, '_wp_mcp_ai_tool_token_usage', $usage );
+
+		// 6000 tokens is a spike (6x average > 5x threshold).
+		$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, $tool_slug, 6000 );
+		$this->assertTrue( $is_anomaly );
+
+		// 10000 tokens is a major spike (10x average).
+		$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, $tool_slug, 10000 );
+		$this->assertTrue( $is_anomaly );
+	}
+
+	/**
+	 * Test anomaly detection with insufficient data.
+	 */
+	public function test_anomaly_detection_insufficient_data() {
+		$user_id   = $this->factory->user->create();
+		$tool_slug = 'test_tool';
+
+		// No usage data.
+		$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly( $user_id, $tool_slug, 10000 );
+		$this->assertFalse( $is_anomaly ); // Should not flag without baseline.
+	}
+
+	/**
+	 * Test audit logging for tier changes.
+	 */
+	public function test_audit_logging_tier_change() {
+		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+
+		// Set tier and verify logging happens.
+		WP_MCP_AI_Tool_Token_Limits::set_user_tier( $user_id, 'enterprise' );
+
+		// Get recent activity logs.
+		$activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+
+		// Find the tier change log.
+		$found_log = false;
+		foreach ( $activity as $log ) {
+			if ( 'token_tier_changed' === $log['event'] ) {
+				$found_log = true;
+				$this->assertEquals( $user_id, $log['context']['user_id'] );
+				$this->assertEquals( 'free', $log['context']['old_tier'] );
+				$this->assertEquals( 'enterprise', $log['context']['new_tier'] );
+				$this->assertArrayHasKey( 'changed_by', $log['context'] );
+				$this->assertArrayHasKey( 'ip_address', $log['context'] );
+				break;
+			}
+		}
+
+		$this->assertTrue( $found_log, 'Tier change should be logged in activity' );
+	}
+
+	/**
+	 * Test database index creation.
+	 */
+	public function test_database_index_creation() {
+		global $wpdb;
+
+		// Clean up any existing indexes first (test isolation).
+		$wpdb->query( "ALTER TABLE {$wpdb->usermeta} DROP INDEX IF EXISTS idx_wp_mcp_ai_token_tier" );
+		$wpdb->query( "ALTER TABLE {$wpdb->usermeta} DROP INDEX IF EXISTS idx_wp_mcp_ai_usage" );
+
+		// Create indexes.
+		$result = WP_MCP_AI_Tool_Token_Limits::create_database_indexes();
+		$this->assertTrue( $result );
+
+		// Verify tier index exists.
+		$tier_index = $wpdb->get_var(
+			$wpdb->prepare(
+				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				'idx_wp_mcp_ai_token_tier'
+			)
+		);
+		$this->assertNotNull( $tier_index );
+
+		// Verify usage index exists.
+		$usage_index = $wpdb->get_var(
+			$wpdb->prepare(
+				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				'idx_wp_mcp_ai_usage'
+			)
+		);
+		$this->assertNotNull( $usage_index );
+
+		// Calling again should be idempotent (no errors).
+		$result2 = WP_MCP_AI_Tool_Token_Limits::create_database_indexes();
+		$this->assertTrue( $result2 );
 	}
 }

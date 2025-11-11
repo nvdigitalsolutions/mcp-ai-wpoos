@@ -103,6 +103,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// Hook cron job to alert checking.
 		add_action( 'wp_mcp_ai_hourly_forecast_check', array( __CLASS__, 'check_and_send_alerts' ) );
 
+		// Hook into tier changes for audit logging.
+		add_action( 'wp_mcp_ai_user_tier_changed', array( __CLASS__, 'log_tier_change' ), 10, 4 );
+
 		// Clean up cron on plugin deactivation.
 		register_deactivation_hook( WP_MCP_AI_PATH . 'wp-mcp-ai.php', array( __CLASS__, 'deactivate' ) );
 	}
@@ -280,6 +283,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 			delete_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires' );
 		}
 
+		// Invalidate cache after tier update.
+		self::invalidate_tier_cache( $user_id );
+
 		/**
 		 * Fires after a user's tier has been changed.
 		 *
@@ -446,6 +452,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		update_user_meta( $user_id, self::USAGE_META_KEY, $usage );
+
+		// Detect usage anomalies for security monitoring.
+		self::detect_usage_anomaly( $user_id, $tool_slug, $tokens );
 
 		/**
 		 * Fires after tool token usage has been recorded.
@@ -1475,5 +1484,210 @@ class WP_MCP_AI_Tool_Token_Limits {
 		}
 
 		return $user_ids;
+	}
+
+	/**
+	 * Get user tier with caching for improved performance.
+	 *
+	 * Uses WordPress object cache with 1-hour TTL to reduce database queries.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return string Tier identifier.
+	 */
+	public static function get_user_tier_cached( $user_id ) {
+		$user_id   = absint( $user_id );
+		$cache_key = "wp_mcp_ai_user_tier_{$user_id}";
+		$tier      = wp_cache_get( $cache_key, 'wp_mcp_ai' );
+
+		if ( false === $tier ) {
+			$tier = self::get_user_tier( $user_id );
+			wp_cache_set( $cache_key, $tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+		}
+
+		return $tier;
+	}
+
+	/**
+	 * Invalidate tier cache for a user.
+	 *
+	 * Called automatically when tier is updated.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int $user_id User ID.
+	 */
+	public static function invalidate_tier_cache( $user_id ) {
+		$user_id   = absint( $user_id );
+		$cache_key = "wp_mcp_ai_user_tier_{$user_id}";
+		wp_cache_delete( $cache_key, 'wp_mcp_ai' );
+	}
+
+	/**
+	 * Detect unusual usage patterns (anomaly detection).
+	 *
+	 * Flags usage that is 5x the user's average hourly usage over the last 7 days.
+	 * Logs anomalies for security monitoring and alerting.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int    $user_id   User ID.
+	 * @param string $tool_slug Tool identifier.
+	 * @param int    $tokens    Tokens used in current request.
+	 * @return bool True if anomaly detected, false otherwise.
+	 */
+	public static function detect_usage_anomaly( $user_id, $tool_slug, $tokens ) {
+		$user_id   = absint( $user_id );
+		$tool_slug = sanitize_key( $tool_slug );
+		$tokens    = absint( $tokens );
+
+		if ( ! $user_id || ! $tool_slug || $tokens <= 0 ) {
+			return false;
+		}
+
+		// Get usage data.
+		$usage = self::get_user_tool_usage( $user_id );
+
+		if ( ! isset( $usage[ $tool_slug ]['hourly'] ) || empty( $usage[ $tool_slug ]['hourly'] ) ) {
+			// Not enough data to detect anomaly.
+			return false;
+		}
+
+		$hourly_data = $usage[ $tool_slug ]['hourly'];
+
+		// Calculate average hourly usage.
+		$avg_hourly = array_sum( $hourly_data ) / count( $hourly_data );
+
+		// Flag if current request is 5x average.
+		$threshold  = $avg_hourly * 5;
+		$is_anomaly = $tokens > $threshold;
+
+		if ( $is_anomaly ) {
+			WP_MCP_AI_Logger::log_event(
+				'usage_anomaly_detected',
+				'Unusual token usage pattern detected.',
+				array(
+					'user_id'    => $user_id,
+					'tool_slug'  => $tool_slug,
+					'tokens'     => $tokens,
+					'avg_hourly' => (int) $avg_hourly,
+					'threshold'  => (int) $threshold,
+					'multiplier' => round( $tokens / max( $avg_hourly, 1 ), 2 ),
+				)
+			);
+
+			/**
+			 * Fires when a usage anomaly is detected.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param int    $user_id   User ID.
+			 * @param string $tool_slug Tool identifier.
+			 * @param int    $tokens    Tokens used.
+			 * @param float  $avg_hourly Average hourly usage.
+			 */
+			do_action( 'wp_mcp_ai_usage_anomaly_detected', $user_id, $tool_slug, $tokens, $avg_hourly );
+		}
+
+		return $is_anomaly;
+	}
+
+	/**
+	 * Log tier changes for audit trail.
+	 *
+	 * Captures admin ID, IP address, user agent, and tier transition details.
+	 * Called automatically via the wp_mcp_ai_user_tier_changed action.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int    $user_id  User ID whose tier changed.
+	 * @param string $old_tier Previous tier.
+	 * @param string $new_tier New tier.
+	 * @param int    $expires  Expiration timestamp (0 for no expiration).
+	 */
+	public static function log_tier_change( $user_id, $old_tier, $new_tier, $expires = 0 ) {
+		$user_id  = absint( $user_id );
+		$old_tier = sanitize_key( $old_tier );
+		$new_tier = sanitize_key( $new_tier );
+		$expires  = absint( $expires );
+
+		$admin_id   = get_current_user_id();
+		$ip_address = WP_MCP_AI_Logger::get_client_ip();
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+
+		WP_MCP_AI_Logger::log_event(
+			'token_tier_changed',
+			'User token tier was modified.',
+			array(
+				'user_id'      => $user_id,
+				'old_tier'     => $old_tier,
+				'new_tier'     => $new_tier,
+				'expires'      => $expires,
+				'expires_date' => $expires > 0 ? gmdate( 'Y-m-d H:i:s', $expires ) : 'never',
+				'changed_by'   => $admin_id,
+				'ip_address'   => $ip_address,
+				'user_agent'   => $user_agent,
+			)
+		);
+	}
+
+	/**
+	 * Create database indexes for improved query performance.
+	 *
+	 * Adds indexes on user meta table for:
+	 * - Token tier lookups (_wp_mcp_ai_token_tier)
+	 * - Usage data queries (_wp_mcp_ai_tool_token_usage)
+	 *
+	 * This method is idempotent and safe to call multiple times.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function create_database_indexes() {
+		global $wpdb;
+
+		// Check if indexes already exist to avoid errors.
+		$tier_index_exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				'idx_wp_mcp_ai_token_tier'
+			)
+		);
+
+		if ( ! $tier_index_exists ) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->usermeta} 
+				ADD INDEX idx_wp_mcp_ai_token_tier (meta_key(191), meta_value(20))"
+			);
+		}
+
+		$usage_index_exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SHOW INDEX FROM {$wpdb->usermeta} WHERE Key_name = %s",
+				'idx_wp_mcp_ai_usage'
+			)
+		);
+
+		if ( ! $usage_index_exists ) {
+			$wpdb->query(
+				"ALTER TABLE {$wpdb->usermeta} 
+				ADD INDEX idx_wp_mcp_ai_usage (meta_key(191), user_id)"
+			);
+		}
+
+		// Log index creation.
+		WP_MCP_AI_Logger::log_event(
+			'database_indexes_created',
+			'Token manager database indexes created or verified.',
+			array(
+				'tier_index_existed'  => (bool) $tier_index_exists,
+				'usage_index_existed' => (bool) $usage_index_exists,
+			)
+		);
+
+		return true;
 	}
 }
