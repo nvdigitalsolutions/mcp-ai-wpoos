@@ -2,6 +2,13 @@
 /**
  * Admin cron manager for WP oOS.
  *
+ * This class provides a server-side UI for managing cron jobs. It does not use
+ * AJAX for delete operations or data refresh - instead it follows WordPress
+ * conventions using admin_post_ actions and page redirects.
+ *
+ * If AJAX functionality is needed in the future, it should integrate with
+ * WP_MCP_AI_Admin_AJAX_Handlers following the existing pattern in the codebase.
+ *
  * @package WP_MCP_AI
  */
 
