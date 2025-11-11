@@ -30,6 +30,11 @@
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
+    /**
+     * Get localStorage key for a specific assistant.
+     * @param {string} assistantId - The assistant ID.
+     * @return {string} The storage key.
+     */
     function getStorageKey(assistantId) {
         return STORAGE_KEY_PREFIX + assistantId;
     }
