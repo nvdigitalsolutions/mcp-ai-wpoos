@@ -43,9 +43,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Clean any previous output.
 			$this->clean_all_buffers();
 
-			// Start fresh output buffering.
-			ob_start();
-
 			// Map action to handler method.
 			$action_map = array(
 				'wp_ajax_wp_mcp_ai_test_ollama_connection' => 'handle_test_ollama_connection',
@@ -64,7 +61,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$handler_method = isset( $action_map[ $action ] ) ? $action_map[ $action ] : '';
 
 			if ( ! $handler_method || ! method_exists( $this, $handler_method ) ) {
-				$this->clean_all_buffers();
 				wp_send_json_error( array( 'message' => __( 'Invalid action.', 'wp-mcp-ai' ) ) );
 				return;
 			}
@@ -84,9 +80,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				);
 			}
 
-			// Note: No buffer cleanup here - if handler succeeded, wp_send_json_*()
-			// already called wp_die() and execution stopped. Cleaning buffers here
-			// would discard the JSON response, causing WordPress to return "0".
+			// Note: If handler succeeded, wp_send_json_*() already called wp_die() and execution stopped.
+			// If we reach here, something went wrong - the handler didn't send a response.
 		}
 
 		/**
