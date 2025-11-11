@@ -241,6 +241,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 	protected static function get_tool_multiplier( $tool_slug ) {
 		$tool_slug = sanitize_key( $tool_slug );
 
+		// Check persisted custom multipliers first.
+		$custom = get_option( 'wp_mcp_ai_tool_multipliers', array() );
+		if ( is_array( $custom ) && isset( $custom[ $tool_slug ] ) ) {
+			return (float) $custom[ $tool_slug ];
+		}
+
+		// Check hardcoded multipliers.
 		if ( isset( self::$tool_multipliers[ $tool_slug ] ) ) {
 			return (float) self::$tool_multipliers[ $tool_slug ];
 		}
@@ -255,6 +262,58 @@ class WP_MCP_AI_Tool_Token_Limits {
 		 */
 		return apply_filters( 'wp_mcp_ai_tool_limit_multiplier', 1.0, $tool_slug );
 	}
+
+/**
+ * Get all tool multipliers.
+ *
+ * @return array Tool slug => multiplier pairs.
+ */
+public static function get_tool_multipliers() {
+// Start with hardcoded defaults.
+$multipliers = self::$tool_multipliers;
+
+// Merge with persisted custom multipliers.
+$custom = get_option( 'wp_mcp_ai_tool_multipliers', array() );
+if ( is_array( $custom ) ) {
+$multipliers = array_merge( $multipliers, $custom );
+}
+
+/**
+ * Filter all tool multipliers.
+ *
+ * @since 1.0.0
+ *
+ * @param array $multipliers Tool slug => multiplier pairs.
+ */
+return apply_filters( 'wp_mcp_ai_all_tool_multipliers', $multipliers );
+}
+
+/**
+ * Set tool multiplier.
+ *
+ * @param string $tool_slug Tool identifier.
+ * @param float  $multiplier Multiplier value.
+ * @return bool True on success.
+ */
+public static function set_tool_multiplier( $tool_slug, $multiplier ) {
+$tool_slug  = sanitize_key( $tool_slug );
+$multiplier = (float) $multiplier;
+
+if ( '' === $tool_slug || $multiplier < 0.1 || $multiplier > 10 ) {
+return false;
+}
+
+// Get current multipliers from option (persistent storage).
+$multipliers = get_option( 'wp_mcp_ai_tool_multipliers', array() );
+
+if ( ! is_array( $multipliers ) ) {
+$multipliers = array();
+}
+
+$multipliers[ $tool_slug ] = $multiplier;
+
+return update_option( 'wp_mcp_ai_tool_multipliers', $multipliers, false );
+}
 
 	/**
 	 * Set custom tier for a user.

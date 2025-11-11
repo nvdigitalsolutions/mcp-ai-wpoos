@@ -604,6 +604,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		/**
 		 * Handle AJAX request to save tool token limits.
 		 */
+
 		public function handle_save_tool_limits() {
 			// Check capabilities.
 			if ( ! current_user_can( 'manage_options' ) ) {
@@ -617,16 +618,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get limits from request.
-			$limits = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// Get limits and multipliers from request.
+			$limits      = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$multipliers = isset( $_POST['multipliers'] ) ? (array) $_POST['multipliers'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-			if ( empty( $limits ) ) {
-				wp_send_json_error( array( 'message' => __( 'No limits provided.', 'wp-mcp-ai' ) ) );
+			if ( empty( $limits ) && empty( $multipliers ) ) {
+				wp_send_json_error( array( 'message' => __( 'No limits or multipliers provided.', 'wp-mcp-ai' ) ) );
 				return;
 			}
 
-			// Check if any limits have actually changed.
 			$changed_count = 0;
+
+			// Check if any limits have actually changed.
 			foreach ( $limits as $tool_slug => $limit ) {
 				$tool_slug     = sanitize_key( $tool_slug );
 				$limit         = absint( $limit );
@@ -637,11 +640,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
+			// Check if any multipliers have changed.
+			$current_multipliers = WP_MCP_AI_Tool_Token_Limits::get_tool_multipliers();
+			foreach ( $multipliers as $tool_slug => $multiplier ) {
+				$tool_slug = sanitize_key( $tool_slug );
+				$multiplier = (float) $multiplier;
+				$current_multiplier = isset( $current_multipliers[ $tool_slug ] ) ? (float) $current_multipliers[ $tool_slug ] : 1.0;
+
+				if ( '' !== $tool_slug && abs( $current_multiplier - $multiplier ) > 0.01 ) {
+					++$changed_count;
+				}
+			}
+
 			// If no changes detected, notify the user.
 			if ( 0 === $changed_count ) {
 				wp_send_json_success(
 					array(
-						'message'    => __( 'No changes detected. All tool limits are already set to the specified values.', 'wp-mcp-ai' ),
+						'message'    => __( 'No changes detected. All tool settings are already set to the specified values.', 'wp-mcp-ai' ),
 						'no_changes' => true,
 					)
 				);
@@ -661,18 +676,30 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				}
 			}
 
+			// Save each multiplier.
+			foreach ( $multipliers as $tool_slug => $multiplier ) {
+				$tool_slug  = sanitize_key( $tool_slug );
+				$multiplier = (float) $multiplier;
+
+				if ( '' !== $tool_slug && $multiplier >= 0.1 && $multiplier <= 10 ) {
+					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier ) ) {
+						++$saved_count;
+					}
+				}
+			}
+
 			if ( $saved_count > 0 ) {
 				wp_send_json_success(
 					array(
 						'message' => sprintf(
-							/* translators: %d: number of limits saved */
-							__( 'Tool token limits saved successfully. %d limits updated.', 'wp-mcp-ai' ),
+							/* translators: %d: number of settings saved */
+							__( 'Tool settings saved successfully. %d settings updated.', 'wp-mcp-ai' ),
 							$saved_count
 						),
 					)
 				);
 			} else {
-				wp_send_json_error( array( 'message' => __( 'Failed to save tool limits.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Failed to save tool settings.', 'wp-mcp-ai' ) ) );
 			}
 		}
 
