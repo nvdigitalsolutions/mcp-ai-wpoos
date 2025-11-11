@@ -1,6 +1,12 @@
 (function () {
     'use strict';
 
+    // Import external libraries for Phase 2 improvements
+    // These will be bundled by esbuild
+    const { marked } = typeof window !== 'undefined' && window.marked ? window : require('marked');
+    const DOMPurify = typeof window !== 'undefined' && window.DOMPurify ? window.DOMPurify : require('dompurify');
+    const ky = typeof window !== 'undefined' && window.ky ? window.ky.default || window.ky : require('ky').default;
+
     const globalConfig = window.wpMcpAiChat || {};
     const instances = window.wpMcpAiChatInstances || {};
     let objectUrlRegistry = [];
@@ -30,6 +36,24 @@
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
+    // Configure marked for safe markdown rendering
+    // This replaces ~223 lines of custom markdown parsing code
+    if (marked && marked.setOptions) {
+        marked.setOptions({
+            breaks: true, // Convert \n to <br>
+            gfm: true, // GitHub Flavored Markdown
+            headerIds: false, // Don't add IDs to headers (not needed for chat)
+            mangle: false, // Don't escape autolinked email addresses
+        });
+    }
+
+    // Configure DOMPurify for safe HTML sanitization
+    const DOMPURIFY_CONFIG = {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'del', 'code', 'pre', 'a', 'ul', 'ol', 'li', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'class'],
+        ALLOW_DATA_ATTR: false,
+    };
+
     /**
      * Get localStorage key for a specific assistant.
      * @param {string} assistantId - The assistant ID.
@@ -45,6 +69,57 @@
 
     // Message bundling to group rapid user inputs
     const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
+
+    // Configure ky for HTTP requests with retry logic
+    // This replaces raw fetch() calls and provides better UX on network failures
+    const kyInstance = ky.create({
+        retry: {
+            limit: 3, // Retry failed requests up to 3 times
+            methods: ['get', 'post'], // Retry GET and POST requests
+            statusCodes: [408, 413, 429, 500, 502, 503, 504], // Retry on specific HTTP errors
+        },
+        timeout: 30000, // 30 second timeout
+        hooks: {
+            beforeRetry: [
+                ({ request, options, error, retryCount }) => {
+                    // Log retry attempts for debugging
+                    if (window.console && console.log && DEBUG_MODE) {
+                        console.log(`Retrying request (${retryCount}/3):`, request.url, error);
+                    }
+                }
+            ]
+        }
+    });
+
+    /**
+     * Helper function to build headers for API requests
+     * @param {Object} state - Chat state object
+     * @return {Object} Headers object
+     */
+    function buildHeaders(state) {
+        const headers = {
+            'X-WP-Nonce': globalConfig.nonce || '',
+            Accept: 'application/json',
+        };
+
+        // Add guest token if available
+        if (state && state.config && state.config.guestToken) {
+            headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
+        }
+
+        return headers;
+    }
+
+    /**
+     * Helper function to build JSON headers
+     * @param {Object} state - Chat state object
+     * @return {Object} Headers object
+     */
+    function buildJsonHeaders(state) {
+        const headers = buildHeaders(state);
+        headers['Content-Type'] = 'application/json';
+        return headers;
+    }
 
     function saveConversationToStorage(state) {
         if (!state || !state.config || !state.config.assistantId) {
@@ -191,24 +266,14 @@
             messages: state.conversation
         };
 
-        return fetch(state.config.transcriptsEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.transcriptsEndpoint, {
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
-            body: JSON.stringify(payload)
+            json: payload
         })
-            .then(function(response) {
-                return response.json().catch(function() {
-                    return null;
-                }).then(function(body) {
-                    if (!response.ok) {
-                        // Log error but don't block the UI
-                        if (window.console && console.error) {
-                            console.error('Failed to save conversation to CCT:', body);
-                        }
-                    }
-                    return body;
-                });
+            .json()
+            .then(function(body) {
+                return body;
             })
             .catch(function(error) {
                 // Fail silently - we don't want to block the user from starting a new chat
@@ -438,29 +503,16 @@
             },
         };
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.toolsEndpoint, {
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
-            body: JSON.stringify(payload),
+            json: payload,
         })
-            .then(function (response) {
-                return response
-                    .json()
-                    .catch(function () {
-                        return null;
-                    })
-                    .then(function (body) {
-                        if (!response.ok) {
-                            throw response;
-                        }
-                        if (!body || typeof body !== 'object') {
-                            return Promise.reject(new Error('Invalid response.'));
-                        }
-                        return body;
-                    });
-            })
+            .json()
             .then(function (body) {
+                if (!body || typeof body !== 'object') {
+                    return Promise.reject(new Error('Invalid response.'));
+                }
 
                 const result = Object.prototype.hasOwnProperty.call(body, 'result') ? body.result : body;
                 if (!result || typeof result !== 'object' || !result.url) {
@@ -1158,27 +1210,12 @@
 
         headers['Content-Type'] = contentType || 'audio/webm';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.uploadEndpoint, {
             headers: headers,
             body: file,
             credentials: 'same-origin',
         })
-            .then(function (response) {
-                return response
-                    .json()
-                    .catch(function () {
-                        return null;
-                    })
-                    .then(function (data) {
-                        if (!response.ok) {
-                            const error = new Error('Upload failed');
-                            error.response = response;
-                            throw error;
-                        }
-                        return data;
-                    });
-            })
+            .json()
             .then(function (data) {
                 return normaliseUploadResponse(data, file);
             });
@@ -1201,24 +1238,11 @@
             },
         };
 
-        return fetch(state.config.toolsEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.toolsEndpoint, {
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        }).then(function (response) {
-            return response
-                .json()
-                .catch(function () {
-                    return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        throw response;
-                    }
-                    return data;
-                });
-        });
+            json: payload,
+        }).json();
     }
 
     function extractTranscriptionResult(body) {
@@ -2005,31 +2029,11 @@
 
         const deleteUrl = endpoint + '/' + encodeURIComponent(sessionKey);
 
-        fetch(deleteUrl, {
-            method: 'DELETE',
+        kyInstance.delete(deleteUrl, {
             headers: buildHistoryHeaders(state),
             credentials: 'same-origin',
         })
-            .then(function (response) {
-                return response
-                    .json()
-                    .catch(function () {
-                        return null;
-                    })
-                    .then(function (data) {
-                        if (!response.ok) {
-                            if (response.status === 401) {
-                                throw new Error('unauthorized');
-                            } else if (response.status === 404) {
-                                throw new Error('not_found');
-                            } else if (response.status >= 500) {
-                                throw new Error('server_error');
-                            }
-                            throw new Error('delete_failed');
-                        }
-                        return data;
-                    });
-            })
+            .json()
             .then(function () {
                 if (item && item.parentNode) {
                     item.parentNode.removeChild(item);
@@ -2056,12 +2060,16 @@
             .catch(function (error) {
                 let errorMessage;
                 
-                if (error && error.message === 'unauthorized') {
-                    errorMessage = getString('historyDeleteUnauthorized', 'You are not authorized to delete this conversation.');
-                } else if (error && error.message === 'not_found') {
-                    errorMessage = getString('historyDeleteNotFound', 'This conversation could not be found.');
-                } else if (error && error.message === 'server_error') {
-                    errorMessage = getString('historyDeleteServerError', 'A server error occurred. Please try again later.');
+                if (error && error.response) {
+                    if (error.response.status === 401) {
+                        errorMessage = getString('historyDeleteUnauthorized', 'You are not authorized to delete this conversation.');
+                    } else if (error.response.status === 404) {
+                        errorMessage = getString('historyDeleteNotFound', 'This conversation could not be found.');
+                    } else if (error.response.status >= 500) {
+                        errorMessage = getString('historyDeleteServerError', 'A server error occurred. Please try again later.');
+                    } else {
+                        errorMessage = getString('historyDeleteError', 'Unable to delete conversation.');
+                    }
                 } else {
                     errorMessage = getString('historyDeleteError', 'Unable to delete conversation.');
                 }
@@ -2171,27 +2179,10 @@
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
         }
 
-        return fetch(url, {
-            method: 'GET',
+        return kyInstance.get(url, {
             headers: buildHistoryHeaders(state),
             credentials: 'same-origin',
-        }).then(function (response) {
-            return response
-                .json()
-                .catch(function () {
-                    return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        const message = data && data.message ? data.message : getString('historyError', 'Unable to load conversation history.');
-                        const error = new Error(message);
-                        error.status = response.status;
-                        throw error;
-                    }
-
-                    return data;
-                });
-        });
+        }).json();
     }
 
     function fetchHistorySessionDetails(state, sessionKey) {
@@ -2207,35 +2198,22 @@
 
         const url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
 
-        return fetch(url, {
-            method: 'GET',
+        return kyInstance.get(url, {
             headers: buildHistoryHeaders(state),
             credentials: 'same-origin',
-        }).then(function (response) {
-            return response
-                .json()
-                .catch(function () {
-                    return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        const message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
-                        const error = new Error(message);
-                        error.status = response.status;
-                        throw error;
-                    }
+        })
+            .json()
+            .then(function (data) {
+                if (data && data.session) {
+                    return data.session;
+                }
 
-                    if (data && data.session) {
-                        return data.session;
-                    }
+                if (data && data.message) {
+                    throw new Error(data.message);
+                }
 
-                    if (data && data.message) {
-                        throw new Error(data.message);
-                    }
-
-                    throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
-                });
-        });
+                throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
+            });
     }
 
     function normaliseHistoryRole(role) {
@@ -2419,19 +2397,6 @@
             });
     }
 
-    function buildJsonHeaders(state) {
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-WP-Nonce': globalConfig.nonce || '',
-        };
-
-        if (state && state.config && state.config.guestToken) {
-            headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
-        }
-
-        return headers;
-    }
-
     function handleFileSelection(event, state) {
         if (!state || !state.canUploadAttachments) {
             return;
@@ -2529,27 +2494,12 @@
 
         headers['Content-Type'] = file.type || 'application/octet-stream';
 
-        return fetch(state.config.uploadEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.uploadEndpoint, {
             headers: headers,
             body: file,
             credentials: 'same-origin',
         })
-            .then(function (response) {
-                return response
-                    .json()
-                    .catch(function () {
-                        return null;
-                    })
-                    .then(function (data) {
-                        if (!response.ok) {
-                            const error = new Error('Upload failed');
-                            error.response = response;
-                            throw error;
-                        }
-                        return data;
-                    });
-            })
+            .json()
             .then(function (data) {
                 const record = normaliseUploadResponse(data, file);
                 if (!record) {
@@ -4316,28 +4266,15 @@
             return Promise.reject(new Error('Crawl4AI endpoint not configured.'));
         }
 
-        return fetch(url, {
-            method: 'GET',
+        return kyInstance.get(url, {
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
+            throwHttpErrors: false,
         }).then(function (response) {
             if (response.status === 404) {
                 return null;
             }
-
-            return response
-                .json()
-                .catch(function () {
-                    return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        const error = new Error('HTTP ' + response.status);
-                        error.status = response.status;
-                        throw error;
-                    }
-                    return data;
-                });
+            return response.json();
         });
     }
 
@@ -5070,25 +5007,12 @@
         }
 
         // Non-streaming request (original implementation)
-        return fetch(state.config.messagesEndpoint, {
-            method: 'POST',
+        return kyInstance.post(state.config.messagesEndpoint, {
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
-            body: JSON.stringify(payload),
+            json: payload,
         })
-            .then(function (response) {
-                return response
-                    .json()
-                    .catch(function () {
-                        return null;
-                    })
-                    .then(function (data) {
-                        if (!response.ok) {
-                            throw response;
-                        }
-                        return data;
-                    });
-            })
+            .json()
             .then(function (data) {
                 return handleChatResponse(state, data);
             })
@@ -5096,7 +5020,8 @@
                 saveConversationToStorage(state);
                 finalize();
                 return result;
-            }, function (error) {
+            })
+            .catch(function (error) {
                 handleError(state, error);
                 restoreSubmissionState(state, submissionContext);
                 finalize();
@@ -6004,276 +5929,22 @@
             return '';
         }
 
-        const placeholderBase = 'WP_MCP_AI_' + Math.random().toString(36).slice(2);
-        const codeBlocks = [];
-        const inlineCodes = [];
-        const links = [];
-        let processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
-
-        processed = processed.replace(/```([\w+-]*)\n?([\s\S]*?)```/g, function (match, language, code) {
-            const placeholder = '@@' + placeholderBase + '_CODE_' + codeBlocks.length + '@@';
-            codeBlocks.push({
-                placeholder: placeholder,
-                language: (language || '').trim(),
-                code: code.replace(/\s+$/, ''),
-            });
-            return placeholder;
-        });
-
-        processed = processed.replace(/`([^`]+)`/g, function (match, code) {
-            const placeholder = '@@' + placeholderBase + '_INLINE_' + inlineCodes.length + '@@';
-            inlineCodes.push({
-                placeholder: placeholder,
-                code: code,
-            });
-            return placeholder;
-        });
-
-        processed = processed.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (match, label, url) {
-            const placeholder = '@@' + placeholderBase + '_LINK_' + links.length + '@@';
-            links.push({
-                placeholder: placeholder,
-                label: label,
-                url: url,
-            });
-            return placeholder;
-        });
-
-        processed = escapeHtml(processed);
-
-        const codePlaceholderMap = {};
-        codeBlocks.forEach(function (item) {
-            codePlaceholderMap[item.placeholder] = true;
-        });
-
-        const lines = processed.split('\n');
-        const htmlParts = [];
-        let paragraphLines = [];
-        const listStack = []; // Stack to handle nested lists: [{type: 'ul', items: []}]
-
-        function flushParagraph() {
-            if (!paragraphLines.length) {
-                return;
-            }
-            htmlParts.push('<p>' + paragraphLines.join('<br />') + '</p>');
-            paragraphLines = [];
-        }
-
-        function flushAllLists() {
-            while (listStack.length > 0) {
-                const list = listStack.pop();
-                if (list.items.length > 0) {
-                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
-                    if (listStack.length > 0) {
-                        // Nested list - append to parent's last item before closing tag
-                        // This is safe because we control the HTML generation and </li> only appears
-                        // at the end of each list item string we create
-                        const parent = listStack[listStack.length - 1];
-                        if (parent.items.length > 0) {
-                            const lastItemIndex = parent.items.length - 1;
-                            parent.items[lastItemIndex] = parent.items[lastItemIndex].replace('</li>', html + '</li>');
-                        }
-                    } else {
-                        // Top-level list - add to HTML parts
-                        htmlParts.push(html);
-                    }
-                }
-            }
-        }
-
-        function getIndentLevel(line) {
-            const match = line.match(/^(\s*)/);
-            if (!match) {
-                return 0;
-            }
-            // Count spaces and tabs (1 tab = 2 spaces for indent calculation)
-            const spaces = match[1].replace(/\t/g, '  ');
-            return Math.floor(spaces.length / 2); // 2 spaces = 1 indent level
-        }
-
-        function processListItem(indent, listType, itemText) {
-            flushParagraph();
-
-            // Determine target depth based on indentation
-            const targetDepth = indent;
-
-            // Close lists deeper than target
-            while (listStack.length > targetDepth + 1) {
-                const list = listStack.pop();
-                if (list.items.length > 0) {
-                    const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
-                    if (listStack.length > 0) {
-                        const parent = listStack[listStack.length - 1];
-                        if (parent.items.length > 0) {
-                            parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
-                        }
-                    }
-                }
-            }
-
-            // If we need a deeper list or different type, create new list
-            if (listStack.length === 0 || listStack.length <= targetDepth) {
-                listStack.push({ type: listType, items: [] });
-            } else {
-                // Check if current list type matches; if not, close and start new
-                const currentList = listStack[listStack.length - 1];
-                if (currentList.type !== listType) {
-                    const list = listStack.pop();
-                    if (list.items.length > 0) {
-                        const html = '<' + list.type + '>' + list.items.join('') + '</' + list.type + '>';
-                        if (listStack.length > 0) {
-                            const parent = listStack[listStack.length - 1];
-                            if (parent.items.length > 0) {
-                                parent.items[parent.items.length - 1] = parent.items[parent.items.length - 1].replace('</li>', html + '</li>');
-                            }
-                        } else {
-                            htmlParts.push(html);
-                        }
-                    }
-                    listStack.push({ type: listType, items: [] });
-                }
-            }
-
-            // Add item to current list
-            const currentList = listStack[listStack.length - 1];
-            currentList.items.push('<li>' + formatInline(itemText) + '</li>');
-        }
-
-        lines.forEach(function (line) {
-            const trimmed = line.trim();
-
-            if (!trimmed) {
-                flushParagraph();
-                flushAllLists();
-                return;
-            }
-
-            if (codePlaceholderMap[trimmed]) {
-                flushParagraph();
-                flushAllLists();
-                htmlParts.push(trimmed);
-                return;
-            }
-
-            if (trimmed.indexOf('&gt;') === 0) {
-                flushParagraph();
-                flushAllLists();
-                htmlParts.push('<blockquote><p>' + formatInline(trimmed.replace(/^&gt;\s*/, '')) + '</p></blockquote>');
-                return;
-            }
-
-            const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
-            if (headingMatch) {
-                flushParagraph();
-                flushAllLists();
-                const level = headingMatch[1].length;
-                const headingText = formatInline(headingMatch[2]);
-                htmlParts.push('<h' + level + '>' + headingText + '</h' + level + '>');
-                return;
-            }
-
-            // Check for list items (with indentation support)
-            const indent = getIndentLevel(line);
-            const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
-            if (orderedMatch) {
-                processListItem(indent, 'ol', orderedMatch[2]);
-                return;
-            }
-
-            const bulletMatch = trimmed.match(/^[-*+]\s+(.*)$/);
-            if (bulletMatch) {
-                processListItem(indent, 'ul', bulletMatch[1]);
-                return;
-            }
-
-            // Not a list item
-            if (listStack.length > 0) {
-                flushAllLists();
-            }
-
-            paragraphLines.push(formatInline(line));
-        });
-
-        flushParagraph();
-        flushAllLists();
-
-        let html = htmlParts.join('');
-
-        inlineCodes.forEach(function (item) {
-            html = replaceAll(html, item.placeholder, '<code>' + escapeHtml(item.code) + '</code>');
-        });
-
-        links.forEach(function (item) {
-            const labelHtml = renderInlineLabel(item.label);
-            const href = sanitizeUrl(item.url);
-            let attributes = ' href="' + href + '"';
-            if (/^https?:/i.test(href)) {
-                attributes += ' target="_blank" rel="noopener noreferrer"';
-            }
-            html = replaceAll(html, item.placeholder, '<a' + attributes + '>' + labelHtml + '</a>');
-        });
-
-        codeBlocks.forEach(function (item) {
-            const language = item.language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
-            const className = language ? ' class="language-' + language + '"' : '';
-            const codeHtml = '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(item.code) + '</code></pre>';
-            html = replaceAll(html, item.placeholder, codeHtml);
-        });
-
-        return html;
-    }
-
-    function renderInlineLabel(text) {
-        if (!text) {
-            return '';
-        }
-
-        const inlineBase = 'WP_MCP_AI_INLINE_' + Math.random().toString(36).slice(2);
-        const inlineCodes = [];
-        let processed = String(text).replace(/\r\n|\r|\u2028|\u2029/g, ' ');
-
-        processed = processed.replace(/`([^`]+)`/g, function (match, code) {
-            const placeholder = '@@' + inlineBase + '_CODE_' + inlineCodes.length + '@@';
-            inlineCodes.push({
-                placeholder: placeholder,
-                code: code,
-            });
-            return placeholder;
-        });
-
-        processed = escapeHtml(processed);
-        processed = formatInline(processed);
-
-        inlineCodes.forEach(function (item) {
-            processed = replaceAll(processed, item.placeholder, '<code>' + escapeHtml(item.code) + '</code>');
-        });
-
-        return processed;
-    }
-
-    function sanitizeUrl(url) {
-        if (!url) {
-            return '#';
-        }
-
-        const trimmed = url.trim();
-        if (!trimmed) {
-            return '#';
-        }
-
         try {
-            const parsed = new URL(trimmed, window.location.origin);
-            const protocol = parsed.protocol ? parsed.protocol.replace(/:$/, '').toLowerCase() : '';
-            if (protocol && ['http', 'https', 'mailto', 'tel'].indexOf(protocol) === -1) {
-                return '#';
-            }
+            // Use marked to parse markdown to HTML
+            const rawHtml = marked.parse(text);
+            
+            // Sanitize with DOMPurify to prevent XSS
+            const cleanHtml = DOMPurify.sanitize(rawHtml, DOMPURIFY_CONFIG);
+            
+            // Add our custom class to code blocks for styling
+            return cleanHtml.replace(/<pre><code/g, '<pre class="wp-mcp-ai-chat__code-block"><code');
         } catch (error) {
-            if (!/^https?:/i.test(trimmed) && !/^mailto:/i.test(trimmed) && !/^tel:/i.test(trimmed)) {
-                return '#';
+            // Fallback to escaped text if markdown parsing fails
+            if (window.console && console.error) {
+                console.error('Markdown rendering error:', error);
             }
+            return escapeHtml(String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n')).replace(/\n/g, '<br />');
         }
-
-        return trimmed.replace(/"/g, '%22');
     }
 
     function escapeHtml(text) {
@@ -6293,18 +5964,6 @@
                     return character;
             }
         });
-    }
-
-    function formatInline(text) {
-        let result = text;
-        result = result.replace(/~~(?=\S)(.+?)(?<=\S)~~/g, '<del>$1</del>');
-        result = result.replace(/\*\*(?=\S)(.+?)(?<=\S)\*\*/g, '<strong>$1</strong>');
-        result = result.replace(/\*(?=\S)(.+?)(?<=\S)\*/g, '<em>$1</em>');
-        return result;
-    }
-
-    function replaceAll(text, search, replacement) {
-        return text.split(search).join(replacement);
     }
 
     function normaliseContent(content) {
