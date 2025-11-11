@@ -32,7 +32,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$url      = untrailingslashit( $endpoint_url ) . '/api/tags';
-			$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
+			$response = wp_remote_get( $url, array( 'timeout' => $this->resolve_timeout( array() ) ) );
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Ollama connection failed.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$url      = untrailingslashit( $endpoint_url ) . '/api/tags';
-			$response = wp_remote_get( $url, array( 'timeout' => 10 ) );
+			$response = wp_remote_get( $url, array( 'timeout' => $this->resolve_timeout( array() ) ) );
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
