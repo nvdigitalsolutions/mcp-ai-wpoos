@@ -116,6 +116,19 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'allow_sensitive_tools',
+			array(
+				'label'        => __( 'Allow Sensitive Tools', 'wp-mcp-ai' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
+				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'return_value' => 'true',
+				'default'      => 'false',
+				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'wp-mcp-ai' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -1109,6 +1122,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'true' === $settings['enable_streaming'];
 		if ( $enable_streaming ) {
 			$attributes['enable_streaming'] = 'true';
+		}
+
+		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'true' === $settings['allow_sensitive_tools'];
+		if ( $allow_sensitive_tools ) {
+			$attributes['allow_sensitive_tools'] = 'true';
 		}
 
 		$shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
