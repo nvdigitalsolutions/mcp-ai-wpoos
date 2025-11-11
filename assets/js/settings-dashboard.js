@@ -180,10 +180,16 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						$button.text('Saved!');
-						setTimeout(function() {
-							window.location.reload();
-						}, 1000);
+						// Check if this is a "no changes" response
+						if (response.data.no_changes) {
+							alert(response.data.message);
+							$button.prop('disabled', false).text('Save All Tool Limits');
+						} else {
+							$button.text('Saved!');
+							setTimeout(function() {
+								window.location.reload();
+							}, 1000);
+						}
 					} else {
 						alert(response.data.message || 'Failed to save tool limits.');
 						$button.prop('disabled', false).text('Save All Tool Limits');

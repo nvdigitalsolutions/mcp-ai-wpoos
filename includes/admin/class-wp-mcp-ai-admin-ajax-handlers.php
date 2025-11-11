@@ -604,6 +604,29 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Check if any limits have actually changed.
+			$changed_count = 0;
+			foreach ( $limits as $tool_slug => $limit ) {
+				$tool_slug     = sanitize_key( $tool_slug );
+				$limit         = absint( $limit );
+				$current_limit = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+
+				if ( '' !== $tool_slug && $current_limit !== $limit ) {
+					++$changed_count;
+				}
+			}
+
+			// If no changes detected, notify the user.
+			if ( 0 === $changed_count ) {
+				wp_send_json_success(
+					array(
+						'message'    => __( 'No changes detected. All tool limits are already set to the specified values.', 'wp-mcp-ai' ),
+						'no_changes' => true,
+					)
+				);
+				return;
+			}
+
 			// Sanitize and save each limit.
 			$saved_count = 0;
 			foreach ( $limits as $tool_slug => $limit ) {
