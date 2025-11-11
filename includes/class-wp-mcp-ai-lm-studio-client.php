@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
 
 			$request_args = array(
-				'timeout' => 10,
+				'timeout' => $this->resolve_timeout( array() ),
 				'headers' => array( 'Accept' => 'application/json' ),
 			);
 
@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
 
 			$request_args = array(
-				'timeout' => 10,
+				'timeout' => $this->resolve_timeout( array() ),
 				'headers' => array( 'Accept' => 'application/json' ),
 			);
 
