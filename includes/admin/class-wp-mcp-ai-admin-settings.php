@@ -3679,7 +3679,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_openai_image_quality_field() {
 			$settings  = self::get_settings();
 			$qualities = $this->get_openai_image_quality_choices();
-			$current   = isset( $settings['openai_image_quality'] ) ? sanitize_key( $settings['openai_image_quality'] ) : 'standard';
+			$current   = isset( $settings['openai_image_quality'] ) ? sanitize_key( $settings['openai_image_quality'] ) : 'medium';
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_quality]" class="regular-text">
 			<?php foreach ( $qualities as $value => $label ) : ?>
