@@ -228,6 +228,65 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-site-health-auto-updates.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/class-wp-debug-data.php' );
 
+		// Provide a polyfill for wp_check_php_version() if it's not defined.
+		// This function was introduced in WordPress 5.1.0 and should be available,
+		// but in some contexts it may not be loaded properly.
+		if ( ! function_exists( 'wp_check_php_version' ) ) {
+			/**
+			 * Polyfill for wp_check_php_version() function.
+			 *
+			 * Checks the PHP version and returns version data from WordPress.org API.
+			 * This is a simplified version that returns cached or basic data.
+			 *
+			 * @since 5.1.0 (WordPress Core)
+			 * @return array|false Array of PHP version data on success, false on failure.
+			 */
+			function wp_check_php_version() {
+				$response = get_site_transient( 'php_check_result' );
+
+				if ( false !== $response ) {
+					return $response;
+				}
+
+				$url      = 'https://api.wordpress.org/core/serve-happy/1.0/';
+				$response = wp_remote_get( $url );
+
+				if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+					// Return a basic response structure if the API call fails.
+					return array(
+						'recommended_version' => '7.4',
+						'minimum_version'     => '7.4',
+						'is_supported'        => version_compare( PHP_VERSION, '7.4', '>=' ),
+						'is_secure'           => version_compare( PHP_VERSION, '7.4', '>=' ),
+						'is_acceptable'       => version_compare( PHP_VERSION, '7.4', '>=' ),
+					);
+				}
+
+				$body = wp_remote_retrieve_body( $response );
+				$body = json_decode( $body, true );
+
+				if ( ! is_array( $body ) || empty( $body ) ) {
+					return false;
+				}
+
+				$response = array(
+					'recommended_version' => isset( $body['recommended_version'] ) ? $body['recommended_version'] : '7.4',
+					'minimum_version'     => isset( $body['minimum_version'] ) ? $body['minimum_version'] : '7.4',
+					'is_supported'        => isset( $body['is_supported'] ) ? (bool) $body['is_supported'] : false,
+					'is_secure'           => isset( $body['is_secure'] ) ? (bool) $body['is_secure'] : false,
+					'is_acceptable'       => isset( $body['is_acceptable'] ) ? (bool) $body['is_acceptable'] : false,
+				);
+
+				if ( isset( $body['is_lower_than_future_minimum'] ) ) {
+					$response['is_lower_than_future_minimum'] = (bool) $body['is_lower_than_future_minimum'];
+				}
+
+				set_site_transient( 'php_check_result', $response, DAY_IN_SECONDS );
+
+				return $response;
+			}
+		}
+
 		return class_exists( 'WP_Site_Health', false );
 	}
 
