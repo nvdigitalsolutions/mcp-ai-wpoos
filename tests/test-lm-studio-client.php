@@ -434,4 +434,90 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'test-model', $result['model'] );
 		$this->assertEquals( ' Paris', $result['choices'][0]['text'] );
 	}
+
+	/**
+	 * Test that test_connection uses configurable timeout instead of hardcoded value.
+	 */
+	public function test_connection_respects_timeout_settings() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'request_timeout'        => 60,
+			)
+		);
+
+		// Track the actual timeout used in the request.
+		$actual_timeout = null;
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$actual_timeout ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					$actual_timeout = isset( $args['timeout'] ) ? $args['timeout'] : null;
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->test_connection();
+
+		// Verify that the timeout was set to the configured value (or resource manager value).
+		$this->assertNotNull( $actual_timeout, 'Timeout should be set in request args' );
+		$this->assertGreaterThanOrEqual( 30, $actual_timeout, 'Timeout should be at least 30 seconds' );
+		$this->assertNotEquals( 10, $actual_timeout, 'Timeout should not be the old hardcoded 10 seconds' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that list_models uses configurable timeout instead of hardcoded value.
+	 */
+	public function test_list_models_respects_timeout_settings() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'request_timeout'        => 60,
+			)
+		);
+
+		// Track the actual timeout used in the request.
+		$actual_timeout = null;
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$actual_timeout ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					$actual_timeout = isset( $args['timeout'] ) ? $args['timeout'] : null;
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->list_models();
+
+		// Verify that the timeout was set to the configured value (or resource manager value).
+		$this->assertNotNull( $actual_timeout, 'Timeout should be set in request args' );
+		$this->assertGreaterThanOrEqual( 30, $actual_timeout, 'Timeout should be at least 30 seconds' );
+		$this->assertNotEquals( 10, $actual_timeout, 'Timeout should not be the old hardcoded 10 seconds' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }
