@@ -136,18 +136,41 @@ Four REST endpoints have been added for programmatic access:
 - User data access restrictions
 - Admin-only tier modifications
 
-### Phase 6: Performance & Security 🔄 PARTIALLY COMPLETED
+### Phase 6: Performance & Security ✅ COMPLETED
 
 **Completed**
 - Migration method for existing users
 - Comprehensive unit test coverage
 - Backward compatibility maintained
+- Caching for tier lookups (WordPress object cache with 1-hour TTL)
+- Anomaly detection for unusual usage patterns (5x threshold detection)
+- Audit logging for tier changes (full audit trail with admin ID, IP, user agent)
+- Database indexing optimization (meta_key and user_id indexes)
 
-**Pending**
-- Caching for tier lookups
-- Anomaly detection for unusual usage patterns
-- Audit logging for tier changes
-- Database indexing optimization
+**Features Implemented**
+- Caching:
+  - `get_user_tier_cached()` method with wp_cache API
+  - Automatic cache invalidation on tier updates
+  - 1-hour TTL in 'wp_mcp_ai' cache group
+  - Reduces database queries for tier lookups
+
+- Anomaly Detection:
+  - `detect_usage_anomaly()` detects 5x average usage spikes
+  - Integrated into `record_tool_usage()` for automatic monitoring
+  - Logs to WP_MCP_AI_Logger with full context
+  - Fires `wp_mcp_ai_usage_anomaly_detected` action hook
+
+- Audit Logging:
+  - `log_tier_change()` captures all tier modifications
+  - Hooked to `wp_mcp_ai_user_tier_changed` action
+  - Logs admin ID, IP address, user agent, tier transition
+  - Full audit trail for compliance and security
+
+- Database Optimization:
+  - `create_database_indexes()` creates performance indexes
+  - idx_wp_mcp_ai_token_tier on (meta_key, meta_value)
+  - idx_wp_mcp_ai_usage on (meta_key, user_id)
+  - Idempotent - safe to call multiple times
 
 ## Files Changed
 
@@ -159,9 +182,17 @@ Four REST endpoints have been added for programmatic access:
    - Added hourly tracking support
    - Implemented forecasting and alert system
    - Added bulk operations and migration support
-   - **NEW:** Added `export_usage_report()` method for CSV export
-   - **NEW:** Added `get_filtered_users()` helper method for filtering
-   - ~650 lines of new code
+   - **PHASE 4:** Added `export_usage_report()` method for CSV export
+   - **PHASE 4:** Added `get_filtered_users()` helper method for filtering
+   - **PHASE 6:** Added `get_user_tier_cached()` for cached tier lookups
+   - **PHASE 6:** Added `invalidate_tier_cache()` for cache management
+   - **PHASE 6:** Added `detect_usage_anomaly()` for security monitoring
+   - **PHASE 6:** Added `log_tier_change()` for audit trail
+   - **PHASE 6:** Added `create_database_indexes()` for performance optimization
+   - **PHASE 6:** Integrated cache invalidation into `set_user_tier()`
+   - **PHASE 6:** Integrated anomaly detection into `record_tool_usage()`
+   - **PHASE 6:** Hooked audit logging into init()
+   - ~870 lines of code (650 original + 220 Phase 6)
 
 2. **`includes/admin/sections/class-wp-mcp-ai-section-token-manager.php`**
    - Added tier column to user table
@@ -207,7 +238,11 @@ Four REST endpoints have been added for programmatic access:
    - Tests for role-based tiers, custom overrides, expiration
    - Tests for limits, multipliers, hourly tracking
    - Tests for bulk operations and forecasting
-   - ~250 lines
+   - **PHASE 6:** Tests for tier caching and cache invalidation
+   - **PHASE 6:** Tests for anomaly detection (normal and spike scenarios)
+   - **PHASE 6:** Tests for audit logging of tier changes
+   - **PHASE 6:** Tests for database index creation and idempotency
+   - ~455 lines (250 original + 205 Phase 6)
 
 3. **`tests/test-rest-token-manager.php`**
    - REST API endpoint tests
@@ -241,13 +276,15 @@ Four REST endpoints have been added for programmatic access:
 
 - `wp_mcp_ai_user_tier_changed` - Fires when user's tier changes
 - `wp_mcp_ai_limit_alert_sent` - Fires after limit alert email is sent
-- **NEW:** `wp_ajax_wp_mcp_ai_export_token_usage_csv` - AJAX action for CSV export
-- **NEW:** `wp_ajax_wp_mcp_ai_bulk_assign_tier` - AJAX action for bulk tier assignment
+- **PHASE 4:** `wp_ajax_wp_mcp_ai_export_token_usage_csv` - AJAX action for CSV export
+- **PHASE 4:** `wp_ajax_wp_mcp_ai_bulk_assign_tier` - AJAX action for bulk tier assignment
+- **PHASE 6:** `wp_mcp_ai_usage_anomaly_detected` - Fires when usage anomaly is detected
 
 ### Modified Actions
 
 - `wp_mcp_ai_tool_token_limit_exceeded` - Now includes `$tier` parameter
-- `wp_mcp_ai_hourly_forecast_check` - New cron hook
+- `wp_mcp_ai_hourly_forecast_check` - Cron hook for usage forecasting
+- **PHASE 4:** `wp_ajax_wp_mcp_ai_reset_user_token_usage` - Now accepts user_id parameter
 - **IMPROVED:** `wp_ajax_wp_mcp_ai_reset_user_token_usage` - Now accepts user_id parameter
 
 ## Database Schema Changes
@@ -397,6 +434,43 @@ $usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_hourly_usage(
 );
 ```
 
+### Phase 6: Performance & Security Features
+
+```php
+// Use cached tier lookups for better performance
+$tier = WP_MCP_AI_Tool_Token_Limits::get_user_tier_cached( $user_id );
+
+// Manually invalidate cache if needed
+WP_MCP_AI_Tool_Token_Limits::invalidate_tier_cache( $user_id );
+
+// Detect usage anomaly (called automatically in record_tool_usage)
+$is_anomaly = WP_MCP_AI_Tool_Token_Limits::detect_usage_anomaly(
+    $user_id,
+    'run_crawl4ai_job',
+    6000 // Tokens in current request
+);
+
+if ( $is_anomaly ) {
+    // Unusual usage detected - 5x average
+    // Automatically logged to WP_MCP_AI_Logger
+}
+
+// Hook into anomaly detection
+add_action( 'wp_mcp_ai_usage_anomaly_detected', function( $user_id, $tool_slug, $tokens, $avg_hourly ) {
+    // Send alert, throttle user, or log to external system
+    error_log( "User {$user_id} anomaly: {$tokens} tokens (avg: {$avg_hourly})" );
+}, 10, 4 );
+
+// Tier changes are automatically logged, but you can hook into it
+add_action( 'wp_mcp_ai_user_tier_changed', function( $user_id, $old_tier, $new_tier, $expires ) {
+    // Custom handling of tier changes
+    error_log( "User {$user_id} tier changed from {$old_tier} to {$new_tier}" );
+}, 10, 4 );
+
+// Create database indexes for performance (typically in activation hook)
+WP_MCP_AI_Tool_Token_Limits::create_database_indexes();
+```
+
 ## Migration
 
 ### Automatic Migration
@@ -454,12 +528,19 @@ vendor/bin/phpunit tests/test-rest-token-manager.php
 - ✅ REST endpoints
 - ✅ Permission checks
 - ✅ User access restrictions
-- ✅ **NEW:** CSV export format validation
-- ✅ **NEW:** CSV export permissions
-- ✅ **NEW:** CSV tier filtering
-- ✅ **NEW:** CSV tool filtering
-- ✅ **NEW:** CSV percentage calculations
-- ✅ **NEW:** Multi-user CSV export
+- ✅ **PHASE 4:** CSV export format validation
+- ✅ **PHASE 4:** CSV export permissions
+- ✅ **PHASE 4:** CSV tier filtering
+- ✅ **PHASE 4:** CSV tool filtering
+- ✅ **PHASE 4:** CSV percentage calculations
+- ✅ **PHASE 4:** Multi-user CSV export
+- ✅ **PHASE 6:** Tier caching functionality
+- ✅ **PHASE 6:** Cache invalidation on tier update
+- ✅ **PHASE 6:** Anomaly detection with normal usage
+- ✅ **PHASE 6:** Anomaly detection with usage spikes
+- ✅ **PHASE 6:** Anomaly detection with insufficient data
+- ✅ **PHASE 6:** Audit logging for tier changes
+- ✅ **PHASE 6:** Database index creation and idempotency
 
 ## Performance Considerations
 
@@ -472,15 +553,24 @@ vendor/bin/phpunit tests/test-rest-token-manager.php
 ### Query Performance
 
 - Tier lookups use simple user meta queries
+- **PHASE 6:** WordPress object cache reduces tier lookup queries (1-hour TTL)
+- **PHASE 6:** Database indexes on meta_key and user_id improve query speed
 - Forecasting calculations are in-memory only
 - Bulk operations batch user meta updates
 
-### Recommended Optimizations (Future)
+### Implemented Optimizations (Phase 6)
 
-1. Add WordPress object caching for tier lookups
-2. Create database indexes on tier user meta
-3. Implement transient caching for frequently accessed data
-4. Add background processing for bulk operations
+1. ✅ WordPress object caching for tier lookups (`get_user_tier_cached()`)
+2. ✅ Database indexes on tier user meta (`create_database_indexes()`)
+3. ✅ Automatic cache invalidation on tier updates
+4. ✅ Anomaly detection integrated into existing usage recording flow
+
+### Future Optimization Opportunities
+
+1. Add transient caching for forecasting calculations
+2. Add background processing for bulk tier assignments (1000+ users)
+3. Implement query result caching for admin dashboard
+4. Add Redis/Memcached support for high-traffic sites
 
 ## Security Considerations
 
@@ -499,9 +589,18 @@ vendor/bin/phpunit tests/test-rest-token-manager.php
 
 ### Audit Trail
 
-- Tier changes logged via `WP_MCP_AI_Logger`
+- **PHASE 6:** Tier changes logged via `WP_MCP_AI_Logger` with full context
+- **PHASE 6:** Audit logs include admin ID, IP address, user agent
+- **PHASE 6:** Anomaly detection logs include tokens, averages, multipliers
 - Bulk operations logged with results
 - Alert sending logged with forecast data
+
+### Anomaly Detection (Phase 6)
+
+- **PHASE 6:** 5x threshold for detecting unusual usage spikes
+- **PHASE 6:** Automatic logging of anomalous patterns
+- **PHASE 6:** `wp_mcp_ai_usage_anomaly_detected` action hook for custom responses
+- **PHASE 6:** Baseline requires at least 1 hour of usage history
 
 ## Backward Compatibility
 
@@ -529,8 +628,8 @@ vendor/bin/phpunit tests/test-rest-token-manager.php
 
 Planned for future releases:
 
-1. **Caching Layer**: WP object caching for tier lookups
-2. **Anomaly Detection**: Flag unusual usage patterns
+1. ~~**Caching Layer**: WP object caching for tier lookups~~ ✅ COMPLETED (Phase 6)
+2. ~~**Anomaly Detection**: Flag unusual usage patterns~~ ✅ COMPLETED (Phase 6)
 3. **Advanced Analytics**: Charts, trends, comparisons (Chart.js foundation ready)
 4. **Multi-tenancy**: Organization-level token pools
 5. **Token Marketplace**: Buy/transfer tokens
@@ -539,6 +638,8 @@ Planned for future releases:
 8. **Advanced Filtering**: Date range filters for CSV export
 9. **Scheduled Exports**: Automated daily/weekly CSV reports
 10. **Usage Visualizations**: Dashboard charts using Chart.js integration
+11. **Automated Tier Adjustments**: Auto-upgrade based on consistent high usage
+12. **Geolocation-based Anomaly Detection**: Flag usage from unusual locations
 
 ## Completed Features (v1.1.0)
 
@@ -551,7 +652,11 @@ Planned for future releases:
   - User details expansion
   - Enhanced AJAX handlers  
 ✅ **Phase 5:** REST API endpoints for external integration  
-🔄 **Phase 6:** Performance & Security (partial - caching pending)
+✅ **Phase 6:** Performance & Security enhancements:
+  - WordPress object caching for tier lookups
+  - Anomaly detection (5x threshold)
+  - Audit logging for tier changes
+  - Database indexing optimization
 
 ## Documentation
 
@@ -584,5 +689,6 @@ For issues or questions:
 
 ---
 
-**Status**: Phase 4 Complete - Full Admin UI Implementation  
-**Remaining**: Performance optimizations (Phase 6), Documentation updates (Phase 7)
+**Status**: ✅ All Phases Complete (Phases 1-6)  
+**Phase 6 Completion Date**: 2025-11-11  
+**Total Features**: Tiered limits, hourly tracking, forecasting, admin UI, REST API, caching, anomaly detection, audit logging, database optimization
