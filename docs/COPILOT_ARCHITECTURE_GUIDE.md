@@ -953,11 +953,28 @@ public function cleanup_old_files( $days = 7 )
 - Allow changing data storage without affecting business logic
 - Centralize database query logic
 
-**The "3 Data Access Repositories"** refers to three specialized repository classes that handle different types of data:
+**Current State**: The plugin has **3 implemented repositories** as part of Phase 4 refactoring (Milestone 9):
 
 1. **Assistant Repository** - Manages assistant configuration data
 2. **Credential Repository** - Manages authentication credentials
 3. **Settings Repository** - Manages plugin settings and options
+
+**Note**: This is a **work in progress**. Additional data entities that should have repositories but currently use direct database access include:
+
+**Potential Future Repositories**:
+- **AI Peer Repository** - For federation peer sites (currently `WP_MCP_AI_AI_Peer_CPT`)
+- **Chat Transcript Repository** - For conversation history (currently `WP_MCP_AI_Chat_Transcript_Recorder`)
+- **Rate Limits Repository** - For model rate limits (currently `WP_MCP_AI_Model_Rate_Limits_CCT`)
+- **Performance Metrics Repository** - For monitoring data (currently `WP_MCP_AI_Performance_Monitor_CCT`)
+- **Job Queue Repository** - For background jobs (currently `WP_MCP_AI_Job_Queue_Manager`)
+
+**Why Only 3 Repositories Currently?**
+
+The repository layer is being implemented **incrementally** as part of architectural refactoring:
+- **Phase 4, Milestone 9**: Initial repository layer (3 core repositories)
+- Focus on most critical data entities first (assistants, credentials, settings)
+- Additional repositories to be added in future phases
+- Legacy code gradually refactored to use repositories
 
 **Pattern**: Repository Pattern (Data Access Object pattern)
 

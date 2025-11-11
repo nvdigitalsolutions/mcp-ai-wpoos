@@ -92,6 +92,13 @@ class My_Section extends WP_MCP_AI_Settings_Section {
 - `WP_MCP_AI_Credential_Repository` - Credential management
 - `WP_MCP_AI_Settings_Repository` - Settings storage
 
+**Note**: Currently 3 repositories implemented (Phase 4 refactoring). Additional entities that should have repositories:
+- AI Peers (federation)
+- Chat Transcripts (history)
+- Rate Limits (model limits)
+- Performance Metrics (monitoring)
+- Job Queue (background tasks)
+
 ### Core Components
 - `WP_MCP_AI_Container` - DI container
 - `WP_MCP_AI_Tool_Registry` - Tool registry
