@@ -379,7 +379,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						foreach ( $site_stats['by_provider'] as $provider => $stats ) :
 							?>
 							<tr>
-								<td><strong><?php echo esc_html( ucfirst( $provider ) ); ?></strong></td>
+								<td><strong><?php echo esc_html( $this->get_provider_display_name( $provider ) ); ?></strong></td>
 								<td><?php echo number_format_i18n( $stats['requests'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['prompt_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['completion_tokens'] ); ?></td>
@@ -415,7 +415,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							?>
 							<tr>
 								<td><code><?php echo esc_html( $model_data['model'] ); ?></code></td>
-								<td><?php echo esc_html( ucfirst( $model_data['provider'] ) ); ?></td>
+								<td><?php echo esc_html( $this->get_provider_display_name( $model_data['provider'] ) ); ?></td>
 								<td><?php echo number_format_i18n( $model_data['requests'] ); ?></td>
 								<td><?php echo number_format_i18n( $model_data['total_tokens'] ); ?></td>
 							</tr>
@@ -468,7 +468,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								}
 								?>
 								<tr>
-									<td><?php echo esc_html( ucfirst( $provider ) ); ?></td>
+									<td><?php echo esc_html( $this->get_provider_display_name( $provider ) ); ?></td>
 									<td><code><?php echo esc_html( $model ); ?></code></td>
 									<td><?php echo number_format_i18n( $data['requests'] ); ?></td>
 									<td><?php echo number_format_i18n( $data['prompt_tokens'] ); ?></td>
@@ -673,6 +673,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$stats['tools_used'] = count( $tools_set );
 
 			return $stats;
+		}
+
+		/**
+		 * Get formatted provider display name.
+		 *
+		 * @param string $provider Provider key.
+		 * @return string Formatted provider name.
+		 */
+		private function get_provider_display_name( $provider ) {
+			$provider = sanitize_key( $provider );
+
+			$provider_labels = array(
+				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+			);
+
+			if ( isset( $provider_labels[ $provider ] ) ) {
+				return $provider_labels[ $provider ];
+			}
+
+			// Fallback: capitalize and replace underscores/hyphens with spaces.
+			return ucwords( str_replace( array( '-', '_' ), ' ', $provider ) );
 		}
 
 		/**
