@@ -45,7 +45,10 @@ class WP_MCP_AI_Chat_Client_Agentic_Workflow_Test extends WP_UnitTestCase {
 			'method'   => 'heuristic',
 			// Extra parameters that should be filtered out:
 			'messages' => array(
-				array( 'role' => 'user', 'content' => 'Previous message' ),
+				array(
+					'role'    => 'user',
+					'content' => 'Previous message',
+				),
 			),
 			'extra'    => 'Should be ignored',
 		);

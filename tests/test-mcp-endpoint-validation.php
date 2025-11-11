@@ -258,7 +258,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$this->assertSame( 400, $response->get_status(), 'tools/call without name should return 400' );
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertStringContainsString( 'name', $data['error']['message'] );
-		
+
 		// Check for actionable guidance.
 		if ( isset( $data['error']['data'] ) && isset( $data['error']['data']['actions'] ) ) {
 			$this->assertIsArray( $data['error']['data']['actions'], 'Error should include actions' );
@@ -312,7 +312,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$response = $this->server->dispatch( $request );
 
 		$this->assertSame( 202, $response->get_status(), 'Notification should return 202 Accepted' );
-		
+
 		// Notification response should have no body or null.
 		$data = $response->get_data();
 		$this->assertNull( $data, 'Notification response should have null body' );
@@ -342,7 +342,7 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 		$this->assertSame( '2.0', $data['jsonrpc'] );
 		$this->assertArrayHasKey( 'id', $data );
 		$this->assertArrayHasKey( 'result', $data );
-		
+
 		$result = $data['result'];
 		$this->assertArrayHasKey( 'protocolVersion', $result );
 		$this->assertArrayHasKey( 'capabilities', $result );
@@ -370,11 +370,11 @@ class WP_MCP_AI_MCP_Endpoint_Validation_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'error', $data );
 		$this->assertArrayHasKey( 'message', $data['error'] );
-		
+
 		// Check for actionable guidance in error data.
 		if ( isset( $data['error']['data'] ) ) {
 			$this->assertIsArray( $data['error']['data'] );
-			
+
 			if ( isset( $data['error']['data']['actions'] ) ) {
 				$this->assertIsArray( $data['error']['data']['actions'], 'Actions should be an array' );
 				$this->assertNotEmpty( $data['error']['data']['actions'], 'Actions should not be empty' );

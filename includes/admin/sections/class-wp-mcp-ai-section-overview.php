@@ -73,30 +73,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		/**
 		 * Render the section content.
 		 */
-/**
- * Render the section content.
- *
- * This method is abstract in the parent class but not used in this display-only section.
- */
-public function render() {
-// Not used - we override render_wrapper() instead.
-}
+		/**
+		 * Render the section content.
+		 *
+		 * This method is abstract in the parent class but not used in this display-only section.
+		 */
+		public function render() {
+			// Not used - we override render_wrapper() instead.
+		}
 
-/**
- * Override render_wrapper to provide custom layout without form table.
- */
-public function render_wrapper() {
-$description = $this->get_description();
-?>
+		/**
+		 * Override render_wrapper to provide custom layout without form table.
+		 */
+		public function render_wrapper() {
+			$description = $this->get_description();
+			?>
 <div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 <h2><?php echo esc_html( $this->get_title() ); ?></h2>
-<?php if ( $description ) : ?>
+			<?php if ( $description ) : ?>
 <p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
 <?php endif; ?>
-<?php $this->render_content(); ?>
+			<?php $this->render_content(); ?>
 </div>
-<?php
-}
+			<?php
+		}
 
 		public function render_content() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -265,10 +265,10 @@ $description = $this->get_description();
 		 * @param array $settings Plugin settings.
 		 */
 		private function render_auth0_status_card( $settings ) {
-			$auth0_domain    = ! empty( $settings['auth0_domain'] ) ? $settings['auth0_domain'] : '';
-			$auth0_audience  = ! empty( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '';
-			$github_bridge   = ! empty( $settings['enable_auth0_github_bridge'] );
-			$has_mgmt_creds  = ! empty( $settings['auth0_management_client_id'] ) && ! empty( $settings['auth0_management_client_secret'] );
+			$auth0_domain   = ! empty( $settings['auth0_domain'] ) ? $settings['auth0_domain'] : '';
+			$auth0_audience = ! empty( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '';
+			$github_bridge  = ! empty( $settings['enable_auth0_github_bridge'] );
+			$has_mgmt_creds = ! empty( $settings['auth0_management_client_id'] ) && ! empty( $settings['auth0_management_client_secret'] );
 
 			?>
 			<div class="wp-mcp-ai-status-card">
@@ -317,10 +317,10 @@ $description = $this->get_description();
 		 * @param array $settings Plugin settings.
 		 */
 		private function render_providers_status_card( $settings ) {
-			$has_openai      = ! empty( $settings['openai_api_key'] );
-			$has_gemini      = ! empty( $settings['gemini_api_key'] );
-			$has_ollama      = ! empty( $settings['ollama_endpoint_url'] );
-			$has_lm_studio   = ! empty( $settings['lm_studio_endpoint_url'] );
+			$has_openai       = ! empty( $settings['openai_api_key'] );
+			$has_gemini       = ! empty( $settings['gemini_api_key'] );
+			$has_ollama       = ! empty( $settings['ollama_endpoint_url'] );
+			$has_lm_studio    = ! empty( $settings['lm_studio_endpoint_url'] );
 			$default_provider = ! empty( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 
 			?>
@@ -372,15 +372,15 @@ $description = $this->get_description();
 			$mesh_enabled    = ! empty( $settings['enable_mesh'] );
 
 			// Count configured connectors.
-			$connectors      = array(
-				'brave'       => ! empty( $settings['brave_search_api_key'] ),
-				'crawl4ai'    => ! empty( $settings['crawl4ai_base_url'] ),
-				'cloudflare'  => ! empty( $settings['cloudflare_api_token'] ),
-				'cloudways'   => ! empty( $settings['cloudways_api_key'] ),
-				'mailjet'     => ! empty( $settings['mailjet_api_key'] ),
-				'quickbooks'  => ! empty( $settings['quickbooks_api_key'] ),
+			$connectors       = array(
+				'brave'            => ! empty( $settings['brave_search_api_key'] ),
+				'crawl4ai'         => ! empty( $settings['crawl4ai_base_url'] ),
+				'cloudflare'       => ! empty( $settings['cloudflare_api_token'] ),
+				'cloudways'        => ! empty( $settings['cloudways_api_key'] ),
+				'mailjet'          => ! empty( $settings['mailjet_api_key'] ),
+				'quickbooks'       => ! empty( $settings['quickbooks_api_key'] ),
 				'google_analytics' => ! empty( $settings['google_analytics_property_id'] ),
-				'gmail'       => ! empty( $settings['gmail_refresh_token'] ),
+				'gmail'            => ! empty( $settings['gmail_refresh_token'] ),
 			);
 			$configured_count = count( array_filter( $connectors ) );
 			$total_count      = count( $connectors );

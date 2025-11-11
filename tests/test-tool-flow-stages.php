@@ -298,9 +298,18 @@ class WP_MCP_AI_Tool_Flow_Stages_Tests extends WP_UnitTestCase {
 	 */
 	public function test_validate_tool_flow_stage_allows_anytime_tools() {
 		$contexts = array(
-			array( 'iteration' => 0, 'max_iterations' => 5 ),
-			array( 'iteration' => 2, 'max_iterations' => 5 ),
-			array( 'iteration' => 4, 'max_iterations' => 5 ),
+			array(
+				'iteration'      => 0,
+				'max_iterations' => 5,
+			),
+			array(
+				'iteration'      => 2,
+				'max_iterations' => 5,
+			),
+			array(
+				'iteration'      => 4,
+				'max_iterations' => 5,
+			),
 		);
 
 		foreach ( $contexts as $context ) {

@@ -147,10 +147,10 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 
 		$settings = $this->get_settings_for_display();
 
-		$title           = isset( $settings['title'] ) ? $settings['title'] : '';
-		$description     = isset( $settings['description'] ) ? $settings['description'] : '';
-		$enabled_tests   = isset( $settings['enabled_tests'] ) ? $settings['enabled_tests'] : array();
-		$show_results    = ! empty( $settings['show_results'] ) && 'yes' === $settings['show_results'];
+		$title         = isset( $settings['title'] ) ? $settings['title'] : '';
+		$description   = isset( $settings['description'] ) ? $settings['description'] : '';
+		$enabled_tests = isset( $settings['enabled_tests'] ) ? $settings['enabled_tests'] : array();
+		$show_results  = ! empty( $settings['show_results'] ) && 'yes' === $settings['show_results'];
 
 		echo '<div class="wp-mcp-ai-test-runner">';
 

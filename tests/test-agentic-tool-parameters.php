@@ -1,7 +1,7 @@
 <?php
 /**
  * Tests for agentic tool execution parameter validation.
- * 
+ *
  * Ensures that tool arguments are properly validated and error handling
  * works correctly for invalid JSON and malformed parameters.
  */
@@ -47,7 +47,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 												'id'       => 'call_test_123',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													'arguments' => '{invalid json here}',
 												),
 											),
@@ -100,7 +100,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		// Should get error response for malformed JSON.
 		$this->assertArrayHasKey( 'tool_results', $data );
 		$this->assertNotEmpty( $data['tool_results'] );
-		
+
 		$tool_result = $data['tool_results'][0];
 		$this->assertStringContainsString( 'invalid JSON arguments', $tool_result['content'] );
 	}
@@ -143,7 +143,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 												'id'       => 'call_time_123',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_current_time',
+													'name' => 'get_current_time',
 													'arguments' => '', // Empty string is valid - no args needed.
 												),
 											),
@@ -233,7 +233,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 												'id'       => 'call_test_456',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													'arguments' => '"just a string"', // Valid JSON but not an object.
 												),
 											),
@@ -286,7 +286,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 		// Should get error response for non-array arguments.
 		$this->assertArrayHasKey( 'tool_results', $data );
 		$this->assertNotEmpty( $data['tool_results'] );
-		
+
 		$tool_result = $data['tool_results'][0];
 		$this->assertStringContainsString( 'expected JSON object', $tool_result['content'] );
 	}
@@ -327,7 +327,7 @@ class WP_MCP_AI_Agentic_Tool_Parameters_Test extends WP_UnitTestCase {
 												'id'       => 'call_weather_789',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_open_meteo_forecast',
+													'name' => 'get_open_meteo_forecast',
 													// Arguments provided as array instead of JSON string.
 													'arguments' => array(
 														'latitude'  => 48.8566,

@@ -127,9 +127,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 					case 'range':
 					case 'slider':
-						$min             = isset( $field['min'] ) ? (int) $field['min'] : 0;
-						$max             = isset( $field['max'] ) ? (int) $field['max'] : 100;
-						$sanitized_value = absint( $value );
+						$min               = isset( $field['min'] ) ? (int) $field['min'] : 0;
+						$max               = isset( $field['max'] ) ? (int) $field['max'] : 100;
+						$sanitized_value   = absint( $value );
 						$sanitized[ $key ] = max( $min, min( $max, $sanitized_value ) );
 						break;
 

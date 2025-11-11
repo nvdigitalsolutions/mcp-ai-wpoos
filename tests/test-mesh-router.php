@@ -335,7 +335,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 
 		// Complex prompt should prefer compute hub.
 		$complex_prompt = 'Please provide a comprehensive, detailed analysis of the following complex research topic with in-depth examination of all factors...';
-		$result = WP_MCP_AI_Mesh_Router::get_optimal_peer( $this->assistant_id, $complex_prompt );
+		$result         = WP_MCP_AI_Mesh_Router::get_optimal_peer( $this->assistant_id, $complex_prompt );
 
 		$this->assertEquals( 'Compute Hub', $result['name'] );
 	}
@@ -349,7 +349,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 
 		// Simulate successful request.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Mesh_Router' );
-		$method = $reflection->getMethod( 'update_health_metrics' );
+		$method     = $reflection->getMethod( 'update_health_metrics' );
 		$method->setAccessible( true );
 
 		$method->invokeArgs( null, array( 'Test Peer', 1.5, true ) );
@@ -396,7 +396,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		);
 
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Mesh_Router' );
-		$method = $reflection->getMethod( 'get_health_metrics' );
+		$method     = $reflection->getMethod( 'get_health_metrics' );
 		$method->setAccessible( true );
 
 		$metrics = $method->invoke( null );
@@ -412,7 +412,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 	 */
 	public function test_prompt_complexity_analysis() {
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Mesh_Router' );
-		$method = $reflection->getMethod( 'analyze_prompt_complexity' );
+		$method     = $reflection->getMethod( 'analyze_prompt_complexity' );
 		$method->setAccessible( true );
 
 		// Simple prompt.
@@ -421,17 +421,17 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 
 		// Complex prompt with keywords.
 		$complex_prompt = 'Please analyze in detail and provide a comprehensive explanation of this complex topic...';
-		$complex_score = $method->invokeArgs( null, array( $complex_prompt ) );
+		$complex_score  = $method->invokeArgs( null, array( $complex_prompt ) );
 		$this->assertGreaterThanOrEqual( 7, $complex_score );
 
 		// Long prompt.
 		$long_prompt = str_repeat( 'word ', 150 );
-		$long_score = $method->invokeArgs( null, array( $long_prompt ) );
+		$long_score  = $method->invokeArgs( null, array( $long_prompt ) );
 		$this->assertGreaterThanOrEqual( 7, $long_score );
 
 		// Multiple questions.
 		$multi_question = 'What is this? How does it work? Why is it important?';
-		$multi_score = $method->invokeArgs( null, array( $multi_question ) );
+		$multi_score    = $method->invokeArgs( null, array( $multi_question ) );
 		$this->assertGreaterThanOrEqual( 6, $multi_score );
 	}
 
@@ -440,7 +440,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 	 */
 	public function test_query_mesh_intelligent_tool_registration() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( 'query_mesh_intelligent' );
+		$tool     = $registry->get_tool( 'query_mesh_intelligent' );
 
 		$this->assertNotNull( $tool );
 		$this->assertInstanceOf( 'WP_MCP_AI_Tool_Query_Mesh_Intelligent', $tool );
@@ -456,7 +456,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		wp_set_current_user( $subscriber_id );
 
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( 'query_mesh_intelligent' );
+		$tool     = $registry->get_tool( 'query_mesh_intelligent' );
 
 		$result = $tool->execute(
 			array( 'prompt' => 'Test query' ),
@@ -482,7 +482,7 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 		);
 
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( 'query_mesh_intelligent' );
+		$tool     = $registry->get_tool( 'query_mesh_intelligent' );
 
 		$result = $tool->execute(
 			array( 'prompt' => 'Test query' ),
@@ -501,8 +501,8 @@ class Test_Mesh_Router extends WP_UnitTestCase {
 	 */
 	public function test_query_mesh_intelligent_tool_schema() {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( 'query_mesh_intelligent' );
-		$schema = $tool->get_parameters_schema();
+		$tool     = $registry->get_tool( 'query_mesh_intelligent' );
+		$schema   = $tool->get_parameters_schema();
 
 		$this->assertIsArray( $schema );
 		$this->assertEquals( 'object', $schema['type'] );

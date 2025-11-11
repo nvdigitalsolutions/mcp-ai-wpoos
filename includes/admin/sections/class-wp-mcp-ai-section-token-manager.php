@@ -497,7 +497,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			// Get all registered tools from the tool registry.
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
-			
+
 			if ( ! $registry ) {
 				// Fallback to hardcoded tools if registry is not available.
 				$tools = array(
@@ -507,7 +507,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			} else {
 				// Ensure registry is initialized.
 				$registry->init();
-				
+
 				$registered_tools = $registry->get_tools();
 
 				// Build array of tool slug => name pairs.
@@ -515,7 +515,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
 						$slug = $tool->get_slug();
 						$name = $tool->get_name();
-						
+
 						if ( ! empty( $slug ) && ! empty( $name ) ) {
 							$tools[ $slug ] = $name;
 						}

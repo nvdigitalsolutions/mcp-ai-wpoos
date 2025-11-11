@@ -80,7 +80,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 		}
 
 		$hub_config = WP_MCP_AI_Mesh_Router::get_hub_config( $post->ID );
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings   = WP_MCP_AI_Admin_Settings::get_settings();
 		$peer_sites = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] )
 			? $settings['mesh_peer_sites']
 			: array();
@@ -162,7 +162,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 						<div id="wp-mcp-ai-preferred-peers-list">
 							<?php
 							$preferred_peers = isset( $hub_config['preferred_peers'] ) ? $hub_config['preferred_peers'] : array();
-							$peer_index = 0;
+							$peer_index      = 0;
 							foreach ( $preferred_peers as $preferred ) {
 								?>
 								<div class="wp-mcp-ai-preferred-peer-row" style="margin-bottom: 10px;">
@@ -185,7 +185,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 									<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 								</div>
 								<?php
-								$peer_index++;
+								++$peer_index;
 							}
 							?>
 						</div>

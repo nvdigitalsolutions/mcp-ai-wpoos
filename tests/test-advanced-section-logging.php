@@ -19,7 +19,7 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 
 		// Check that extended logging field exists.
 		$this->assertArrayHasKey( 'enable_extended_logging', $fields );
-		
+
 		// Verify the field configuration.
 		$this->assertEquals( 'checkbox', $fields['enable_extended_logging']['type'] );
 		$this->assertStringContainsString( 'Requires "Enable Logging"', $fields['enable_extended_logging']['description'] );
@@ -79,10 +79,10 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 
 		// Check that enable_logging field exists.
 		$this->assertArrayHasKey( 'enable_logging', $fields );
-		
+
 		// Verify the description mentions viewing logs in Advanced tab.
 		$this->assertStringContainsString( 'View logs in the Advanced tab', $fields['enable_logging']['description'] );
-		
+
 		// Verify the description mentions what gets logged.
 		$this->assertStringContainsString( 'errors, warnings, and key activity', $fields['enable_logging']['description'] );
 	}
@@ -96,13 +96,13 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 
 		// Check that extended logging has proper description.
 		$this->assertArrayHasKey( 'enable_extended_logging', $fields );
-		
+
 		// Should mention it requires Enable Logging.
 		$this->assertStringContainsString( 'Requires "Enable Logging"', $fields['enable_extended_logging']['description'] );
-		
+
 		// Should mention performance impact.
 		$this->assertStringContainsString( 'impact performance', $fields['enable_extended_logging']['description'] );
-		
+
 		// Should explain what it logs.
 		$this->assertStringContainsString( 'request/response', $fields['enable_extended_logging']['description'] );
 	}
@@ -112,7 +112,7 @@ class Test_Advanced_Section_Logging extends WP_UnitTestCase {
 	 */
 	public function tearDown(): void {
 		parent::tearDown();
-		
+
 		// Clear the settings cache.
 		WP_MCP_AI_Admin_Settings::reset_settings_cache();
 	}

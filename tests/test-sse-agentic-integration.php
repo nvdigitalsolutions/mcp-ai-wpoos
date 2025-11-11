@@ -223,7 +223,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		// Set low max iterations for testing.
 		add_filter(
 			'wp_mcp_ai_max_agentic_iterations',
-			function() {
+			function () {
 				return 2;
 			}
 		);
@@ -395,9 +395,9 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 		}
 
 		// Get the last registered callback (should be our SSE handler).
-		$callbacks = $hook->callbacks[999];
+		$callbacks   = $hook->callbacks[999];
 		$closure_key = array_key_last( $callbacks );
-		$closure = $callbacks[ $closure_key ]['function'];
+		$closure     = $callbacks[ $closure_key ]['function'];
 
 		// Capture output.
 		ob_start();
@@ -472,7 +472,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 												'id'       => 'call_time_001',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_current_time',
+													'name' => 'get_current_time',
 													'arguments' => '{}',
 												),
 											),
@@ -480,7 +480,7 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 												'id'       => 'call_summary_002',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_site_summary',
+													'name' => 'get_site_summary',
 													'arguments' => '{}',
 												),
 											),

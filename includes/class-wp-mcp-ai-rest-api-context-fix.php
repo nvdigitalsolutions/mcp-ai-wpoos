@@ -76,14 +76,14 @@ class WP_MCP_AI_REST_API_Context_Fix {
 
 		// Check if this is a GET request with context parameter.
 		$context = $request->get_param( 'context' );
-		
+
 		// For requests with context parameter or edit-related endpoints, ensure no caching.
 		if ( ! empty( $context ) || self::is_edit_endpoint( $route ) ) {
 			// Set aggressive no-cache headers to prevent any caching.
 			$result->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
 			$result->header( 'Pragma', 'no-cache' );
 			$result->header( 'Expires', '0' );
-			
+
 			// Remove any existing cache headers that might allow caching.
 			$result->remove_header( 'ETag' );
 			$result->remove_header( 'Last-Modified' );
@@ -121,7 +121,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 		// Add Vary header for context parameter.
 		$existing_vary = $result->get_headers()['Vary'] ?? '';
 		$vary_values   = array_filter( array_map( 'trim', explode( ',', $existing_vary ) ) );
-		
+
 		// Add context to Vary header if not already present.
 		if ( ! in_array( 'context', $vary_values, true ) ) {
 			$vary_values[] = 'context';
@@ -146,7 +146,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 	public static function ensure_query_string_preservation( $served, $result, $request, $server ) {
 		// This is primarily a diagnostic hook - we can't actually restore stripped parameters,
 		// but we can log when they appear to be missing.
-		
+
 		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 			return $served;
 		}
@@ -158,7 +158,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 
 		// Get the raw request URI.
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		
+
 		if ( empty( $request_uri ) ) {
 			return $served;
 		}
@@ -168,7 +168,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			$parsed = wp_parse_url( $request_uri );
 			if ( ! empty( $parsed['query'] ) ) {
 				parse_str( $parsed['query'], $uri_params );
-				
+
 				// Check for context parameter in URI but not in request.
 				if ( isset( $uri_params['context'] ) && ! $request->get_param( 'context' ) ) {
 					// Query string is being stripped - log for debugging.
@@ -214,7 +214,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 		}
 
 		$error_code = $response->get_error_code();
-		
+
 		// Check for common errors that might be related to missing context parameter.
 		$context_related_errors = array(
 			'rest_forbidden',
@@ -228,7 +228,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 
 		// Check if context parameter might have been stripped.
 		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-		
+
 		if ( empty( $request_uri ) ) {
 			return $response;
 		}
@@ -241,11 +241,11 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			}
 
 			$error_data['diagnostic'] = array(
-				'issue'           => 'Query parameter appears to have been stripped',
-				'parameter'       => 'context',
-				'request_uri'     => $request_uri,
-				'likely_cause'    => 'Caching layer, WAF, or server configuration is stripping query strings',
-				'documentation'   => 'See deployment-troubleshooting.md for server configuration instructions',
+				'issue'         => 'Query parameter appears to have been stripped',
+				'parameter'     => 'context',
+				'request_uri'   => $request_uri,
+				'likely_cause'  => 'Caching layer, WAF, or server configuration is stripping query strings',
+				'documentation' => 'See deployment-troubleshooting.md for server configuration instructions',
 			);
 
 			$response->add_data( $error_data );
@@ -313,11 +313,11 @@ class WP_MCP_AI_REST_API_Context_Fix {
 
 		// Check for common caching plugins.
 		$caching_plugins = array(
-			'w3-total-cache/w3-total-cache.php'     => 'W3 Total Cache',
-			'wp-super-cache/wp-cache.php'           => 'WP Super Cache',
-			'wp-rocket/wp-rocket.php'               => 'WP Rocket',
-			'litespeed-cache/litespeed-cache.php'   => 'LiteSpeed Cache',
-			'wp-fastest-cache/wpFastestCache.php'   => 'WP Fastest Cache',
+			'w3-total-cache/w3-total-cache.php'   => 'W3 Total Cache',
+			'wp-super-cache/wp-cache.php'         => 'WP Super Cache',
+			'wp-rocket/wp-rocket.php'             => 'WP Rocket',
+			'litespeed-cache/litespeed-cache.php' => 'LiteSpeed Cache',
+			'wp-fastest-cache/wpFastestCache.php' => 'WP Fastest Cache',
 		);
 
 		// Ensure is_plugin_active() is available.

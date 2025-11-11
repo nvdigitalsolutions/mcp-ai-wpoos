@@ -86,9 +86,9 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 		 * Render the setup wizard page.
 		 */
 		public function render_page() {
-			$settings   = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$domain     = isset( $settings['auth0_domain'] ) ? $settings['auth0_domain'] : '';
-			$audience   = isset( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '';
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$domain         = isset( $settings['auth0_domain'] ) ? $settings['auth0_domain'] : '';
+			$audience       = isset( $settings['auth0_audience'] ) ? $settings['auth0_audience'] : '';
 			$bridge_enabled = ! empty( $settings['enable_auth0_github_bridge'] );
 			?>
 			<div class="wrap">
@@ -334,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 			// Extract audience if present.
 			if ( ! empty( $payload['aud'] ) ) {
-				$audience = is_array( $payload['aud'] ) ? $payload['aud'][0] : $payload['aud'];
+				$audience                   = is_array( $payload['aud'] ) ? $payload['aud'][0] : $payload['aud'];
 				$settings['auth0_audience'] = sanitize_text_field( $audience );
 			}
 
@@ -369,7 +369,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 			$enabled = ! empty( $_POST['enabled'] );
 
 			// Update settings.
-			$settings                              = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$settings                               = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$settings['enable_auth0_github_bridge'] = $enabled;
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 

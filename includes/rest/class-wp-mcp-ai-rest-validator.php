@@ -97,7 +97,7 @@ class WP_MCP_AI_REST_Validator {
 				);
 			}
 
-			$role = $message['role'];
+			$role        = $message['role'];
 			$valid_roles = array( 'system', 'user', 'assistant', 'tool' );
 
 			if ( ! in_array( $role, $valid_roles, true ) ) {

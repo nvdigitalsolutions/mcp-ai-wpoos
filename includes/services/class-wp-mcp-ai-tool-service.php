@@ -259,10 +259,10 @@ class WP_MCP_AI_Tool_Service {
 		// This would integrate with usage tracking.
 		// For now, return placeholder.
 		return array(
-			'tool'           => $tool_slug,
+			'tool'            => $tool_slug,
 			'execution_count' => 0,
-			'success_count'  => 0,
-			'error_count'    => 0,
+			'success_count'   => 0,
+			'error_count'     => 0,
 		);
 	}
 }

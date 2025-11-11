@@ -151,8 +151,8 @@ class WP_MCP_AI_Text_Chunker {
 
 					// Add overlap.
 					if ( $overlap > 0 && ! empty( $chunks ) ) {
-						$prev_chunk   = $chunks[ count( $chunks ) - 1 ];
-						$overlap_text = substr( $prev_chunk, -$overlap );
+						$prev_chunk    = $chunks[ count( $chunks ) - 1 ];
+						$overlap_text  = substr( $prev_chunk, -$overlap );
 						$current_chunk = $overlap_text . ' ';
 					}
 				}
@@ -189,14 +189,14 @@ class WP_MCP_AI_Text_Chunker {
 	 * @return array Array of text chunks.
 	 */
 	protected static function chunk_by_characters( $text, $chunk_size, $overlap ) {
-		$chunks  = array();
-		$length  = strlen( $text );
-		$start   = 0;
+		$chunks = array();
+		$length = strlen( $text );
+		$start  = 0;
 
 		while ( $start < $length ) {
-			$chunk = substr( $text, $start, $chunk_size );
+			$chunk    = substr( $text, $start, $chunk_size );
 			$chunks[] = $chunk;
-			$start += $chunk_size - $overlap;
+			$start   += $chunk_size - $overlap;
 		}
 
 		return array_values( array_filter( $chunks, 'strlen' ) );

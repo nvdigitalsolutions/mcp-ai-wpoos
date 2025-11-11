@@ -68,7 +68,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 
 			// Sanitize Crawl4AI settings.
 			if ( isset( $_POST['crawl4ai_base_url'] ) ) {
-				$url = esc_url_raw( wp_unslash( $_POST['crawl4ai_base_url'] ) );
+				$url                           = esc_url_raw( wp_unslash( $_POST['crawl4ai_base_url'] ) );
 				$settings['crawl4ai_base_url'] = $url;
 			}
 
@@ -98,11 +98,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 				return;
 			}
 
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$gmail_client_id = isset( $settings['gmail_client_id'] ) ? $settings['gmail_client_id'] : '';
+			$settings            = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$gmail_client_id     = isset( $settings['gmail_client_id'] ) ? $settings['gmail_client_id'] : '';
 			$gmail_client_secret = isset( $settings['gmail_client_secret'] ) ? $settings['gmail_client_secret'] : '';
-			$crawl4ai_base_url = isset( $settings['crawl4ai_base_url'] ) ? $settings['crawl4ai_base_url'] : '';
-			$crawl4ai_api_key = isset( $settings['crawl4ai_api_key'] ) ? $settings['crawl4ai_api_key'] : '';
+			$crawl4ai_base_url   = isset( $settings['crawl4ai_base_url'] ) ? $settings['crawl4ai_base_url'] : '';
+			$crawl4ai_api_key    = isset( $settings['crawl4ai_api_key'] ) ? $settings['crawl4ai_api_key'] : '';
 
 			?>
 			<div class="wrap">

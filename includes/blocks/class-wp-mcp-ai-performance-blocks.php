@@ -56,11 +56,11 @@ class WP_MCP_AI_Performance_Blocks {
 			array(
 				'render_callback' => array( __CLASS__, 'render_metrics_block' ),
 				'attributes'      => array(
-					'title'     => array(
+					'title'      => array(
 						'type'    => 'string',
 						'default' => __( 'Performance Metrics', 'wp-mcp-ai' ),
 					),
-					'component' => array(
+					'component'  => array(
 						'type'    => 'string',
 						'default' => '',
 					),
@@ -78,11 +78,11 @@ class WP_MCP_AI_Performance_Blocks {
 			array(
 				'render_callback' => array( __CLASS__, 'render_health_status_block' ),
 				'attributes'      => array(
-					'title'           => array(
+					'title'         => array(
 						'type'    => 'string',
 						'default' => __( 'System Health Status', 'wp-mcp-ai' ),
 					),
-					'showBreakdown'   => array(
+					'showBreakdown' => array(
 						'type'    => 'boolean',
 						'default' => true,
 					),
@@ -96,15 +96,15 @@ class WP_MCP_AI_Performance_Blocks {
 			array(
 				'render_callback' => array( __CLASS__, 'render_test_results_block' ),
 				'attributes'      => array(
-					'title'      => array(
+					'title'    => array(
 						'type'    => 'string',
 						'default' => __( 'Test Results', 'wp-mcp-ai' ),
 					),
-					'testType'   => array(
+					'testType' => array(
 						'type'    => 'string',
 						'default' => '',
 					),
-					'limit'      => array(
+					'limit'    => array(
 						'type'    => 'number',
 						'default' => 10,
 					),
@@ -140,15 +140,15 @@ class WP_MCP_AI_Performance_Blocks {
 			array(
 				'render_callback' => array( __CLASS__, 'render_trends_block' ),
 				'attributes'      => array(
-					'title'       => array(
+					'title'      => array(
 						'type'    => 'string',
 						'default' => __( 'Performance Trends', 'wp-mcp-ai' ),
 					),
-					'component'   => array(
+					'component'  => array(
 						'type'    => 'string',
 						'default' => 'rest_api',
 					),
-					'timePeriod'  => array(
+					'timePeriod' => array(
 						'type'    => 'string',
 						'default' => '-7 days',
 					),
@@ -190,7 +190,7 @@ class WP_MCP_AI_Performance_Blocks {
 			return '<p>' . esc_html__( 'You do not have permission to run performance tests.', 'wp-mcp-ai' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Test Runner', 'wp-mcp-ai' );
+		$title         = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Test Runner', 'wp-mcp-ai' );
 		$enabled_tests = isset( $attributes['enabledTests'] ) ? $attributes['enabledTests'] : array();
 
 		ob_start();
@@ -221,8 +221,8 @@ class WP_MCP_AI_Performance_Blocks {
 			return '<p>' . esc_html__( 'You do not have permission to view performance metrics.', 'wp-mcp-ai' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Metrics', 'wp-mcp-ai' );
-		$component = isset( $attributes['component'] ) ? $attributes['component'] : '';
+		$title       = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Metrics', 'wp-mcp-ai' );
+		$component   = isset( $attributes['component'] ) ? $attributes['component'] : '';
 		$time_period = isset( $attributes['timePeriod'] ) ? $attributes['timePeriod'] : '-24 hours';
 
 		$metrics = self::get_performance_metrics( $component, $time_period );

@@ -170,14 +170,14 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		$query_args = array(
-			'post_type'             => $post_type,
-			'post_status'           => 'publish',
-			'posts_per_page'        => $limit,
-			'orderby'               => 'date',
-			'order'                 => 'DESC',
-			'ignore_sticky_posts'   => true,
-			'suppress_filters'      => false,
-			'no_found_rows'         => true,  // Performance: Skip counting total rows.
+			'post_type'              => $post_type,
+			'post_status'            => 'publish',
+			'posts_per_page'         => $limit,
+			'orderby'                => 'date',
+			'order'                  => 'DESC',
+			'ignore_sticky_posts'    => true,
+			'suppress_filters'       => false,
+			'no_found_rows'          => true,  // Performance: Skip counting total rows.
 			'update_post_term_cache' => false, // Performance: Skip term cache if not using taxonomy data.
 			'update_post_meta_cache' => true,  // Keep meta cache as we need post meta.
 		);

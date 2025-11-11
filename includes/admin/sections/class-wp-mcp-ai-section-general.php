@@ -67,10 +67,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		public function get_fields() {
 			// Get available providers for dropdown.
 			$provider_options = array(
-				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
-				'gemini'     => __( 'Google Gemini', 'wp-mcp-ai' ),
-				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
+				'gemini'    => __( 'Google Gemini', 'wp-mcp-ai' ),
+				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 
 			// Get available assistants for dropdown.
@@ -167,23 +167,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			}
 		}
 
-	/**
-	 * Sanitize section input.
-	 *
-	 * @param array $input Raw input from form.
-	 * @return array Sanitized input.
-	 */
-	public function sanitize( $input ) {
-		// Call parent sanitization first.
-		$sanitized = parent::sanitize( $input );
+		/**
+		 * Sanitize section input.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input.
+		 */
+		public function sanitize( $input ) {
+			// Call parent sanitization first.
+			$sanitized = parent::sanitize( $input );
 
-		// Special handling for default_assistant: convert to integer.
-		if ( isset( $sanitized['default_assistant'] ) ) {
-			$sanitized['default_assistant'] = absint( $sanitized['default_assistant'] );
+			// Special handling for default_assistant: convert to integer.
+			if ( isset( $sanitized['default_assistant'] ) ) {
+				$sanitized['default_assistant'] = absint( $sanitized['default_assistant'] );
+			}
+
+			return $sanitized;
 		}
-
-		return $sanitized;
-	}
 
 		/**
 		 * Validate section input.

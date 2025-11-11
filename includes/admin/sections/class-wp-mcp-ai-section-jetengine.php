@@ -70,7 +70,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 */
 		public function get_fields() {
 			$jetengine_active = class_exists( 'Jet_Engine' );
-			
+
 			$fields = array(
 				'jetengine_status' => array(
 					'type'    => 'html',
@@ -111,9 +111,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 */
 		private function get_status_content() {
 			$jetengine_active = class_exists( 'Jet_Engine' );
-			
+
 			$content = '<div style="background: ' . ( $jetengine_active ? '#d5f0db' : '#f0f0f1' ) . '; border-left: 4px solid ' . ( $jetengine_active ? '#0a5f1a' : '#646970' ) . '; padding: 1rem; margin: 1rem 0;">';
-			
+
 			if ( $jetengine_active ) {
 				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ JetEngine Active', 'wp-mcp-ai' ) . '</h4>';
 				$content .= '<p>' . esc_html__( 'JetEngine is installed and active. Advanced features are available.', 'wp-mcp-ai' ) . '</p>';
@@ -126,9 +126,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 				$content .= '<li>' . esc_html__( 'Return to this page to configure integration settings', 'wp-mcp-ai' ) . '</li>';
 				$content .= '</ol>';
 			}
-			
+
 			$content .= '</div>';
-			
+
 			return $content;
 		}
 
@@ -138,7 +138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 * @return string
 		 */
 		private function get_tools_list_content() {
-			$content = '<div style="margin: 1rem 0;">';
+			$content  = '<div style="margin: 1rem 0;">';
 			$content .= '<h4>' . esc_html__( 'Available JetEngine Tools', 'wp-mcp-ai' ) . '</h4>';
 			$content .= '<ul style="margin-left: 1.5rem;">';
 			$content .= '<li><strong>jetengine_create_post_type</strong> - ' . esc_html__( 'Create custom post types dynamically', 'wp-mcp-ai' ) . '</li>';
@@ -148,7 +148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 			$content .= '<li><strong>jetengine_update_cct_item</strong> - ' . esc_html__( 'Update existing CCT items', 'wp-mcp-ai' ) . '</li>';
 			$content .= '</ul>';
 			$content .= '</div>';
-			
+
 			return $content;
 		}
 

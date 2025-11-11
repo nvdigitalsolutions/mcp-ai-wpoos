@@ -57,10 +57,10 @@ class WP_MCP_AI_Chat_Service {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Language_Model_Router  $router                Language model router.
-	 * @param WP_MCP_AI_Rate_Limit_Manager     $rate_limiter          Rate limit manager.
-	 * @param WP_MCP_AI_Token_Budget_Manager   $token_budget_manager  Token budget manager.
-	 * @param WP_MCP_AI_Tool_Registry          $tool_registry         Tool registry.
+	 * @param WP_MCP_AI_Language_Model_Router $router                Language model router.
+	 * @param WP_MCP_AI_Rate_Limit_Manager    $rate_limiter          Rate limit manager.
+	 * @param WP_MCP_AI_Token_Budget_Manager  $token_budget_manager  Token budget manager.
+	 * @param WP_MCP_AI_Tool_Registry         $tool_registry         Tool registry.
 	 */
 	public function __construct(
 		WP_MCP_AI_Language_Model_Router $router,
@@ -85,13 +85,13 @@ class WP_MCP_AI_Chat_Service {
 	 * - Agentic tool execution loops
 	 * - Transcript recording
 	 *
-	 * @param int    $assistant_id       Assistant post ID.
-	 * @param array  $messages           Chat messages.
-	 * @param array  $options            Chat options.
-	 * @param array  $assistant_config   Assistant configuration.
-	 * @param array  $transcript_context Transcript recording context.
-	 * @param int    $user_id            Current user ID.
-	 * @param int    $max_iterations     Maximum agentic loop iterations.
+	 * @param int   $assistant_id       Assistant post ID.
+	 * @param array $messages           Chat messages.
+	 * @param array $options            Chat options.
+	 * @param array $assistant_config   Assistant configuration.
+	 * @param array $transcript_context Transcript recording context.
+	 * @param int   $user_id            Current user ID.
+	 * @param int   $max_iterations     Maximum agentic loop iterations.
 	 * @return array|WP_Error Chat response or error.
 	 */
 	public function process_chat_request(
@@ -299,8 +299,8 @@ class WP_MCP_AI_Chat_Service {
 				'wp_mcp_ai_chat_error',
 				$response['error']['message'] ?? __( 'Chat request failed', 'wp-mcp-ai' ),
 				array(
-					'status'             => 500,
-					'provider_error'     => $response['error'],
+					'status'              => 500,
+					'provider_error'      => $response['error'],
 					'provider_error_code' => $response['error']['code'] ?? '',
 				)
 			);

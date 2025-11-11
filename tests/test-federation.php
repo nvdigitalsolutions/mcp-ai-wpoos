@@ -180,20 +180,20 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'      => true,
-				'federation_regions'     => 'us, eu',
-				'federation_data_tags'   => 'no_pii, gdpr_ok',
-				'federation_qps'         => 10,
-				'federation_burst'       => 20,
+				'enable_federation'    => true,
+				'federation_regions'   => 'us, eu',
+				'federation_data_tags' => 'no_pii, gdpr_ok',
+				'federation_qps'       => 10,
+				'federation_burst'     => 20,
 			)
 		);
 
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 		$wellknown = new WP_MCP_AI_Federation_WellKnown( $registry );
 
 		// Use reflection to test the protected method.
 		$reflection = new ReflectionClass( $wellknown );
-		$method = $reflection->getMethod( 'get_ai_peer_document' );
+		$method     = $reflection->getMethod( 'get_ai_peer_document' );
 		$method->setAccessible( true );
 
 		$document = $method->invoke( $wellknown );
@@ -264,7 +264,7 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		$request->set_param( 'region', 'eu' );
 		$request->set_param( 'data_tag', 'no_pii' );
 
-		$rest = new WP_MCP_AI_Federation_Directory_REST();
+		$rest     = new WP_MCP_AI_Federation_Directory_REST();
 		$response = $rest->search_peers( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
@@ -315,7 +315,7 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
 		$federation = new WP_MCP_AI_Federation( $registry );
 		do_action( 'init' );
 

@@ -85,11 +85,11 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				'label'       => __( 'Component', 'wp-mcp-ai' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					'rest_api'     => __( 'REST API', 'wp-mcp-ai' ),
-					'chat_ui'      => __( 'Chat UI', 'wp-mcp-ai' ),
-					'mcp_core'     => __( 'MCP Core', 'wp-mcp-ai' ),
-					'elementor'    => __( 'Elementor', 'wp-mcp-ai' ),
-					'cpt_ai_peer'  => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
+					'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
+					'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
+					'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
+					'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
+					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
 					'cpt_assistant' => __( 'CPT: Assistant', 'wp-mcp-ai' ),
 				),
 				'default'     => 'rest_api',
@@ -104,9 +104,9 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'options' => array(
 					'-24 hours' => __( 'Last 24 Hours', 'wp-mcp-ai' ),
-					'-7 days'  => __( 'Last 7 Days', 'wp-mcp-ai' ),
-					'-30 days' => __( 'Last 30 Days', 'wp-mcp-ai' ),
-					'-90 days' => __( 'Last 90 Days', 'wp-mcp-ai' ),
+					'-7 days'   => __( 'Last 7 Days', 'wp-mcp-ai' ),
+					'-30 days'  => __( 'Last 30 Days', 'wp-mcp-ai' ),
+					'-90 days'  => __( 'Last 90 Days', 'wp-mcp-ai' ),
 				),
 				'default' => '-7 days',
 			)
@@ -167,8 +167,8 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		// Trend summary.
 		if ( isset( $trends['trend'] ) ) {
 			$trend_class = 'trend-' . sanitize_html_class( $trends['trend'] );
-			$trend_icon = $this->get_trend_icon( $trends['trend'] );
-			$trend_text = $this->get_trend_text( $trends['trend'] );
+			$trend_icon  = $this->get_trend_icon( $trends['trend'] );
+			$trend_text  = $this->get_trend_text( $trends['trend'] );
 
 			echo '<div class="wp-mcp-ai-performance-trends__summary ' . esc_attr( $trend_class ) . '">';
 			echo '<span class="dashicons dashicons-' . esc_attr( $trend_icon ) . '"></span>';

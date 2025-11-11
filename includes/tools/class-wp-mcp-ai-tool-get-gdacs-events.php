@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
 		}
 
 		$sanitised_events = $this->sanitize_payload( $decoded );
-		$event_count = is_array( $sanitised_events ) ? count( $sanitised_events ) : 0;
+		$event_count      = is_array( $sanitised_events ) ? count( $sanitised_events ) : 0;
 
 		return array(
 			'summary'   => sprintf( __( 'Found %d GDACS events', 'wp-mcp-ai' ), $event_count ),

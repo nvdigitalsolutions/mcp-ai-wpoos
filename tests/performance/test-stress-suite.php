@@ -38,7 +38,7 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 			$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 			$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
-			$response = rest_do_request( $request );
+			$response    = rest_do_request( $request );
 			$responses[] = $response;
 		}
 
@@ -71,9 +71,9 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 				'memory_peak_mb'      => $memory_used / 1024 / 1024,
 			),
 			array(
-				'total'   => $concurrent_requests,
-				'passed'  => $success_count,
-				'failed'  => $concurrent_requests - $success_count,
+				'total'  => $concurrent_requests,
+				'passed' => $success_count,
+				'failed' => $concurrent_requests - $success_count,
 			)
 		);
 
@@ -164,9 +164,9 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 				'memory_peak_mb'      => $memory_used / 1024 / 1024,
 			),
 			array(
-				'total'   => $session_count,
-				'passed'  => $messages_sent,
-				'failed'  => $session_count - $messages_sent,
+				'total'  => $session_count,
+				'passed' => $messages_sent,
+				'failed' => $session_count - $messages_sent,
 			)
 		);
 
@@ -202,8 +202,8 @@ class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 			);
 		}
 
-		$end_time     = microtime( true );
-		$end_memory   = memory_get_usage();
+		$end_time      = microtime( true );
+		$end_memory    = memory_get_usage();
 		$queries_after = $wpdb->num_queries;
 
 		$elapsed_time = ( $end_time - $start_time ) * 1000;

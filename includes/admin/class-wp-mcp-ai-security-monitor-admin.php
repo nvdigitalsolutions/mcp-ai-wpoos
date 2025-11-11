@@ -134,9 +134,9 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'      => 'wp-mcp-ai-dashboard',
-							'tab'       => 'security',
-							'root_key'  => 'empty',
+							'page'     => 'wp-mcp-ai-dashboard',
+							'tab'      => 'security',
+							'root_key' => 'empty',
 						),
 						admin_url( 'admin.php' )
 					)
@@ -151,10 +151,10 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'      => 'wp-mcp-ai-dashboard',
-							'tab'       => 'security',
-							'root_key'  => 'invalid',
-							'error'     => urlencode( $result->get_error_message() ),
+							'page'     => 'wp-mcp-ai-dashboard',
+							'tab'      => 'security',
+							'root_key' => 'invalid',
+							'error'    => urlencode( $result->get_error_message() ),
 						),
 						admin_url( 'admin.php' )
 					)
@@ -165,9 +165,9 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'      => 'wp-mcp-ai-dashboard',
-						'tab'       => 'security',
-						'root_key'  => 'verified',
+						'page'     => 'wp-mcp-ai-dashboard',
+						'tab'      => 'security',
+						'root_key' => 'verified',
 					),
 					admin_url( 'admin.php' )
 				)

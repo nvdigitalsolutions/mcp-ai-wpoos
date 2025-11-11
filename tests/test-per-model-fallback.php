@@ -21,7 +21,7 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 
 		// Mock the CCT get_model_fallback method.
 		$mock_fallback = 'gemini-1.5-pro';
-		
+
 		// Create a test to verify the method exists and can be called.
 		$this->assertTrue(
 			method_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT', 'get_model_fallback' ),
@@ -34,9 +34,9 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_global_fallback_used_when_no_per_model_fallback() {
 		// Set global fallback in settings.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                                   = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_high_token_model_switch'] = true;
-		$settings['high_token_fallback_model'] = 'gemini-2.0-flash-exp';
+		$settings['high_token_fallback_model']      = 'gemini-2.0-flash-exp';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Create messages that exceed gpt-4o-mini's TPM limit (200,000).
@@ -72,11 +72,11 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 	public function test_get_high_capacity_fallback_accepts_model_parameter() {
 		// Use reflection to access the protected method.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Selector' );
-		$method = $reflection->getMethod( 'get_high_capacity_fallback_model' );
+		$method     = $reflection->getMethod( 'get_high_capacity_fallback_model' );
 		$method->setAccessible( true );
 
 		// Set global fallback.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                              = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['high_token_fallback_model'] = 'gemini-2.0-flash-exp';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -94,10 +94,10 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_fallback_logging_includes_source() {
 		// Enable logging.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		$settings['enable_logging'] = true;
+		$settings                                   = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_logging']                 = true;
 		$settings['enable_high_token_model_switch'] = true;
-		$settings['high_token_fallback_model'] = 'gemini-2.0-flash-exp';
+		$settings['high_token_fallback_model']      = 'gemini-2.0-flash-exp';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Clear previous logs.
@@ -131,9 +131,9 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_backward_compatibility_without_jetengine() {
 		// Set global fallback.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                                   = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_high_token_model_switch'] = true;
-		$settings['high_token_fallback_model'] = 'gemini-2.0-flash-exp';
+		$settings['high_token_fallback_model']      = 'gemini-2.0-flash-exp';
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
 		// Even if JetEngine is not available, the system should work with global settings.
@@ -154,7 +154,7 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 	 */
 	public function test_auto_switching_can_be_disabled() {
 		// Disable auto-switching.
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                                   = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['enable_high_token_model_switch'] = false;
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
 
@@ -191,7 +191,7 @@ class Test_WP_MCP_AI_Per_Model_Fallback extends WP_UnitTestCase {
 
 		// Use reflection to access the protected method.
 		$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
-		$method = $reflection->getMethod( 'get_meta_fields' );
+		$method     = $reflection->getMethod( 'get_meta_fields' );
 		$method->setAccessible( true );
 
 		// Get the meta fields.

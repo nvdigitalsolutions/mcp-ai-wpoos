@@ -75,7 +75,7 @@ class WP_MCP_AI_Federation_Peer_Verifier {
 		}
 
 		// Check JWKS availability.
-		$jwks_uri = isset( $data['jwks_uri'] ) ? $data['jwks_uri'] : '';
+		$jwks_uri       = isset( $data['jwks_uri'] ) ? $data['jwks_uri'] : '';
 		$jwks_reachable = false;
 
 		if ( $jwks_uri ) {
@@ -125,10 +125,10 @@ class WP_MCP_AI_Federation_Peer_Verifier {
 	public static function verify_all_peers() {
 		$query = new WP_Query(
 			array(
-				'post_type'             => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
-				'posts_per_page'        => -1,
-				'fields'                => 'ids',
-				'no_found_rows'         => true,  // Performance: Skip counting.
+				'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,  // Performance: Skip counting.
 				'update_post_term_cache' => false, // Performance: Skip term cache.
 			)
 		);

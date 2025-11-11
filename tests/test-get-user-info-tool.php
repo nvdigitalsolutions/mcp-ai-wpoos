@@ -143,7 +143,7 @@ class WP_MCP_AI_Get_User_Info_Tool_Test extends WP_UnitTestCase {
 		$schema = $tool->get_parameters_schema();
 
 		$this->assertIsArray( $schema, 'Schema should be an array.' );
-		
+
 		// Verify that additionalProperties is not set to false.
 		// It can be absent (which allows additional properties) or explicitly set to true.
 		if ( isset( $schema['additionalProperties'] ) ) {

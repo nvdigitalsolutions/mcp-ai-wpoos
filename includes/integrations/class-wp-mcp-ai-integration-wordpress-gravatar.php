@@ -15,9 +15,9 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 	 * Maps WordPress.com/Gravatar identities to WordPress users.
 	 */
 	class WP_MCP_AI_Integration_WordPress_Gravatar {
-		const META_SUBJECT        = '_wp_mcp_ai_wordpress_gravatar_subject';
-		const META_WORDPRESS_ID   = '_wp_mcp_ai_wordpress_id';
-		const META_GRAVATAR_HASH  = '_wp_mcp_ai_gravatar_hash';
+		const META_SUBJECT       = '_wp_mcp_ai_wordpress_gravatar_subject';
+		const META_WORDPRESS_ID  = '_wp_mcp_ai_wordpress_id';
+		const META_GRAVATAR_HASH = '_wp_mcp_ai_gravatar_hash';
 
 		/**
 		 * Tracks whether hooks have been registered.
@@ -233,8 +233,8 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 			}
 
 			// Try to fetch userinfo from OAuth provider.
-			$userinfo_url = isset( $settings['wordpress_gravatar_userinfo_endpoint'] ) 
-				? $settings['wordpress_gravatar_userinfo_endpoint'] 
+			$userinfo_url = isset( $settings['wordpress_gravatar_userinfo_endpoint'] )
+				? $settings['wordpress_gravatar_userinfo_endpoint']
 				: '';
 
 			if ( empty( $userinfo_url ) ) {

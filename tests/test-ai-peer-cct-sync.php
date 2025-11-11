@@ -267,7 +267,7 @@ class WP_MCP_AI_AI_Peer_CCT_Sync_Test extends WP_UnitTestCase {
 	 */
 	public function test_cct_field_id_base_uniqueness() {
 		// Verify that AI Peers CCT uses a different field ID base than Assistants CCT.
-		$peers_field_base = WP_MCP_AI_JetEngine_AI_Peers_CCT::FIELD_ID_BASE;
+		$peers_field_base      = WP_MCP_AI_JetEngine_AI_Peers_CCT::FIELD_ID_BASE;
 		$assistants_field_base = WP_MCP_AI_JetEngine_Assistants_CCT::FIELD_ID_BASE;
 
 		$this->assertNotSame( $peers_field_base, $assistants_field_base, 'Field ID bases should be different' );

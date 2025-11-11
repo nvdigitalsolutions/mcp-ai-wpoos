@@ -97,7 +97,7 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 		// Our endpoints should not have the extra no-cache headers added by the fix.
 		// They should manage their own cache headers.
 		$headers = $response->get_headers();
-		
+
 		// The fix should skip our endpoints, so we shouldn't see the specific
 		// no-cache headers added by the fix (they have their own cache control).
 		// This is a negative test - just verify the response is successful.
