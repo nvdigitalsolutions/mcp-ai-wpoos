@@ -316,7 +316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			try {
 				// Load performance reporter.
 				if ( ! class_exists( 'WP_MCP_AI_Performance_Reporter' ) ) {
-					require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-performance-service.php';
 				}
 
 				// Get current metrics.

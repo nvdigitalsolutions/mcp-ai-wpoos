@@ -20,6 +20,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-usage-tracker-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-management-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-service.php';
 
 /**
  * Initialize services

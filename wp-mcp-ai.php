@@ -285,8 +285,8 @@ require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-usage-tracker-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-token-management-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
@@ -346,7 +346,7 @@ if ( ! $skip_buffering ) {
 
 if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
+	require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-performance-service.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
