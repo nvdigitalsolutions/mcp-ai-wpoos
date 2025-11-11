@@ -9,20 +9,21 @@ This directory contains Chart.js integration for the WP oOS Token Manager enhanc
 
 ### Installation
 
-#### Option 1: Manual Download (Recommended for Production)
+#### Option 1: NPM Install (Recommended)
+Chart.js is now included in `package.json` and will be automatically installed and copied to the vendor directory.
+
+```bash
+# Install all dependencies (including Chart.js)
+npm install
+
+# Chart.js will be automatically copied to assets/js/vendor/chart.min.js via postinstall script
+```
+
+#### Option 2: Manual Download
 ```bash
 # Download Chart.js v4.4.1
 cd assets/js/vendor/
 curl -o chart.min.js https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js
-```
-
-#### Option 2: NPM Install
-```bash
-# Install via npm
-npm install chart.js@4.4.1
-
-# Copy to vendor directory
-cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js
 ```
 
 #### Option 3: Use CDN (Development Only)

@@ -80,9 +80,26 @@ WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_config() // Pie chart config
 **Location:** `wp-mcp-ai.php` (line 247)  
 **Change:** Added Chart.js helper class to includes
 
+### 6. NPM Package Configuration
+**Location:** `package.json`  
+**Change:** Added Chart.js as a dependency with automatic installation
+
 ## Installation Instructions
 
-### Method 1: Manual Download (Recommended for Production)
+### Method 1: NPM Install (Recommended)
+
+Chart.js is now included in the project's `package.json` and will be automatically installed.
+
+```bash
+cd wp-content/plugins/wp-mcp-ai/
+npm install
+```
+
+The `postinstall` script will automatically copy Chart.js to the correct location:
+- Source: `node_modules/chart.js/dist/chart.umd.min.js`
+- Destination: `assets/js/vendor/chart.min.js`
+
+### Method 2: Manual Download
 
 ```bash
 cd wp-content/plugins/wp-mcp-ai/assets/js/vendor/
@@ -91,16 +108,11 @@ curl -o chart.min.js https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.
 
 **Verification:**
 ```bash
-ls -lh chart.min.js
+ls -lh assets/js/vendor/chart.min.js
 # Should show ~250KB file
 ```
 
-### Method 2: NPM Install
-
-```bash
-cd wp-content/plugins/wp-mcp-ai/
-npm install chart.js@4.4.1
-cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js
+### Method 3: CDN (Development/Testing Only)
 ```
 
 ### Method 3: CDN (Development/Testing Only)
