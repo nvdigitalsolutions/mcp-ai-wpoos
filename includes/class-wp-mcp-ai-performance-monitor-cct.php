@@ -199,6 +199,8 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			'response_time_ms'       => isset( $metrics['avg_response_time'] ) ? floatval( $metrics['avg_response_time'] ) : 0,
 			'memory_usage_bytes'     => isset( $metrics['memory_peak_bytes'] ) ? absint( $metrics['memory_peak_bytes'] ) : 0,
 			'db_queries'             => isset( $metrics['db_queries'] ) ? absint( $metrics['db_queries'] ) : 0,
+			'error_rate'             => isset( $metrics['error_rate'] ) ? floatval( $metrics['error_rate'] ) : 0,
+			'total_errors'           => isset( $metrics['total_errors'] ) ? absint( $metrics['total_errors'] ) : 0,
 			'metrics_json'           => wp_json_encode( $metrics ),
 			'test_results_json'      => wp_json_encode( $test_results ),
 			'diagnostic_summary'     => sanitize_textarea_field( $diagnostic_summary ),
@@ -245,6 +247,14 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 
 		if ( isset( $metrics['db_queries'] ) ) {
 			$summary[] = sprintf( 'DB Queries: %d', $metrics['db_queries'] );
+		}
+
+		if ( isset( $metrics['error_rate'] ) ) {
+			$summary[] = sprintf( 'Error Rate: %.2f%%', $metrics['error_rate'] );
+		}
+
+		if ( isset( $metrics['total_errors'] ) && $metrics['total_errors'] > 0 ) {
+			$summary[] = sprintf( 'Errors: %d', $metrics['total_errors'] );
 		}
 
 		// Add test-specific insights.
@@ -346,6 +356,29 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 					'severity' => 'medium',
 					'issue'    => 'Excessive database queries',
 					'action'   => 'Implement query caching or reduce N+1 query patterns',
+				);
+			}
+		}
+
+		// Error rate recommendations.
+		if ( isset( $metrics['error_rate'] ) ) {
+			if ( $metrics['error_rate'] > 10 ) {
+				$recommendations[] = array(
+					'severity' => 'critical',
+					'issue'    => sprintf( 'High error rate detected: %.2f%%', $metrics['error_rate'] ),
+					'action'   => 'Review error logs and fix critical issues immediately',
+				);
+			} elseif ( $metrics['error_rate'] > 5 ) {
+				$recommendations[] = array(
+					'severity' => 'high',
+					'issue'    => sprintf( 'Elevated error rate: %.2f%%', $metrics['error_rate'] ),
+					'action'   => 'Investigate and address error sources',
+				);
+			} elseif ( $metrics['error_rate'] > 1 ) {
+				$recommendations[] = array(
+					'severity' => 'medium',
+					'issue'    => sprintf( 'Error rate above baseline: %.2f%%', $metrics['error_rate'] ),
+					'action'   => 'Monitor error patterns and consider preventive measures',
 				);
 			}
 		}
@@ -786,6 +819,10 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 							'key'   => 'optimization',
 							'value' => __( 'Optimization Comparison', 'wp-mcp-ai' ),
 						),
+						array(
+							'key'   => 'monitoring',
+							'value' => __( 'Error Monitoring', 'wp-mcp-ai' ),
+						),
 					),
 					'description' => __( 'Type of performance test conducted.', 'wp-mcp-ai' ),
 				)
@@ -872,6 +909,25 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 				'number',
 				array(
 					'description' => __( 'Number of database queries executed.', 'wp-mcp-ai' ),
+				)
+			),
+			self::build_field(
+				10016,
+				'error_rate',
+				__( 'Error Rate (%)', 'wp-mcp-ai' ),
+				'number',
+				array(
+					'description' => __( 'Percentage of requests that resulted in errors.', 'wp-mcp-ai' ),
+					'step'        => '0.01',
+				)
+			),
+			self::build_field(
+				10017,
+				'total_errors',
+				__( 'Total Errors', 'wp-mcp-ai' ),
+				'number',
+				array(
+					'description' => __( 'Total number of errors encountered during the test.', 'wp-mcp-ai' ),
 				)
 			),
 			self::build_field(

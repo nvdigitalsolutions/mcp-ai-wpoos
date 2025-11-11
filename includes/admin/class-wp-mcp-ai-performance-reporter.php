@@ -123,6 +123,44 @@ class WP_MCP_AI_Performance_Reporter {
 			}
 		}
 
+		// Check error rates using Error Tracking Service.
+		if ( function_exists( 'wp_mcp_ai_get_error_tracking_service' ) ) {
+			$error_service = wp_mcp_ai_get_error_tracking_service();
+			$time_seconds  = strtotime( $time_period ) ? abs( strtotime( $time_period ) - time() ) : 3600;
+			$error_rate    = $error_service->get_error_rate( $component, $time_seconds );
+
+			$component_data['metrics']['error_rate'] = $error_rate;
+
+			// Add alert for high error rates.
+			if ( $error_rate > 10 ) {
+				$component_data['alerts'][] = array(
+					'severity'  => 'critical',
+					'component' => $component,
+					'test_type' => 'error_tracking',
+					'message'   => sprintf(
+						'Critical error rate detected in %s: %.2f%%',
+						$component,
+						$error_rate
+					),
+				);
+				$component_data['health_status'] = 'critical';
+			} elseif ( $error_rate > 5 ) {
+				$component_data['alerts'][] = array(
+					'severity'  => 'high',
+					'component' => $component,
+					'test_type' => 'error_tracking',
+					'message'   => sprintf(
+						'Elevated error rate in %s: %.2f%%',
+						$component,
+						$error_rate
+					),
+				);
+				if ( 'good' === $component_data['health_status'] ) {
+					$component_data['health_status'] = 'warning';
+				}
+			}
+		}
+
 		// Generate component-specific recommendations.
 		$component_data['recommendations'] = self::generate_component_recommendations( $component, $component_data );
 
