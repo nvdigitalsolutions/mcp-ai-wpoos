@@ -269,6 +269,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface {
 		);
 
 		// Disable SSL verification only for localhost/loopback addresses to prevent certificate mismatch.
+		// Note: WP_MCP_AI_HTTP_Helper also handles this globally, but we set it explicitly here for clarity.
 		if ( $this->is_loopback_address( $varnish_host ) ) {
 			$request_args['sslverify'] = false;
 		}

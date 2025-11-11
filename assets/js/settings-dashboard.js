@@ -180,10 +180,16 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						$button.text('Saved!');
-						setTimeout(function() {
-							window.location.reload();
-						}, 1000);
+						// Check if this is a "no changes" response
+						if (response.data.no_changes) {
+							alert(response.data.message);
+							$button.prop('disabled', false).text('Save All Tool Limits');
+						} else {
+							$button.text('Saved!');
+							setTimeout(function() {
+								window.location.reload();
+							}, 1000);
+						}
 					} else {
 						alert(response.data.message || 'Failed to save tool limits.');
 						$button.prop('disabled', false).text('Save All Tool Limits');
@@ -372,6 +378,14 @@
 				}, {
 					success: function(response) {
 						if (response.success) {
+							// Update the hidden field value immediately so if user clicks "Save Changes" 
+							// before reload, the correct preset will be saved
+							$('#orchestration_preset').val(presetId);
+							
+							// Update the active preset indicator text immediately
+							const presetName = $('.preset-card[data-preset="' + presetId + '"] h4').text();
+							$('.current-preset-name').text(presetName);
+							
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
 							setTimeout(function() {
 								window.location.reload();

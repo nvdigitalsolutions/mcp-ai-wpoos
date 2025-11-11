@@ -118,6 +118,43 @@ if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_get_effective_chat_capability' ) ) {
+	/**
+	 * Get the effective capability required for a specific assistant.
+	 *
+	 * This function checks the assistant's required_capability meta first,
+	 * then falls back to the global capability filter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int    $assistant_id Assistant post ID.
+	 * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+	 *
+	 * @return string|false Capability string. Return `'public'` to allow any visitor,
+	 *                      or a falsy value to skip the check entirely.
+	 */
+	function wp_mcp_ai_get_effective_chat_capability( $assistant_id = 0, $context = 'general' ) {
+		$assistant_id = absint( $assistant_id );
+
+		// Check if assistant has a specific capability requirement.
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$required_capability = get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, true );
+
+			if ( is_string( $required_capability ) ) {
+				$required_capability = WP_MCP_AI_Assistant_CPT::sanitize_required_capability_meta( $required_capability );
+
+				// If assistant has a specific capability set (even if empty), use it.
+				if ( '' !== $required_capability ) {
+					return $required_capability;
+				}
+			}
+		}
+
+		// Fall back to the global capability setting.
+		return wp_mcp_ai_get_required_chat_capability( $assistant_id, $context );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_filter_crawl4ai_base_url' ) ) {
 	/**
 	 * Provide a fallback Crawl4AI base URL from the environment when available.
@@ -208,6 +245,10 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-ren
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
+
+// Load HTTP helper early to prevent SSL issues with loopback addresses.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+WP_MCP_AI_HTTP_Helper::init();
 
 // Load cache helper early for performance optimization.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';

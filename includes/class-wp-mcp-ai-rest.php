@@ -1555,7 +1555,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->reset_auth_context();
 
 			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
-			$capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+
+			// Use the effective capability (per-assistant or global).
+			$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $assistant_id, 'rest' )
+				: wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
 
 			$guest_token = $this->extract_guest_token( $request );
 

@@ -1260,11 +1260,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			return true;
 		}
 
-		if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
+		if ( ! function_exists( 'wp_mcp_ai_get_effective_chat_capability' ) && ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 			return true;
 		}
 
-		$capability = wp_mcp_ai_get_required_chat_capability( absint( $assistant_id ), 'shortcode' );
+		// Use the effective capability (per-assistant or global).
+		$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+			? wp_mcp_ai_get_effective_chat_capability( absint( $assistant_id ), 'shortcode' )
+			: wp_mcp_ai_get_required_chat_capability( absint( $assistant_id ), 'shortcode' );
 
 		if ( ! $capability || 'public' === $capability ) {
 			return true;

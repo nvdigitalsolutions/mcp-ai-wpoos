@@ -19,13 +19,35 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		const PAGE_SLUG = 'wp-mcp-ai-dashboard';
 
 		/**
+		 * AJAX handlers component.
+		 *
+		 * @var WP_MCP_AI_Admin_AJAX_Handlers
+		 */
+		private $ajax_handlers;
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
+			// Initialize AJAX handlers.
+			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
+
+			// Register AJAX handlers.
+			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 		}
 
 		/**
@@ -213,31 +235,34 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				return;
 			}
 
-			$plugin_url = plugin_dir_url( dirname( dirname( __FILE__ ) ) );
+			// Use WP_MCP_AI_PATH and WP_MCP_AI_URL constants for consistency.
+			$css_path           = WP_MCP_AI_PATH . 'assets/css/settings-dashboard.css';
+			$js_ajax_error_path = WP_MCP_AI_PATH . 'assets/js/ajax-error-service.js';
+			$js_dashboard_path  = WP_MCP_AI_PATH . 'assets/js/settings-dashboard.js';
 
-			// Enqueue dashboard styles.
+			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
-				$plugin_url . 'assets/css/settings-dashboard.css',
+				WP_MCP_AI_URL . 'assets/css/settings-dashboard.css',
 				array(),
-				WP_MCP_AI_VERSION
+				file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
 			);
 
-			// Enqueue AJAX error service (must be loaded before other scripts).
+			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-ajax-error-service',
-				$plugin_url . 'assets/js/ajax-error-service.js',
+				WP_MCP_AI_URL . 'assets/js/ajax-error-service.js',
 				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
+				file_exists( $js_ajax_error_path ) ? filemtime( $js_ajax_error_path ) : '1.0.0',
 				true
 			);
 
-			// Enqueue dashboard scripts with jQuery UI Sortable dependency.
+			// Enqueue dashboard scripts with jQuery UI Sortable dependency and filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
-				$plugin_url . 'assets/js/settings-dashboard.js',
+				WP_MCP_AI_URL . 'assets/js/settings-dashboard.js',
 				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
-				WP_MCP_AI_VERSION,
+				file_exists( $js_dashboard_path ) ? filemtime( $js_dashboard_path ) : '1.0.0',
 				true
 			);
 

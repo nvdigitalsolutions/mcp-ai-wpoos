@@ -320,6 +320,11 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			'wp-fastest-cache/wpFastestCache.php'   => 'WP Fastest Cache',
 		);
 
+		// Ensure is_plugin_active() is available.
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
 		$active_caching_plugins = array();
 		foreach ( $caching_plugins as $plugin_file => $plugin_name ) {
 			if ( is_plugin_active( $plugin_file ) ) {

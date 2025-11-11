@@ -29,6 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -772,6 +773,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_REQUIRED_CAPABILITY,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_required_capability_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
 		}
 
 		/**
@@ -968,6 +981,33 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize the required capability meta value.
+		 *
+		 * @param mixed $capability Raw capability value.
+		 * @return string
+		 */
+		public static function sanitize_required_capability_meta( $capability ) {
+			if ( ! is_string( $capability ) ) {
+				return '';
+			}
+
+			$capability = sanitize_key( $capability );
+
+			// Allow empty (no requirement), 'public' (anyone), or valid WordPress capabilities.
+			if ( '' === $capability || 'public' === $capability ) {
+				return $capability;
+			}
+
+			// Validate it's a known capability or follows WordPress naming convention.
+			// This is permissive to allow custom capabilities.
+			if ( preg_match( '/^[a-z_]+$/', $capability ) ) {
+				return $capability;
+			}
+
+			return '';
+		}
+
+		/**
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
@@ -986,6 +1026,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				array( $this, 'render_tool_shortcuts_meta_box' ),
 				self::POST_TYPE,
 				'normal',
+				'default'
+			);
+
+			add_meta_box(
+				'wp-mcp-ai-required-capability',
+				__( 'Access Control', 'wp-mcp-ai' ),
+				array( $this, 'render_required_capability_meta_box' ),
+				self::POST_TYPE,
+				'side',
 				'default'
 			);
 
@@ -2564,6 +2613,62 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Render the required capability meta box.
+		 *
+		 * @param WP_Post $post Post object.
+		 */
+		public function render_required_capability_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			}
+
+			wp_nonce_field( 'wp_mcp_ai_required_capability_meta', 'wp_mcp_ai_required_capability_meta_nonce' );
+
+			$required_capability = get_post_meta( $post->ID, self::META_REQUIRED_CAPABILITY, true );
+			if ( ! is_string( $required_capability ) ) {
+				$required_capability = '';
+			}
+
+			$required_capability = self::sanitize_required_capability_meta( $required_capability );
+
+			?>
+			<p>
+				<label for="wp-mcp-ai-required-capability">
+					<strong><?php esc_html_e( 'Required Capability', 'wp-mcp-ai' ); ?></strong>
+				</label>
+			</p>
+			<p>
+				<select id="wp-mcp-ai-required-capability" name="wp_mcp_ai_required_capability" class="widefat">
+					<option value="" <?php selected( $required_capability, '' ); ?>>
+						<?php esc_html_e( 'No requirement (use global setting)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="public" <?php selected( $required_capability, 'public' ); ?>>
+						<?php esc_html_e( 'Public (anyone can access)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="read" <?php selected( $required_capability, 'read' ); ?>>
+						<?php esc_html_e( 'Read (subscribers and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="edit_posts" <?php selected( $required_capability, 'edit_posts' ); ?>>
+						<?php esc_html_e( 'Edit Posts (contributors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="publish_posts" <?php selected( $required_capability, 'publish_posts' ); ?>>
+						<?php esc_html_e( 'Publish Posts (authors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="edit_pages" <?php selected( $required_capability, 'edit_pages' ); ?>>
+						<?php esc_html_e( 'Edit Pages (editors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="manage_options" <?php selected( $required_capability, 'manage_options' ); ?>>
+						<?php esc_html_e( 'Manage Options (administrators only)', 'wp-mcp-ai' ); ?>
+					</option>
+				</select>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Set the WordPress capability required to access this assistant. Leave empty to use the global capability setting. Set to "Public" to allow anyone (including guests) to access this assistant.', 'wp-mcp-ai' ); ?>
+			</p>
+			<?php
+		}
+
+		/**
 		 * Handle credential issuance requests from the admin UI.
 		 */
 		public function handle_issue_credential() {
@@ -2958,6 +3063,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle required capability meta.
+			if ( isset( $_POST['wp_mcp_ai_required_capability_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_required_capability_meta_nonce'] ) ), 'wp_mcp_ai_required_capability_meta' ) ) {
+				$required_capability = isset( $_POST['wp_mcp_ai_required_capability'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_required_capability_meta().
+				? self::sanitize_required_capability_meta( wp_unslash( $_POST['wp_mcp_ai_required_capability'] ) )
+				: '';
+
+				if ( '' === $required_capability ) {
+					delete_post_meta( $post_id, self::META_REQUIRED_CAPABILITY );
+				} else {
+					update_post_meta( $post_id, self::META_REQUIRED_CAPABILITY, $required_capability );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -3184,6 +3303,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'disable_prebuilt_shortcuts' => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
+				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
 			);
 
 			if ( ! is_array( $config['tools'] ) ) {
@@ -3252,6 +3372,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['external_action_type'] = '';
 			} else {
 				$config['external_action_type'] = self::sanitize_external_action_type_meta( $config['external_action_type'] );
+			}
+
+			if ( ! is_string( $config['required_capability'] ) ) {
+				$config['required_capability'] = '';
+			} else {
+				$config['required_capability'] = self::sanitize_required_capability_meta( $config['required_capability'] );
 			}
 
 			return $config;

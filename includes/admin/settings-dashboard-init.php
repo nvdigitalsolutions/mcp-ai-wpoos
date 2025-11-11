@@ -72,7 +72,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Orchestration() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
+		// Gmail & Crawl4AI Integration has its own dedicated page (wp-mcp-ai-gmail-crawl4ai) and should not appear in settings tabs.
+		// WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_JetEngine_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_WooCommerce_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Elementor_Integration() );

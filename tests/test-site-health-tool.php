@@ -447,4 +447,47 @@ class WP_MCP_AI_Site_Health_Tool_Test extends WP_UnitTestCase {
 		$undefined_function_name = 'wp_mcp_ai_test_undefined_function_' . uniqid();
 		eval( $undefined_function_name . '();' );
 	}
+
+	/**
+	 * Test that the polyfill for wp_check_php_version() is available and works.
+	 */
+	public function test_wp_check_php_version_polyfill_is_available() {
+		// Create a new instance to trigger ensure_site_health_dependencies().
+		$tool = new WP_MCP_AI_Tool_Get_Site_Health();
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'ensure_site_health_dependencies' );
+		$method->setAccessible( true );
+
+		// Call the method to ensure dependencies are loaded.
+		$dependencies_loaded = $method->invoke( $tool );
+
+		// Verify dependencies were loaded successfully.
+		$this->assertTrue( $dependencies_loaded, 'Dependencies should be loaded successfully' );
+
+		// Verify that wp_check_php_version function exists after loading dependencies.
+		$this->assertTrue(
+			function_exists( 'wp_check_php_version' ),
+			'wp_check_php_version function should exist after loading dependencies'
+		);
+
+		// Call the function and verify it returns the expected structure.
+		$result = wp_check_php_version();
+
+		// The function should return either an array or false.
+		$this->assertTrue(
+			is_array( $result ) || false === $result,
+			'wp_check_php_version should return an array or false'
+		);
+
+		// If it returns an array, verify it has the expected keys.
+		if ( is_array( $result ) ) {
+			$this->assertArrayHasKey( 'recommended_version', $result, 'Result should have recommended_version' );
+			$this->assertArrayHasKey( 'minimum_version', $result, 'Result should have minimum_version' );
+			$this->assertArrayHasKey( 'is_supported', $result, 'Result should have is_supported' );
+			$this->assertArrayHasKey( 'is_secure', $result, 'Result should have is_secure' );
+			$this->assertArrayHasKey( 'is_acceptable', $result, 'Result should have is_acceptable' );
+		}
+	}
 }
