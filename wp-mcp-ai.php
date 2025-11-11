@@ -10,6 +10,7 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
  * Text Domain: wp-mcp-ai
+ * Domain Path: /languages
  * Network: true
  *
  * @package WP_MCP_AI
