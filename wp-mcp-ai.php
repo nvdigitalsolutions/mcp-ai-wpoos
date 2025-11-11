@@ -421,13 +421,19 @@ if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 	/**
 	 * Load the plugin textdomain for localisation support.
 	 *
-	 * Changed to 'init' hook in WordPress 6.7 to comply with new translation loading requirements.
-	 * WordPress 6.7+ requires translations to be loaded at 'init' or later.
+	 * WordPress 6.7+ handles translation loading automatically via just-in-time loading
+	 * based on the "Text Domain" header in the plugin file. For older versions, we
+	 * explicitly load the textdomain at the 'init' hook.
 	 *
 	 * @since 1.0.0
 	 */
 	function wp_mcp_ai_load_textdomain() {
-		load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		// WordPress 6.7+ handles this automatically, so we only need to load explicitly
+		// for older versions to maintain backwards compatibility.
+		global $wp_version;
+		if ( version_compare( $wp_version, '6.7', '<' ) ) {
+			load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		}
 	}
 }
 
