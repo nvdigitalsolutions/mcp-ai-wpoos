@@ -23,6 +23,16 @@ const commonOptions = {
 	logLevel: 'info',
 };
 
+// Options for files that need bundling (e.g., chat.js with external libraries)
+const bundledOptions = {
+	bundle: true,
+	minify: true,
+	sourcemap: true,
+	target: ['es2015'],
+	format: 'iife',
+	logLevel: 'info',
+};
+
 // Build configurations for each file
 const builds = [
 	{
@@ -33,7 +43,7 @@ const builds = [
 	{
 		entryPoints: ['assets/js/chat.js'],
 		outfile: 'assets/js/chat.min.js',
-		...commonOptions,
+		...bundledOptions, // Use bundled options to include marked, DOMPurify, and ky
 	},
 	{
 		entryPoints: ['assets/js/settings-dashboard.js'],
