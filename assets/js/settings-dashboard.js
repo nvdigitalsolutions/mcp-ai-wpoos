@@ -48,6 +48,8 @@
 
 			// Save all tool limits
 			$('#wp-mcp-ai-save-all-tool-limits').on('click', this.handleSaveToolLimits.bind(this));
+			// Save all tool settings (new enhanced button with multipliers)
+			$('#wp-mcp-ai-save-all-tool-settings').on('click', this.handleSaveToolSettings.bind(this));
 
 			// Export token usage to CSV
 			$('#wp-mcp-ai-export-usage-csv').on('click', this.handleExportUsageCSV.bind(this));
@@ -207,6 +209,72 @@
 				error: function(error) {
 					alert(error.userMessage || 'An error occurred while saving tool limits.');
 					$button.prop('disabled', false).text('Save All Tool Limits');
+				}
+			});
+		},
+
+		/**
+		 * Handle save tool settings (limits + multipliers).
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleSaveToolSettings: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const $spinner = $button.next('.spinner');
+			const $message = $('#wp-mcp-ai-tool-settings-message');
+			const limits = {};
+			const multipliers = {};
+
+			// Collect all limits
+			$('.wp-mcp-ai-tool-limit-input').each(function() {
+				const $input = $(this);
+				limits[$input.data('tool-slug')] = $input.val();
+			});
+
+			// Collect all multipliers
+			$('.wp-mcp-ai-tool-multiplier-input').each(function() {
+				const $input = $(this);
+				multipliers[$input.data('tool-slug')] = $input.val();
+			});
+
+			$button.prop('disabled', true);
+			$spinner.addClass('is-active');
+			$message.text('').removeClass('error success');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_save_tool_limits',
+					nonce: wpMcpAiDashboard.nonce,
+					limits: limits,
+					multipliers: multipliers
+				}
+			}, {
+				success: function(response) {
+					$spinner.removeClass('is-active');
+					if (response.success) {
+						// Check if this is a "no changes" response
+						if (response.data.no_changes) {
+							$message.text(response.data.message).addClass('notice notice-info');
+							$button.prop('disabled', false);
+						} else {
+							$message.text(response.data.message).addClass('notice notice-success');
+							setTimeout(function() {
+								window.location.reload();
+							}, 1500);
+						}
+					} else {
+						$message.text(response.data.message || 'Failed to save tool settings.').addClass('notice notice-error');
+						$button.prop('disabled', false);
+					}
+				},
+				error: function(error) {
+					$spinner.removeClass('is-active');
+					$message.text(error.userMessage || 'An error occurred while saving tool settings.').addClass('notice notice-error');
+					$button.prop('disabled', false);
 				}
 			});
 		},
