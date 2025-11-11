@@ -346,7 +346,9 @@ class WP_MCP_AI_Shortcode {
 
 		$session_key = sanitize_key( $session_key );
 
-		$can_upload_attachments = current_user_can( 'upload_files' );
+		// Allow file uploads for logged-in users with upload_files capability
+		// OR for guest users when guest access is enabled (guest token will be validated on upload)
+		$can_upload_attachments = current_user_can( 'upload_files' ) || ( $allow_guests && ! empty( $guest_token ) );
 
 		$assistant_content = get_post_field( 'post_content', $assistant_id );
 		if ( $assistant_content ) {
