@@ -80,6 +80,230 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Get tool selection presets for common use cases.
+		 *
+		 * @return array Array of presets with name, description, and tools.
+		 */
+		protected function get_tool_presets() {
+			$presets = array(
+				'content_writing' => array(
+					'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
+					'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'search_content',
+						'search_attachments',
+						'get_recent_posts',
+						'save_post',
+						'get_rankmath_seo',
+						'generate_openai_image',
+						'generate_gemini_image',
+						'web_search',
+					),
+				),
+				'ecommerce'       => array(
+					'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
+					'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_woo_recent_orders',
+						'get_woo_products',
+						'create_woo_product',
+						'send_group_email',
+						'send_mailjet_email',
+					),
+				),
+				'site_management' => array(
+					'name'        => __( 'Site Management', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_site_summary',
+						'get_system_logs',
+						'get_update_status',
+						'get_site_health',
+						'get_environment_status',
+						'check_site_security',
+						'purge_cache',
+						'create_cron_job',
+						'list_cron_jobs',
+					),
+				),
+				'seo_marketing'   => array(
+					'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
+					'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_rankmath_seo',
+						'web_search',
+						'post_facebook_instagram',
+						'post_linkedin_update',
+						'get_facebook_instagram_insights',
+						'google_analytics_report',
+						'create_google_calendar_event',
+					),
+				),
+				'development'     => array(
+					'name'        => __( 'Development', 'wp-mcp-ai' ),
+					'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'create_wpcode_snippet',
+						'check_wp_cli',
+						'get_system_logs',
+						'count_tokens',
+						'probe_chat',
+						'query_remote_site',
+					),
+				),
+				'data_analytics'  => array(
+					'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
+					'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_jetengine_items',
+						'list_jetengine_rest_routes',
+						'invoke_jetengine_route',
+						'get_jetformbuilder_forms',
+						'get_jetformbuilder_submissions',
+						'google_analytics_report',
+						'quickbooks_report',
+					),
+				),
+			);
+
+			/**
+			 * Filter the tool selection presets.
+			 *
+			 * @param array $presets Array of presets with name, description, and tools.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_presets', $presets );
+		}
+
+		/**
+		 * Render tool selection preset buttons.
+		 *
+		 * @param array $selected_tools Currently selected tool slugs.
+		 */
+		protected function render_tool_presets( $selected_tools ) {
+			$presets = $this->get_tool_presets();
+
+			if ( empty( $presets ) ) {
+				return;
+			}
+
+			// Get all available tools for validation.
+			$available_tools = array();
+			foreach ( $this->registry->get_tools() as $tool ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+					$available_tools[] = $tool->get_slug();
+				}
+			}
+
+			echo '<div class="wp-mcp-ai-tool-presets" style="margin-top: 1rem;">';
+			echo '<h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 14px;">' . esc_html__( 'Quick Tool Selection Presets', 'wp-mcp-ai' ) . '</h3>';
+			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to quickly select tools for common tasks. This will replace your current tool selection.', 'wp-mcp-ai' ) . '</p>';
+			echo '<div class="wp-mcp-ai-tool-presets__buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">';
+
+			foreach ( $presets as $preset_key => $preset_data ) {
+				if ( ! isset( $preset_data['name'], $preset_data['tools'] ) || ! is_array( $preset_data['tools'] ) ) {
+					continue;
+				}
+
+				// Filter tools to only include those that are actually available.
+				$preset_tools = array_intersect( $preset_data['tools'], $available_tools );
+				if ( empty( $preset_tools ) ) {
+					continue;
+				}
+
+				$preset_name        = sanitize_text_field( $preset_data['name'] );
+				$preset_description = isset( $preset_data['description'] ) ? sanitize_text_field( $preset_data['description'] ) : '';
+				$preset_tools_json  = wp_json_encode( array_values( $preset_tools ) );
+
+				printf(
+					'<button type="button" class="button wp-mcp-ai-tool-preset-btn" data-preset="%1$s" data-tools="%2$s" title="%3$s">%4$s</button>',
+					esc_attr( $preset_key ),
+					esc_attr( $preset_tools_json ),
+					esc_attr( $preset_description ),
+					esc_html( $preset_name )
+				);
+			}
+
+			echo '</div>';
+			echo '</div>';
+
+			// Add JavaScript for preset functionality.
+			static $preset_script_printed = false;
+			if ( ! $preset_script_printed ) {
+				$preset_script_printed = true;
+				?>
+				<script type="text/javascript">
+				( function() {
+					document.addEventListener( 'DOMContentLoaded', function() {
+						var presetButtons = document.querySelectorAll( '.wp-mcp-ai-tool-preset-btn' );
+
+						presetButtons.forEach( function( button ) {
+							button.addEventListener( 'click', function( e ) {
+								e.preventDefault();
+
+								var toolsData = button.getAttribute( 'data-tools' );
+								if ( ! toolsData ) {
+									return;
+								}
+
+								var presetTools;
+								try {
+									presetTools = JSON.parse( toolsData );
+								} catch ( error ) {
+									console.error( 'Failed to parse preset tools:', error );
+									return;
+								}
+
+								if ( ! Array.isArray( presetTools ) ) {
+									return;
+								}
+
+								// First, uncheck all tool checkboxes.
+								var allToolCheckboxes = document.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
+								allToolCheckboxes.forEach( function( checkbox ) {
+									if ( checkbox.checked ) {
+										checkbox.checked = false;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Then, check the checkboxes for tools in the preset.
+								presetTools.forEach( function( toolSlug ) {
+									var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+									if ( checkbox && ! checkbox.checked ) {
+										checkbox.checked = true;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Scroll to the tools section.
+								var toolsSection = document.querySelector( '.wp-mcp-ai-tools' );
+								if ( toolsSection ) {
+									toolsSection.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+								}
+
+								// Show a brief visual confirmation.
+								button.style.backgroundColor = '#2271b1';
+								button.style.color = '#fff';
+								button.style.borderColor = '#2271b1';
+								setTimeout( function() {
+									button.style.backgroundColor = '';
+									button.style.color = '';
+									button.style.borderColor = '';
+								}, 500 );
+							} );
+						} );
+					} );
+				} )();
+				</script>
+				<?php
+			}
+		}
+
+		/**
 		 * Render controls that allow editing the pre-built shortcuts contributed by tools.
 		 *
 		 * @param WP_Post $post               Post object.
@@ -1386,6 +1610,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			echo '</label>';
 			echo '<p class="description">' . esc_html__( 'When enabled, only the custom shortcuts you define below will appear in the chat interface.', 'wp-mcp-ai' ) . '</p>';
 			echo '</fieldset>';
+
+			// Render tool selection presets.
+			$this->render_tool_presets( $selected_tools );
 
 			$group_map = array();
 			if ( method_exists( $this->registry, 'get_tool_group_map' ) ) {
