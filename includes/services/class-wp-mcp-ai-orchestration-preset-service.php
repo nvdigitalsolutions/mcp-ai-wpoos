@@ -423,6 +423,9 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			// Update the active preset.
 			WP_MCP_AI_Settings_Registry::update_setting( 'orchestration_preset', $preset_id );
 
+			// Clear WordPress object cache to ensure fresh values on next read.
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+
 			// Log the preset application.
 			WP_MCP_AI_Logger::log_event(
 				'orchestration_preset_applied',

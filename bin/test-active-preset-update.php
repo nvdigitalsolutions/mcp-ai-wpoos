@@ -67,6 +67,11 @@ function apply_filters( $hook, $value ) {
 	return $value;
 }
 
+function wp_cache_delete( $key, $group = '' ) {
+	// Mock - cache delete for tests.
+	return true;
+}
+
 function register_setting( $option_group, $option_name, $args = array() ) {
 	// Mock - do nothing for tests.
 }
