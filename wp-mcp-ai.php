@@ -53,7 +53,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	 * Prevent plugin activation on incompatible PHP versions.
 	 */
 	function wp_mcp_ai_deactivate_self() {
-		deactivate_plugins( plugin_basename( __FILE__ ) );
+		deactivate_plugins( plugin_basename( WP_MCP_AI_FILE ) );
 	}
 	add_action( 'admin_init', 'wp_mcp_ai_deactivate_self' );
 	
@@ -64,11 +64,14 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
 	define( 'WP_MCP_AI_VERSION', '1.0.0' );
 }
+if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
+	define( 'WP_MCP_AI_FILE', __FILE__ );
+}
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-	define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
+	define( 'WP_MCP_AI_PATH', plugin_dir_path( WP_MCP_AI_FILE ) );
 }
 if ( ! defined( 'WP_MCP_AI_URL' ) ) {
-	define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
+	define( 'WP_MCP_AI_URL', plugin_dir_url( WP_MCP_AI_FILE ) );
 }
 
 // Load Composer dependencies when available.
@@ -381,7 +384,7 @@ if ( is_admin() ) {
 
 		return array_merge( $plugin_links, $links );
 	}
-	add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wp_mcp_ai_add_plugin_action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -433,7 +436,7 @@ if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
 		// for older versions to maintain backwards compatibility.
 		global $wp_version;
 		if ( version_compare( $wp_version, '6.7', '<' ) ) {
-			load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+			load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( WP_MCP_AI_FILE ) ) . '/languages' );
 		}
 	}
 }
@@ -807,7 +810,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_new_site_activation( $blog ) {
-		if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
+		if ( ! is_plugin_active_for_network( plugin_basename( WP_MCP_AI_FILE ) ) ) {
 			return;
 		}
 
@@ -993,7 +996,7 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 	}
 }
 
-register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
+register_activation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_activate' );
 
 if ( ! function_exists( 'wp_mcp_ai_deactivate' ) ) {
 	/**
@@ -1025,7 +1028,7 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 	}
 }
 
-register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
+register_deactivation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_deactivate' );
 
 if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {
 	/**
@@ -1100,7 +1103,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 	}
 }
 
-register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );
+register_uninstall_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_uninstall' );
 
 if ( ! function_exists( 'wp_mcp_ai_extend_upload_mimes' ) ) {
 	/**
