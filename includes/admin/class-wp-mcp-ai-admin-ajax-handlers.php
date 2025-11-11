@@ -509,7 +509,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			delete_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY );
-			
+
 			// Reset tool-specific token usage data.
 			WP_MCP_AI_Tool_Token_Limits::reset_user_tool_usage( $user_id );
 
@@ -560,7 +560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			foreach ( $user_ids as $user_id ) {
 				clean_user_cache( $user_id );
 			}
-			
+
 			// Also delete tool-specific token usage data.
 			$tool_meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
 			$wpdb->delete(
