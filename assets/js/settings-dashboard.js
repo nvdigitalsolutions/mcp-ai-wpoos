@@ -51,6 +51,12 @@
 
 			// Export token usage to CSV
 			$('#wp-mcp-ai-export-usage-csv').on('click', this.handleExportUsageCSV.bind(this));
+
+			// Bulk tier assignment
+			$('#wp-mcp-ai-select-all-users').on('change', this.handleSelectAllUsers.bind(this));
+			$('.wp-mcp-ai-user-checkbox').on('change', this.handleUserCheckboxChange.bind(this));
+			$('#bulk-tier-selector').on('change', this.handleBulkTierSelectorChange.bind(this));
+			$('#wp-mcp-ai-apply-bulk-tier').on('click', this.handleApplyBulkTier.bind(this));
 		},
 
 		/**
@@ -247,6 +253,104 @@
 				$form.remove();
 				$button.prop('disabled', false).text('Export to CSV');
 			}, 1000);
+		},
+
+		/**
+		 * Handle select all users checkbox.
+		 *
+		 * @param {Event} e Change event.
+		 */
+		handleSelectAllUsers: function(e) {
+			const checked = $(e.currentTarget).prop('checked');
+			$('.wp-mcp-ai-user-checkbox').prop('checked', checked);
+			this.updateBulkActionButton();
+		},
+
+		/**
+		 * Handle individual user checkbox change.
+		 */
+		handleUserCheckboxChange: function() {
+			// Update select all checkbox state
+			const totalCheckboxes = $('.wp-mcp-ai-user-checkbox').length;
+			const checkedCheckboxes = $('.wp-mcp-ai-user-checkbox:checked').length;
+
+			$('#wp-mcp-ai-select-all-users').prop('checked', totalCheckboxes === checkedCheckboxes);
+			this.updateBulkActionButton();
+		},
+
+		/**
+		 * Handle bulk tier selector change.
+		 */
+		handleBulkTierSelectorChange: function() {
+			this.updateBulkActionButton();
+		},
+
+		/**
+		 * Update bulk action button state.
+		 */
+		updateBulkActionButton: function() {
+			const hasSelection = $('.wp-mcp-ai-user-checkbox:checked').length > 0;
+			const hasTier = $('#bulk-tier-selector').val() !== '';
+			$('#wp-mcp-ai-apply-bulk-tier').prop('disabled', !hasSelection || !hasTier);
+		},
+
+		/**
+		 * Handle apply bulk tier action.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleApplyBulkTier: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const tier = $('#bulk-tier-selector').val();
+			const userIds = [];
+
+			$('.wp-mcp-ai-user-checkbox:checked').each(function() {
+				userIds.push($(this).val());
+			});
+
+			if (userIds.length === 0) {
+				alert('Please select at least one user.');
+				return;
+			}
+
+			if (!tier) {
+				alert('Please select a tier.');
+				return;
+			}
+
+			const tierName = $('#bulk-tier-selector option:selected').text();
+			if (!confirm('Are you sure you want to assign ' + tierName + ' to ' + userIds.length + ' user(s)?')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Applying...');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_bulk_assign_tier',
+					nonce: wpMcpAiDashboard.nonce,
+					user_ids: userIds,
+					tier: tier
+				}
+			}, {
+				success: function(response) {
+					if (response.success) {
+						alert(response.data.message);
+						window.location.reload();
+					} else {
+						alert(response.data.message || 'Failed to assign tiers.');
+						$button.prop('disabled', false).text('Apply');
+					}
+				},
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while assigning tiers.');
+					$button.prop('disabled', false).text('Apply');
+				}
+			});
 		},
 
 		/**
