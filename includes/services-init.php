@@ -20,6 +20,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
 
 /**
  * Initialize services
@@ -126,4 +127,15 @@ function wp_mcp_ai_get_token_budget_manager() {
 function wp_mcp_ai_get_tool_registry() {
 	$container = WP_MCP_AI_Container::get_instance();
 	return $container->get( 'tool_registry' );
+}
+
+/**
+ * Get error tracking service instance
+ *
+ * Helper function to get error tracking service instance.
+ *
+ * @return WP_MCP_AI_Error_Tracking_Service Error tracking service instance.
+ */
+function wp_mcp_ai_get_error_tracking_service() {
+	return WP_MCP_AI_Error_Tracking_Service::get_instance();
 }

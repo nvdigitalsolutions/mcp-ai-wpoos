@@ -48,7 +48,7 @@ class WP_MCP_AI_Performance_Reporter {
 
 		// Analyze each component.
 		foreach ( $options['components'] as $component ) {
-			$component_data = self::analyze_component( $component, $options['time_period'], $options['test_types'] );
+			$component_data                     = self::analyze_component( $component, $options['time_period'], $options['test_types'] );
 			$report['components'][ $component ] = $component_data;
 
 			// Collect alerts.
@@ -123,6 +123,44 @@ class WP_MCP_AI_Performance_Reporter {
 			}
 		}
 
+		// Check error rates using Error Tracking Service.
+		if ( function_exists( 'wp_mcp_ai_get_error_tracking_service' ) ) {
+			$error_service = wp_mcp_ai_get_error_tracking_service();
+			$time_seconds  = strtotime( $time_period ) ? abs( strtotime( $time_period ) - time() ) : 3600;
+			$error_rate    = $error_service->get_error_rate( $component, $time_seconds );
+
+			$component_data['metrics']['error_rate'] = $error_rate;
+
+			// Add alert for high error rates.
+			if ( $error_rate > 10 ) {
+				$component_data['alerts'][]      = array(
+					'severity'  => 'critical',
+					'component' => $component,
+					'test_type' => 'error_tracking',
+					'message'   => sprintf(
+						'Critical error rate detected in %s: %.2f%%',
+						$component,
+						$error_rate
+					),
+				);
+				$component_data['health_status'] = 'critical';
+			} elseif ( $error_rate > 5 ) {
+				$component_data['alerts'][] = array(
+					'severity'  => 'high',
+					'component' => $component,
+					'test_type' => 'error_tracking',
+					'message'   => sprintf(
+						'Elevated error rate in %s: %.2f%%',
+						$component,
+						$error_rate
+					),
+				);
+				if ( 'good' === $component_data['health_status'] ) {
+					$component_data['health_status'] = 'warning';
+				}
+			}
+		}
+
 		// Generate component-specific recommendations.
 		$component_data['recommendations'] = self::generate_component_recommendations( $component, $component_data );
 
@@ -172,12 +210,12 @@ class WP_MCP_AI_Performance_Reporter {
 	 */
 	protected static function generate_summary( $report ) {
 		$summary = array(
-			'total_components'    => count( $report['components'] ),
-			'total_alerts'        => count( $report['alerts'] ),
+			'total_components'      => count( $report['components'] ),
+			'total_alerts'          => count( $report['alerts'] ),
 			'total_recommendations' => count( $report['recommendations'] ),
-			'critical_alerts'     => 0,
-			'high_alerts'         => 0,
-			'medium_alerts'       => 0,
+			'critical_alerts'       => 0,
+			'high_alerts'           => 0,
+			'medium_alerts'         => 0,
 		);
 
 		// Count alerts by severity.
@@ -255,7 +293,12 @@ class WP_MCP_AI_Performance_Reporter {
 		usort(
 			$alerts,
 			function ( $a, $b ) {
-				$severity_order = array( 'critical' => 0, 'high' => 1, 'medium' => 2, 'low' => 3 );
+				$severity_order = array(
+					'critical' => 0,
+					'high'     => 1,
+					'medium'   => 2,
+					'low'      => 3,
+				);
 				$a_order        = isset( $severity_order[ $a['severity'] ] ) ? $severity_order[ $a['severity'] ] : 99;
 				$b_order        = isset( $severity_order[ $b['severity'] ] ) ? $severity_order[ $b['severity'] ] : 99;
 				return $a_order - $b_order;
