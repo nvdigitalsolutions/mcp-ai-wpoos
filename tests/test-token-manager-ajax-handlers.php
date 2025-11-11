@@ -80,6 +80,46 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
+	 * Test save tool limits with no changes.
+	 */
+	public function test_save_tool_limits_no_changes() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// First, set some initial limits.
+		WP_MCP_AI_Tool_Token_Limits::set_tool_limit( 'run_crawl4ai_job', 250000 );
+		WP_MCP_AI_Tool_Token_Limits::set_tool_limit( 'general_tools', 150000 );
+
+		// Set up AJAX request with the same limits (no changes).
+		$_POST['action'] = 'wp_mcp_ai_save_tool_limits';
+		$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_dashboard' );
+		$_POST['limits'] = array(
+			'run_crawl4ai_job' => 250000,
+			'general_tools'    => 150000,
+		);
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify success with no_changes flag.
+		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
+		$this->assertTrue( isset( $response['data']['no_changes'] ), 'Response should have no_changes flag' );
+		$this->assertTrue( $response['data']['no_changes'], 'no_changes flag should be true' );
+		$this->assertStringContainsString( 'no changes', strtolower( $response['data']['message'] ) );
+
+		// Verify limits are still the same.
+		$this->assertEquals( 250000, WP_MCP_AI_Tool_Token_Limits::get_tool_limit( 'run_crawl4ai_job' ) );
+		$this->assertEquals( 150000, WP_MCP_AI_Tool_Token_Limits::get_tool_limit( 'general_tools' ) );
+	}
+
+	/**
 	 * Test save tool limits with invalid nonce.
 	 */
 	public function test_save_tool_limits_invalid_nonce() {
