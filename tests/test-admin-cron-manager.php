@@ -346,4 +346,66 @@ class WP_MCP_AI_Admin_Cron_Manager_Test extends WP_UnitTestCase {
 		$this->assertNotFalse( wp_next_scheduled( 'wp_mcp_ai_test_recurring' ), 'Recurring job should be scheduled' );
 		$this->assertNotFalse( wp_next_scheduled( 'wp_mcp_ai_test_with_args', array( array( 'test_key' => 'test_value' ) ) ), 'Job with args should be scheduled' );
 	}
+
+	/**
+	 * Test that the admin manager can render the page with test jobs.
+	 *
+	 * This test confirms that when jobs are created, the render_page method
+	 * can be called successfully and the jobs will appear in the admin UI.
+	 */
+	public function test_render_page_shows_test_jobs() {
+		// Create an admin user with proper capabilities.
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Create test jobs using the tool.
+		$tool   = new WP_MCP_AI_Tool_Create_Cron_Job();
+		$future = time() + HOUR_IN_SECONDS;
+
+		// Create a one-off job.
+		$tool->execute(
+			array(
+				'hook'      => 'wp_mcp_ai_render_test_oneoff',
+				'timestamp' => $future,
+			),
+			array(
+				'user_id' => $admin_id,
+			)
+		);
+
+		// Create a recurring job.
+		$tool->execute(
+			array(
+				'hook'      => 'wp_mcp_ai_render_test_recurring',
+				'timestamp' => $future + HOUR_IN_SECONDS,
+				'schedule'  => 'daily',
+			),
+			array(
+				'user_id' => $admin_id,
+			)
+		);
+
+		// Verify jobs were created.
+		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$this->assertCount( 2, $jobs, 'Two jobs should be created before rendering' );
+
+		// Capture the output of render_page.
+		ob_start();
+		$this->manager->render_page();
+		$output = ob_get_clean();
+
+		// Verify the output contains job information.
+		$this->assertStringContainsString( 'wp_mcp_ai_render_test_oneoff', $output, 'One-off job hook should appear in rendered output' );
+		$this->assertStringContainsString( 'wp_mcp_ai_render_test_recurring', $output, 'Recurring job hook should appear in rendered output' );
+
+		// Verify statistics are displayed.
+		$this->assertStringContainsString( 'Total Events', $output, 'Total events label should appear' );
+		$this->assertStringContainsString( 'Active', $output, 'Active label should appear' );
+		$this->assertStringContainsString( 'Recurring', $output, 'Recurring label should appear' );
+		$this->assertStringContainsString( 'One-off', $output, 'One-off label should appear' );
+
+		// Verify the stats show correct counts.
+		$this->assertStringContainsString( '>2<', $output, 'Should show 2 total events' );
+		$this->assertStringContainsString( '>1<', $output, 'Should show 1 recurring and 1 one-off' );
+	}
 }
