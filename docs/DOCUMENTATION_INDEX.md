@@ -6,7 +6,7 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 51+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 52+ files (all in docs/ folder, 5+ key files in root)
 
 **📋 Note:** As of November 8, 2025, 107 audit reports and summaries have been consolidated into two organized reference documents:
 - [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Chronological development history
@@ -164,6 +164,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
+| [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 | [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
 | [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Known minor issues | Developers |
@@ -193,8 +194,8 @@ These two documents replace 107 individual audit reports, summaries, and status 
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 50+ (45+ in docs/, 5+ in root)
-- **Total Documentation Size:** ~400KB+
+- **Total Documentation Files:** 51+ (46+ in docs/, 5+ in root)
+- **Total Documentation Size:** ~408KB+
 - **Main README Size:** 1,400+ lines
 - **Average Doc Size:** ~8.8KB
 
