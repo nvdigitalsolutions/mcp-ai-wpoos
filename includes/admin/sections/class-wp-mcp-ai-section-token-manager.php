@@ -256,56 +256,159 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		/**
 		 * Render per-tool token limits view.
 		 */
-		private function render_per_tool_view() {
-			$current_user_id = get_current_user_id();
-			$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
+	/**
+	 * Render per-tool token limits view.
+	 */
+	private function render_per_tool_view() {
+		$current_user_id = get_current_user_id();
+		$user_tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $current_user_id );
 
-			// Get all available tools.
-			$all_tools = $this->get_all_available_tools();
+		// Get all available tools.
+		$all_tools = $this->get_all_available_tools();
 
-			?>
-			<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'Configure daily token usage limits for individual tools. Different tools can have different limits based on their resource requirements.', 'wp-mcp-ai' ); ?></p>
+		?>
+		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
+		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
 
-			<table class="wp-list-table widefat fixed striped">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Daily Token Limit', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Total Tokens Used', 'wp-mcp-ai' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php
-					foreach ( $all_tools as $tool_slug => $tool_name ) :
-						$tool_limit = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
-						$tool_stats = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
-						?>
-						<tr>
-							<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
-							<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
-							<td>
-								<input type="number" class="wp-mcp-ai-tool-limit-input" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" value="<?php echo esc_attr( $tool_limit ); ?>" min="0" step="1000" style="width: 120px;" />
-								<span class="description"><?php esc_html_e( 'tokens/day', 'wp-mcp-ai' ); ?></span>
-							</td>
-							<td><?php echo number_format_i18n( $tool_stats['total_users'] ); ?></td>
-							<td><?php echo number_format_i18n( $tool_stats['total_requests'] ); ?></td>
-							<td><?php echo number_format_i18n( $tool_stats['total_tokens'] ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-
-			<p class="submit">
-				<button type="button" id="wp-mcp-ai-save-all-tool-limits" class="button button-primary">
-					<?php esc_html_e( 'Save All Tool Limits', 'wp-mcp-ai' ); ?>
-				</button>
+		<!-- Tier Reference Card -->
+		<div class="wp-mcp-ai-tier-reference" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+			<h4 style="margin-top: 0;"><?php esc_html_e( 'Tier Base Limits (tokens/day)', 'wp-mcp-ai' ); ?></h4>
+			<div style="display: flex; gap: 20px;">
+				<div>
+					<span class="wp-mcp-ai-tier-badge" style="background-color: #999; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+						<?php esc_html_e( 'FREE', 'wp-mcp-ai' ); ?>
+					</span>
+					<strong><?php echo number_format_i18n( 50000 ); ?></strong>
+				</div>
+				<div>
+					<span class="wp-mcp-ai-tier-badge" style="background-color: #0073aa; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+						<?php esc_html_e( 'PRO', 'wp-mcp-ai' ); ?>
+					</span>
+					<strong><?php echo number_format_i18n( 200000 ); ?></strong>
+				</div>
+				<div>
+					<span class="wp-mcp-ai-tier-badge" style="background-color: #46b450; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+						<?php esc_html_e( 'ENTERPRISE', 'wp-mcp-ai' ); ?>
+					</span>
+					<strong><?php echo number_format_i18n( 1000000 ); ?></strong>
+				</div>
+			</div>
+			<p class="description" style="margin-bottom: 0; margin-top: 10px;">
+				<?php esc_html_e( 'Tool multipliers are applied to these base limits. For example, a tool with a 2.0× multiplier would have 100k tokens/day for Free tier users (50k × 2.0).', 'wp-mcp-ai' ); ?>
 			</p>
-			<?php
+		</div>
+
+		<table class="wp-list-table widefat fixed striped">
+			<thead>
+				<tr>
+					<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 10%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'wp-mcp-ai' ); ?>">
+						<?php esc_html_e( 'Multiplier', 'wp-mcp-ai' ); ?>
+						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
+					</th>
+					<th style="width: 15%;"><?php esc_html_e( 'Effective Limits', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Usage %', 'wp-mcp-ai' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				foreach ( $all_tools as $tool_slug => $tool_name ) :
+					$tool_limit = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+					$tool_stats = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
+					$multiplier = $this->get_tool_multiplier( $tool_slug );
+
+					// Calculate effective limits for each tier.
+					$free_limit       = (int) ( 50000 * $multiplier );
+					$pro_limit        = (int) ( 200000 * $multiplier );
+					$enterprise_limit = (int) ( 1000000 * $multiplier );
+
+					// Calculate usage percentage (based on enterprise tier as max).
+					$usage_pct = $tool_stats['total_tokens'] > 0 && $enterprise_limit > 0
+						? min( 100, round( ( $tool_stats['total_tokens'] / $enterprise_limit ) * 100, 1 ) )
+						: 0;
+
+					// Determine usage color.
+					if ( $usage_pct >= 80 ) {
+						$usage_color = '#dc3232'; // Red.
+					} elseif ( $usage_pct >= 50 ) {
+						$usage_color = '#f56e28'; // Orange.
+					} else {
+						$usage_color = '#46b450'; // Green.
+					}
+					?>
+					<tr>
+						<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
+						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+						<td>
+							<input 
+								type="number" 
+								class="wp-mcp-ai-tool-multiplier-input" 
+								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" 
+								value="<?php echo esc_attr( $multiplier ); ?>" 
+								min="0.1" 
+								max="10" 
+								step="0.1" 
+								style="width: 70px;" 
+							/>×
+						</td>
+						<td style="font-size: 11px;">
+							<div title="<?php esc_attr_e( 'Free tier limit', 'wp-mcp-ai' ); ?>">
+								<span style="color: #999;">F:</span> <?php echo number_format_i18n( $free_limit ); ?>
+							</div>
+							<div title="<?php esc_attr_e( 'Pro tier limit', 'wp-mcp-ai' ); ?>">
+								<span style="color: #0073aa;">P:</span> <?php echo number_format_i18n( $pro_limit ); ?>
+							</div>
+							<div title="<?php esc_attr_e( 'Enterprise tier limit', 'wp-mcp-ai' ); ?>">
+								<span style="color: #46b450;">E:</span> <?php echo number_format_i18n( $enterprise_limit ); ?>
+							</div>
+						</td>
+						<td><?php echo number_format_i18n( $tool_stats['total_users'] ); ?></td>
+						<td><?php echo number_format_i18n( $tool_stats['total_requests'] ); ?></td>
+						<td><?php echo number_format_i18n( $tool_stats['total_tokens'] ); ?></td>
+						<td>
+							<div class="wp-mcp-ai-usage-bar" style="background: #f0f0f0; border-radius: 3px; overflow: hidden; height: 20px; position: relative;">
+								<div style="background: <?php echo esc_attr( $usage_color ); ?>; width: <?php echo esc_attr( $usage_pct ); ?>%; height: 100%; transition: width 0.3s ease;"></div>
+								<span style="position: absolute; left: 0; right: 0; top: 0; text-align: center; line-height: 20px; font-size: 11px; font-weight: bold; color: #333;">
+									<?php echo esc_html( $usage_pct ); ?>%
+								</span>
+							</div>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+
+		<p class="submit">
+			<button type="button" id="wp-mcp-ai-save-all-tool-settings" class="button button-primary">
+				<?php esc_html_e( 'Save All Tool Settings', 'wp-mcp-ai' ); ?>
+			</button>
+			<span class="spinner" style="float: none; margin: 0 10px;"></span>
+			<span id="wp-mcp-ai-tool-settings-message" style="margin-left: 10px;"></span>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Get tool multiplier for token limits.
+	 *
+	 * @param string $tool_slug Tool slug.
+	 * @return float Multiplier value.
+	 */
+	private function get_tool_multiplier( $tool_slug ) {
+		// Get multipliers from the WP_MCP_AI_Tool_Token_Limits class.
+		$multipliers = WP_MCP_AI_Tool_Token_Limits::get_tool_multipliers();
+		
+		if ( isset( $multipliers[ $tool_slug ] ) ) {
+			return (float) $multipliers[ $tool_slug ];
 		}
+		
+		return 1.0; // Default multiplier.
+	}
+
 
 		/**
 		 * Render per-site token statistics view.
