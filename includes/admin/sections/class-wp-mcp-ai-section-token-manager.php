@@ -156,6 +156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<thead>
 						<tr>
 							<th><?php esc_html_e( 'User', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Tier', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
@@ -174,12 +175,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 							$usage  = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
 							$totals = $this->calculate_usage_totals( $usage );
+							$tier   = WP_MCP_AI_Tool_Token_Limits::get_user_tier( $user_id );
+
+							// Tier badge styling.
+							$tier_colors = array(
+								'free'       => '#999',
+								'pro'        => '#0073aa',
+								'enterprise' => '#46b450',
+							);
+							$tier_color = isset( $tier_colors[ $tier ] ) ? $tier_colors[ $tier ] : '#999';
 							?>
 							<tr>
 								<td>
 									<strong><?php echo esc_html( $user->display_name ); ?></strong>
 									<br>
 									<small class="description"><?php echo esc_html( $user->user_email ); ?></small>
+								</td>
+								<td>
+									<span class="wp-mcp-ai-tier-badge" style="background-color: <?php echo esc_attr( $tier_color ); ?>; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+										<?php echo esc_html( $tier ); ?>
+									</span>
 								</td>
 								<td><?php echo number_format_i18n( $totals['requests'] ); ?></td>
 								<td><?php echo number_format_i18n( $totals['total_tokens'] ); ?></td>
@@ -196,7 +211,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								</td>
 							</tr>
 							<tr class="wp-mcp-ai-user-details-row" id="user-details-<?php echo esc_attr( $user_id ); ?>" style="display: none;">
-								<td colspan="7">
+								<td colspan="8">
 									<?php $this->render_user_details( $user_id, $usage ); ?>
 								</td>
 							</tr>
