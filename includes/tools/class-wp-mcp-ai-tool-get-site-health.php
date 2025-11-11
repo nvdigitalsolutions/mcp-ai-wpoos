@@ -219,7 +219,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			}
 		};
 
+		// Load WordPress admin includes in the order WordPress core loads them.
+		// This ensures all function dependencies are available for Site Health tests.
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/admin.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/file.php' );
+		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/template.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/plugin.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/theme.php' );
 		$maybe_require( trailingslashit( ABSPATH ) . 'wp-admin/includes/misc.php' );
