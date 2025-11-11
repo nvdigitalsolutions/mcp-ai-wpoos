@@ -19,13 +19,35 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		const PAGE_SLUG = 'wp-mcp-ai-dashboard';
 
 		/**
+		 * AJAX handlers component.
+		 *
+		 * @var WP_MCP_AI_Admin_AJAX_Handlers
+		 */
+		private $ajax_handlers;
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
+			// Initialize AJAX handlers.
+			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
+
+			// Register AJAX handlers.
+			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 		}
 
 		/**
