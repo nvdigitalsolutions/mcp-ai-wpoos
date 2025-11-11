@@ -85,9 +85,8 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			$result->header( 'Expires', '0' );
 			
 			// Remove any existing cache headers that might allow caching.
-			// WordPress doesn't have remove_header(), use set_header(key, null) instead.
-			$result->set_header( 'ETag', null );
-			$result->set_header( 'Last-Modified', null );
+			$result->remove_header( 'ETag' );
+			$result->remove_header( 'Last-Modified' );
 		}
 
 		return $result;
