@@ -76,6 +76,13 @@
 			xhr.fail(function(jqXHR, textStatus, errorThrown) {
 				const error = AjaxErrorService.parseError(jqXHR, textStatus, errorThrown);
 				
+				// Always log errors to console for debugging
+				AjaxErrorService.logError(error, {
+					url: options.url || jqXHR.url || 'unknown',
+					method: options.type || jqXHR.type || 'unknown',
+					data: options.data || {}
+				});
+				
 				if (originalError) {
 					try {
 						originalError.call(this, error, jqXHR);
