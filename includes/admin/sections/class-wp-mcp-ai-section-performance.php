@@ -373,6 +373,58 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 				margin-top: 15px;
 				border-radius: 4px;
 			}
+			.test-summary {
+				margin: 10px 0;
+				padding: 10px;
+				background: #fff;
+				border-left: 3px solid #2271b1;
+			}
+			.cli-command, .setup-command {
+				margin: 10px 0;
+				padding: 10px;
+				background: #fff;
+				border-radius: 4px;
+			}
+			.cli-command code, .setup-command code {
+				display: block;
+				padding: 8px;
+				background: #23282d;
+				color: #f0f0f1;
+				border-radius: 3px;
+				font-family: Consolas, Monaco, monospace;
+				font-size: 13px;
+			}
+			.test-details {
+				margin: 10px 0;
+				padding: 10px;
+				background: #fff;
+			}
+			.test-output {
+				margin: 10px 0;
+			}
+			.test-output summary {
+				cursor: pointer;
+				padding: 8px;
+				background: #fff;
+				border: 1px solid #ccd0d4;
+				border-radius: 3px;
+				font-weight: 600;
+			}
+			.test-output summary:hover {
+				background: #f0f0f1;
+			}
+			.test-output pre {
+				margin: 10px 0 0;
+				padding: 10px;
+				background: #23282d;
+				color: #f0f0f1;
+				border-radius: 3px;
+				overflow-x: auto;
+				font-family: Consolas, Monaco, monospace;
+				font-size: 12px;
+				line-height: 1.5;
+				max-height: 400px;
+			}
 			.health-badge {
 				display: inline-block;
 				padding: 3px 8px;
@@ -468,17 +520,178 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'wp-mcp-ai' ) ) );
 		}
 
-		// Return information about running tests via CLI.
-		wp_send_json_success(
-			array(
+		// Try to run the test programmatically.
+		$result = $this->run_performance_test_programmatically( $test_type );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( $result );
+		} else {
+			wp_send_json_error( $result );
+		}
+	}
+
+	/**
+	 * Run performance test programmatically.
+	 *
+	 * @param string $test_type Type of test to run.
+	 * @return array Test results with success status and message.
+	 */
+	protected function run_performance_test_programmatically( $test_type ) {
+		// Map test types to file paths.
+		$test_files = array(
+			'stress'       => WP_MCP_AI_PATH . 'tests/performance/test-stress-suite.php',
+			'security'     => WP_MCP_AI_PATH . 'tests/security/test-security-suite.php',
+			'speed'        => WP_MCP_AI_PATH . 'tests/performance/test-speed-benchmarks.php',
+			'optimization' => WP_MCP_AI_PATH . 'tests/performance/test-optimization-comparison.php',
+		);
+
+		if ( ! isset( $test_files[ $test_type ] ) ) {
+			return array(
+				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: test type */
-					__( 'To run %s tests, use: ./bin/run-performance-tests.sh --suite=%s', 'wp-mcp-ai' ),
-					$test_type,
+					__( 'Unknown test type: %s', 'wp-mcp-ai' ),
 					$test_type
 				),
-			)
+			);
+		}
+
+		$test_file = $test_files[ $test_type ];
+
+		if ( ! file_exists( $test_file ) ) {
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: file path */
+					__( 'Test file not found: %s', 'wp-mcp-ai' ),
+					basename( $test_file )
+				),
+			);
+		}
+
+		// Check if PHPUnit is available.
+		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
+		if ( ! file_exists( $phpunit_bin ) ) {
+			return array(
+				'success'     => false,
+				'message'     => __( 'PHPUnit not installed. Run: composer install', 'wp-mcp-ai' ),
+				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
+			);
+		}
+
+		// Execute the test using shell_exec with timeout.
+		$command = sprintf(
+			'cd %s && %s %s --no-configuration 2>&1',
+			escapeshellarg( WP_MCP_AI_PATH ),
+			escapeshellarg( $phpunit_bin ),
+			escapeshellarg( $test_file )
 		);
+
+		// Set timeout using timeout command if available.
+		if ( $this->command_exists( 'timeout' ) ) {
+			$command = 'timeout 60 ' . $command;
+		}
+
+		$output     = array();
+		$return_var = 0;
+
+		// Execute the test.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( $command, $output, $return_var );
+
+		$output_text = implode( "\n", $output );
+
+		// Check if WordPress test environment is required.
+		if ( strpos( $output_text, 'WP_UnitTestCase' ) !== false || strpos( $output_text, 'WP_TESTS_DIR' ) !== false ) {
+			return array(
+				'success'       => false,
+				'message'       => __( 'WordPress test environment not configured. Use CLI command below or run setup first.', 'wp-mcp-ai' ),
+				'details'       => __( 'The performance tests require the WordPress test framework. Please run the setup script or use the CLI command.', 'wp-mcp-ai' ),
+				'cli_command'   => './bin/run-performance-tests.sh --suite=' . $test_type,
+				'setup_command' => 'composer run test:install',
+			);
+		}
+
+		if ( 0 === $return_var ) {
+			// Parse output for test results.
+			$summary = $this->parse_test_output( $output_text );
+
+			return array(
+				'success' => true,
+				'message' => sprintf(
+					/* translators: %1$s: test type, %2$s: test summary */
+					__( '%1$s tests completed successfully. %2$s', 'wp-mcp-ai' ),
+					ucfirst( $test_type ),
+					$summary
+				),
+				'output'  => $output_text,
+				'summary' => $summary,
+			);
+		} else {
+			return array(
+				'success'     => false,
+				'message'     => sprintf(
+					/* translators: %s: test type */
+					__( '%s tests failed. See details below.', 'wp-mcp-ai' ),
+					ucfirst( $test_type )
+				),
+				'output'      => $output_text,
+				'return_code' => $return_var,
+			);
+		}
+	}
+
+	/**
+	 * Check if a command exists.
+	 *
+	 * @param string $command Command name.
+	 * @return bool True if command exists.
+	 */
+	protected function command_exists( $command ) {
+		$return_var = 0;
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
+		exec( 'command -v ' . escapeshellarg( $command ) . ' 2>/dev/null', $output, $return_var );
+		return 0 === $return_var;
+	}
+
+	/**
+	 * Parse PHPUnit test output to extract summary.
+	 *
+	 * @param string $output Test output.
+	 * @return string Test summary.
+	 */
+	protected function parse_test_output( $output ) {
+		// Look for PHPUnit summary line.
+		if ( preg_match( '/OK \((\d+) tests?, (\d+) assertions?\)/', $output, $matches ) ) {
+			return sprintf(
+				/* translators: %1$d: number of tests, %2$d: number of assertions */
+				__( 'Passed: %1$d tests, %2$d assertions', 'wp-mcp-ai' ),
+				absint( $matches[1] ),
+				absint( $matches[2] )
+			);
+		}
+
+		if ( preg_match( '/Tests: (\d+), Assertions: (\d+)/', $output, $matches ) ) {
+			return sprintf(
+				/* translators: %1$d: number of tests, %2$d: number of assertions */
+				__( 'Tests: %1$d, Assertions: %2$d', 'wp-mcp-ai' ),
+				absint( $matches[1] ),
+				absint( $matches[2] )
+			);
+		}
+
+		if ( preg_match( '/FAILURES!/', $output ) ) {
+			if ( preg_match( '/Tests: (\d+), Assertions: (\d+), Failures: (\d+)/', $output, $matches ) ) {
+				return sprintf(
+					/* translators: %1$d: total tests, %2$d: failed tests */
+					__( 'Tests: %1$d, Failures: %2$d', 'wp-mcp-ai' ),
+					absint( $matches[1] ),
+					absint( $matches[3] )
+				);
+			}
+		}
+
+		return __( 'Test execution completed. Check details for results.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -623,7 +836,7 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 							'exception' => $e->getMessage(),
 						)
 					);
-				} catch ( Exception $log_error ) {
+				} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 					// Silently fail on logging errors.
 				}
 			}

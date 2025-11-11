@@ -42,6 +42,7 @@
 			const testType = $button.data('test-type');
 			const $resultsContainer = $('.test-results-container');
 			const $results = $('.test-results');
+			const originalText = $button.text();
 
 			$button.prop('disabled', true).text(wpMcpAiPerformance.runningText || 'Running...');
 
@@ -53,21 +54,81 @@
 					nonce: wpMcpAiPerformance.nonce,
 					test_type: testType
 				},
+				timeout: 65000, // 65 second timeout for test execution
 				success: function(response) {
+					$resultsContainer.show();
+					
 					if (response.success) {
-						$resultsContainer.show();
-						$results.html('<div class="notice notice-info"><p>' + response.data.message + '</p></div>');
+						let html = '<div class="notice notice-success"><p><strong>✓ ' + response.data.message + '</strong></p></div>';
+						
+						// Show summary if available
+						if (response.data.summary) {
+							html += '<div class="test-summary"><p>' + response.data.summary + '</p></div>';
+						}
+						
+						// Show detailed output if available
+						if (response.data.output) {
+							html += '<details class="test-output"><summary>View Detailed Output</summary><pre>' + 
+									PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
+						}
+						
+						$results.html(html);
 					} else {
-						alert('Error: ' + (response.data.message || 'Unknown error'));
+						let html = '<div class="notice notice-error"><p><strong>✗ ' + 
+								   PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
+						
+						// Show CLI command if available
+						if (response.data.cli_command) {
+							html += '<div class="cli-command"><p><strong>Run via CLI:</strong></p>' +
+									'<code>' + PerformanceAdmin.escapeHtml(response.data.cli_command) + '</code></div>';
+						}
+						
+						// Show setup command if needed
+						if (response.data.setup_command) {
+							html += '<div class="setup-command"><p><strong>Setup Required:</strong></p>' +
+									'<code>' + PerformanceAdmin.escapeHtml(response.data.setup_command) + '</code></div>';
+						}
+						
+						// Show details if available
+						if (response.data.details) {
+							html += '<div class="test-details"><p>' + PerformanceAdmin.escapeHtml(response.data.details) + '</p></div>';
+						}
+						
+						// Show output if available
+						if (response.data.output) {
+							html += '<details class="test-output"><summary>View Error Output</summary><pre>' + 
+									PerformanceAdmin.escapeHtml(response.data.output) + '</pre></details>';
+						}
+						
+						$results.html(html);
 					}
 				},
-				error: function() {
-					alert('AJAX request failed');
+				error: function(jqXHR, textStatus) {
+					$resultsContainer.show();
+					let errorMsg = 'AJAX request failed';
+					
+					if (textStatus === 'timeout') {
+						errorMsg = 'Test execution timed out. This may be a server configuration issue or the test is taking too long.';
+					}
+					
+					$results.html('<div class="notice notice-error"><p><strong>✗ ' + errorMsg + '</strong></p></div>');
 				},
 				complete: function() {
-					$button.prop('disabled', false).text($button.text().replace('Running...', 'Run ' + testType.charAt(0).toUpperCase() + testType.slice(1) + ' Test'));
+					$button.prop('disabled', false).text(originalText);
 				}
 			});
+		},
+
+		/**
+		 * Escape HTML to prevent XSS.
+		 *
+		 * @param {string} text Text to escape.
+		 * @return {string} Escaped text.
+		 */
+		escapeHtml: function(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
 		},
 
 		/**
