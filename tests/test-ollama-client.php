@@ -168,6 +168,88 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Ensure the test connection method uses configurable timeout.
+	 */
+	public function test_connection_uses_configurable_timeout() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['request_timeout']     = 60; // Set custom timeout.
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client          = new WP_MCP_AI_Ollama_Client();
+		$captured_args   = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
+			$captured_args = $args;
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models' => array(),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$client->test_connection();
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Verify timeout was passed correctly.
+		$this->assertNotNull( $captured_args );
+		$this->assertArrayHasKey( 'timeout', $captured_args );
+		$this->assertSame( 60, $captured_args['timeout'] );
+	}
+
+	/**
+	 * Ensure the list models method uses configurable timeout.
+	 */
+	public function test_list_models_uses_configurable_timeout() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['request_timeout']     = 45; // Set custom timeout.
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client          = new WP_MCP_AI_Ollama_Client();
+		$captured_args   = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
+			$captured_args = $args;
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'models' => array(),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$client->list_models();
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Verify timeout was passed correctly.
+		$this->assertNotNull( $captured_args );
+		$this->assertArrayHasKey( 'timeout', $captured_args );
+		$this->assertSame( 45, $captured_args['timeout'] );
+	}
+
+	/**
 	 * Ensure the list models method returns models correctly.
 	 */
 	public function test_list_models_returns_models() {

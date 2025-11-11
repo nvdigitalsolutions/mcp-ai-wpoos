@@ -102,8 +102,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Get timeout from settings.
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
+			$timeout         = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout         = max( 5, $timeout );
+
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
-			$response = wp_remote_get( $api_url, array( 'timeout' => 10 ) );
+			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
 				wp_send_json_error(
@@ -146,8 +152,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
+			// Get timeout from settings.
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr    = WP_MCP_AI_Resource_Manager::instance();
+			$timeout         = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout         = max( 5, $timeout );
+
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
-			$response = wp_remote_get( $api_url, array( 'timeout' => 10 ) );
+			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
 				wp_send_json_error( array( 'message' => __( 'Failed to fetch models.', 'wp-mcp-ai' ) ) );
