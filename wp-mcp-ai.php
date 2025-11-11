@@ -209,6 +209,10 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
+// Load HTTP helper early to prevent SSL issues with loopback addresses.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+WP_MCP_AI_HTTP_Helper::init();
+
 // Load cache helper early for performance optimization.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
