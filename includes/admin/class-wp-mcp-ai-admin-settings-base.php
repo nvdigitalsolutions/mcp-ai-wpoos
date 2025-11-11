@@ -59,16 +59,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			$sanitized = array();
 			$defaults  = self::get_default_settings();
+			$current   = get_option( self::OPTION_NAME, array() );
 
 			foreach ( $defaults as $key => $default_value ) {
-				// If key is not present in submitted settings, use the default value.
+				// If key is not present in submitted settings, preserve existing value or use default.
 				if ( ! isset( $settings[ $key ] ) ) {
 					// For boolean defaults (checkboxes), missing key means false (unchecked).
 					if ( is_bool( $default_value ) ) {
 						$sanitized[ $key ] = false;
 					} else {
-						// For other types, use the default value.
-						$sanitized[ $key ] = $default_value;
+						// For other types, preserve existing value or use default.
+						$sanitized[ $key ] = isset( $current[ $key ] ) ? $current[ $key ] : $default_value;
 					}
 					continue;
 				}
@@ -336,6 +337,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_burst'                  => 10,
 				'federation_jwks_keys'              => array(),
 				'federation_price_hints'            => array(),
+				// Orchestration layer settings.
+				'orchestration_preset'              => 'custom',
+				'enable_budget_management'          => true,
+				'enable_predictive_optimization'    => true,
+				'enable_capability_gating'          => true,
+				'enable_cron_orchestration'         => true,
+				'memory_warning_threshold'          => 70,
+				'memory_critical_threshold'         => 85,
+				'error_rate_warning_threshold'      => 5,
+				'error_rate_critical_threshold'     => 10,
+				'high_priority_budget'              => 100,
+				'medium_priority_budget'            => 75,
+				'low_priority_budget'               => 50,
+				'critical_health_reduction'         => 50,
+				'warning_health_reduction'          => 75,
+				'low_tier_max_tokens'               => 2000,
+				'medium_tier_max_tokens'            => 8000,
+				'high_tier_max_tokens'              => 32000,
+				'prediction_confidence_threshold'   => 40,
+				'prediction_safety_buffer'          => 15,
 			);
 		}
 
