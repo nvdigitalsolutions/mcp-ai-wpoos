@@ -36,6 +36,12 @@ class WP_MCP_AI_HTTP_Helper {
 	 * 2. Loopback addresses typically don't have valid SSL certificates
 	 * 3. This causes "SSL certificate subject name mismatch" errors
 	 *
+	 * Supports all common local LLM and development server ports:
+	 * - Ollama: localhost:11434
+	 * - LM Studio: localhost:1234
+	 * - Crawl4AI: localhost:8000
+	 * - Any other localhost port (port is automatically stripped for detection)
+	 *
 	 * @param array  $args Request arguments.
 	 * @param string $url  Request URL.
 	 * @return array Modified request arguments.
@@ -59,7 +65,16 @@ class WP_MCP_AI_HTTP_Helper {
 	/**
 	 * Check if a host is a loopback/localhost address.
 	 *
-	 * @param string $host Host address to check.
+	 * Detects loopback addresses in various formats:
+	 * - IPv4: 127.0.0.1, 127.0.0.2, any 127.x.x.x
+	 * - IPv6: ::1, 0:0:0:0:0:0:0:1, [::1]
+	 * - Hostnames: localhost, localhost.localdomain, ip6-localhost, ip6-loopback
+	 * - With ports: localhost:11434, 127.0.0.1:1234, [::1]:8000
+	 *
+	 * Common local LLM ports are automatically supported:
+	 * - Ollama (11434), LM Studio (1234), Crawl4AI (8000), etc.
+	 *
+	 * @param string $host Host address to check (may include port).
 	 * @return bool True if the host is a loopback address, false otherwise.
 	 */
 	public static function is_loopback_address( $host ) {
@@ -70,7 +85,7 @@ class WP_MCP_AI_HTTP_Helper {
 		// Normalize the host.
 		$host = strtolower( trim( $host ) );
 
-		// Remove port number if present.
+		// Remove port number if present (supports Ollama:11434, LM Studio:1234, etc.).
 		if ( strpos( $host, ':' ) !== false ) {
 			// For IPv6, only remove port after ].
 			if ( strpos( $host, ']' ) !== false ) {
