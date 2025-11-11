@@ -127,4 +127,34 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 		$this->assertSame( array(), $jobs, 'Jobs without timestamp should be pruned immediately' );
 	}
+
+	public function test_maybe_prune_jobs_respects_settings_registry() {
+		$admin_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		$hook     = 'wp_mcp_ai_custom_retention_job';
+		// Set timestamp to 2 hours ago.
+		$two_hours_ago = time() - ( 2 * HOUR_IN_SECONDS );
+
+		// Set custom retention period to 1 hour via settings registry.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['cron_job_retention_period'] = '1';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Manually create a job with a timestamp 2 hours ago.
+		WP_MCP_AI_Cron_Manager::record_job( $hook, array(), 'single', $two_hours_ago, $admin_id );
+
+		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$this->assertCount( 1, $jobs );
+
+		// Simulate the job not being in WordPress cron (already executed).
+		_set_cron_array( array() );
+
+		// Job should be removed because it's older than the 1-hour retention period.
+		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
+
+		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$this->assertSame( array(), $jobs, 'Job should be pruned when exceeding custom retention period from settings' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }

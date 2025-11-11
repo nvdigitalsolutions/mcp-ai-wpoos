@@ -173,8 +173,14 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 			$jobs    = self::load_jobs();
 			$changed = false;
 
-			// Get retention period from settings (in hours), default to 24 hours.
-			$retention_hours = get_option( 'wp_mcp_ai_cron_job_retention_period', 24 );
+			// Get retention period from settings registry (in hours), default to 24 hours.
+			if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+				$retention_hours = WP_MCP_AI_Settings_Registry::get_setting( 'cron_job_retention_period', 24 );
+			} else {
+				// Fallback to direct option read if registry not available.
+				$settings        = get_option( 'wp_mcp_ai_settings', array() );
+				$retention_hours = isset( $settings['cron_job_retention_period'] ) ? $settings['cron_job_retention_period'] : 24;
+			}
 			$retention_hours = absint( $retention_hours );
 			
 			// If retention is 0, jobs are removed immediately when not scheduled.
