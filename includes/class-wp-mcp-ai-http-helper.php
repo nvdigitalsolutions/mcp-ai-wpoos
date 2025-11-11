@@ -20,11 +20,17 @@ class WP_MCP_AI_HTTP_Helper {
 	/**
 	 * Initialize the HTTP helper.
 	 *
-	 * Adds filters to prevent SSL verification issues with loopback addresses.
+	 * Adds filters to prevent SSL verification issues with loopback addresses
+	 * and to allow HTTP requests to private network addresses.
 	 */
 	public static function init() {
 		// Add filter to handle loopback addresses properly.
 		add_filter( 'http_request_args', array( __CLASS__, 'handle_loopback_requests' ), 10, 2 );
+
+		// Add filter to allow requests to private network addresses.
+		// WordPress blocks requests to local/private IPs by default for security.
+		// This filter explicitly allows them for local AI services like LM Studio, Ollama, etc.
+		add_filter( 'http_request_host_is_external', array( __CLASS__, 'allow_private_network_requests' ), 10, 3 );
 	}
 
 	/**
@@ -205,5 +211,38 @@ class WP_MCP_AI_HTTP_Helper {
 		$first_byte = ord( $binary[0] );
 
 		return ( 0xfc === $first_byte || 0xfd === $first_byte );
+	}
+
+	/**
+	 * Allow HTTP requests to private network addresses.
+	 *
+	 * WordPress blocks requests to local/private IP addresses by default for security.
+	 * This filter explicitly allows them for local AI services (LM Studio, Ollama, etc.)
+	 * running on the local network.
+	 *
+	 * This enables connections to:
+	 * - LM Studio on private network: 192.168.2.222:1234
+	 * - Ollama on LAN: 10.0.0.50:11434
+	 * - Crawl4AI on local network: 172.16.0.10:8000
+	 * - Any other local AI service on private network addresses
+	 *
+	 * @param bool   $is_external Whether the request is to an external host.
+	 * @param string $host        The host to check.
+	 * @param string $url         The URL being requested (unused but part of filter signature).
+	 * @return bool True to allow the request, false to block it.
+	 */
+	public static function allow_private_network_requests( $is_external, $host, $url ) {
+		// If WordPress already considers it external, keep that.
+		if ( $is_external ) {
+			return $is_external;
+		}
+
+		// Check if this is a loopback or private network address.
+		// If it is, explicitly mark it as "external" so WordPress allows the request.
+		if ( self::is_loopback_address( $host ) ) {
+			return true;
+		}
+
+		return $is_external;
 	}
 }
