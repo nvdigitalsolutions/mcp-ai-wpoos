@@ -137,6 +137,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
 				foreach ( $available as $plugin_file => $plugin ) {
 					$update_data = isset( $plugin->update ) && is_object( $plugin->update ) ? $plugin->update : $plugin;
 
+					// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WordPress plugin object properties.
 					$plugin_updates[] = array(
 						'name'            => isset( $plugin->Name ) ? $plugin->Name : ( isset( $update_data->name ) ? $update_data->name : $plugin_file ),
 						'slug'            => isset( $plugin->slug ) ? $plugin->slug : ( isset( $update_data->slug ) ? $update_data->slug : '' ),
@@ -146,6 +147,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
 						'homepage'        => isset( $plugin->url ) ? $plugin->url : ( isset( $update_data->url ) ? $update_data->url : '' ),
 						'download_url'    => isset( $plugin->package ) ? $plugin->package : ( isset( $update_data->package ) ? $update_data->package : '' ),
 					);
+					// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 				}
 			}
 
@@ -161,6 +163,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
 				foreach ( $available as $stylesheet => $theme ) {
 					$update_data = isset( $theme->update ) && is_object( $theme->update ) ? $theme->update : $theme;
 
+					// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- WordPress theme object properties.
 					$theme_updates[] = array(
 						'name'            => isset( $theme->display_name ) ? $theme->display_name : ( isset( $update_data->name ) ? $update_data->name : $stylesheet ),
 						'slug'            => isset( $theme->theme ) ? $theme->theme : $stylesheet,
@@ -170,6 +173,7 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
 						'homepage'        => isset( $update_data->url ) ? $update_data->url : '',
 						'download_url'    => isset( $update_data->package ) ? $update_data->package : '',
 					);
+					// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 				}
 			}
 

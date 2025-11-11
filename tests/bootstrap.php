@@ -3,6 +3,8 @@
  * PHPUnit bootstrap file.
  *
  * Sets up the WordPress test environment and loads the plugin.
+ *
+ * @package WP_MCP_AI
  */
 
 $_tests_dir  = getenv( 'WP_TESTS_DIR' );
