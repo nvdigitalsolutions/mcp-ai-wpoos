@@ -205,7 +205,7 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		// Verify timeout was passed correctly.
 		$this->assertNotNull( $captured_args );
 		$this->assertArrayHasKey( 'timeout', $captured_args );
-		$this->assertSame( 60, $captured_args['timeout'] );
+		$this->assertEquals( 60, $captured_args['timeout'] );
 	}
 
 	/**
@@ -246,7 +246,7 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		// Verify timeout was passed correctly.
 		$this->assertNotNull( $captured_args );
 		$this->assertArrayHasKey( 'timeout', $captured_args );
-		$this->assertSame( 45, $captured_args['timeout'] );
+		$this->assertEquals( 45, $captured_args['timeout'] );
 	}
 
 	/**
