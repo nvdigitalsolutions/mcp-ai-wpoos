@@ -223,4 +223,46 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 		$this->assertEquals( 'POST', $modified['method'] );
 		$this->assertArrayHasKey( 'Content-Type', $modified['headers'] );
 	}
+
+	/**
+	 * Test that allow_private_network_requests allows localhost addresses.
+	 */
+	public function test_allow_private_network_requests_allows_localhost() {
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, 'localhost', 'http://localhost:11434' ) );
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '127.0.0.1', 'http://127.0.0.1:11434' ) );
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '::1', 'http://[::1]:11434' ) );
+	}
+
+	/**
+	 * Test that allow_private_network_requests allows private IP addresses.
+	 */
+	public function test_allow_private_network_requests_allows_private_ips() {
+		// 192.168.x.x - the specific IP from the issue.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '192.168.2.222', 'http://192.168.2.222:1234' ) );
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '192.168.1.100', 'http://192.168.1.100:11434' ) );
+
+		// 10.x.x.x.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '10.0.0.50', 'http://10.0.0.50:1234' ) );
+
+		// 172.16-31.x.x.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '172.16.0.10', 'http://172.16.0.10:8000' ) );
+	}
+
+	/**
+	 * Test that allow_private_network_requests does not allow public IPs.
+	 */
+	public function test_allow_private_network_requests_blocks_public_ips() {
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, 'api.openai.com', 'https://api.openai.com' ) );
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '8.8.8.8', 'http://8.8.8.8' ) );
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '1.1.1.1', 'http://1.1.1.1' ) );
+	}
+
+	/**
+	 * Test that allow_private_network_requests preserves already external hosts.
+	 */
+	public function test_allow_private_network_requests_preserves_external() {
+		// If WordPress already marked it as external, keep it that way.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( true, 'example.com', 'https://example.com' ) );
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( true, '8.8.8.8', 'http://8.8.8.8' ) );
+	}
 }
