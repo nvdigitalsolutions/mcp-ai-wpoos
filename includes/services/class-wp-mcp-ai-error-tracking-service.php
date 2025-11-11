@@ -106,15 +106,15 @@ class WP_MCP_AI_Error_Tracking_Service {
 		$error_id = uniqid( 'err_', true );
 
 		$error = array(
-			'id'         => $error_id,
-			'component'  => sanitize_key( $component ),
-			'message'    => sanitize_text_field( $message ),
-			'context'    => $context,
-			'timestamp'  => current_time( 'timestamp' ),
-			'user_id'    => get_current_user_id(),
-			'ip_address' => $this->get_client_ip(),
+			'id'          => $error_id,
+			'component'   => sanitize_key( $component ),
+			'message'     => sanitize_text_field( $message ),
+			'context'     => $context,
+			'timestamp'   => current_time( 'timestamp' ),
+			'user_id'     => get_current_user_id(),
+			'ip_address'  => $this->get_client_ip(),
 			'request_uri' => isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
-			'user_agent' => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
+			'user_agent'  => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
 		);
 
 		// Store the error.
@@ -175,7 +175,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			return floatval( $cached );
 		}
 
-		$errors = $this->get_errors_by_component( $component, $time_period );
+		$errors      = $this->get_errors_by_component( $component, $time_period );
 		$error_count = count( $errors );
 
 		// If total_requests is not provided, estimate from stored data.
@@ -282,9 +282,9 @@ class WP_MCP_AI_Error_Tracking_Service {
 
 				if ( ! isset( $stats[ $component ] ) ) {
 					$stats[ $component ] = array(
-						'count'       => 0,
-						'first_seen'  => $error['timestamp'],
-						'last_seen'   => $error['timestamp'],
+						'count'           => 0,
+						'first_seen'      => $error['timestamp'],
+						'last_seen'       => $error['timestamp'],
 						'unique_messages' => array(),
 					);
 				}

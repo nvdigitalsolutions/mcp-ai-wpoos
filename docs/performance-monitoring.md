@@ -2,7 +2,7 @@
 
 ## Overview
 
-The WP oOS Performance Monitoring system provides real-time insights into plugin performance, historical trend analysis, and AI-generated recommendations for optimization. This guide covers the Performance Monitor CCT, admin dashboard, widgets, and integration options.
+The WP oOS Performance Monitoring system provides real-time insights into plugin performance, historical trend analysis, AI-generated recommendations for optimization, and comprehensive error tracking. This guide covers the Performance Monitor CCT, Error Tracking Service, admin dashboard, widgets, and integration options.
 
 ## Architecture
 
@@ -15,18 +15,29 @@ The Performance Monitor Custom Content Type (CCT) is the central data store for 
 - **Auto-registration:** Automatically creates CCT schema when JetEngine is active
 - **AI-Friendly:** Generates diagnostic summaries and recommendations
 
+### Error Tracking Service
+
+The Error Tracking Service provides centralized error monitoring:
+
+- **Location:** `includes/services/class-wp-mcp-ai-error-tracking-service.php`
+- **Documentation:** See [Error Tracking Service Guide](error-tracking-service.md)
+- **Features:** Real-time error tracking, error rate calculation, component-level analysis
+- **Integration:** Seamlessly integrates with Performance Monitor CCT
+
 ### Data Structure
 
 Each performance test record contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `test_type` | select | stress, security, speed, optimization |
+| `test_type` | select | stress, security, speed, optimization, monitoring |
 | `component` | select | rest_api, chat_ui, mcp_core, elementor, cpt_* |
 | `optimizations_enabled` | radio | yes/no |
 | `response_time_ms` | number | Average response time in milliseconds |
 | `memory_usage_bytes` | number | Peak memory usage in bytes |
 | `db_queries` | number | Number of database queries |
+| `error_rate` | number | Percentage of requests with errors |
+| `total_errors` | number | Total error count |
 | `metrics_json` | textarea | Complete metrics in JSON format |
 | `test_results_json` | textarea | Detailed results in JSON format |
 | `diagnostic_summary` | textarea | Human-readable summary |
@@ -594,8 +605,70 @@ Generate comprehensive performance report.
 
 **Returns:** (array) Complete performance report
 
+## Error Tracking Integration
+
+The Performance Monitor integrates with the Error Tracking Service to provide comprehensive error analysis:
+
+### Automatic Error Rate Monitoring
+
+The Performance Reporter automatically checks error rates for all components:
+
+```php
+$report = WP_MCP_AI_Performance_Reporter::generate_report( array(
+    'time_period' => '-7 days'
+) );
+
+// Report includes error rate data in component metrics
+foreach ( $report['components'] as $component => $data ) {
+    if ( isset( $data['metrics']['error_rate'] ) ) {
+        echo "Error rate for $component: " . $data['metrics']['error_rate'] . "%\n";
+    }
+}
+```
+
+### Error Rate Alerts
+
+Error rates trigger automatic alerts:
+
+- **Critical (>10%)** - Immediate attention required
+- **High (>5%)** - Investigation needed
+- **Medium (>1%)** - Monitoring recommended
+
+### Manual Error Tracking
+
+Track errors manually and link to performance metrics:
+
+```php
+$error_service = wp_mcp_ai_get_error_tracking_service();
+
+// Track error with performance context
+$error_service->record_error_with_metrics(
+    'rest_api',
+    'Request timeout',
+    array(
+        'endpoint'      => '/wp-json/mcp-ai/v1/chat',
+        'response_time' => 30000
+    ),
+    true  // Store in Performance Monitor CCT
+);
+```
+
+### Viewing Error Statistics
+
+```php
+$error_service = wp_mcp_ai_get_error_tracking_service();
+
+// Get error statistics for last 24 hours
+$stats = $error_service->get_error_statistics( 86400 );
+
+foreach ( $stats as $component => $data ) {
+    echo "$component: {$data['count']} errors ({$data['unique_message_count']} unique)\n";
+}
+```
+
 ## Resources
 
+- [Error Tracking Service Guide](error-tracking-service.md)
 - [Performance Testing Guide](performance-testing-guide.md)
 - [WP oOS Documentation Index](DOCUMENTATION_INDEX.md)
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)

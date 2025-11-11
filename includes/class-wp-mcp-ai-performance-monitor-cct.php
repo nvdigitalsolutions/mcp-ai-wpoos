@@ -193,23 +193,23 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 		$diagnostic_summary = self::generate_diagnostic_summary( $test_type, $component, $metrics, $test_results );
 
 		$data = array(
-			'test_type'              => sanitize_key( $test_type ),
-			'component'              => sanitize_key( $component ),
-			'optimizations_enabled'  => $optimizations_enabled ? 'yes' : 'no',
-			'response_time_ms'       => isset( $metrics['avg_response_time'] ) ? floatval( $metrics['avg_response_time'] ) : 0,
-			'memory_usage_bytes'     => isset( $metrics['memory_peak_bytes'] ) ? absint( $metrics['memory_peak_bytes'] ) : 0,
-			'db_queries'             => isset( $metrics['db_queries'] ) ? absint( $metrics['db_queries'] ) : 0,
-			'error_rate'             => isset( $metrics['error_rate'] ) ? floatval( $metrics['error_rate'] ) : 0,
-			'total_errors'           => isset( $metrics['total_errors'] ) ? absint( $metrics['total_errors'] ) : 0,
-			'metrics_json'           => wp_json_encode( $metrics ),
-			'test_results_json'      => wp_json_encode( $test_results ),
-			'diagnostic_summary'     => sanitize_textarea_field( $diagnostic_summary ),
-			'test_status'            => self::determine_test_status( $metrics, $test_results ),
-			'recommendations'        => wp_json_encode( self::generate_recommendations( $test_type, $metrics, $test_results ) ),
-			'tested_at'              => current_time( 'mysql' ),
-			'php_version'            => PHP_VERSION,
-			'wp_version'             => get_bloginfo( 'version' ),
-			'plugin_version'         => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
+			'test_type'             => sanitize_key( $test_type ),
+			'component'             => sanitize_key( $component ),
+			'optimizations_enabled' => $optimizations_enabled ? 'yes' : 'no',
+			'response_time_ms'      => isset( $metrics['avg_response_time'] ) ? floatval( $metrics['avg_response_time'] ) : 0,
+			'memory_usage_bytes'    => isset( $metrics['memory_peak_bytes'] ) ? absint( $metrics['memory_peak_bytes'] ) : 0,
+			'db_queries'            => isset( $metrics['db_queries'] ) ? absint( $metrics['db_queries'] ) : 0,
+			'error_rate'            => isset( $metrics['error_rate'] ) ? floatval( $metrics['error_rate'] ) : 0,
+			'total_errors'          => isset( $metrics['total_errors'] ) ? absint( $metrics['total_errors'] ) : 0,
+			'metrics_json'          => wp_json_encode( $metrics ),
+			'test_results_json'     => wp_json_encode( $test_results ),
+			'diagnostic_summary'    => sanitize_textarea_field( $diagnostic_summary ),
+			'test_status'           => self::determine_test_status( $metrics, $test_results ),
+			'recommendations'       => wp_json_encode( self::generate_recommendations( $test_type, $metrics, $test_results ) ),
+			'tested_at'             => current_time( 'mysql' ),
+			'php_version'           => PHP_VERSION,
+			'wp_version'            => get_bloginfo( 'version' ),
+			'plugin_version'        => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
 		);
 
 		// JetEngine CCT requires cct_created field.
@@ -439,10 +439,10 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	protected static function analyze_trends( $items ) {
 		if ( empty( $items ) ) {
 			return array(
-				'trend'             => 'no_data',
-				'avg_response_time' => 0,
-				'avg_memory_usage'  => 0,
-				'avg_db_queries'    => 0,
+				'trend'               => 'no_data',
+				'avg_response_time'   => 0,
+				'avg_memory_usage'    => 0,
+				'avg_db_queries'      => 0,
 				'status_distribution' => array(),
 			);
 		}
@@ -463,7 +463,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 				$db_queries[] = intval( $item['db_queries'] );
 			}
 			if ( isset( $item['test_status'] ) ) {
-				$status = $item['test_status'];
+				$status              = $item['test_status'];
 				$statuses[ $status ] = isset( $statuses[ $status ] ) ? $statuses[ $status ] + 1 : 1;
 			}
 		}
@@ -515,18 +515,18 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 		$test_id = uniqid( 'test_', true );
 
 		$tests[ $test_id ] = array(
-			'test_type'              => sanitize_key( $test_type ),
-			'component'              => sanitize_key( $component ),
-			'optimizations_enabled'  => $optimizations_enabled,
-			'metrics'                => $metrics,
-			'test_results'           => $test_results,
-			'diagnostic_summary'     => self::generate_diagnostic_summary( $test_type, $component, $metrics, $test_results ),
-			'test_status'            => self::determine_test_status( $metrics, $test_results ),
-			'recommendations'        => self::generate_recommendations( $test_type, $metrics, $test_results ),
-			'tested_at'              => current_time( 'mysql' ),
-			'php_version'            => PHP_VERSION,
-			'wp_version'             => get_bloginfo( 'version' ),
-			'plugin_version'         => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
+			'test_type'             => sanitize_key( $test_type ),
+			'component'             => sanitize_key( $component ),
+			'optimizations_enabled' => $optimizations_enabled,
+			'metrics'               => $metrics,
+			'test_results'          => $test_results,
+			'diagnostic_summary'    => self::generate_diagnostic_summary( $test_type, $component, $metrics, $test_results ),
+			'test_status'           => self::determine_test_status( $metrics, $test_results ),
+			'recommendations'       => self::generate_recommendations( $test_type, $metrics, $test_results ),
+			'tested_at'             => current_time( 'mysql' ),
+			'php_version'           => PHP_VERSION,
+			'wp_version'            => get_bloginfo( 'version' ),
+			'plugin_version'        => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0',
 		);
 
 		// Keep only the last 100 tests to avoid bloating options.
@@ -756,31 +756,31 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			'rest_post_access'    => 'manage_options',
 			'rest_delete_access'  => 'manage_options',
 			'admin_columns'       => array(
-				'_ID'                  => array(
+				'_ID'                   => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'test_type'            => array(
+				'test_type'             => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'component'            => array(
+				'component'             => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'test_status'          => array(
+				'test_status'           => array(
 					'enabled' => true,
 				),
-				'response_time_ms'     => array(
+				'response_time_ms'      => array(
 					'enabled' => true,
 					'is_num'  => true,
 				),
 				'optimizations_enabled' => array(
 					'enabled' => true,
 				),
-				'tested_at'            => array(
+				'tested_at'             => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
@@ -963,7 +963,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 				__( 'Test Status', 'wp-mcp-ai' ),
 				'select',
 				array(
-					'options' => array(
+					'options'     => array(
 						array(
 							'key'   => 'passed',
 							'value' => __( 'Passed', 'wp-mcp-ai' ),
