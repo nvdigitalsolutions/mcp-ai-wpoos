@@ -103,7 +103,7 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$hook     = 'wp_mcp_ai_no_timestamp_job';
 
 		// Manually create a job without a timestamp.
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs                = WP_MCP_AI_Cron_Manager::get_jobs();
 		$jobs['test_job_id'] = array(
 			'job_id'          => 'test_job_id',
 			'hook'            => $hook,
@@ -135,7 +135,7 @@ class WP_MCP_AI_Cron_Manager_Test extends WP_UnitTestCase {
 		$two_hours_ago = time() - ( 2 * HOUR_IN_SECONDS );
 
 		// Set custom retention period to 1 hour via settings registry.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings                              = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['cron_job_retention_period'] = '1';
 		update_option( 'wp_mcp_ai_settings', $settings );
 

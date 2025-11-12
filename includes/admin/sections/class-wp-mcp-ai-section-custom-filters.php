@@ -73,14 +73,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		public function get_fields() {
 			return array(
 				// Model Selection Filters.
-				'filter_default_light_model'     => array(
+				'filter_default_light_model'            => array(
 					'type'        => 'text',
 					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4o-mini',
 				),
-				'filter_default_advanced_model'  => array(
+				'filter_default_advanced_model'         => array(
 					'type'        => 'text',
 					'label'       => __( 'Default Advanced Model', 'wp-mcp-ai' ),
 					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4o', 'wp-mcp-ai' ),
@@ -89,21 +89,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				),
 
 				// Resource Management Filters.
-				'filter_max_agentic_iterations'  => array(
+				'filter_max_agentic_iterations'         => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Agentic Iterations', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => '5',
 				),
-				'filter_resource_max_tokens'     => array(
+				'filter_resource_max_tokens'            => array(
 					'type'        => 'number',
 					'label'       => __( 'Resource Max Tokens', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => 'Auto',
 				),
-				'filter_resource_request_timeout' => array(
+				'filter_resource_request_timeout'       => array(
 					'type'        => 'number',
 					'label'       => __( 'Resource Request Timeout (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
@@ -112,14 +112,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				),
 
 				// Retry and Error Handling.
-				'filter_max_retries'             => array(
+				'filter_max_retries'                    => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Retries', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'wp-mcp-ai' ),
 					'default'     => '',
 					'placeholder' => '3',
 				),
-				'filter_max_retry_delay'         => array(
+				'filter_max_retry_delay'                => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Retry Delay (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'wp-mcp-ai' ),
@@ -128,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				),
 
 				// File and Attachment Limits.
-				'filter_max_attachment_bytes'    => array(
+				'filter_max_attachment_bytes'           => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Attachment Size (bytes)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'wp-mcp-ai' ),
@@ -137,7 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				),
 
 				// Endpoint URLs.
-				'filter_default_ollama_endpoint_url' => array(
+				'filter_default_ollama_endpoint_url'    => array(
 					'type'        => 'url',
 					'label'       => __( 'Default Ollama Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'wp-mcp-ai' ),
@@ -162,7 +162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 
 			// Organize fields into logical groups for better UX.
 			$groups = array(
-				'model_selection'    => array(
+				'model_selection'     => array(
 					'title'  => __( 'AI Model Selection', 'wp-mcp-ai' ),
 					'fields' => array( 'filter_default_light_model', 'filter_default_advanced_model' ),
 				),
@@ -170,15 +170,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 					'title'  => __( 'Resource Management', 'wp-mcp-ai' ),
 					'fields' => array( 'filter_max_agentic_iterations', 'filter_resource_max_tokens', 'filter_resource_request_timeout' ),
 				),
-				'retry_handling'     => array(
+				'retry_handling'      => array(
 					'title'  => __( 'Retry & Error Handling', 'wp-mcp-ai' ),
 					'fields' => array( 'filter_max_retries', 'filter_max_retry_delay' ),
 				),
-				'file_limits'        => array(
+				'file_limits'         => array(
 					'title'  => __( 'File & Attachment Limits', 'wp-mcp-ai' ),
 					'fields' => array( 'filter_max_attachment_bytes' ),
 				),
-				'endpoint_urls'      => array(
+				'endpoint_urls'       => array(
 					'title'  => __( 'Local AI Endpoint URLs', 'wp-mcp-ai' ),
 					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url' ),
 				),

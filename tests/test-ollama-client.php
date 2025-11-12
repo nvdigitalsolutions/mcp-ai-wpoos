@@ -177,8 +177,8 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
-		$client          = new WP_MCP_AI_Ollama_Client();
-		$captured_args   = null;
+		$client        = new WP_MCP_AI_Ollama_Client();
+		$captured_args = null;
 
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
 			$captured_args = $args;
@@ -218,8 +218,8 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
 
-		$client          = new WP_MCP_AI_Ollama_Client();
-		$captured_args   = null;
+		$client        = new WP_MCP_AI_Ollama_Client();
+		$captured_args = null;
 
 		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
 			$captured_args = $args;

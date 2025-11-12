@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 
 		// Provide polyfills for WordPress admin functions that may not be available
 		// in certain contexts, especially when Site Health is accessed via REST API.
-		
+
 		// Polyfill for wp_check_php_version() - introduced in WordPress 5.1.0.
 		if ( ! function_exists( 'wp_check_php_version' ) ) {
 			/**
@@ -325,11 +325,11 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 			 */
 			function get_core_updates( $options = array() ) {
 				$updates = get_site_transient( 'update_core' );
-				
+
 				if ( ! isset( $updates->updates ) || ! is_array( $updates->updates ) ) {
 					return false;
 				}
-				
+
 				return $updates->updates;
 			}
 		}
@@ -349,22 +349,22 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 				if ( ! function_exists( 'get_plugins' ) ) {
 					return array();
 				}
-				
+
 				$all_plugins     = get_plugins();
 				$upgrade_plugins = array();
 				$current         = get_site_transient( 'update_plugins' );
-				
+
 				if ( ! isset( $current->response ) ) {
 					return $upgrade_plugins;
 				}
-				
+
 				foreach ( (array) $all_plugins as $plugin_file => $plugin_data ) {
 					if ( isset( $current->response[ $plugin_file ] ) ) {
 						$upgrade_plugins[ $plugin_file ]         = (object) $plugin_data;
 						$upgrade_plugins[ $plugin_file ]->update = $current->response[ $plugin_file ];
 					}
 				}
-				
+
 				return $upgrade_plugins;
 			}
 		}
@@ -384,21 +384,21 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 				if ( ! function_exists( 'wp_get_themes' ) ) {
 					return array();
 				}
-				
-				$themes  = wp_get_themes();
-				$current = get_site_transient( 'update_themes' );
+
+				$themes        = wp_get_themes();
+				$current       = get_site_transient( 'update_themes' );
 				$update_themes = array();
-				
+
 				if ( ! isset( $current->response ) ) {
 					return $update_themes;
 				}
-				
+
 				foreach ( $themes as $stylesheet => $theme ) {
 					if ( isset( $current->response[ $stylesheet ] ) ) {
 						$update_themes[ $stylesheet ] = wp_get_theme( $stylesheet );
 					}
 				}
-				
+
 				return $update_themes;
 			}
 		}

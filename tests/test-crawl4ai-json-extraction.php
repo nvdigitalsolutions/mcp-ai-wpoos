@@ -164,7 +164,7 @@ class WP_MCP_AI_Crawl4AI_JSON_Extraction_Test extends WP_UnitTestCase {
 
 		$request_count = 0;
 		$callback      = function ( $pre, $args, $url ) use ( &$request_count ) {
-			$request_count++;
+			++$request_count;
 			return array(
 				'body'     => '<html><body><h1>Page ' . $request_count . '</h1></body></html>',
 				'response' => array( 'code' => 200 ),

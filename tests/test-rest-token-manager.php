@@ -57,7 +57,7 @@ class WP_MCP_AI_REST_Token_Manager_Test extends WP_UnitTestCase {
 	 * Test permission check for tier updates.
 	 */
 	public function test_update_tier_requires_admin() {
-		$user_id  = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$user_id   = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$editor_id = $this->factory->user->create( array( 'role' => 'editor' ) );
 
 		wp_set_current_user( $editor_id );
@@ -127,7 +127,7 @@ class WP_MCP_AI_REST_Token_Manager_Test extends WP_UnitTestCase {
 		);
 
 		for ( $i = 0; $i < 48; $i++ ) {
-			$hour_key                                = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
+			$hour_key                                  = gmdate( 'Y-m-d-H', strtotime( "-{$i} hours" ) );
 			$usage['test_tool']['hourly'][ $hour_key ] = 500;
 		}
 

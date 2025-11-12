@@ -244,43 +244,43 @@ class WP_MCP_AI_Elementor_Editor_No_Buffering_Test extends WP_UnitTestCase {
 		$test_cases = array(
 			// Normal page: should buffer.
 			array(
-				'is_ajax'       => false,
-				'get_action'    => null,
+				'is_ajax'        => false,
+				'get_action'     => null,
 				'request_action' => null,
-				'should_buffer' => true,
-				'description'   => 'Normal page',
+				'should_buffer'  => true,
+				'description'    => 'Normal page',
 			),
 			// Elementor editor: should NOT buffer.
 			array(
-				'is_ajax'       => false,
-				'get_action'    => 'elementor',
+				'is_ajax'        => false,
+				'get_action'     => 'elementor',
 				'request_action' => null,
-				'should_buffer' => false,
-				'description'   => 'Elementor editor page',
+				'should_buffer'  => false,
+				'description'    => 'Elementor editor page',
 			),
 			// Elementor AJAX: should NOT buffer.
 			array(
-				'is_ajax'       => true,
-				'get_action'    => null,
+				'is_ajax'        => true,
+				'get_action'     => null,
 				'request_action' => 'elementor_clear_cache',
-				'should_buffer' => false,
-				'description'   => 'Elementor AJAX request',
+				'should_buffer'  => false,
+				'description'    => 'Elementor AJAX request',
 			),
 			// Non-Elementor admin page: should buffer.
 			array(
-				'is_ajax'       => false,
-				'get_action'    => 'edit',
+				'is_ajax'        => false,
+				'get_action'     => 'edit',
 				'request_action' => null,
-				'should_buffer' => true,
-				'description'   => 'Non-Elementor admin page',
+				'should_buffer'  => true,
+				'description'    => 'Non-Elementor admin page',
 			),
 			// Non-Elementor AJAX: should buffer.
 			array(
-				'is_ajax'       => true,
-				'get_action'    => null,
+				'is_ajax'        => true,
+				'get_action'     => null,
 				'request_action' => 'wp_ajax_custom',
-				'should_buffer' => true,
-				'description'   => 'Non-Elementor AJAX',
+				'should_buffer'  => true,
+				'description'    => 'Non-Elementor AJAX',
 			),
 		);
 

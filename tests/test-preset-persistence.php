@@ -91,9 +91,9 @@ class WP_MCP_AI_Preset_Persistence_Test extends WP_UnitTestCase {
 
 		// Simulate saving settings from a different tab (e.g., general settings).
 		// This should NOT reset orchestration settings.
-		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+		$settings_base    = new WP_MCP_AI_Admin_Settings_Base();
 		$partial_settings = array(
-			'default_model' => 'gpt-4o',
+			'default_model'  => 'gpt-4o',
 			'enable_logging' => true,
 			// Note: orchestration settings are NOT included here.
 		);
@@ -135,7 +135,7 @@ class WP_MCP_AI_Preset_Persistence_Test extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_Settings_Registry::get_setting( 'enable_logging' ) );
 
 		// Simulate form save without checkboxes (unchecked).
-		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+		$settings_base    = new WP_MCP_AI_Admin_Settings_Base();
 		$partial_settings = array(
 			'default_model' => 'gpt-4o',
 			// Checkboxes are NOT included - should be treated as false.

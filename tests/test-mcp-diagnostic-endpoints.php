@@ -247,7 +247,7 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 
 		// Check if the diagnostic page is registered under Tools menu.
 		$this->assertArrayHasKey( 'tools.php', $submenu, 'Tools submenu should exist' );
-		
+
 		// Find the MCP diagnostic page in the submenu.
 		$found = false;
 		foreach ( $submenu['tools.php'] as $item ) {

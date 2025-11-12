@@ -61,8 +61,8 @@ if ( class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
 echo "2. Getting available presets...\n";
 try {
 	$presets = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
-	echo "   ✓ Found " . count( $presets ) . " presets:\n";
-	
+	echo '   ✓ Found ' . count( $presets ) . " presets:\n";
+
 	foreach ( $presets as $preset_id => $preset_config ) {
 		if ( isset( $preset_config['name'] ) ) {
 			echo "      - {$preset_id}: {$preset_config['name']}\n";
@@ -70,16 +70,16 @@ try {
 	}
 	echo "\n";
 } catch ( Exception $e ) {
-	echo "   ✗ Error: " . $e->getMessage() . "\n";
+	echo '   ✗ Error: ' . $e->getMessage() . "\n";
 	exit( 1 );
 }
 
 echo "3. Checking preset details...\n";
 foreach ( $presets as $preset_id => $preset_config ) {
-	$has_name = isset( $preset_config['name'] );
-	$has_desc = isset( $preset_config['description'] );
+	$has_name     = isset( $preset_config['name'] );
+	$has_desc     = isset( $preset_config['description'] );
 	$has_settings = isset( $preset_config['settings'] );
-	
+
 	if ( $has_name && $has_desc && $has_settings ) {
 		$settings_count = is_array( $preset_config['settings'] ) ? count( $preset_config['settings'] ) : 0;
 		echo "   ✓ {$preset_id}: {$settings_count} settings defined\n";
@@ -102,7 +102,7 @@ if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 
 echo "5. Testing renderer methods...\n";
 $reflection = new ReflectionClass( 'WP_MCP_AI_Orchestration_Renderer' );
-$methods = $reflection->getMethods( ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC );
+$methods    = $reflection->getMethods( ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_STATIC );
 
 foreach ( $methods as $method ) {
 	echo "   ✓ Method: {$method->getName()}\n";
@@ -113,8 +113,8 @@ echo "6. Testing preset selector rendering...\n";
 try {
 	$html = WP_MCP_AI_Orchestration_Renderer::render_presets_selector( $presets );
 	if ( ! empty( $html ) ) {
-		echo "   ✓ Preset selector HTML generated (" . strlen( $html ) . " bytes)\n";
-		
+		echo '   ✓ Preset selector HTML generated (' . strlen( $html ) . " bytes)\n";
+
 		// Check for key elements
 		if ( strpos( $html, 'wp-mcp-ai-presets-section' ) !== false ) {
 			echo "   ✓ Contains preset section class\n";
@@ -130,7 +130,7 @@ try {
 	}
 	echo "\n";
 } catch ( Exception $e ) {
-	echo "   ✗ Error: " . $e->getMessage() . "\n";
+	echo '   ✗ Error: ' . $e->getMessage() . "\n";
 	exit( 1 );
 }
 
@@ -145,11 +145,11 @@ try {
 		'default'     => 50,
 		'suffix'      => '%',
 	);
-	
+
 	$html = WP_MCP_AI_Orchestration_Renderer::render_slider( 'test_slider', $slider_config );
 	if ( ! empty( $html ) ) {
-		echo "   ✓ Slider HTML generated (" . strlen( $html ) . " bytes)\n";
-		
+		echo '   ✓ Slider HTML generated (' . strlen( $html ) . " bytes)\n";
+
 		// Check for key elements
 		if ( strpos( $html, 'wp-mcp-ai-slider' ) !== false ) {
 			echo "   ✓ Contains slider class\n";
@@ -162,7 +162,7 @@ try {
 	}
 	echo "\n";
 } catch ( Exception $e ) {
-	echo "   ✗ Error: " . $e->getMessage() . "\n";
+	echo '   ✗ Error: ' . $e->getMessage() . "\n";
 	exit( 1 );
 }
 

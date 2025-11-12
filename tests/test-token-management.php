@@ -15,9 +15,9 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_text_chunker_estimate_tokens() {
 		// Test with known string: "Hello world" = 11 chars / 4 = ~3 tokens.
-		$text = 'Hello world';
+		$text      = 'Hello world';
 		$estimated = WP_MCP_AI_Text_Chunker::estimate_tokens( $text );
-		
+
 		$this->assertGreaterThanOrEqual( 2, $estimated );
 		$this->assertLessThanOrEqual( 4, $estimated );
 	}
@@ -28,7 +28,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	public function test_text_chunker_chunk_text() {
 		// Create a long text that will need chunking.
 		$paragraph = str_repeat( 'This is a sentence. ', 100 ); // ~2000 chars.
-		$text = str_repeat( $paragraph . "\n\n", 3 ); // ~6000 chars.
+		$text      = str_repeat( $paragraph . "\n\n", 3 ); // ~6000 chars.
 
 		$chunks = WP_MCP_AI_Text_Chunker::chunk_text( $text, 1200, 100 );
 
@@ -47,7 +47,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_text_chunker_trim_to_token_budget() {
 		$long_text = str_repeat( 'Word ', 10000 ); // ~50,000 chars = ~12,500 tokens.
-		$trimmed = WP_MCP_AI_Text_Chunker::trim_to_token_budget( $long_text, 100 );
+		$trimmed   = WP_MCP_AI_Text_Chunker::trim_to_token_budget( $long_text, 100 );
 
 		$estimated_tokens = WP_MCP_AI_Text_Chunker::estimate_tokens( $trimmed );
 		$this->assertLessThanOrEqual( 110, $estimated_tokens, 'Trimmed text should fit within budget +10% margin' );
@@ -58,7 +58,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_document_summarizer_short_text() {
 		$short_text = 'This is a short document.';
-		$result = WP_MCP_AI_Document_Summarizer::summarize_if_needed( $short_text );
+		$result     = WP_MCP_AI_Document_Summarizer::summarize_if_needed( $short_text );
 
 		$this->assertEquals( $short_text, $result, 'Short text should not be summarized' );
 	}
@@ -68,7 +68,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_document_summarizer_long_text() {
 		$long_text = str_repeat( 'Paragraph content. ', 500 ); // ~10,000 chars.
-		$result = WP_MCP_AI_Document_Summarizer::summarize_if_needed( $long_text );
+		$result    = WP_MCP_AI_Document_Summarizer::summarize_if_needed( $long_text );
 
 		$this->assertNotEquals( $long_text, $result, 'Long text should be summarized' );
 		$this->assertLessThan( strlen( $long_text ), strlen( $result ), 'Summary should be shorter than original' );
@@ -80,7 +80,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_resource_manager_max_concurrent_requests() {
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-		
+
 		$max_concurrent = $resource_mgr->get_max_concurrent_requests();
 		$this->assertGreaterThanOrEqual( 1, $max_concurrent );
 		$this->assertLessThanOrEqual( 10, $max_concurrent );
@@ -98,7 +98,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_resource_manager_max_input_tokens() {
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-		
+
 		$max_tokens = $resource_mgr->get_max_input_tokens();
 		$this->assertGreaterThanOrEqual( 1000, $max_tokens );
 
@@ -115,7 +115,7 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_resource_manager_validate_token_budget() {
 		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-		
+
 		// Within budget.
 		$result = $resource_mgr->validate_token_budget( 50000 );
 		$this->assertTrue( $result );
@@ -131,20 +131,20 @@ class WP_MCP_AI_Token_Management_Test extends WP_UnitTestCase {
 	 */
 	public function test_openai_client_count_tokens() {
 		$client = new WP_MCP_AI_OpenAI_Client();
-		
+
 		$messages = array(
 			array(
-				'role' => 'user',
+				'role'    => 'user',
 				'content' => 'Hello, how are you?',
 			),
 			array(
-				'role' => 'assistant',
+				'role'    => 'assistant',
 				'content' => 'I am doing well, thank you!',
 			),
 		);
 
 		$token_count = $client->count_tokens( $messages );
-		
+
 		$this->assertIsInt( $token_count );
 		$this->assertGreaterThan( 0, $token_count );
 		// Rough estimate: ~50 chars total / 4 = ~12 tokens + overhead.

@@ -46,7 +46,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test setting a custom multiplier.
 	 */
 	public function test_set_tool_multiplier_saves_successfully() {
-		$tool_slug = 'test_tool';
+		$tool_slug  = 'test_tool';
 		$multiplier = 3.5;
 
 		$result = WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier );
@@ -68,8 +68,8 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test setting multiple custom multipliers.
 	 */
 	public function test_set_multiple_tool_multipliers() {
-		$tool1 = 'tool_one';
-		$tool2 = 'tool_two';
+		$tool1       = 'tool_one';
+		$tool2       = 'tool_two';
 		$multiplier1 = 2.5;
 		$multiplier2 = 4.0;
 
@@ -89,7 +89,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test that custom multipliers override defaults.
 	 */
 	public function test_custom_multiplier_overrides_default() {
-		$tool_slug = 'run_crawl4ai_job';
+		$tool_slug      = 'run_crawl4ai_job';
 		$new_multiplier = 5.0;
 
 		// Default should be 2.0.
@@ -108,7 +108,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test multiplier validation (minimum).
 	 */
 	public function test_set_tool_multiplier_validates_minimum() {
-		$tool_slug = 'test_tool';
+		$tool_slug          = 'test_tool';
 		$invalid_multiplier = 0.05; // Below minimum of 0.1.
 
 		$result = WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $invalid_multiplier );
@@ -124,7 +124,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test multiplier validation (maximum).
 	 */
 	public function test_set_tool_multiplier_validates_maximum() {
-		$tool_slug = 'test_tool';
+		$tool_slug          = 'test_tool';
 		$invalid_multiplier = 15.0; // Above maximum of 10.
 
 		$result = WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $invalid_multiplier );
@@ -140,7 +140,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test multiplier validation (empty tool slug).
 	 */
 	public function test_set_tool_multiplier_validates_empty_slug() {
-		$tool_slug = '';
+		$tool_slug  = '';
 		$multiplier = 2.0;
 
 		$result = WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier );
@@ -152,8 +152,8 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test that multiplier affects user tool limits.
 	 */
 	public function test_multiplier_affects_user_tool_limit() {
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
-		$tool_slug = 'test_tool';
+		$user_id    = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$tool_slug  = 'test_tool';
 		$multiplier = 3.0;
 
 		// Set custom multiplier.
@@ -170,7 +170,7 @@ class Test_Token_Manager_Tool_Multipliers extends WP_UnitTestCase {
 	 * Test tool with no multiplier uses default 1.0.
 	 */
 	public function test_tool_without_multiplier_uses_default() {
-		$user_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		$user_id   = $this->factory->user->create( array( 'role' => 'subscriber' ) );
 		$tool_slug = 'generic_tool';
 
 		// No multiplier set for this tool.

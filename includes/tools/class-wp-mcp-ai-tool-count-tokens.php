@@ -243,7 +243,7 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 		if ( $has_messages ) {
 			$summary_parts[] = sprintf( __( '(%d messages)', 'wp-mcp-ai' ), $details['message_count'] );
 		}
-		
+
 		$response = array(
 			'summary'          => implode( ' ', $summary_parts ),
 			'estimated_tokens' => $estimated_tokens,

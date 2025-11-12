@@ -76,19 +76,19 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 
 			// Mock Anthropic API response.
 			$mock_response = array(
-				'id'           => 'msg_test123',
-				'type'         => 'message',
-				'role'         => 'assistant',
-				'model'        => 'claude-3-5-sonnet-20241022',
-				'content'      => array(
+				'id'            => 'msg_test123',
+				'type'          => 'message',
+				'role'          => 'assistant',
+				'model'         => 'claude-3-5-sonnet-20241022',
+				'content'       => array(
 					array(
 						'type' => 'text',
 						'text' => 'Hello! How can I help you today?',
 					),
 				),
-				'stop_reason'  => 'end_turn',
+				'stop_reason'   => 'end_turn',
 				'stop_sequence' => null,
-				'usage'        => array(
+				'usage'         => array(
 					'input_tokens'  => 10,
 					'output_tokens' => 15,
 				),
@@ -168,18 +168,18 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 			$captured_payload = json_decode( $args['body'], true );
 
 			$mock_response = array(
-				'id'      => 'msg_test',
-				'type'    => 'message',
-				'role'    => 'assistant',
-				'model'   => 'claude-3-haiku-20240307',
-				'content' => array(
+				'id'          => 'msg_test',
+				'type'        => 'message',
+				'role'        => 'assistant',
+				'model'       => 'claude-3-haiku-20240307',
+				'content'     => array(
 					array(
 						'type' => 'text',
 						'text' => 'Understood.',
 					),
 				),
 				'stop_reason' => 'end_turn',
-				'usage'   => array(
+				'usage'       => array(
 					'input_tokens'  => 20,
 					'output_tokens' => 5,
 				),
@@ -242,19 +242,30 @@ class WP_MCP_AI_Anthropic_Client_Test extends WP_UnitTestCase {
 			$captured_payload = json_decode( $args['body'], true );
 
 			$mock_response = array(
-				'id'      => 'msg_test',
-				'type'    => 'message',
-				'role'    => 'assistant',
-				'model'   => 'claude-3-sonnet-20240229',
-				'content' => array( array( 'type' => 'text', 'text' => 'Hello' ) ),
+				'id'          => 'msg_test',
+				'type'        => 'message',
+				'role'        => 'assistant',
+				'model'       => 'claude-3-sonnet-20240229',
+				'content'     => array(
+					array(
+						'type' => 'text',
+						'text' => 'Hello',
+					),
+				),
 				'stop_reason' => 'end_turn',
-				'usage'   => array( 'input_tokens' => 5, 'output_tokens' => 3 ),
+				'usage'       => array(
+					'input_tokens'  => 5,
+					'output_tokens' => 3,
+				),
 			);
 
 			return array(
 				'headers'  => array( 'content-type' => 'application/json' ),
 				'body'     => wp_json_encode( $mock_response ),
-				'response' => array( 'code' => 200, 'message' => 'OK' ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
 			);
 		};
 

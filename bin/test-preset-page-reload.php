@@ -2,7 +2,7 @@
 <?php
 /**
  * Test preset persistence after page reload scenario.
- * 
+ *
  * Simulates:
  * 1. User applies preset via AJAX
  * 2. Page reloads
@@ -90,13 +90,13 @@ class WP_Error {
 	private $code;
 	private $message;
 	private $data;
-	
+
 	public function __construct( $code, $message, $data = '' ) {
-		$this->code = $code;
+		$this->code    = $code;
 		$this->message = $message;
-		$this->data = $data;
+		$this->data    = $data;
 	}
-	
+
 	public function get_error_message() {
 		return $this->message;
 	}
@@ -111,7 +111,7 @@ class WP_MCP_AI_Logger {
 	public static function log_error( $message, $context = array() ) {
 		// Silent for tests.
 	}
-	
+
 	public static function log_event( $message, $description, $context = array() ) {
 		// Silent for tests.
 	}
@@ -120,14 +120,14 @@ class WP_MCP_AI_Logger {
 // Mock Resource Manager.
 class WP_MCP_AI_Resource_Manager {
 	private static $instance = null;
-	
+
 	public static function instance() {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
 	}
-	
+
 	public function get_memory_limit() {
 		return 512 * 1024 * 1024; // 512MB - Medium tier
 	}
@@ -168,7 +168,7 @@ if ( $result !== true ) {
 
 // Verify it was saved to database
 $saved_options = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-$saved_preset = isset( $saved_options['orchestration_preset'] ) ? $saved_options['orchestration_preset'] : 'NOT SET';
+$saved_preset  = isset( $saved_options['orchestration_preset'] ) ? $saved_options['orchestration_preset'] : 'NOT SET';
 echo "  Saved to database: orchestration_preset = $saved_preset\n";
 
 if ( $saved_preset !== 'balanced' ) {
@@ -193,7 +193,7 @@ echo "  ✓ Preset correctly shows as 'balanced' after reload\n\n";
 
 // Step 4: Verify the preset card would show as active
 echo "Step 4: Verify UI would render correctly...\n";
-$presets = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
+$presets             = WP_MCP_AI_Orchestration_Preset_Service::get_presets();
 $current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : 'Unknown';
 echo "  Would display: 'Currently Active: $current_preset_name'\n";
 

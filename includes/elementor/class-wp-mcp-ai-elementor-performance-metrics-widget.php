@@ -85,12 +85,12 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 				'label'       => __( 'Filter by Component', 'wp-mcp-ai' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					''             => __( 'All Components', 'wp-mcp-ai' ),
-					'rest_api'     => __( 'REST API', 'wp-mcp-ai' ),
-					'chat_ui'      => __( 'Chat UI', 'wp-mcp-ai' ),
-					'mcp_core'     => __( 'MCP Core', 'wp-mcp-ai' ),
-					'elementor'    => __( 'Elementor', 'wp-mcp-ai' ),
-					'cpt_ai_peer'  => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
+					''              => __( 'All Components', 'wp-mcp-ai' ),
+					'rest_api'      => __( 'REST API', 'wp-mcp-ai' ),
+					'chat_ui'       => __( 'Chat UI', 'wp-mcp-ai' ),
+					'mcp_core'      => __( 'MCP Core', 'wp-mcp-ai' ),
+					'elementor'     => __( 'Elementor', 'wp-mcp-ai' ),
+					'cpt_ai_peer'   => __( 'CPT: AI Peer', 'wp-mcp-ai' ),
 					'cpt_assistant' => __( 'CPT: Assistant', 'wp-mcp-ai' ),
 				),
 				'default'     => '',
@@ -104,10 +104,10 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 				'label'   => __( 'Time Period', 'wp-mcp-ai' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'options' => array(
-					'-1 hour'  => __( 'Last Hour', 'wp-mcp-ai' ),
+					'-1 hour'   => __( 'Last Hour', 'wp-mcp-ai' ),
 					'-24 hours' => __( 'Last 24 Hours', 'wp-mcp-ai' ),
-					'-7 days'  => __( 'Last 7 Days', 'wp-mcp-ai' ),
-					'-30 days' => __( 'Last 30 Days', 'wp-mcp-ai' ),
+					'-7 days'   => __( 'Last 7 Days', 'wp-mcp-ai' ),
+					'-30 days'  => __( 'Last 30 Days', 'wp-mcp-ai' ),
 				),
 				'default' => '-24 hours',
 			)
@@ -166,11 +166,11 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		$settings = $this->get_settings_for_display();
 
-		$title             = isset( $settings['title'] ) ? $settings['title'] : '';
-		$component_filter  = isset( $settings['component_filter'] ) ? $settings['component_filter'] : '';
-		$time_period       = isset( $settings['time_period'] ) ? $settings['time_period'] : '-24 hours';
-		$show_status       = ! empty( $settings['show_status_indicators'] ) && 'yes' === $settings['show_status_indicators'];
-		$auto_refresh      = ! empty( $settings['auto_refresh'] ) && 'yes' === $settings['auto_refresh'];
+		$title            = isset( $settings['title'] ) ? $settings['title'] : '';
+		$component_filter = isset( $settings['component_filter'] ) ? $settings['component_filter'] : '';
+		$time_period      = isset( $settings['time_period'] ) ? $settings['time_period'] : '-24 hours';
+		$show_status      = ! empty( $settings['show_status_indicators'] ) && 'yes' === $settings['show_status_indicators'];
+		$auto_refresh     = ! empty( $settings['auto_refresh'] ) && 'yes' === $settings['auto_refresh'];
 
 		// Get performance data.
 		$metrics = $this->get_performance_metrics( $component_filter, $time_period );
@@ -273,7 +273,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * @return array Aggregated metrics.
 	 */
 	protected function get_aggregated_metrics( $time_period ) {
-		$components = array( 'rest_api', 'chat_ui', 'mcp_core', 'elementor', 'cpt_ai_peer', 'cpt_assistant' );
+		$components  = array( 'rest_api', 'chat_ui', 'mcp_core', 'elementor', 'cpt_ai_peer', 'cpt_assistant' );
 		$all_metrics = array(
 			'avg_response_time'   => 0,
 			'avg_memory_usage'    => 0,
@@ -284,12 +284,12 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		foreach ( $components as $component ) {
 			$metrics = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, $time_period );
-			
+
 			if ( isset( $metrics['total_tests'] ) && $metrics['total_tests'] > 0 ) {
 				$all_metrics['avg_response_time'] += $metrics['avg_response_time'];
-				$all_metrics['avg_memory_usage'] += $metrics['avg_memory_usage'];
-				$all_metrics['avg_db_queries'] += $metrics['avg_db_queries'];
-				$all_metrics['total_tests'] += $metrics['total_tests'];
+				$all_metrics['avg_memory_usage']  += $metrics['avg_memory_usage'];
+				$all_metrics['avg_db_queries']    += $metrics['avg_db_queries'];
+				$all_metrics['total_tests']       += $metrics['total_tests'];
 
 				if ( isset( $metrics['status_distribution'] ) ) {
 					foreach ( $metrics['status_distribution'] as $status => $count ) {
@@ -304,10 +304,10 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 
 		// Calculate averages.
 		if ( $all_metrics['total_tests'] > 0 ) {
-			$count = count( $components );
+			$count                             = count( $components );
 			$all_metrics['avg_response_time'] /= $count;
-			$all_metrics['avg_memory_usage'] /= $count;
-			$all_metrics['avg_db_queries'] /= $count;
+			$all_metrics['avg_memory_usage']  /= $count;
+			$all_metrics['avg_db_queries']    /= $count;
 		}
 
 		return $all_metrics;

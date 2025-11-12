@@ -89,21 +89,33 @@ echo "Test 1: Orchestration settings in defaults...\n";
 $defaults = WP_MCP_AI_Admin_Settings_Base::get_default_settings();
 
 $tests = array(
-	array( 'key' => 'orchestration_preset', 'expected' => 'custom' ),
-	array( 'key' => 'memory_warning_threshold', 'expected' => 70 ),
-	array( 'key' => 'prediction_safety_buffer', 'expected' => 15 ),
-	array( 'key' => 'high_tier_max_tokens', 'expected' => 32000 ),
+	array(
+		'key'      => 'orchestration_preset',
+		'expected' => 'custom',
+	),
+	array(
+		'key'      => 'memory_warning_threshold',
+		'expected' => 70,
+	),
+	array(
+		'key'      => 'prediction_safety_buffer',
+		'expected' => 15,
+	),
+	array(
+		'key'      => 'high_tier_max_tokens',
+		'expected' => 32000,
+	),
 );
 
 $passed = 0;
 foreach ( $tests as $test ) {
-	$key = $test['key'];
+	$key      = $test['key'];
 	$expected = $test['expected'];
-	$actual = $defaults[ $key ] ?? 'MISSING';
-	
+	$actual   = $defaults[ $key ] ?? 'MISSING';
+
 	if ( $actual === $expected ) {
 		echo "  ✓ $key = $expected\n";
-		$passed++;
+		++$passed;
 	} else {
 		echo "  ✗ $key: expected $expected, got $actual\n";
 	}
@@ -120,17 +132,20 @@ if ( $passed === count( $tests ) ) {
 echo "Test 2: Sanitize preserves orchestration settings...\n";
 
 // Set up initial state with orchestration settings.
-update_option( 'wp_mcp_ai_settings', array(
-	'memory_warning_threshold' => 80,
-	'prediction_safety_buffer' => 20,
-	'default_model' => 'gpt-4o',
-	'enable_logging' => true,
-) );
+update_option(
+	'wp_mcp_ai_settings',
+	array(
+		'memory_warning_threshold' => 80,
+		'prediction_safety_buffer' => 20,
+		'default_model'            => 'gpt-4o',
+		'enable_logging'           => true,
+	)
+);
 
 // Simulate form submission with only general settings.
 $settings_base = new WP_MCP_AI_Admin_Settings_Base();
-$partial_form = array(
-	'default_model' => 'gpt-4o-mini',  // Changed.
+$partial_form  = array(
+	'default_model'  => 'gpt-4o-mini',  // Changed.
 	'enable_logging' => '1',  // Unchanged.
 	// Orchestration settings NOT included in form.
 );
@@ -139,21 +154,33 @@ $sanitized = $settings_base->sanitize_settings( $partial_form );
 
 // Check if orchestration settings were preserved.
 $tests2 = array(
-	array( 'key' => 'memory_warning_threshold', 'expected' => 80, 'desc' => 'should be preserved' ),
-	array( 'key' => 'prediction_safety_buffer', 'expected' => 20, 'desc' => 'should be preserved' ),
-	array( 'key' => 'default_model', 'expected' => 'gpt-4o-mini', 'desc' => 'should be updated' ),
+	array(
+		'key'      => 'memory_warning_threshold',
+		'expected' => 80,
+		'desc'     => 'should be preserved',
+	),
+	array(
+		'key'      => 'prediction_safety_buffer',
+		'expected' => 20,
+		'desc'     => 'should be preserved',
+	),
+	array(
+		'key'      => 'default_model',
+		'expected' => 'gpt-4o-mini',
+		'desc'     => 'should be updated',
+	),
 );
 
 $passed2 = 0;
 foreach ( $tests2 as $test ) {
-	$key = $test['key'];
+	$key      = $test['key'];
 	$expected = $test['expected'];
-	$desc = $test['desc'];
-	$actual = $sanitized[ $key ] ?? 'MISSING';
-	
+	$desc     = $test['desc'];
+	$actual   = $sanitized[ $key ] ?? 'MISSING';
+
 	if ( $actual === $expected ) {
 		echo "  ✓ $key = $expected ($desc)\n";
-		$passed2++;
+		++$passed2;
 	} else {
 		echo "  ✗ $key: expected $expected, got $actual ($desc)\n";
 	}
@@ -169,10 +196,13 @@ if ( $passed2 === count( $tests2 ) ) {
 // Test 3: Checkboxes still reset correctly.
 echo "Test 3: Checkboxes reset when unchecked...\n";
 
-update_option( 'wp_mcp_ai_settings', array(
-	'enable_budget_management' => true,
-	'enable_logging' => true,
-) );
+update_option(
+	'wp_mcp_ai_settings',
+	array(
+		'enable_budget_management' => true,
+		'enable_logging'           => true,
+	)
+);
 
 $partial_form2 = array(
 	'default_model' => 'gpt-4o',
@@ -186,8 +216,8 @@ if ( $sanitized2['enable_budget_management'] === false && $sanitized2['enable_lo
 	echo "✓ Test 3 passed\n\n";
 } else {
 	echo "  ✗ Checkboxes not reset correctly\n";
-	echo "    enable_budget_management: " . var_export( $sanitized2['enable_budget_management'], true ) . "\n";
-	echo "    enable_logging: " . var_export( $sanitized2['enable_logging'], true ) . "\n";
+	echo '    enable_budget_management: ' . var_export( $sanitized2['enable_budget_management'], true ) . "\n";
+	echo '    enable_logging: ' . var_export( $sanitized2['enable_logging'], true ) . "\n";
 	exit( 1 );
 }
 

@@ -32,15 +32,15 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		public static function image_model_supports_response_format( $model ) {
 			$model = sanitize_text_field( $model );
 
-		// The gpt-image-1 model does NOT support the response_format parameter.
-		// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
-		// Default to true for backward compatibility, but explicitly block gpt-image-1.
-		$supported = true;
+			// The gpt-image-1 model does NOT support the response_format parameter.
+			// Only DALL·E variants (dall-e-2, dall-e-3) support this parameter.
+			// Default to true for backward compatibility, but explicitly block gpt-image-1.
+			$supported = true;
 
-		// Check if this is the gpt-image-1 model (case-insensitive).
-		if ( 'gpt-image-1' === strtolower( $model ) ) {
-			$supported = false;
-		}
+			// Check if this is the gpt-image-1 model (case-insensitive).
+			if ( 'gpt-image-1' === strtolower( $model ) ) {
+				$supported = false;
+			}
 			/**
 			 * Filter whether the supplied image model supports the response_format parameter.
 			 *
@@ -1601,7 +1601,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$attachment_lookup = $this->index_attachments_by_id( $attachments );
 				}
 				// Always run conversion to handle input_image segments from conversation history
-				$chat_messages     = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
+				$chat_messages       = $this->convert_image_files_to_image_url( $chat_messages, $attachment_lookup );
 				$payload['messages'] = $chat_messages;
 			}
 
@@ -3170,19 +3170,19 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			// For OpenAI, we don't have a direct token counting API endpoint,
 			// so we use estimation based on character count.
 			// This is a reasonable heuristic: ~4 characters per token for English text.
-			
+
 			$total_chars = 0;
-			
+
 			foreach ( $messages as $message ) {
 				if ( ! is_array( $message ) ) {
 					continue;
 				}
-				
+
 				// Count role
 				if ( isset( $message['role'] ) ) {
 					$total_chars += strlen( (string) $message['role'] );
 				}
-				
+
 				// Count content
 				if ( isset( $message['content'] ) ) {
 					if ( is_string( $message['content'] ) ) {
@@ -3197,7 +3197,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						}
 					}
 				}
-				
+
 				// Count tool calls
 				if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
 					$encoded = wp_json_encode( $message['tool_calls'] );
@@ -3205,7 +3205,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 						$total_chars += strlen( $encoded );
 					}
 				}
-				
+
 				// Count tool responses
 				if ( isset( $message['tool_call_id'] ) ) {
 					$total_chars += strlen( (string) $message['tool_call_id'] );
@@ -3214,20 +3214,20 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$total_chars += strlen( (string) $message['name'] );
 				}
 			}
-			
+
 			// Apply the ~4 characters per token heuristic
 			$estimated_tokens = (int) ceil( $total_chars / self::CHAT_APPROX_CHARS_PER_TOKEN );
-			
+
 			WP_MCP_AI_Logger::log_event(
 				'openai_token_count_estimated',
 				'Estimated token count for OpenAI request.',
 				array(
-					'total_chars'       => $total_chars,
-					'estimated_tokens'  => $estimated_tokens,
-					'message_count'     => count( $messages ),
+					'total_chars'      => $total_chars,
+					'estimated_tokens' => $estimated_tokens,
+					'message_count'    => count( $messages ),
 				)
 			);
-			
+
 			return $estimated_tokens;
 		}
 	}

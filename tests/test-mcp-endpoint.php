@@ -424,11 +424,11 @@ class WP_MCP_AI_MCP_Endpoint_Test extends WP_UnitTestCase {
 	 * Test OPTIONS request for CORS preflight.
 	 */
 	public function test_options_request() {
-		$request = new WP_REST_Request( 'OPTIONS', '/mcp-ai/v1/mcp' );
+		$request  = new WP_REST_Request( 'OPTIONS', '/mcp-ai/v1/mcp' );
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 204, $response->get_status(), 'OPTIONS should return 204' );
-		
+
 		$headers = $response->get_headers();
 		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers );
 		$this->assertArrayHasKey( 'Access-Control-Allow-Methods', $headers );

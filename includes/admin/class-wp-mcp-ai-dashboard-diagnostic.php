@@ -154,8 +154,6 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 
 				<div class="card">
 					<h2><?php esc_html_e( '4. Global Variables', 'wp-mcp-ai' ); ?></h2>
-					<?php
-					?>
 					<p>
 						<strong><?php esc_html_e( 'Active Settings System:', 'wp-mcp-ai' ); ?></strong>
 						<span style="color: green;"><?php esc_html_e( 'New Settings Dashboard', 'wp-mcp-ai' ); ?></span>
@@ -227,8 +225,8 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					<h2><?php esc_html_e( '5. Admin Menu Pages', 'wp-mcp-ai' ); ?></h2>
 					<?php
 					global $menu, $submenu;
-					$found_old = false;
-					$found_new = false;
+					$found_old   = false;
+					$found_new   = false;
 					$found_auth0 = false;
 
 					// Check for old settings under Settings submenu.
@@ -368,7 +366,12 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Current Screen', 'wp-mcp-ai' ); ?></th>
-								<td><?php $screen = get_current_screen(); echo $screen ? esc_html( $screen->id ) : 'null'; ?></td>
+								<td>
+								<?php
+								$screen = get_current_screen();
+								echo $screen ? esc_html( $screen->id ) : 'null';
+								?>
+								</td>
 							</tr>
 						</tbody>
 					</table>

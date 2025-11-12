@@ -70,8 +70,8 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 		$image_tool = $this->create_mock_image_tool();
 		$this->registry->register_tool( $image_tool );
 
-		$mock_client = $this->create_mock_client_with_tool_call( 'generate_test_image' );
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client  = $this->create_mock_client_with_tool_call( 'generate_test_image' );
+		$mock_router  = $this->create_mock_router_with_client( $mock_client );
 		$chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -92,7 +92,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
-		
+
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertArrayHasKey( 'url', $content );
 		$this->assertArrayHasKey( 'attachment_id', $content );
@@ -105,8 +105,8 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 		// Create some test posts.
 		$post_ids = $this->factory->post->create_many( 3 );
 
-		$mock_client = $this->create_mock_client_with_tool_call( 'get_recent_posts' );
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client  = $this->create_mock_client_with_tool_call( 'get_recent_posts' );
+		$mock_router  = $this->create_mock_router_with_client( $mock_client );
 		$chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -127,7 +127,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
-		
+
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertIsArray( $content );
 	}
@@ -136,8 +136,8 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 	 * Test content creation tool execution.
 	 */
 	public function test_content_creation_tool_execution() {
-		$mock_client = $this->create_mock_client_with_tool_call( 'save_post' );
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client  = $this->create_mock_client_with_tool_call( 'save_post' );
+		$mock_router  = $this->create_mock_router_with_client( $mock_client );
 		$chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -164,7 +164,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 	 */
 	public function test_mixed_tool_types_execution() {
 		$call_count = 0;
-		
+
 		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -190,7 +190,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 												'id'       => 'call_posts_001',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_recent_posts',
+													'name' => 'get_recent_posts',
 													'arguments' => wp_json_encode( array( 'limit' => 5 ) ),
 												),
 											),
@@ -198,7 +198,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 												'id'       => 'call_time_002',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_current_time',
+													'name' => 'get_current_time',
 													'arguments' => '{}',
 												),
 											),
@@ -213,7 +213,7 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 				}
 			);
 
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_router  = $this->create_mock_router_with_client( $mock_client );
 		$chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -247,8 +247,8 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 		);
 
 		foreach ( $tools_to_test as $tool_name ) {
-			$mock_client = $this->create_mock_client_with_tool_call( $tool_name );
-			$mock_router = $this->create_mock_router_with_client( $mock_client );
+			$mock_client  = $this->create_mock_client_with_tool_call( $tool_name );
+			$mock_router  = $this->create_mock_router_with_client( $mock_client );
 			$chat_service = $this->create_chat_service( $mock_router );
 
 			$messages = array(
@@ -268,15 +268,15 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 			);
 
 			$this->assertArrayHasKey( 'tool_results', $response, "Tool $tool_name should return results" );
-			
+
 			if ( ! empty( $response['tool_results'] ) ) {
 				$tool_result = $response['tool_results'][0];
-				
+
 				// All tools should return consistent structure.
 				$this->assertEquals( 'tool', $tool_result['role'], "Tool $tool_name should have role 'tool'" );
 				$this->assertArrayHasKey( 'tool_call_id', $tool_result, "Tool $tool_name should have tool_call_id" );
 				$this->assertArrayHasKey( 'content', $tool_result, "Tool $tool_name should have content" );
-				
+
 				// Content should be valid JSON.
 				$content = json_decode( $tool_result['content'], true );
 				$this->assertNotNull( $content, "Tool $tool_name content should be valid JSON" );

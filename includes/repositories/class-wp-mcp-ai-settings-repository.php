@@ -203,14 +203,14 @@ class WP_MCP_AI_Settings_Repository {
 	 * @return array Provider settings.
 	 */
 	public function get_provider_settings( $provider ) {
-		$all_settings     = $this->get_all();
+		$all_settings      = $this->get_all();
 		$provider_settings = array();
 
 		$provider_prefix = $provider . '_';
 
 		foreach ( $all_settings as $key => $value ) {
 			if ( 0 === strpos( $key, $provider_prefix ) ) {
-				$provider_key                      = str_replace( $provider_prefix, '', $key );
+				$provider_key                       = str_replace( $provider_prefix, '', $key );
 				$provider_settings[ $provider_key ] = $value;
 			}
 		}

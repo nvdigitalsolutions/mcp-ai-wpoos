@@ -303,7 +303,7 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		// Add a higher priority filter (should not be overridden).
 		add_filter(
 			'wp_mcp_ai_default_light_model',
-			function( $model ) {
+			function ( $model ) {
 				return 'high-priority-model';
 			},
 			1

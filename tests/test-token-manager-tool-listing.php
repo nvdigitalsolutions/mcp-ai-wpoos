@@ -24,7 +24,7 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 
 		// Create a mock token manager section to test the private method.
 		$token_manager = new WP_MCP_AI_Section_Token_Manager();
-		
+
 		// Use reflection to access the private method.
 		$reflection = new ReflectionClass( $token_manager );
 		$method     = $reflection->getMethod( 'get_all_available_tools' );
@@ -55,7 +55,7 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 		}
 
 		// Verify tools are sorted alphabetically by name.
-		$tool_names = array_values( $tools );
+		$tool_names   = array_values( $tools );
 		$sorted_names = $tool_names;
 		asort( $sorted_names );
 		$this->assertEquals(
@@ -75,7 +75,7 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 
 		// Create a mock token manager section.
 		$token_manager = new WP_MCP_AI_Section_Token_Manager();
-		
+
 		// Use reflection to access the private method.
 		$reflection = new ReflectionClass( $token_manager );
 		$method     = $reflection->getMethod( 'get_all_available_tools' );
@@ -117,7 +117,7 @@ class Test_Token_Manager_Tool_Listing extends WP_UnitTestCase {
 
 		// Create a mock token manager section.
 		$token_manager = new WP_MCP_AI_Section_Token_Manager();
-		
+
 		// Use reflection to access the private method.
 		$reflection = new ReflectionClass( $token_manager );
 		$method     = $reflection->getMethod( 'get_all_available_tools' );

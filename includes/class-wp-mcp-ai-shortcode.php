@@ -288,7 +288,7 @@ class WP_MCP_AI_Shortcode {
 					'Shortcode attempted to render unavailable assistant',
 					array(
 						'assistant_id'     => $assistant_id,
-						'assistant_exists' => ! ! $assistant,
+						'assistant_exists' => (bool) $assistant,
 						'post_type'        => $assistant ? $assistant->post_type : null,
 						'post_status'      => $assistant ? $assistant->post_status : null,
 						'attributes'       => $atts,
@@ -324,94 +324,94 @@ class WP_MCP_AI_Shortcode {
 				return '<div class="wp-mcp-ai-chat__notice">' . esc_html__( 'You do not have permission to chat with this assistant.', 'wp-mcp-ai' ) . '</div>';
 			}
 
-		// Render the actual widget in Elementor editor for better preview.
-		// The WP_DEBUG fix in the main plugin class ensures debug output
-		// won't break the editor when WP_DEBUG is enabled.
-		$is_elementor_editor = $this->is_elementor_editor();
+			// Render the actual widget in Elementor editor for better preview.
+			// The WP_DEBUG fix in the main plugin class ensures debug output
+			// won't break the editor when WP_DEBUG is enabled.
+			$is_elementor_editor = $this->is_elementor_editor();
 
-		if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
-			$this->register_assets();
-		}
-
-		wp_enqueue_script( self::SCRIPT_HANDLE );
-		wp_enqueue_style( self::STYLE_HANDLE );
-
-		$instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
-		$textarea_id = $instance_id . '-input';
-		$session_key = wp_generate_uuid4();
-
-		if ( ! $session_key ) {
-			$session_key = wp_unique_id( 'wp-mcp-ai-session-' );
-		}
-
-		$session_key = sanitize_key( $session_key );
-
-		$can_upload_attachments = current_user_can( 'upload_files' );
-
-		$assistant_content = get_post_field( 'post_content', $assistant_id );
-		if ( $assistant_content ) {
-			$assistant_content = apply_filters( 'the_content', $assistant_content );
-		}
-
-		$config = array(
-			'id'                    => $instance_id,
-			'assistantId'           => $assistant_id,
-			'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
-			'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
-			'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
-			'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-			'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
-			'crawl4aiDefaultPollMs' => 5000,
-			'requiredCapability'    => $capability ? $capability : '',
-			'allowGuests'           => (bool) $allow_guests,
-			'canUploadAttachments'  => (bool) $can_upload_attachments,
-			'saveTranscript'        => (bool) $save_transcript,
-			'enableStreaming'       => (bool) $enable_streaming,
-			'allowSensitiveTools'   => (bool) $allow_sensitive_tools,
-			'sessionKey'            => $session_key,
-			'historyPerPage'        => 20,
-		);
-
-		$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
-		if ( ! empty( $tool_shortcuts ) ) {
-			$config['toolShortcuts'] = $tool_shortcuts;
-		}
-
-		if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
-			$allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
-			$allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
-			$allowed_file_mimes  = isset( $allowed_mime_sets['file'] ) ? (array) $allowed_mime_sets['file'] : array();
-			$allowed_extensions  = self::get_allowed_extensions_for_mimes( array_merge( $allowed_image_mimes, $allowed_file_mimes ) );
-			$file_accept_tokens  = self::build_file_accept_tokens( $allowed_image_mimes, $allowed_file_mimes, $allowed_extensions );
-
-			if ( ! empty( $allowed_image_mimes ) ) {
-				$config['allowedImageMimes'] = array_values( $allowed_image_mimes );
+			if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
+				$this->register_assets();
 			}
 
-			if ( ! empty( $allowed_file_mimes ) ) {
-				$config['allowedFileMimes'] = array_values( $allowed_file_mimes );
+			wp_enqueue_script( self::SCRIPT_HANDLE );
+			wp_enqueue_style( self::STYLE_HANDLE );
+
+			$instance_id = wp_unique_id( 'wp-mcp-ai-chat-' );
+			$textarea_id = $instance_id . '-input';
+			$session_key = wp_generate_uuid4();
+
+			if ( ! $session_key ) {
+				$session_key = wp_unique_id( 'wp-mcp-ai-session-' );
 			}
 
-			if ( ! empty( $allowed_extensions ) ) {
-				$config['allowedExtensions'] = array_values( $allowed_extensions );
+			$session_key = sanitize_key( $session_key );
+
+			$can_upload_attachments = current_user_can( 'upload_files' );
+
+			$assistant_content = get_post_field( 'post_content', $assistant_id );
+			if ( $assistant_content ) {
+				$assistant_content = apply_filters( 'the_content', $assistant_content );
 			}
 
-			if ( ! empty( $file_accept_tokens ) ) {
-				$config['fileAccept'] = implode( ',', $file_accept_tokens );
+			$config = array(
+				'id'                    => $instance_id,
+				'assistantId'           => $assistant_id,
+				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
+				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'transcriptsEndpoint'   => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'crawl4aiTaskEndpoint'  => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/crawl4ai/task' ) ) ) ),
+				'crawl4aiDefaultPollMs' => 5000,
+				'requiredCapability'    => $capability ? $capability : '',
+				'allowGuests'           => (bool) $allow_guests,
+				'canUploadAttachments'  => (bool) $can_upload_attachments,
+				'saveTranscript'        => (bool) $save_transcript,
+				'enableStreaming'       => (bool) $enable_streaming,
+				'allowSensitiveTools'   => (bool) $allow_sensitive_tools,
+				'sessionKey'            => $session_key,
+				'historyPerPage'        => 20,
+			);
+
+			$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );
+			if ( ! empty( $tool_shortcuts ) ) {
+				$config['toolShortcuts'] = $tool_shortcuts;
 			}
-		}
 
-		if ( $guest_token ) {
-			$config['guestToken'] = $guest_token;
-		}
+			if ( $can_upload_attachments && class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+				$allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+				$allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
+				$allowed_file_mimes  = isset( $allowed_mime_sets['file'] ) ? (array) $allowed_mime_sets['file'] : array();
+				$allowed_extensions  = self::get_allowed_extensions_for_mimes( array_merge( $allowed_image_mimes, $allowed_file_mimes ) );
+				$file_accept_tokens  = self::build_file_accept_tokens( $allowed_image_mimes, $allowed_file_mimes, $allowed_extensions );
 
-		$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
-		$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
-		wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
+				if ( ! empty( $allowed_image_mimes ) ) {
+					$config['allowedImageMimes'] = array_values( $allowed_image_mimes );
+				}
 
-		ob_start();
-		$messages_id = $instance_id . '-messages';
-		?>
+				if ( ! empty( $allowed_file_mimes ) ) {
+					$config['allowedFileMimes'] = array_values( $allowed_file_mimes );
+				}
+
+				if ( ! empty( $allowed_extensions ) ) {
+					$config['allowedExtensions'] = array_values( $allowed_extensions );
+				}
+
+				if ( ! empty( $file_accept_tokens ) ) {
+					$config['fileAccept'] = implode( ',', $file_accept_tokens );
+				}
+			}
+
+			if ( $guest_token ) {
+				$config['guestToken'] = $guest_token;
+			}
+
+			$inline_config  = 'window.wpMcpAiChatInstances = window.wpMcpAiChatInstances || {};';
+			$inline_config .= 'window.wpMcpAiChatInstances[' . wp_json_encode( $instance_id ) . '] = ' . wp_json_encode( $config ) . ';';
+			wp_add_inline_script( self::SCRIPT_HANDLE, $inline_config, 'before' );
+
+			ob_start();
+			$messages_id = $instance_id . '-messages';
+			?>
 		<div class="wp-mcp-ai-chat" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-chat>
 			<?php
 			if ( $is_elementor_editor ) {
@@ -498,8 +498,8 @@ class WP_MCP_AI_Shortcode {
 				<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
 			</section>
 		</div>
-		<?php
-		return ob_get_clean();
+			<?php
+			return ob_get_clean();
 
 		} catch ( Exception $e ) {
 			// Catch any unexpected errors during shortcode rendering.
@@ -515,8 +515,8 @@ class WP_MCP_AI_Shortcode {
 			);
 
 			// Return user-friendly error message.
-			return '<div class="wp-mcp-ai-chat__notice wp-mcp-ai-chat__error">' . 
-				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'wp-mcp-ai' ) . 
+			return '<div class="wp-mcp-ai-chat__notice wp-mcp-ai-chat__error">' .
+				esc_html__( 'Unable to load the chat interface. Please try refreshing the page or contact support if the problem persists.', 'wp-mcp-ai' ) .
 				'</div>';
 		}
 	}

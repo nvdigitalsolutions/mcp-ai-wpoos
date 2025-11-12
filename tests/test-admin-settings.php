@@ -57,11 +57,11 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 	 * Ensure the default model choices include comprehensive OpenAI models from fallback.
 	 */
 	public function test_default_model_choices_include_comprehensive_models() {
-		$admin_settings  = new WP_MCP_AI_Admin_Settings();
-		$reflection      = new ReflectionClass( $admin_settings );
-		$method          = $reflection->getMethod( 'get_openai_default_model_choices' );
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+		$reflection     = new ReflectionClass( $admin_settings );
+		$method         = $reflection->getMethod( 'get_openai_default_model_choices' );
 		$method->setAccessible( true );
-		$choices         = $method->invoke( $admin_settings );
+		$choices = $method->invoke( $admin_settings );
 
 		// Verify we have more models than the original 8 hardcoded ones.
 		$this->assertGreaterThanOrEqual( 15, count( $choices ) );
@@ -863,7 +863,7 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Since we can't directly test private static properties from here,
 		// we'll use reflection to access and verify the cache state.
 
-		$reflection = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );
+		$reflection     = new ReflectionClass( 'WP_MCP_AI_Admin_Settings' );
 		$cache_property = $reflection->getProperty( 'settings_cache' );
 		$cache_property->setAccessible( true );
 

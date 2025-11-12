@@ -300,7 +300,7 @@ class Test_WP_MCP_AI_Tool_Generate_Auth0_Token extends WP_UnitTestCase {
 	public function test_execute_with_custom_audience() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$mock_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.token';
+		$mock_token      = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.token';
 		$custom_audience = 'https://api.example.com';
 
 		// Capture the request body to verify audience.
@@ -357,7 +357,7 @@ class Test_WP_MCP_AI_Tool_Generate_Auth0_Token extends WP_UnitTestCase {
 	public function test_execute_with_default_audience() {
 		wp_set_current_user( $this->admin_user_id );
 
-		$mock_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.token';
+		$mock_token   = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.test.token';
 		$auth0_domain = 'example.us.auth0.com';
 
 		// Capture the request body to verify audience.

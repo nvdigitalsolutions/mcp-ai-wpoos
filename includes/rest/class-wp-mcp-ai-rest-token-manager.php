@@ -144,9 +144,9 @@ class WP_MCP_AI_REST_Token_Manager {
 
 		// Get sample limits for common tools.
 		$tool_limits = array(
-			'general_tools'      => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'general_tools' ),
-			'run_crawl4ai_job'   => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'run_crawl4ai_job' ),
-			'search_content'     => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'search_content' ),
+			'general_tools'    => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'general_tools' ),
+			'run_crawl4ai_job' => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'run_crawl4ai_job' ),
+			'search_content'   => WP_MCP_AI_Tool_Token_Limits::get_user_tool_limit( $user_id, 'search_content' ),
 		);
 
 		return rest_ensure_response(

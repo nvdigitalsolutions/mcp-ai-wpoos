@@ -199,7 +199,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 
 			foreach ( $results as $result ) {
 				$status_class = 'status-' . sanitize_html_class( $result['test_status'] );
-				
+
 				echo '<tr>';
 				echo '<td class="wp-mcp-ai-test-results__cell">' . esc_html( ucfirst( $result['test_type'] ) ) . '</td>';
 				echo '<td class="wp-mcp-ai-test-results__cell">' . esc_html( $result['component'] ) . '</td>';
@@ -289,7 +289,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			}
 
 			$test['_ID'] = $test_id;
-			$filtered[] = $test;
+			$filtered[]  = $test;
 
 			if ( count( $filtered ) >= $limit ) {
 				break;

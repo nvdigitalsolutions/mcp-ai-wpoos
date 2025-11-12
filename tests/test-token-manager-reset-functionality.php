@@ -126,7 +126,7 @@ class Test_Token_Manager_Reset_Functionality extends WP_UnitTestCase {
 		// Verify both types of data exist.
 		$tool_usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $this->test_user_id );
 		$general    = get_user_meta( $this->test_user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
-		
+
 		$this->assertNotEmpty( $tool_usage );
 		$this->assertNotEmpty( $general );
 
@@ -137,7 +137,7 @@ class Test_Token_Manager_Reset_Functionality extends WP_UnitTestCase {
 		// Verify both types of data were cleared.
 		$tool_usage_after = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $this->test_user_id );
 		$general_after    = get_user_meta( $this->test_user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, true );
-		
+
 		$this->assertEmpty( $tool_usage_after );
 		$this->assertEmpty( $general_after );
 	}

@@ -2,7 +2,7 @@
 <?php
 /**
  * Test that active preset updates correctly after applying a preset.
- * 
+ *
  * This test verifies that:
  * 1. The orchestration_preset setting is updated when apply_preset is called
  * 2. The hidden field value would be correct after page reload
@@ -46,12 +46,22 @@ function get_current_user_id() {
 }
 
 function wp_send_json_success( $data = null ) {
-	echo json_encode( array( 'success' => true, 'data' => $data ) );
+	echo json_encode(
+		array(
+			'success' => true,
+			'data'    => $data,
+		)
+	);
 	exit;
 }
 
 function wp_send_json_error( $data = null ) {
-	echo json_encode( array( 'success' => false, 'data' => $data ) );
+	echo json_encode(
+		array(
+			'success' => false,
+			'data'    => $data,
+		)
+	);
 	exit;
 }
 
@@ -81,13 +91,13 @@ class WP_Error {
 	private $code;
 	private $message;
 	private $data;
-	
+
 	public function __construct( $code, $message, $data = '' ) {
-		$this->code = $code;
+		$this->code    = $code;
 		$this->message = $message;
-		$this->data = $data;
+		$this->data    = $data;
 	}
-	
+
 	public function get_error_message() {
 		return $this->message;
 	}
@@ -102,7 +112,7 @@ class WP_MCP_AI_Logger {
 	public static function log_error( $message, $context = array() ) {
 		// Silent for tests.
 	}
-	
+
 	public static function log_event( $message, $description, $context = array() ) {
 		// Silent for tests.
 	}
@@ -119,14 +129,14 @@ require_once ABSPATH . 'includes/services/class-wp-mcp-ai-orchestration-preset-s
 // Mock Resource Manager.
 class WP_MCP_AI_Resource_Manager {
 	private static $instance = null;
-	
+
 	public static function instance() {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 		return self::$instance;
 	}
-	
+
 	public function get_memory_limit() {
 		return 512 * 1024 * 1024; // 512MB
 	}
@@ -166,8 +176,8 @@ echo "Test 2: Preset persists when other settings are saved...\n";
 // Simulate saving the form with the orchestration_preset field included
 $form_data = array(
 	'orchestration_preset' => 'balanced',  // This should be in the form.
-	'default_model' => 'gpt-4o',
-	'enable_logging' => '1',
+	'default_model'        => 'gpt-4o',
+	'enable_logging'       => '1',
 );
 
 // Update settings

@@ -9,9 +9,12 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 	 */
 	public function test_router_uses_provider_priority_list() {
 		// Set provider_priority_list with gemini first.
-		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 
-			'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' )
-		) );
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
+			)
+		);
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -36,9 +39,12 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 	 */
 	public function test_router_falls_back_to_next_provider_on_failure() {
 		// Set provider_priority_list with gemini first, openai second.
-		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 
-			'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' )
-		) );
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
+			)
+		);
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -94,9 +100,12 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 	 */
 	public function test_router_returns_error_when_all_providers_fail() {
 		// Set provider_priority_list.
-		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 
-			'provider_priority_list' => array( 'gemini', 'openai' )
-		) );
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'provider_priority_list' => array( 'gemini', 'openai' ),
+			)
+		);
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );
@@ -147,9 +156,12 @@ class WP_MCP_AI_Language_Model_Router_Test extends WP_UnitTestCase {
 	 */
 	public function test_router_respects_explicit_provider_override() {
 		// Set provider_priority_list with gemini first.
-		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array( 
-			'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' )
-		) );
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'provider_priority_list' => array( 'gemini', 'openai', 'ollama', 'lm_studio' ),
+			)
+		);
 
 		$openai_client    = $this->createMock( WP_MCP_AI_OpenAI_Client::class );
 		$gemini_client    = $this->createMock( WP_MCP_AI_Gemini_Client::class );

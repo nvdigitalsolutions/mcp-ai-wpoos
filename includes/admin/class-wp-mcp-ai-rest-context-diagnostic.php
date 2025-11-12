@@ -174,10 +174,10 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 				<h3><?php esc_html_e( 'Nginx Configuration', 'wp-mcp-ai' ); ?></h3>
 				<p><?php esc_html_e( 'Add this to your Nginx configuration file:', 'wp-mcp-ai' ); ?></p>
 				<div class="code-block">location ~* ^/wp-json/ {<br>
-    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;<br>
-    add_header Pragma "no-cache" always;<br>
-    add_header Expires "0" always;<br>
-    try_files $uri $uri/ /index.php?$args;<br>
+	add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;<br>
+	add_header Pragma "no-cache" always;<br>
+	add_header Expires "0" always;<br>
+	try_files $uri $uri/ /index.php?$args;<br>
 }</div>
 			<?php endif; ?>
 
@@ -186,11 +186,11 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 				<h3><?php esc_html_e( 'Apache .htaccess Configuration', 'wp-mcp-ai' ); ?></h3>
 				<p><?php esc_html_e( 'Add this to your .htaccess file:', 'wp-mcp-ai' ); ?></p>
 				<div class="code-block">&lt;FilesMatch "^(wp-json)"&gt;<br>
-    &lt;IfModule mod_headers.c&gt;<br>
-        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"<br>
-        Header set Pragma "no-cache"<br>
-        Header set Expires "0"<br>
-    &lt;/IfModule&gt;<br>
+	&lt;IfModule mod_headers.c&gt;<br>
+		Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"<br>
+		Header set Pragma "no-cache"<br>
+		Header set Expires "0"<br>
+	&lt;/IfModule&gt;<br>
 &lt;/FilesMatch&gt;<br>
 <br>
 # Preserve query strings (QSA flag)<br>

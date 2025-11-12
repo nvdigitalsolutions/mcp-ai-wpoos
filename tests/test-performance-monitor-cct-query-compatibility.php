@@ -61,8 +61,8 @@ class WP_MCP_AI_Performance_Monitor_CCT_Query_Compatibility_Test extends WP_Unit
 		$reflection->setAccessible( true );
 
 		$args = array(
-			'component'  => 'rest_api',
-			'test_type'  => 'stress',
+			'component'   => 'rest_api',
+			'test_type'   => 'stress',
 			'test_status' => 'passed',
 		);
 

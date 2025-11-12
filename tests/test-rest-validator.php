@@ -26,10 +26,10 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Load the validator class.
 		require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
-		
+
 		$this->validator = new WP_MCP_AI_REST_Validator();
 	}
 
@@ -222,7 +222,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	 * Test sanitize_memory_files with valid input.
 	 */
 	public function test_sanitize_memory_files() {
-		$files = array( 1, 2, 3 );
+		$files  = array( 1, 2, 3 );
 		$result = $this->validator->sanitize_memory_files( $files );
 
 		$this->assertIsArray( $result );
@@ -234,7 +234,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	 * Test sanitize_memory_files with array of arrays.
 	 */
 	public function test_sanitize_memory_files_array_of_arrays() {
-		$files = array(
+		$files  = array(
 			array( 'file_id' => 1 ),
 			array( 'file_id' => 2 ),
 		);
@@ -249,7 +249,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 	 * Test sanitize_memory_files removes duplicates.
 	 */
 	public function test_sanitize_memory_files_removes_duplicates() {
-		$files = array( 1, 2, 2, 3, 3, 3 );
+		$files  = array( 1, 2, 2, 3, 3, 3 );
 		$result = $this->validator->sanitize_memory_files( $files );
 
 		$this->assertIsArray( $result );
@@ -267,7 +267,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'method', 'tools/call' );
-		
+
 		$result = $this->validator->validate_mcp_params( $params, $request, 'params' );
 
 		$this->assertTrue( $result );
@@ -283,7 +283,7 @@ class Test_REST_Validator extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request();
 		$request->set_param( 'method', 'tools/call' );
-		
+
 		$result = $this->validator->validate_mcp_params( $params, $request, 'params' );
 
 		$this->assertWPError( $result );
