@@ -21,6 +21,8 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-management-service.php';
 
 /**
  * Initialize services
@@ -138,4 +140,26 @@ function wp_mcp_ai_get_tool_registry() {
  */
 function wp_mcp_ai_get_error_tracking_service() {
 	return WP_MCP_AI_Error_Tracking_Service::get_instance();
+}
+
+/**
+ * Get performance service instance
+ *
+ * Helper function to get performance service instance.
+ *
+ * @return WP_MCP_AI_Performance_Service Performance service instance.
+ */
+function wp_mcp_ai_get_performance_service() {
+	return new WP_MCP_AI_Performance_Service();
+}
+
+/**
+ * Get token management service instance
+ *
+ * Helper function to get token management service instance.
+ *
+ * @return WP_MCP_AI_Token_Management_Service Token management service instance.
+ */
+function wp_mcp_ai_get_token_management_service() {
+	return new WP_MCP_AI_Token_Management_Service();
 }
