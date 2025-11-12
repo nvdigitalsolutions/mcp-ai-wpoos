@@ -576,15 +576,22 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 				return 'failing_test_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Failing Test Tool';
+			}
+
+			public function get_description() {
+				return 'A tool that always fails';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'                => 'failing_test_tool',
-					'description'         => 'A tool that always fails',
-					'required_capability' => 'read',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return new WP_Error( 'tool_failed', 'This tool always fails.' );
 			}
 		};
@@ -601,15 +608,22 @@ class WP_MCP_AI_Test_SSE_Agentic_Integration extends WP_UnitTestCase {
 				return 'generate_test_image';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Generate Test Image';
+			}
+
+			public function get_description() {
+				return 'Generate a test image';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'                => 'generate_test_image',
-					'description'         => 'Generate a test image',
-					'required_capability' => 'upload_files',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'url'           => 'https://example.com/test-image.png',
 					'attachment_id' => 123,

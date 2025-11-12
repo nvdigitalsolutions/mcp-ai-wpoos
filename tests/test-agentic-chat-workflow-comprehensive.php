@@ -717,15 +717,22 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				return 'failing_test_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Failing Test Tool';
+			}
+
+			public function get_description() {
+				return 'A tool that always fails';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'                => 'failing_test_tool',
-					'description'         => 'A tool that always fails',
-					'required_capability' => 'read',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return new WP_Error( 'tool_failed', 'This tool always fails.' );
 			}
 		};
