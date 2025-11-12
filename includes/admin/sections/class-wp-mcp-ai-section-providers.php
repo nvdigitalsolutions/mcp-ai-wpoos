@@ -78,7 +78,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'o1-2024-12-17' => 'o1 (Dec 2024)',
 					'o1-preview'    => 'o1 Preview',
 					'o1-mini'       => 'o1 Mini',
-					'o3-mini'       => 'o3 Mini',
+					'o3-mini'       => 'o3 Mini (24% faster, structured outputs)',
 					// GPT-4o series (current flagship).
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
@@ -177,8 +177,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_gemini_model'   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
-					'description' => __( 'The default model to use for Gemini requests. Gemini 2.0 Flash (Experimental) offers the latest capabilities, while Gemini 1.5 Pro provides stable, proven performance. Gemini 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
+					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Flash is the latest production model. Gemini 2.0 Flash (Experimental) offers cutting-edge capabilities, while Gemini 1.5 Pro provides stable, proven performance. Gemini 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
 					'options'     => array(
+						'gemini-2.5-flash'     => 'Gemini 2.5 Flash (Latest)',
 						'gemini-2.0-flash-exp' => 'Gemini 2.0 Flash (Experimental)',
 						'gemini-exp-1206'      => 'Gemini Exp 1206 (Experimental)',
 						'gemini-1.5-pro'       => 'Gemini 1.5 Pro',

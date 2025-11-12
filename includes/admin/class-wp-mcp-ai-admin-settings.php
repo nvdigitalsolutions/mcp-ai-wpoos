@@ -4419,7 +4419,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
 					'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
 					'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
-					'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+					'o3-mini'                 => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
 					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
@@ -4558,7 +4558,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
 				'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
 				'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
-				'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+				'o3-mini'                 => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
 				'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 				// GPT-4o series.
 				'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
@@ -4717,7 +4717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
 					'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
 					'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
-					'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+					'o3-mini'                 => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
 					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
 					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
