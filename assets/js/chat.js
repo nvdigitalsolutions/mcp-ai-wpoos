@@ -2457,7 +2457,19 @@
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        const url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        let url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        
+        // Add user_id parameter
+        let userId = null;
+        if (state && state.config && typeof state.config.userId !== 'undefined') {
+            userId = state.config.userId;
+        } else if (typeof globalConfig.currentUserId !== 'undefined') {
+            userId = globalConfig.currentUserId;
+        }
+        
+        if (userId !== null) {
+            url += '&user_id=' + encodeURIComponent(userId);
+        }
 
         return fetch(url, {
             method: 'GET',
