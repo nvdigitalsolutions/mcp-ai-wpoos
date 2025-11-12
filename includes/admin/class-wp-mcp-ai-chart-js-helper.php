@@ -105,6 +105,16 @@ class WP_MCP_AI_Chart_JS_Helper {
 		$args = wp_parse_args( $args, $defaults );
 		$days = absint( $args['days'] );
 
+		// Validate days parameter.
+		if ( $days < 1 ) {
+			$days = 7;
+		}
+
+		// Limit to reasonable range.
+		if ( $days > 90 ) {
+			$days = 90;
+		}
+
 		// Generate labels for the past N days.
 		$labels = array();
 		$data   = array();
@@ -112,38 +122,73 @@ class WP_MCP_AI_Chart_JS_Helper {
 		for ( $i = $days - 1; $i >= 0; $i-- ) {
 			$date     = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
 			$labels[] = $date;
-
-			// Get token usage for this day.
-			// For now, return sample data - will be connected to actual usage tracking.
-			$data[] = 0;
+			$data[]   = 0; // Initialize with 0.
 		}
 
-		// Get actual usage data if available.
-		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
-			$users = get_users( array( 'fields' => 'ID' ) );
+		// Get actual usage data from WP_MCP_AI_Tool_Token_Limits.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			// Return empty chart data if class not loaded.
+			return array(
+				'labels'   => $labels,
+				'datasets' => array(
+					array(
+						'label'           => __( 'Token Usage', 'wp-mcp-ai' ),
+						'data'            => $data,
+						'borderColor'     => 'rgba(75, 192, 192, 1)',
+						'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+						'fill'            => true,
+						'tension'         => 0.4,
+					),
+				),
+			);
+		}
 
-			foreach ( $users as $user_id ) {
-				$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+		// Determine which users to query.
+		$user_ids = array();
 
-				if ( ! empty( $usage ) ) {
-					foreach ( $usage as $provider => $models ) {
-						foreach ( $models as $model => $totals ) {
-							if ( isset( $totals['total_tokens'] ) ) {
-								// Distribute tokens across days (simplified).
-								$tokens_per_day = absint( $totals['total_tokens'] ) / $days;
-								for ( $i = 0; $i < $days; $i++ ) {
-									$data[ $i ] += $tokens_per_day;
-								}
-							}
-						}
+		if ( ! empty( $args['user_id'] ) ) {
+			// Specific user.
+			$user_ids = array( absint( $args['user_id'] ) );
+		} else {
+			// All users.
+			$user_ids = get_users( array( 'fields' => 'ID' ) );
+		}
+
+		// Aggregate usage across users and tools.
+		foreach ( $user_ids as $user_id ) {
+			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+
+			if ( empty( $usage ) || ! is_array( $usage ) ) {
+				continue;
+			}
+
+			// Filter by tool if specified.
+			if ( ! empty( $args['tool_slug'] ) ) {
+				$tool_slug = sanitize_key( $args['tool_slug'] );
+				if ( ! isset( $usage[ $tool_slug ] ) ) {
+					continue;
+				}
+				$usage = array( $tool_slug => $usage[ $tool_slug ] );
+			}
+
+			// Sum up usage for each day.
+			foreach ( $usage as $tool_slug => $tool_data ) {
+				if ( ! isset( $tool_data['daily'] ) || ! is_array( $tool_data['daily'] ) ) {
+					continue;
+				}
+
+				foreach ( $tool_data['daily'] as $date => $tokens ) {
+					// Find the index for this date in our labels array.
+					$idx = array_search( $date, $labels, true );
+
+					if ( false !== $idx ) {
+						$data[ $idx ] += absint( $tokens );
 					}
 				}
 			}
 		}
 
-		// Round data values.
-		$data = array_map( 'absint', $data );
-
+		// Format data for Chart.js.
 		return array(
 			'labels'   => $labels,
 			'datasets' => array(
@@ -177,28 +222,120 @@ class WP_MCP_AI_Chart_JS_Helper {
 			'enterprise' => 0,
 		);
 
-		// Count users by tier.
+		// Count users by tier using WP_MCP_AI_Tool_Token_Limits if available.
 		$users = get_users( array( 'fields' => 'ID' ) );
 
-		foreach ( $users as $user_id ) {
-			$user_tier = get_user_meta( $user_id, 'wp_mcp_ai_token_tier', true );
+		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			// Use the proper tier detection method.
+			foreach ( $users as $user_id ) {
+				$user_tier = WP_MCP_AI_Tool_Token_Limits::get_user_tier( $user_id );
 
-			if ( empty( $user_tier ) ) {
-				$user_tier = 'free';
+				if ( isset( $tier_counts[ $user_tier ] ) ) {
+					$tier_counts[ $user_tier ]++;
+				} else {
+					// Fallback to free tier for unknown tiers.
+					$tier_counts['free']++;
+				}
 			}
+		} else {
+			// Fallback: Read meta key directly.
+			foreach ( $users as $user_id ) {
+				$user_tier = get_user_meta( $user_id, '_wp_mcp_ai_token_tier', true );
 
-			$user_tier = sanitize_key( $user_tier );
+				if ( empty( $user_tier ) ) {
+					$user_tier = 'free';
+				}
 
-			if ( isset( $tier_counts[ $user_tier ] ) ) {
-				$tier_counts[ $user_tier ]++;
-			} else {
-				$tier_counts['free']++;
+				$user_tier = sanitize_key( $user_tier );
+
+				if ( isset( $tier_counts[ $user_tier ] ) ) {
+					$tier_counts[ $user_tier ]++;
+				} else {
+					$tier_counts['free']++;
+				}
 			}
 		}
 
 		return array(
 			'labels' => array_values( $tiers ),
 			'values' => array_values( $tier_counts ),
+		);
+	}
+
+	/**
+	 * Get chart data for tool usage breakdown.
+	 *
+	 * Returns token usage distribution across different tools.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array Chart data in Chart.js format.
+	 */
+	public static function get_tool_breakdown_data( $args = array() ) {
+		$defaults = array(
+			'user_id' => 0,
+			'days'    => 7,
+			'limit'   => 10, // Top N tools.
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			return array(
+				'labels' => array(),
+				'values' => array(),
+			);
+		}
+
+		$tool_usage = array();
+
+		// Determine which users to query.
+		$user_ids = array();
+
+		if ( ! empty( $args['user_id'] ) ) {
+			$user_ids = array( absint( $args['user_id'] ) );
+		} else {
+			$user_ids = get_users( array( 'fields' => 'ID' ) );
+		}
+
+		// Aggregate usage by tool.
+		foreach ( $user_ids as $user_id ) {
+			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+
+			if ( empty( $usage ) || ! is_array( $usage ) ) {
+				continue;
+			}
+
+			foreach ( $usage as $tool_slug => $tool_data ) {
+				if ( ! isset( $tool_usage[ $tool_slug ] ) ) {
+					$tool_usage[ $tool_slug ] = 0;
+				}
+
+				if ( isset( $tool_data['total_tokens'] ) ) {
+					$tool_usage[ $tool_slug ] += absint( $tool_data['total_tokens'] );
+				}
+			}
+		}
+
+		// Sort by usage descending.
+		arsort( $tool_usage );
+
+		// Limit to top N tools.
+		$limit      = absint( $args['limit'] );
+		$tool_usage = array_slice( $tool_usage, 0, $limit, true );
+
+		// Format for chart.
+		$labels = array();
+		$values = array();
+
+		foreach ( $tool_usage as $tool_slug => $tokens ) {
+			// Convert tool_slug to human-readable name.
+			$labels[] = str_replace( '_', ' ', ucwords( $tool_slug, '_' ) );
+			$values[] = $tokens;
+		}
+
+		return array(
+			'labels' => $labels,
+			'values' => $values,
 		);
 	}
 

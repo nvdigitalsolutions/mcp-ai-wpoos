@@ -64,6 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_apply_preset'           => 'handle_apply_preset',
 				'wp_ajax_wp_mcp_ai_get_usage_trend'        => 'handle_get_usage_trend',
 				'wp_ajax_wp_mcp_ai_get_tier_distribution'  => 'handle_get_tier_distribution',
+				'wp_ajax_wp_mcp_ai_get_tool_breakdown'     => 'handle_get_tool_breakdown',
 			);
 
 			$action         = current_action();
@@ -1044,6 +1045,44 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			$data = WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_data();
+
+			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle AJAX request to get tool breakdown data for charts.
+		 */
+		public function handle_get_tool_breakdown() {
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get chart data.
+			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get parameters.
+			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+			$days    = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : 7;
+			$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+
+			$data = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data(
+				array(
+					'user_id' => $user_id,
+					'days'    => $days,
+					'limit'   => $limit,
+				)
+			);
 
 			wp_send_json_success( $data );
 		}
