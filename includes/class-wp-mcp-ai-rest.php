@@ -921,6 +921,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$request->set_param( 'user_id', $user_id );
 			}
 
+
+		// Verify nonce for logged-in users.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( $current_user ) {
+			if ( empty( $nonce ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_nonce',
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_invalid_nonce',
+					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 			if ( $user_id && $current_user && $user_id === $current_user ) {
 				if ( ! is_user_logged_in() ) {
 					return new WP_Error(

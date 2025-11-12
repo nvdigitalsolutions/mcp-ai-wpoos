@@ -130,16 +130,34 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function permissions_check_job_stream( WP_REST_Request $request ) {
-		// Allow logged-in users or valid bearer tokens.
-		if ( is_user_logged_in() ) {
-			return true;
-		}
-
-		// Check for bearer token authentication.
+		// Check for bearer token authentication first.
 		$bearer = $request->get_header( 'Authorization' );
 		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
 			// Token validation would go here.
 			// For now, allow any bearer token.
+			return true;
+		}
+
+		// Allow logged-in users with valid nonce.
+		if ( is_user_logged_in() ) {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			
+			if ( empty( $nonce ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_nonce',
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_invalid_nonce',
+					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+
 			return true;
 		}
 
@@ -167,6 +185,27 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 * @return bool|WP_Error
 	 */
 	public static function permissions_check_webhook_register( WP_REST_Request $request ) {
+		// Verify nonce for logged-in users.
+		if ( is_user_logged_in() ) {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			
+			if ( empty( $nonce ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_nonce',
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_invalid_nonce',
+					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
 		// Only admin users can register webhooks.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
