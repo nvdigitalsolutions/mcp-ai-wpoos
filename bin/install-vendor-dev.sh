@@ -70,6 +70,17 @@ fi
 echo "Extracting vendor-dev.zip..."
 unzip -q -o vendor-dev.zip
 
+# Regenerate autoloader to include both production and dev dependencies
+echo ""
+echo "Regenerating composer autoloader..."
+if command -v composer >/dev/null 2>&1; then
+  composer dump-autoload --no-interaction
+  echo "Autoloader regenerated successfully."
+else
+  echo "Warning: composer not found. Autoloader may need manual regeneration."
+  echo "Run 'composer dump-autoload' when composer is available."
+fi
+
 echo ""
 echo "========================================"
 echo "✓ Installation complete!"

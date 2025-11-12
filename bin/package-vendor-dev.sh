@@ -59,6 +59,8 @@ echo "Step 2: Preparing vendor-dev package..."
 mkdir -p "$TEMP_DIR/vendor"
 
 # Copy dev-only packages (exclude production packages already in repo)
+# Production packages (nyholm, php-http, psr, rahul900day, symfony) are already
+# committed to the repository and will be present on Cloudways/production servers.
 DEV_PACKAGES=(
   "dealerdirect"
   "doctrine"
@@ -84,10 +86,9 @@ for package in "${DEV_PACKAGES[@]}"; do
   fi
 done
 
-# Also include composer files needed for autoloading
-echo "  - Including composer autoload files"
-cp -r vendor/composer "$TEMP_DIR/vendor/"
-cp vendor/autoload.php "$TEMP_DIR/vendor/"
+# Note: We do NOT include vendor/autoload.php or vendor/composer/ 
+# because those are already in the repository with production dependencies.
+# The install script will run 'composer dump-autoload' to regenerate them.
 
 echo ""
 

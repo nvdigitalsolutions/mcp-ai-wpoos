@@ -4,10 +4,22 @@
 The PHPUnit test framework and development dependencies (~140 MB) are needed for testing but shouldn't be committed to the main repository, making it difficult to set up testing in offline or air-gapped environments.
 
 ## Solution
-Two scripts that package and extract development dependencies separately from the main plugin:
+Two scripts that package and extract development dependencies separately from the main plugin, while preserving production dependencies that are already committed to the repository.
+
+### Production Dependencies (Always Available)
+The following production dependencies (~5.6 MB) are committed to the repository and available on all environments including Cloudways:
+- `vendor/autoload.php` - Composer autoloader
+- `vendor/composer/` - Composer core files
+- `vendor/nyholm/` - PSR-7 implementation
+- `vendor/php-http/` - HTTP client discovery
+- `vendor/psr/` - PSR interfaces
+- `vendor/rahul900day/` - Tiktoken PHP
+- `vendor/symfony/` - Symfony HTTP client
+
+These are required for the plugin to function and are always present.
 
 ### 1. Package Script: `bin/package-vendor-dev.sh`
-Creates a `vendor-dev.zip` archive (~140 MB) containing all development dependencies.
+Creates a `vendor-dev.zip` archive (~140 MB) containing ONLY development dependencies (not production dependencies).
 
 **Requirements:**
 - Composer installed
@@ -21,7 +33,7 @@ Creates a `vendor-dev.zip` archive (~140 MB) containing all development dependen
 
 **Output:** `vendor-dev.zip` in the root directory
 
-**Contains:**
+**Contains (dev-only packages):**
 - PHPUnit test framework
 - PHP_CodeSniffer & WordPress Coding Standards  
 - WordPress stubs for IDE support
@@ -30,19 +42,25 @@ Creates a `vendor-dev.zip` archive (~140 MB) containing all development dependen
 - Yoast PHPUnit polyfills
 - Other development dependencies
 
+**Note:** This package does NOT include production dependencies (they're already in the repo).
+
 ### 2. Install Script: `bin/install-vendor-dev.sh`
-Extracts `vendor-dev.zip` and makes development tools available.
+Extracts `vendor-dev.zip` and regenerates the autoloader to include both production and dev dependencies.
 
 **Requirements:**
 - `vendor-dev.zip` file in root directory
 - `unzip` command available
+- `composer` command (for autoloader regeneration)
 
 **Usage:**
 ```bash
 ./bin/install-vendor-dev.sh
 ```
 
-**Result:** Development dependencies installed in `vendor/` directory
+**Result:** 
+- Development dependencies installed in `vendor/` directory
+- Composer autoloader regenerated to include all dependencies
+- Plugin ready for testing
 
 ## Workflow
 
@@ -77,11 +95,24 @@ composer run test
 
 ## Key Points
 
-- ✅ Production dependencies (~5.6 MB) remain committed to repository
-- ✅ Dev dependencies (~140 MB) available as optional download
-- ✅ No composer or internet needed on target machine
+- ✅ Production dependencies (~5.6 MB) are committed to repository and available on Cloudways/production
+- ✅ Plugin loads correctly on Cloudways with production dependencies only
+- ✅ Dev dependencies (~140 MB) available as optional download for testing environments
+- ✅ No composer or internet needed on target machine (for install script)
+- ✅ Autoloader automatically regenerated to include all dependencies
 - ✅ Scripts validated with shellcheck
 - ✅ .gitignore excludes vendor-dev.zip automatically
+
+## Cloudways Compatibility
+
+The plugin is fully compatible with Cloudways hosting:
+
+1. **Production deployment**: Works out of the box with committed production dependencies
+2. **Testing on Cloudways**: Upload `vendor-dev.zip` and run install script
+3. **Autoloader**: Automatically handles both production and dev dependencies
+4. **No conflicts**: Dev packages don't overwrite production dependencies
+
+The scripts are designed to work seamlessly in managed hosting environments like Cloudways, SiteGround, WP Engine, etc.
 
 ## File Sizes
 
