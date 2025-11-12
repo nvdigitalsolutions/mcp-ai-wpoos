@@ -2457,6 +2457,35 @@
         return placeholder.replace('%s', number);
     }
 
+    /**
+     * Truncate preview text to a maximum length with ellipsis.
+     * 
+     * @param {string} text - Text to truncate
+     * @param {number} maxLength - Maximum length before truncation
+     * @return {string} Truncated text
+     */
+    function truncatePreviewText(text, maxLength) {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        const trimmed = text.trim();
+        
+        if (trimmed.length <= maxLength) {
+            return trimmed;
+        }
+
+        // Truncate at word boundary if possible
+        let truncated = trimmed.substring(0, maxLength);
+        const lastSpace = truncated.lastIndexOf(' ');
+        
+        if (lastSpace > maxLength * 0.7) {
+            truncated = truncated.substring(0, lastSpace);
+        }
+
+        return truncated + '…';
+    }
+
     function buildHistoryMeta(state, session) {
         const parts = [];
 
@@ -2500,16 +2529,25 @@
             
             const sessionTitle = formatHistorySessionTitle(state, session, index);
             const metaText = buildHistoryMeta(state, session);
+            const previewText = session && session.preview ? session.preview : '';
             const ariaLabel = metaText ? sessionTitle + ' - ' + metaText : sessionTitle;
             button.setAttribute('aria-label', getString('loadConversation', 'Load conversation') + ': ' + ariaLabel);
 
             const content = document.createElement('div');
             content.className = 'wp-mcp-ai-chat__history-session-content';
 
-            const title = document.createElement('span');
-            title.className = 'wp-mcp-ai-chat__history-session-title';
-            title.textContent = sessionTitle;
-            content.appendChild(title);
+            // Add preview text as the main title if available
+            if (previewText) {
+                const preview = document.createElement('span');
+                preview.className = 'wp-mcp-ai-chat__history-session-preview';
+                preview.textContent = truncatePreviewText(previewText, 60);
+                content.appendChild(preview);
+            } else {
+                const title = document.createElement('span');
+                title.className = 'wp-mcp-ai-chat__history-session-title';
+                title.textContent = sessionTitle;
+                content.appendChild(title);
+            }
 
             if (metaText) {
                 const meta = document.createElement('span');
