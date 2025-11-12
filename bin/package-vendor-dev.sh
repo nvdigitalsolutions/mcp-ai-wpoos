@@ -51,7 +51,7 @@ echo ""
 
 # Create temporary directory for packaging
 TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 echo "Step 2: Preparing vendor-dev package..."
 
