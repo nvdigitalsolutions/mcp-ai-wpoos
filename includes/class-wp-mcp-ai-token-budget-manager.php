@@ -648,4 +648,223 @@ class WP_MCP_AI_Token_Budget_Manager {
 
 		return $messages;
 	}
+
+	/**
+	 * Get cost per 1K tokens for a model.
+	 *
+	 * @param string $model    Model identifier.
+	 * @param string $provider Provider identifier.
+	 * @param string $type     Token type: 'input', 'output', or 'cached'.
+	 *
+	 * @return float Cost per 1K tokens in USD, or 0 if not found.
+	 */
+	public static function get_model_cost_per_1k( $model, $provider = '', $type = 'input' ) {
+		$model    = sanitize_text_field( $model );
+		$provider = sanitize_key( $provider );
+		$type     = sanitize_key( $type );
+
+		// Try to get cost from CCT first if available.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+
+			if ( $cct_data ) {
+				$cost_field = '';
+				if ( 'input' === $type || 'cached' === $type ) {
+					$cost_field = 'cost_per_1k_input_tokens';
+				} elseif ( 'output' === $type ) {
+					$cost_field = 'cost_per_1k_output_tokens';
+				}
+
+				if ( ! empty( $cost_field ) && isset( $cct_data[ $cost_field ] ) && $cct_data[ $cost_field ] > 0 ) {
+					// Cached tokens typically cost less (often 50% of input tokens).
+					$cost = (float) $cct_data[ $cost_field ];
+					if ( 'cached' === $type ) {
+						$cost = $cost * 0.5;
+					}
+					return $cost;
+				}
+			}
+		}
+
+		// Fallback to hardcoded pricing data based on public pricing (as of Nov 2024).
+		$pricing = self::get_fallback_pricing();
+
+		// Try exact match.
+		if ( isset( $pricing[ $model ] ) && isset( $pricing[ $model ][ $type ] ) ) {
+			return (float) $pricing[ $model ][ $type ];
+		}
+
+		// Try partial match for model families.
+		foreach ( $pricing as $key => $costs ) {
+			if ( 0 === strpos( $model, $key ) && isset( $costs[ $type ] ) ) {
+				return (float) $costs[ $type ];
+			}
+		}
+
+		/**
+		 * Filter the default cost per 1K tokens for unknown models.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param float  $default_cost Default cost per 1K tokens. Default 0.
+		 * @param string $model        Model identifier.
+		 * @param string $provider     Provider identifier.
+		 * @param string $type         Token type (input, output, cached).
+		 */
+		return apply_filters( 'wp_mcp_ai_token_budget_default_cost', 0.0, $model, $provider, $type );
+	}
+
+	/**
+	 * Get fallback pricing data for common models.
+	 *
+	 * Prices are per 1K tokens in USD, based on public pricing as of Nov 2024.
+	 *
+	 * @return array Pricing data indexed by model identifier.
+	 */
+	protected static function get_fallback_pricing() {
+		return array(
+			// OpenAI Models.
+			'gpt-4o'            => array(
+				'input'  => 0.0025,
+				'output' => 0.01,
+				'cached' => 0.00125,
+			),
+			'gpt-4o-mini'       => array(
+				'input'  => 0.00015,
+				'output' => 0.0006,
+				'cached' => 0.000075,
+			),
+			'gpt-4-turbo'       => array(
+				'input'  => 0.01,
+				'output' => 0.03,
+				'cached' => 0.005,
+			),
+			'gpt-4'             => array(
+				'input'  => 0.03,
+				'output' => 0.06,
+				'cached' => 0.015,
+			),
+			'gpt-3.5-turbo'     => array(
+				'input'  => 0.0005,
+				'output' => 0.0015,
+				'cached' => 0.00025,
+			),
+			'o1-preview'        => array(
+				'input'  => 0.015,
+				'output' => 0.06,
+				'cached' => 0.0075,
+			),
+			'o1-mini'           => array(
+				'input'  => 0.003,
+				'output' => 0.012,
+				'cached' => 0.0015,
+			),
+			// Anthropic Claude Models.
+			'claude-3.5-sonnet' => array(
+				'input'  => 0.003,
+				'output' => 0.015,
+				'cached' => 0.0015,
+			),
+			'claude-3-opus'     => array(
+				'input'  => 0.015,
+				'output' => 0.075,
+				'cached' => 0.0075,
+			),
+			'claude-3-haiku'    => array(
+				'input'  => 0.00025,
+				'output' => 0.00125,
+				'cached' => 0.000125,
+			),
+			// Google Gemini Models.
+			'gemini-1.5-pro'    => array(
+				'input'  => 0.00125,
+				'output' => 0.005,
+				'cached' => 0.000625,
+			),
+			'gemini-1.5-flash'  => array(
+				'input'  => 0.000075,
+				'output' => 0.0003,
+				'cached' => 0.0000375,
+			),
+			'gemini-2.0-flash'  => array(
+				'input'  => 0.0001,
+				'output' => 0.0004,
+				'cached' => 0.00005,
+			),
+			// Local models (Ollama, etc.) are free.
+			'llama3'            => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'mistral'           => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'codellama'         => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'phi3'              => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'deepseek-coder'    => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'qwen2'             => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+			'gemma2'            => array(
+				'input'  => 0.0,
+				'output' => 0.0,
+				'cached' => 0.0,
+			),
+		);
+	}
+
+	/**
+	 * Calculate the cost for token usage.
+	 *
+	 * @param string $model            Model identifier.
+	 * @param int    $prompt_tokens    Number of input/prompt tokens.
+	 * @param int    $completion_tokens Number of output/completion tokens.
+	 * @param int    $cached_tokens    Number of cached tokens (optional).
+	 * @param string $provider         Provider identifier (optional).
+	 *
+	 * @return array Cost breakdown with 'input_cost', 'output_cost', 'cached_cost', 'total_cost'.
+	 */
+	public static function calculate_cost( $model, $prompt_tokens, $completion_tokens, $cached_tokens = 0, $provider = '' ) {
+		$model            = sanitize_text_field( $model );
+		$provider         = sanitize_key( $provider );
+		$prompt_tokens    = max( 0, absint( $prompt_tokens ) );
+		$completion_tokens = max( 0, absint( $completion_tokens ) );
+		$cached_tokens    = max( 0, absint( $cached_tokens ) );
+
+		// Get costs per 1K tokens.
+		$input_cost_per_1k  = self::get_model_cost_per_1k( $model, $provider, 'input' );
+		$output_cost_per_1k = self::get_model_cost_per_1k( $model, $provider, 'output' );
+		$cached_cost_per_1k = self::get_model_cost_per_1k( $model, $provider, 'cached' );
+
+		// Calculate actual costs.
+		$input_cost  = ( $prompt_tokens / 1000 ) * $input_cost_per_1k;
+		$output_cost = ( $completion_tokens / 1000 ) * $output_cost_per_1k;
+		$cached_cost = ( $cached_tokens / 1000 ) * $cached_cost_per_1k;
+		$total_cost  = $input_cost + $output_cost + $cached_cost;
+
+		return array(
+			'input_cost'  => round( $input_cost, 6 ),
+			'output_cost' => round( $output_cost, 6 ),
+			'cached_cost' => round( $cached_cost, 6 ),
+			'total_cost'  => round( $total_cost, 6 ),
+			'currency'    => 'USD',
+		);
+	}
 }

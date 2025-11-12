@@ -102,7 +102,7 @@ class WP_MCP_AI_Usage_Tracker {
 			$totals[ $provider ][ $model ] = self::get_initial_model_totals();
 		}
 
-		$totals[ $provider ][ $model ] = self::increment_totals( $totals[ $provider ][ $model ], $usage, $assistant_id );
+		$totals[ $provider ][ $model ] = self::increment_totals( $totals[ $provider ][ $model ], $usage, $assistant_id, $model, $provider );
 
 		update_user_meta( $user_id, self::USER_META_KEY, $totals );
 
@@ -260,6 +260,10 @@ class WP_MCP_AI_Usage_Tracker {
 			'completion_tokens' => 0,
 			'total_tokens'      => 0,
 			'cached_tokens'     => 0,
+			'total_cost'        => 0.0,
+			'input_cost'        => 0.0,
+			'output_cost'       => 0.0,
+			'cached_cost'       => 0.0,
 			'last_used_gmt'     => '',
 			'assistants'        => array(),
 		);
@@ -277,6 +281,10 @@ class WP_MCP_AI_Usage_Tracker {
 			'completion_tokens' => 0,
 			'total_tokens'      => 0,
 			'cached_tokens'     => 0,
+			'total_cost'        => 0.0,
+			'input_cost'        => 0.0,
+			'output_cost'       => 0.0,
+			'cached_cost'       => 0.0,
 			'last_used_gmt'     => '',
 		);
 	}
@@ -284,12 +292,14 @@ class WP_MCP_AI_Usage_Tracker {
 	/**
 	 * Increment totals with a usage delta.
 	 *
-	 * @param array $existing_totals Existing totals for the model.
-	 * @param array $usage           Usage delta to apply.
-	 * @param int   $assistant_id    Assistant identifier.
+	 * @param array  $existing_totals Existing totals for the model.
+	 * @param array  $usage           Usage delta to apply.
+	 * @param int    $assistant_id    Assistant identifier.
+	 * @param string $model           Model identifier for cost calculation.
+	 * @param string $provider        Provider identifier for cost calculation.
 	 * @return array
 	 */
-	protected static function increment_totals( array $existing_totals, array $usage, $assistant_id ) {
+	protected static function increment_totals( array $existing_totals, array $usage, $assistant_id, $model = '', $provider = '' ) {
 		$timestamp = current_time( 'mysql', true );
 
 		if ( ! isset( $existing_totals['requests'] ) ) {
@@ -302,11 +312,40 @@ class WP_MCP_AI_Usage_Tracker {
 		$existing_totals['total_tokens']      = isset( $existing_totals['total_tokens'] ) ? (int) $existing_totals['total_tokens'] : 0;
 		$existing_totals['cached_tokens']     = isset( $existing_totals['cached_tokens'] ) ? (int) $existing_totals['cached_tokens'] : 0;
 
-		$existing_totals['prompt_tokens']     += isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0;
-		$existing_totals['completion_tokens'] += isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0;
-		$existing_totals['total_tokens']      += isset( $usage['total_tokens'] ) ? (int) $usage['total_tokens'] : 0;
-		$existing_totals['cached_tokens']     += isset( $usage['cached_tokens'] ) ? (int) $usage['cached_tokens'] : 0;
+		// Initialize cost fields if they don't exist.
+		$existing_totals['total_cost']  = isset( $existing_totals['total_cost'] ) ? (float) $existing_totals['total_cost'] : 0.0;
+		$existing_totals['input_cost']  = isset( $existing_totals['input_cost'] ) ? (float) $existing_totals['input_cost'] : 0.0;
+		$existing_totals['output_cost'] = isset( $existing_totals['output_cost'] ) ? (float) $existing_totals['output_cost'] : 0.0;
+		$existing_totals['cached_cost'] = isset( $existing_totals['cached_cost'] ) ? (float) $existing_totals['cached_cost'] : 0.0;
+
+		$prompt_tokens_delta     = isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0;
+		$completion_tokens_delta = isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0;
+		$cached_tokens_delta     = isset( $usage['cached_tokens'] ) ? (int) $usage['cached_tokens'] : 0;
+		$total_tokens_delta      = isset( $usage['total_tokens'] ) ? (int) $usage['total_tokens'] : 0;
+
+		$existing_totals['prompt_tokens']     += $prompt_tokens_delta;
+		$existing_totals['completion_tokens'] += $completion_tokens_delta;
+		$existing_totals['total_tokens']      += $total_tokens_delta;
+		$existing_totals['cached_tokens']     += $cached_tokens_delta;
 		$existing_totals['last_used_gmt']      = $timestamp;
+
+		// Calculate cost for this usage delta.
+		if ( ! empty( $model ) && class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+			$cost_data = WP_MCP_AI_Token_Budget_Manager::calculate_cost(
+				$model,
+				$prompt_tokens_delta,
+				$completion_tokens_delta,
+				$cached_tokens_delta,
+				$provider
+			);
+
+			if ( is_array( $cost_data ) ) {
+				$existing_totals['input_cost']  += isset( $cost_data['input_cost'] ) ? (float) $cost_data['input_cost'] : 0.0;
+				$existing_totals['output_cost'] += isset( $cost_data['output_cost'] ) ? (float) $cost_data['output_cost'] : 0.0;
+				$existing_totals['cached_cost'] += isset( $cost_data['cached_cost'] ) ? (float) $cost_data['cached_cost'] : 0.0;
+				$existing_totals['total_cost']  += isset( $cost_data['total_cost'] ) ? (float) $cost_data['total_cost'] : 0.0;
+			}
+		}
 
 		if ( ! isset( $existing_totals['assistants'] ) || ! is_array( $existing_totals['assistants'] ) ) {
 			$existing_totals['assistants'] = array();
@@ -330,11 +369,35 @@ class WP_MCP_AI_Usage_Tracker {
 			$assistant_totals['total_tokens']      = isset( $assistant_totals['total_tokens'] ) ? (int) $assistant_totals['total_tokens'] : 0;
 			$assistant_totals['cached_tokens']     = isset( $assistant_totals['cached_tokens'] ) ? (int) $assistant_totals['cached_tokens'] : 0;
 
-			$assistant_totals['prompt_tokens']     += isset( $usage['prompt_tokens'] ) ? (int) $usage['prompt_tokens'] : 0;
-			$assistant_totals['completion_tokens'] += isset( $usage['completion_tokens'] ) ? (int) $usage['completion_tokens'] : 0;
-			$assistant_totals['total_tokens']      += isset( $usage['total_tokens'] ) ? (int) $usage['total_tokens'] : 0;
-			$assistant_totals['cached_tokens']     += isset( $usage['cached_tokens'] ) ? (int) $usage['cached_tokens'] : 0;
+			// Initialize assistant cost fields if they don't exist.
+			$assistant_totals['total_cost']  = isset( $assistant_totals['total_cost'] ) ? (float) $assistant_totals['total_cost'] : 0.0;
+			$assistant_totals['input_cost']  = isset( $assistant_totals['input_cost'] ) ? (float) $assistant_totals['input_cost'] : 0.0;
+			$assistant_totals['output_cost'] = isset( $assistant_totals['output_cost'] ) ? (float) $assistant_totals['output_cost'] : 0.0;
+			$assistant_totals['cached_cost'] = isset( $assistant_totals['cached_cost'] ) ? (float) $assistant_totals['cached_cost'] : 0.0;
+
+			$assistant_totals['prompt_tokens']     += $prompt_tokens_delta;
+			$assistant_totals['completion_tokens'] += $completion_tokens_delta;
+			$assistant_totals['total_tokens']      += $total_tokens_delta;
+			$assistant_totals['cached_tokens']     += $cached_tokens_delta;
 			$assistant_totals['last_used_gmt']      = $timestamp;
+
+			// Add cost to assistant totals.
+			if ( ! empty( $model ) && class_exists( 'WP_MCP_AI_Token_Budget_Manager' ) ) {
+				$cost_data = WP_MCP_AI_Token_Budget_Manager::calculate_cost(
+					$model,
+					$prompt_tokens_delta,
+					$completion_tokens_delta,
+					$cached_tokens_delta,
+					$provider
+				);
+
+				if ( is_array( $cost_data ) ) {
+					$assistant_totals['input_cost']  += isset( $cost_data['input_cost'] ) ? (float) $cost_data['input_cost'] : 0.0;
+					$assistant_totals['output_cost'] += isset( $cost_data['output_cost'] ) ? (float) $cost_data['output_cost'] : 0.0;
+					$assistant_totals['cached_cost'] += isset( $cost_data['cached_cost'] ) ? (float) $cost_data['cached_cost'] : 0.0;
+					$assistant_totals['total_cost']  += isset( $cost_data['total_cost'] ) ? (float) $cost_data['total_cost'] : 0.0;
+				}
+			}
 
 			$existing_totals['assistants'][ $assistant_id ] = $assistant_totals;
 		}
