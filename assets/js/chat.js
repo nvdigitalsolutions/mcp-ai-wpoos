@@ -2133,55 +2133,88 @@
         }, 3000);
     }
 
+    /**
+     * Handle save conversation button click.
+     * Saves the current conversation to CCT without clearing it.
+     * 
+     * @param {Object} state - Chat state object
+     */
+    function handleSaveConversation(state) {
+        if (!state) {
+            return;
+        }
+
+        // Check if there's anything to save
+        if (!state.conversation || state.conversation.length === 0) {
+            setStatus(state.container, getString('noConversationToSave', 'No conversation to save. Start chatting first!'));
+            setTimeout(function() {
+                clearStatus(state.container);
+            }, 3000);
+            return;
+        }
+
+        // Show saving status
+        setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
+
+        // Save to CCT
+        saveConversationToCCT(state, { silent: false }).then(function(result) {
+            if (!result || result.skipped) {
+                // No save needed or save was skipped
+                setStatus(state.container, getString('saveSkipped', 'Save not available for this conversation.'));
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 3000);
+                return;
+            }
+
+            if (result.success) {
+                // Save succeeded
+                setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 3000);
+            } else {
+                // Save failed
+                const errorMsg = result.error || 'Failed to save conversation';
+                setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+                
+                if (window.console && console.error) {
+                    console.error('Failed to save conversation:', errorMsg);
+                }
+                
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 5000);
+            }
+        }).catch(function(error) {
+            // Handle unexpected errors
+            setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+            
+            if (window.console && console.error) {
+                console.error('Error saving conversation:', error);
+            }
+            
+            setTimeout(function() {
+                clearStatus(state.container);
+            }, 5000);
+        });
+    }
+
     function startNewConversation(state) {
         if (!state) {
             return;
         }
 
-        // Save current conversation to CCT before clearing (if there are messages)
+        // If there are messages, confirm before clearing
         if (state.conversation && state.conversation.length > 0) {
-            // Confirm with user before clearing the conversation
-            const confirmMessage = getString('newConversation', 'Start new conversation') + '?';
+            const confirmMessage = getString('confirmClearConversation', 'Clear current conversation and start new? Use the Save button first if you want to keep this conversation.');
             if (!confirm(confirmMessage)) {
                 return;
             }
-
-            // Show saving status
-            setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
-
-            // Save to CCT before clearing
-            saveConversationToCCT(state).then(function(result) {
-                if (!result || result.skipped) {
-                    // No save needed or save was skipped, proceed with clearing
-                    performConversationClear(state);
-                    return;
-                }
-
-                if (result.success) {
-                    // Save succeeded, proceed with clearing
-                    setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
-                    performConversationClear(state);
-                } else {
-                    // Save failed, ask user if they want to proceed anyway
-                    const errorMsg = result.error || 'Failed to save conversation';
-                    const proceedMsg = getString('saveFailedProceed', 'Failed to save conversation: ') + errorMsg + '. ' + 
-                                     getString('proceedAnyway', 'Do you want to proceed anyway? Your current conversation will be lost.');
-                    
-                    setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
-                    
-                    if (confirm(proceedMsg)) {
-                        // User chose to proceed despite save failure
-                        performConversationClear(state);
-                    } else {
-                        // User cancelled, keep the conversation
-                        setStatus(state.container, getString('saveFailedKeepingConversation', 'Conversation not cleared. You can try again later.'));
-                    }
-                }
-            });
-        } else {
-            // No messages to save, just clear
-            performConversationClear(state);
         }
+
+        // Just clear - user can use Save button if they want to save first
+        performConversationClear(state);
     }
 
     /**
@@ -2390,6 +2423,35 @@
         return placeholder.replace('%s', number);
     }
 
+    /**
+     * Truncate preview text to a maximum length with ellipsis.
+     * 
+     * @param {string} text - Text to truncate
+     * @param {number} maxLength - Maximum length before truncation
+     * @return {string} Truncated text
+     */
+    function truncatePreviewText(text, maxLength) {
+        if (!text || typeof text !== 'string') {
+            return '';
+        }
+
+        const trimmed = text.trim();
+        
+        if (trimmed.length <= maxLength) {
+            return trimmed;
+        }
+
+        // Truncate at word boundary if possible
+        let truncated = trimmed.substring(0, maxLength);
+        const lastSpace = truncated.lastIndexOf(' ');
+        
+        if (lastSpace > maxLength * 0.7) {
+            truncated = truncated.substring(0, lastSpace);
+        }
+
+        return truncated + '…';
+    }
+
     function buildHistoryMeta(state, session) {
         const parts = [];
 
@@ -2433,16 +2495,25 @@
             
             const sessionTitle = formatHistorySessionTitle(state, session, index);
             const metaText = buildHistoryMeta(state, session);
+            const previewText = session && session.preview ? session.preview : '';
             const ariaLabel = metaText ? sessionTitle + ' - ' + metaText : sessionTitle;
             button.setAttribute('aria-label', getString('loadConversation', 'Load conversation') + ': ' + ariaLabel);
 
             const content = document.createElement('div');
             content.className = 'wp-mcp-ai-chat__history-session-content';
 
-            const title = document.createElement('span');
-            title.className = 'wp-mcp-ai-chat__history-session-title';
-            title.textContent = sessionTitle;
-            content.appendChild(title);
+            // Add preview text as the main title if available
+            if (previewText) {
+                const preview = document.createElement('span');
+                preview.className = 'wp-mcp-ai-chat__history-session-preview';
+                preview.textContent = truncatePreviewText(previewText, 60);
+                content.appendChild(preview);
+            } else {
+                const title = document.createElement('span');
+                title.className = 'wp-mcp-ai-chat__history-session-title';
+                title.textContent = sessionTitle;
+                content.appendChild(title);
+            }
 
             if (metaText) {
                 const meta = document.createElement('span');
@@ -2984,11 +3055,26 @@
     }
 
     function buildJsonHeaders(state) {
+        let nonce = '';
+        
+        // Priority: state.config.restNonce > globalConfig.nonce
+        if (state && state.config && state.config.restNonce) {
+            nonce = state.config.restNonce;
+        } else if (globalConfig && globalConfig.nonce) {
+            nonce = globalConfig.nonce;
+        }
+        
         const headers = {
             'Content-Type': 'application/json',
-            'X-WP-Nonce': globalConfig.nonce || '',
+            'Accept': 'application/json',
         };
+        
+        // Add nonce if available
+        if (nonce) {
+            headers['X-WP-Nonce'] = nonce;
+        }
 
+        // Add guest token if available
         if (state && state.config && state.config.guestToken) {
             headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
         }
@@ -5123,10 +5209,11 @@
      * 
      * @param {Object} state - Chat state object
      * @param {HTMLElement} container - Chat container element
+     * @param {HTMLElement} saveButton - Save button element (optional)
      * @param {HTMLElement} exportButton - Export button element (optional)
      * @param {HTMLElement} newChatButton - New chat button element (optional)
      */
-    function initializeKeyboardShortcuts(state, container, exportButton, newChatButton) {
+    function initializeKeyboardShortcuts(state, container, saveButton, exportButton, newChatButton) {
         if (!state || !container) {
             return;
         }
@@ -5146,6 +5233,15 @@
 
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             const modKey = isMac ? event.metaKey : event.ctrlKey;
+
+            // Ctrl/Cmd + S: Save conversation
+            if (modKey && (event.key === 's' || event.key === 'S') && saveButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy && state.conversation && state.conversation.length > 0) {
+                    handleSaveConversation(state);
+                }
+                return;
+            }
 
             // Ctrl/Cmd + E: Export conversation
             if (modKey && (event.key === 'e' || event.key === 'E') && exportButton && !event.shiftKey) {
@@ -5218,6 +5314,10 @@
                 '<h3 class="wp-mcp-ai-chat__shortcuts-title">Keyboard Shortcuts</h3>' +
                 '<button type="button" class="wp-mcp-ai-chat__shortcuts-close" aria-label="Close">&times;</button>' +
                 '<div class="wp-mcp-ai-chat__shortcuts-list">' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + S</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Save conversation</span>' +
+                    '</div>' +
                     '<div class="wp-mcp-ai-chat__shortcut">' +
                         '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + E</kbd>' +
                         '<span class="wp-mcp-ai-chat__shortcut-desc">Export conversation</span>' +
@@ -5437,9 +5537,19 @@
                 });
             }
 
-            // Initialize export and quota monitoring UI controls
+            // Initialize save, export and quota monitoring UI controls
+            const saveButton = container.querySelector('.wp-mcp-ai-chat__save');
             const exportButton = container.querySelector('.wp-mcp-ai-chat__export');
             const quotaMonitor = container.querySelector('.wp-mcp-ai-chat__quota-monitor');
+            
+            if (saveButton) {
+                saveButton.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+                    handleSaveConversation(state);
+                });
+            }
             
             if (exportButton) {
                 exportButton.addEventListener('click', function (event) {
@@ -5526,7 +5636,7 @@
             updateTranscribeButtonState(state);
 
             // Initialize keyboard shortcuts
-            initializeKeyboardShortcuts(state, container, exportButton, newChatButton);
+            initializeKeyboardShortcuts(state, container, saveButton, exportButton, newChatButton);
 
             // Store state globally for cross-widget communication
             container.__wpMcpAiChatState = state;
