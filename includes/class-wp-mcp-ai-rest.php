@@ -937,9 +937,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( ! $user_id ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'handle_chat_transcripts: No user ID available',
+					array(
+						'requested_user_id'  => $request->get_param( 'user_id' ),
+						'current_user_id'    => get_current_user_id(),
+						'is_user_logged_in'  => is_user_logged_in(),
+					)
+				);
+
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_user',
-					__( 'A valid user is required to query chat transcripts.', 'wp-mcp-ai' ),
+					__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -947,10 +957,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$session_key  = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcripts: Request parameters',
+				array(
+					'raw_session_key'        => $request->get_param( 'session_key' ),
+					'normalized_session_key' => $session_key,
+					'user_id'                => $user_id,
+					'assistant_id'           => $assistant_id,
+				)
+			);
+
 			if ( '' !== $session_key ) {
 				$session = $this->get_transcript_session( $user_id, $session_key, $assistant_id );
 
 				if ( is_wp_error( $session ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'handle_chat_transcripts: Error retrieving session',
+						array(
+							'error_code'    => $session->get_error_code(),
+							'error_message' => $session->get_error_message(),
+							'session_key'   => $session_key,
+							'user_id'       => $user_id,
+						)
+					);
+
 					if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
 						return rest_ensure_response(
 							array(

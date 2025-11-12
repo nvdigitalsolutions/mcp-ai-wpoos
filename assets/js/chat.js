@@ -165,24 +165,24 @@
      * This is called before clearing a conversation to ensure messages are not lost.
      * 
      * @param {Object} state - Chat state object
-     * @returns {Promise} Promise that resolves when save is complete or fails silently
+     * @returns {Promise<{success: boolean, error?: string}>} Promise that resolves with save status
      */
     function saveConversationToCCT(state) {
         // Return resolved promise if conditions aren't met for saving
         if (!state || !state.config || !state.config.assistantId) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.conversation || !Array.isArray(state.conversation) || state.conversation.length === 0) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.config.sessionKey) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.config.transcriptsEndpoint) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         const payload = {
@@ -202,19 +202,23 @@
                     return null;
                 }).then(function(body) {
                     if (!response.ok) {
-                        // Log error but don't block the UI
+                        // Log error and return failure status
                         if (window.console && console.error) {
                             console.error('Failed to save conversation to CCT:', body);
                         }
+                        const errorMessage = body && body.message ? body.message : 'Failed to save conversation';
+                        return { success: false, error: errorMessage };
                     }
-                    return body;
+                    return { success: true };
                 });
             })
             .catch(function(error) {
-                // Fail silently - we don't want to block the user from starting a new chat
+                // Return failure status
                 if (window.console && console.error) {
                     console.error('Error saving conversation to CCT:', error);
                 }
+                const errorMessage = error && error.message ? error.message : 'Network error while saving conversation';
+                return { success: false, error: errorMessage };
             });
     }
 
@@ -1653,9 +1657,33 @@
             setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
 
             // Save to CCT before clearing
-            saveConversationToCCT(state).then(function() {
-                // After saving (or failing silently), proceed with clearing
-                performConversationClear(state);
+            saveConversationToCCT(state).then(function(result) {
+                if (!result || result.skipped) {
+                    // No save needed or save was skipped, proceed with clearing
+                    performConversationClear(state);
+                    return;
+                }
+
+                if (result.success) {
+                    // Save succeeded, proceed with clearing
+                    setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                    performConversationClear(state);
+                } else {
+                    // Save failed, ask user if they want to proceed anyway
+                    const errorMsg = result.error || 'Failed to save conversation';
+                    const proceedMsg = getString('saveFailedProceed', 'Failed to save conversation: ') + errorMsg + '. ' + 
+                                     getString('proceedAnyway', 'Do you want to proceed anyway? Your current conversation will be lost.');
+                    
+                    setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+                    
+                    if (confirm(proceedMsg)) {
+                        // User chose to proceed despite save failure
+                        performConversationClear(state);
+                    } else {
+                        // User cancelled, keep the conversation
+                        setStatus(state.container, getString('saveFailedKeepingConversation', 'Conversation not cleared. You can try again later.'));
+                    }
+                }
             });
         } else {
             // No messages to save, just clear
