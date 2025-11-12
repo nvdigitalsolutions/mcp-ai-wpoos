@@ -2,7 +2,10 @@
     'use strict';
 
     const globalConfig = window.wpMcpAiChat || {};
-    const instances = window.wpMcpAiChatInstances || {};
+    // Initialize instances object if it doesn't exist
+    if (!window.wpMcpAiChatInstances) {
+        window.wpMcpAiChatInstances = {};
+    }
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -30,6 +33,11 @@
     const DEBUG_MODE = window.wpMcpAiChatDebugMode === true;
     const OPTIMIZATIONS_ENABLED = !DEBUG_MODE;
 
+    /**
+     * Get localStorage key for a specific assistant.
+     * @param {string} assistantId - The assistant ID.
+     * @return {string} The storage key.
+     */
     function getStorageKey(assistantId) {
         return STORAGE_KEY_PREFIX + assistantId;
     }
@@ -41,19 +49,33 @@
     // Message bundling to group rapid user inputs
     const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
 
-    function saveConversationToStorage(state) {
+    /**
+     * Save conversation to localStorage with quota management.
+     * Includes automatic cleanup of old conversations if quota is exceeded.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} options - Optional settings
+     * @return {Object} Result object with success status
+     */
+    function saveConversationToStorage(state, options) {
         if (!state || !state.config || !state.config.assistantId) {
-            return;
+            return { success: false, skipped: true };
         }
 
         if (!window.localStorage) {
-            return;
+            return { success: false, error: 'localStorage not available' };
         }
 
         const assistantId = state.config.assistantId;
+        const opts = options || {};
+        const forceImmediate = opts.immediate === true;
         
-        // Skip debouncing in debug mode for immediate saves
-        if (!OPTIMIZATIONS_ENABLED) {
+        /**
+         * Internal function to perform the actual save.
+         * 
+         * @return {Object} Result with success status
+         */
+        function performSave() {
             try {
                 const storageKey = getStorageKey(assistantId);
                 const data = {
@@ -62,11 +84,55 @@
                     timestamp: Date.now(),
                     assistantId: assistantId
                 };
+                
                 window.localStorage.setItem(storageKey, JSON.stringify(data));
+                return { success: true };
             } catch (error) {
-                // Silently fail if localStorage is not available or quota exceeded
+                // Check if it's a quota exceeded error
+                const isQuotaError = error.name === 'QuotaExceededError' || 
+                                   error.code === 22 || // Legacy browsers
+                                   error.code === 1014; // Firefox
+                
+                if (isQuotaError) {
+                    // Try to free up space by removing old conversations
+                    const cleaned = cleanupOldStorageEntries();
+                    
+                    if (cleaned > 0) {
+                        // Retry save after cleanup
+                        try {
+                            const storageKey = getStorageKey(assistantId);
+                            const data = {
+                                conversation: state.conversation || [],
+                                sessionKey: state.config.sessionKey || '',
+                                timestamp: Date.now(),
+                                assistantId: assistantId
+                            };
+                            
+                            window.localStorage.setItem(storageKey, JSON.stringify(data));
+                            return { success: true, cleaned: cleaned };
+                        } catch (retryError) {
+                            if (window.console && console.warn) {
+                                console.warn('Failed to save conversation even after cleanup:', retryError);
+                            }
+                            return { success: false, error: 'localStorage quota exceeded', cleaned: cleaned };
+                        }
+                    }
+                    
+                    return { success: false, error: 'localStorage quota exceeded' };
+                }
+                
+                // Other errors - log but don't interrupt user experience
+                if (window.console && console.warn) {
+                    console.warn('Error saving conversation to localStorage:', error);
+                }
+                
+                return { success: false, error: error.message || 'localStorage error' };
             }
-            return;
+        }
+        
+        // Skip debouncing in debug mode or if immediate save requested
+        if (!OPTIMIZATIONS_ENABLED || forceImmediate) {
+            return performSave();
         }
 
         // Clear existing timer for this assistant
@@ -76,21 +142,76 @@
 
         // Debounce the save operation to reduce localStorage writes
         storageSaveTimers[assistantId] = setTimeout(function() {
-            try {
-                const storageKey = getStorageKey(assistantId);
-                const data = {
-                    conversation: state.conversation || [],
-                    sessionKey: state.config.sessionKey || '',
-                    timestamp: Date.now(),
-                    assistantId: assistantId
-                };
-
-                window.localStorage.setItem(storageKey, JSON.stringify(data));
-                delete storageSaveTimers[assistantId];
-            } catch (error) {
-                // Silently fail if localStorage is not available or quota exceeded
-            }
+            performSave();
+            delete storageSaveTimers[assistantId];
         }, STORAGE_SAVE_DEBOUNCE_MS);
+        
+        return { success: true, debounced: true };
+    }
+    
+    /**
+     * Clean up old localStorage entries to free up space.
+     * Removes entries older than STORAGE_EXPIRY_MS.
+     * 
+     * @return {number} Number of entries cleaned up
+     */
+    function cleanupOldStorageEntries() {
+        if (!window.localStorage) {
+            return 0;
+        }
+        
+        let cleaned = 0;
+        const now = Date.now();
+        const keysToRemove = [];
+        
+        try {
+            // Find all wp_mcp_ai_chat_ keys
+            for (let i = 0; i < window.localStorage.length; i++) {
+                const key = window.localStorage.key(i);
+                
+                if (!key || !key.startsWith(STORAGE_KEY_PREFIX)) {
+                    continue;
+                }
+                
+                try {
+                    const stored = window.localStorage.getItem(key);
+                    if (!stored) {
+                        keysToRemove.push(key);
+                        continue;
+                    }
+                    
+                    const data = JSON.parse(stored);
+                    
+                    // Remove if expired
+                    if (data && data.timestamp && (now - data.timestamp) > STORAGE_EXPIRY_MS) {
+                        keysToRemove.push(key);
+                    }
+                } catch (error) {
+                    // Invalid JSON - mark for removal
+                    keysToRemove.push(key);
+                }
+            }
+            
+            // Remove identified keys
+            keysToRemove.forEach(function(key) {
+                try {
+                    window.localStorage.removeItem(key);
+                    cleaned++;
+                } catch (error) {
+                    // Ignore errors during cleanup
+                }
+            });
+            
+            if (cleaned > 0 && window.console && console.info) {
+                console.info('Cleaned up ' + cleaned + ' old conversation(s) from localStorage');
+            }
+        } catch (error) {
+            if (window.console && console.warn) {
+                console.warn('Error during localStorage cleanup:', error);
+            }
+        }
+        
+        return cleaned;
     }
 
     function loadConversationFromStorage(state) {
@@ -160,25 +281,40 @@
      * This is called before clearing a conversation to ensure messages are not lost.
      * 
      * @param {Object} state - Chat state object
-     * @returns {Promise} Promise that resolves when save is complete or fails silently
+     * @returns {Promise<{success: boolean, error?: string}>} Promise that resolves with save status
      */
-    function saveConversationToCCT(state) {
+    /**
+     * Enhanced function to save conversation to CCT (Custom Content Type) with retry logic.
+     * This function includes timeout support, retry logic, and better error handling.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} options - Optional settings (retry, timeout, etc.)
+     * @return {Promise} Promise that resolves with save result
+     */
+    function saveConversationToCCT(state, options) {
         // Return resolved promise if conditions aren't met for saving
         if (!state || !state.config || !state.config.assistantId) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.conversation || !Array.isArray(state.conversation) || state.conversation.length === 0) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.config.sessionKey) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
 
         if (!state.config.transcriptsEndpoint) {
-            return Promise.resolve();
+            return Promise.resolve({ success: true, skipped: true });
         }
+
+        // Default options
+        const opts = options || {};
+        const maxRetries = opts.maxRetries !== undefined ? opts.maxRetries : 2;
+        const retryDelay = opts.retryDelay || 1000;
+        const timeout = opts.timeout || 15000;
+        const silent = opts.silent !== false; // Silent by default
 
         const payload = {
             assistant_id: state.config.assistantId,
@@ -186,31 +322,105 @@
             messages: state.conversation
         };
 
-        return fetch(state.config.transcriptsEndpoint, {
-            method: 'POST',
-            headers: buildJsonHeaders(state),
-            credentials: 'same-origin',
-            body: JSON.stringify(payload)
-        })
-            .then(function(response) {
-                return response.json().catch(function() {
-                    return null;
-                }).then(function(body) {
-                    if (!response.ok) {
-                        // Log error but don't block the UI
-                        if (window.console && console.error) {
-                            console.error('Failed to save conversation to CCT:', body);
-                        }
-                    }
-                    return body;
-                });
+        /**
+         * Internal function to attempt the save request.
+         * 
+         * @param {number} attempt - Current attempt number
+         * @return {Promise} Promise that resolves with save result
+         */
+        function attemptSave(attempt) {
+            // Create abort controller for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(function() {
+                controller.abort();
+            }, timeout);
+
+            return fetch(state.config.transcriptsEndpoint, {
+                method: 'POST',
+                headers: buildJsonHeaders(state),
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+                signal: controller.signal
             })
-            .catch(function(error) {
-                // Fail silently - we don't want to block the user from starting a new chat
-                if (window.console && console.error) {
-                    console.error('Error saving conversation to CCT:', error);
-                }
-            });
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    
+                    // Clone response for error handling
+                    const responseClone = response.clone();
+                    
+                    return response.json()
+                        .catch(function(parseError) {
+                            // If JSON parsing fails, try to get text for debugging
+                            return responseClone.text().then(function(text) {
+                                if (!silent && window.console && console.error) {
+                                    console.error('Invalid JSON response from CCT save:', text.substring(0, 200));
+                                }
+                                return null;
+                            }).catch(function() {
+                                return null;
+                            });
+                        })
+                        .then(function(body) {
+                            if (!response.ok) {
+                                // Log error and potentially retry
+                                const errorMessage = body && body.message ? body.message : 'Failed to save conversation';
+                                
+                                if (!silent && window.console && console.error) {
+                                    console.error('Failed to save conversation to CCT (attempt ' + (attempt + 1) + '):', body);
+                                }
+                                
+                                // Throw error to trigger retry logic
+                                const error = new Error(errorMessage);
+                                error.response = response;
+                                error.status = response.status;
+                                throw error;
+                            }
+                            return { success: true, attempt: attempt + 1 };
+                        });
+                })
+                .catch(function(error) {
+                    clearTimeout(timeoutId);
+                    
+                    // Check if we should retry
+                    const isTimeout = error.name === 'AbortError';
+                    const isNetworkError = !error.response;
+                    const isServerError = error.status && error.status >= 500;
+                    
+                    // Retry on timeout, network errors, or server errors (5xx)
+                    const shouldRetry = (isTimeout || isNetworkError || isServerError) && attempt < maxRetries;
+                    
+                    if (shouldRetry) {
+                        if (!silent && window.console && console.warn) {
+                            console.warn('Retrying CCT save (attempt ' + (attempt + 1) + ' of ' + maxRetries + ') after ' + retryDelay + 'ms...');
+                        }
+                        
+                        // Wait before retrying
+                        return new Promise(function(resolve) {
+                            setTimeout(function() {
+                                resolve(attemptSave(attempt + 1));
+                            }, retryDelay * (attempt + 1)); // Exponential backoff
+                        });
+                    }
+                    
+                    // No more retries - return failure status
+                    if (!silent && window.console && console.error) {
+                        console.error('Error saving conversation to CCT after ' + (attempt + 1) + ' attempts:', error);
+                    }
+                    
+                    const errorMessage = error && error.message ? error.message : 
+                                       (isTimeout ? 'Request timed out after ' + (timeout / 1000) + ' seconds' : 
+                                                   'Network error while saving conversation');
+                    
+                    return { 
+                        success: false, 
+                        error: errorMessage,
+                        attempts: attempt + 1,
+                        timeout: isTimeout
+                    };
+                });
+        }
+
+        return attemptSave(0);
     }
 
     function registerObjectUrl(url) {
@@ -1648,9 +1858,33 @@
             setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
 
             // Save to CCT before clearing
-            saveConversationToCCT(state).then(function() {
-                // After saving (or failing silently), proceed with clearing
-                performConversationClear(state);
+            saveConversationToCCT(state).then(function(result) {
+                if (!result || result.skipped) {
+                    // No save needed or save was skipped, proceed with clearing
+                    performConversationClear(state);
+                    return;
+                }
+
+                if (result.success) {
+                    // Save succeeded, proceed with clearing
+                    setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                    performConversationClear(state);
+                } else {
+                    // Save failed, ask user if they want to proceed anyway
+                    const errorMsg = result.error || 'Failed to save conversation';
+                    const proceedMsg = getString('saveFailedProceed', 'Failed to save conversation: ') + errorMsg + '. ' + 
+                                     getString('proceedAnyway', 'Do you want to proceed anyway? Your current conversation will be lost.');
+                    
+                    setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+                    
+                    if (confirm(proceedMsg)) {
+                        // User chose to proceed despite save failure
+                        performConversationClear(state);
+                    } else {
+                        // User cancelled, keep the conversation
+                        setStatus(state.container, getString('saveFailedKeepingConversation', 'Conversation not cleared. You can try again later.'));
+                    }
+                }
             });
         } else {
             // No messages to save, just clear
@@ -2104,6 +2338,17 @@
         return state.historyLoadPromise;
     }
 
+    function refreshHistorySessions(state) {
+        if (!state) {
+            return Promise.resolve();
+        }
+
+        // Reset the loaded state to force a fresh fetch
+        state.historyLoaded = false;
+        state.historyLoadPromise = loadHistorySessions(state);
+        return state.historyLoadPromise;
+    }
+
     function loadHistorySessions(state) {
         const endpoint = getHistoryEndpoint(state);
 
@@ -2161,6 +2406,18 @@
 
     function fetchHistorySessions(state, endpoint, perPage) {
         let url = endpoint;
+        
+        // Add user_id parameter
+        let userId = null;
+        if (state && state.config && typeof state.config.userId !== 'undefined') {
+            userId = state.config.userId;
+        } else if (typeof globalConfig.currentUserId !== 'undefined') {
+            userId = globalConfig.currentUserId;
+        }
+        
+        if (userId !== null) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'user_id=' + encodeURIComponent(userId);
+        }
 
         if (perPage && perPage > 0) {
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
@@ -2200,7 +2457,19 @@
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        const url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        let url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        
+        // Add user_id parameter
+        let userId = null;
+        if (state && state.config && typeof state.config.userId !== 'undefined') {
+            userId = state.config.userId;
+        } else if (typeof globalConfig.currentUserId !== 'undefined') {
+            userId = globalConfig.currentUserId;
+        }
+        
+        if (userId !== null) {
+            url += '&user_id=' + encodeURIComponent(userId);
+        }
 
         return fetch(url, {
             method: 'GET',
@@ -2230,6 +2499,14 @@
 
                     throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
                 });
+        }).catch(function (error) {
+            // Log error for debugging (handles both network-level and application-level errors)
+            if (window.console && console.error) {
+                console.error('Error fetching history session details:', error);
+            }
+            // Re-throw the error to propagate it to the caller
+            // Errors from the response handler above already have user-friendly messages
+            throw error;
         });
     }
 
@@ -4552,8 +4829,13 @@
     function init() {
         const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
+            // Skip if already initialized
+            if (container.hasAttribute('data-wp-mcp-ai-initialized')) {
+                return;
+            }
+
             const instanceId = container.getAttribute('id');
-            const config = instances[instanceId];
+            const config = window.wpMcpAiChatInstances[instanceId];
 
             if (!config) {
                 setStatus(container, getString('missingAssistant', 'Assistant configuration missing.'));
@@ -4578,6 +4860,7 @@
             const historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
             const historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
             const historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
+            const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -4652,6 +4935,7 @@
                 historyContainer: historyContainer,
                 historyStatus: historyStatusEl,
                 historyList: historyList,
+                historyRefresh: historyRefresh,
                 transcriptExpanded: false,
                 historyVisible: false,
                 historyLoaded: false,
@@ -4690,6 +4974,16 @@
                     }
 
                     toggleHistoryVisibility(state);
+                });
+            }
+
+            if (historyRefresh) {
+                historyRefresh.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    refreshHistorySessions(state);
                 });
             }
 
@@ -4784,6 +5078,9 @@
             
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
+
+            // Mark container as initialized to prevent double-initialization
+            container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
     }
 
@@ -5219,7 +5516,6 @@
                     }
                 }
                 finalize();
-                throw error;
             });
     }
 
@@ -6632,6 +6928,202 @@
         }
 
         return template.replace('%s', value);
+    }
+
+    /**
+     * Dedicated function for saving chat posts with enhanced error handling.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} saveData - Data to save (title, content, post_type, etc.)
+     * @param {Object} options - Optional settings (retry, timeout, etc.)
+     * @return {Promise} Promise that resolves with save result
+     */
+    function saveChatPost(state, saveData, options) {
+        if (!state || !state.config || !state.config.toolsEndpoint) {
+            return Promise.reject(new Error('Tools endpoint not configured'));
+        }
+
+        if (!saveData || (!saveData.content && !saveData.post_id)) {
+            return Promise.reject(new Error('Save data must include content or post_id'));
+        }
+
+        // Default options
+        const opts = options || {};
+        const maxRetries = opts.maxRetries || 1;
+        const retryDelay = opts.retryDelay || 1000;
+        const timeout = opts.timeout || 30000;
+
+        // Build the payload for save_post tool
+        const payload = {
+            assistant_id: state.config.assistantId,
+            tool: 'save_post',
+            arguments: {
+                title: saveData.title || '',
+                content: saveData.content || '',
+                post_type: saveData.post_type || 'post',
+                status: saveData.status || 'draft',
+            },
+        };
+
+        // Add optional fields
+        if (saveData.post_id) {
+            payload.arguments.post_id = parseInt(saveData.post_id, 10);
+        }
+        if (saveData.excerpt) {
+            payload.arguments.excerpt = saveData.excerpt;
+        }
+        if (saveData.slug) {
+            payload.arguments.slug = saveData.slug;
+        }
+
+        // Add session key if available
+        if (state.config.sessionKey) {
+            payload.session_key = state.config.sessionKey;
+        }
+
+        /**
+         * Internal function to attempt the save request.
+         * 
+         * @param {number} attempt - Current attempt number
+         * @return {Promise} Promise that resolves with response data
+         */
+        function attemptSave(attempt) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(function() {
+                controller.abort();
+            }, timeout);
+
+            return fetch(state.config.toolsEndpoint, {
+                method: 'POST',
+                headers: buildJsonHeaders(state),
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            })
+                .then(function(response) {
+                    clearTimeout(timeoutId);
+                    
+                    // Clone response for error handling
+                    const responseClone = response.clone();
+                    
+                    return response.json()
+                        .catch(function(parseError) {
+                            // If JSON parsing fails, try to get text for debugging
+                            return responseClone.text().then(function(text) {
+                                throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+                            }).catch(function() {
+                                throw parseError;
+                            });
+                        })
+                        .then(function(data) {
+                            if (!response.ok) {
+                                // Extract error message from response
+                                const errorMsg = (data && data.message) || 
+                                               (data && data.error) || 
+                                               'Save failed with status ' + response.status;
+                                throw new Error(errorMsg);
+                            }
+                            return data;
+                        });
+                })
+                .catch(function(error) {
+                    clearTimeout(timeoutId);
+                    
+                    // Check if we should retry
+                    if (attempt < maxRetries && !error.name === 'AbortError') {
+                        // Wait before retrying
+                        return new Promise(function(resolve) {
+                            setTimeout(function() {
+                                resolve(attemptSave(attempt + 1));
+                            }, retryDelay);
+                        });
+                    }
+                    
+                    // Transform error for better user feedback
+                    if (error.name === 'AbortError') {
+                        throw new Error('Save request timed out after ' + (timeout / 1000) + ' seconds');
+                    }
+                    
+                    throw error;
+                });
+        }
+
+        return attemptSave(0);
+    }
+
+    /**
+     * Helper function to save post from chat message.
+     * This wraps saveChatPost with user-friendly feedback.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} saveData - Data to save
+     * @return {Promise} Promise that resolves with formatted result
+     */
+    function savePostFromChat(state, saveData) {
+        if (!state || !state.container) {
+            return Promise.reject(new Error('Invalid chat state'));
+        }
+
+        // Show saving status
+        setStatus(state.container, getString('savingPost', 'Saving post...'));
+
+        return saveChatPost(state, saveData, {
+            maxRetries: 2,
+            retryDelay: 1000,
+            timeout: 30000,
+        })
+            .then(function(result) {
+                clearStatus(state.container);
+                
+                // Format success message
+                let message = 'Post saved successfully';
+                if (result && result.post_id) {
+                    message += ' (ID: ' + result.post_id + ')';
+                }
+                if (result && result.edit_url) {
+                    message += '. <a href="' + escapeHtml(result.edit_url) + '" target="_blank">Edit post</a>';
+                }
+                
+                // Show success message in chat
+                if (state.messagesEl) {
+                    appendMessage(state.messagesEl, 'system', {
+                        text: message,
+                        attachments: [],
+                    }, false);
+                }
+                
+                return result;
+            })
+            .catch(function(error) {
+                clearStatus(state.container);
+                
+                // Show error message
+                const errorMessage = error && error.message ? error.message : 'Failed to save post';
+                if (state.messagesEl) {
+                    appendMessage(state.messagesEl, 'system', {
+                        text: 'Error: ' + escapeHtml(errorMessage),
+                        attachments: [],
+                    }, false);
+                }
+                
+                throw error;
+            });
+    }
+
+    /**
+     * Escape HTML to prevent XSS in dynamic content.
+     * 
+     * @param {string} text - Text to escape
+     * @return {string} Escaped text
+     */
+    function escapeHtml(text) {
+        if (!text) {
+            return '';
+        }
+        
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     if (document.readyState === 'loading') {

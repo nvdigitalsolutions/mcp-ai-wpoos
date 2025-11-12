@@ -44,7 +44,7 @@ class WP_MCP_AI_Assistant_Tools_Test extends WP_UnitTestCase {
 		$group_map = $registry->get_tool_group_map();
 
 		$this->assertArrayHasKey( 'get_update_status', $group_map );
-		$this->assertSame( 'operations', $group_map['get_update_status'] );
+		$this->assertSame( 'wordpress-core', $group_map['get_update_status'] );
 	}
 
 	/**

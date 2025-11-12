@@ -227,9 +227,9 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 
 		$this->assertIsArray( $labels );
 		$this->assertNotEmpty( $labels );
-		$this->assertArrayHasKey( 'content', $labels );
-		$this->assertArrayHasKey( 'media', $labels );
-		$this->assertArrayHasKey( 'automation', $labels );
+		$this->assertArrayHasKey( 'wordpress-core', $labels );
+		$this->assertArrayHasKey( 'wordpress-plugins', $labels );
+		$this->assertArrayHasKey( 'external-tools', $labels );
 	}
 
 	/**

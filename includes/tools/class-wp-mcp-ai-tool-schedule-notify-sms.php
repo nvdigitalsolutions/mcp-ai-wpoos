@@ -30,6 +30,24 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 	}
 
 	/**
+	 * Check if the tool is available.
+	 *
+	 * @return bool Whether the NotifyLk SDK is available.
+	 */
+	public static function is_available() {
+		return class_exists( 'NotifyLk\Api\SmsApi' );
+	}
+
+	/**
+	 * Message explaining why the tool is unavailable.
+	 *
+	 * @return string Explanation message.
+	 */
+	public static function get_unavailable_reason() {
+		return __( 'The Schedule Notify.lk SMS tool is disabled because the notifylk/notify-php package is not installed.', 'wp-mcp-ai' );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {

@@ -116,6 +116,19 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'allow_sensitive_tools',
+			array(
+				'label'        => __( 'Allow Sensitive Tools', 'wp-mcp-ai' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
+				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'return_value' => 'true',
+				'default'      => 'false',
+				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'wp-mcp-ai' ),
+			)
+		);
+
 		$this->end_controls_section();
 
 		$this->start_controls_section(
@@ -1056,14 +1069,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		$assistants = get_posts(
 			array(
-				'post_type'             => WP_MCP_AI_Assistant_CPT::POST_TYPE,
-				'post_status'           => 'publish',
-				'numberposts'           => -1,
-				'orderby'               => 'title',
-				'order'                 => 'ASC',
-				'suppress_filters'      => true,
-				'fields'                => 'ids',
-				'no_found_rows'         => true,
+				'post_type'              => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status'            => 'publish',
+				'numberposts'            => -1,
+				'orderby'                => 'title',
+				'order'                  => 'ASC',
+				'suppress_filters'       => true,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
 				'update_post_term_cache' => false,  // Performance: Skip term cache.
 			)
 		);
@@ -1109,6 +1122,11 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'true' === $settings['enable_streaming'];
 		if ( $enable_streaming ) {
 			$attributes['enable_streaming'] = 'true';
+		}
+
+		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'true' === $settings['allow_sensitive_tools'];
+		if ( $allow_sensitive_tools ) {
+			$attributes['allow_sensitive_tools'] = 'true';
 		}
 
 		$shortcode = '[' . WP_MCP_AI_Shortcode::SHORTCODE;
@@ -1242,11 +1260,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			return true;
 		}
 
-		if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
+		if ( ! function_exists( 'wp_mcp_ai_get_effective_chat_capability' ) && ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 			return true;
 		}
 
-		$capability = wp_mcp_ai_get_required_chat_capability( absint( $assistant_id ), 'shortcode' );
+		// Use the effective capability (per-assistant or global).
+		$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+			? wp_mcp_ai_get_effective_chat_capability( absint( $assistant_id ), 'shortcode' )
+			: wp_mcp_ai_get_required_chat_capability( absint( $assistant_id ), 'shortcode' );
 
 		if ( ! $capability || 'public' === $capability ) {
 			return true;

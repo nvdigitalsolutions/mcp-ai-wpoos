@@ -57,54 +57,54 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected $client;
 
-	/**
-	 * Authentication handler.
-	 *
-	 * @var WP_MCP_AI_REST_Authenticator
-	 */
-	protected $authenticator;
+		/**
+		 * Authentication handler.
+		 *
+		 * @var WP_MCP_AI_REST_Authenticator
+		 */
+		protected $authenticator;
 
-	/**
-	 * Request validator and sanitizer.
-	 *
-	 * @var WP_MCP_AI_REST_Validator
-	 */
-	protected $validator;
+		/**
+		 * Request validator and sanitizer.
+		 *
+		 * @var WP_MCP_AI_REST_Validator
+		 */
+		protected $validator;
 
-	/**
-	 * Server-Sent Events handler.
-	 *
-	 * @var WP_MCP_AI_SSE_Handler
-	 */
-	protected $sse_handler;
+		/**
+		 * Server-Sent Events handler.
+		 *
+		 * @var WP_MCP_AI_SSE_Handler
+		 */
+		protected $sse_handler;
 
-	/**
-	 * Chat service.
-	 *
-	 * @var WP_MCP_AI_Chat_Service
-	 */
-	protected $chat_service;
+		/**
+		 * Chat service.
+		 *
+		 * @var WP_MCP_AI_Chat_Service
+		 */
+		protected $chat_service;
 
-	/**
-	 * Assistant service.
-	 *
-	 * @var WP_MCP_AI_Assistant_Service
-	 */
-	protected $assistant_service;
+		/**
+		 * Assistant service.
+		 *
+		 * @var WP_MCP_AI_Assistant_Service
+		 */
+		protected $assistant_service;
 
-	/**
-	 * Tool service.
-	 *
-	 * @var WP_MCP_AI_Tool_Service
-	 */
-	protected $tool_service;
+		/**
+		 * Tool service.
+		 *
+		 * @var WP_MCP_AI_Tool_Service
+		 */
+		protected $tool_service;
 
-	/**
-	 * File service.
-	 *
-	 * @var WP_MCP_AI_File_Service
-	 */
-	protected $file_service;
+		/**
+		 * File service.
+		 *
+		 * @var WP_MCP_AI_File_Service
+		 */
+		protected $file_service;
 
 		/**
 		 * Tracks authentication details for the current request.
@@ -135,6 +135,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->sse_handler   = new WP_MCP_AI_SSE_Handler();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
+
+			// Register Token Manager REST endpoints.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-token-manager.php';
+			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Token_Manager', 'register_routes' ) );
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
@@ -389,7 +394,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 											'oneOf'       => array(
 												array( 'type' => 'string' ),
 												array(
-													'type'  => 'array',
+													'type' => 'array',
 													'items' => array(
 														'type' => 'object',
 													),
@@ -464,7 +469,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						),
 					),
 				),
-			true
+				true
 			);
 
 			// Register /chat-client endpoint for browser-based chat UI (relaxed iteration limits).
@@ -500,7 +505,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 											'oneOf'       => array(
 												array( 'type' => 'string' ),
 												array(
-													'type'  => 'array',
+													'type' => 'array',
 													'items' => array(
 														'type' => 'object',
 													),
@@ -658,7 +663,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 											'oneOf'       => array(
 												array( 'type' => 'string' ),
 												array(
-													'type'  => 'array',
+													'type' => 'array',
 													'items' => array(
 														'type' => 'object',
 													),
@@ -890,6 +895,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$user_id      = absint( $request->get_param( 'user_id' ) );
 			$current_user = get_current_user_id();
 
+			// Check for guest token authentication.
+			$guest_token = $this->extract_guest_token( $request );
+			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				$assistant_id    = absint( $request->get_param( 'assistant_id' ) );
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id );
+
+				if ( $guest_assistant ) {
+					// Guest users (not logged in) can access their own transcripts (user_id = 0).
+					// Set user_id to 0 if not explicitly provided, matching how chat transcripts are saved for guests.
+					if ( ! $user_id ) {
+						$user_id = 0;
+						$request->set_param( 'user_id', $user_id );
+					}
+
+					// Allow guest users to access transcripts with user_id = 0.
+					if ( 0 === $user_id ) {
+						return true;
+					}
+				}
+			}
+
 			if ( ! $user_id && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
@@ -932,9 +958,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( ! $user_id ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'handle_chat_transcripts: No user ID available',
+					array(
+						'requested_user_id'  => $request->get_param( 'user_id' ),
+						'current_user_id'    => get_current_user_id(),
+						'is_user_logged_in'  => is_user_logged_in(),
+					)
+				);
+
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_user',
-					__( 'A valid user is required to query chat transcripts.', 'wp-mcp-ai' ),
+					__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -942,10 +978,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$session_key  = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcripts: Request parameters',
+				array(
+					'raw_session_key'        => $request->get_param( 'session_key' ),
+					'normalized_session_key' => $session_key,
+					'user_id'                => $user_id,
+					'assistant_id'           => $assistant_id,
+				)
+			);
+
 			if ( '' !== $session_key ) {
 				$session = $this->get_transcript_session( $user_id, $session_key, $assistant_id );
 
 				if ( is_wp_error( $session ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'handle_chat_transcripts: Error retrieving session',
+						array(
+							'error_code'    => $session->get_error_code(),
+							'error_message' => $session->get_error_message(),
+							'session_key'   => $session_key,
+							'user_id'       => $user_id,
+						)
+					);
+
 					if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
 						return rest_ensure_response(
 							array(
@@ -1068,13 +1126,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get user ID.
 			$user_id = get_current_user_id();
 
-			if ( ! $user_id ) {
-				return new WP_Error(
-					'wp_mcp_ai_transcripts_missing_user',
-					__( 'You must be logged in to save a transcript.', 'wp-mcp-ai' ),
-					array( 'status' => 401 )
-				);
-			}
+			// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
+			// The permission check already validated the guest token if present.
 
 			// Get assistant configuration for metadata.
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
@@ -1090,10 +1143,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Build context for the transcript recorder.
 			$context = array(
-				'session_key'            => $session_key,
-				'save_transcript'        => true,
-				'request_started_at'     => microtime( true ),
-				'response_completed_at'  => microtime( true ),
+				'session_key'           => $session_key,
+				'save_transcript'       => true,
+				'request_started_at'    => microtime( true ),
+				'response_completed_at' => microtime( true ),
 			);
 
 			// Use the transcript recorder to save.
@@ -1555,7 +1608,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->reset_auth_context();
 
 			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
-			$capability   = wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
+
+			// Use the effective capability (per-assistant or global).
+			$capability = function_exists( 'wp_mcp_ai_get_effective_chat_capability' )
+				? wp_mcp_ai_get_effective_chat_capability( $assistant_id, 'rest' )
+				: wp_mcp_ai_get_required_chat_capability( $assistant_id, 'rest' );
 
 			$guest_token = $this->extract_guest_token( $request );
 
@@ -2048,7 +2105,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				// Execute each tool and collect results.
 				foreach ( $tool_calls as $tool_call ) {
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
 
 					// Extract tool call metadata for message construction.
 					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
@@ -2304,231 +2361,47 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 		/**
 		 * Handle chat request with SSE streaming support for agentic loop.
-		*
-		* Streams tool execution status and results in real-time during the agentic loop.
-		*
-		* Note: This method uses exit after streaming is complete, which is necessary
-		* for SSE to work properly. The exit ensures no additional output is sent
-		* after the [DONE] marker.
-		*
-	 * Note: While 8 parameters exceeds typical guidelines, this maintains consistency
-	 * with how the non-streaming handler is invoked and keeps all context together.
-	 * Grouping into objects would add unnecessary complexity for internal use.
-	 *
-	 * @param int              $assistant_id        Assistant post ID.
-	 * @param array            $messages            Chat messages array.
-	 * @param array            $options             Chat options.
-	 * @param array            $assistant_config    Assistant configuration.
-	 * @param array            $transcript_context  Transcript recording context.
-	 * @param WP_REST_Request  $request             REST request instance.
-	 * @param int              $user_id             Current user ID.
-	 * @param int              $max_iterations      Maximum agentic loop iterations.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
-		// Set up SSE headers.
-		$this->send_sse_headers();
+		 *
+		 * Streams tool execution status and results in real-time during the agentic loop.
+		 *
+		 * Note: This method uses exit after streaming is complete, which is necessary
+		 * for SSE to work properly. The exit ensures no additional output is sent
+		 * after the [DONE] marker.
+		 *
+		 * Note: While 8 parameters exceeds typical guidelines, this maintains consistency
+		 * with how the non-streaming handler is invoked and keeps all context together.
+		 * Grouping into objects would add unnecessary complexity for internal use.
+		 *
+		 * @param int             $assistant_id        Assistant post ID.
+		 * @param array           $messages            Chat messages array.
+		 * @param array           $options             Chat options.
+		 * @param array           $assistant_config    Assistant configuration.
+		 * @param array           $transcript_context  Transcript recording context.
+		 * @param WP_REST_Request $request             REST request instance.
+		 * @param int             $user_id             Current user ID.
+		 * @param int             $max_iterations      Maximum agentic loop iterations.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		protected function handle_chat_request_with_streaming( $assistant_id, $messages, $options, $assistant_config, $transcript_context, $request, $user_id, $max_iterations ) {
+			// Set up SSE headers.
+			$this->send_sse_headers();
 
-		// Send initial status.
-		$this->send_sse_event(
-			'status',
-			array(
-				'type'         => 'thinking',
-				'message'      => __( 'Processing your request…', 'wp-mcp-ai' ),
-				'assistant_id' => $assistant_id,
-			)
-		);
-
-		$iteration            = 0;
-		$tool_result_messages = array();
-
-		$transcript_context['request_started_at'] = microtime( true );
-		$response                                 = $this->client->create_chat_completion( $messages, $options );
-		$transcript_context['response_completed_at'] = microtime( true );
-
-		if ( ! is_wp_error( $response ) ) {
-			$response = $this->maybe_convert_failed_chat_response( $response );
-		}
-
-		if ( is_wp_error( $response ) ) {
-			$this->send_sse_event(
-				'error',
-				array(
-					'code'    => $response->get_error_code(),
-					'message' => $response->get_error_message(),
-				)
-			);
-			$this->send_sse_done();
-			exit;
-		}
-
-		// Agentic loop with streaming updates.
-		while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
-			$tool_calls = $this->extract_tool_calls_from_response( $response );
-
-			if ( empty( $tool_calls ) ) {
-				break; // No more tools to execute.
-			}
-
-			// Stream tool execution status.
-			$this->send_sse_event(
-				'tool_execution',
-				array(
-					'type'       => 'start',
-					'iteration'  => $iteration,
-					'tool_count' => count( $tool_calls ),
-					'tools'      => array_map(
-						function ( $tool_call ) {
-							return isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : 'unknown';
-						},
-						$tool_calls
-					),
-				)
-			);
-
-			// Add assistant message with tool_calls to conversation.
-			$assistant_message = $this->extract_assistant_message_from_response( $response );
-			if ( $assistant_message ) {
-				$messages[] = $assistant_message;
-			}
-
-			// Execute each tool and stream results.
-			foreach ( $tool_calls as $tool_call ) {
-				$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
-				$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
-
-				// Stream tool start event.
-				$this->send_sse_event(
-					'tool_execution',
-					array(
-						'type'      => 'tool_start',
-						'tool_name' => $tool_name,
-						'tool_id'   => $tool_call_id,
-					)
-				);
-
-				$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request );
-
-				// Stream tool result event.
-				$this->send_sse_event(
-					'tool_execution',
-					array(
-						'type'      => 'tool_result',
-						'tool_name' => $tool_name,
-						'tool_id'   => $tool_call_id,
-						'result'    => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
-					)
-				);
-
-				// Create full tool message for frontend.
-				$full_tool_message = array(
-					'role'    => 'tool',
-					'content' => $tool_result,
-				);
-
-				if ( '' !== $tool_call_id ) {
-					$full_tool_message['tool_call_id'] = $tool_call_id;
-				}
-
-				if ( '' !== $tool_name ) {
-					$full_tool_message['name'] = $tool_name;
-				}
-
-				$tool_result_messages[] = $full_tool_message;
-
-				// Create sanitized version for LLM.
-				$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
-
-				$tool_message = array(
-					'role'    => 'tool',
-					'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
-				);
-
-				if ( '' !== $tool_call_id ) {
-					$tool_message['tool_call_id'] = $tool_call_id;
-				}
-
-				if ( '' !== $tool_name ) {
-					$tool_message['name'] = $tool_name;
-				}
-
-				$messages[] = $tool_message;
-			}
-
-			// Validate token budget before next iteration.
-			$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
-			$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
-			$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
-
-			if ( is_wp_error( $tpm_validation ) ) {
-				// Handle model switching or truncation (same logic as non-streaming).
-				$settings            = WP_MCP_AI_Admin_Settings::get_settings();
-				$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
-				$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
-				$switched_model      = false;
-
-				if ( $auto_switch_enabled && $fallback_model !== $model ) {
-					$fallback_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $fallback_model, $max_output_tokens );
-
-					if ( ! is_wp_error( $fallback_validation ) ) {
-						$options['model'] = $fallback_model;
-						$model            = $fallback_model;
-						$switched_model   = true;
-
-						$this->send_sse_event(
-							'status',
-							array(
-								'type'    => 'model_switched',
-								'message' => sprintf(
-									/* translators: %s: New model name */
-									__( 'Switched to %s for higher token capacity.', 'wp-mcp-ai' ),
-									$fallback_model
-								),
-							)
-						);
-					}
-				}
-
-				if ( ! $switched_model ) {
-					$tpm_limit     = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
-					$target_tokens = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
-					$messages      = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
-
-					$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
-
-					if ( is_wp_error( $tpm_validation ) ) {
-						$this->send_sse_event(
-							'error',
-							array(
-								'code'    => $tpm_validation->get_error_code(),
-								'message' => $tpm_validation->get_error_message(),
-							)
-						);
-						$this->send_sse_done();
-						exit;
-					}
-
-					$this->send_sse_event(
-						'status',
-						array(
-							'type'    => 'messages_truncated',
-							'message' => __( 'Reduced context to fit token limits.', 'wp-mcp-ai' ),
-						)
-					);
-				}
-			}
-
-			// Stream thinking status.
+			// Send initial status.
 			$this->send_sse_event(
 				'status',
 				array(
-					'type'    => 'thinking',
-					'message' => __( 'Analyzing tool results…', 'wp-mcp-ai' ),
+					'type'         => 'thinking',
+					'message'      => __( 'Processing your request…', 'wp-mcp-ai' ),
+					'assistant_id' => $assistant_id,
 				)
 			);
 
-			// Call LLM again with tool results.
-			$response = $this->client->create_chat_completion( $messages, $options );
+			$iteration            = 0;
+			$tool_result_messages = array();
+
+			$transcript_context['request_started_at']    = microtime( true );
+			$response                                    = $this->client->create_chat_completion( $messages, $options );
+			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {
 				$response = $this->maybe_convert_failed_chat_response( $response );
@@ -2546,90 +2419,274 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				exit;
 			}
 
-			++$iteration;
-		}
+			// Agentic loop with streaming updates.
+			while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
+				$tool_calls = $this->extract_tool_calls_from_response( $response );
 
-		if ( $iteration >= $max_iterations ) {
-			$this->send_sse_event(
-				'status',
-				array(
-					'type'    => 'max_iterations',
-					'message' => __( 'Reached maximum tool execution iterations.', 'wp-mcp-ai' ),
-				)
-			);
-		}
+				if ( empty( $tool_calls ) ) {
+					break; // No more tools to execute.
+				}
 
-		// Log and record transcript.
-		WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+				// Stream tool execution status.
+				$this->send_sse_event(
+					'tool_execution',
+					array(
+						'type'       => 'start',
+						'iteration'  => $iteration,
+						'tool_count' => count( $tool_calls ),
+						'tools'      => array_map(
+							function ( $tool_call ) {
+								return isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : 'unknown';
+							},
+							$tool_calls
+						),
+					)
+				);
 
-		if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
-			WP_MCP_AI_Chat_Transcript_Recorder::record(
-				$assistant_id,
-				$messages,
-				$options,
-				$response,
-				$request,
+				// Add assistant message with tool_calls to conversation.
+				$assistant_message = $this->extract_assistant_message_from_response( $response );
+				if ( $assistant_message ) {
+					$messages[] = $assistant_message;
+				}
+
+				// Execute each tool and stream results.
+				foreach ( $tool_calls as $tool_call ) {
+					$tool_name    = isset( $tool_call['function']['name'] ) ? $tool_call['function']['name'] : '';
+					$tool_call_id = isset( $tool_call['id'] ) ? $tool_call['id'] : '';
+
+					// Stream tool start event.
+					$this->send_sse_event(
+						'tool_execution',
+						array(
+							'type'      => 'tool_start',
+							'tool_name' => $tool_name,
+							'tool_id'   => $tool_call_id,
+						)
+					);
+
+					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations );
+
+					// Stream tool result event.
+					$this->send_sse_event(
+						'tool_execution',
+						array(
+							'type'      => 'tool_result',
+							'tool_name' => $tool_name,
+							'tool_id'   => $tool_call_id,
+							'result'    => $this->validator->sanitize_tool_result_for_display( $tool_result, $tool_name ),
+						)
+					);
+
+					// Create full tool message for frontend.
+					$full_tool_message = array(
+						'role'    => 'tool',
+						'content' => $tool_result,
+					);
+
+					if ( '' !== $tool_call_id ) {
+						$full_tool_message['tool_call_id'] = $tool_call_id;
+					}
+
+					if ( '' !== $tool_name ) {
+						$full_tool_message['name'] = $tool_name;
+					}
+
+					$tool_result_messages[] = $full_tool_message;
+
+					// Create sanitized version for LLM.
+					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+
+					$tool_message = array(
+						'role'    => 'tool',
+						'content' => is_string( $sanitized_result ) ? $sanitized_result : wp_json_encode( $sanitized_result ),
+					);
+
+					if ( '' !== $tool_call_id ) {
+						$tool_message['tool_call_id'] = $tool_call_id;
+					}
+
+					if ( '' !== $tool_name ) {
+						$tool_message['name'] = $tool_name;
+					}
+
+					$messages[] = $tool_message;
+				}
+
+				// Validate token budget before next iteration.
+				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
+				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
+				$tpm_validation    = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+				if ( is_wp_error( $tpm_validation ) ) {
+					// Handle model switching or truncation (same logic as non-streaming).
+					$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
+					$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
+					$switched_model      = false;
+
+					if ( $auto_switch_enabled && $fallback_model !== $model ) {
+						$fallback_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $fallback_model, $max_output_tokens );
+
+						if ( ! is_wp_error( $fallback_validation ) ) {
+							$options['model'] = $fallback_model;
+							$model            = $fallback_model;
+							$switched_model   = true;
+
+							$this->send_sse_event(
+								'status',
+								array(
+									'type'    => 'model_switched',
+									'message' => sprintf(
+										/* translators: %s: New model name */
+										__( 'Switched to %s for higher token capacity.', 'wp-mcp-ai' ),
+										$fallback_model
+									),
+								)
+							);
+						}
+					}
+
+					if ( ! $switched_model ) {
+						$tpm_limit     = WP_MCP_AI_Token_Budget_Manager::get_model_tpm_limit( $model );
+						$target_tokens = $tpm_limit ? (int) ( $tpm_limit * self::TPM_SAFETY_MARGIN ) : self::TPM_FALLBACK_TOKENS;
+						$messages      = WP_MCP_AI_Token_Budget_Manager::truncate_messages( $messages, $model, $target_tokens );
+
+						$tpm_validation = WP_MCP_AI_Token_Budget_Manager::validate_tpm_limit( $messages, $model, $max_output_tokens );
+
+						if ( is_wp_error( $tpm_validation ) ) {
+							$this->send_sse_event(
+								'error',
+								array(
+									'code'    => $tpm_validation->get_error_code(),
+									'message' => $tpm_validation->get_error_message(),
+								)
+							);
+							$this->send_sse_done();
+							exit;
+						}
+
+						$this->send_sse_event(
+							'status',
+							array(
+								'type'    => 'messages_truncated',
+								'message' => __( 'Reduced context to fit token limits.', 'wp-mcp-ai' ),
+							)
+						);
+					}
+				}
+
+				// Stream thinking status.
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'thinking',
+						'message' => __( 'Analyzing tool results…', 'wp-mcp-ai' ),
+					)
+				);
+
+				// Call LLM again with tool results.
+				$response = $this->client->create_chat_completion( $messages, $options );
+
+				if ( ! is_wp_error( $response ) ) {
+					$response = $this->maybe_convert_failed_chat_response( $response );
+				}
+
+				if ( is_wp_error( $response ) ) {
+					$this->send_sse_event(
+						'error',
+						array(
+							'code'    => $response->get_error_code(),
+							'message' => $response->get_error_message(),
+						)
+					);
+					$this->send_sse_done();
+					exit;
+				}
+
+				++$iteration;
+			}
+
+			if ( $iteration >= $max_iterations ) {
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'max_iterations',
+						'message' => __( 'Reached maximum tool execution iterations.', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
+			// Log and record transcript.
+			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
+
+			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+				WP_MCP_AI_Chat_Transcript_Recorder::record(
+					$assistant_id,
+					$messages,
+					$options,
+					$response,
+					$request,
+					$user_id,
+					$transcript_context
+				);
+			}
+
+			WP_MCP_AI_Usage_Tracker::record_chat_usage(
 				$user_id,
-				$transcript_context
+				$assistant_id,
+				$options,
+				$response
 			);
+
+			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
+
+			// Stream final response.
+			$payload = array(
+				'assistant_id' => $assistant_id,
+				'data'         => $response,
+			);
+
+			if ( ! empty( $tool_result_messages ) ) {
+				$payload['tool_results'] = $tool_result_messages;
+			}
+
+			$this->send_sse_event( 'message', $payload );
+			$this->send_sse_done();
+
+			exit;
 		}
 
-		WP_MCP_AI_Usage_Tracker::record_chat_usage(
-			$user_id,
-			$assistant_id,
-			$options,
-			$response
-		);
-
-		do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
-
-		// Stream final response.
-		$payload = array(
-			'assistant_id' => $assistant_id,
-			'data'         => $response,
-		);
-
-		if ( ! empty( $tool_result_messages ) ) {
-			$payload['tool_results'] = $tool_result_messages;
+		/**
+		 * Send SSE headers for streaming response.
+		 *
+		 * Delegates to SSE handler.
+		 *
+		 * @since 1.0.0
+		 */
+		protected function send_sse_headers() {
+			$this->sse_handler->send_sse_headers();
 		}
 
-		$this->send_sse_event( 'message', $payload );
-		$this->send_sse_done();
+		/**
+		 * Send an SSE event.
+		 *
+		 * Delegates to SSE handler.
+		 *
+		 * @param string $event Event name.
+		 * @param array  $data  Event data.
+		 */
+		protected function send_sse_event( $event, $data ) {
+			$this->sse_handler->send_sse_event( $event, $data );
+		}
 
-		exit;
-	}
-
-	/**
-	 * Send SSE headers for streaming response.
-	 *
-	 * Delegates to SSE handler.
-	 *
-	 * @since 1.0.0
-	 */
-	protected function send_sse_headers() {
-		$this->sse_handler->send_sse_headers();
-	}
-
-	/**
-	 * Send an SSE event.
-	 *
-	 * Delegates to SSE handler.
-	 *
-	 * @param string $event Event name.
-	 * @param array  $data  Event data.
-	 */
-	protected function send_sse_event( $event, $data ) {
-		$this->sse_handler->send_sse_event( $event, $data );
-	}
-
-	/**
-	 * Send SSE done marker.
-	 *
-	 * Delegates to SSE handler.
-	 */
-	protected function send_sse_done() {
-		$this->sse_handler->send_sse_done();
-	}
+		/**
+		 * Send SSE done marker.
+		 *
+		 * Delegates to SSE handler.
+		 */
+		protected function send_sse_done() {
+			$this->sse_handler->send_sse_done();
+		}
 
 		/**
 		 * Determine whether the current request prefers an event stream response.
@@ -3226,28 +3283,53 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
+			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
+			try {
+				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $prepared_arguments, $context );
 
-			$result = $tool->execute( $prepared_arguments, $context );
+				$result = $tool->execute( $prepared_arguments, $context );
 
-			if ( is_wp_error( $result ) ) {
+				if ( is_wp_error( $result ) ) {
+					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
+					return $result;
+				}
+
+				$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
+
+				// Orchestration Layer: Adjust result to fit within budget constraints.
+				if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+					$result = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+				}
+
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
-				return $result;
+
+				/**
+				 * Fires after a registered tool has completed execution.
+				 *
+				 * @param string           $tool_slug Tool identifier.
+				 * @param array            $arguments Arguments passed in the request.
+				 * @param array            $context   Execution context including user_id and assistant_id.
+				 * @param mixed            $result    Tool result after filters have been applied.
+				 */
+				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
+
+			} catch ( Exception $e ) {
+				// Orchestration Layer: Budget constraint violation.
+				WP_MCP_AI_Logger::log_error(
+					'Tool execution blocked by orchestration layer',
+					array(
+						'tool_slug' => $tool_slug,
+						'error'     => $e->getMessage(),
+						'context'   => $context,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_budget_exceeded',
+					$e->getMessage(),
+					array( 'status' => 429 )
+				);
 			}
-
-			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $prepared_arguments, $context );
-
-			WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $prepared_arguments, $result, $context );
-
-			/**
-			 * Fires after a registered tool has completed execution.
-			 *
-			 * @param string           $tool_slug Tool identifier.
-			 * @param array            $arguments Arguments passed in the request.
-			 * @param array            $context   Execution context including user_id and assistant_id.
-			 * @param mixed            $result    Tool result after filters have been applied.
-			 */
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $prepared_arguments, $context, $result );
 
 			return rest_ensure_response(
 				array(
@@ -3969,6 +4051,83 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$context['provider']     = isset( $context['provider'] ) ? sanitize_key( $context['provider'] ) : '';
 			$context['model']        = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
 
+			// Pre-flight token count validation using resource manager budget.
+			$resource_mgr     = WP_MCP_AI_Resource_Manager::instance();
+			$max_input_tokens = $resource_mgr->get_max_input_tokens();
+
+			// Estimate current token count.
+			$estimated_tokens = 0;
+			foreach ( $messages as $message ) {
+				if ( isset( $message['content'] ) ) {
+					if ( is_string( $message['content'] ) ) {
+						$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $message['content'] );
+					} elseif ( is_array( $message['content'] ) ) {
+						foreach ( $message['content'] as $segment ) {
+							if ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment['text'] );
+							} elseif ( is_string( $segment ) ) {
+								$estimated_tokens += WP_MCP_AI_Text_Chunker::estimate_tokens( $segment );
+							}
+						}
+					}
+				}
+			}
+
+			// Check if request exceeds budget.
+			if ( $estimated_tokens > $max_input_tokens ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_request_token_budget_exceeded',
+					'Request exceeded maximum input token budget.',
+					array(
+						'estimated_tokens' => $estimated_tokens,
+						'max_input_tokens' => $max_input_tokens,
+						'message_count'    => count( $messages ),
+					)
+				);
+
+				// Attempt to trim to budget using text chunker.
+				$messages = $this->trim_messages_to_token_budget( $messages, $max_input_tokens );
+
+				// Re-estimate after trimming.
+				$estimated_tokens_after = 0;
+				foreach ( $messages as $message ) {
+					if ( isset( $message['content'] ) ) {
+						if ( is_string( $message['content'] ) ) {
+							$estimated_tokens_after += WP_MCP_AI_Text_Chunker::estimate_tokens( $message['content'] );
+						}
+					}
+				}
+
+				// If still over budget, return error.
+				if ( $estimated_tokens_after > $max_input_tokens ) {
+					return new WP_Error(
+						'wp_mcp_ai_token_budget_exceeded',
+						sprintf(
+							/* translators: 1: Token count, 2: Maximum allowed tokens */
+							__( 'Request token count (%1$d) exceeds maximum allowed (%2$d) even after trimming. Please reduce message length.', 'wp-mcp-ai' ),
+							$estimated_tokens_after,
+							$max_input_tokens
+						),
+						array(
+							'status'           => 413,
+							'estimated_tokens' => $estimated_tokens,
+							'max_input_tokens' => $max_input_tokens,
+							'trimmed_tokens'   => $estimated_tokens_after,
+						)
+					);
+				}
+
+				WP_MCP_AI_Logger::log_event(
+					'chat_request_trimmed_to_budget',
+					'Messages trimmed to fit token budget.',
+					array(
+						'original_tokens' => $estimated_tokens,
+						'trimmed_tokens'  => $estimated_tokens_after,
+						'max_tokens'      => $max_input_tokens,
+					)
+				);
+			}
+
 			// Apply message count limit before token-based trimming.
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
 			$max_message_count = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
@@ -4433,6 +4592,55 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$message['content'] = array_values( $kept );
 
 			return $message;
+		}
+
+		/**
+		 * Trim messages to fit within a token budget.
+		 *
+		 * @param array $messages     Array of messages to trim.
+		 * @param int   $max_tokens   Maximum token budget.
+		 * @return array Trimmed messages.
+		 */
+		protected function trim_messages_to_token_budget( array $messages, $max_tokens ) {
+			$max_tokens = max( 100, absint( $max_tokens ) );
+
+			// Separate system messages from other messages.
+			$system_messages = array();
+			$other_messages  = array();
+
+			foreach ( $messages as $message ) {
+				$role = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : '';
+				if ( 'system' === $role ) {
+					$system_messages[] = $message;
+				} else {
+					$other_messages[] = $message;
+				}
+			}
+
+			// Trim each message content using the text chunker.
+			$trimmed_messages = array();
+
+			foreach ( $system_messages as $message ) {
+				if ( isset( $message['content'] ) && is_string( $message['content'] ) ) {
+					$message['content'] = WP_MCP_AI_Text_Chunker::trim_to_token_budget(
+						$message['content'],
+						(int) ( $max_tokens * 0.2 ) // Reserve 20% for system messages.
+					);
+				}
+				$trimmed_messages[] = $message;
+			}
+
+			foreach ( $other_messages as $message ) {
+				if ( isset( $message['content'] ) && is_string( $message['content'] ) ) {
+					$message['content'] = WP_MCP_AI_Text_Chunker::trim_to_token_budget(
+						$message['content'],
+						(int) ( $max_tokens * 0.8 / max( 1, count( $other_messages ) ) )
+					);
+				}
+				$trimmed_messages[] = $message;
+			}
+
+			return $trimmed_messages;
 		}
 
 		/**
@@ -5218,6 +5426,28 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$length = $this->mb_strlen( $text );
 			$limit  = min( $available_total, min( $length, self::MEMORY_MAX_DOCUMENT_CHARS ) );
 
+			// If the document is significantly larger than limit, summarize instead of truncate.
+			if ( $length > $limit * 2 && $limit > 500 ) {
+				WP_MCP_AI_Logger::log_event(
+					'memory_document_summarization',
+					'Summarizing large memory document to fit budget.',
+					array(
+						'original_length' => $length,
+						'target_length'   => $limit,
+					)
+				);
+
+				$text   = WP_MCP_AI_Document_Summarizer::summarize_if_needed(
+					$text,
+					array(
+						'force_summarize' => true,
+						'target_chars'    => $limit,
+					)
+				);
+				$length = $this->mb_strlen( $text );
+				$limit  = min( $available_total, $length );
+			}
+
 			$chunks = array();
 
 			for ( $offset = 0; $offset < $limit; $offset += self::MEMORY_CHUNK_CHARS ) {
@@ -5230,7 +5460,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			$truncated = $limit < $length;
+			$truncated = $limit < $this->mb_strlen( $text );
 
 			if ( $truncated && ! empty( $chunks ) ) {
 				$chunks[ count( $chunks ) - 1 ] .= "\n\n[" . __( 'Truncated', 'wp-mcp-ai' ) . ']';
@@ -6507,9 +6737,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param array           $assistant_config Assistant configuration.
 		 * @param int             $user_id          User ID.
 		 * @param WP_REST_Request $request          Original REST request.
+		 * @param int             $iteration        Current iteration number (default 0).
+		 * @param int             $max_iterations   Maximum iterations (default 5).
 		 * @return mixed Tool execution result.
 		 */
-		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request ) {
+		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5 ) {
 			if ( ! isset( $tool_call['function']['name'] ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'wp-mcp-ai' ) );
 			}
@@ -6520,7 +6752,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( isset( $tool_call['function']['arguments'] ) ) {
 				if ( is_string( $tool_call['function']['arguments'] ) ) {
 					$arguments_string = trim( $tool_call['function']['arguments'] );
-					
+
 					// Empty string is valid - means no arguments.
 					if ( '' === $arguments_string ) {
 						$arguments = array();
@@ -6534,11 +6766,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								WP_MCP_AI_Logger::log_error(
 									'Tool call arguments JSON decoded to non-array',
 									array(
-										'tool_name'     => $tool_name,
-										'arguments'     => $arguments_string,
-										'decoded_type'  => gettype( $decoded ),
-										'assistant_id'  => $assistant_id,
-										'agentic_loop'  => true,
+										'tool_name'    => $tool_name,
+										'arguments'    => $arguments_string,
+										'decoded_type' => gettype( $decoded ),
+										'assistant_id' => $assistant_id,
+										'agentic_loop' => true,
 									)
 								);
 								/* translators: %s: tool name */
@@ -6550,11 +6782,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							WP_MCP_AI_Logger::log_error(
 								'Tool call arguments JSON decode failed',
 								array(
-									'tool_name'     => $tool_name,
-									'arguments'     => $arguments_string,
-									'json_error'    => $json_error,
-									'assistant_id'  => $assistant_id,
-									'agentic_loop'  => true,
+									'tool_name'    => $tool_name,
+									'arguments'    => $arguments_string,
+									'json_error'   => $json_error,
+									'assistant_id' => $assistant_id,
+									'agentic_loop' => true,
 								)
 							);
 							/* translators: 1: tool name, 2: JSON error message */
@@ -6591,11 +6823,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$context = array(
-				'user_id'          => $user_id,
-				'assistant_id'     => $assistant_id,
-				'request'          => $request,
-				'assistant_config' => $assistant_config,
-				'agentic_loop'     => true,
+				'user_id'               => $user_id,
+				'assistant_id'          => $assistant_id,
+				'request'               => $request,
+				'assistant_config'      => $assistant_config,
+				'agentic_loop'          => true,
+				'iteration'             => $iteration,
+				'max_iterations'        => $max_iterations,
+				'endpoint'              => $request->get_route(),
+				'allow_sensitive_tools' => $request->get_param( 'allow_sensitive_tools' ) === true,
 			);
 
 			// Special handling for run_openai_external_action tool.
@@ -6609,22 +6845,96 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
+			// Filter arguments to only include parameters defined in the tool's schema.
+			// This prevents "Invalid parameter(s)" errors when AI providers include extra
+			// parameters like 'messages' that aren't in the tool's schema.
+			$arguments = $this->filter_tool_arguments_by_schema( $tool, $arguments );
 
-			$result = $tool->execute( $arguments, $context );
+			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
+			try {
+				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
-			if ( is_wp_error( $result ) ) {
+				$result = $tool->execute( $arguments, $context );
+
+				if ( is_wp_error( $result ) ) {
+					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+					return $result->get_error_message();
+				}
+
+				$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
+
+				// Orchestration Layer: Adjust result to fit within budget constraints.
+				if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+					$result = WP_MCP_AI_Tool_Token_Limits::adjust_tool_result_for_budget( $result, $tool_slug, $context );
+				}
+
 				WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
-				return $result->get_error_message();
+
+				do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
+
+				return $result;
+
+			} catch ( Exception $e ) {
+				// Orchestration Layer: Budget constraint violation.
+				WP_MCP_AI_Logger::log_error(
+					'Tool execution blocked by orchestration layer',
+					array(
+						'tool_slug' => $tool_slug,
+						'error'     => $e->getMessage(),
+						'context'   => $context,
+					)
+				);
+
+				return $e->getMessage();
+			}
+		}
+
+		/**
+		 * Filter tool arguments to only include parameters defined in the tool's schema.
+		 *
+		 * When a tool's schema has 'additionalProperties' => false, this method removes
+		 * any extra parameters that aren't defined in the schema. This prevents errors
+		 * like "Invalid parameter(s): messages" when AI providers include extra parameters.
+		 *
+		 * @param WP_MCP_AI_Tool_Interface $tool      The tool instance.
+		 * @param array                    $arguments The tool arguments to filter.
+		 * @return array Filtered arguments.
+		 */
+		protected function filter_tool_arguments_by_schema( $tool, array $arguments ) {
+			// Get the tool's parameter schema.
+			$schema = $tool->get_parameters_schema();
+
+			// If no schema or schema doesn't restrict additional properties, return arguments as-is.
+			if ( ! is_array( $schema ) || ! isset( $schema['additionalProperties'] ) || false !== $schema['additionalProperties'] ) {
+				return $arguments;
 			}
 
-			$result = apply_filters( 'wp_mcp_ai_tool_output', $result, $tool_slug, $arguments, $context );
+			// Get the allowed properties from the schema.
+			$allowed_properties = array();
+			if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
+				$allowed_properties = array_keys( $schema['properties'] );
+			}
 
-			WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+			// Filter arguments to only include allowed properties.
+			$filtered_arguments = array();
+			foreach ( $arguments as $key => $value ) {
+				if ( in_array( $key, $allowed_properties, true ) ) {
+					$filtered_arguments[ $key ] = $value;
+				} else {
+					// Log that we're dropping an extra parameter.
+					WP_MCP_AI_Logger::log_event(
+						'tool_argument_filtered',
+						'Dropped extra parameter not in tool schema',
+						array(
+							'tool_slug' => $tool->get_slug(),
+							'parameter' => $key,
+							'allowed'   => $allowed_properties,
+						)
+					);
+				}
+			}
 
-			do_action( 'wp_mcp_ai_after_tool_execution', $tool_slug, $arguments, $context, $result );
-
-			return $result;
+			return $filtered_arguments;
 		}
 
 		/**

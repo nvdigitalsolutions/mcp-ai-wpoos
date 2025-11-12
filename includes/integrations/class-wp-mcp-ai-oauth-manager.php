@@ -291,10 +291,11 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			// Manually sanitize settings before saving.
-			// We need an instance of the settings class to access its sanitization logic.
-			// Note: This creates a temporary instance solely for sanitization.
-			$settings_instance = new WP_MCP_AI_Admin_Settings();
-			$sanitized         = $settings_instance->sanitize_settings( $updated_settings );
+			// Use the base class to avoid circular dependency.
+			// WP_MCP_AI_Admin_Settings instantiates WP_MCP_AI_OAuth_Manager in its constructor,
+			// so we cannot instantiate it here. Use the base class instead.
+			$settings_base = new WP_MCP_AI_Admin_Settings_Base();
+			$sanitized     = $settings_base->sanitize_settings( $updated_settings );
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized );
 
 			if ( $used_existing ) {

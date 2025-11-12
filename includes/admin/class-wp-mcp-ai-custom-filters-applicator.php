@@ -114,9 +114,9 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		/**
 		 * Apply resource request timeout filter.
 		 *
-		 * @param int $timeout Current timeout.
+		 * @param int    $timeout Current timeout.
 		 * @param string $tier Workload tier.
-		 * @param int $max_execution_time Max execution time.
+		 * @param int    $max_execution_time Max execution time.
 		 * @return int
 		 */
 		public function apply_resource_request_timeout( $timeout, $tier = '', $max_execution_time = 0 ) {

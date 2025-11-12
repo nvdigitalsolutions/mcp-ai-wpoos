@@ -105,7 +105,7 @@ class WP_MCP_AI_REST_Cache {
 	public static function invalidate_endpoint( $endpoint ) {
 		global $wpdb;
 
-		$pattern = self::CACHE_PREFIX . sanitize_key( $endpoint ) . '_%';
+		$pattern        = self::CACHE_PREFIX . sanitize_key( $endpoint ) . '_%';
 		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -127,7 +127,7 @@ class WP_MCP_AI_REST_Cache {
 	public static function clear_all_caches() {
 		global $wpdb;
 
-		$pattern = self::CACHE_PREFIX . '%';
+		$pattern        = self::CACHE_PREFIX . '%';
 		$option_pattern = '_transient_' . $wpdb->esc_like( $pattern ) . '%';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -150,7 +150,7 @@ class WP_MCP_AI_REST_Cache {
 	 */
 	private static function build_cache_key( $endpoint, $params = array() ) {
 		$endpoint_key = sanitize_key( $endpoint );
-		
+
 		if ( empty( $params ) ) {
 			return self::CACHE_PREFIX . $endpoint_key;
 		}

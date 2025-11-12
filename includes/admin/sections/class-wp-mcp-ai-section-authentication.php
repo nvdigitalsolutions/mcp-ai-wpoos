@@ -95,16 +95,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'default'        => false,
 				),
 				'auth0_management_client_id'       => array(
-					'type'        => 'text',
-					'label'       => __( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
-					'description' => __( 'Client ID for Auth0 Management API. Required for GitHub Bridge feature to resolve user identities from GitHub accounts via Auth0.', 'wp-mcp-ai' ),
-					'placeholder' => '',
+					'type'         => 'text',
+					'label'        => __( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
+					'description'  => __( 'Client ID for Auth0 Management API. Required for GitHub Bridge feature to resolve user identities from GitHub accounts via Auth0.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
 				),
 				'auth0_management_client_secret'   => array(
-					'type'        => 'password',
-					'label'       => __( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
-					'description' => __( 'Client Secret for Auth0 Management API. Keep this secure as it grants administrative access to your Auth0 tenant.', 'wp-mcp-ai' ),
-					'placeholder' => '',
+					'type'         => 'password',
+					'label'        => __( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'Client Secret for Auth0 Management API. Keep this secure as it grants administrative access to your Auth0 tenant.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
 				),
 
 				// WordPress.com/Gravatar Bridge.
@@ -158,12 +160,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 
 			// Group fields by authentication method.
 			$groups = array(
-				'Auth0 Configuration' => array(
+				'Auth0 Configuration'           => array(
 					'auth0_domain',
 					'auth0_audience',
 					'auth0_required_scope',
 				),
-				'Auth0 GitHub Bridge' => array(
+				'Auth0 GitHub Bridge'           => array(
 					'enable_auth0_github_bridge',
 					'auth0_management_client_id',
 					'auth0_management_client_secret',
@@ -172,10 +174,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'enable_wpcom_gravatar_bridge',
 					'wpcom_gravatar_userinfo_endpoint',
 				),
-				'Simple JWT Login'    => array(
+				'Simple JWT Login'              => array(
 					'enable_simple_jwt_login',
 				),
-				'Guest Access'        => array(
+				'Guest Access'                  => array(
 					'guest_token_lifetime',
 				),
 			);

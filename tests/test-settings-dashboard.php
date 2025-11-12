@@ -232,7 +232,7 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$input_checked = array(
 			'enable_auth0_github_bridge' => '1',
 		);
-		$sanitized = $section->sanitize( $input_checked );
+		$sanitized     = $section->sanitize( $input_checked );
 		$this->assertTrue( $sanitized['enable_auth0_github_bridge'] );
 
 		// Simulate form submission where checkbox is unchecked (not in POST data).
@@ -242,12 +242,9 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the new dashboard loads by default.
+	 * Test that the new dashboard loads.
 	 */
-	public function test_new_dashboard_loads_by_default() {
-		// By default, WP_MCP_AI_USE_OLD_SETTINGS should be false.
-		$this->assertFalse( WP_MCP_AI_USE_OLD_SETTINGS );
-		
+	public function test_new_dashboard_loads() {
 		// The settings dashboard should be initialized.
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Dashboard' ) );
 		$this->assertTrue( class_exists( 'WP_MCP_AI_Settings_Registry' ) );
@@ -337,5 +334,64 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$cache = $cache_prop->getValue();
 
 		$this->assertNull( $cache, 'Settings cache should be cleared after sanitize_settings is called' );
+	}
+
+	/**
+	 * Test that dashboard assets use WP_MCP_AI_PATH and WP_MCP_AI_URL constants.
+	 *
+	 * This test verifies that the enqueue_assets method uses the plugin constants
+	 * instead of calculating paths with dirname(__FILE__), ensuring consistency
+	 * across nested directory structures.
+	 */
+	public function test_dashboard_assets_use_constants() {
+		// Set current admin screen to the dashboard page.
+		set_current_screen( 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// Create dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Hook into wp_enqueue_scripts to capture enqueued assets.
+		$enqueued_scripts = array();
+		$enqueued_styles  = array();
+
+		add_filter(
+			'script_loader_src',
+			function ( $src, $handle ) use ( &$enqueued_scripts ) {
+				$enqueued_scripts[ $handle ] = $src;
+				return $src;
+			},
+			10,
+			2
+		);
+
+		add_filter(
+			'style_loader_src',
+			function ( $src, $handle ) use ( &$enqueued_styles ) {
+				$enqueued_styles[ $handle ] = $src;
+				return $src;
+			},
+			10,
+			2
+		);
+
+		// Call enqueue_assets method.
+		$dashboard->enqueue_assets( 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// Verify that scripts are enqueued with URLs from WP_MCP_AI_URL constant.
+		$this->assertArrayHasKey( 'wp-mcp-ai-ajax-error-service', $enqueued_scripts, 'AJAX error service script should be enqueued' );
+		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $enqueued_scripts, 'Dashboard script should be enqueued' );
+
+		// Verify that style is enqueued.
+		$this->assertArrayHasKey( 'wp-mcp-ai-dashboard', $enqueued_styles, 'Dashboard style should be enqueued' );
+
+		// Verify URLs contain the WP_MCP_AI_URL constant value.
+		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/js/ajax-error-service.js', $enqueued_scripts['wp-mcp-ai-ajax-error-service'], 'Script should use WP_MCP_AI_URL constant' );
+		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/js/settings-dashboard.js', $enqueued_scripts['wp-mcp-ai-dashboard'], 'Script should use WP_MCP_AI_URL constant' );
+		$this->assertStringContainsString( WP_MCP_AI_URL . 'assets/css/settings-dashboard.css', $enqueued_styles['wp-mcp-ai-dashboard'], 'Style should use WP_MCP_AI_URL constant' );
+
+		// Verify that asset files exist at the WP_MCP_AI_PATH location.
+		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/css/settings-dashboard.css', 'Dashboard CSS file should exist' );
+		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/js/ajax-error-service.js', 'AJAX error service JS file should exist' );
+		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/js/settings-dashboard.js', 'Dashboard JS file should exist' );
 	}
 }

@@ -6,7 +6,7 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 51+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 52+ files (all in docs/ folder, 5+ key files in root)
 
 **📋 Note:** As of November 8, 2025, 107 audit reports and summaries have been consolidated into two organized reference documents:
 - [DEVELOPMENT-HISTORY.md](DEVELOPMENT-HISTORY.md) - Chronological development history
@@ -28,8 +28,9 @@ This document provides a comprehensive index of all documentation available for 
 3. [CODE_REVIEW.md](CODE_REVIEW.md) - Comprehensive code quality analysis
 4. [ACTION_ITEMS.md](ACTION_ITEMS.md) - Prioritized development tasks
 5. [tool-reference.md](tool-reference.md) - Complete tool catalog
-6. [rest-api.md](rest-api.md) - REST API reference
-7. [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) - Dynamic configuration via WordPress filters
+6. [tool-grouping.md](tool-grouping.md) - Tool categorization system (WordPress Core, Plugins, External)
+7. [rest-api.md](rest-api.md) - REST API reference
+8. [DYNAMIC-CONFIGURATION-FILTERS.md](DYNAMIC-CONFIGURATION-FILTERS.md) - Dynamic configuration via WordPress filters
 
 ### For System Administrators
 1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
@@ -71,7 +72,12 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
+| [ORCHESTRATION-DASHBOARD-SUMMARY.md](ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
+| [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
+| [ORCHESTRATION-DASHBOARD-FINDINGS.md](ORCHESTRATION-DASHBOARD-FINDINGS.md) | Documentation search findings and gap analysis | Developers/Admins |
 | [RESOURCE-MANAGEMENT.md](RESOURCE-MANAGEMENT.md) | Computer-implemented resource management system | Developers |
+| [orchestration-budget-enforcement.md](orchestration-budget-enforcement.md) | Orchestration layer budget prediction and enforcement | Developers |
 | [assistant-storage-cpt-vs-cct.md](assistant-storage-cpt-vs-cct.md) | CPT vs CCT storage architecture (20KB) | Developers |
 | [assistant-tool-shortcuts.md](assistant-tool-shortcuts.md) | Prompt shortcuts system | Users/Devs |
 | [base-vs-full-comparison.md](base-vs-full-comparison.md) | Base vs Full version comparison | Admins |
@@ -84,6 +90,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [chatkit-integration.md](chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
+| [jetengine-api-compatibility.md](jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
 
 ### Remote Client Setup
 
@@ -115,6 +122,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 |----------|-------------|----------|
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
+| [tool-grouping.md](tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
 | [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |
@@ -136,6 +144,10 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |
+| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
+| [PHASE-7-ANALYTICS-PLAN.md](PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
+| [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
+| [QUICK-REFERENCE-PHASE-7.md](QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
 | [job-notification-system.md](job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
@@ -156,6 +168,8 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | Document | Description | Audience |
 |----------|-------------|----------|
 | [deployment-troubleshooting.md](deployment-troubleshooting.md) | Common deployment issues | Admins |
+| [CRON_TESTING_GUIDE.md](CRON_TESTING_GUIDE.md) | **NEW:** Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
+| [php-version-compatibility.md](php-version-compatibility.md) | PHP version compatibility and defensive guards | Developers/Admins |
 | [multisite-support.md](multisite-support.md) | Multisite configuration | Admins |
 | [REMAINING_ISSUES.md](REMAINING_ISSUES.md) | Known minor issues | Developers |
 
@@ -184,8 +198,8 @@ These two documents replace 107 individual audit reports, summaries, and status 
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 50+ (45+ in docs/, 5+ in root)
-- **Total Documentation Size:** ~400KB+
+- **Total Documentation Files:** 51+ (46+ in docs/, 5+ in root)
+- **Total Documentation Size:** ~408KB+
 - **Main README Size:** 1,400+ lines
 - **Average Doc Size:** ~8.8KB
 

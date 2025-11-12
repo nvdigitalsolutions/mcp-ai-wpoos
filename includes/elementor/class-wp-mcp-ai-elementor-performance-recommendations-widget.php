@@ -146,10 +146,10 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 
 		$settings = $this->get_settings_for_display();
 
-		$title             = isset( $settings['title'] ) ? $settings['title'] : '';
-		$severity_filter   = isset( $settings['severity_filter'] ) ? $settings['severity_filter'] : 'all';
-		$limit             = isset( $settings['limit'] ) ? absint( $settings['limit'] ) : 5;
-		$show_actions      = ! empty( $settings['show_action_buttons'] ) && 'yes' === $settings['show_action_buttons'];
+		$title           = isset( $settings['title'] ) ? $settings['title'] : '';
+		$severity_filter = isset( $settings['severity_filter'] ) ? $settings['severity_filter'] : 'all';
+		$limit           = isset( $settings['limit'] ) ? absint( $settings['limit'] ) : 5;
+		$show_actions    = ! empty( $settings['show_action_buttons'] ) && 'yes' === $settings['show_action_buttons'];
 
 		// Get recommendations.
 		$recommendations = $this->get_recommendations( $severity_filter, $limit );
@@ -170,7 +170,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 
 			foreach ( $recommendations as $rec ) {
 				$severity_class = 'severity-' . sanitize_html_class( $rec['severity'] );
-				
+
 				echo '<div class="wp-mcp-ai-recommendations__item ' . esc_attr( $severity_class ) . '">';
 				echo '<div class="wp-mcp-ai-recommendations__severity">';
 				echo '<span class="wp-mcp-ai-recommendations__severity-badge">' . esc_html( ucfirst( $rec['severity'] ) ) . '</span>';
@@ -178,7 +178,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 				echo '<div class="wp-mcp-ai-recommendations__content">';
 				echo '<h4 class="wp-mcp-ai-recommendations__issue">' . esc_html( $rec['issue'] ) . '</h4>';
 				echo '<p class="wp-mcp-ai-recommendations__action">' . esc_html( $rec['action'] ) . '</p>';
-				
+
 				if ( isset( $rec['component'] ) ) {
 					echo '<span class="wp-mcp-ai-recommendations__meta">Component: ' . esc_html( $rec['component'] ) . '</span>';
 				}
@@ -215,18 +215,15 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			return array();
 		}
 
-		$handler = WP_MCP_AI_Performance_Monitor_CCT::get_item_handler();
+		// Get recent test results with recommendations.
+		$args = array();
 
-		if ( ! $handler ) {
+		$tests = WP_MCP_AI_Performance_Monitor_CCT::query_items( $args, 20 );
+
+		if ( empty( $tests ) ) {
 			return $this->get_recommendations_fallback( $severity_filter, $limit );
 		}
 
-		// Get recent test results with recommendations.
-		$args = array(
-			'limit' => 20, // Get more tests to find enough recommendations.
-		);
-
-		$tests = $handler->query_items( $args );
 		$all_recommendations = array();
 
 		foreach ( $tests as $test ) {
@@ -234,7 +231,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 				$recs = json_decode( $test['recommendations'], true );
 				if ( is_array( $recs ) ) {
 					foreach ( $recs as $rec ) {
-						$rec['component'] = isset( $test['component'] ) ? $test['component'] : '';
+						$rec['component']      = isset( $test['component'] ) ? $test['component'] : '';
 						$all_recommendations[] = $rec;
 					}
 				}
@@ -242,8 +239,13 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 		}
 
 		// Filter by severity.
-		$severity_levels = array( 'critical' => 4, 'high' => 3, 'medium' => 2, 'low' => 1 );
-		$min_severity = 0;
+		$severity_levels = array(
+			'critical' => 4,
+			'high'     => 3,
+			'medium'   => 2,
+			'low'      => 1,
+		);
+		$min_severity    = 0;
 
 		if ( 'critical' === $severity_filter ) {
 			$min_severity = 4;
@@ -253,18 +255,24 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			$min_severity = 2;
 		}
 
-		$filtered = array_filter( $all_recommendations, function( $rec ) use ( $severity_levels, $min_severity ) {
-			$rec_severity = isset( $rec['severity'] ) ? $rec['severity'] : 'low';
-			$rec_level = isset( $severity_levels[ $rec_severity ] ) ? $severity_levels[ $rec_severity ] : 1;
-			return $rec_level >= $min_severity;
-		} );
+		$filtered = array_filter(
+			$all_recommendations,
+			function ( $rec ) use ( $severity_levels, $min_severity ) {
+				$rec_severity = isset( $rec['severity'] ) ? $rec['severity'] : 'low';
+				$rec_level    = isset( $severity_levels[ $rec_severity ] ) ? $severity_levels[ $rec_severity ] : 1;
+				return $rec_level >= $min_severity;
+			}
+		);
 
 		// Sort by severity (highest first).
-		usort( $filtered, function( $a, $b ) use ( $severity_levels ) {
-			$a_level = isset( $severity_levels[ $a['severity'] ] ) ? $severity_levels[ $a['severity'] ] : 1;
-			$b_level = isset( $severity_levels[ $b['severity'] ] ) ? $severity_levels[ $b['severity'] ] : 1;
-			return $b_level - $a_level;
-		} );
+		usort(
+			$filtered,
+			function ( $a, $b ) use ( $severity_levels ) {
+				$a_level = isset( $severity_levels[ $a['severity'] ] ) ? $severity_levels[ $a['severity'] ] : 1;
+				$b_level = isset( $severity_levels[ $b['severity'] ] ) ? $severity_levels[ $b['severity'] ] : 1;
+				return $b_level - $a_level;
+			}
+		);
 
 		return array_slice( $filtered, 0, $limit );
 	}

@@ -52,7 +52,7 @@ This resource management system implements the following method and system claim
 
 **A non-transitory computer-readable medium** storing instructions that, when executed by a web server processor, cause the system to perform the method described above:
 
-- PHP source files: `includes/class-resource-manager.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/class-wp-mcp-ai-tool-registry.php`, `includes/class-wp-mcp-ai-token-budget-manager.php`, `includes/class-wp-mcp-ai-cron-manager.php`
+- PHP source files: `includes/class-resource-manager.php`, `includes/class-wp-mcp-ai-rest.php`, `includes/class-wp-mcp-ai-tool-registry.php`, `includes/services/class-wp-mcp-ai-token-budget-service.php`, `includes/class-wp-mcp-ai-cron-manager.php`
 - Configuration stored in WordPress database tables
 - Distributed as installable WordPress plugin package
 

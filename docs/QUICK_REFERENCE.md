@@ -505,6 +505,7 @@ Settings → WP oOS → Chat Theme
 - [Documentation Index](DOCUMENTATION_INDEX.md) - All 39 documentation files
 - [Tool Reference](tool-reference.md) - All 65+ tools detailed
 - [REST API Guide](rest-api.md) - Complete API documentation
+- [Orchestration Budget Enforcement](orchestration-budget-enforcement.md) - Budget prediction and adjustment
 
 ### External Links
 - [OpenAI Platform](https://platform.openai.com/)

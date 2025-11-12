@@ -44,6 +44,20 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		private $workload_tier = null;
 
 		/**
+		 * Maximum concurrent AI requests allowed.
+		 *
+		 * @var int
+		 */
+		private $max_concurrent_requests = 2;
+
+		/**
+		 * Maximum input tokens per request.
+		 *
+		 * @var int
+		 */
+		private $max_input_tokens = 120000;
+
+		/**
 		 * Returns the singleton instance.
 		 *
 		 * @return WP_MCP_AI_Resource_Manager
@@ -254,6 +268,105 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 						'tier'             => $tier,
 						'max_tokens'       => $max_tokens,
 						'requested_tokens' => $requirements['max_tokens'],
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Get the maximum number of concurrent AI requests allowed.
+		 *
+		 * @return int Maximum concurrent requests.
+		 */
+		public function get_max_concurrent_requests() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+			if ( isset( $settings['max_concurrent_requests'] ) && $settings['max_concurrent_requests'] > 0 ) {
+				return absint( $settings['max_concurrent_requests'] );
+			}
+
+			/**
+			 * Filter the maximum concurrent AI requests.
+			 *
+			 * @param int $max_concurrent Default maximum concurrent requests.
+			 */
+			return apply_filters( 'wp_mcp_ai_max_concurrent_requests', $this->max_concurrent_requests );
+		}
+
+		/**
+		 * Set the maximum number of concurrent AI requests.
+		 *
+		 * @param int $max Maximum concurrent requests (1-10).
+		 * @return bool True on success.
+		 */
+		public function set_max_concurrent_requests( $max ) {
+			$max = max( 1, min( 10, absint( $max ) ) );
+
+			$settings                            = get_option( 'wp_mcp_ai_settings', array() );
+			$settings['max_concurrent_requests'] = $max;
+
+			return update_option( 'wp_mcp_ai_settings', $settings );
+		}
+
+		/**
+		 * Get the maximum input tokens allowed per request.
+		 *
+		 * @return int Maximum input tokens.
+		 */
+		public function get_max_input_tokens() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+			if ( isset( $settings['max_input_tokens'] ) && $settings['max_input_tokens'] > 0 ) {
+				return absint( $settings['max_input_tokens'] );
+			}
+
+			/**
+			 * Filter the maximum input tokens per request.
+			 *
+			 * @param int $max_tokens Default maximum input tokens.
+			 */
+			return apply_filters( 'wp_mcp_ai_max_input_tokens', $this->max_input_tokens );
+		}
+
+		/**
+		 * Set the maximum input tokens per request.
+		 *
+		 * @param int $max Maximum input tokens (1000-500000).
+		 * @return bool True on success.
+		 */
+		public function set_max_input_tokens( $max ) {
+			$max = max( 1000, min( 500000, absint( $max ) ) );
+
+			$settings                     = get_option( 'wp_mcp_ai_settings', array() );
+			$settings['max_input_tokens'] = $max;
+
+			return update_option( 'wp_mcp_ai_settings', $settings );
+		}
+
+		/**
+		 * Validate token count against budget.
+		 *
+		 * @param int $token_count Token count to validate.
+		 * @return bool|WP_Error True if within budget, WP_Error otherwise.
+		 */
+		public function validate_token_budget( $token_count ) {
+			$max_tokens = $this->get_max_input_tokens();
+
+			if ( $token_count > $max_tokens ) {
+				return new WP_Error(
+					'wp_mcp_ai_token_budget_exceeded',
+					sprintf(
+						/* translators: 1: Token count, 2: Maximum allowed tokens */
+						__( 'Request token count (%1$d) exceeds maximum allowed (%2$d).', 'wp-mcp-ai' ),
+						$token_count,
+						$max_tokens
+					),
+					array(
+						'status'      => 413,
+						'token_count' => $token_count,
+						'max_tokens'  => $max_tokens,
 					)
 				);
 			}

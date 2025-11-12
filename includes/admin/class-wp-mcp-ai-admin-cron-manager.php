@@ -2,6 +2,13 @@
 /**
  * Admin cron manager for WP oOS.
  *
+ * This class provides a server-side UI for managing cron jobs. It does not use
+ * AJAX for delete operations or data refresh - instead it follows WordPress
+ * conventions using admin_post_ actions and page redirects.
+ *
+ * If AJAX functionality is needed in the future, it should integrate with
+ * WP_MCP_AI_Admin_AJAX_Handlers following the existing pattern in the codebase.
+ *
  * @package WP_MCP_AI
  */
 
@@ -77,6 +84,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			. '.wp-mcp-ai-cron-manager__args{font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;}'
 			. '.wp-mcp-ai-cron-manager__status{display:inline-block;padding:0.25rem 0.5rem;border-radius:3px;font-size:0.75rem;font-weight:600;}'
 			. '.wp-mcp-ai-cron-manager__status--active{background:#d5f0db;color:#0a5f1a;}'
+			. '.wp-mcp-ai-cron-manager__status--executed{background:#e0f2ff;color:#0056a0;}'
 			. '.wp-mcp-ai-cron-manager__status--inactive{background:#f0f0f1;color:#50575e;}'
 			. '.wp-mcp-ai-cron-manager__status--recurring{background:#e5f2ff;color:#0c5ba0;}'
 			. '.wp-mcp-ai-cron-manager__status--oneoff{background:#fef7e0;color:#8b6c00;}';
@@ -132,25 +140,25 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		foreach ( $jobs as $job ) {
 			$event = wp_get_scheduled_event( $job['hook'], $job['args'] );
 			if ( $event ) {
-				$active_jobs++;
+				++$active_jobs;
 			} else {
-				$inactive_jobs++;
+				++$inactive_jobs;
 			}
 
 			$schedule = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
 			if ( 'single' === $schedule || '' === $schedule ) {
-				$one_off++;
+				++$one_off;
 			} else {
-				$recurring++;
+				++$recurring;
 			}
 		}
 
 		return array(
-			'total'    => $total_jobs,
-			'active'   => $active_jobs,
-			'inactive' => $inactive_jobs,
+			'total'     => $total_jobs,
+			'active'    => $active_jobs,
+			'inactive'  => $inactive_jobs,
 			'recurring' => $recurring,
-			'one_off'  => $one_off,
+			'one_off'   => $one_off,
 		);
 	}
 
@@ -164,7 +172,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 
-		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
+		$jobs  = WP_MCP_AI_Cron_Manager::get_jobs();
 		$stats = $this->get_statistics( $jobs );
 		?>
 		<div class="wrap">
@@ -173,7 +181,58 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			<div class="wp-mcp-ai-cron-manager__intro">
 				<p><strong><?php esc_html_e( 'About Cron Manager', 'wp-mcp-ai' ); ?></strong></p>
 				<p><?php esc_html_e( 'The Cron Manager displays and manages scheduled tasks created through WP oOS AI Assistant tools. Cron events allow the assistant to schedule automated tasks to run at specific times or on recurring schedules.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'Use the tools below to monitor active schedules, view task details, and remove events that are no longer needed. WordPress will automatically clean up completed one-time events.', 'wp-mcp-ai' ); ?></p>
+				<p>
+				<?php
+					/* translators: %s: retention period in hours */
+					$retention_hours = 24; // Default value.
+				if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+					$retention_hours = WP_MCP_AI_Settings_Registry::get_setting( 'cron_job_retention_period', 24 );
+				}
+					$retention_hours = absint( $retention_hours );
+
+				if ( $retention_hours > 0 ) {
+					if ( $retention_hours < 24 ) {
+						echo esc_html(
+							sprintf(
+								/* translators: %d: number of hours */
+								_n(
+									'Test jobs and completed one-time events remain visible for %d hour after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+									'Test jobs and completed one-time events remain visible for %d hours after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+									$retention_hours,
+									'wp-mcp-ai'
+								),
+								$retention_hours
+							)
+						);
+					} elseif ( $retention_hours >= 24 && $retention_hours < 168 ) {
+						$retention_days = floor( $retention_hours / 24 );
+						echo esc_html(
+							sprintf(
+								/* translators: %d: number of days */
+								_n(
+									'Test jobs and completed one-time events remain visible for %d day after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+									'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.',
+									$retention_days,
+									'wp-mcp-ai'
+								),
+								$retention_days
+							)
+						);
+					} else {
+						$retention_days = floor( $retention_hours / 24 );
+						echo esc_html(
+							sprintf(
+								/* translators: %d: number of days */
+								__( 'Test jobs and completed one-time events remain visible for %d days after execution, then are automatically removed. You can adjust this retention period in Settings → Orchestration Layer.', 'wp-mcp-ai' ),
+								$retention_days
+							)
+						);
+					}
+				} else {
+					esc_html_e( 'Completed one-time events are removed immediately after execution. You can enable job retention in Settings → Orchestration Layer to keep them visible for testing and verification.', 'wp-mcp-ai' );
+				}
+				?>
+				</p>
 			</div>
 
 			<?php
@@ -229,7 +288,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 						<li><strong>get_cron_job</strong> - <?php esc_html_e( 'Get details about a specific scheduled task', 'wp-mcp-ai' ); ?></li>
 						<li><strong>delete_cron_job</strong> - <?php esc_html_e( 'Remove a scheduled task', 'wp-mcp-ai' ); ?></li>
 					</ul>
-					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here for monitoring and management.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here immediately for monitoring and management. Test jobs and completed one-time events will remain visible for the configured retention period, allowing you to verify successful execution.', 'wp-mcp-ai' ); ?></p>
 				</div>
 			<?php else : ?>
 				<table class="wp-mcp-ai-cron-manager__table">
@@ -248,11 +307,16 @@ class WP_MCP_AI_Admin_Cron_Manager {
 					<tbody>
 						<?php foreach ( $jobs as $job ) : ?>
 							<?php
-							$event      = wp_get_scheduled_event( $job['hook'], $job['args'] );
-							$next_run   = $event ? $event->timestamp : false;
-							$schedule   = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
-							$is_active  = (bool) $event;
-							$is_recurring = ! ( 'single' === $schedule || '' === $schedule );
+							$event           = wp_get_scheduled_event( $job['hook'], $job['args'] );
+							$next_run        = $event ? $event->timestamp : false;
+							$schedule        = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
+							$is_active       = (bool) $event;
+							$is_recurring    = ! ( 'single' === $schedule || '' === $schedule );
+							$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
+
+							// Determine if job was executed (not active but timestamp is in the past).
+							$was_executed = ! $is_active && $first_timestamp > 0 && $first_timestamp < time();
+
 							$creator    = '';
 							$created_by = isset( $job['created_by'] ) ? (int) $job['created_by'] : 0;
 
@@ -275,6 +339,8 @@ class WP_MCP_AI_Admin_Cron_Manager {
 								<td>
 									<?php if ( $is_active ) : ?>
 										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--active"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+									<?php elseif ( $was_executed ) : ?>
+										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--executed"><?php esc_html_e( 'Executed', 'wp-mcp-ai' ); ?></span>
 									<?php else : ?>
 										<span class="wp-mcp-ai-cron-manager__status wp-mcp-ai-cron-manager__status--inactive"><?php esc_html_e( 'Inactive', 'wp-mcp-ai' ); ?></span>
 									<?php endif; ?>
@@ -291,6 +357,12 @@ class WP_MCP_AI_Admin_Cron_Manager {
 											echo esc_html( sprintf( __( '%s ago', 'wp-mcp-ai' ), $time_diff ) );
 										}
 										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $next_run ) ) . '</small>';
+									} elseif ( $was_executed && $first_timestamp > 0 ) {
+										// Show when the job was scheduled to run for executed jobs.
+										$time_diff = human_time_diff( $first_timestamp, time() );
+										/* translators: %s: human-readable time difference */
+										echo esc_html( sprintf( __( 'Ran %s ago', 'wp-mcp-ai' ), $time_diff ) );
+										echo '<br><small>' . esc_html( wp_date( 'Y-m-d H:i:s T', $first_timestamp ) ) . '</small>';
 									} else {
 										esc_html_e( 'Not scheduled', 'wp-mcp-ai' );
 									}

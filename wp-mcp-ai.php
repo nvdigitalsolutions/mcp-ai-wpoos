@@ -10,6 +10,7 @@
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
  * Text Domain: wp-mcp-ai
+ * Domain Path: /languages
  * Network: true
  *
  * @package WP_MCP_AI
@@ -24,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Check PHP version compatibility before loading any classes.
- * 
+ *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
  * will fail to parse with syntax errors like "unexpected token 'private'".
  * We check the version early to provide a clear error message instead of
@@ -47,15 +48,15 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 		);
 	}
 	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	
+
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
 	 */
 	function wp_mcp_ai_deactivate_self() {
-		deactivate_plugins( plugin_basename( __FILE__ ) );
+		deactivate_plugins( plugin_basename( WP_MCP_AI_FILE ) );
 	}
 	add_action( 'admin_init', 'wp_mcp_ai_deactivate_self' );
-	
+
 	// Stop execution - don't load any class files that will cause parse errors.
 	return;
 }
@@ -63,16 +64,111 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 if ( ! defined( 'WP_MCP_AI_VERSION' ) ) {
 	define( 'WP_MCP_AI_VERSION', '1.0.0' );
 }
+if ( ! defined( 'WP_MCP_AI_FILE' ) ) {
+	define( 'WP_MCP_AI_FILE', __FILE__ );
+}
 if ( ! defined( 'WP_MCP_AI_PATH' ) ) {
-	define( 'WP_MCP_AI_PATH', plugin_dir_path( __FILE__ ) );
+	define( 'WP_MCP_AI_PATH', plugin_dir_path( WP_MCP_AI_FILE ) );
 }
 if ( ! defined( 'WP_MCP_AI_URL' ) ) {
-	define( 'WP_MCP_AI_URL', plugin_dir_url( __FILE__ ) );
+	define( 'WP_MCP_AI_URL', plugin_dir_url( WP_MCP_AI_FILE ) );
 }
 
-// Load Composer dependencies when available.
+/**
+ * Load Composer dependencies with error handling.
+ *
+ * Some hosting providers disable putenv() for security. If dev dependencies
+ * (like wp-phpunit) are accidentally installed in production, they may try to
+ * call putenv() causing a fatal error. We handle this gracefully.
+ */
 if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'vendor/autoload.php';
+	// Check if wp-phpunit dev dependency is present (shouldn't be in production).
+	$has_dev_deps = file_exists( WP_MCP_AI_PATH . 'vendor/wp-phpunit/wp-phpunit/__loaded.php' );
+
+	// Check if putenv is available.
+	$putenv_available = function_exists( 'putenv' );
+
+	// If dev dependencies are present but putenv is disabled, show warning and skip autoload.
+	if ( $has_dev_deps && ! $putenv_available ) {
+		if ( is_admin() ) {
+			/**
+			 * Display notice about dev dependencies in production.
+			 */
+			function wp_mcp_ai_dev_deps_error_notice() {
+				$message = sprintf(
+					/* translators: Deployment configuration error message */
+					__( '<strong>WP Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.', 'wp-mcp-ai' )
+				);
+				printf(
+					'<div class="notice notice-error"><p>%s</p></div>',
+					wp_kses_post( $message )
+				);
+			}
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
+		}
+
+		// Log the issue.
+		error_log( 'WP_MCP_AI: Development dependencies detected in production with putenv() disabled. Run: composer install --no-dev' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		// We can't safely load the autoloader, so we'll manually load critical production dependencies.
+		// This allows the plugin to function (degraded) until the deployment is fixed.
+		$critical_files = array(
+			'vendor/symfony/deprecation-contracts/function.php',
+			'vendor/symfony/polyfill-ctype/bootstrap.php',
+			'vendor/symfony/polyfill-mbstring/bootstrap.php',
+			'vendor/symfony/polyfill-php83/bootstrap.php',
+		);
+
+		foreach ( $critical_files as $file ) {
+			$file_path = WP_MCP_AI_PATH . $file;
+			if ( file_exists( $file_path ) ) {
+				require_once $file_path;
+			}
+		}
+
+		// Register a simple autoloader for production dependencies only.
+		spl_autoload_register(
+			function ( $class ) {
+				// Map of production class prefixes to their paths (from composer's autoload_psr4.php).
+				$prefix_map = array(
+					'Rahul900day\\Tiktoken\\'           => 'vendor/rahul900day/tiktoken-php/src/',
+					'Symfony\\Contracts\\Service\\'     => 'vendor/symfony/service-contracts/',
+					'Symfony\\Contracts\\HttpClient\\'  => 'vendor/symfony/http-client-contracts/',
+					'Symfony\\Contracts\\Cache\\'       => 'vendor/symfony/cache-contracts/',
+					'Symfony\\Component\\VarExporter\\' => 'vendor/symfony/var-exporter/',
+					'Symfony\\Component\\HttpClient\\'  => 'vendor/symfony/http-client/',
+					'Symfony\\Component\\Filesystem\\'  => 'vendor/symfony/filesystem/',
+					'Symfony\\Component\\Cache\\'       => 'vendor/symfony/cache/',
+					'Nyholm\\Psr7\\'                    => 'vendor/nyholm/psr7/src/',
+					'Psr\\Log\\'                        => 'vendor/psr/log/src/',
+					'Psr\\Http\\Message\\'              => 'vendor/psr/http-message/src/',
+					'Psr\\Http\\Client\\'               => 'vendor/psr/http-client/src/',
+					'Psr\\Container\\'                  => 'vendor/psr/container/src/',
+					'Psr\\Cache\\'                      => 'vendor/psr/cache/src/',
+					'Http\\Discovery\\'                 => 'vendor/php-http/discovery/src/',
+				);
+
+				foreach ( $prefix_map as $prefix => $base_dir ) {
+					$len = strlen( $prefix );
+					if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+						continue;
+					}
+
+					$relative_class = substr( $class, $len );
+					$file           = WP_MCP_AI_PATH . $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+
+					if ( file_exists( $file ) ) {
+						require_once $file;
+						return;
+					}
+				}
+			}
+		);
+
+	} else {
+		// Normal autoload when environment is correctly configured.
+		require_once WP_MCP_AI_PATH . 'vendor/autoload.php';
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
@@ -115,6 +211,43 @@ if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
 		}
 
 		return $capability;
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_get_effective_chat_capability' ) ) {
+	/**
+	 * Get the effective capability required for a specific assistant.
+	 *
+	 * This function checks the assistant's required_capability meta first,
+	 * then falls back to the global capability filter.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param int    $assistant_id Assistant post ID.
+	 * @param string $context      Context for the capability check (e.g. 'shortcode', 'rest').
+	 *
+	 * @return string|false Capability string. Return `'public'` to allow any visitor,
+	 *                      or a falsy value to skip the check entirely.
+	 */
+	function wp_mcp_ai_get_effective_chat_capability( $assistant_id = 0, $context = 'general' ) {
+		$assistant_id = absint( $assistant_id );
+
+		// Check if assistant has a specific capability requirement.
+		if ( $assistant_id && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			$required_capability = get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_REQUIRED_CAPABILITY, true );
+
+			if ( is_string( $required_capability ) ) {
+				$required_capability = WP_MCP_AI_Assistant_CPT::sanitize_required_capability_meta( $required_capability );
+
+				// If assistant has a specific capability set (even if empty), use it.
+				if ( '' !== $required_capability ) {
+					return $required_capability;
+				}
+			}
+		}
+
+		// Fall back to the global capability setting.
+		return wp_mcp_ai_get_required_chat_capability( $assistant_id, $context );
 	}
 }
 
@@ -173,9 +306,9 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
 // Skip buffering during Elementor AJAX requests and editor page loads to avoid interfering with Elementor operations.
-$is_ajax_request = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
+$is_ajax_request     = ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 	|| ( defined( 'DOING_AJAX' ) && DOING_AJAX );
-$is_elementor_ajax = false;
+$is_elementor_ajax   = false;
 $is_elementor_editor = false;
 
 // Check for Elementor AJAX requests.
@@ -189,7 +322,7 @@ if ( $is_ajax_request && isset( $_REQUEST['action'] ) ) {
 // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
 if ( ! $is_ajax_request && isset( $_GET['action'] ) ) {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification in its editor loader.
-	$get_action = sanitize_text_field( wp_unslash( $_GET['action'] ) );
+	$get_action          = sanitize_text_field( wp_unslash( $_GET['action'] ) );
 	$is_elementor_editor = ( 'elementor' === $get_action );
 }
 
@@ -206,11 +339,21 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-bas
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-renderer.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-chart-js-helper.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
+
+// Load HTTP helper early to prevent SSL issues with loopback addresses.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http-helper.php';
+WP_MCP_AI_HTTP_Helper::init();
 
 // Load cache helper early for performance optimization.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
+
+// Load REST API context parameter fix to prevent caching issues.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
@@ -224,7 +367,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-budget-manager.php';
+
+// Load dependency injection container (Phase 4 refactoring - Milestone 10).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
+require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
+
+// Load service layer (Phase 4 refactoring - Milestone 8).
+// This includes token budget manager and performance monitor services.
+require_once WP_MCP_AI_PATH . 'includes/services-init.php';
+
+// Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
@@ -235,11 +387,15 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
+require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-recommendations.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
@@ -252,15 +408,12 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
-// Load dependency injection container (Phase 4 refactoring - Milestone 10).
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
-require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
+// Container and services already loaded earlier (after rate-limit-manager, before model-selector).
 
 // Load repository layer (Phase 4 refactoring - Milestone 9).
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 
-// Load service layer (Phase 4 refactoring - Milestone 8).
-require_once WP_MCP_AI_PATH . 'includes/services-init.php';
+// Service layer already loaded earlier (after container, before model-selector).
 
 // Load federation system components.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php';
@@ -279,7 +432,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-assistants-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-performance-monitor-cct.php';
+	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
@@ -305,19 +458,18 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-provider-diagnostics.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-rest-context-diagnostic.php';
+	WP_MCP_AI_REST_Context_Diagnostic::init();
 
-	// Load new modular settings dashboard system by default.
-	// Set WP_MCP_AI_USE_OLD_SETTINGS to true in wp-config.php to use legacy settings.
-	if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
-		define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
-	}
+	// Load new modular settings dashboard system.
+	require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
+	// Load Auth0 Setup wizard (submenu of wp-mcp-ai-dashboard).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
+	new WP_MCP_AI_Auth0_Setup();
 
-	if ( ! WP_MCP_AI_USE_OLD_SETTINGS ) {
-		require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
-		// Load Auth0 Setup wizard only when using new dashboard (it's a submenu of wp-mcp-ai-dashboard).
-		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
-		new WP_MCP_AI_Auth0_Setup();
-	}
+	// Load test assistant page (submenu of AI Assistants CPT).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
+	new WP_MCP_AI_Admin_Test_Assistant();
 
 	/**
 	 * Add plugin action links in the plugins list.
@@ -326,15 +478,7 @@ if ( is_admin() ) {
 	 * @return array Modified plugin action links.
 	 */
 	function wp_mcp_ai_add_plugin_action_links( $links ) {
-		$settings_link = '';
-		
-		// Link to the appropriate settings page based on configuration.
-		if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
-			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-settings' );
-		} else {
-			$settings_link = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
-		}
-
+		$settings_link   = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
@@ -344,7 +488,7 @@ if ( is_admin() ) {
 
 		return array_merge( $plugin_links, $links );
 	}
-	add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'wp_mcp_ai_add_plugin_action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -353,6 +497,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 WP_MCP_AI_Message_Attachments::init();
 WP_MCP_AI_Response_Attachments::init();
+
+// Initialize REST API context parameter fix.
+WP_MCP_AI_REST_API_Context_Fix::init();
 
 WP_MCP_AI_HTTP::bootstrap();
 
@@ -378,18 +525,21 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	}
 }
 
-if ( ! function_exists( 'wp_mcp_ai_load_textdomain' ) ) {
-	/**
-	 * Load the plugin textdomain for localisation support.
-	 */
-	function wp_mcp_ai_load_textdomain() {
-		load_plugin_textdomain( 'wp-mcp-ai', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-	}
-}
-
-if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain' ) ) {
-	add_action( 'plugins_loaded', 'wp_mcp_ai_load_textdomain', 1 );
-}
+/**
+ * Translation Loading Note:
+ *
+ * As of WordPress 6.7+, translation loading is handled automatically via just-in-time (JIT)
+ * loading based on the "Text Domain" and "Domain Path" headers in the plugin file.
+ * No explicit load_plugin_textdomain() call is needed.
+ *
+ * WordPress will automatically load translations when translation functions (__(), _e(), etc.)
+ * are first called, using the metadata from the plugin headers.
+ *
+ * This prevents the "_load_textdomain_just_in_time was called incorrectly" warning that
+ * occurred when explicit loading conflicted with automatic JIT loading.
+ *
+ * @since 1.0.0
+ */
 
 if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	/**
@@ -511,13 +661,8 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$anthropic_client = new WP_MCP_AI_Anthropic_Client();
 			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client, $anthropic_client );
 
-			$this->resource_manager   = WP_MCP_AI_Resource_Manager::instance();
-			
-			// Only instantiate old admin settings if legacy mode is enabled.
-			if ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) {
-				$this->admin_settings = new WP_MCP_AI_Admin_Settings();
-			}
-			
+			$this->resource_manager = WP_MCP_AI_Resource_Manager::instance();
+
 			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
 			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
 			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
@@ -530,12 +675,6 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.
 			$GLOBALS['wp_mcp_ai_resource_manager']   = $this->resource_manager;
-			
-			// Only set admin_settings global if using old settings.
-			if ( isset( $this->admin_settings ) ) {
-				$GLOBALS['wp_mcp_ai_admin_settings'] = $this->admin_settings;
-			}
-			
 			$GLOBALS['wp_mcp_ai_assistant_cpt']      = $this->assistant_cpt;
 			$GLOBALS['wp_mcp_ai_crawl4ai_local_api'] = $this->crawl4ai_local_api;
 			$GLOBALS['wp_mcp_ai_rest_controller']    = $this->rest_controller;
@@ -704,7 +843,7 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 		// Instantiate the main plugin singleton and bootstrap it.
 		$plugin = WP_MCP_AI::instance();
 		$plugin->bootstrap();
-		
+
 		/**
 		 * Fires after WP oOS has completed its bootstrap process.
 		 *
@@ -767,7 +906,7 @@ if ( ! function_exists( 'wp_mcp_ai_new_site_activation' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_new_site_activation( $blog ) {
-		if ( ! is_plugin_active_for_network( plugin_basename( __FILE__ ) ) ) {
+		if ( ! is_plugin_active_for_network( plugin_basename( WP_MCP_AI_FILE ) ) ) {
 			return;
 		}
 
@@ -953,7 +1092,7 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 	}
 }
 
-register_activation_hook( __FILE__, 'wp_mcp_ai_activate' );
+register_activation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_activate' );
 
 if ( ! function_exists( 'wp_mcp_ai_deactivate' ) ) {
 	/**
@@ -985,7 +1124,7 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 	}
 }
 
-register_deactivation_hook( __FILE__, 'wp_mcp_ai_deactivate' );
+register_deactivation_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_deactivate' );
 
 if ( ! function_exists( 'wp_mcp_ai_uninstall' ) ) {
 	/**
@@ -1060,7 +1199,7 @@ if ( ! function_exists( 'wp_mcp_ai_uninstall_single_site' ) ) {
 	}
 }
 
-register_uninstall_hook( __FILE__, 'wp_mcp_ai_uninstall' );
+register_uninstall_hook( WP_MCP_AI_FILE, 'wp_mcp_ai_uninstall' );
 
 if ( ! function_exists( 'wp_mcp_ai_extend_upload_mimes' ) ) {
 	/**

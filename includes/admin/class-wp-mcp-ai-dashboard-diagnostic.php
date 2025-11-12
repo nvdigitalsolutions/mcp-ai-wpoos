@@ -27,9 +27,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 		/**
 		 * Register diagnostic page under Tools menu.
 		 *
-		 * Note: Changed from submenu of 'wp-mcp-ai-dashboard' to 'tools.php'
-		 * to ensure the diagnostic page is always accessible, even when the
-		 * main dashboard isn't loaded (e.g., when WP_MCP_AI_USE_OLD_SETTINGS is true).
+		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
 			add_submenu_page(
@@ -66,7 +64,6 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								'WP_MCP_AI_PATH',
 								'WP_MCP_AI_URL',
 								'WP_MCP_AI_VERSION',
-								'WP_MCP_AI_USE_OLD_SETTINGS',
 							);
 							foreach ( $constants as $const ) {
 								$defined = defined( $const );
@@ -157,19 +154,9 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 
 				<div class="card">
 					<h2><?php esc_html_e( '4. Global Variables', 'wp-mcp-ai' ); ?></h2>
-					<?php
-					// Check which settings system is active.
-					$using_old_settings = defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS;
-					?>
 					<p>
 						<strong><?php esc_html_e( 'Active Settings System:', 'wp-mcp-ai' ); ?></strong>
-						<?php
-						if ( $using_old_settings ) {
-							echo '<span style="color: orange;">' . esc_html__( 'Legacy Settings (WP_MCP_AI_USE_OLD_SETTINGS = true)', 'wp-mcp-ai' ) . '</span>';
-						} else {
-							echo '<span style="color: green;">' . esc_html__( 'New Settings Dashboard (default)', 'wp-mcp-ai' ) . '</span>';
-						}
-						?>
+						<span style="color: green;"><?php esc_html_e( 'New Settings Dashboard', 'wp-mcp-ai' ); ?></span>
 					</p>
 					<table class="widefat striped">
 						<thead>
@@ -238,8 +225,8 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					<h2><?php esc_html_e( '5. Admin Menu Pages', 'wp-mcp-ai' ); ?></h2>
 					<?php
 					global $menu, $submenu;
-					$found_old = false;
-					$found_new = false;
+					$found_old   = false;
+					$found_new   = false;
 					$found_auth0 = false;
 
 					// Check for old settings under Settings submenu.
@@ -282,19 +269,14 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						</thead>
 						<tbody>
 							<tr>
-								<td><?php esc_html_e( 'Old Settings (Settings > WP oOS)', 'wp-mcp-ai' ); ?></td>
-								<td><?php echo $found_old ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
-								<td><?php echo ( defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS ) ? 'Yes' : 'No'; ?></td>
-							</tr>
-							<tr>
 								<td><?php esc_html_e( 'New Dashboard (Top-level WP oOS)', 'wp-mcp-ai' ); ?></td>
 								<td><?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
-								<td><?php echo ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) || ! WP_MCP_AI_USE_OLD_SETTINGS ) ? 'Yes' : 'No'; ?></td>
+								<td>Yes</td>
 							</tr>
 							<tr>
 								<td><?php esc_html_e( 'Auth0 Setup (Under WP oOS)', 'wp-mcp-ai' ); ?></td>
 								<td><?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
-								<td><?php echo ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) || ! WP_MCP_AI_USE_OLD_SETTINGS ) ? 'Yes' : 'No'; ?></td>
+								<td>Yes</td>
 							</tr>
 						</tbody>
 					</table>
@@ -334,42 +316,30 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 
 				<div class="card">
 					<h2><?php esc_html_e( '7. Diagnosis', 'wp-mcp-ai' ); ?></h2>
-					<?php
-					$use_old = defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) && WP_MCP_AI_USE_OLD_SETTINGS;
-					?>
 					<div style="padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
-						<?php if ( $use_old ) : ?>
-							<p><strong><?php esc_html_e( 'Mode: Legacy Settings (OLD)', 'wp-mcp-ai' ); ?></strong></p>
-							<p><?php esc_html_e( 'The WP_MCP_AI_USE_OLD_SETTINGS constant is set to TRUE.', 'wp-mcp-ai' ); ?></p>
-							<p><?php esc_html_e( 'Expected behavior: Settings page should appear under Settings > WP oOS', 'wp-mcp-ai' ); ?></p>
-							<p><strong><?php esc_html_e( 'Actual:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_old ? '<span style="color: green;">✓ Working correctly</span>' : '<span style="color: red;">✗ Not working - settings page not found</span>'; ?></p>
-						<?php else : ?>
-							<p><strong><?php esc_html_e( 'Mode: New Dashboard (DEFAULT)', 'wp-mcp-ai' ); ?></strong></p>
-							<p><?php esc_html_e( 'The WP_MCP_AI_USE_OLD_SETTINGS constant is FALSE or not set.', 'wp-mcp-ai' ); ?></p>
-							<p><?php esc_html_e( 'Expected behavior: Top-level menu "WP oOS" with Auth0 submenu', 'wp-mcp-ai' ); ?></p>
-							<p><strong><?php esc_html_e( 'Dashboard:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
-							<p><strong><?php esc_html_e( 'Auth0 Setup:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
+						<p><strong><?php esc_html_e( 'Mode: New Dashboard', 'wp-mcp-ai' ); ?></strong></p>
+						<p><?php esc_html_e( 'Expected behavior: Top-level menu "WP oOS" with Auth0 submenu', 'wp-mcp-ai' ); ?></p>
+						<p><strong><?php esc_html_e( 'Dashboard:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
+						<p><strong><?php esc_html_e( 'Auth0 Setup:', 'wp-mcp-ai' ); ?></strong> <?php echo $found_auth0 ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not found</span>'; ?></p>
+						
+						<?php if ( ! $found_new ) : ?>
+							<hr>
+							<h3 style="color: red;"><?php esc_html_e( 'Issue Detected: Dashboard Not Loading', 'wp-mcp-ai' ); ?></h3>
+							<p><?php esc_html_e( 'Possible causes:', 'wp-mcp-ai' ); ?></p>
+							<ul>
+								<li><?php esc_html_e( 'PHP error during dashboard initialization (check error logs)', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Missing or corrupted dashboard files', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Hook timing issue', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'WordPress version incompatibility', 'wp-mcp-ai' ); ?></li>
+							</ul>
 							
-							<?php if ( ! $found_new ) : ?>
-								<hr>
-								<h3 style="color: red;"><?php esc_html_e( 'Issue Detected: Dashboard Not Loading', 'wp-mcp-ai' ); ?></h3>
-								<p><?php esc_html_e( 'Possible causes:', 'wp-mcp-ai' ); ?></p>
-								<ul>
-									<li><?php esc_html_e( 'PHP error during dashboard initialization (check error logs)', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Missing or corrupted dashboard files', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Hook timing issue', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'WordPress version incompatibility', 'wp-mcp-ai' ); ?></li>
-								</ul>
-								
-								<h4><?php esc_html_e( 'Troubleshooting Steps:', 'wp-mcp-ai' ); ?></h4>
-								<ol>
-									<li><?php esc_html_e( 'Check WordPress error log (wp-content/debug.log if WP_DEBUG_LOG is enabled)', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Enable WP_DEBUG and WP_DEBUG_LOG in wp-config.php', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Deactivate and reactivate the plugin', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Check file permissions on includes/admin/ directory', 'wp-mcp-ai' ); ?></li>
-									<li><?php esc_html_e( 'Try switching to legacy mode by adding to wp-config.php: define(\'WP_MCP_AI_USE_OLD_SETTINGS\', true);', 'wp-mcp-ai' ); ?></li>
-								</ol>
-							<?php endif; ?>
+							<h4><?php esc_html_e( 'Troubleshooting Steps:', 'wp-mcp-ai' ); ?></h4>
+							<ol>
+								<li><?php esc_html_e( 'Check WordPress error log (wp-content/debug.log if WP_DEBUG_LOG is enabled)', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Enable WP_DEBUG and WP_DEBUG_LOG in wp-config.php', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Deactivate and reactivate the plugin', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check file permissions on includes/admin/ directory', 'wp-mcp-ai' ); ?></li>
+							</ol>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -396,7 +366,12 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Current Screen', 'wp-mcp-ai' ); ?></th>
-								<td><?php $screen = get_current_screen(); echo $screen ? esc_html( $screen->id ) : 'null'; ?></td>
+								<td>
+								<?php
+								$screen = get_current_screen();
+								echo $screen ? esc_html( $screen->id ) : 'null';
+								?>
+								</td>
 							</tr>
 						</tbody>
 					</table>

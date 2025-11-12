@@ -389,7 +389,7 @@ class WP_MCP_AI_Optimization_Comparison_Test extends WP_UnitTestCase {
 
 		$improvement_percent = 0;
 		if ( isset( $trends_disabled['avg_response_time'] ) && $trends_disabled['avg_response_time'] > 0 ) {
-			$baseline = $trends_disabled['avg_response_time'];
+			$baseline  = $trends_disabled['avg_response_time'];
 			$optimized = isset( $trends_enabled['avg_response_time'] ) ? $trends_enabled['avg_response_time'] : $baseline;
 
 			$improvement_percent = ( ( $baseline - $optimized ) / $baseline ) * 100;

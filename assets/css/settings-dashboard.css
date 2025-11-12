@@ -419,3 +419,399 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+/* Orchestration Presets Styles */
+.wp-mcp-ai-presets-section {
+	margin: 20px 0;
+	padding: 20px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-presets-section h3 {
+	margin-top: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* Current Preset Indicator */
+.wp-mcp-ai-current-preset-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	margin: 15px 0;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+	color: #fff;
+	border-radius: 4px;
+	font-size: 14px;
+	box-shadow: 0 2px 6px rgba(0, 163, 42, 0.25);
+}
+
+.wp-mcp-ai-current-preset-indicator .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+}
+
+.wp-mcp-ai-current-preset-indicator strong {
+	font-weight: 600;
+}
+
+.wp-mcp-ai-current-preset-indicator .current-preset-name {
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Preset Grid - Lightweight and Flexible */
+.wp-mcp-ai-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+	margin-top: 15px;
+}
+
+.preset-card {
+	background: #fff;
+	border: 2px solid #dcdcde;
+	border-radius: 6px;
+	padding: 12px;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	position: relative;
+}
+
+.preset-card:hover {
+	border-color: #2271b1;
+	box-shadow: 0 2px 6px rgba(34, 113, 177, 0.12);
+	transform: translateY(-1px);
+}
+
+.preset-card.active {
+	border-color: #00a32a;
+	border-width: 3px;
+	background: linear-gradient(135deg, #f0f9f1 0%, #f6f9f7 100%);
+	box-shadow: 0 3px 10px rgba(0, 163, 42, 0.15);
+	padding: 11px; /* Compensate for thicker border */
+}
+
+.preset-card.active::before {
+	content: '';
+	position: absolute;
+	top: -3px;
+	left: -3px;
+	right: -3px;
+	bottom: -3px;
+	border-radius: 6px;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+	opacity: 0.1;
+	z-index: -1;
+}
+
+.preset-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 8px;
+	gap: 8px;
+}
+
+.preset-header h4 {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.4;
+}
+
+.preset-card.active .preset-header h4 {
+	color: #00a32a;
+	font-weight: 700;
+}
+
+.preset-badge {
+	display: inline-block;
+	padding: 2px 6px;
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	border-radius: 3px;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.preset-badge.default {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.preset-badge.recommended {
+	background: #2271b1;
+	color: #fff;
+}
+
+.preset-description {
+	margin: 8px 0;
+	font-size: 12px;
+	color: #646970;
+	line-height: 1.5;
+}
+
+.preset-status {
+	margin-top: 8px;
+	padding: 8px;
+	background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+	color: #fff;
+	text-align: center;
+	border-radius: 4px;
+	font-weight: 700;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	box-shadow: 0 2px 4px rgba(0, 163, 42, 0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+}
+
+.preset-status::before {
+	content: '✓';
+	font-size: 16px;
+	font-weight: 900;
+}
+
+.preset-card .apply-preset {
+	width: 100%;
+	margin-top: 8px;
+	padding: 6px 12px;
+	font-size: 13px;
+	height: auto;
+	line-height: 1.4;
+}
+
+/* Slider Controls - Lightweight and Flexible */
+.wp-mcp-ai-slider-control {
+	margin: 16px 0;
+	padding: 12px;
+	background: #f9f9f9;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-slider-control .slider-label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 600;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.slider-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+.slider-min,
+.slider-max {
+	font-size: 11px;
+	color: #646970;
+	min-width: 36px;
+	text-align: center;
+}
+
+.wp-mcp-ai-slider {
+	flex: 1;
+	height: 4px;
+	-webkit-appearance: none;
+	appearance: none;
+	background: #dcdcde;
+	border-radius: 2px;
+	outline: none;
+}
+
+.wp-mcp-ai-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	background: #2271b1;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.wp-mcp-ai-slider::-webkit-slider-thumb:hover {
+	background: #135e96;
+	transform: scale(1.1);
+}
+
+.wp-mcp-ai-slider::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	background: #2271b1;
+	border: none;
+	border-radius: 50%;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.wp-mcp-ai-slider::-moz-range-thumb:hover {
+	background: #135e96;
+	transform: scale(1.1);
+}
+
+.slider-value {
+	font-weight: 600;
+	color: #2271b1;
+	min-width: 50px;
+	text-align: right;
+	font-size: 12px;
+}
+
+/* Responsive Design - Mobile-first */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-presets-grid {
+		grid-template-columns: 1fr;
+	}
+	
+	.slider-wrapper {
+		flex-wrap: wrap;
+	}
+	
+	.slider-min,
+	.slider-max {
+		min-width: 30px;
+		font-size: 10px;
+	}
+}
+
+/* Health Status Banner */
+.wp-mcp-ai-health-banner {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 15px 20px;
+	margin: 20px 0;
+	border-radius: 4px;
+	border-left: 4px solid;
+}
+
+.wp-mcp-ai-health-banner.status-healthy {
+	background: #e7f7ed;
+	border-color: #00a32a;
+}
+
+.wp-mcp-ai-health-banner.status-warning {
+	background: #fcf3cd;
+	border-color: #dba617;
+}
+
+.wp-mcp-ai-health-banner.status-critical {
+	background: #fcf0f1;
+	border-color: #d63638;
+}
+
+.wp-mcp-ai-health-banner.status-unknown {
+	background: #f0f0f1;
+	border-color: #8c8f94;
+}
+
+.health-status {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.health-icon {
+	font-size: 20px;
+}
+
+.health-metrics {
+	display: flex;
+	gap: 20px;
+	font-size: 13px;
+}
+
+.health-metrics .metric {
+	color: #646970;
+}
+
+/* Orchestration Intro Section */
+.wp-mcp-ai-orchestration-intro {
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	padding: 1.5rem;
+	margin: 1rem 0;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-orchestration-intro h3 {
+	margin-top: 0;
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-orchestration-intro h4 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-top: 1rem;
+	margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-orchestration-intro ul {
+	margin: 0.5rem 0;
+	padding-left: 1.5rem;
+}
+
+.wp-mcp-ai-orchestration-intro li {
+	margin-bottom: 0.5rem;
+	line-height: 1.6;
+}
+
+/* Orchestration Stats Section */
+.wp-mcp-ai-orchestration-stats {
+	margin: 1.5rem 0;
+}
+
+.wp-mcp-ai-orchestration-stats h3 {
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-bottom: 1rem;
+}
+
+.wp-mcp-ai-orchestration-stats h4 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin-top: 1.5rem;
+	margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-health-banner {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	.health-metrics {
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.wp-mcp-ai-presets-grid {
+		grid-template-columns: 1fr;
+	}
+}

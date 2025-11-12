@@ -9,6 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent parse errors on PHP < 7.4 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+	return;
+}
+
 if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 	/**
 	 * WooCommerce integration settings section.
@@ -70,7 +75,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 		 */
 		public function get_fields() {
 			$woo_active = class_exists( 'WooCommerce' );
-			
+
 			$fields = array(
 				'woocommerce_status' => array(
 					'type'    => 'html',
@@ -111,9 +116,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 		 */
 		private function get_status_content() {
 			$woo_active = class_exists( 'WooCommerce' );
-			
+
 			$content = '<div style="background: ' . ( $woo_active ? '#d5f0db' : '#f0f0f1' ) . '; border-left: 4px solid ' . ( $woo_active ? '#0a5f1a' : '#646970' ) . '; padding: 1rem; margin: 1rem 0;">';
-			
+
 			if ( $woo_active ) {
 				$content .= '<h4 style="margin-top: 0; color: #0a5f1a;">' . esc_html__( '✓ WooCommerce Active', 'wp-mcp-ai' ) . '</h4>';
 				$content .= '<p>' . esc_html__( 'WooCommerce is installed and active. E-commerce AI tools are available.', 'wp-mcp-ai' ) . '</p>';
@@ -126,9 +131,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 				$content .= '<li>' . esc_html__( 'Return to this page to configure integration settings', 'wp-mcp-ai' ) . '</li>';
 				$content .= '</ol>';
 			}
-			
+
 			$content .= '</div>';
-			
+
 			return $content;
 		}
 
@@ -138,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 		 * @return string
 		 */
 		private function get_tools_list_content() {
-			$content = '<div style="margin: 1rem 0;">';
+			$content  = '<div style="margin: 1rem 0;">';
 			$content .= '<h4>' . esc_html__( 'Available WooCommerce Tools', 'wp-mcp-ai' ) . '</h4>';
 			$content .= '<ul style="margin-left: 1.5rem;">';
 			$content .= '<li><strong>woo_create_product</strong> - ' . esc_html__( 'Create new products with full metadata', 'wp-mcp-ai' ) . '</li>';
@@ -149,7 +154,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 			$content .= '</ul>';
 			$content .= '<p style="margin-top: 1rem;"><em>' . esc_html__( 'Note: WooCommerce tools are available only in Full Version mode. Set WP_MCP_AI_BASE_VERSION to false in wp-config.php to enable.', 'wp-mcp-ai' ) . '</em></p>';
 			$content .= '</div>';
-			
+
 			return $content;
 		}
 

@@ -43,7 +43,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-			$settings['enable_jetengine_cct'] = isset( $_POST['enable_jetengine_cct'] ) ? true : false;
+			$settings['enable_jetengine_cct']   = isset( $_POST['enable_jetengine_cct'] ) ? true : false;
 			$settings['enable_jetengine_tools'] = isset( $_POST['enable_jetengine_tools'] ) ? true : false;
 
 			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -83,9 +83,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_JetEngine_Integration' ) ) {
 			}
 
 			$jetengine_active = class_exists( 'Jet_Engine' );
-			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$cct_enabled = isset( $settings['enable_jetengine_cct'] ) ? (bool) $settings['enable_jetengine_cct'] : true;
-			$tools_enabled = isset( $settings['enable_jetengine_tools'] ) ? (bool) $settings['enable_jetengine_tools'] : true;
+			$settings         = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$cct_enabled      = isset( $settings['enable_jetengine_cct'] ) ? (bool) $settings['enable_jetengine_cct'] : true;
+			$tools_enabled    = isset( $settings['enable_jetengine_tools'] ) ? (bool) $settings['enable_jetengine_tools'] : true;
 
 			?>
 			<div class="wrap">

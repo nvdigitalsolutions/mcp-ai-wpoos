@@ -198,10 +198,50 @@ vendor/bin/phpunit --filter test_concurrent_api_requests tests/performance/test-
 
 ### WordPress Admin Interface
 
-1. Navigate to **Settings → WP oOS → Performance Monitoring**
-2. Click on test buttons to view test execution information
-3. View real-time metrics and historical trends
-4. Export results as JSON or CSV
+**NEW: Test Execution in Admin UI** (as of this update)
+
+1. Navigate to **Settings → WP oOS → Advanced → Performance Monitoring**
+2. Scroll to the "Run Performance Tests" section
+3. Click any test button:
+   - **Run Stress Test** - Executes concurrent load testing
+   - **Run Security Test** - Runs security vulnerability scans  
+   - **Run Speed Benchmark** - Measures latency percentiles
+   - **Run Optimization Test** - Compares optimization effectiveness
+
+**Test Execution Behavior:**
+
+- **Environment Ready**: Tests execute programmatically and display results inline
+- **Setup Required**: Shows installation instructions and CLI fallback commands
+- **Results Display**: 
+  - Success: Shows checkmark with test summary and expandable detailed output
+  - Failure: Shows error with helpful next steps and CLI alternatives
+  - Timeout: 65-second timeout with clear error messaging
+
+**Features:**
+- Real-time test execution (no page refresh needed)
+- Inline results with syntax-highlighted output
+- Fallback to CLI commands when WordPress test environment unavailable
+- Export test history as JSON or CSV
+- View component performance metrics
+- Historical trend analysis
+
+**Example Output:**
+```
+✓ Stress tests completed successfully. Passed: 5 tests, 12 assertions
+
+[View Detailed Output] (expandable section with full PHPUnit output)
+```
+
+**Fallback Example (when environment not ready):**
+```
+✗ WordPress test environment not configured. Use CLI command below or run setup first.
+
+Setup Required:
+composer run test:install
+
+Run via CLI:
+./bin/run-performance-tests.sh --suite=stress
+```
 
 ### Programmatic Execution
 

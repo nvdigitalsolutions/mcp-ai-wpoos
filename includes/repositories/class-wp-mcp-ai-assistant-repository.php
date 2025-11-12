@@ -57,12 +57,12 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function find_all( $args = array() ) {
 		$defaults = array(
-			'post_type'             => $this->post_type,
-			'post_status'           => 'publish',
-			'posts_per_page'        => -1,
-			'orderby'               => 'title',
-			'order'                 => 'ASC',
-			'no_found_rows'         => true,  // Performance: Skip counting total rows.
+			'post_type'              => $this->post_type,
+			'post_status'            => 'publish',
+			'posts_per_page'         => -1,
+			'orderby'                => 'title',
+			'order'                  => 'ASC',
+			'no_found_rows'          => true,  // Performance: Skip counting total rows.
 			'update_post_term_cache' => false, // Performance: Skip term cache if not needed.
 			'update_post_meta_cache' => true,  // Keep meta cache for assistant configs.
 		);
@@ -73,7 +73,7 @@ class WP_MCP_AI_Assistant_Repository {
 		if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			return WP_MCP_AI_Cache_Helper::get_assistants_list(
 				$query_args,
-				function() use ( $query_args ) {
+				function () use ( $query_args ) {
 					$query = new WP_Query( $query_args );
 					return $query->posts;
 				}
@@ -168,7 +168,7 @@ class WP_MCP_AI_Assistant_Repository {
 		foreach ( $all_meta as $key => $values ) {
 			// Only include our plugin's meta keys.
 			if ( 0 === strpos( $key, 'mcp_ai_' ) ) {
-				$stripped_key              = str_replace( 'mcp_ai_', '', $key );
+				$stripped_key                 = str_replace( 'mcp_ai_', '', $key );
 				$plugin_meta[ $stripped_key ] = $values[0] ?? '';
 			}
 		}
@@ -189,10 +189,10 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function create( $data ) {
 		$post_data = array(
-			'post_type'   => $this->post_type,
-			'post_title'  => $data['title'] ?? '',
+			'post_type'    => $this->post_type,
+			'post_title'   => $data['title'] ?? '',
 			'post_content' => $data['content'] ?? '',
-			'post_status' => $data['status'] ?? 'draft',
+			'post_status'  => $data['status'] ?? 'draft',
 		);
 
 		$assistant_id = wp_insert_post( $post_data, true );
@@ -308,11 +308,11 @@ class WP_MCP_AI_Assistant_Repository {
 	 */
 	public function search( $search_term, $args = array() ) {
 		$defaults = array(
-			'post_type'             => $this->post_type,
-			'post_status'           => 'publish',
-			's'                     => $search_term,
-			'posts_per_page'        => -1,
-			'no_found_rows'         => true,  // Performance: Skip counting for search.
+			'post_type'              => $this->post_type,
+			'post_status'            => 'publish',
+			's'                      => $search_term,
+			'posts_per_page'         => -1,
+			'no_found_rows'          => true,  // Performance: Skip counting for search.
 			'update_post_term_cache' => false, // Performance: Skip term cache.
 		);
 

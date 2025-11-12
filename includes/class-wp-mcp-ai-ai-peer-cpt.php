@@ -204,13 +204,13 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render_peer_info_meta_box( $post ) {
-		$site_url        = get_post_meta( $post->ID, self::META_SITE_URL, true );
-		$wellknown_url   = get_post_meta( $post->ID, self::META_WELLKNOWN_URL, true );
-		$mcp_url         = get_post_meta( $post->ID, self::META_MCP_URL, true );
-		$jwks_uri        = get_post_meta( $post->ID, self::META_JWKS_URI, true );
-		$capabilities    = get_post_meta( $post->ID, self::META_CAPABILITIES, true );
-		$regions         = get_post_meta( $post->ID, self::META_REGIONS, true );
-		$data_tags       = get_post_meta( $post->ID, self::META_DATA_TAGS, true );
+		$site_url      = get_post_meta( $post->ID, self::META_SITE_URL, true );
+		$wellknown_url = get_post_meta( $post->ID, self::META_WELLKNOWN_URL, true );
+		$mcp_url       = get_post_meta( $post->ID, self::META_MCP_URL, true );
+		$jwks_uri      = get_post_meta( $post->ID, self::META_JWKS_URI, true );
+		$capabilities  = get_post_meta( $post->ID, self::META_CAPABILITIES, true );
+		$regions       = get_post_meta( $post->ID, self::META_REGIONS, true );
+		$data_tags     = get_post_meta( $post->ID, self::META_DATA_TAGS, true );
 
 		$capabilities = is_string( $capabilities ) ? json_decode( $capabilities, true ) : array();
 		$regions      = is_string( $regions ) ? json_decode( $regions, true ) : array();
@@ -319,10 +319,10 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 * @param WP_Post $post Post object.
 	 */
 	public function render_health_meta_box( $post ) {
-		$health_status  = get_post_meta( $post->ID, self::META_HEALTH_STATUS, true );
-		$latency_p50    = get_post_meta( $post->ID, self::META_LATENCY_P50, true );
-		$last_verified  = get_post_meta( $post->ID, self::META_LAST_VERIFIED, true );
-		$last_error     = get_post_meta( $post->ID, self::META_LAST_ERROR, true );
+		$health_status = get_post_meta( $post->ID, self::META_HEALTH_STATUS, true );
+		$latency_p50   = get_post_meta( $post->ID, self::META_LATENCY_P50, true );
+		$last_verified = get_post_meta( $post->ID, self::META_LAST_VERIFIED, true );
+		$last_error    = get_post_meta( $post->ID, self::META_LAST_ERROR, true );
 
 		$status_class = 'unknown';
 		$status_label = __( 'Unknown', 'wp-mcp-ai' );
@@ -458,8 +458,8 @@ class WP_MCP_AI_AI_Peer_CPT {
 					'degraded' => __( 'Degraded', 'wp-mcp-ai' ),
 					'down'     => __( 'Down', 'wp-mcp-ai' ),
 				);
-				$color = isset( $status_colors[ $health_status ] ) ? $status_colors[ $health_status ] : '#999';
-				$label = isset( $status_labels[ $health_status ] ) ? $status_labels[ $health_status ] : __( 'Unknown', 'wp-mcp-ai' );
+				$color         = isset( $status_colors[ $health_status ] ) ? $status_colors[ $health_status ] : '#999';
+				$label         = isset( $status_labels[ $health_status ] ) ? $status_labels[ $health_status ] : __( 'Unknown', 'wp-mcp-ai' );
 				echo '<span style="color: ' . esc_attr( $color ) . '; font-weight: 600;">● ' . esc_html( $label ) . '</span>';
 				break;
 
@@ -570,16 +570,16 @@ class WP_MCP_AI_AI_Peer_CPT {
 			}
 
 			// Get peer metadata.
-			$site_name       = get_post_meta( $post_id, self::META_SITE_NAME, true );
-			$site_url        = get_post_meta( $post_id, self::META_SITE_URL, true );
-			$mcp_url         = get_post_meta( $post_id, self::META_MCP_URL, true );
-			$jwks_uri        = get_post_meta( $post_id, self::META_JWKS_URI, true );
-			$capabilities    = get_post_meta( $post_id, self::META_CAPABILITIES, true );
-			$regions         = get_post_meta( $post_id, self::META_REGIONS, true );
-			$data_tags       = get_post_meta( $post_id, self::META_DATA_TAGS, true );
-			$health_status   = get_post_meta( $post_id, self::META_HEALTH_STATUS, true );
-			$latency_p50     = get_post_meta( $post_id, self::META_LATENCY_P50, true );
-			$last_verified   = get_post_meta( $post_id, self::META_LAST_VERIFIED, true );
+			$site_name     = get_post_meta( $post_id, self::META_SITE_NAME, true );
+			$site_url      = get_post_meta( $post_id, self::META_SITE_URL, true );
+			$mcp_url       = get_post_meta( $post_id, self::META_MCP_URL, true );
+			$jwks_uri      = get_post_meta( $post_id, self::META_JWKS_URI, true );
+			$capabilities  = get_post_meta( $post_id, self::META_CAPABILITIES, true );
+			$regions       = get_post_meta( $post_id, self::META_REGIONS, true );
+			$data_tags     = get_post_meta( $post_id, self::META_DATA_TAGS, true );
+			$health_status = get_post_meta( $post_id, self::META_HEALTH_STATUS, true );
+			$latency_p50   = get_post_meta( $post_id, self::META_LATENCY_P50, true );
+			$last_verified = get_post_meta( $post_id, self::META_LAST_VERIFIED, true );
 
 			// Map CPT data to CCT fields.
 			$cct_data = array(

@@ -9,6 +9,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent parse errors on PHP < 7.4 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+	return;
+}
+
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
 
 /**

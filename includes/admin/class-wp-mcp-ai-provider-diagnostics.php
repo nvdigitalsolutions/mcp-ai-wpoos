@@ -36,9 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		/**
 		 * Register diagnostic page under Tools menu.
 		 *
-		 * Note: Changed from submenu of 'wp-mcp-ai-dashboard' to 'tools.php'
-		 * to ensure the diagnostic page is always accessible, even when the
-		 * main dashboard isn't loaded (e.g., when WP_MCP_AI_USE_OLD_SETTINGS is true).
+		 * Note: Located under Tools menu to ensure easy access for troubleshooting.
 		 */
 		public static function register_page() {
 			self::$page_hook = add_submenu_page(
@@ -526,7 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			try {
 				$client = new WP_MCP_AI_OpenAI_Client();
-				
+
 				// Simple test: list models.
 				$response = wp_remote_get(
 					'https://api.openai.com/v1/models',
@@ -567,7 +565,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					return;
 				}
 
-				$body = json_decode( wp_remote_retrieve_body( $response ), true );
+				$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 				$model_count = isset( $body['data'] ) ? count( $body['data'] ) : 0;
 
 				wp_send_json_success(
@@ -647,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					return;
 				}
 
-				$body = json_decode( wp_remote_retrieve_body( $response ), true );
+				$body        = json_decode( wp_remote_retrieve_body( $response ), true );
 				$model_count = isset( $body['models'] ) ? count( $body['models'] ) : 0;
 
 				wp_send_json_success(

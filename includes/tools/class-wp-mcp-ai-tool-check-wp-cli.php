@@ -66,6 +66,7 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
 		$candidates  = $this->get_candidate_paths();
 		$binary_info = $this->locate_binary( $candidates );
 		$result      = array(
+			'summary'       => $binary_info ? __( 'WP-CLI check complete', 'wp-mcp-ai' ) : __( 'WP-CLI not found', 'wp-mcp-ai' ),
 			'available'     => (bool) $binary_info,
 			'binary_path'   => $binary_info ? $binary_info['path'] : '',
 			'binary_type'   => $binary_info ? $binary_info['type'] : '',

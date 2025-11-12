@@ -106,15 +106,15 @@ class WP_MCP_AI_Metabox_Base_Knowledge extends WP_MCP_AI_Metabox_Base {
 				continue;
 			}
 
-			$file_size_bytes  = 0;
-			$file_size_label  = '';
-			$file_path        = get_attached_file( $file_id );
+			$file_size_bytes = 0;
+			$file_size_label = '';
+			$file_path       = get_attached_file( $file_id );
 
 			if ( $file_path && file_exists( $file_path ) ) {
 				$file_size = filesize( $file_path );
 				if ( false !== $file_size ) {
-					$file_size_bytes  = (int) $file_size;
-					$file_size_label  = size_format( $file_size_bytes );
+					$file_size_bytes    = (int) $file_size;
+					$file_size_label    = size_format( $file_size_bytes );
 					$memory_size_bytes += $file_size_bytes;
 				}
 			}

@@ -11,13 +11,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load registry and base classes.
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
+// Load base classes for settings sections.
+// Note: Settings Registry and Validator are loaded in the main plugin file.
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 
 // Load custom filters applicator.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-custom-filters-applicator.php';
+
+// Load orchestration renderer.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-renderer.php';
 
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
@@ -70,7 +72,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Orchestration() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
+		// Gmail & Crawl4AI Integration has its own dedicated page (wp-mcp-ai-gmail-crawl4ai) and should not appear in settings tabs.
+		// WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_JetEngine_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_WooCommerce_Integration() );
 		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Elementor_Integration() );
@@ -85,9 +88,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new WP_MCP_AI_Settings_Dashboard();
 
 		// Initialize integration admin pages.
-		$GLOBALS['wp_mcp_ai_admin_jetengine'] = new WP_MCP_AI_Admin_JetEngine_Integration();
+		$GLOBALS['wp_mcp_ai_admin_jetengine']   = new WP_MCP_AI_Admin_JetEngine_Integration();
 		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = new WP_MCP_AI_Admin_WooCommerce_Integration();
-		$GLOBALS['wp_mcp_ai_admin_elementor'] = new WP_MCP_AI_Admin_Elementor_Integration();
+		$GLOBALS['wp_mcp_ai_admin_elementor']   = new WP_MCP_AI_Admin_Elementor_Integration();
 		$GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = new WP_MCP_AI_Admin_Gmail_Crawl_Integration();
 
 		// Initialize the custom filters applicator.
@@ -110,7 +113,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// Show admin notice about the error.
 		add_action(
 			'admin_notices',
-			function() use ( $e ) {
+			function () use ( $e ) {
 				?>
 				<div class="notice notice-error">
 					<p>

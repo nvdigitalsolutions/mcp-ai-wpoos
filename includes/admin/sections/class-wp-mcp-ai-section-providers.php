@@ -74,13 +74,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal hardcoded list if static method unavailable.
 			if ( empty( $model_choices ) ) {
 				$model_choices = array(
-					'gpt-4o'         => 'GPT-4o',
-					'gpt-4o-mini'    => 'GPT-4o Mini',
-					'gpt-4-turbo'    => 'GPT-4 Turbo',
-					'gpt-4'          => 'GPT-4',
-					'gpt-3.5-turbo'  => 'GPT-3.5 Turbo',
-					'o1-preview'     => 'o1 Preview',
-					'o1-mini'        => 'o1 Mini',
+					'gpt-4o'        => 'GPT-4o',
+					'gpt-4o-mini'   => 'GPT-4o Mini',
+					'gpt-4-turbo'   => 'GPT-4 Turbo',
+					'gpt-4'         => 'GPT-4',
+					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
+					'o1-preview'    => 'o1 Preview',
+					'o1-mini'       => 'o1 Mini',
 				);
 			}
 
@@ -92,19 +92,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
 					'default'     => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
 				),
-				
+
 				// OpenAI Settings.
-				'openai_api_key'        => array(
-					'type'        => 'password',
-					'label'       => __( 'OpenAI API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+				'openai_api_key'         => array(
+					'type'         => 'password',
+					'label'        => __( 'OpenAI API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: OpenAI API keys URL */
 						__( 'Your OpenAI API key. Get one from <a href="%s" target="_blank">OpenAI Platform</a>.', 'wp-mcp-ai' ),
 						'https://platform.openai.com/api-keys'
 					),
-					'placeholder' => 'sk-...',
+					'placeholder'  => 'sk-...',
+					'autocomplete' => 'new-password',
 				),
-				'default_model'         => array(
+				'default_model'          => array(
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'wp-mcp-ai' ),
@@ -123,24 +124,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => 'text-embedding-3-small',
 				),
 				'openai_organization_id' => array(
-					'type'        => 'text',
-					'label'       => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
-					'placeholder' => 'org-...',
+					'type'         => 'text',
+					'label'        => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
+					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
+					'placeholder'  => 'org-...',
+					'autocomplete' => 'off',
 				),
 
 				// Anthropic Settings.
-				'anthropic_api_key'     => array(
-					'type'        => 'password',
-					'label'       => __( 'Anthropic API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+				'anthropic_api_key'      => array(
+					'type'         => 'password',
+					'label'        => __( 'Anthropic API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: Anthropic Console URL */
 						__( 'Your Anthropic API key. Get one from <a href="%s" target="_blank">Anthropic Console</a>.', 'wp-mcp-ai' ),
 						'https://console.anthropic.com/'
 					),
-					'placeholder' => 'sk-ant-...',
+					'placeholder'  => 'sk-ant-...',
+					'autocomplete' => 'new-password',
 				),
-				'anthropic_model'       => array(
+				'anthropic_model'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'wp-mcp-ai' ),
@@ -155,17 +158,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Google Gemini Settings.
-				'gemini_api_key'        => array(
-					'type'        => 'password',
-					'label'       => __( 'Gemini API Key', 'wp-mcp-ai' ),
-					'description' => sprintf(
+				'gemini_api_key'         => array(
+					'type'         => 'password',
+					'label'        => __( 'Gemini API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
 						/* translators: %s: Google AI Studio URL */
 						__( 'Your Google Gemini API key. Get one from <a href="%s" target="_blank">Google AI Studio</a>.', 'wp-mcp-ai' ),
 						'https://aistudio.google.com/app/apikey'
 					),
-					'placeholder' => 'AIza...',
+					'placeholder'  => 'AIza...',
+					'autocomplete' => 'new-password',
 				),
-				'default_gemini_model'  => array(
+				'default_gemini_model'   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for Gemini requests. Gemini 1.5 Pro offers the best capabilities while Gemini 1.5 Flash provides faster responses at lower cost.', 'wp-mcp-ai' ),
@@ -178,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Ollama Settings.
-				'ollama_endpoint_url'   => array(
+				'ollama_endpoint_url'    => array(
 					'type'        => 'url',
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for your local Ollama installation. Default is http://localhost:11434 for local installations. Ensure Ollama is running before testing the connection.', 'wp-mcp-ai' ),
@@ -192,7 +196,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_ollama_endpoint_url', 'http://localhost:11434' ),
 				),
-				'ollama_model'          => array(
+				'ollama_model'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model name to use with Ollama. Must match exactly a model you have pulled (e.g., llama3, mistral, codellama). Use \"ollama list\" in terminal to see available models.', 'wp-mcp-ai' ),
@@ -214,7 +218,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234/v1' ),
 				),
-				'lm_studio_model'       => array(
+				'lm_studio_model'        => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model identifier for your loaded LM Studio model. This is typically shown in the LM Studio interface. Some installations accept \"local-model\" as a generic identifier.', 'wp-mcp-ai' ),
@@ -236,10 +240,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			// Group fields by provider.
 			$providers = array(
-				'OpenAI'      => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
-				'Anthropic'          => array( 'anthropic_api_key', 'anthropic_model' ),
-				'Google Gemini' => array( 'gemini_api_key', 'default_gemini_model' ),
-				'Ollama (Local)' => array( 'ollama_endpoint_url', 'ollama_model' ),
+				'OpenAI'            => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
+				'Anthropic'         => array( 'anthropic_api_key', 'anthropic_model' ),
+				'Google Gemini'     => array( 'gemini_api_key', 'default_gemini_model' ),
+				'Ollama (Local)'    => array( 'ollama_endpoint_url', 'ollama_model' ),
 				'LM Studio (Local)' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
 			);
 
@@ -265,11 +269,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			$value       = WP_MCP_AI_Settings_Registry::get_setting( 'provider_priority_list', isset( $field['default'] ) ? $field['default'] : array() );
 
 			$provider_labels = array(
-				'openai'     => __( 'OpenAI', 'wp-mcp-ai' ),
-			'anthropic'  => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'     => __( 'Gemini', 'wp-mcp-ai' ),
-				'ollama'     => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'  => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
+				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
+				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 			?>
 			<tr>

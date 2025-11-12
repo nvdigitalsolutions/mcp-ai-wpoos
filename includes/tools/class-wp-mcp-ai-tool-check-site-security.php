@@ -68,14 +68,14 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 		}
 
 		$checks = array(
-			'https'            => $this->check_https(),
-			'debug_mode'       => $this->check_debug_mode(),
-			'file_edit'        => $this->check_file_edit(),
-			'default_admin'    => $this->check_default_admin(),
-			'wp_version'       => $this->check_wordpress_version(),
-			'ssl_verify'       => $this->check_ssl_verify(),
-			'force_ssl_admin'  => $this->check_force_ssl_admin(),
-			'db_prefix'        => $this->check_database_prefix(),
+			'https'           => $this->check_https(),
+			'debug_mode'      => $this->check_debug_mode(),
+			'file_edit'       => $this->check_file_edit(),
+			'default_admin'   => $this->check_default_admin(),
+			'wp_version'      => $this->check_wordpress_version(),
+			'ssl_verify'      => $this->check_ssl_verify(),
+			'force_ssl_admin' => $this->check_force_ssl_admin(),
+			'db_prefix'       => $this->check_database_prefix(),
 		);
 
 		// Calculate risk level.
@@ -97,21 +97,21 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 			}
 		}
 
-		$risk_level       = $this->calculate_risk_level( $critical_issues, $warnings );
-		$is_safe          = ( 'safe' === $risk_level || 'low' === $risk_level );
-		$recommendation   = $this->get_recommendation( $risk_level, $critical_issues, $warnings );
+		$risk_level     = $this->calculate_risk_level( $critical_issues, $warnings );
+		$is_safe        = ( 'safe' === $risk_level || 'low' === $risk_level );
+		$recommendation = $this->get_recommendation( $risk_level, $critical_issues, $warnings );
 
 		return array(
-			'risk_level'       => $risk_level,
-			'is_safe_to_use'   => $is_safe,
-			'recommendation'   => $recommendation,
-			'summary'          => array(
+			'risk_level'     => $risk_level,
+			'is_safe_to_use' => $is_safe,
+			'recommendation' => $recommendation,
+			'summary'        => array(
 				'critical' => $critical_issues,
 				'warning'  => $warnings,
 				'pass'     => $passed,
 				'total'    => count( $checks ),
 			),
-			'checks'           => $checks,
+			'checks'         => $checks,
 		);
 	}
 
@@ -125,19 +125,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( $is_ssl ) {
 			return array(
-				'name'        => __( 'HTTPS Enabled', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'Site is using HTTPS, which encrypts data in transit.', 'wp-mcp-ai' ),
+				'name'     => __( 'HTTPS Enabled', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'Site is using HTTPS, which encrypts data in transit.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'HTTPS Not Enabled', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'critical',
-			'message'     => __( 'Site is not using HTTPS. AI API keys and sensitive data could be intercepted. This plugin should NOT be enabled without HTTPS.', 'wp-mcp-ai' ),
-			'action'      => __( 'Install an SSL certificate and enable HTTPS on your site.', 'wp-mcp-ai' ),
+			'name'     => __( 'HTTPS Not Enabled', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'critical',
+			'message'  => __( 'Site is not using HTTPS. AI API keys and sensitive data could be intercepted. This plugin should NOT be enabled without HTTPS.', 'wp-mcp-ai' ),
+			'action'   => __( 'Install an SSL certificate and enable HTTPS on your site.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -151,10 +151,10 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( ! $debug_enabled ) {
 			return array(
-				'name'        => __( 'Debug Mode', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'Debug mode is disabled.', 'wp-mcp-ai' ),
+				'name'     => __( 'Debug Mode', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'Debug mode is disabled.', 'wp-mcp-ai' ),
 			);
 		}
 
@@ -163,19 +163,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( $is_local ) {
 			return array(
-				'name'        => __( 'Debug Mode', 'wp-mcp-ai' ),
-				'status'      => 'info',
-				'severity'    => 'pass',
-				'message'     => __( 'Debug mode is enabled on local environment.', 'wp-mcp-ai' ),
+				'name'     => __( 'Debug Mode', 'wp-mcp-ai' ),
+				'status'   => 'info',
+				'severity' => 'pass',
+				'message'  => __( 'Debug mode is enabled on local environment.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'Debug Mode Enabled', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'warning',
-			'message'     => __( 'Debug mode is enabled in production. This may expose sensitive information in error messages.', 'wp-mcp-ai' ),
-			'action'      => __( 'Set WP_DEBUG to false in wp-config.php for production environments.', 'wp-mcp-ai' ),
+			'name'     => __( 'Debug Mode Enabled', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'warning',
+			'message'  => __( 'Debug mode is enabled in production. This may expose sensitive information in error messages.', 'wp-mcp-ai' ),
+			'action'   => __( 'Set WP_DEBUG to false in wp-config.php for production environments.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -189,19 +189,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( $file_edit_disabled ) {
 			return array(
-				'name'        => __( 'File Editing', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'File editing is disabled in the WordPress admin.', 'wp-mcp-ai' ),
+				'name'     => __( 'File Editing', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'File editing is disabled in the WordPress admin.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'File Editing Enabled', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'warning',
-			'message'     => __( 'File editing is enabled in the WordPress admin. If an attacker gains access, they could modify plugin/theme files.', 'wp-mcp-ai' ),
-			'action'      => __( 'Add define( \'DISALLOW_FILE_EDIT\', true ); to wp-config.php.', 'wp-mcp-ai' ),
+			'name'     => __( 'File Editing Enabled', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'warning',
+			'message'  => __( 'File editing is enabled in the WordPress admin. If an attacker gains access, they could modify plugin/theme files.', 'wp-mcp-ai' ),
+			'action'   => __( 'Add define( \'DISALLOW_FILE_EDIT\', true ); to wp-config.php.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -215,19 +215,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( ! $admin_user ) {
 			return array(
-				'name'        => __( 'Default Admin Username', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'No default "admin" username found.', 'wp-mcp-ai' ),
+				'name'     => __( 'Default Admin Username', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'No default "admin" username found.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'Default Admin Username Found', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'warning',
-			'message'     => __( 'The default "admin" username exists. This makes brute force attacks easier.', 'wp-mcp-ai' ),
-			'action'      => __( 'Create a new administrator account with a unique username and delete the "admin" account.', 'wp-mcp-ai' ),
+			'name'     => __( 'Default Admin Username Found', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'warning',
+			'message'  => __( 'The default "admin" username exists. This makes brute force attacks easier.', 'wp-mcp-ai' ),
+			'action'   => __( 'Create a new administrator account with a unique username and delete the "admin" account.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -247,10 +247,10 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( ! is_array( $updates ) || empty( $updates ) ) {
 			return array(
-				'name'        => __( 'WordPress Version', 'wp-mcp-ai' ),
-				'status'      => 'info',
-				'severity'    => 'pass',
-				'message'     => sprintf(
+				'name'     => __( 'WordPress Version', 'wp-mcp-ai' ),
+				'status'   => 'info',
+				'severity' => 'pass',
+				'message'  => sprintf(
 					/* translators: %s: WordPress version number */
 					__( 'WordPress version %s is installed.', 'wp-mcp-ai' ),
 					$wp_version
@@ -262,10 +262,10 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( 'latest' === $update->response ) {
 			return array(
-				'name'        => __( 'WordPress Version', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => sprintf(
+				'name'     => __( 'WordPress Version', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => sprintf(
 					/* translators: %s: WordPress version number */
 					__( 'WordPress is up to date (version %s).', 'wp-mcp-ai' ),
 					$wp_version
@@ -274,16 +274,16 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return array(
-			'name'        => __( 'Outdated WordPress Version', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'warning',
-			'message'     => sprintf(
+			'name'     => __( 'Outdated WordPress Version', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'warning',
+			'message'  => sprintf(
 				/* translators: 1: Current WordPress version, 2: Available WordPress version */
 				__( 'WordPress version %1$s is outdated. Version %2$s is available.', 'wp-mcp-ai' ),
 				$wp_version,
 				isset( $update->version ) ? $update->version : __( 'unknown', 'wp-mcp-ai' )
 			),
-			'action'      => __( 'Update WordPress to the latest version.', 'wp-mcp-ai' ),
+			'action'   => __( 'Update WordPress to the latest version.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -305,19 +305,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( ! $ssl_verify_disabled ) {
 			return array(
-				'name'        => __( 'SSL Verification', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'SSL certificate verification is enabled for outbound requests.', 'wp-mcp-ai' ),
+				'name'     => __( 'SSL Verification', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'SSL certificate verification is enabled for outbound requests.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'SSL Verification Disabled', 'wp-mcp-ai' ),
-			'status'      => 'fail',
-			'severity'    => 'critical',
-			'message'     => __( 'SSL certificate verification is disabled. This makes the site vulnerable to man-in-the-middle attacks when communicating with AI APIs.', 'wp-mcp-ai' ),
-			'action'      => __( 'Remove any filters or code that disable SSL verification.', 'wp-mcp-ai' ),
+			'name'     => __( 'SSL Verification Disabled', 'wp-mcp-ai' ),
+			'status'   => 'fail',
+			'severity' => 'critical',
+			'message'  => __( 'SSL certificate verification is disabled. This makes the site vulnerable to man-in-the-middle attacks when communicating with AI APIs.', 'wp-mcp-ai' ),
+			'action'   => __( 'Remove any filters or code that disable SSL verification.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -332,28 +332,28 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 		if ( ! is_ssl() ) {
 			// If site is not on SSL at all, this check doesn't matter.
 			return array(
-				'name'        => __( 'Force SSL Admin', 'wp-mcp-ai' ),
-				'status'      => 'info',
-				'severity'    => 'pass',
-				'message'     => __( 'Not applicable (site is not using HTTPS).', 'wp-mcp-ai' ),
+				'name'     => __( 'Force SSL Admin', 'wp-mcp-ai' ),
+				'status'   => 'info',
+				'severity' => 'pass',
+				'message'  => __( 'Not applicable (site is not using HTTPS).', 'wp-mcp-ai' ),
 			);
 		}
 
 		if ( $force_ssl_admin ) {
 			return array(
-				'name'        => __( 'Force SSL Admin', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'SSL is enforced for admin area.', 'wp-mcp-ai' ),
+				'name'     => __( 'Force SSL Admin', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'SSL is enforced for admin area.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'Force SSL Admin', 'wp-mcp-ai' ),
-			'status'      => 'info',
-			'severity'    => 'pass',
-			'message'     => __( 'FORCE_SSL_ADMIN is not set. Consider enabling it for additional security.', 'wp-mcp-ai' ),
-			'action'      => __( 'Add define( \'FORCE_SSL_ADMIN\', true ); to wp-config.php.', 'wp-mcp-ai' ),
+			'name'     => __( 'Force SSL Admin', 'wp-mcp-ai' ),
+			'status'   => 'info',
+			'severity' => 'pass',
+			'message'  => __( 'FORCE_SSL_ADMIN is not set. Consider enabling it for additional security.', 'wp-mcp-ai' ),
+			'action'   => __( 'Add define( \'FORCE_SSL_ADMIN\', true ); to wp-config.php.', 'wp-mcp-ai' ),
 		);
 	}
 
@@ -369,19 +369,19 @@ class WP_MCP_AI_Tool_Check_Site_Security implements WP_MCP_AI_Tool_Interface {
 
 		if ( 'wp_' !== $prefix ) {
 			return array(
-				'name'        => __( 'Database Prefix', 'wp-mcp-ai' ),
-				'status'      => 'pass',
-				'severity'    => 'pass',
-				'message'     => __( 'Custom database prefix is used.', 'wp-mcp-ai' ),
+				'name'     => __( 'Database Prefix', 'wp-mcp-ai' ),
+				'status'   => 'pass',
+				'severity' => 'pass',
+				'message'  => __( 'Custom database prefix is used.', 'wp-mcp-ai' ),
 			);
 		}
 
 		return array(
-			'name'        => __( 'Default Database Prefix', 'wp-mcp-ai' ),
-			'status'      => 'info',
-			'severity'    => 'pass',
-			'message'     => __( 'Default database prefix "wp_" is used. While not critical, using a custom prefix adds a minor security layer.', 'wp-mcp-ai' ),
-			'action'      => __( 'Consider using a custom database prefix for new installations.', 'wp-mcp-ai' ),
+			'name'     => __( 'Default Database Prefix', 'wp-mcp-ai' ),
+			'status'   => 'info',
+			'severity' => 'pass',
+			'message'  => __( 'Default database prefix "wp_" is used. While not critical, using a custom prefix adds a minor security layer.', 'wp-mcp-ai' ),
+			'action'   => __( 'Consider using a custom database prefix for new installations.', 'wp-mcp-ai' ),
 		);
 	}
 

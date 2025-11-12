@@ -19,7 +19,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Provides a master tool for purging all configured cache layers.
  */
-class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_TIMEOUT = 30;
 
 	const MAX_TIMEOUT = 120;
@@ -255,5 +255,18 @@ class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface {
 		);
 
 		return $cloudflare_tool->execute( $arguments, $context );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Clears cache data.
+			'state-changing',       // Modifies system state.
+			'requires-capability',  // Requires 'manage_options' capability.
+			'performance-impact',   // May affect site performance temporarily.
+			'idempotent',           // Can be called multiple times safely.
+		);
 	}
 }

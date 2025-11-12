@@ -19,13 +19,39 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		const PAGE_SLUG = 'wp-mcp-ai-dashboard';
 
 		/**
+		 * AJAX handlers component.
+		 *
+		 * @var WP_MCP_AI_Admin_AJAX_Handlers
+		 */
+		private $ajax_handlers;
+
+		/**
 		 * Constructor.
 		 */
 		public function __construct() {
+			// Initialize AJAX handlers.
+			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
+
+			// Register AJAX handlers.
+			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_lm_studio_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_lm_studio_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_orchestration_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_export_token_usage_csv', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_bulk_assign_tier', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_all_recommendations', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_apply_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 		}
 
 		/**
@@ -72,13 +98,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		/**
 		 * Sanitize settings before saving.
 		 *
-		 * @param array $input Raw settings input.
+		 * @param array  $input Raw settings input.
 		 * @param string $active_tab Optional. The active tab to process. If not provided, processes all tabs.
 		 * @return array Sanitized settings.
 		 */
 		public function sanitize_settings( $input, $active_tab = '' ) {
 			$sanitized = array();
-			
+
 			// Get sections to process - either from a specific tab or all sections.
 			if ( ! empty( $active_tab ) ) {
 				$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
@@ -122,9 +148,36 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
-			
+
+			// Check if logging is enabled for diagnostic purposes.
+			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
+
+			// Log save attempt for debugging (only if logging enabled).
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						$active_tab,
+						count( $posted_settings ),
+						implode( ', ', array_keys( $posted_settings ) )
+					)
+				);
+			}
+
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
 			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+
+			// Log sanitization results.
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
+						count( $sanitized_new ),
+						implode( ', ', array_keys( $sanitized_new ) )
+					)
+				);
+			}
 
 			// Merge with existing settings to avoid wiping unrelated fields.
 			// This is critical for display-only sections (like Overview) that have no editable fields,
@@ -132,14 +185,37 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
 
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+			// Save to database and log result.
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+
+			if ( $enable_logging ) {
+				error_log(
+					sprintf(
+						'[WP oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
+						$update_result ? 'SUCCESS' : 'UNCHANGED',
+						count( $existing_settings ),
+						count( $merged_settings )
+					)
+				);
+			}
+
+			// Clear caches when settings are updated.
+			if ( 'orchestration' === $active_tab ) {
+				// Clear orchestration-related caches.
+				delete_transient( 'wp_mcp_ai_health_status' );
+				delete_transient( 'wp_mcp_ai_active_cron_count' );
+
+				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
+				}
+			}
 
 			// Redirect back to the same tab that was being edited.
 			$redirect_args = array(
 				'page'    => self::PAGE_SLUG,
 				'updated' => 'true',
 			);
-			
+
 			if ( ! empty( $active_tab ) ) {
 				$redirect_args['tab'] = $active_tab;
 			}
@@ -163,22 +239,34 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				return;
 			}
 
-			$plugin_url = plugin_dir_url( dirname( dirname( __FILE__ ) ) );
+			// Use WP_MCP_AI_PATH and WP_MCP_AI_URL constants for consistency.
+			$css_path           = WP_MCP_AI_PATH . 'assets/css/settings-dashboard.css';
+			$js_ajax_error_path = WP_MCP_AI_PATH . 'assets/js/ajax-error-service.js';
+			$js_dashboard_path  = WP_MCP_AI_PATH . 'assets/js/settings-dashboard.js';
 
-			// Enqueue dashboard styles.
+			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
-				$plugin_url . 'assets/css/settings-dashboard.css',
+				WP_MCP_AI_URL . 'assets/css/settings-dashboard.css',
 				array(),
-				WP_MCP_AI_VERSION
+				file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
 			);
 
-			// Enqueue dashboard scripts with jQuery UI Sortable dependency.
+			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
+			wp_enqueue_script(
+				'wp-mcp-ai-ajax-error-service',
+				WP_MCP_AI_URL . 'assets/js/ajax-error-service.js',
+				array( 'jquery' ),
+				file_exists( $js_ajax_error_path ) ? filemtime( $js_ajax_error_path ) : '1.0.0',
+				true
+			);
+
+			// Enqueue dashboard scripts with jQuery UI Sortable dependency and filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-dashboard',
-				$plugin_url . 'assets/js/settings-dashboard.js',
-				array( 'jquery', 'jquery-ui-sortable' ),
-				WP_MCP_AI_VERSION,
+				WP_MCP_AI_URL . 'assets/js/settings-dashboard.js',
+				array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
+				file_exists( $js_dashboard_path ) ? filemtime( $js_dashboard_path ) : '1.0.0',
 				true
 			);
 

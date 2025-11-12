@@ -68,11 +68,11 @@ echo ""
 # Navigate to project root.
 cd "$PROJECT_ROOT"
 
-# Check if vendor directory exists.
-if [ ! -d "vendor" ]; then
-	echo -e "${YELLOW}Installing dependencies...${NC}"
-	composer install --no-interaction
-	echo ""
+# Ensure PHPUnit is available.
+if [ ! -x "vendor/bin/phpunit" ]; then
+        echo -e "${YELLOW}Installing development dependencies (including PHPUnit)...${NC}"
+        composer install --no-interaction
+        echo ""
 fi
 
 # Function to run a specific test suite.

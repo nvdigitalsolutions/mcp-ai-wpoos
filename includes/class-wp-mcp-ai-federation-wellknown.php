@@ -97,7 +97,7 @@ class WP_MCP_AI_Federation_WellKnown {
 				status_header( 404 );
 				echo wp_json_encode(
 					array(
-						'error' => 'not_found',
+						'error'   => 'not_found',
 						'message' => 'Unknown well-known endpoint.',
 					)
 				);
@@ -165,7 +165,7 @@ class WP_MCP_AI_Federation_WellKnown {
 	 * @return array Array of capability slugs.
 	 */
 	protected function get_available_capabilities() {
-		$tools = $this->registry->get_all_tools();
+		$tools        = $this->registry->get_all_tools();
 		$capabilities = array();
 
 		foreach ( $tools as $tool ) {
@@ -200,7 +200,7 @@ class WP_MCP_AI_Federation_WellKnown {
 		// If no keys configured, generate a placeholder indicating keys should be configured.
 		if ( empty( $public_keys ) ) {
 			return array(
-				'keys' => array(),
+				'keys'    => array(),
 				'message' => 'No public keys configured. Configure federation keys in WP oOS settings.',
 			);
 		}

@@ -717,7 +717,7 @@ Registry Cleanup (completed jobs pruned)
    - Implements safety margins for API limits
    - Manages predictive chunking strategies
    - Prevents token limit overruns
-   - Location: `includes/class-wp-mcp-ai-token-budget-manager.php`
+   - Location: `includes/services/class-wp-mcp-ai-token-budget-service.php`
 
 3. **WP_MCP_AI_Tool_Registry**
    - Maintains central tool catalog with extensive built-in tools

@@ -18,6 +18,17 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-chat-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-assistant-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-budget-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-reporting-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
+
+// Load performance monitor service only when not in base version mode.
+if ( ! wp_mcp_ai_is_base_version() ) {
+	require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-monitor-service.php';
+}
 
 /**
  * Initialize services
@@ -124,4 +135,61 @@ function wp_mcp_ai_get_token_budget_manager() {
 function wp_mcp_ai_get_tool_registry() {
 	$container = WP_MCP_AI_Container::get_instance();
 	return $container->get( 'tool_registry' );
+}
+
+/**
+ * Get error tracking service instance
+ *
+ * Helper function to get error tracking service instance.
+ *
+ * @return WP_MCP_AI_Error_Tracking_Service Error tracking service instance.
+ */
+function wp_mcp_ai_get_error_tracking_service() {
+	return WP_MCP_AI_Error_Tracking_Service::get_instance();
+}
+
+/**
+ * Get performance monitor service instance
+ *
+ * Helper function to get performance monitor service instance.
+ * Returns null if not available (e.g., in base version mode).
+ *
+ * @return WP_MCP_AI_Performance_Monitor_CCT|null Performance monitor service instance or null.
+ */
+function wp_mcp_ai_get_performance_monitor_service() {
+	if ( wp_mcp_ai_is_base_version() ) {
+		return null;
+	}
+	
+	if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
+		return null;
+	}
+	
+	// Performance monitor is a static class, return the class name
+	// for static method access (e.g., WP_MCP_AI_Performance_Monitor_CCT::store_test_result).
+	return 'WP_MCP_AI_Performance_Monitor_CCT';
+}
+
+/**
+ * Get performance reporting service instance
+ *
+ * Helper function to access performance reporting service.
+ * This service provides business logic for performance analysis and reporting.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_performance_reporting_service() {
+	return 'WP_MCP_AI_Performance_Reporting_Service';
+}
+
+/**
+ * Get token usage service instance
+ *
+ * Helper function to access token usage service.
+ * This service provides business logic for token usage calculations and statistics.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_token_usage_service() {
+	return 'WP_MCP_AI_Token_Usage_Service';
 }

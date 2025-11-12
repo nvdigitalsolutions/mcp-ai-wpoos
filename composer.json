@@ -3,6 +3,11 @@
     "description": "WordPress plugin integrating MCP tools with AI workflows.",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
+    "require": {
+        "rahul900day/tiktoken-php": "^1.0",
+        "symfony/http-client": "^7.3",
+        "nyholm/psr7": "^1.8"
+    },
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
@@ -34,17 +39,5 @@
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "php-http/discovery": true
         }
-    },
-    "repositories": {
-        "notifylk": {
-            "type": "vcs",
-            "url": "https://github.com/notifylk/notify-php"
-        }
-    },
-    "require": {
-        "notifylk/notify-php": "dev-master",
-        "rahul900day/tiktoken-php": "^1.0",
-        "symfony/http-client": "^7.3",
-        "nyholm/psr7": "^1.8"
     }
 }

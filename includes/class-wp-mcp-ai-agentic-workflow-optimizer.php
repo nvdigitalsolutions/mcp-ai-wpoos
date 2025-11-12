@@ -58,7 +58,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 */
 	public function __construct() {
 		$this->enabled = ! defined( 'WP_MCP_AI_DISABLE_AGENTIC_OPTIMIZATIONS' ) || ! WP_MCP_AI_DISABLE_AGENTIC_OPTIMIZATIONS;
-		
+
 		if ( $this->enabled ) {
 			$this->init_hooks();
 		}
@@ -214,7 +214,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 		}
 
 		$compressed = gzencode( $content, 6 ); // Medium compression level.
-		
+
 		if ( false === $compressed ) {
 			return $content;
 		}
@@ -222,11 +222,11 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 		// Only use compression if it actually saves space.
 		if ( strlen( $compressed ) < strlen( $content ) * 0.8 ) {
 			$this->record_metric( 'compression_saved', strlen( $content ) - strlen( $compressed ) );
-			
+
 			return wp_json_encode(
 				array(
-					'compressed' => true,
-					'data'       => base64_encode( $compressed ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					'compressed'    => true,
+					'data'          => base64_encode( $compressed ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 					'original_size' => strlen( $content ),
 				)
 			);
@@ -260,12 +260,12 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 	 */
 	public function start_metrics_collection() {
 		$this->metrics = array(
-			'start_time'      => microtime( true ),
-			'start_memory'    => memory_get_usage(),
-			'iterations'      => 0,
-			'tool_executions' => 0,
-			'cache_hits'      => 0,
-			'cache_misses'    => 0,
+			'start_time'        => microtime( true ),
+			'start_memory'      => memory_get_usage(),
+			'iterations'        => 0,
+			'tool_executions'   => 0,
+			'cache_hits'        => 0,
+			'cache_misses'      => 0,
 			'compression_saved' => 0,
 		);
 	}
@@ -296,9 +296,9 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 			return;
 		}
 
-		$this->metrics['end_time']   = microtime( true );
-		$this->metrics['end_memory'] = memory_get_usage();
-		$this->metrics['duration']   = $this->metrics['end_time'] - $this->metrics['start_time'];
+		$this->metrics['end_time']    = microtime( true );
+		$this->metrics['end_memory']  = memory_get_usage();
+		$this->metrics['duration']    = $this->metrics['end_time'] - $this->metrics['start_time'];
 		$this->metrics['memory_used'] = $this->metrics['end_memory'] - $this->metrics['start_memory'];
 
 		// Log metrics if logging is enabled.

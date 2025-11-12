@@ -172,7 +172,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 */
 	public function test_multi_iteration_agentic_loop() {
 		$iteration_count = 0;
-		
+
 		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -199,7 +199,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				}
 			);
 
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -228,7 +228,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 */
 	public function test_max_iteration_limit() {
 		$iteration_count = 0;
-		
+
 		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -239,13 +239,13 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			->willReturnCallback(
 				function ( $messages ) use ( &$iteration_count ) {
 					++$iteration_count;
-					
+
 					// Always request a tool to hit the limit
 					return $this->create_response_with_tool_call( 'get_current_time' );
 				}
 			);
 
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -256,7 +256,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		);
 
 		$max_iterations = 3;
-		$response = $this->chat_service->process_chat_request(
+		$response       = $this->chat_service->process_chat_request(
 			$this->assistant_id,
 			$messages,
 			array(),
@@ -278,8 +278,8 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		$failing_tool = $this->create_failing_tool();
 		$this->registry->register_tool( $failing_tool );
 
-		$mock_client = $this->create_mock_client_with_tool_call( 'failing_test_tool' );
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client        = $this->create_mock_client_with_tool_call( 'failing_test_tool' );
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -300,7 +300,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 
 		$this->assertArrayHasKey( 'tool_results', $response );
 		$tool_result = $response['tool_results'][0];
-		
+
 		// Verify error is captured in tool result
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertArrayHasKey( 'error', $content );
@@ -310,8 +310,8 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 * Test that tool results are properly formatted for frontend.
 	 */
 	public function test_tool_results_format() {
-		$mock_client = $this->create_mock_client_with_tool_call();
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client        = $this->create_mock_client_with_tool_call();
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -338,7 +338,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		$this->assertEquals( 'tool', $tool_result['role'] );
 		$this->assertArrayHasKey( 'tool_call_id', $tool_result );
 		$this->assertArrayHasKey( 'content', $tool_result );
-		
+
 		// Content should be JSON encoded
 		$content = json_decode( $tool_result['content'], true );
 		$this->assertIsArray( $content );
@@ -348,8 +348,8 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 * Test that responses are properly surfaced to frontend.
 	 */
 	public function test_responses_properly_surfaced() {
-		$mock_client = $this->create_mock_client_with_tool_call();
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_client        = $this->create_mock_client_with_tool_call();
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -385,7 +385,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			$this->assertEquals( 'tool', $tool_result['role'] );
 			$this->assertArrayHasKey( 'tool_call_id', $tool_result );
 			$this->assertArrayHasKey( 'content', $tool_result );
-			
+
 			// Verify content is valid JSON
 			$decoded = json_decode( $tool_result['content'], true );
 			$this->assertNotNull( $decoded, 'Tool result content should be valid JSON' );
@@ -397,13 +397,16 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 */
 	public function test_max_iterations_configurable() {
 		$custom_max = 3;
-		
-		add_filter( 'wp_mcp_ai_max_agentic_iterations', function( $iterations ) use ( $custom_max ) {
-			return $custom_max;
-		} );
+
+		add_filter(
+			'wp_mcp_ai_max_agentic_iterations',
+			function ( $iterations ) use ( $custom_max ) {
+				return $custom_max;
+			}
+		);
 
 		$iteration_count = 0;
-		
+
 		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -414,13 +417,13 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			->willReturnCallback(
 				function ( $messages ) use ( &$iteration_count ) {
 					++$iteration_count;
-					
+
 					// Always request a tool to hit the limit
 					return $this->create_response_with_tool_call( 'get_current_time' );
 				}
 			);
 
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -447,7 +450,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 		// - Browser /chat-client endpoint: 15 iterations (for complex UI workflows)
 		// - Per-assistant override: via assistant config 'max_agentic_iterations'
 		// - Admin setting: Settings → Custom Filters → Max Agentic Iterations
-		
+
 		$this->assertTrue( true, 'Documented: /chat-client uses 15 iterations by default' );
 	}
 
@@ -456,7 +459,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	 */
 	public function test_assistant_message_ordering() {
 		$messages_sent = array();
-		
+
 		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
 			->disableOriginalConstructor()
 			->onlyMethods( array( 'create_chat_completion' ) )
@@ -483,7 +486,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				}
 			);
 
-		$mock_router = $this->create_mock_router_with_client( $mock_client );
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
 		$this->chat_service = $this->create_chat_service( $mock_router );
 
 		$messages = array(
@@ -609,7 +612,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 												'id'       => 'call_time_001',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_current_time',
+													'name' => 'get_current_time',
 													'arguments' => '{}',
 												),
 											),
@@ -617,7 +620,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 												'id'       => 'call_summary_002',
 												'type'     => 'function',
 												'function' => array(
-													'name'      => 'get_site_summary',
+													'name' => 'get_site_summary',
 													'arguments' => '{}',
 												),
 											),
@@ -714,15 +717,22 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 				return 'failing_test_tool';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Failing Test Tool';
+			}
+
+			public function get_description() {
+				return 'A tool that always fails';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'                => 'failing_test_tool',
-					'description'         => 'A tool that always fails',
-					'required_capability' => 'read',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return new WP_Error( 'tool_failed', 'This tool always fails.' );
 			}
 		};

@@ -133,7 +133,7 @@ class WP_MCP_AI_Elementor_Widget_Registration_No_Buffering_Test extends WP_UnitT
 
 		// Instantiate the widget - this should work without internal ob_end_clean suppressing output.
 		try {
-			$widget = new WP_MCP_AI_Elementor_Widget();
+			$widget                  = new WP_MCP_AI_Elementor_Widget();
 			$instantiation_succeeded = true;
 		} catch ( Exception $e ) {
 			$instantiation_succeeded = false;

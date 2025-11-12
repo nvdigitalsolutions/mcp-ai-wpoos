@@ -29,6 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_CREDENTIALS             = WP_MCP_AI_Credentials::META_KEY;
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
+		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -76,6 +77,230 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
 			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
+		}
+
+		/**
+		 * Get tool selection presets for common use cases.
+		 *
+		 * @return array Array of presets with name, description, and tools.
+		 */
+		protected function get_tool_presets() {
+			$presets = array(
+				'content_writing' => array(
+					'name'        => __( 'Content Writing', 'wp-mcp-ai' ),
+					'description' => __( 'Tools for creating and managing content, posts, and pages', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'search_content',
+						'search_attachments',
+						'get_recent_posts',
+						'save_post',
+						'get_rankmath_seo',
+						'generate_openai_image',
+						'generate_gemini_image',
+						'web_search',
+					),
+				),
+				'ecommerce'       => array(
+					'name'        => __( 'E-commerce Support', 'wp-mcp-ai' ),
+					'description' => __( 'WooCommerce and product management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_woo_recent_orders',
+						'get_woo_products',
+						'create_woo_product',
+						'send_group_email',
+						'send_mailjet_email',
+					),
+				),
+				'site_management' => array(
+					'name'        => __( 'Site Management', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress core management and monitoring tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_site_summary',
+						'get_system_logs',
+						'get_update_status',
+						'get_site_health',
+						'get_environment_status',
+						'check_site_security',
+						'purge_cache',
+						'create_cron_job',
+						'list_cron_jobs',
+					),
+				),
+				'seo_marketing'   => array(
+					'name'        => __( 'SEO & Marketing', 'wp-mcp-ai' ),
+					'description' => __( 'SEO analysis and social media management tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_rankmath_seo',
+						'web_search',
+						'post_facebook_instagram',
+						'post_linkedin_update',
+						'get_facebook_instagram_insights',
+						'google_analytics_report',
+						'create_google_calendar_event',
+					),
+				),
+				'development'     => array(
+					'name'        => __( 'Development', 'wp-mcp-ai' ),
+					'description' => __( 'Code snippets, CLI, and technical development tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'create_wpcode_snippet',
+						'check_wp_cli',
+						'get_system_logs',
+						'count_tokens',
+						'probe_chat',
+						'query_remote_site',
+					),
+				),
+				'data_analytics'  => array(
+					'name'        => __( 'Data & Analytics', 'wp-mcp-ai' ),
+					'description' => __( 'Data collection, reporting, and analytics tools', 'wp-mcp-ai' ),
+					'tools'       => array(
+						'get_jetengine_items',
+						'list_jetengine_rest_routes',
+						'invoke_jetengine_route',
+						'get_jetformbuilder_forms',
+						'get_jetformbuilder_submissions',
+						'google_analytics_report',
+						'quickbooks_report',
+					),
+				),
+			);
+
+			/**
+			 * Filter the tool selection presets.
+			 *
+			 * @param array $presets Array of presets with name, description, and tools.
+			 */
+			return apply_filters( 'wp_mcp_ai_tool_presets', $presets );
+		}
+
+		/**
+		 * Render tool selection preset buttons.
+		 *
+		 * @param array $selected_tools Currently selected tool slugs.
+		 */
+		protected function render_tool_presets( $selected_tools ) {
+			$presets = $this->get_tool_presets();
+
+			if ( empty( $presets ) ) {
+				return;
+			}
+
+			// Get all available tools for validation.
+			$available_tools = array();
+			foreach ( $this->registry->get_tools() as $tool ) {
+				if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+					$available_tools[] = $tool->get_slug();
+				}
+			}
+
+			echo '<div class="wp-mcp-ai-tool-presets" style="margin-top: 1rem;">';
+			echo '<h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 14px;">' . esc_html__( 'Quick Tool Selection Presets', 'wp-mcp-ai' ) . '</h3>';
+			echo '<p class="description" style="margin-top: 0; margin-bottom: 1rem;">' . esc_html__( 'Click a preset to quickly select tools for common tasks. This will replace your current tool selection.', 'wp-mcp-ai' ) . '</p>';
+			echo '<div class="wp-mcp-ai-tool-presets__buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">';
+
+			foreach ( $presets as $preset_key => $preset_data ) {
+				if ( ! isset( $preset_data['name'], $preset_data['tools'] ) || ! is_array( $preset_data['tools'] ) ) {
+					continue;
+				}
+
+				// Filter tools to only include those that are actually available.
+				$preset_tools = array_intersect( $preset_data['tools'], $available_tools );
+				if ( empty( $preset_tools ) ) {
+					continue;
+				}
+
+				$preset_name        = sanitize_text_field( $preset_data['name'] );
+				$preset_description = isset( $preset_data['description'] ) ? sanitize_text_field( $preset_data['description'] ) : '';
+				$preset_tools_json  = wp_json_encode( array_values( $preset_tools ) );
+
+				printf(
+					'<button type="button" class="button wp-mcp-ai-tool-preset-btn" data-preset="%1$s" data-tools="%2$s" title="%3$s">%4$s</button>',
+					esc_attr( $preset_key ),
+					esc_attr( $preset_tools_json ),
+					esc_attr( $preset_description ),
+					esc_html( $preset_name )
+				);
+			}
+
+			echo '</div>';
+			echo '</div>';
+
+			// Add JavaScript for preset functionality.
+			static $preset_script_printed = false;
+			if ( ! $preset_script_printed ) {
+				$preset_script_printed = true;
+				?>
+				<script type="text/javascript">
+				( function() {
+					document.addEventListener( 'DOMContentLoaded', function() {
+						var presetButtons = document.querySelectorAll( '.wp-mcp-ai-tool-preset-btn' );
+
+						presetButtons.forEach( function( button ) {
+							button.addEventListener( 'click', function( e ) {
+								e.preventDefault();
+
+								var toolsData = button.getAttribute( 'data-tools' );
+								if ( ! toolsData ) {
+									return;
+								}
+
+								var presetTools;
+								try {
+									presetTools = JSON.parse( toolsData );
+								} catch ( error ) {
+									console.error( 'Failed to parse preset tools:', error );
+									return;
+								}
+
+								if ( ! Array.isArray( presetTools ) ) {
+									return;
+								}
+
+								// First, uncheck all tool checkboxes.
+								var allToolCheckboxes = document.querySelectorAll( '.wp-mcp-ai-tools__checkbox' );
+								allToolCheckboxes.forEach( function( checkbox ) {
+									if ( checkbox.checked ) {
+										checkbox.checked = false;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Then, check the checkboxes for tools in the preset.
+								presetTools.forEach( function( toolSlug ) {
+									var checkbox = document.querySelector( 'input[name="wp_mcp_ai_tools[]"][value="' + toolSlug + '"]' );
+									if ( checkbox && ! checkbox.checked ) {
+										checkbox.checked = true;
+										// Trigger change event to update UI.
+										var event = new Event( 'change', { bubbles: true } );
+										checkbox.dispatchEvent( event );
+									}
+								} );
+
+								// Scroll to the tools section.
+								var toolsSection = document.querySelector( '.wp-mcp-ai-tools' );
+								if ( toolsSection ) {
+									toolsSection.scrollIntoView( { behavior: 'smooth', block: 'start' } );
+								}
+
+								// Show a brief visual confirmation.
+								button.style.backgroundColor = '#2271b1';
+								button.style.color = '#fff';
+								button.style.borderColor = '#2271b1';
+								setTimeout( function() {
+									button.style.backgroundColor = '';
+									button.style.color = '';
+									button.style.borderColor = '';
+								}, 500 );
+							} );
+						} );
+					} );
+				} )();
+				</script>
+				<?php
+			}
 		}
 
 		/**
@@ -772,6 +997,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_REQUIRED_CAPABILITY,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( __CLASS__, 'sanitize_required_capability_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
 		}
 
 		/**
@@ -968,9 +1205,42 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Sanitize the required capability meta value.
+		 *
+		 * @param mixed $capability Raw capability value.
+		 * @return string
+		 */
+		public static function sanitize_required_capability_meta( $capability ) {
+			if ( ! is_string( $capability ) ) {
+				return '';
+			}
+
+			$capability = sanitize_key( $capability );
+
+			// Allow empty (no requirement), 'public' (anyone), or valid WordPress capabilities.
+			if ( '' === $capability || 'public' === $capability ) {
+				return $capability;
+			}
+
+			// Validate it's a known capability or follows WordPress naming convention.
+			// This is permissive to allow custom capabilities.
+			if ( preg_match( '/^[a-z_]+$/', $capability ) ) {
+				return $capability;
+			}
+
+			return '';
+		}
+
+		/**
 		 * Register meta boxes for the assistant CPT.
 		 */
 		public function register_meta_boxes() {
+			// Only register metaboxes for assistant post type.
+			$screen = get_current_screen();
+			if ( ! $screen || self::POST_TYPE !== $screen->post_type ) {
+				return;
+			}
+
 			add_meta_box(
 				'wp-mcp-ai-tools',
 				__( 'Available Tools', 'wp-mcp-ai' ),
@@ -986,6 +1256,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				array( $this, 'render_tool_shortcuts_meta_box' ),
 				self::POST_TYPE,
 				'normal',
+				'default'
+			);
+
+			add_meta_box(
+				'wp-mcp-ai-required-capability',
+				__( 'Access Control', 'wp-mcp-ai' ),
+				array( $this, 'render_required_capability_meta_box' ),
+				self::POST_TYPE,
+				'side',
 				'default'
 			);
 
@@ -1337,6 +1616,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			echo '</label>';
 			echo '<p class="description">' . esc_html__( 'When enabled, only the custom shortcuts you define below will appear in the chat interface.', 'wp-mcp-ai' ) . '</p>';
 			echo '</fieldset>';
+
+			// Render tool selection presets.
+			$this->render_tool_presets( $selected_tools );
 
 			$group_map = array();
 			if ( method_exists( $this->registry, 'get_tool_group_map' ) ) {
@@ -2422,15 +2704,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					continue;
 				}
 
-				$file_size_bytes  = 0;
-				$file_size_label  = '';
-				$file_path        = get_attached_file( $file_id );
+				$file_size_bytes = 0;
+				$file_size_label = '';
+				$file_path       = get_attached_file( $file_id );
 
 				if ( $file_path && file_exists( $file_path ) ) {
 					$file_size = filesize( $file_path );
 					if ( false !== $file_size ) {
-						$file_size_bytes  = (int) $file_size;
-						$file_size_label  = size_format( $file_size_bytes );
+						$file_size_bytes    = (int) $file_size;
+						$file_size_label    = size_format( $file_size_bytes );
 						$memory_size_bytes += $file_size_bytes;
 					}
 				}
@@ -2560,6 +2842,62 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			} );
 		} );
 		</script>
+			<?php
+		}
+
+		/**
+		 * Render the required capability meta box.
+		 *
+		 * @param WP_Post $post Post object.
+		 */
+		public function render_required_capability_meta_box( $post ) {
+			if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+				wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			}
+
+			wp_nonce_field( 'wp_mcp_ai_required_capability_meta', 'wp_mcp_ai_required_capability_meta_nonce' );
+
+			$required_capability = get_post_meta( $post->ID, self::META_REQUIRED_CAPABILITY, true );
+			if ( ! is_string( $required_capability ) ) {
+				$required_capability = '';
+			}
+
+			$required_capability = self::sanitize_required_capability_meta( $required_capability );
+
+			?>
+			<p>
+				<label for="wp-mcp-ai-required-capability">
+					<strong><?php esc_html_e( 'Required Capability', 'wp-mcp-ai' ); ?></strong>
+				</label>
+			</p>
+			<p>
+				<select id="wp-mcp-ai-required-capability" name="wp_mcp_ai_required_capability" class="widefat">
+					<option value="" <?php selected( $required_capability, '' ); ?>>
+						<?php esc_html_e( 'No requirement (use global setting)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="public" <?php selected( $required_capability, 'public' ); ?>>
+						<?php esc_html_e( 'Public (anyone can access)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="read" <?php selected( $required_capability, 'read' ); ?>>
+						<?php esc_html_e( 'Read (subscribers and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="edit_posts" <?php selected( $required_capability, 'edit_posts' ); ?>>
+						<?php esc_html_e( 'Edit Posts (contributors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="publish_posts" <?php selected( $required_capability, 'publish_posts' ); ?>>
+						<?php esc_html_e( 'Publish Posts (authors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="edit_pages" <?php selected( $required_capability, 'edit_pages' ); ?>>
+						<?php esc_html_e( 'Edit Pages (editors and above)', 'wp-mcp-ai' ); ?>
+					</option>
+					<option value="manage_options" <?php selected( $required_capability, 'manage_options' ); ?>>
+						<?php esc_html_e( 'Manage Options (administrators only)', 'wp-mcp-ai' ); ?>
+					</option>
+				</select>
+			</p>
+			<p class="description">
+				<?php esc_html_e( 'Set the WordPress capability required to access this assistant. Leave empty to use the global capability setting. Set to "Public" to allow anyone (including guests) to access this assistant.', 'wp-mcp-ai' ); ?>
+			</p>
 			<?php
 		}
 
@@ -2958,6 +3296,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle required capability meta.
+			if ( isset( $_POST['wp_mcp_ai_required_capability_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_required_capability_meta_nonce'] ) ), 'wp_mcp_ai_required_capability_meta' ) ) {
+				$required_capability = isset( $_POST['wp_mcp_ai_required_capability'] )
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_required_capability_meta().
+				? self::sanitize_required_capability_meta( wp_unslash( $_POST['wp_mcp_ai_required_capability'] ) )
+				: '';
+
+				if ( '' === $required_capability ) {
+					delete_post_meta( $post_id, self::META_REQUIRED_CAPABILITY );
+				} else {
+					update_post_meta( $post_id, self::META_REQUIRED_CAPABILITY, $required_capability );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -3014,7 +3366,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Routing strategy.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) ) {
-						$strategy = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) );
+						$strategy           = sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['routing_strategy'] ) );
 						$allowed_strategies = array( 'ai_optimized', 'round_robin', 'least_loaded', 'preferred_with_fallback' );
 						if ( in_array( $strategy, $allowed_strategies, true ) ) {
 							$mesh_config['routing_strategy'] = $strategy;
@@ -3023,7 +3375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Compute hubs.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) && is_array( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) ) {
-						$compute_hubs = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) );
+						$compute_hubs                = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['compute_hubs'] ) );
 						$mesh_config['compute_hubs'] = array_filter( $compute_hubs );
 					} else {
 						$mesh_config['compute_hubs'] = array();
@@ -3031,7 +3383,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Preferred peers.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) && is_array( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) ) {
-						$preferred_peers = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) );
+						$preferred_peers                = array_map( 'sanitize_text_field', wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['preferred_peers'] ) );
 						$mesh_config['preferred_peers'] = array_filter( $preferred_peers );
 					} else {
 						$mesh_config['preferred_peers'] = array();
@@ -3042,7 +3394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					// Max retries.
 					if ( isset( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) ) {
-						$max_retries = absint( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) );
+						$max_retries                = absint( wp_unslash( $_POST['wp_mcp_ai_mesh_routing']['max_retries'] ) );
 						$mesh_config['max_retries'] = min( max( 1, $max_retries ), 10 );
 					}
 
@@ -3184,6 +3536,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'disable_prebuilt_shortcuts' => get_post_meta( $assistant_id, self::META_DISABLE_TOOL_SHORTCUTS, true ),
 				'external_action_identifier' => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_ID, true ),
 				'external_action_type'       => get_post_meta( $assistant_id, self::META_EXTERNAL_ACTION_TYPE, true ),
+				'required_capability'        => get_post_meta( $assistant_id, self::META_REQUIRED_CAPABILITY, true ),
 			);
 
 			if ( ! is_array( $config['tools'] ) ) {
@@ -3196,18 +3549,24 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['provider'] = self::sanitize_provider_meta( $config['provider'] );
 			}
 
-			if ( '' === $config['model'] ) {
+			if ( ! is_string( $config['model'] ) ) {
 				$config['model'] = '';
+			} else {
+				$config['model'] = self::sanitize_model_meta( $config['model'] );
 			}
 
-			if ( '' === $config['temperature'] ) {
+			if ( ! is_numeric( $config['temperature'] ) && '' !== $config['temperature'] ) {
+				$config['temperature'] = null;
+			} elseif ( '' === $config['temperature'] || false === $config['temperature'] || null === $config['temperature'] ) {
 				$config['temperature'] = null;
 			} else {
 				$config['temperature'] = floatval( $config['temperature'] );
 			}
 
-			if ( '' === $config['system_prompt'] ) {
+			if ( ! is_string( $config['system_prompt'] ) ) {
 				$config['system_prompt'] = '';
+			} else {
+				$config['system_prompt'] = self::sanitize_system_prompt_meta( $config['system_prompt'] );
 			}
 
 			if ( ! is_array( $config['memory_files'] ) ) {
@@ -3252,6 +3611,12 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['external_action_type'] = '';
 			} else {
 				$config['external_action_type'] = self::sanitize_external_action_type_meta( $config['external_action_type'] );
+			}
+
+			if ( ! is_string( $config['required_capability'] ) ) {
+				$config['required_capability'] = '';
+			} else {
+				$config['required_capability'] = self::sanitize_required_capability_meta( $config['required_capability'] );
 			}
 
 			return $config;
@@ -3659,7 +4024,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			$hub_config = WP_MCP_AI_Mesh_Router::get_hub_config( $post->ID );
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
 			$peer_sites = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] )
 				? $settings['mesh_peer_sites']
 				: array();
@@ -3741,7 +4106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							<div id="wp-mcp-ai-preferred-peers-list">
 								<?php
 								$preferred_peers = isset( $hub_config['preferred_peers'] ) ? $hub_config['preferred_peers'] : array();
-								$peer_index = 0;
+								$peer_index      = 0;
 								foreach ( $preferred_peers as $preferred ) {
 									?>
 									<div class="wp-mcp-ai-preferred-peer-row" style="margin-bottom: 10px;">
@@ -3764,7 +4129,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 										<button type="button" class="button wp-mcp-ai-remove-preferred-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
 									</div>
 									<?php
-									$peer_index++;
+									++$peer_index;
 								}
 								?>
 							</div>

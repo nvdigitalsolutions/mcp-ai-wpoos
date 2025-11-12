@@ -57,8 +57,14 @@ class WP_MCP_AI_REST_Cache_Test extends WP_UnitTestCase {
 	 */
 	public function test_cache_key_consistency() {
 		$endpoint  = 'assistants';
-		$params1   = array( 'status' => 'publish', 'per_page' => 10 );
-		$params2   = array( 'per_page' => 10, 'status' => 'publish' ); // Different order.
+		$params1   = array(
+			'status'   => 'publish',
+			'per_page' => 10,
+		);
+		$params2   = array(
+			'per_page' => 10,
+			'status'   => 'publish',
+		); // Different order.
 		$response1 = array( 'data' => 'test1' );
 		$response2 = array( 'data' => 'test2' );
 

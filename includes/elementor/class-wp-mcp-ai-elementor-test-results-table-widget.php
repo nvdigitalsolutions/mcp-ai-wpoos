@@ -199,7 +199,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 
 			foreach ( $results as $result ) {
 				$status_class = 'status-' . sanitize_html_class( $result['test_status'] );
-				
+
 				echo '<tr>';
 				echo '<td class="wp-mcp-ai-test-results__cell">' . esc_html( ucfirst( $result['test_type'] ) ) . '</td>';
 				echo '<td class="wp-mcp-ai-test-results__cell">' . esc_html( $result['component'] ) . '</td>';
@@ -241,15 +241,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			return array();
 		}
 
-		$handler = WP_MCP_AI_Performance_Monitor_CCT::get_item_handler();
-
-		if ( ! $handler ) {
-			return $this->get_test_results_fallback( $test_type_filter, $status_filter, $limit );
-		}
-
-		$args = array(
-			'limit' => $limit,
-		);
+		$args = array();
 
 		if ( ! empty( $test_type_filter ) ) {
 			$args['test_type'] = sanitize_key( $test_type_filter );
@@ -259,7 +251,14 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			$args['test_status'] = sanitize_key( $status_filter );
 		}
 
-		return $handler->query_items( $args );
+		$items = WP_MCP_AI_Performance_Monitor_CCT::query_items( $args, $limit );
+
+		// Fallback to WordPress options if JetEngine is unavailable.
+		if ( empty( $items ) ) {
+			return $this->get_test_results_fallback( $test_type_filter, $status_filter, $limit );
+		}
+
+		return $items;
 	}
 
 	/**
@@ -290,7 +289,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			}
 
 			$test['_ID'] = $test_id;
-			$filtered[] = $test;
+			$filtered[]  = $test;
 
 			if ( count( $filtered ) >= $limit ) {
 				break;

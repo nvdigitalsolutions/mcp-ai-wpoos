@@ -4,6 +4,269 @@ This guide captures the most common issues surfaced while testing the MCP REST
 layer and the JetEngine proxy tools. Use it during staging deployments and when
 triaging production incidents.
 
+## Development Dependencies in Production (putenv() Error)
+
+### Problem
+Fatal error: `Call to undefined function putenv()` when activating or using the plugin.
+
+### Root Cause
+This error occurs when:
+1. Development dependencies (like `wp-phpunit`) are installed in production
+2. The hosting provider has disabled the `putenv()` PHP function for security reasons
+3. The wp-phpunit package tries to call `putenv()` during autoload, causing a fatal error
+
+### Solution
+
+**Option 1: Reinstall with Production Dependencies Only (Recommended)**
+
+SSH into your server and run:
+
+```bash
+cd /path/to/wp-content/plugins/wpoos
+composer install --no-dev --optimize-autoloader
+```
+
+This removes all development dependencies and rebuilds the autoloader for production.
+
+**Option 2: Use Pre-built Distribution**
+
+When deploying to production:
+1. Build locally with `composer install --no-dev`
+2. Create a ZIP of the plugin directory
+3. Upload and extract on production server
+4. **Never run `composer install` on production without `--no-dev` flag**
+
+### Prevention
+
+**Best Practices for Deployment:**
+
+1. **Always use `--no-dev` flag in production:**
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   ```
+
+2. **Add to deployment scripts:**
+   ```bash
+   #!/bin/bash
+   # deploy.sh
+   cd /path/to/plugin
+   composer install --no-dev --optimize-autoloader --no-interaction
+   ```
+
+3. **CI/CD Pipeline Example:**
+   ```yaml
+   - name: Install PHP dependencies
+     run: composer install --no-dev --optimize-autoloader --no-interaction
+   ```
+
+4. **Check your composer.lock:**
+   Ensure it doesn't include dev packages in production. Run:
+   ```bash
+   composer show --tree | grep -i phpunit
+   ```
+   Should return nothing in production.
+
+### Verification
+
+After fixing, verify dev dependencies are removed:
+
+```bash
+# Check for wp-phpunit (should not exist in production)
+ls -la vendor/wp-phpunit/
+
+# Check autoload files list
+cat vendor/composer/autoload_files.php | grep phpunit
+
+# Both should return errors or empty results in production
+```
+
+### Plugin Behavior
+
+The plugin includes automatic detection and graceful degradation:
+- If dev dependencies are detected with `putenv()` disabled, the plugin shows an admin warning
+- The plugin will attempt to load production dependencies only (degraded mode)
+- Full functionality is restored once dependencies are properly reinstalled
+
+## REST API Context Parameter Issues
+
+### Problem
+WordPress REST API `context` parameter (e.g., `?context=edit`) is not processed correctly, which can break:
+- Block editor (Gutenberg)
+- WooCommerce admin panels
+- Plugin operations that require edit context
+- Any WordPress core or plugin functionality relying on REST API context parameter
+
+### Root Causes
+1. **Caching layers** (Cloudflare, Nginx, Apache) caching REST API responses
+2. **WAF/Security plugins** stripping query strings from `/wp-json/` requests
+3. **Server configurations** not preserving query parameters in rewrites
+4. **CDN/Proxy** caching dynamic REST API responses
+
+### Diagnosis
+1. Check if REST API returns 200 OK with `?context=edit`:
+   ```bash
+   curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit" \
+     -H "Authorization: Bearer YOUR_TOKEN"
+   ```
+
+2. Verify query string is preserved:
+   ```bash
+   # Should show context=edit in request
+   curl -v "https://yoursite.com/wp-json/wp/v2/types?context=edit"
+   ```
+
+3. Check for caching headers:
+   ```bash
+   # Should see Cache-Control: no-store, no-cache
+   curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit"
+   ```
+
+### Server Configuration Fixes
+
+#### Cloudflare
+1. **Create Page Rule** for `/wp-json/*`:
+   - Cache Level: Bypass
+   - Disable Rocket Loader
+   - Disable Email Obfuscation
+   - Security Level: Medium or Low
+   - Browser Integrity Check: Off
+
+2. **Cache Settings**:
+   - Go to Caching → Configuration
+   - Add Cache Rule: `URI Path contains /wp-json/` → Bypass cache
+
+3. **Transform Rules** (ensure query strings preserved):
+   - Go to Rules → Transform Rules
+   - Verify no rules strip query parameters from `/wp-json/` paths
+
+4. **WAF Rules**:
+   - Go to Security → WAF
+   - Add Exception: Skip all rules for `/wp-json/*` paths
+
+#### Nginx
+Add this configuration block to your site's Nginx config:
+
+```nginx
+# WordPress REST API - no caching, preserve query strings
+location ~* ^/wp-json/ {
+    # Prevent caching
+    add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+    add_header Pragma "no-cache" always;
+    add_header Expires "0" always;
+    
+    # Preserve query strings in rewrites
+    try_files $uri $uri/ /index.php?$args;
+    
+    # Pass to PHP-FPM
+    fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;  # Adjust PHP version as needed
+    fastcgi_index index.php;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    fastcgi_param QUERY_STRING $query_string;
+}
+```
+
+#### Apache (.htaccess)
+Ensure your `.htaccess` file preserves query strings:
+
+```apache
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# REST API - prevent caching
+<FilesMatch "^(wp-json)">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
+
+# Preserve query strings (QSA flag)
+RewriteRule ^wp-json/(.*)$ /index.php?rest_route=/$1 [QSA,L]
+
+# Standard WordPress rules
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+```
+
+**Important**: The `[QSA]` flag (Query String Append) is crucial to preserve query parameters.
+
+#### LiteSpeed
+Add to your `.htaccess`:
+
+```apache
+# LiteSpeed - no cache for REST API
+<IfModule LiteSpeed>
+    # Disable cache for /wp-json/ paths
+    RewriteCond %{REQUEST_URI} ^/wp-json/ [NC]
+    RewriteRule .* - [E=Cache-Control:no-cache]
+</IfModule>
+```
+
+### WordPress Plugin Configurations
+
+#### WP Rocket
+1. Go to Settings → WP Rocket → Advanced Rules
+2. Add to "Never Cache URL(s)":
+   ```
+   /wp-json/(.*)
+   ```
+3. Add to "Never Cache Cookies":
+   ```
+   wordpress_logged_in_
+   ```
+
+#### W3 Total Cache
+1. Go to Performance → Page Cache
+2. Add to "Never cache the following pages":
+   ```
+   /wp-json/
+   ```
+
+#### WP Super Cache
+1. Go to Settings → WP Super Cache → Advanced
+2. Add to "Rejected URLs":
+   ```
+   /wp-json/
+   ```
+
+#### LiteSpeed Cache
+1. Go to LiteSpeed Cache → Cache → Excludes
+2. Add to "Do Not Cache URIs":
+   ```
+   /wp-json/
+   ```
+
+### Verification
+
+After applying fixes, verify with:
+
+```bash
+# Test 1: Context parameter is processed
+curl "https://yoursite.com/wp-json/wp/v2/posts?context=edit" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  | jq '.[] | keys' | grep -E "(content|excerpt)"
+
+# Expected: Should show full content fields (content.raw, etc.)
+
+# Test 2: No caching headers present
+curl -I "https://yoursite.com/wp-json/wp/v2/posts/1?context=edit" \
+  | grep -i "cache-control"
+
+# Expected: Cache-Control: no-store, no-cache, must-revalidate, max-age=0
+
+# Test 3: Query string preserved in redirects
+curl -I -L "https://yoursite.com/wp-json/wp/v2/types?context=edit" \
+  | grep -E "(Location|HTTP)"
+
+# Expected: No redirects or redirects preserve ?context=edit
+```
+
 ## Connectivity health checks
 
 - Run `wp mcp-ai remote https://example.com/wp-json/mcp-ai/v1 --token=...` from any WordPress instance with WP-CLI access to confirm the remote REST namespace is reachable. The command exercises the `/assistants` directory, issues a `/chat` probe, surfaces the assistant count, reports the detected token scope, and records any REST error codes returned by the remote server so you can distinguish connectivity issues from permission problems at a glance.【F:includes/class-wp-mcp-ai-cli-command.php†L137-L280】【F:includes/class-wp-mcp-ai-remote-tester.php†L29-L331】
@@ -59,6 +322,12 @@ triaging production incidents.
    If a route is missing it falls back to an HTTP request. Review the WordPress
    debug log for `wp_mcp_ai_jetengine_route_unavailable` notices when diagnosing
    connectivity problems.
+6. **JetEngine API compatibility (v3.3+)** – If you encounter the error
+   `Call to undefined method Jet_Engine\...\Item_Handler::query_items()`,
+   ensure you're using WP oOS version 1.0.0+ which includes the compatibility
+   layer for JetEngine 3.3+. The plugin automatically detects and uses the
+   correct API. See [jetengine-api-compatibility.md](jetengine-api-compatibility.md)
+   for details.
 
 ## Security recommendations
 

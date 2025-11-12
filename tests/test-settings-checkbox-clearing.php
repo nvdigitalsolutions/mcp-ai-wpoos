@@ -130,7 +130,7 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 
 		// First save: some checkboxes on.
 		$submitted1 = array(
-			'enable_logging'    => '1',
+			'enable_logging'      => '1',
 			'delete_on_uninstall' => '1',
 		);
 		$sanitized1 = $settings_base->sanitize_settings( $submitted1 );
@@ -185,7 +185,7 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		// Now simulate saving the Advanced tab with enable_extended_logging turned on.
 		// The key here is that enable_logging is NOT in the posted settings because
 		// it's on a different tab (General tab).
-		$dashboard     = new WP_MCP_AI_Settings_Dashboard();
+		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$posted_settings = array(
 			'enable_extended_logging' => '1', // From Advanced tab.
 			// Note: enable_logging is NOT here because we're on the Advanced tab.
@@ -196,21 +196,21 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 
 		// Get the existing settings from the database.
 		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		
+
 		// Merge as the dashboard does.
 		$merged = array_merge( $existing_settings, $sanitized );
 
 		// The critical assertion: enable_logging should still be true.
 		// It should NOT have been cleared just because we saved the Advanced tab.
-		$this->assertTrue( 
-			$merged['enable_logging'], 
-			'enable_logging from General tab should remain true when saving Advanced tab' 
+		$this->assertTrue(
+			$merged['enable_logging'],
+			'enable_logging from General tab should remain true when saving Advanced tab'
 		);
 
 		// And enable_extended_logging should now be true.
-		$this->assertTrue( 
-			$merged['enable_extended_logging'], 
-			'enable_extended_logging should be true after saving Advanced tab' 
+		$this->assertTrue(
+			$merged['enable_extended_logging'],
+			'enable_extended_logging should be true after saving Advanced tab'
 		);
 	}
 
@@ -227,7 +227,7 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
 		// Now simulate saving the General tab with enable_logging turned on.
-		$dashboard     = new WP_MCP_AI_Settings_Dashboard();
+		$dashboard       = new WP_MCP_AI_Settings_Dashboard();
 		$posted_settings = array(
 			'enable_logging' => '1', // From General tab.
 			// Note: enable_extended_logging is NOT here because we're on the General tab.
@@ -238,26 +238,26 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 
 		// Get the existing settings from the database.
 		$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		
+
 		// Merge as the dashboard does.
 		$merged = array_merge( $existing_settings, $sanitized );
 
 		// The critical assertion: enable_extended_logging should still be true.
-		$this->assertTrue( 
-			$merged['enable_extended_logging'], 
-			'enable_extended_logging from Advanced tab should remain true when saving General tab' 
+		$this->assertTrue(
+			$merged['enable_extended_logging'],
+			'enable_extended_logging from Advanced tab should remain true when saving General tab'
 		);
 
 		// And enable_logging should now be true.
-		$this->assertTrue( 
-			$merged['enable_logging'], 
-			'enable_logging should be true after saving General tab' 
+		$this->assertTrue(
+			$merged['enable_logging'],
+			'enable_logging should be true after saving General tab'
 		);
 	}
 
 	/**
 	 * Test that select fields with integer keys save correctly.
-	 * 
+	 *
 	 * This specifically tests the default_assistant field which has integer post IDs as option keys.
 	 * Form submissions send all values as strings, but we need to convert them back to integers
 	 * to match the option keys for proper validation.
@@ -285,10 +285,10 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 
 		// The default_assistant should be in the sanitized output.
 		$this->assertArrayHasKey( 'default_assistant', $sanitized, 'default_assistant should be in sanitized settings' );
-		
+
 		// The default_assistant should be converted to an integer.
 		$this->assertIsInt( $sanitized['default_assistant'], 'default_assistant should be an integer' );
-		
+
 		// The default_assistant should have the correct value.
 		$this->assertSame( $assistant_id, $sanitized['default_assistant'], 'default_assistant should have the correct assistant ID' );
 	}
@@ -310,10 +310,10 @@ class WP_MCP_AI_Settings_Checkbox_Clearing_Test extends WP_UnitTestCase {
 
 		// The default_provider should be in the sanitized output.
 		$this->assertArrayHasKey( 'default_provider', $sanitized, 'default_provider should be in sanitized settings' );
-		
+
 		// The default_provider should be a string.
 		$this->assertSame( 'gemini', $sanitized['default_provider'], 'default_provider should be "gemini"' );
-		
+
 		// The default_assistant should be 0 (integer, not string "0").
 		$this->assertSame( 0, $sanitized['default_assistant'], 'default_assistant should be 0 when set to "None"' );
 	}

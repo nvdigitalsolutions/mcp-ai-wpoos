@@ -57,10 +57,10 @@ class WP_MCP_AI_Chat_Service {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Language_Model_Router  $router                Language model router.
-	 * @param WP_MCP_AI_Rate_Limit_Manager     $rate_limiter          Rate limit manager.
-	 * @param WP_MCP_AI_Token_Budget_Manager   $token_budget_manager  Token budget manager.
-	 * @param WP_MCP_AI_Tool_Registry          $tool_registry         Tool registry.
+	 * @param WP_MCP_AI_Language_Model_Router $router                Language model router.
+	 * @param WP_MCP_AI_Rate_Limit_Manager    $rate_limiter          Rate limit manager.
+	 * @param WP_MCP_AI_Token_Budget_Manager  $token_budget_manager  Token budget manager.
+	 * @param WP_MCP_AI_Tool_Registry         $tool_registry         Tool registry.
 	 */
 	public function __construct(
 		WP_MCP_AI_Language_Model_Router $router,
@@ -85,13 +85,14 @@ class WP_MCP_AI_Chat_Service {
 	 * - Agentic tool execution loops
 	 * - Transcript recording
 	 *
-	 * @param int    $assistant_id       Assistant post ID.
-	 * @param array  $messages           Chat messages.
-	 * @param array  $options            Chat options.
-	 * @param array  $assistant_config   Assistant configuration.
-	 * @param array  $transcript_context Transcript recording context.
-	 * @param int    $user_id            Current user ID.
-	 * @param int    $max_iterations     Maximum agentic loop iterations.
+	 * @param int             $assistant_id       Assistant post ID.
+	 * @param array           $messages           Chat messages.
+	 * @param array           $options            Chat options.
+	 * @param array           $assistant_config   Assistant configuration.
+	 * @param array           $transcript_context Transcript recording context.
+	 * @param int             $user_id            Current user ID.
+	 * @param int             $max_iterations     Maximum agentic loop iterations.
+	 * @param WP_REST_Request $request            REST request instance.
 	 * @return array|WP_Error Chat response or error.
 	 */
 	public function process_chat_request(
@@ -101,7 +102,8 @@ class WP_MCP_AI_Chat_Service {
 		$assistant_config,
 		$transcript_context,
 		$user_id,
-		$max_iterations = 5
+		$max_iterations = 5,
+		$request = null
 	) {
 		// Apply filters to options before processing.
 		$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, null );
@@ -164,8 +166,8 @@ class WP_MCP_AI_Chat_Service {
 				'tool_calls' => $tool_calls,
 			);
 
-			// Execute each tool.
-			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config );
+			// Execute each tool with iteration context for flow stage validation.
+			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
 
 			// Add tool results to conversation.
 			foreach ( $tool_results as $tool_result ) {
@@ -200,8 +202,11 @@ class WP_MCP_AI_Chat_Service {
 			$this->save_chat_transcript(
 				$assistant_id,
 				$messages,
+				$options,
 				$response,
-				$transcript_context
+				$transcript_context,
+				$user_id,
+				$request
 			);
 		}
 
@@ -231,9 +236,11 @@ class WP_MCP_AI_Chat_Service {
 	 * @param array $tool_calls       Tool calls from LLM.
 	 * @param int   $assistant_id     Assistant ID.
 	 * @param array $assistant_config Assistant configuration.
+	 * @param int   $iteration        Current iteration number.
+	 * @param int   $max_iterations   Maximum iterations.
 	 * @return array Tool result messages.
 	 */
-	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config ) {
+	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration = 0, $max_iterations = 5 ) {
 		$results = array();
 
 		foreach ( $tool_calls as $tool_call ) {
@@ -257,13 +264,15 @@ class WP_MCP_AI_Chat_Service {
 				continue;
 			}
 
-			// Execute tool via registry.
+			// Execute tool via registry with iteration context.
 			$tool_result = $this->tool_registry->execute_tool(
 				$tool_name,
 				$arguments,
 				array(
 					'assistant_id'     => $assistant_id,
 					'assistant_config' => $assistant_config,
+					'iteration'        => $iteration,
+					'max_iterations'   => $max_iterations,
 				)
 			);
 
@@ -295,8 +304,8 @@ class WP_MCP_AI_Chat_Service {
 				'wp_mcp_ai_chat_error',
 				$response['error']['message'] ?? __( 'Chat request failed', 'wp-mcp-ai' ),
 				array(
-					'status'             => 500,
-					'provider_error'     => $response['error'],
+					'status'              => 500,
+					'provider_error'      => $response['error'],
 					'provider_error_code' => $response['error']['code'] ?? '',
 				)
 			);
@@ -337,32 +346,41 @@ class WP_MCP_AI_Chat_Service {
 	/**
 	 * Save chat transcript
 	 *
-	 * @param int   $assistant_id       Assistant ID.
-	 * @param array $messages           Chat messages.
-	 * @param array $response           LLM response.
-	 * @param array $transcript_context Transcript context.
+	 * @param int             $assistant_id       Assistant ID.
+	 * @param array           $messages           Chat messages.
+	 * @param array           $options            Chat options.
+	 * @param array           $response           LLM response.
+	 * @param array           $transcript_context Transcript context.
+	 * @param int             $user_id            User ID.
+	 * @param WP_REST_Request $request            REST request instance.
 	 */
-	private function save_chat_transcript( $assistant_id, $messages, $response, $transcript_context ) {
+	private function save_chat_transcript( $assistant_id, $messages, $options, $response, $transcript_context, $user_id, $request ) {
 		// Check if chat transcript recorder is available.
 		if ( ! class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
 			return;
 		}
 
-		$recorder = new WP_MCP_AI_Chat_Transcript_Recorder();
-
-		$session_key = $transcript_context['session_key'] ?? '';
-		$duration    = 0;
-
-		if ( isset( $transcript_context['request_started_at'], $transcript_context['response_completed_at'] ) ) {
-			$duration = $transcript_context['response_completed_at'] - $transcript_context['request_started_at'];
+		// If no request object provided, we cannot save the transcript.
+		if ( ! $request instanceof WP_REST_Request ) {
+			WP_MCP_AI_Logger::log_error(
+				'Cannot save chat transcript without WP_REST_Request object',
+				array(
+					'assistant_id' => $assistant_id,
+					'user_id'      => $user_id,
+				)
+			);
+			return;
 		}
 
-		$recorder->record_transcript(
+		// Call the static record method with correct parameters.
+		WP_MCP_AI_Chat_Transcript_Recorder::record(
 			$assistant_id,
 			$messages,
+			$options,
 			$response,
-			$session_key,
-			$duration
+			$request,
+			$user_id,
+			$transcript_context
 		);
 	}
 

@@ -1,0 +1,12 @@
+# Third-party vendor files
+assets/js/vendor/
+
+# Minified files
+*.min.js
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/

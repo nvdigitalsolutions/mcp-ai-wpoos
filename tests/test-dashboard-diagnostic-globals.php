@@ -8,11 +8,6 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 	 * Test that diagnostic correctly identifies new settings dashboard mode.
 	 */
 	public function test_diagnostic_identifies_new_settings_mode() {
-		// Ensure we're in new settings mode (default).
-		if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
-			define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
-		}
-
 		// Mock the new settings dashboard global.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new stdClass();
 
@@ -25,7 +20,7 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 		$output = ob_get_clean();
 
 		// Verify the output mentions new settings dashboard.
-		$this->assertStringContainsString( 'New Settings Dashboard (default)', $output );
+		$this->assertStringContainsString( 'New Dashboard', $output );
 		$this->assertStringContainsString( 'wp_mcp_ai_settings_dashboard', $output );
 
 		// Clean up.
@@ -36,11 +31,6 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 	 * Test that diagnostic shows appropriate status for settings dashboard global.
 	 */
 	public function test_diagnostic_shows_dashboard_global_status() {
-		// Ensure we're in new settings mode.
-		if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
-			define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
-		}
-
 		// Test with global set.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new stdClass();
 
@@ -61,11 +51,6 @@ class WP_MCP_AI_Dashboard_Diagnostic_Globals_Test extends WP_UnitTestCase {
 	 * Test that diagnostic shows appropriate note for admin settings in new mode.
 	 */
 	public function test_diagnostic_shows_admin_settings_not_needed_in_new_mode() {
-		// Ensure we're in new settings mode.
-		if ( ! defined( 'WP_MCP_AI_USE_OLD_SETTINGS' ) ) {
-			define( 'WP_MCP_AI_USE_OLD_SETTINGS', false );
-		}
-
 		// Don't set the admin settings global (expected in new mode).
 		unset( $GLOBALS['wp_mcp_ai_admin_settings'] );
 

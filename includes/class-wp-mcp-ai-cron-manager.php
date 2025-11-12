@@ -164,10 +164,27 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 
 		/**
 		 * Remove entries for jobs that are no longer scheduled.
+		 *
+		 * Jobs are kept for a configurable period after their scheduled time to allow users
+		 * to see recently executed one-time jobs and verify test jobs ran successfully.
+		 * The retention period can be configured in Settings > Orchestration Layer.
 		 */
 		public static function maybe_prune_jobs() {
 			$jobs    = self::load_jobs();
 			$changed = false;
+
+			// Get retention period from settings registry (in hours), default to 24 hours.
+			if ( class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
+				$retention_hours = WP_MCP_AI_Settings_Registry::get_setting( 'cron_job_retention_period', 24 );
+			} else {
+				// Fallback to direct option read if registry not available.
+				$settings        = get_option( 'wp_mcp_ai_settings', array() );
+				$retention_hours = isset( $settings['cron_job_retention_period'] ) ? $settings['cron_job_retention_period'] : 24;
+			}
+			$retention_hours = absint( $retention_hours );
+
+			// If retention is 0, jobs are removed immediately when not scheduled.
+			$retention_period = $retention_hours > 0 ? $retention_hours * HOUR_IN_SECONDS : 0;
 
 			foreach ( $jobs as $job_id => $job ) {
 				$hook = isset( $job['hook'] ) ? (string) $job['hook'] : '';
@@ -182,8 +199,20 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 
 				$event = wp_get_scheduled_event( $hook, $args );
 				if ( ! $event ) {
-					unset( $jobs[ $job_id ] );
-					$changed = true;
+					// Check if we should remove the job based on retention period.
+					if ( $retention_period === 0 ) {
+						// Remove immediately if retention is disabled.
+						unset( $jobs[ $job_id ] );
+						$changed = true;
+					} else {
+						// Only remove if it's been longer than the retention period.
+						$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
+
+						if ( $first_timestamp > 0 && ( time() - $first_timestamp ) > $retention_period ) {
+							unset( $jobs[ $job_id ] );
+							$changed = true;
+						}
+					}
 				}
 			}
 

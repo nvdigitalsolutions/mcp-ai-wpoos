@@ -59,16 +59,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 
 			$sanitized = array();
 			$defaults  = self::get_default_settings();
+			$current   = get_option( self::OPTION_NAME, array() );
 
 			foreach ( $defaults as $key => $default_value ) {
-				// If key is not present in submitted settings, use the default value.
+				// If key is not present in submitted settings, preserve existing value or use default.
 				if ( ! isset( $settings[ $key ] ) ) {
 					// For boolean defaults (checkboxes), missing key means false (unchecked).
 					if ( is_bool( $default_value ) ) {
 						$sanitized[ $key ] = false;
 					} else {
-						// For other types, use the default value.
-						$sanitized[ $key ] = $default_value;
+						// For other types, preserve existing value or use default.
+						$sanitized[ $key ] = isset( $current[ $key ] ) ? $current[ $key ] : $default_value;
 					}
 					continue;
 				}
@@ -220,14 +221,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				return self::$settings_cache;
 			}
 
-			$defaults  = self::get_default_settings();
-			$saved     = get_option( self::OPTION_NAME, array() );
-			
+			$defaults = self::get_default_settings();
+			$saved    = get_option( self::OPTION_NAME, array() );
+
 			if ( ! is_array( $saved ) ) {
 				$saved = array();
 			}
-			
-			$settings  = wp_parse_args( $saved, $defaults );
+
+			$settings = wp_parse_args( $saved, $defaults );
 
 			// Ensure chat_colors is properly merged.
 			if ( ! isset( $settings['chat_colors'] ) || ! is_array( $settings['chat_colors'] ) ) {
@@ -255,30 +256,30 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 */
 		public static function get_default_settings() {
 			return array(
-				'openai_api_key'                    => '',
-				'gemini_api_key'                    => '',
-				'ollama_endpoint_url'               => '',
-				'ollama_model'                      => '',
-				'lm_studio_endpoint_url'            => '',
-				'lm_studio_model'                   => '',
-				'default_assistant'                 => 0,
-				'enable_logging'                    => false,
-				'default_model'                     => 'gpt-4o-mini',
-				'default_gemini_model'              => 'gemini-1.5-flash',
-				'default_provider'                  => 'openai',
-				'provider_priority_list'            => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
-				'web_search_provider'               => 'duckduckgo',
-				'brave_search_api_key'              => '',
-				'ita_tariff_api_key'                => '',
-				'request_timeout'                   => 30,
-				'memory_max_file_bytes'             => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
-				'auth0_domain'                      => '',
-				'auth0_audience'                    => '',
-				'auth0_required_scope'              => '',
-				'enable_auth0_github_bridge'        => false,
-				'auth0_management_client_id'        => '',
-				'auth0_management_client_secret'    => '',
-				'enable_wordpress_gravatar_bridge'  => false,
+				'openai_api_key'                       => '',
+				'gemini_api_key'                       => '',
+				'ollama_endpoint_url'                  => '',
+				'ollama_model'                         => '',
+				'lm_studio_endpoint_url'               => '',
+				'lm_studio_model'                      => '',
+				'default_assistant'                    => 0,
+				'enable_logging'                       => false,
+				'default_model'                        => 'gpt-4o-mini',
+				'default_gemini_model'                 => 'gemini-1.5-flash',
+				'default_provider'                     => 'openai',
+				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'ollama', 'lm_studio' ),
+				'web_search_provider'                  => 'duckduckgo',
+				'brave_search_api_key'                 => '',
+				'ita_tariff_api_key'                   => '',
+				'request_timeout'                      => 30,
+				'memory_max_file_bytes'                => self::DEFAULT_MEMORY_MAX_FILE_BYTES,
+				'auth0_domain'                         => '',
+				'auth0_audience'                       => '',
+				'auth0_required_scope'                 => '',
+				'enable_auth0_github_bridge'           => false,
+				'auth0_management_client_id'           => '',
+				'auth0_management_client_secret'       => '',
+				'enable_wordpress_gravatar_bridge'     => false,
 				'wordpress_gravatar_userinfo_endpoint' => '',
 				'enable_simple_jwt_login'           => false,
 				'delete_on_uninstall'               => false,
@@ -365,17 +366,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'get_chat_color_definitions' ) ) {
 				return WP_MCP_AI_Admin_Settings::get_chat_color_definitions();
 			}
-			
+
 			// Fallback to basic definitions (this should not happen in practice).
 			return array(
-				'container-border'                    => array(
+				'container-border'     => array(
 					'label'       => __( 'Container border', 'wp-mcp-ai' ),
 					'group'       => 'container',
 					'default'     => '#d5d5d5',
 					'format'      => 'hex',
 					'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
 				),
-				'container-background'                => array(
+				'container-background' => array(
 					'label'       => __( 'Container background', 'wp-mcp-ai' ),
 					'group'       => 'container',
 					'default'     => '#fff',

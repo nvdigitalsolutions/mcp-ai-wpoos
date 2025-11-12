@@ -35,10 +35,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Get tab ID.
 		 *
+		 * Note: This section has its own dedicated admin page at wp-mcp-ai-gmail-crawl4ai
+		 * and should not appear in the main settings tabs.
+		 *
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'orchestration';
+			return 'integrations';
 		}
 
 		/**
@@ -67,28 +70,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		public function get_fields() {
 			return array(
 				'gmail_client_id'     => array(
-					'type'        => 'text',
-					'label'       => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
-					'description' => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
-					'placeholder' => '',
+					'type'         => 'text',
+					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
 				),
 				'gmail_client_secret' => array(
-					'type'        => 'password',
-					'label'       => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
-					'description' => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
-					'placeholder' => '',
+					'type'         => 'password',
+					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
 				),
 				'crawl4ai_base_url'   => array(
-					'type'        => 'url',
-					'label'       => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
-					'description' => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
-					'placeholder' => 'http://localhost:8000',
+					'type'         => 'url',
+					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
+					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
+					'placeholder'  => 'http://localhost:8000',
+					'autocomplete' => 'url',
 				),
 				'crawl4ai_api_key'    => array(
-					'type'        => 'password',
-					'label'       => __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
-					'description' => __( 'API key for Crawl4AI service (if required).', 'wp-mcp-ai' ),
-					'placeholder' => '',
+					'type'         => 'password',
+					'label'        => __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for Crawl4AI service (if required).', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
 				),
 			);
 		}
