@@ -151,10 +151,11 @@ class WP_MCP_AI_Shortcode {
 																'historyMessageCount' => __( '%d messages', 'wp-mcp-ai' ),
 					'historySingleMessage'      => __( '1 message', 'wp-mcp-ai' ),
 					/* translators: %s: conversation identifier */
-																'historyPreviewFallback' => __( 'Conversation %s', 'wp-mcp-ai' ),
+					'historyPreviewFallback' => __( 'Conversation %s', 'wp-mcp-ai' ),
 					'historySessionLoading'     => __( 'Loading conversation…', 'wp-mcp-ai' ),
 					'historySessionError'       => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
 					'historyNoMessages'         => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),
+					'savingPost'                => __( 'Saving post…', 'wp-mcp-ai' ),
 					'roleLabels'                => array(
 						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
 						'user'      => __( 'You', 'wp-mcp-ai' ),
