@@ -37,14 +37,37 @@ if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
 fi
 
 download() {
-    if command -v curl >/dev/null; then
-        curl -sSL "$1" -o "$2"
-    elif command -v wget >/dev/null; then
-        wget -q "$1" -O "$2"
-    else
-        echo "Could not find curl or wget" >&2
-        exit 1
-    fi
+    local url="$1"
+    local output="$2"
+    local max_attempts=2
+    local attempt=1
+    local wait_time=3
+    
+    while [ $attempt -le $max_attempts ]; do
+        if [ $attempt -gt 1 ]; then
+            echo "Retry attempt $attempt of $max_attempts (waiting ${wait_time}s)..." >&2
+            sleep $wait_time
+        fi
+        
+        if command -v curl >/dev/null; then
+            if curl -sSL --connect-timeout 10 --max-time 120 "$url" -o "$output" 2>/dev/null; then
+                return 0
+            fi
+        elif command -v wget >/dev/null; then
+            if wget -q --timeout=10 --dns-timeout=10 --connect-timeout=10 --read-timeout=120 --tries=1 "$url" -O "$output" 2>/dev/null; then
+                return 0
+            fi
+        else
+            echo "Could not find curl or wget" >&2
+            exit 1
+        fi
+        
+        attempt=$((attempt + 1))
+    done
+    
+    echo "Failed to download $url after $max_attempts attempts" >&2
+    echo "This may indicate network connectivity issues or that the URL is blocked" >&2
+    return 1
 }
 
 install_wp() {
@@ -55,13 +78,30 @@ install_wp() {
     mkdir -p "$WP_CORE_DIR"
 
     local ARCHIVE_NAME='latest'
+    local GITHUB_TAG='6.7.1'
 
     if [ "$WP_VERSION" != 'latest' ]; then
         ARCHIVE_NAME="wordpress-${WP_VERSION}"
+        GITHUB_TAG="$WP_VERSION"
     fi
 
-    download "https://wordpress.org/${ARCHIVE_NAME}.tar.gz" "$TMPDIR/wordpress.tar.gz"
-    tar --strip-components=1 -zxmf "$TMPDIR/wordpress.tar.gz" -C "$WP_CORE_DIR"
+    # Try wordpress.org first
+    if download "https://wordpress.org/${ARCHIVE_NAME}.tar.gz" "$TMPDIR/wordpress.tar.gz"; then
+        echo "Downloaded WordPress from wordpress.org" >&2
+        tar --strip-components=1 -zxmf "$TMPDIR/wordpress.tar.gz" -C "$WP_CORE_DIR"
+        return 0
+    fi
+    
+    # Fallback to GitHub mirror
+    echo "wordpress.org not accessible, trying GitHub mirror..." >&2
+    if download "https://github.com/WordPress/WordPress/archive/refs/tags/${GITHUB_TAG}.tar.gz" "$TMPDIR/wordpress.tar.gz"; then
+        echo "Downloaded WordPress from GitHub" >&2
+        tar --strip-components=1 -zxmf "$TMPDIR/wordpress.tar.gz" -C "$WP_CORE_DIR"
+        return 0
+    fi
+    
+    echo "Failed to download WordPress from both wordpress.org and GitHub" >&2
+    return 1
 }
 
 install_test_suite() {
