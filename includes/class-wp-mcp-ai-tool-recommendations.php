@@ -27,23 +27,23 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static $presets = array(
 		'conservative' => array(
-			'name'        => 'Conservative',
-			'description' => 'Lower token limits for cost control. Best for budget-conscious deployments.',
+			'name'                  => 'Conservative',
+			'description'           => 'Lower token limits for cost control. Best for budget-conscious deployments.',
 			'multiplier_adjustment' => 0.8, // Reduce all multipliers by 20%.
 		),
 		'balanced'     => array(
-			'name'        => 'Balanced (Recommended)',
-			'description' => 'Optimal balance between performance and cost. Uses our analyzed recommendations.',
+			'name'                  => 'Balanced (Recommended)',
+			'description'           => 'Optimal balance between performance and cost. Uses our analyzed recommendations.',
 			'multiplier_adjustment' => 1.0, // Use recommended values as-is.
 		),
 		'performance'  => array(
-			'name'        => 'Performance',
-			'description' => 'Higher token limits for maximum performance. Best for high-traffic or demanding applications.',
+			'name'                  => 'Performance',
+			'description'           => 'Higher token limits for maximum performance. Best for high-traffic or demanding applications.',
 			'multiplier_adjustment' => 1.3, // Increase all multipliers by 30%.
 		),
 		'aggressive'   => array(
-			'name'        => 'Aggressive',
-			'description' => 'Maximum token limits for complex operations. Use when cost is not a concern.',
+			'name'                  => 'Aggressive',
+			'description'           => 'Maximum token limits for complex operations. Use when cost is not a concern.',
 			'multiplier_adjustment' => 1.5, // Increase all multipliers by 50%.
 		),
 	);
@@ -55,11 +55,11 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static $tool_categories = array(
 		// High resource tools - complex operations, large outputs.
-		'high_resource'   => array(
-			'multiplier'        => 2.0,
-			'preferred_model'   => 'gpt-4o',
-			'description'       => 'Complex operations requiring extensive processing and large outputs',
-			'tools'             => array(
+		'high_resource'     => array(
+			'multiplier'      => 2.0,
+			'preferred_model' => 'gpt-4o',
+			'description'     => 'Complex operations requiring extensive processing and large outputs',
+			'tools'           => array(
 				'run_crawl4ai_job',
 				'submit_document_prompt',
 				'search_content',
@@ -73,11 +73,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Medium resource tools - moderate complexity.
-		'medium_resource' => array(
-			'multiplier'        => 1.5,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Moderate complexity operations with medium-sized outputs',
-			'tools'             => array(
+		'medium_resource'   => array(
+			'multiplier'      => 1.5,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Moderate complexity operations with medium-sized outputs',
+			'tools'           => array(
 				'get_recent_posts',
 				'get_woo_products',
 				'get_woo_recent_orders',
@@ -98,11 +98,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Low resource tools - simple operations.
-		'low_resource'    => array(
-			'multiplier'        => 1.0,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Simple operations with minimal token requirements',
-			'tools'             => array(
+		'low_resource'      => array(
+			'multiplier'      => 1.0,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Simple operations with minimal token requirements',
+			'tools'           => array(
 				'get_user_info',
 				'get_update_status',
 				'count_tokens',
@@ -119,11 +119,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Image/Media generation tools - specialized models.
-		'image_generation' => array(
-			'multiplier'        => 1.5,
-			'preferred_model'   => 'default', // Let assistant handle model selection.
-			'description'       => 'Image and media generation operations',
-			'tools'             => array(
+		'image_generation'  => array(
+			'multiplier'      => 1.5,
+			'preferred_model' => 'default', // Let assistant handle model selection.
+			'description'     => 'Image and media generation operations',
+			'tools'           => array(
 				'generate_openai_image',
 				'generate_gemini_image',
 				'edit_gemini_image',
@@ -133,22 +133,22 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Audio/Speech tools.
-		'audio_processing' => array(
-			'multiplier'        => 1.5,
-			'preferred_model'   => 'default',
-			'description'       => 'Audio processing and speech operations',
-			'tools'             => array(
+		'audio_processing'  => array(
+			'multiplier'      => 1.5,
+			'preferred_model' => 'default',
+			'description'     => 'Audio processing and speech operations',
+			'tools'           => array(
 				'generate_openai_speech',
 				'transcribe_openai_audio',
 			),
 		),
 
 		// Content creation tools - need good quality models.
-		'content_creation' => array(
-			'multiplier'        => 1.5,
-			'preferred_model'   => 'gpt-4o',
-			'description'       => 'Content creation and management operations',
-			'tools'             => array(
+		'content_creation'  => array(
+			'multiplier'      => 1.5,
+			'preferred_model' => 'gpt-4o',
+			'description'     => 'Content creation and management operations',
+			'tools'           => array(
 				'save_post',
 				'create_woo_product',
 				'create_wpcode_snippet',
@@ -162,11 +162,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// API/External tools - variable complexity.
-		'api_operations'   => array(
-			'multiplier'        => 1.2,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'External API calls and integrations',
-			'tools'             => array(
+		'api_operations'    => array(
+			'multiplier'      => 1.2,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'External API calls and integrations',
+			'tools'           => array(
 				'run_openai_external_action',
 				'invoke_jetengine_route',
 				'get_rankmath_seo',
@@ -181,11 +181,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Messaging/Communication tools.
-		'messaging'        => array(
-			'multiplier'        => 1.0,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Messaging and notification operations',
-			'tools'             => array(
+		'messaging'         => array(
+			'multiplier'      => 1.0,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Messaging and notification operations',
+			'tools'           => array(
 				'schedule_notify_sms',
 				'send_telegram_message',
 				'send_whatsapp_message',
@@ -193,11 +193,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Security/Auth tools - lightweight but critical.
-		'security_auth'    => array(
-			'multiplier'        => 1.0,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Security and authentication operations',
-			'tools'             => array(
+		'security_auth'     => array(
+			'multiplier'      => 1.0,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Security and authentication operations',
+			'tools'           => array(
 				'generate_auth0_token',
 				'generate_simple_jwt_token',
 			),
@@ -205,10 +205,10 @@ class WP_MCP_AI_Tool_Recommendations {
 
 		// Cache/Performance tools - minimal token usage.
 		'cache_performance' => array(
-			'multiplier'        => 0.8,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Cache management and performance operations',
-			'tools'             => array(
+			'multiplier'      => 0.8,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Cache management and performance operations',
+			'tools'           => array(
 				'purge_cache',
 				'purge_cloudflare_cache',
 				'purge_varnish_cache',
@@ -216,11 +216,11 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Scheduling/Automation tools.
-		'scheduling'       => array(
-			'multiplier'        => 1.0,
-			'preferred_model'   => 'gpt-4o-mini',
-			'description'       => 'Scheduling and automation operations',
-			'tools'             => array(
+		'scheduling'        => array(
+			'multiplier'      => 1.0,
+			'preferred_model' => 'gpt-4o-mini',
+			'description'     => 'Scheduling and automation operations',
+			'tools'           => array(
 				'create_cron_job',
 				'delete_cron_job',
 			),
@@ -240,8 +240,11 @@ class WP_MCP_AI_Tool_Recommendations {
 			return null;
 		}
 
+		// Get categories with filter support.
+		$tool_categories = self::get_tool_categories();
+
 		// Find which category this tool belongs to.
-		foreach ( self::$tool_categories as $category => $data ) {
+		foreach ( $tool_categories as $category => $data ) {
 			if ( in_array( $tool_slug, $data['tools'], true ) ) {
 				return array(
 					'category'        => $category,
@@ -253,13 +256,20 @@ class WP_MCP_AI_Tool_Recommendations {
 			}
 		}
 
-		// Default recommendation for uncategorized tools.
+		// For uncategorized tools, try to suggest a category.
+		$suggestion = self::suggest_tool_category( $tool_slug );
+
+		// Default recommendation for uncategorized tools using the suggestion.
 		return array(
-			'category'        => 'default',
-			'multiplier'      => 1.0,
-			'preferred_model' => 'default',
-			'description'     => 'Standard operations',
-			'reason'          => __( 'This tool uses standard token limits suitable for general operations.', 'wp-mcp-ai' ),
+			'category'        => $suggestion['category'],
+			'multiplier'      => $suggestion['multiplier'],
+			'preferred_model' => $suggestion['model'],
+			'description'     => 'Auto-detected category',
+			'reason'          => sprintf(
+				/* translators: %s: reasoning for the suggestion */
+				__( 'This is a new/uncategorized tool. Suggested settings: %s', 'wp-mcp-ai' ),
+				$suggestion['reasoning']
+			),
 		);
 	}
 
@@ -323,7 +333,9 @@ class WP_MCP_AI_Tool_Recommendations {
 	public static function get_category_statistics() {
 		$stats = array();
 
-		foreach ( self::$tool_categories as $category => $data ) {
+		$tool_categories = self::get_tool_categories();
+
+		foreach ( $tool_categories as $category => $data ) {
 			$stats[ $category ] = array(
 				'name'        => ucwords( str_replace( '_', ' ', $category ) ),
 				'tool_count'  => count( $data['tools'] ),
@@ -357,13 +369,13 @@ class WP_MCP_AI_Tool_Recommendations {
 		$model_matches      = $current_model === $recommendation['preferred_model'] || 'default' === $recommendation['preferred_model'];
 
 		return array(
-			'matches'               => $multiplier_matches && $model_matches,
-			'multiplier_matches'    => $multiplier_matches,
-			'model_matches'         => $model_matches,
+			'matches'                => $multiplier_matches && $model_matches,
+			'multiplier_matches'     => $multiplier_matches,
+			'model_matches'          => $model_matches,
 			'recommended_multiplier' => $recommendation['multiplier'],
-			'recommended_model'     => $recommendation['preferred_model'],
-			'category'              => $recommendation['category'],
-			'reason'                => $recommendation['reason'],
+			'recommended_model'      => $recommendation['preferred_model'],
+			'category'               => $recommendation['category'],
+			'reason'                 => $recommendation['reason'],
 		);
 	}
 
@@ -530,10 +542,10 @@ class WP_MCP_AI_Tool_Recommendations {
 		$adjustment = $presets[ $preset ]['multiplier_adjustment'];
 
 		// Apply preset adjustment to multiplier.
-		$recommendation['multiplier']          = round( $recommendation['multiplier'] * $adjustment, 1 );
-		$recommendation['preset']              = $preset;
-		$recommendation['preset_name']         = $presets[ $preset ]['name'];
-		$recommendation['preset_description']  = $presets[ $preset ]['description'];
+		$recommendation['multiplier']         = round( $recommendation['multiplier'] * $adjustment, 1 );
+		$recommendation['preset']             = $preset;
+		$recommendation['preset_name']        = $presets[ $preset ]['name'];
+		$recommendation['preset_description'] = $presets[ $preset ]['description'];
 
 		return $recommendation;
 	}
@@ -565,6 +577,18 @@ class WP_MCP_AI_Tool_Recommendations {
 
 		$recommendations = self::get_all_recommendations();
 
+		// Batch updates: prepare all multipliers and model preferences first.
+		$all_multipliers = get_option( 'wp_mcp_ai_tool_multipliers', array() );
+		if ( ! is_array( $all_multipliers ) ) {
+			$all_multipliers = array();
+		}
+
+		$all_preferences = get_option( WP_MCP_AI_Tool_Token_Limits::MODEL_PREFERENCES_OPTION, array() );
+		if ( ! is_array( $all_preferences ) ) {
+			$all_preferences = array();
+		}
+
+		// Process each tool and prepare batch updates.
 		foreach ( $recommendations as $tool_slug => $base_recommendation ) {
 			$adjusted_recommendation = self::get_tool_recommendation_with_preset( $tool_slug, $preset );
 
@@ -573,27 +597,44 @@ class WP_MCP_AI_Tool_Recommendations {
 				continue;
 			}
 
-			// Apply the adjusted multiplier.
-			if ( ! WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $adjusted_recommendation['multiplier'] ) ) {
+			// Validate multiplier value.
+			$multiplier = (float) $adjusted_recommendation['multiplier'];
+			if ( $multiplier < 0.1 || $multiplier > 10 ) {
 				++$results['failed'];
 				continue;
 			}
 
-			// Apply model preference.
-			if ( ! WP_MCP_AI_Tool_Token_Limits::set_tool_model_preference( $tool_slug, $adjusted_recommendation['preferred_model'] ) ) {
-				++$results['failed'];
-				continue;
-			}
+			// Add to batch updates.
+			$all_multipliers[ $tool_slug ] = $multiplier;
+			$all_preferences[ $tool_slug ] = sanitize_text_field( $adjusted_recommendation['preferred_model'] );
 
 			++$results['success'];
+		}
+
+		// Apply batch updates - this is much more efficient than updating one at a time.
+		$multipliers_updated = update_option( 'wp_mcp_ai_tool_multipliers', $all_multipliers, false );
+		$preferences_updated = update_option( WP_MCP_AI_Tool_Token_Limits::MODEL_PREFERENCES_OPTION, $all_preferences, false );
+
+		// If either batch update failed completely, log it.
+		if ( ! $multipliers_updated && ! $preferences_updated ) {
+			WP_MCP_AI_Logger::log_event(
+				'preset_apply_error',
+				'Failed to save preset settings to database.',
+				array(
+					'preset'  => $preset,
+					'results' => $results,
+				)
+			);
 		}
 
 		WP_MCP_AI_Logger::log_event(
 			'preset_applied',
 			'Applied recommendation preset to tools.',
 			array(
-				'preset'  => $preset,
-				'results' => $results,
+				'preset'              => $preset,
+				'results'             => $results,
+				'multipliers_updated' => $multipliers_updated,
+				'preferences_updated' => $preferences_updated,
 			)
 		);
 
@@ -649,7 +690,7 @@ class WP_MCP_AI_Tool_Recommendations {
 
 		// Find the preset with highest match percentage.
 		arsort( $preset_matches );
-		$best_preset       = key( $preset_matches );
+		$best_preset        = key( $preset_matches );
 		$best_match_percent = reset( $preset_matches );
 
 		// If match is less than 60%, consider it custom.
@@ -658,5 +699,198 @@ class WP_MCP_AI_Tool_Recommendations {
 		}
 
 		return $best_preset;
+	}
+
+	/**
+	 * Get tools that are not in any category (new/uncategorized tools).
+	 *
+	 * @return array Array of uncategorized tool slugs.
+	 */
+	public static function get_uncategorized_tools() {
+		$uncategorized = array();
+
+		// Get all registered tools.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		if ( ! $registry ) {
+			return $uncategorized;
+		}
+
+		$registry->init();
+		$registered_tools = $registry->get_tools();
+
+		// Build list of all categorized tools.
+		$categorized_tools = array();
+		foreach ( self::$tool_categories as $category => $data ) {
+			$categorized_tools = array_merge( $categorized_tools, $data['tools'] );
+		}
+
+		// Find tools not in any category.
+		foreach ( $registered_tools as $tool ) {
+			if ( $tool instanceof WP_MCP_AI_Tool_Interface ) {
+				$slug = $tool->get_slug();
+				if ( ! empty( $slug ) && ! in_array( $slug, $categorized_tools, true ) ) {
+					$uncategorized[] = $slug;
+				}
+			}
+		}
+
+		return $uncategorized;
+	}
+
+	/**
+	 * Analyze a tool and suggest categorization.
+	 *
+	 * This analyzes tool characteristics to suggest which category it should belong to.
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @return array Suggested category and reasoning.
+	 */
+	public static function suggest_tool_category( $tool_slug ) {
+		$tool_slug = sanitize_key( $tool_slug );
+
+		if ( '' === $tool_slug ) {
+			return array(
+				'category'   => 'low_resource',
+				'multiplier' => 1.0,
+				'model'      => 'gpt-4o-mini',
+				'confidence' => 0,
+				'reasoning'  => __( 'Invalid tool slug.', 'wp-mcp-ai' ),
+			);
+		}
+
+		// Get the tool instance to analyze.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		if ( ! $registry ) {
+			return array(
+				'category'   => 'low_resource',
+				'multiplier' => 1.0,
+				'model'      => 'gpt-4o-mini',
+				'confidence' => 0,
+				'reasoning'  => __( 'Tool registry not available.', 'wp-mcp-ai' ),
+			);
+		}
+
+		$registry->init();
+		$tool = $registry->get_tool( $tool_slug );
+
+		if ( ! $tool ) {
+			return array(
+				'category'   => 'low_resource',
+				'multiplier' => 1.0,
+				'model'      => 'gpt-4o-mini',
+				'confidence' => 0,
+				'reasoning'  => __( 'Tool not found in registry.', 'wp-mcp-ai' ),
+			);
+		}
+
+		// Analyze tool characteristics.
+		$suggested_category = 'low_resource'; // Default.
+		$confidence         = 50;
+		$reasoning          = '';
+
+		// Check tool slug for keywords.
+		if ( strpos( $tool_slug, 'crawl' ) !== false || strpos( $tool_slug, 'search' ) !== false ) {
+			$suggested_category = 'high_resource';
+			$confidence         = 70;
+			$reasoning          = __( 'Tool involves crawling or searching, which typically requires high resources.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'image' ) !== false || strpos( $tool_slug, 'vision' ) !== false || strpos( $tool_slug, 'generate' ) !== false ) {
+			$suggested_category = 'image_generation';
+			$confidence         = 80;
+			$reasoning          = __( 'Tool involves image generation or vision processing.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'audio' ) !== false || strpos( $tool_slug, 'speech' ) !== false || strpos( $tool_slug, 'transcribe' ) !== false ) {
+			$suggested_category = 'audio_processing';
+			$confidence         = 80;
+			$reasoning          = __( 'Tool involves audio or speech processing.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'post' ) !== false || strpos( $tool_slug, 'save' ) !== false || strpos( $tool_slug, 'create' ) !== false || strpos( $tool_slug, 'send' ) !== false ) {
+			$suggested_category = 'content_creation';
+			$confidence         = 65;
+			$reasoning          = __( 'Tool involves content creation or posting.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'cache' ) !== false || strpos( $tool_slug, 'purge' ) !== false ) {
+			$suggested_category = 'cache_performance';
+			$confidence         = 85;
+			$reasoning          = __( 'Tool involves cache management.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'cron' ) !== false || strpos( $tool_slug, 'schedule' ) !== false ) {
+			$suggested_category = 'scheduling';
+			$confidence         = 75;
+			$reasoning          = __( 'Tool involves scheduling or automation.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'message' ) !== false || strpos( $tool_slug, 'sms' ) !== false || strpos( $tool_slug, 'notify' ) !== false ) {
+			$suggested_category = 'messaging';
+			$confidence         = 75;
+			$reasoning          = __( 'Tool involves messaging or notifications.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'auth' ) !== false || strpos( $tool_slug, 'token' ) !== false || strpos( $tool_slug, 'jwt' ) !== false ) {
+			$suggested_category = 'security_auth';
+			$confidence         = 80;
+			$reasoning          = __( 'Tool involves authentication or security.', 'wp-mcp-ai' );
+		} elseif ( strpos( $tool_slug, 'get' ) !== false || strpos( $tool_slug, 'list' ) !== false || strpos( $tool_slug, 'query' ) !== false ) {
+			$suggested_category = 'medium_resource';
+			$confidence         = 60;
+			$reasoning          = __( 'Tool involves data retrieval, typically medium resource usage.', 'wp-mcp-ai' );
+		}
+
+		// Get category data.
+		$category_data = isset( self::$tool_categories[ $suggested_category ] ) ? self::$tool_categories[ $suggested_category ] : self::$tool_categories['low_resource'];
+
+		return array(
+			'category'   => $suggested_category,
+			'multiplier' => $category_data['multiplier'],
+			'model'      => $category_data['preferred_model'],
+			'confidence' => $confidence,
+			'reasoning'  => $reasoning,
+		);
+	}
+
+	/**
+	 * Add a tool to a category.
+	 *
+	 * This method allows dynamically adding tools to categories via a filter.
+	 * Note: This doesn't modify the static array, but allows filtering.
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param string $category  Category name.
+	 * @return bool True on success, false if category doesn't exist.
+	 */
+	public static function add_tool_to_category( $tool_slug, $category ) {
+		$tool_slug = sanitize_key( $tool_slug );
+		$category  = sanitize_key( $category );
+
+		if ( '' === $tool_slug || '' === $category ) {
+			return false;
+		}
+
+		if ( ! isset( self::$tool_categories[ $category ] ) ) {
+			return false;
+		}
+
+		// Use a filter to allow adding tools to categories dynamically.
+		add_filter(
+			'wp_mcp_ai_tool_categories',
+			function ( $categories ) use ( $tool_slug, $category ) {
+				if ( ! isset( $categories[ $category ] ) ) {
+					return $categories;
+				}
+
+				if ( ! in_array( $tool_slug, $categories[ $category ]['tools'], true ) ) {
+					$categories[ $category ]['tools'][] = $tool_slug;
+				}
+
+				return $categories;
+			}
+		);
+
+		return true;
+	}
+
+	/**
+	 * Get tool categories with dynamic filtering support.
+	 *
+	 * @return array Tool categories.
+	 */
+	public static function get_tool_categories() {
+		/**
+		 * Filter tool categories to allow dynamic additions.
+		 *
+		 * @param array $categories Tool categories.
+		 */
+		return apply_filters( 'wp_mcp_ai_tool_categories', self::$tool_categories );
 	}
 }
