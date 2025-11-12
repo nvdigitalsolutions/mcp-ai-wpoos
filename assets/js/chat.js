@@ -5118,6 +5118,144 @@
         window.wpMcpAiLoadSession = loadSessionIntoChat;
     }
 
+    /**
+     * Initialize keyboard shortcuts for the chat interface.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {HTMLElement} container - Chat container element
+     * @param {HTMLElement} exportButton - Export button element (optional)
+     * @param {HTMLElement} newChatButton - New chat button element (optional)
+     */
+    function initializeKeyboardShortcuts(state, container, exportButton, newChatButton) {
+        if (!state || !container) {
+            return;
+        }
+
+        // Track if help modal is open
+        let helpModalOpen = false;
+
+        document.addEventListener('keydown', function(event) {
+            // Don't trigger shortcuts if user is typing in an input/textarea
+            const target = event.target;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                // Allow Escape to work in inputs/textareas
+                if (event.key !== 'Escape' && event.keyCode !== 27) {
+                    return;
+                }
+            }
+
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const modKey = isMac ? event.metaKey : event.ctrlKey;
+
+            // Ctrl/Cmd + E: Export conversation
+            if (modKey && (event.key === 'e' || event.key === 'E') && exportButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy && state.conversation && state.conversation.length > 0) {
+                    handleExportConversation(state);
+                }
+                return;
+            }
+
+            // Ctrl/Cmd + N: New conversation
+            if (modKey && (event.key === 'n' || event.key === 'N') && newChatButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy) {
+                    startNewConversation(state);
+                }
+                return;
+            }
+
+            // Ctrl/Cmd + /: Show keyboard shortcuts help
+            if (modKey && event.key === '/') {
+                event.preventDefault();
+                toggleKeyboardShortcutsHelp(container);
+                helpModalOpen = !helpModalOpen;
+                return;
+            }
+
+            // Escape: Close modals or clear status
+            if (event.key === 'Escape' || event.keyCode === 27) {
+                if (helpModalOpen) {
+                    toggleKeyboardShortcutsHelp(container);
+                    helpModalOpen = false;
+                } else {
+                    clearStatus(container);
+                }
+                return;
+            }
+        });
+    }
+
+    /**
+     * Toggle keyboard shortcuts help modal.
+     * 
+     * @param {HTMLElement} container - Chat container element
+     */
+    function toggleKeyboardShortcutsHelp(container) {
+        if (!container) {
+            return;
+        }
+
+        // Check if help modal already exists
+        let helpModal = container.querySelector('.wp-mcp-ai-chat__shortcuts-help');
+        
+        if (helpModal) {
+            // Remove existing modal
+            helpModal.parentNode.removeChild(helpModal);
+            return;
+        }
+
+        // Create help modal
+        helpModal = document.createElement('div');
+        helpModal.className = 'wp-mcp-ai-chat__shortcuts-help';
+        
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const modKeyName = isMac ? 'Cmd' : 'Ctrl';
+
+        helpModal.innerHTML = '' +
+            '<div class="wp-mcp-ai-chat__shortcuts-overlay"></div>' +
+            '<div class="wp-mcp-ai-chat__shortcuts-modal">' +
+                '<h3 class="wp-mcp-ai-chat__shortcuts-title">Keyboard Shortcuts</h3>' +
+                '<button type="button" class="wp-mcp-ai-chat__shortcuts-close" aria-label="Close">&times;</button>' +
+                '<div class="wp-mcp-ai-chat__shortcuts-list">' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + E</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Export conversation</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + N</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Start new conversation</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + /</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Show this help</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">Escape</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Close modals or clear status</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(helpModal);
+
+        // Add close button functionality
+        const closeButton = helpModal.querySelector('.wp-mcp-ai-chat__shortcuts-close');
+        const overlay = helpModal.querySelector('.wp-mcp-ai-chat__shortcuts-overlay');
+        
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                toggleKeyboardShortcutsHelp(container);
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                toggleKeyboardShortcutsHelp(container);
+            });
+        }
+    }
+
     function init() {
         const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
@@ -5386,6 +5524,9 @@
 
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+
+            // Initialize keyboard shortcuts
+            initializeKeyboardShortcuts(state, container, exportButton, newChatButton);
 
             // Store state globally for cross-widget communication
             container.__wpMcpAiChatState = state;
