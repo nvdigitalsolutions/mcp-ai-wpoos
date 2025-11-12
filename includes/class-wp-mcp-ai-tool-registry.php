@@ -335,6 +335,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'check_site_security'             => 'wordpress-core',
 				'count_tokens'                    => 'wordpress-core',
 
+				// Assistant management.
+				'create_assistant'                => 'wordpress-core',
+
 				// WordPress Plugins - Tools requiring specific WordPress plugins.
 				'get_elementor_templates'         => 'wordpress-plugins',
 				'get_woo_recent_orders'           => 'wordpress-plugins',
@@ -874,6 +877,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
 				'WP_MCP_AI_Tool_Save_Post'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
+				'WP_MCP_AI_Tool_Create_Assistant'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant.php',
 				'WP_MCP_AI_Tool_Run_Crawl4AI_Job'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-run-crawl4ai-job.php',
 				'WP_MCP_AI_Tool_Open_OpenAI_Logs'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-logs.php',
 				'WP_MCP_AI_Tool_Open_OpenAI_Usage'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-open-openai-usage.php',
