@@ -25,33 +25,34 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	 * @param WP_REST_Request $request      REST request instance.
 	 * @param int             $user_id      WordPress user ID.
 	 * @param array           $context      Additional context such as timings and session key.
+	 * @return string|null The session key used for the transcript, or null if not recorded.
 	 */
 	public static function record( $assistant_id, array $messages, array $options, array $response, $request, $user_id, array $context = array() ) {
 		if ( ! $request instanceof WP_REST_Request ) {
-			return;
+			return null;
 		}
 
 		$assistant_id = absint( $assistant_id );
 		$user_id      = absint( $user_id );
 
 		if ( ! $assistant_id || empty( $messages ) || empty( $response ) ) {
-			return;
+			return null;
 		}
 
 		if ( ! self::should_record( $assistant_id, $messages, $options, $response, $request, $context ) ) {
-			return;
+			return null;
 		}
 
 		$handler = self::resolve_handler( $assistant_id, $messages, $options, $response, $request, $context );
 
 		if ( ! is_object( $handler ) || ! method_exists( $handler, 'update_item' ) ) {
-			return;
+			return null;
 		}
 
 		$record = self::build_record( $assistant_id, $messages, $options, $response, $request, $user_id, $context );
 
 		if ( empty( $record ) || ! is_array( $record ) ) {
-			return;
+			return null;
 		}
 
 		/**
@@ -70,8 +71,11 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		$record = apply_filters( 'wp_mcp_ai_chat_transcript_record', $record, $assistant_id, $messages, $options, $response, $request, $context );
 
 		if ( empty( $record ) || ! is_array( $record ) ) {
-			return;
+			return null;
 		}
+
+		// Extract session key before saving
+		$session_key = isset( $record['session_key'] ) ? $record['session_key'] : null;
 
 		try {
 			$result = $handler->update_item( $record );
@@ -86,6 +90,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 						'error_message' => $result->get_error_message(),
 					)
 				);
+				return null;
 			}
 		} catch ( Throwable $exception ) {
 			WP_MCP_AI_Logger::log_error(
@@ -96,7 +101,10 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 					'exception'    => $exception->getMessage(),
 				)
 			);
+			return null;
 		}
+
+		return $session_key;
 	}
 
 	/**
