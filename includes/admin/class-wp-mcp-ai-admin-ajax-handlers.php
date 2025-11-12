@@ -617,12 +617,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get limits and multipliers from request.
-			$limits      = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$multipliers = isset( $_POST['multipliers'] ) ? (array) $_POST['multipliers'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// Get limits, multipliers, and model preferences from request.
+			$limits            = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$multipliers       = isset( $_POST['multipliers'] ) ? (array) $_POST['multipliers'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$model_preferences = isset( $_POST['model_preferences'] ) ? (array) $_POST['model_preferences'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-			if ( empty( $limits ) && empty( $multipliers ) ) {
-				wp_send_json_error( array( 'message' => __( 'No limits or multipliers provided.', 'wp-mcp-ai' ) ) );
+			if ( empty( $limits ) && empty( $multipliers ) && empty( $model_preferences ) ) {
+				wp_send_json_error( array( 'message' => __( 'No limits, multipliers, or model preferences provided.', 'wp-mcp-ai' ) ) );
 				return;
 			}
 
@@ -647,6 +648,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				$current_multiplier = isset( $current_multipliers[ $tool_slug ] ) ? (float) $current_multipliers[ $tool_slug ] : 1.0;
 
 				if ( '' !== $tool_slug && abs( $current_multiplier - $multiplier ) > 0.01 ) {
+					++$changed_count;
+				}
+			}
+
+			// Check if any model preferences have changed.
+			$current_preferences = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preferences();
+			foreach ( $model_preferences as $tool_slug => $model ) {
+				$tool_slug           = sanitize_key( $tool_slug );
+				$model               = sanitize_text_field( $model );
+				$current_preference  = isset( $current_preferences[ $tool_slug ] ) ? $current_preferences[ $tool_slug ] : 'default';
+
+				if ( '' !== $tool_slug && $current_preference !== $model ) {
 					++$changed_count;
 				}
 			}
@@ -682,6 +695,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 				if ( '' !== $tool_slug && $multiplier >= 0.1 && $multiplier <= 10 ) {
 					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier ) ) {
+						++$saved_count;
+					}
+				}
+			}
+
+			// Save each model preference.
+			foreach ( $model_preferences as $tool_slug => $model ) {
+				$tool_slug = sanitize_key( $tool_slug );
+				$model     = sanitize_text_field( $model );
+
+				if ( '' !== $tool_slug ) {
+					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_model_preference( $tool_slug, $model ) ) {
 						++$saved_count;
 					}
 				}

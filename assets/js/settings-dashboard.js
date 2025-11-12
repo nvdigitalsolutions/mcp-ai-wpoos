@@ -214,7 +214,7 @@
 		},
 
 		/**
-		 * Handle save tool settings (limits + multipliers).
+		 * Handle save tool settings (limits + multipliers + model preferences).
 		 *
 		 * @param {Event} e Click event.
 		 */
@@ -225,6 +225,7 @@
 			const $message = $('#wp-mcp-ai-tool-settings-message');
 			const limits = {};
 			const multipliers = {};
+			const modelPreferences = {};
 
 			// Collect all limits
 			$('.wp-mcp-ai-tool-limit-input').each(function() {
@@ -236,6 +237,12 @@
 			$('.wp-mcp-ai-tool-multiplier-input').each(function() {
 				const $input = $(this);
 				multipliers[$input.data('tool-slug')] = $input.val();
+			});
+
+			// Collect all model preferences
+			$('.wp-mcp-ai-tool-model-input').each(function() {
+				const $select = $(this);
+				modelPreferences[$select.data('tool-slug')] = $select.val();
 			});
 
 			$button.prop('disabled', true);
@@ -250,7 +257,8 @@
 					action: 'wp_mcp_ai_save_tool_limits',
 					nonce: wpMcpAiDashboard.nonce,
 					limits: limits,
-					multipliers: multipliers
+					multipliers: multipliers,
+					model_preferences: modelPreferences
 				}
 			}, {
 				success: function(response) {

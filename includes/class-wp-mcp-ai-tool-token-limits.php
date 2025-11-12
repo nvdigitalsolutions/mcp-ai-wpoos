@@ -25,6 +25,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 	const LIMITS_OPTION = 'wp_mcp_ai_tool_token_limits';
 
 	/**
+	 * Option name for storing tool model preferences.
+	 */
+	const MODEL_PREFERENCES_OPTION = 'wp_mcp_ai_tool_model_preferences';
+
+	/**
 	 * User meta key for storing per-tool token usage.
 	 */
 	const USAGE_META_KEY = '_wp_mcp_ai_tool_token_usage';
@@ -313,6 +318,156 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$multipliers[ $tool_slug ] = $multiplier;
 
 		return update_option( 'wp_mcp_ai_tool_multipliers', $multipliers, false );
+	}
+
+	/**
+	 * Get tool model preference.
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @return string Model preference ('default' or specific model identifier).
+	 */
+	public static function get_tool_model_preference( $tool_slug ) {
+		$tool_slug = sanitize_key( $tool_slug );
+		if ( '' === $tool_slug ) {
+			return 'default';
+		}
+
+		$preferences = self::get_tool_model_preferences();
+
+		return isset( $preferences[ $tool_slug ] ) ? $preferences[ $tool_slug ] : 'default';
+	}
+
+	/**
+	 * Get all tool model preferences.
+	 *
+	 * @return array Tool slug => model preference pairs.
+	 */
+	public static function get_tool_model_preferences() {
+		$preferences = get_option( self::MODEL_PREFERENCES_OPTION, array() );
+
+		if ( ! is_array( $preferences ) ) {
+			$preferences = array();
+		}
+
+		/**
+		 * Filter all tool model preferences.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $preferences Tool slug => model preference pairs.
+		 */
+		return apply_filters( 'wp_mcp_ai_all_tool_model_preferences', $preferences );
+	}
+
+	/**
+	 * Set tool model preference.
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param string $model     Model identifier or 'default'.
+	 * @return bool True on success.
+	 */
+	public static function set_tool_model_preference( $tool_slug, $model ) {
+		$tool_slug = sanitize_key( $tool_slug );
+		$model     = sanitize_text_field( $model );
+
+		if ( '' === $tool_slug ) {
+			return false;
+		}
+
+		// Get current preferences from option (persistent storage).
+		$preferences = get_option( self::MODEL_PREFERENCES_OPTION, array() );
+
+		if ( ! is_array( $preferences ) ) {
+			$preferences = array();
+		}
+
+		// Store 'default' or the specific model.
+		$preferences[ $tool_slug ] = $model;
+
+		return update_option( self::MODEL_PREFERENCES_OPTION, $preferences, false );
+	}
+
+	/**
+	 * Get available AI models from all configured providers.
+	 *
+	 * @return array Array of model options with provider labels.
+	 */
+	public static function get_available_models() {
+		$models = array(
+			'default' => __( 'Default (use assistant/global setting)', 'wp-mcp-ai' ),
+		);
+
+		// Get settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+		// OpenAI models.
+		if ( ! empty( $settings['openai_api_key'] ) ) {
+			$models['openai_group'] = array(
+				'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
+				'options' => array(
+					'gpt-4o'        => 'GPT-4o',
+					'gpt-4o-mini'   => 'GPT-4o Mini',
+					'gpt-4-turbo'   => 'GPT-4 Turbo',
+					'gpt-4'         => 'GPT-4',
+					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
+					'o1-preview'    => 'o1 Preview',
+					'o1-mini'       => 'o1 Mini',
+				),
+			);
+		}
+
+		// Anthropic models.
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			$models['anthropic_group'] = array(
+				'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'options' => array(
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+					'claude-3-opus-20240229'     => 'Claude 3 Opus',
+				),
+			);
+		}
+
+		// Gemini models.
+		if ( ! empty( $settings['gemini_api_key'] ) ) {
+			$models['gemini_group'] = array(
+				'label'   => __( 'Google Gemini', 'wp-mcp-ai' ),
+				'options' => array(
+					'gemini-2.0-flash-exp' => 'Gemini 2.0 Flash (Experimental)',
+					'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
+					'gemini-1.5-flash'     => 'Gemini 1.5 Flash',
+				),
+			);
+		}
+
+		// Ollama models (if configured).
+		if ( ! empty( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_model'] ) ) {
+			$models['ollama_group'] = array(
+				'label'   => __( 'Ollama (Local)', 'wp-mcp-ai' ),
+				'options' => array(
+					$settings['ollama_model'] => $settings['ollama_model'],
+				),
+			);
+		}
+
+		// LM Studio models (if configured).
+		if ( ! empty( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_model'] ) ) {
+			$models['lm_studio_group'] = array(
+				'label'   => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+				'options' => array(
+					$settings['lm_studio_model'] => $settings['lm_studio_model'],
+				),
+			);
+		}
+
+		/**
+		 * Filter available models for tool preferences.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $models Available models grouped by provider.
+		 */
+		return apply_filters( 'wp_mcp_ai_available_tool_models', $models );
 	}
 
 	/**

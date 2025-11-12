@@ -300,4 +300,80 @@ class Test_Token_Manager_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		$this->assertFalse( $response['success'], 'Old nonce should fail' );
 		$this->assertStringContainsString( 'security token', strtolower( $response['data']['message'] ) );
 	}
+
+	/**
+	 * Test save tool limits with model preferences.
+	 */
+	public function test_save_tool_limits_with_model_preferences() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// Set up AJAX request with model preferences.
+		$_POST['action']            = 'wp_mcp_ai_save_tool_limits';
+		$_POST['nonce']             = wp_create_nonce( 'wp_mcp_ai_dashboard' );
+		$_POST['limits']            = array();
+		$_POST['multipliers']       = array();
+		$_POST['model_preferences'] = array(
+			'run_crawl4ai_job' => 'gpt-4o',
+			'search_content'   => 'claude-3-5-sonnet-20241022',
+			'web_search'       => 'default',
+		);
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify success.
+		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
+
+		// Verify model preferences were saved.
+		$this->assertEquals( 'gpt-4o', WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( 'run_crawl4ai_job' ) );
+		$this->assertEquals( 'claude-3-5-sonnet-20241022', WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( 'search_content' ) );
+		$this->assertEquals( 'default', WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( 'web_search' ) );
+	}
+
+	/**
+	 * Test save tool limits with combined settings (limits, multipliers, model preferences).
+	 */
+	public function test_save_tool_limits_combined() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// Set up AJAX request with all settings.
+		$_POST['action']            = 'wp_mcp_ai_save_tool_limits';
+		$_POST['nonce']             = wp_create_nonce( 'wp_mcp_ai_dashboard' );
+		$_POST['limits']            = array(
+			'test_tool' => 100000,
+		);
+		$_POST['multipliers']       = array(
+			'test_tool' => 2.5,
+		);
+		$_POST['model_preferences'] = array(
+			'test_tool' => 'gpt-4o-mini',
+		);
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_save_tool_limits' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify success.
+		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
+
+		// Verify all settings were saved.
+		$this->assertEquals( 100000, WP_MCP_AI_Tool_Token_Limits::get_tool_limit( 'test_tool' ) );
+		$this->assertEquals( 2.5, WP_MCP_AI_Tool_Token_Limits::get_tool_multiplier( 'test_tool' ) );
+		$this->assertEquals( 'gpt-4o-mini', WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( 'test_tool' ) );
+	}
 }
