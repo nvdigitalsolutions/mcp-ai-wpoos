@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-ajax-request-error',
-        'version' => 'dev-copilot/fix-ajax-request-error',
-        'reference' => '97299d1a3873d4cdd77ac5af142027e60a6d8fc7',
+        'pretty_version' => 'dev-copilot/fix-harcoded-links-settings-page',
+        'version' => 'dev-copilot/fix-harcoded-links-settings-page',
+        'reference' => '5d64334091b49fbf791da48ded3dbff58a5e23d0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-ajax-request-error',
-            'version' => 'dev-copilot/fix-ajax-request-error',
-            'reference' => '97299d1a3873d4cdd77ac5af142027e60a6d8fc7',
+            'pretty_version' => 'dev-copilot/fix-harcoded-links-settings-page',
+            'version' => 'dev-copilot/fix-harcoded-links-settings-page',
+            'reference' => '5d64334091b49fbf791da48ded3dbff58a5e23d0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
