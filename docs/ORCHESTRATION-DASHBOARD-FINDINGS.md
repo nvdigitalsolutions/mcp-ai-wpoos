@@ -427,7 +427,7 @@ Active cron jobs are tracked in:
 
 ### Core Orchestration Classes
 - ✅ `includes/class-wp-mcp-ai-resource-manager.php`
-- ✅ `includes/class-wp-mcp-ai-token-budget-manager.php`
+- ✅ `includes/services/class-wp-mcp-ai-token-budget-service.php`
 - ✅ `includes/class-wp-mcp-ai-tool-registry.php`
 - ✅ `includes/class-wp-mcp-ai-cron-manager.php`
 - ✅ `includes/class-wp-mcp-ai-rest.php`

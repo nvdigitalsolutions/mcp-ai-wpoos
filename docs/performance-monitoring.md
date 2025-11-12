@@ -10,7 +10,7 @@ The WP oOS Performance Monitoring system provides real-time insights into plugin
 
 The Performance Monitor Custom Content Type (CCT) is the central data store for all performance metrics:
 
-- **Location:** `includes/class-wp-mcp-ai-performance-monitor-cct.php`
+- **Location:** `includes/services/class-wp-mcp-ai-performance-monitor-service.php`
 - **Storage:** JetEngine CCT (primary) or WordPress Options (fallback)
 - **Auto-registration:** Automatically creates CCT schema when JetEngine is active
 - **AI-Friendly:** Generates diagnostic summaries and recommendations

@@ -47,7 +47,7 @@ The Token Usage Manager Enhancement Plan **can be fully applied** to the current
 
 ### 2. WP_MCP_AI_Token_Budget_Manager Class ✅
 
-**Location:** `includes/class-wp-mcp-ai-token-budget-manager.php`  
+**Location:** `includes/services/class-wp-mcp-ai-token-budget-service.php`  
 **Status:** Intact (651 lines)
 
 | Component | Status |
