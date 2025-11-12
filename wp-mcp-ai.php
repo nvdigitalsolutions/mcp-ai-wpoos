@@ -274,7 +274,16 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-proxy-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-budget-manager.php';
+
+// Load dependency injection container (Phase 4 refactoring - Milestone 10).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
+require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
+
+// Load service layer (Phase 4 refactoring - Milestone 8).
+// This includes token budget manager and performance monitor services.
+require_once WP_MCP_AI_PATH . 'includes/services-init.php';
+
+// Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
@@ -305,15 +314,12 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
-// Load dependency injection container (Phase 4 refactoring - Milestone 10).
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-container.php';
-require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
+// Container and services already loaded earlier (after rate-limit-manager, before model-selector).
 
 // Load repository layer (Phase 4 refactoring - Milestone 9).
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 
-// Load service layer (Phase 4 refactoring - Milestone 8).
-require_once WP_MCP_AI_PATH . 'includes/services-init.php';
+// Service layer already loaded earlier (after container, before model-selector).
 
 // Load federation system components.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-settings.php';
@@ -332,7 +338,7 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-assistants-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-ai-peers-cct.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-rate-limits-cct.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-performance-monitor-cct.php';
+	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
