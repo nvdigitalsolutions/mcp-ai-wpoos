@@ -154,4 +154,74 @@ class WP_MCP_AI_CPT_CCT_Sync_Test extends WP_UnitTestCase {
 		// This is just documenting the behavior.
 		$this->assertNotEmpty( $config['memory_files'] );
 	}
+
+	/**
+	 * Test that model field is properly sanitized when meta doesn't exist.
+	 */
+	public function test_model_field_sanitization_when_missing() {
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Test Assistant Without Model',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Don't set model meta - simulates assistant created without model.
+		// get_post_meta will return false for non-existent meta.
+
+		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post_id );
+
+		// Model should be an empty string, not false or null.
+		$this->assertIsString( $config['model'], 'Model field should be a string' );
+		$this->assertSame( '', $config['model'], 'Model field should be empty string when not set' );
+	}
+
+	/**
+	 * Test that provider, model, system_prompt fields are properly sanitized.
+	 */
+	public function test_string_fields_sanitization() {
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Don't set any meta fields.
+
+		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post_id );
+
+		// All string fields should be strings, not false or null.
+		$this->assertIsString( $config['provider'], 'Provider should be a string' );
+		$this->assertIsString( $config['model'], 'Model should be a string' );
+		$this->assertIsString( $config['system_prompt'], 'System prompt should be a string' );
+		$this->assertIsString( $config['vector_store_id'], 'Vector store ID should be a string' );
+
+		$this->assertSame( '', $config['provider'] );
+		$this->assertSame( '', $config['model'] );
+		$this->assertSame( '', $config['system_prompt'] );
+		$this->assertSame( '', $config['vector_store_id'] );
+	}
+
+	/**
+	 * Test that temperature field handles missing meta correctly.
+	 */
+	public function test_temperature_field_sanitization_when_missing() {
+		$post_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_assistant',
+				'post_title'  => 'Test Assistant',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Don't set temperature meta.
+
+		$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $post_id );
+
+		// Temperature should be null when not set.
+		$this->assertNull( $config['temperature'], 'Temperature should be null when not set' );
+	}
 }

@@ -3549,18 +3549,24 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['provider'] = self::sanitize_provider_meta( $config['provider'] );
 			}
 
-			if ( '' === $config['model'] ) {
+			if ( ! is_string( $config['model'] ) ) {
 				$config['model'] = '';
+			} else {
+				$config['model'] = self::sanitize_model_meta( $config['model'] );
 			}
 
-			if ( '' === $config['temperature'] ) {
+			if ( ! is_numeric( $config['temperature'] ) && '' !== $config['temperature'] ) {
+				$config['temperature'] = null;
+			} elseif ( '' === $config['temperature'] || false === $config['temperature'] || null === $config['temperature'] ) {
 				$config['temperature'] = null;
 			} else {
 				$config['temperature'] = floatval( $config['temperature'] );
 			}
 
-			if ( '' === $config['system_prompt'] ) {
+			if ( ! is_string( $config['system_prompt'] ) ) {
 				$config['system_prompt'] = '';
+			} else {
+				$config['system_prompt'] = self::sanitize_system_prompt_meta( $config['system_prompt'] );
 			}
 
 			if ( ! is_array( $config['memory_files'] ) ) {
