@@ -2205,50 +2205,16 @@
             return;
         }
 
-        // Save current conversation to CCT before clearing (if there are messages)
+        // If there are messages, confirm before clearing
         if (state.conversation && state.conversation.length > 0) {
-            // Confirm with user before clearing the conversation
-            const confirmMessage = getString('newConversation', 'Start new conversation') + '?';
+            const confirmMessage = getString('confirmClearConversation', 'Clear current conversation and start new? Use the Save button first if you want to keep this conversation.');
             if (!confirm(confirmMessage)) {
                 return;
             }
-
-            // Show saving status
-            setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
-
-            // Save to CCT before clearing
-            saveConversationToCCT(state).then(function(result) {
-                if (!result || result.skipped) {
-                    // No save needed or save was skipped, proceed with clearing
-                    performConversationClear(state);
-                    return;
-                }
-
-                if (result.success) {
-                    // Save succeeded, proceed with clearing
-                    setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
-                    performConversationClear(state);
-                } else {
-                    // Save failed, ask user if they want to proceed anyway
-                    const errorMsg = result.error || 'Failed to save conversation';
-                    const proceedMsg = getString('saveFailedProceed', 'Failed to save conversation: ') + errorMsg + '. ' + 
-                                     getString('proceedAnyway', 'Do you want to proceed anyway? Your current conversation will be lost.');
-                    
-                    setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
-                    
-                    if (confirm(proceedMsg)) {
-                        // User chose to proceed despite save failure
-                        performConversationClear(state);
-                    } else {
-                        // User cancelled, keep the conversation
-                        setStatus(state.container, getString('saveFailedKeepingConversation', 'Conversation not cleared. You can try again later.'));
-                    }
-                }
-            });
-        } else {
-            // No messages to save, just clear
-            performConversationClear(state);
         }
+
+        // Just clear - user can use Save button if they want to save first
+        performConversationClear(state);
     }
 
     /**
