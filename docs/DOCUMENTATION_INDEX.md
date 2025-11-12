@@ -144,8 +144,10 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |
-| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (tiered limits, forecasting) | Developers/Stakeholders |
-| [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements | All Users |
+| [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
+| [PHASE-7-ANALYTICS-PLAN.md](PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
+| [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
+| [QUICK-REFERENCE-PHASE-7.md](QUICK-REFERENCE-PHASE-7.md) | **NEW:** Quick reference guide for Phase 7 analytics features | All Users |
 | [job-notification-system.md](job-notification-system.md) | Real-time async job notifications | Developers |
 | [chat-performance-optimizations.md](chat-performance-optimizations.md) | Complete performance tuning guide | Developers |
 | [tpm-limit-validation.md](tpm-limit-validation.md) | Token-per-minute limit handling | Developers |
