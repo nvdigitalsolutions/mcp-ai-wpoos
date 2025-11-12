@@ -301,25 +301,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
-					<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 15%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 10%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'wp-mcp-ai' ); ?>">
+					<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 15%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Preferred AI model for this tool', 'wp-mcp-ai' ); ?>">
+						<?php esc_html_e( 'Preferred Model', 'wp-mcp-ai' ); ?>
+						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
+					</th>
+					<th style="width: 8%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'wp-mcp-ai' ); ?>">
 						<?php esc_html_e( 'Multiplier', 'wp-mcp-ai' ); ?>
 						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
 					</th>
-					<th style="width: 15%;"><?php esc_html_e( 'Effective Limits', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 10%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 10%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 10%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Effective Limits', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 9%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
 					<th style="width: 10%;"><?php esc_html_e( 'Usage %', 'wp-mcp-ai' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
 				<?php
 				foreach ( $all_tools as $tool_slug => $tool_name ) :
-					$tool_limit = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
-					$tool_stats = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
-					$multiplier = $this->get_tool_multiplier( $tool_slug );
+					$tool_limit          = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+					$tool_stats          = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
+					$multiplier          = $this->get_tool_multiplier( $tool_slug );
+					$model_preference    = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
+					$available_models    = WP_MCP_AI_Tool_Token_Limits::get_available_models();
 
 					// Calculate effective limits for each tier.
 					$free_limit       = (int) ( 50000 * $multiplier );
@@ -343,6 +349,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<tr>
 						<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
 						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+						<td>
+							<select 
+								class="wp-mcp-ai-tool-model-input" 
+								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
+								style="width: 100%; max-width: 250px;"
+							>
+								<?php
+								foreach ( $available_models as $group_key => $group_data ) :
+									// Handle optgroup or single option.
+									if ( is_array( $group_data ) && isset( $group_data['label'] ) && isset( $group_data['options'] ) ) {
+										?>
+										<optgroup label="<?php echo esc_attr( $group_data['label'] ); ?>">
+											<?php foreach ( $group_data['options'] as $model_id => $model_label ) : ?>
+												<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model_preference, $model_id ); ?>>
+													<?php echo esc_html( $model_label ); ?>
+												</option>
+											<?php endforeach; ?>
+										</optgroup>
+										<?php
+									} else {
+										// Single option (like "default").
+										?>
+										<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $model_preference, $group_key ); ?>>
+											<?php echo esc_html( $group_data ); ?>
+										</option>
+										<?php
+									}
+								endforeach;
+								?>
+							</select>
+						</td>
 						<td>
 							<input 
 								type="number" 
