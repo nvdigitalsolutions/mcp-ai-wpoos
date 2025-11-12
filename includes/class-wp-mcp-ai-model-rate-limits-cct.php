@@ -934,9 +934,9 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'supports_streaming'        => true,
 				'supports_function_calling' => true,
 				'supports_vision'           => true,
-				'cost_per_1k_input_tokens'  => 0.001,
-				'cost_per_1k_output_tokens' => 0.005,
-				'notes'                     => 'Claude 3.5 Haiku (October 2024). Fast and economical.',
+				'cost_per_1k_input_tokens'  => 0.0008,
+				'cost_per_1k_output_tokens' => 0.004,
+				'notes'                     => 'Claude 3.5 Haiku (October 2024). Fast and economical with performance matching Claude 3 Opus.',
 			),
 
 			// Azure OpenAI variants (examples).
