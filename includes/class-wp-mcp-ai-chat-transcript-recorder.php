@@ -290,9 +290,8 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			$metadata['finish_reasons'] = $finish_reasons;
 		}
 
-		$usage = self::get_property( $response, 'usage' );
-		if ( ! empty( $usage ) && ( is_array( $usage ) || is_object( $usage ) ) ) {
-			$metadata['usage'] = self::to_array( $usage );
+		if ( isset( $response['usage'] ) && is_array( $response['usage'] ) && ! empty( $response['usage'] ) ) {
+			$metadata['usage'] = $response['usage'];
 		}
 
 		if ( isset( $context['session_key'] ) && '' !== $context['session_key'] ) {
@@ -309,26 +308,19 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	 * @return array
 	 */
 	protected static function extract_finish_reasons( array $response ) {
-		$choices = self::get_property( $response, 'choices' );
-
-		if ( empty( $choices ) ) {
+		if ( empty( $response['choices'] ) || ! is_array( $response['choices'] ) ) {
 			return array();
 		}
 
-		// Handle both arrays and objects (from JSON parsing).
-		if ( ! is_array( $choices ) && ! is_object( $choices ) ) {
-			return array();
-		}
+		$reasons = array();
 
-		$choices_array = self::to_array( $choices );
-		$reasons       = array();
+		foreach ( $response['choices'] as $choice ) {
+			if ( ! is_array( $choice ) ) {
+				continue;
+			}
 
-		foreach ( $choices_array as $choice ) {
-			// Handle both array and stdClass objects for individual choices.
-			$finish_reason = self::get_property( $choice, 'finish_reason' );
-
-			if ( ! empty( $finish_reason ) && is_string( $finish_reason ) ) {
-				$reason = sanitize_key( $finish_reason );
+			if ( isset( $choice['finish_reason'] ) && is_string( $choice['finish_reason'] ) ) {
+				$reason = sanitize_key( $choice['finish_reason'] );
 				if ( '' !== $reason ) {
 					$reasons[] = $reason;
 				}
@@ -462,46 +454,5 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		}
 
 		return ! empty( $value );
-	}
-
-	/**
-	 * Safely get a property value from an array or object.
-	 *
-	 * Handles both arrays and stdClass objects that may result from JSON parsing.
-	 *
-	 * @param array|object $data Array or object to access.
-	 * @param string       $key  Property or array key to retrieve.
-	 * @return mixed Property value, or null if not found.
-	 */
-	protected static function get_property( $data, $key ) {
-		if ( is_array( $data ) ) {
-			return isset( $data[ $key ] ) ? $data[ $key ] : null;
-		}
-
-		if ( is_object( $data ) ) {
-			return isset( $data->$key ) ? $data->$key : null;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Convert an array or object to an array.
-	 *
-	 * Handles stdClass objects that may result from JSON parsing without the associative flag.
-	 *
-	 * @param mixed $data Data to convert to array.
-	 * @return array Converted array, or original data if already an array.
-	 */
-	protected static function to_array( $data ) {
-		if ( is_array( $data ) ) {
-			return $data;
-		}
-
-		if ( is_object( $data ) ) {
-			return (array) $data;
-		}
-
-		return array();
 	}
 }
