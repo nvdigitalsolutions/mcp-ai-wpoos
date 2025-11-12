@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 1.0.0
  */
-class WP_MCP_AI_Chat_Service implements WP_MCP_AI_Chat_Service_Interface {
+class WP_MCP_AI_Chat_Service {
 
 	/**
 	 * Language Model Router instance
