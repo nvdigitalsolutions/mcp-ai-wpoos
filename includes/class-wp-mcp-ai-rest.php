@@ -684,6 +684,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'/chat-transcripts/(?P<session_key>[^/]+)',
 				array(
 					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+						'callback'            => array( $this, 'handle_chat_transcript_get' ),
+						'args'                => array(
+							'session_key'  => array(
+								'description'       => __( 'Session key of the transcript to retrieve.', 'wp-mcp-ai' ),
+								'type'              => 'string',
+								'required'          => true,
+								'sanitize_callback' => 'sanitize_text_field',
+							),
+							'user_id'      => array(
+								'description'       => __( 'User ID to retrieve transcript for. Defaults to current user.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+							'assistant_id' => array(
+								'description'       => __( 'Optional assistant ID to filter transcript by.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'sanitize_callback' => 'absint',
+							),
+						),
+					),
+					array(
 						'methods'             => WP_REST_Server::DELETABLE,
 						'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 						'callback'            => array( $this, 'handle_chat_transcript_delete' ),
@@ -1190,6 +1215,90 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
 				)
 			);
+		}
+
+		/**
+		 * Handle retrieval of a specific chat transcript session by session key.
+		 *
+		 * This endpoint provides RESTful access to a specific transcript using the
+		 * session key in the URL path (e.g., /chat-transcripts/{session_key}).
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_chat_transcript_get( WP_REST_Request $request ) {
+			$session_key  = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+			$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+			$user_id      = absint( $request->get_param( 'user_id' ) );
+
+			if ( '' === $session_key ) {
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_invalid_session',
+					__( 'A valid session key is required to retrieve a transcript.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( ! $user_id ) {
+				$user_id = get_current_user_id();
+			}
+
+			if ( ! $user_id ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'handle_chat_transcript_get: No user ID available',
+					array(
+						'requested_user_id'  => $request->get_param( 'user_id' ),
+						'current_user_id'    => get_current_user_id(),
+						'is_user_logged_in'  => is_user_logged_in(),
+						'session_key'        => $session_key,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_transcripts_missing_user',
+					__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'handle_chat_transcript_get: Request parameters',
+				array(
+					'session_key'  => $session_key,
+					'user_id'      => $user_id,
+					'assistant_id' => $assistant_id,
+				)
+			);
+
+			$session = $this->get_transcript_session( $user_id, $session_key, $assistant_id );
+
+			if ( is_wp_error( $session ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'handle_chat_transcript_get: Error retrieving session',
+					array(
+						'error_code'    => $session->get_error_code(),
+						'error_message' => $session->get_error_message(),
+						'session_key'   => $session_key,
+						'user_id'       => $user_id,
+					)
+				);
+
+				if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
+					return rest_ensure_response(
+						array(
+							'session' => null,
+							'message' => $session->get_error_message(),
+						)
+					);
+				}
+
+				return $session;
+			}
+
+			return rest_ensure_response( array( 'session' => $session ) );
 		}
 
 		/**
