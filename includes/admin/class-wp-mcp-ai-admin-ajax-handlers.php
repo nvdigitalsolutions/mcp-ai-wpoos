@@ -57,6 +57,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_apply_orchestration_preset' => 'handle_apply_orchestration_preset',
 				'wp_ajax_wp_mcp_ai_export_token_usage_csv' => 'handle_export_token_usage_csv',
 				'wp_ajax_wp_mcp_ai_bulk_assign_tier'       => 'handle_bulk_assign_tier',
+				'wp_ajax_wp_mcp_ai_apply_all_recommendations' => 'handle_apply_all_recommendations',
+				'wp_ajax_wp_mcp_ai_apply_preset'           => 'handle_apply_preset',
 			);
 
 			$action         = current_action();
@@ -868,6 +870,116 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 						__( 'Successfully updated %1$d users to %2$s tier.', 'wp-mcp-ai' ),
 						$results['success'],
 						$tier
+					),
+					'results' => $results,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to apply all recommendations.
+		 */
+		public function handle_apply_all_recommendations() {
+			// Check permissions.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Apply all recommendations.
+			$results = WP_MCP_AI_Tool_Recommendations::apply_all_recommendations();
+
+			if ( $results['failed'] > 0 ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: 1: Number of successful updates, 2: Number of failed updates, 3: Number skipped */
+							__( 'Applied recommendations: %1$d succeeded, %2$d failed, %3$d skipped (already optimal).', 'wp-mcp-ai' ),
+							$results['success'],
+							$results['failed'],
+							$results['skipped']
+						),
+						'results' => $results,
+					)
+				);
+				return;
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: Number of tools updated, 2: Number skipped */
+						__( 'Successfully applied recommended settings to %1$d tools. %2$d tools were already using recommended settings.', 'wp-mcp-ai' ),
+						$results['success'],
+						$results['skipped']
+					),
+					'results' => $results,
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to apply a preset.
+		 */
+		public function handle_apply_preset() {
+			// Check permissions.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_dashboard', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get preset from request.
+			$preset = isset( $_POST['preset'] ) ? sanitize_key( $_POST['preset'] ) : 'balanced';
+
+			// Apply preset.
+			$results = WP_MCP_AI_Tool_Recommendations::apply_preset( $preset );
+
+			if ( isset( $results['error'] ) ) {
+				wp_send_json_error( array( 'message' => $results['error'] ) );
+				return;
+			}
+
+			if ( $results['failed'] > 0 ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: 1: Number of successful updates, 2: Number of failed updates */
+							__( 'Preset applied with some errors: %1$d succeeded, %2$d failed.', 'wp-mcp-ai' ),
+							$results['success'],
+							$results['failed']
+						),
+						'results' => $results,
+					)
+				);
+				return;
+			}
+
+			$preset_names = array(
+				'conservative' => __( 'Conservative', 'wp-mcp-ai' ),
+				'balanced'     => __( 'Balanced', 'wp-mcp-ai' ),
+				'performance'  => __( 'Performance', 'wp-mcp-ai' ),
+				'aggressive'   => __( 'Aggressive', 'wp-mcp-ai' ),
+			);
+
+			wp_send_json_success(
+				array(
+					'message' => sprintf(
+						/* translators: 1: Preset name, 2: Number of tools updated */
+						__( 'Successfully applied %1$s preset to %2$d tools!', 'wp-mcp-ai' ),
+						isset( $preset_names[ $preset ] ) ? $preset_names[ $preset ] : $preset,
+						$results['success']
 					),
 					'results' => $results,
 				)

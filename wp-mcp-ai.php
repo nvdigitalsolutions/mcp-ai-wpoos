@@ -291,6 +291,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-recommendations.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chat-transcript-recorder.php';
