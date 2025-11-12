@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-undefined-function-error-another-one',
-        'version' => 'dev-copilot/fix-undefined-function-error-another-one',
-        'reference' => 'e528079c0f5c58825ffccf77cb4beb044cd21134',
+        'pretty_version' => 'dev-copilot/fix-ajax-request-error',
+        'version' => 'dev-copilot/fix-ajax-request-error',
+        'reference' => '97299d1a3873d4cdd77ac5af142027e60a6d8fc7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-undefined-function-error-another-one',
-            'version' => 'dev-copilot/fix-undefined-function-error-another-one',
-            'reference' => 'e528079c0f5c58825ffccf77cb4beb044cd21134',
+            'pretty_version' => 'dev-copilot/fix-ajax-request-error',
+            'version' => 'dev-copilot/fix-ajax-request-error',
+            'reference' => '97299d1a3873d4cdd77ac5af142027e60a6d8fc7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
