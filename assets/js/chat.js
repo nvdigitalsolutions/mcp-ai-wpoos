@@ -2133,6 +2133,73 @@
         }, 3000);
     }
 
+    /**
+     * Handle save conversation button click.
+     * Saves the current conversation to CCT without clearing it.
+     * 
+     * @param {Object} state - Chat state object
+     */
+    function handleSaveConversation(state) {
+        if (!state) {
+            return;
+        }
+
+        // Check if there's anything to save
+        if (!state.conversation || state.conversation.length === 0) {
+            setStatus(state.container, getString('noConversationToSave', 'No conversation to save. Start chatting first!'));
+            setTimeout(function() {
+                clearStatus(state.container);
+            }, 3000);
+            return;
+        }
+
+        // Show saving status
+        setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
+
+        // Save to CCT
+        saveConversationToCCT(state, { silent: false }).then(function(result) {
+            if (!result || result.skipped) {
+                // No save needed or save was skipped
+                setStatus(state.container, getString('saveSkipped', 'Save not available for this conversation.'));
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 3000);
+                return;
+            }
+
+            if (result.success) {
+                // Save succeeded
+                setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 3000);
+            } else {
+                // Save failed
+                const errorMsg = result.error || 'Failed to save conversation';
+                setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+                
+                if (window.console && console.error) {
+                    console.error('Failed to save conversation:', errorMsg);
+                }
+                
+                setTimeout(function() {
+                    clearStatus(state.container);
+                }, 5000);
+            }
+        }).catch(function(error) {
+            // Handle unexpected errors
+            setStatus(state.container, getString('saveFailed', 'Failed to save conversation. See console for details.'));
+            
+            if (window.console && console.error) {
+                console.error('Error saving conversation:', error);
+            }
+            
+            setTimeout(function() {
+                clearStatus(state.container);
+            }, 5000);
+        });
+    }
+
     function startNewConversation(state) {
         if (!state) {
             return;
@@ -5123,10 +5190,11 @@
      * 
      * @param {Object} state - Chat state object
      * @param {HTMLElement} container - Chat container element
+     * @param {HTMLElement} saveButton - Save button element (optional)
      * @param {HTMLElement} exportButton - Export button element (optional)
      * @param {HTMLElement} newChatButton - New chat button element (optional)
      */
-    function initializeKeyboardShortcuts(state, container, exportButton, newChatButton) {
+    function initializeKeyboardShortcuts(state, container, saveButton, exportButton, newChatButton) {
         if (!state || !container) {
             return;
         }
@@ -5146,6 +5214,15 @@
 
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             const modKey = isMac ? event.metaKey : event.ctrlKey;
+
+            // Ctrl/Cmd + S: Save conversation
+            if (modKey && (event.key === 's' || event.key === 'S') && saveButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy && state.conversation && state.conversation.length > 0) {
+                    handleSaveConversation(state);
+                }
+                return;
+            }
 
             // Ctrl/Cmd + E: Export conversation
             if (modKey && (event.key === 'e' || event.key === 'E') && exportButton && !event.shiftKey) {
@@ -5218,6 +5295,10 @@
                 '<h3 class="wp-mcp-ai-chat__shortcuts-title">Keyboard Shortcuts</h3>' +
                 '<button type="button" class="wp-mcp-ai-chat__shortcuts-close" aria-label="Close">&times;</button>' +
                 '<div class="wp-mcp-ai-chat__shortcuts-list">' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + S</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Save conversation</span>' +
+                    '</div>' +
                     '<div class="wp-mcp-ai-chat__shortcut">' +
                         '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + E</kbd>' +
                         '<span class="wp-mcp-ai-chat__shortcut-desc">Export conversation</span>' +
@@ -5437,9 +5518,19 @@
                 });
             }
 
-            // Initialize export and quota monitoring UI controls
+            // Initialize save, export and quota monitoring UI controls
+            const saveButton = container.querySelector('.wp-mcp-ai-chat__save');
             const exportButton = container.querySelector('.wp-mcp-ai-chat__export');
             const quotaMonitor = container.querySelector('.wp-mcp-ai-chat__quota-monitor');
+            
+            if (saveButton) {
+                saveButton.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+                    handleSaveConversation(state);
+                });
+            }
             
             if (exportButton) {
                 exportButton.addEventListener('click', function (event) {
@@ -5526,7 +5617,7 @@
             updateTranscribeButtonState(state);
 
             // Initialize keyboard shortcuts
-            initializeKeyboardShortcuts(state, container, exportButton, newChatButton);
+            initializeKeyboardShortcuts(state, container, saveButton, exportButton, newChatButton);
 
             // Store state globally for cross-widget communication
             container.__wpMcpAiChatState = state;

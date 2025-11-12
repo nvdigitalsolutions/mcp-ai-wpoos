@@ -157,6 +157,20 @@ class WP_MCP_AI_Shortcode {
 					'historySessionError'       => __( 'Unable to load this conversation. Please try again.', 'wp-mcp-ai' ),
 					'historyNoMessages'         => __( 'No messages were saved for this conversation.', 'wp-mcp-ai' ),
 					'savingPost'                => __( 'Saving post…', 'wp-mcp-ai' ),
+					'saveConversation'          => __( 'Save conversation', 'wp-mcp-ai' ),
+					'savingConversation'        => __( 'Saving current conversation...', 'wp-mcp-ai' ),
+					'conversationSaved'         => __( 'Conversation saved successfully.', 'wp-mcp-ai' ),
+					'saveFailed'                => __( 'Failed to save conversation. See console for details.', 'wp-mcp-ai' ),
+					'saveFailedProceed'         => __( 'Failed to save conversation: ', 'wp-mcp-ai' ),
+					'proceedAnyway'             => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'wp-mcp-ai' ),
+					'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'wp-mcp-ai' ),
+					'noConversationToSave'      => __( 'No conversation to save. Start chatting first!', 'wp-mcp-ai' ),
+					'saveSkipped'               => __( 'Save not available for this conversation.', 'wp-mcp-ai' ),
+					'noConversationToExport'    => __( 'No conversation to export. Start chatting first!', 'wp-mcp-ai' ),
+					'exportFormatPrompt'        => __( 'Choose export format:\n- json\n- markdown\n- text', 'wp-mcp-ai' ),
+					'invalidExportFormat'       => __( 'Invalid format. Please choose json, markdown, or text.', 'wp-mcp-ai' ),
+					'exportFailed'              => __( 'Export failed: ', 'wp-mcp-ai' ),
+					'exportSuccess'             => __( 'Conversation exported successfully as ', 'wp-mcp-ai' ),
 					'roleLabels'                => array(
 						'assistant' => __( 'Assistant', 'wp-mcp-ai' ),
 						'user'      => __( 'You', 'wp-mcp-ai' ),
@@ -474,6 +488,18 @@ class WP_MCP_AI_Shortcode {
 			<div class="wp-mcp-ai-chat__controls">
 				<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>
 				<div class="wp-mcp-ai-chat__control-buttons">
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__save"
+						aria-label="<?php echo esc_attr__( 'Save conversation', 'wp-mcp-ai' ); ?>"
+						title="<?php echo esc_attr__( 'Save conversation', 'wp-mcp-ai' ); ?>"
+					>
+						<svg class="wp-mcp-ai-chat__save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM5 5v14h14V9h-4V5H5z" />
+							<path d="M7 5h6v3H7V5zm5 9a2 2 0 11-4 0 2 2 0 014 0z" />
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Save conversation', 'wp-mcp-ai' ); ?></span>
+					</button>
 					<button
 						type="button"
 						class="wp-mcp-ai-chat__export"
