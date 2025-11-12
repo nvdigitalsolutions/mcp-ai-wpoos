@@ -2338,6 +2338,17 @@
         return state.historyLoadPromise;
     }
 
+    function refreshHistorySessions(state) {
+        if (!state) {
+            return Promise.resolve();
+        }
+
+        // Reset the loaded state to force a fresh fetch
+        state.historyLoaded = false;
+        state.historyLoadPromise = loadHistorySessions(state);
+        return state.historyLoadPromise;
+    }
+
     function loadHistorySessions(state) {
         const endpoint = getHistoryEndpoint(state);
 
@@ -4825,6 +4836,7 @@
             const historyContainer = container.querySelector('.wp-mcp-ai-chat__history');
             const historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
             const historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
+            const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -4899,6 +4911,7 @@
                 historyContainer: historyContainer,
                 historyStatus: historyStatusEl,
                 historyList: historyList,
+                historyRefresh: historyRefresh,
                 transcriptExpanded: false,
                 historyVisible: false,
                 historyLoaded: false,
@@ -4937,6 +4950,16 @@
                     }
 
                     toggleHistoryVisibility(state);
+                });
+            }
+
+            if (historyRefresh) {
+                historyRefresh.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    refreshHistorySessions(state);
                 });
             }
 

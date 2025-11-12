@@ -197,6 +197,14 @@
 			'<button type="button" class="wp-mcp-ai-chat__history-toggle"></button>' +
 			'</div>' +
 			'<div class="wp-mcp-ai-chat__history" style="display: none;">' +
+			'<div class="wp-mcp-ai-chat__history-header">' +
+			'<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="Refresh conversation history" title="Refresh conversation history">' +
+			'<svg class="wp-mcp-ai-chat__history-refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M4 12a8 8 0 018-8V3c-1.105 0-2.165.21-3.13.594l1.42 1.42A6.004 6.004 0 0112 5a7 7 0 110 14 7 7 0 01-6.93-6H3a8 8 0 008 8 8 8 0 000-16V3l-3 3 3 3v-1.078z"/>' +
+			'</svg>' +
+			'<span class="screen-reader-text">Refresh conversation history</span>' +
+			'</button>' +
+			'</div>' +
 			'<div class="wp-mcp-ai-chat__history-status"></div>' +
 			'<div class="wp-mcp-ai-chat__history-list"></div>' +
 			'</div>' +
