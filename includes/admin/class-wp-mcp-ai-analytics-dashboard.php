@@ -174,14 +174,68 @@ class WP_MCP_AI_Analytics_Dashboard {
 	 * @return array Forecast data.
 	 */
 	private static function get_usage_forecast_data() {
-		// Placeholder for forecast calculation.
-		// This will use existing forecast functionality.
-		return array(
+		$forecast_data = array(
 			'projected_usage' => 0,
 			'projected_date'  => gmdate( 'Y-m-d', strtotime( '+7 days' ) ),
 			'confidence'      => 0,
 			'trend'           => 'stable',
 		);
+
+		// Use existing forecast functionality if available.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			return $forecast_data;
+		}
+
+		// Get all users to calculate site-wide trend.
+		$users                = get_users( array( 'fields' => 'ID' ) );
+		$total_current_usage  = 0;
+		$total_forecast_usage = 0;
+		$forecast_count       = 0;
+		$confidence_sum       = 0;
+
+		foreach ( $users as $user_id ) {
+			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+
+			if ( empty( $usage ) || ! is_array( $usage ) ) {
+				continue;
+			}
+
+			foreach ( $usage as $tool_slug => $tool_data ) {
+				// Get current daily usage.
+				if ( isset( $tool_data['daily'] ) && is_array( $tool_data['daily'] ) ) {
+					$today = gmdate( 'Y-m-d' );
+					if ( isset( $tool_data['daily'][ $today ] ) ) {
+						$total_current_usage += absint( $tool_data['daily'][ $today ] );
+					}
+				}
+
+				// Get forecast for this user/tool combo.
+				$forecast = WP_MCP_AI_Tool_Token_Limits::forecast_limit_exhaustion( $user_id, $tool_slug );
+
+				if ( $forecast && isset( $forecast['projected_daily_usage'] ) ) {
+					$total_forecast_usage += absint( $forecast['projected_daily_usage'] );
+					$confidence_sum       += absint( $forecast['confidence'] ?? 0 );
+					++$forecast_count;
+				}
+			}
+		}
+
+		// Calculate averages and trend.
+		if ( $forecast_count > 0 ) {
+			$forecast_data['projected_usage'] = (int) ( $total_forecast_usage / $forecast_count );
+			$forecast_data['confidence']      = (int) ( $confidence_sum / $forecast_count );
+
+			// Determine trend based on comparison.
+			if ( $total_forecast_usage > $total_current_usage * 1.1 ) {
+				$forecast_data['trend'] = 'increasing';
+			} elseif ( $total_forecast_usage < $total_current_usage * 0.9 ) {
+				$forecast_data['trend'] = 'decreasing';
+			} else {
+				$forecast_data['trend'] = 'stable';
+			}
+		}
+
+		return $forecast_data;
 	}
 
 	/**
