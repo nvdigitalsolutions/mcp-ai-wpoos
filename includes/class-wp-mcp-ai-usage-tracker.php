@@ -341,4 +341,156 @@ class WP_MCP_AI_Usage_Tracker {
 
 		return $existing_totals;
 	}
+
+	/**
+	 * Calculate cost for usage data based on model pricing.
+	 *
+	 * @param string $provider         Provider key (openai, gemini, anthropic, etc).
+	 * @param string $model            Model identifier.
+	 * @param int    $prompt_tokens    Number of input/prompt tokens.
+	 * @param int    $completion_tokens Number of output/completion tokens.
+	 * @return float Cost in USD. Returns 0 if pricing data unavailable.
+	 */
+	public static function calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens ) {
+		$provider         = sanitize_key( $provider );
+		$model            = sanitize_text_field( $model );
+		$prompt_tokens    = max( 0, (int) $prompt_tokens );
+		$completion_tokens = max( 0, (int) $completion_tokens );
+
+		// Get pricing from Model Rate Limits CCT if available.
+		$pricing = self::get_model_pricing( $model );
+
+		if ( ! $pricing ) {
+			return 0.0;
+		}
+
+		$input_cost  = ( $prompt_tokens / 1000 ) * $pricing['input_cost_per_1k'];
+		$output_cost = ( $completion_tokens / 1000 ) * $pricing['output_cost_per_1k'];
+
+		return (float) ( $input_cost + $output_cost );
+	}
+
+	/**
+	 * Calculate total cost for all usage data for a user.
+	 *
+	 * @param int $user_id WordPress user identifier.
+	 * @return float Total cost in USD.
+	 */
+	public static function calculate_user_total_cost( $user_id ) {
+		$user_id = absint( $user_id );
+
+		if ( ! $user_id ) {
+			return 0.0;
+		}
+
+		$usage      = self::get_usage_for_user( $user_id );
+		$total_cost = 0.0;
+
+		if ( ! is_array( $usage ) || empty( $usage ) ) {
+			return 0.0;
+		}
+
+		foreach ( $usage as $provider => $models ) {
+			if ( ! is_array( $models ) ) {
+				continue;
+			}
+
+			foreach ( $models as $model => $data ) {
+				if ( ! is_array( $data ) ) {
+					continue;
+				}
+
+				$prompt_tokens     = isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+				$completion_tokens = isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+
+				$total_cost += self::calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens );
+			}
+		}
+
+		return $total_cost;
+	}
+
+	/**
+	 * Get pricing information for a specific model.
+	 *
+	 * @param string $model Model identifier.
+	 * @return array|null Array with 'input_cost_per_1k' and 'output_cost_per_1k' keys, or null if not available.
+	 */
+	protected static function get_model_pricing( $model ) {
+		$model = sanitize_text_field( $model );
+
+		// Try to get from Model Rate Limits CCT first.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			try {
+				$model_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model );
+
+				if ( $model_data && is_array( $model_data ) ) {
+					$input_cost  = isset( $model_data['cost_per_1k_input_tokens'] ) ? (float) $model_data['cost_per_1k_input_tokens'] : 0;
+					$output_cost = isset( $model_data['cost_per_1k_output_tokens'] ) ? (float) $model_data['cost_per_1k_output_tokens'] : 0;
+
+					if ( $input_cost > 0 || $output_cost > 0 ) {
+						return array(
+							'input_cost_per_1k'  => $input_cost,
+							'output_cost_per_1k' => $output_cost,
+						);
+					}
+				}
+			} catch ( Exception $e ) {
+				// Silently fail and use fallback pricing.
+				WP_MCP_AI_Logger::log_error(
+					'Error getting model pricing from CCT',
+					array(
+						'model'     => $model,
+						'error'     => $e->getMessage(),
+						'exception' => get_class( $e ),
+					)
+				);
+			}
+		}
+
+		// Fallback to hardcoded pricing for common models.
+		return self::get_fallback_pricing( $model );
+	}
+
+	/**
+	 * Get fallback pricing for common models.
+	 *
+	 * @param string $model Model identifier.
+	 * @return array|null Array with pricing or null if model not found.
+	 */
+	protected static function get_fallback_pricing( $model ) {
+		$model = strtolower( sanitize_text_field( $model ) );
+
+		// Common model pricing (as of November 2024).
+		$pricing_map = array(
+			'gpt-4o'              => array( 'input_cost_per_1k' => 0.0025, 'output_cost_per_1k' => 0.01 ),
+			'gpt-4o-mini'         => array( 'input_cost_per_1k' => 0.00015, 'output_cost_per_1k' => 0.0006 ),
+			'gpt-4-turbo'         => array( 'input_cost_per_1k' => 0.01, 'output_cost_per_1k' => 0.03 ),
+			'gpt-4'               => array( 'input_cost_per_1k' => 0.03, 'output_cost_per_1k' => 0.06 ),
+			'gpt-3.5-turbo'       => array( 'input_cost_per_1k' => 0.0005, 'output_cost_per_1k' => 0.0015 ),
+			'o1-preview'          => array( 'input_cost_per_1k' => 0.015, 'output_cost_per_1k' => 0.06 ),
+			'o1-mini'             => array( 'input_cost_per_1k' => 0.003, 'output_cost_per_1k' => 0.012 ),
+			'gemini-1.5-pro'      => array( 'input_cost_per_1k' => 0.00125, 'output_cost_per_1k' => 0.005 ),
+			'gemini-1.5-flash'    => array( 'input_cost_per_1k' => 0.000075, 'output_cost_per_1k' => 0.0003 ),
+			'gemini-2.0-flash'    => array( 'input_cost_per_1k' => 0.0001, 'output_cost_per_1k' => 0.0004 ),
+			'claude-3.5-sonnet'   => array( 'input_cost_per_1k' => 0.003, 'output_cost_per_1k' => 0.015 ),
+			'claude-3-opus'       => array( 'input_cost_per_1k' => 0.015, 'output_cost_per_1k' => 0.075 ),
+			'claude-3-haiku'      => array( 'input_cost_per_1k' => 0.00025, 'output_cost_per_1k' => 0.00125 ),
+		);
+
+		// Try exact match first.
+		if ( isset( $pricing_map[ $model ] ) ) {
+			return $pricing_map[ $model ];
+		}
+
+		// Try prefix match for model families.
+		foreach ( $pricing_map as $model_key => $pricing ) {
+			if ( 0 === strpos( $model, $model_key ) ) {
+				return $pricing;
+			}
+		}
+
+		// No pricing data available.
+		return null;
+	}
 }
