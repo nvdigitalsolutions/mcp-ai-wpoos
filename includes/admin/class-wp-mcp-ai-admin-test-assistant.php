@@ -106,6 +106,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 					'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
 					'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
 					'historyPerPage'      => 20,
+					'currentUserId'       => get_current_user_id(),
 					'nonce'               => wp_create_nonce( 'wp_rest' ),
 					'strings'             => $this->get_chat_strings(),
 				)

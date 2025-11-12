@@ -2406,6 +2406,18 @@
 
     function fetchHistorySessions(state, endpoint, perPage) {
         let url = endpoint;
+        
+        // Add user_id parameter
+        let userId = null;
+        if (state && state.config && typeof state.config.userId !== 'undefined') {
+            userId = state.config.userId;
+        } else if (typeof globalConfig.currentUserId !== 'undefined') {
+            userId = globalConfig.currentUserId;
+        }
+        
+        if (userId !== null) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'user_id=' + encodeURIComponent(userId);
+        }
 
         if (perPage && perPage > 0) {
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
