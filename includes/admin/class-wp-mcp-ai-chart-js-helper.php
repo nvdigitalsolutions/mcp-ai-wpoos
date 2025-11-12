@@ -66,6 +66,17 @@ class WP_MCP_AI_Chart_JS_Helper {
 			true
 		);
 
+		// Enqueue analytics dashboard CSS.
+		$analytics_css_path = WP_MCP_AI_PATH . 'assets/css/analytics-dashboard.css';
+		if ( file_exists( $analytics_css_path ) ) {
+			wp_enqueue_style(
+				'wp-mcp-ai-analytics-dashboard',
+				WP_MCP_AI_URL . 'assets/css/analytics-dashboard.css',
+				array(),
+				filemtime( $analytics_css_path )
+			);
+		}
+
 		// Enqueue token manager charts integration (to be created in Phase 3).
 		$charts_path = WP_MCP_AI_PATH . 'assets/js/token-manager-charts.js';
 		if ( file_exists( $charts_path ) ) {
