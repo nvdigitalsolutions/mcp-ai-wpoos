@@ -2258,8 +2258,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
+			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
-				WP_MCP_AI_Chat_Transcript_Recorder::record(
+				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
@@ -2290,6 +2291,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include the session key in the response so the client can save it
+			if ( $recorded_session_key ) {
+				$payload['sessionKey'] = $recorded_session_key;
+			}
 
 			// Include tool result messages in the response for frontend display.
 			if ( ! empty( $tool_result_messages ) ) {
@@ -2619,8 +2625,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Log and record transcript.
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
+			$recorded_session_key = null;
 			if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
-				WP_MCP_AI_Chat_Transcript_Recorder::record(
+				$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 					$assistant_id,
 					$messages,
 					$options,
@@ -2645,6 +2652,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include the session key in the response so the client can save it
+			if ( $recorded_session_key ) {
+				$payload['sessionKey'] = $recorded_session_key;
+			}
 
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;

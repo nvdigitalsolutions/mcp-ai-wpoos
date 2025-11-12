@@ -5787,6 +5787,11 @@
     }
 
     function handleChatResponse(state, data) {
+        // Capture and save the session key if provided by the server
+        if (data && data.sessionKey && state.config) {
+            state.config.sessionKey = data.sessionKey;
+        }
+
         const chatData = data && data.data ? data.data : null;
         const choices = chatData && Array.isArray(chatData.choices) ? chatData.choices : [];
         const choice = choices.length ? choices[0] : null;
