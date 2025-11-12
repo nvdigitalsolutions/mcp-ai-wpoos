@@ -19,15 +19,22 @@
     padding-right: 4px;
 }
 
-.wp-mcp-ai-chat__history-launch {
+.wp-mcp-ai-chat__controls {
     margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wp-mcp-ai-chat__control-buttons {
     display: flex;
     justify-content: flex-start;
     gap: 0.5rem;
 }
 
 .wp-mcp-ai-chat__history-toggle,
-.wp-mcp-ai-chat__new-chat {
+.wp-mcp-ai-chat__new-chat,
+.wp-mcp-ai-chat__export {
     appearance: none;
     border-radius: 999px;
     border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
@@ -44,14 +51,16 @@
 }
 
 .wp-mcp-ai-chat__history-toggle:hover,
-.wp-mcp-ai-chat__new-chat:hover {
+.wp-mcp-ai-chat__new-chat:hover,
+.wp-mcp-ai-chat__export:hover {
     background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
     border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
     color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
 }
 
 .wp-mcp-ai-chat__history-toggle:focus,
-.wp-mcp-ai-chat__new-chat:focus {
+.wp-mcp-ai-chat__new-chat:focus,
+.wp-mcp-ai-chat__export:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
 }
@@ -63,7 +72,8 @@
 }
 
 .wp-mcp-ai-chat__history-toggle-icon,
-.wp-mcp-ai-chat__new-chat-icon {
+.wp-mcp-ai-chat__new-chat-icon,
+.wp-mcp-ai-chat__export-icon {
     width: 20px;
     height: 20px;
     fill: currentColor;
@@ -1172,34 +1182,6 @@
 .wp-mcp-ai-chat__quota-unavailable {
     font-size: 0.8rem;
     color: var(--wp-mcp-ai-color-text, rgba(15, 23, 42, 0.6));
-}
-
-/* Export button styles */
-.wp-mcp-ai-chat__export {
-    padding: 0.5rem 1rem;
-    background: var(--wp-mcp-ai-color-button-background, #ffffff);
-    color: var(--wp-mcp-ai-color-button-text, #0f172a);
-    border: 1px solid var(--wp-mcp-ai-color-border, #cbd5e1);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.wp-mcp-ai-chat__export:hover {
-    background: var(--wp-mcp-ai-color-button-hover-background, #f8fafc);
-    border-color: var(--wp-mcp-ai-color-primary, #3b82f6);
-    color: var(--wp-mcp-ai-color-primary, #3b82f6);
-}
-
-.wp-mcp-ai-chat__export:active {
-    transform: scale(0.98);
-}
-
-.wp-mcp-ai-chat__export:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 /* Keyboard shortcuts help modal */
