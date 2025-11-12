@@ -24,6 +24,10 @@ opcache-reset.php
 !/vendor/rahul900day/
 !/vendor/symfony/
 
+# Ignore composer temporary files
+/vendor/composer/*.zip~
+/vendor/composer/tmp-*.zip~
+
 # Minified assets (generated during build)
 *.min.css
 *.min.js
