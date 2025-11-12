@@ -1,17 +1,28 @@
 # WP Open Operator System - Build Process
 
-This document describes the asset build process for the WP Open Operator System (WP oOS) plugin.
+This document describes the build process for the WP Open Operator System (WP oOS) plugin, including both asset compilation and PHP dependency management.
 
 ## Overview
 
-The plugin uses industry-standard build tools to minify and optimize CSS and JavaScript assets for production use. This reduces file sizes by 40-60%, improving page load times and overall performance.
+The plugin uses industry-standard build tools to:
+- Minify and optimize CSS and JavaScript assets (40-60% reduction)
+- Manage PHP dependencies via Composer
+- Package development dependencies for offline use
 
 ## Prerequisites
 
+### For Asset Building
 - Node.js (v14 or higher)
 - npm (v6 or higher)
 
+### For PHP Development
+- PHP 7.4 or higher
+- Composer
+- MySQL (for running tests)
+
 ## Installation
+
+### JavaScript/CSS Build Tools
 
 Install build dependencies:
 
@@ -25,9 +36,60 @@ This installs:
 - `eslint` - JavaScript linting tool
 - `@wordpress/eslint-plugin` - WordPress coding standards for JavaScript
 
+### PHP Dependencies
+
+#### Production Dependencies
+
+Install only production dependencies (automatically included in the repository):
+
+```bash
+composer install --no-dev
+```
+
+Production packages (~5.6 MB):
+- `rahul900day/tiktoken-php` - Token counting for AI models
+- `symfony/http-client` - HTTP client for API requests
+- `nyholm/psr7` - PSR-7 HTTP message implementation
+
+#### Development Dependencies
+
+For development and testing, install dev dependencies:
+
+```bash
+composer install
+```
+
+This adds (~140 MB):
+- PHPUnit test framework
+- PHP_CodeSniffer & WordPress Coding Standards
+- WordPress stubs for IDE support
+- PHP compatibility checker
+
+**Alternative: Pre-packaged Dev Dependencies**
+
+If you don't have internet access or want to distribute the test framework separately:
+
+1. **Create the package** (on a machine with composer and internet):
+   ```bash
+   ./bin/package-vendor-dev.sh
+   ```
+   
+   This creates `vendor-dev.zip` (~140 MB) containing all development dependencies.
+
+2. **Use the package** (on target machine):
+   ```bash
+   ./bin/install-vendor-dev.sh
+   ```
+   
+   This extracts the development dependencies without requiring composer or internet access.
+
+See [TESTING.md](TESTING.md) for complete testing setup instructions.
+
 ## Build Commands
 
-### Build All Assets
+### JavaScript/CSS Assets
+
+#### Build All Assets
 
 Minify both CSS and JavaScript files:
 
@@ -64,6 +126,42 @@ Auto-fix JavaScript linting issues:
 ```bash
 npm run lint:js:fix
 ```
+
+### PHP Linting and Testing
+
+#### Lint PHP Code
+
+Check code against WordPress Coding Standards:
+
+```bash
+composer run lint
+```
+
+#### Check PHP Compatibility
+
+Verify compatibility with PHP 7.4-8.3:
+
+```bash
+composer run lint:compat
+```
+
+#### Auto-fix PHP Code Style
+
+Automatically fix code style issues:
+
+```bash
+composer run format
+```
+
+#### Run Tests
+
+Run PHPUnit test suite (requires dev dependencies):
+
+```bash
+composer run test
+```
+
+See [TESTING.md](TESTING.md) for detailed testing instructions.
 
 ## Build Output
 
