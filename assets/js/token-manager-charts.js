@@ -131,7 +131,7 @@
 		loadUsageTrendData: function() {
 			var self = this;
 
-			// TODO: Implement AJAX call to fetch token usage trend data
+			// Fetch token usage trend data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
@@ -150,8 +150,6 @@
 			//     }]
 			//   }
 			// }
-			// Example implementation:
-			/*
 			$.ajax({
 				url: wpMcpAiChartData.ajaxUrl,
 				type: 'POST',
@@ -167,7 +165,6 @@
 					}
 				}
 			});
-			*/
 		},
 
 		/**
@@ -176,7 +173,7 @@
 		loadTierDistributionData: function() {
 			var self = this;
 
-			// TODO: Implement AJAX call to fetch tier distribution data
+			// Fetch tier distribution data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
@@ -190,8 +187,6 @@
 			//     labels: ['Free', 'Pro', 'Enterprise']  // Optional, can use chart's existing labels
 			//   }
 			// }
-			// Example implementation:
-			/*
 			$.ajax({
 				url: wpMcpAiChartData.ajaxUrl,
 				type: 'POST',
@@ -206,7 +201,6 @@
 					}
 				}
 			});
-			*/
 		},
 
 		/**
