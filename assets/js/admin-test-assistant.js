@@ -153,6 +153,12 @@
 	 * @return {string} HTML string for chat interface.
 	 */
 	function buildChatHTML(instanceId) {
+		// Escape all dynamic strings to prevent XSS.
+		const placeholderEscaped = escapeHtml(getPlaceholder());
+		const attachLabelEscaped = escapeHtml(getAttachLabel());
+		const transcribeLabelEscaped = escapeHtml(getTranscribeLabel());
+		const sendLabelEscaped = escapeHtml(getSendLabel());
+		
 		return '<div class="wp-mcp-ai-chat" id="' + instanceId + '" data-wp-mcp-ai-chat>' +
 			'<div class="wp-mcp-ai-chat__messages" role="log" aria-live="polite" aria-atomic="false"></div>' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite"></div>' +
@@ -162,15 +168,15 @@
 			'</div>' +
 			'<form class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__input-wrapper">' +
-			'<textarea class="wp-mcp-ai-chat__input" rows="3" placeholder="' + getPlaceholder() + '"></textarea>' +
+			'<textarea class="wp-mcp-ai-chat__input" rows="3" placeholder="' + placeholderEscaped + '"></textarea>' +
 			'<div class="wp-mcp-ai-chat__actions">' +
-			'<button type="button" class="wp-mcp-ai-chat__attach" aria-label="' + getAttachLabel() + '" style="display: none;">' +
+			'<button type="button" class="wp-mcp-ai-chat__attach" aria-label="' + attachLabelEscaped + '" style="display: none;">' +
 			'<span class="dashicons dashicons-paperclip"></span>' +
 			'</button>' +
-			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="' + getTranscribeLabel() + '" style="display: none;">' +
+			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="' + transcribeLabelEscaped + '" style="display: none;">' +
 			'<span class="dashicons dashicons-microphone"></span>' +
 			'</button>' +
-			'<button type="submit" class="wp-mcp-ai-chat__submit">' + getSendLabel() + '</button>' +
+			'<button type="submit" class="wp-mcp-ai-chat__submit">' + sendLabelEscaped + '</button>' +
 			'</div>' +
 			'</div>' +
 			'<input type="file" class="wp-mcp-ai-chat__file-input" style="display: none;" />' +
