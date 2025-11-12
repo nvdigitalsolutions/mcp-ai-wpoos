@@ -74,9 +74,101 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 	define( 'WP_MCP_AI_URL', plugin_dir_url( WP_MCP_AI_FILE ) );
 }
 
-// Load Composer dependencies when available.
+/**
+ * Load Composer dependencies with error handling.
+ *
+ * Some hosting providers disable putenv() for security. If dev dependencies
+ * (like wp-phpunit) are accidentally installed in production, they may try to
+ * call putenv() causing a fatal error. We handle this gracefully.
+ */
 if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
-	require_once WP_MCP_AI_PATH . 'vendor/autoload.php';
+	// Check if wp-phpunit dev dependency is present (shouldn't be in production).
+	$has_dev_deps = file_exists( WP_MCP_AI_PATH . 'vendor/wp-phpunit/wp-phpunit/__loaded.php' );
+
+	// Check if putenv is available.
+	$putenv_available = function_exists( 'putenv' );
+
+	// If dev dependencies are present but putenv is disabled, show warning and skip autoload.
+	if ( $has_dev_deps && ! $putenv_available ) {
+		if ( is_admin() ) {
+			/**
+			 * Display notice about dev dependencies in production.
+			 */
+			function wp_mcp_ai_dev_deps_error_notice() {
+				$message = sprintf(
+					/* translators: Deployment configuration error message */
+					__( '<strong>WP Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.', 'wp-mcp-ai' )
+				);
+				printf(
+					'<div class="notice notice-error"><p>%s</p></div>',
+					wp_kses_post( $message )
+				);
+			}
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
+		}
+
+		// Log the issue.
+		error_log( 'WP_MCP_AI: Development dependencies detected in production with putenv() disabled. Run: composer install --no-dev' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		// We can't safely load the autoloader, so we'll manually load critical production dependencies.
+		// This allows the plugin to function (degraded) until the deployment is fixed.
+		$critical_files = array(
+			'vendor/symfony/deprecation-contracts/function.php',
+			'vendor/symfony/polyfill-ctype/bootstrap.php',
+			'vendor/symfony/polyfill-mbstring/bootstrap.php',
+			'vendor/symfony/polyfill-php83/bootstrap.php',
+		);
+
+		foreach ( $critical_files as $file ) {
+			$file_path = WP_MCP_AI_PATH . $file;
+			if ( file_exists( $file_path ) ) {
+				require_once $file_path;
+			}
+		}
+
+		// Register a simple autoloader for production dependencies only.
+		spl_autoload_register(
+			function ( $class ) {
+				// Map of production class prefixes to their paths (from composer's autoload_psr4.php).
+				$prefix_map = array(
+					'Rahul900day\\Tiktoken\\'           => 'vendor/rahul900day/tiktoken-php/src/',
+					'Symfony\\Contracts\\Service\\'     => 'vendor/symfony/service-contracts/',
+					'Symfony\\Contracts\\HttpClient\\'  => 'vendor/symfony/http-client-contracts/',
+					'Symfony\\Contracts\\Cache\\'       => 'vendor/symfony/cache-contracts/',
+					'Symfony\\Component\\VarExporter\\' => 'vendor/symfony/var-exporter/',
+					'Symfony\\Component\\HttpClient\\'  => 'vendor/symfony/http-client/',
+					'Symfony\\Component\\Filesystem\\'  => 'vendor/symfony/filesystem/',
+					'Symfony\\Component\\Cache\\'       => 'vendor/symfony/cache/',
+					'Nyholm\\Psr7\\'                    => 'vendor/nyholm/psr7/src/',
+					'Psr\\Log\\'                        => 'vendor/psr/log/src/',
+					'Psr\\Http\\Message\\'              => 'vendor/psr/http-message/src/',
+					'Psr\\Http\\Client\\'               => 'vendor/psr/http-client/src/',
+					'Psr\\Container\\'                  => 'vendor/psr/container/src/',
+					'Psr\\Cache\\'                      => 'vendor/psr/cache/src/',
+					'Http\\Discovery\\'                 => 'vendor/php-http/discovery/src/',
+				);
+
+				foreach ( $prefix_map as $prefix => $base_dir ) {
+					$len = strlen( $prefix );
+					if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+						continue;
+					}
+
+					$relative_class = substr( $class, $len );
+					$file           = WP_MCP_AI_PATH . $base_dir . str_replace( '\\', '/', $relative_class ) . '.php';
+
+					if ( file_exists( $file ) ) {
+						require_once $file;
+						return;
+					}
+				}
+			}
+		);
+
+	} else {
+		// Normal autoload when environment is correctly configured.
+		require_once WP_MCP_AI_PATH . 'vendor/autoload.php';
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_get_required_chat_capability' ) ) {
