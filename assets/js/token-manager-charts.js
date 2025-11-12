@@ -2,7 +2,6 @@
  * Token Manager Charts Integration
  *
  * Handles Chart.js visualizations for the Token Manager section.
- * This file will be expanded in Phase 3 of the Token Manager enhancement.
  *
  * @package WP_MCP_AI
  */
@@ -39,7 +38,7 @@
 
 			var ctx = canvas.getContext('2d');
 			
-			// Placeholder config - will be populated from server data
+			// Initial configuration - will be populated from server data
 			var config = {
 				type: 'line',
 				data: {
@@ -86,7 +85,7 @@
 
 			var ctx = canvas.getContext('2d');
 			
-			// Placeholder config - will be populated from server data
+			// Initial configuration - will be populated from server data
 			var config = {
 				type: 'pie',
 				data: {
@@ -132,14 +131,25 @@
 		loadUsageTrendData: function() {
 			var self = this;
 
-			// Placeholder - Phase 3 will implement actual AJAX call
+			// Fetch token usage trend data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
 			}
 
-			// Example AJAX call structure (to be implemented in Phase 3)
-			/*
+			// The endpoint should return data in the following format:
+			// {
+			//   success: true,
+			//   data: {
+			//     labels: ['2024-01-01', '2024-01-02', ...],  // Array of dates
+			//     datasets: [{
+			//       label: 'Token Usage',
+			//       data: [1000, 1500, 2000, ...],  // Array of token counts per day
+			//       borderColor: 'rgba(75, 192, 192, 1)',
+			//       backgroundColor: 'rgba(75, 192, 192, 0.2)'
+			//     }]
+			//   }
+			// }
 			$.ajax({
 				url: wpMcpAiChartData.ajaxUrl,
 				type: 'POST',
@@ -155,7 +165,6 @@
 					}
 				}
 			});
-			*/
 		},
 
 		/**
@@ -164,14 +173,20 @@
 		loadTierDistributionData: function() {
 			var self = this;
 
-			// Placeholder - Phase 3 will implement actual AJAX call
+			// Fetch tier distribution data from the server.
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
 			}
 
-			// Example AJAX call structure (to be implemented in Phase 3)
-			/*
+			// The endpoint should return user counts per tier in the following format:
+			// {
+			//   success: true,
+			//   data: {
+			//     values: [120, 45, 8],  // Array of user counts for [Free, Pro, Enterprise]
+			//     labels: ['Free', 'Pro', 'Enterprise']  // Optional, can use chart's existing labels
+			//   }
+			// }
 			$.ajax({
 				url: wpMcpAiChartData.ajaxUrl,
 				type: 'POST',
@@ -186,7 +201,6 @@
 					}
 				}
 			});
-			*/
 		},
 
 		/**

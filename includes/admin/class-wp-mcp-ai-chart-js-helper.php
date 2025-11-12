@@ -92,8 +92,6 @@ class WP_MCP_AI_Chart_JS_Helper {
 	/**
 	 * Get chart data for token usage trends.
 	 *
-	 * This method will be expanded in Phase 3 of the Token Manager enhancement.
-	 *
 	 * @param array $args Query arguments.
 	 * @return array Chart data in Chart.js format.
 	 */
@@ -105,26 +103,102 @@ class WP_MCP_AI_Chart_JS_Helper {
 		);
 
 		$args = wp_parse_args( $args, $defaults );
+		$days = absint( $args['days'] );
 
-		// Placeholder - will be implemented in Phase 3.
+		// Generate labels for the past N days.
+		$labels = array();
+		$data   = array();
+
+		for ( $i = $days - 1; $i >= 0; $i-- ) {
+			$date     = gmdate( 'Y-m-d', strtotime( "-{$i} days" ) );
+			$labels[] = $date;
+
+			// Get token usage for this day.
+			// For now, return sample data - will be connected to actual usage tracking.
+			$data[] = 0;
+		}
+
+		// Get actual usage data if available.
+		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+			$users = get_users( array( 'fields' => 'ID' ) );
+
+			foreach ( $users as $user_id ) {
+				$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+				if ( ! empty( $usage ) ) {
+					foreach ( $usage as $provider => $models ) {
+						foreach ( $models as $model => $totals ) {
+							if ( isset( $totals['total_tokens'] ) ) {
+								// Distribute tokens across days (simplified).
+								$tokens_per_day = absint( $totals['total_tokens'] ) / $days;
+								for ( $i = 0; $i < $days; $i++ ) {
+									$data[ $i ] += $tokens_per_day;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Round data values.
+		$data = array_map( 'absint', $data );
+
 		return array(
-			'labels'   => array(),
-			'datasets' => array(),
+			'labels'   => $labels,
+			'datasets' => array(
+				array(
+					'label'           => __( 'Token Usage', 'wp-mcp-ai' ),
+					'data'            => $data,
+					'borderColor'     => 'rgba(75, 192, 192, 1)',
+					'backgroundColor' => 'rgba(75, 192, 192, 0.2)',
+					'fill'            => true,
+					'tension'         => 0.4,
+				),
+			),
 		);
 	}
 
 	/**
 	 * Get chart data for tier distribution.
 	 *
-	 * This method will be expanded in Phase 3 of the Token Manager enhancement.
-	 *
 	 * @return array Chart data in Chart.js format.
 	 */
 	public static function get_tier_distribution_data() {
-		// Placeholder - will be implemented in Phase 3.
+		$tiers = array(
+			'free'       => __( 'Free', 'wp-mcp-ai' ),
+			'pro'        => __( 'Pro', 'wp-mcp-ai' ),
+			'enterprise' => __( 'Enterprise', 'wp-mcp-ai' ),
+		);
+
+		$tier_counts = array(
+			'free'       => 0,
+			'pro'        => 0,
+			'enterprise' => 0,
+		);
+
+		// Count users by tier.
+		$users = get_users( array( 'fields' => 'ID' ) );
+
+		foreach ( $users as $user_id ) {
+			$user_tier = get_user_meta( $user_id, 'wp_mcp_ai_token_tier', true );
+
+			if ( empty( $user_tier ) ) {
+				$user_tier = 'free';
+			}
+
+			$user_tier = sanitize_key( $user_tier );
+
+			if ( isset( $tier_counts[ $user_tier ] ) ) {
+				$tier_counts[ $user_tier ]++;
+			} else {
+				$tier_counts['free']++;
+			}
+		}
+
 		return array(
-			'labels' => array( 'Free', 'Pro', 'Enterprise' ),
-			'data'   => array( 0, 0, 0 ),
+			'labels' => array_values( $tiers ),
+			'values' => array_values( $tier_counts ),
 		);
 	}
 
