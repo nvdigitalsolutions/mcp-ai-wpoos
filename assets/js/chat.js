@@ -2267,15 +2267,13 @@
                     throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
                 });
         }).catch(function (error) {
-            // Handle network-level fetch errors (timeout, network failure, CORS, etc.)
+            // Log error for debugging (handles both network-level and application-level errors)
             if (window.console && console.error) {
                 console.error('Error fetching history session details:', error);
             }
-            // Re-throw with a user-friendly message, preserving original error if it's already formatted
-            if (error && error.message) {
-                throw error;
-            }
-            throw new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.'));
+            // Re-throw the error to propagate it to the caller
+            // Errors from the response handler above already have user-friendly messages
+            throw error;
         });
     }
 
