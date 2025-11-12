@@ -420,15 +420,22 @@ class WP_MCP_AI_Test_Agentic_Workflow_Tool_Types extends WP_UnitTestCase {
 				return 'generate_test_image';
 			}
 
-			public function get_definition() {
+			public function get_name() {
+				return 'Generate Test Image';
+			}
+
+			public function get_description() {
+				return 'Generate a test image';
+			}
+
+			public function get_parameters_schema() {
 				return array(
-					'name'                => 'generate_test_image',
-					'description'         => 'Generate a test image',
-					'required_capability' => 'upload_files',
+					'type'       => 'object',
+					'properties' => array(),
 				);
 			}
 
-			public function execute( $arguments, $context ) {
+			public function execute( array $arguments = array(), array $context = array() ) {
 				return array(
 					'url'           => 'https://example.com/test-image.png',
 					'attachment_id' => 123,
