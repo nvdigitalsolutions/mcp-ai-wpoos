@@ -198,35 +198,71 @@
 		const sendLabelEscaped = escapeHtml(getSendLabel());
 		
 		return '<div class="wp-mcp-ai-chat" id="' + instanceId + '" data-wp-mcp-ai-chat>' +
-			'<div class="wp-mcp-ai-chat__messages" role="log" aria-live="polite" aria-atomic="false"></div>' +
-			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite"></div>' +
-			'<div class="wp-mcp-ai-chat__attachments" style="display: none;">' +
-			'<div class="wp-mcp-ai-chat__attachments-header"></div>' +
-			'<div class="wp-mcp-ai-chat__attachments-list"></div>' +
+			'<div class="wp-mcp-ai-chat__transcript-controls">' +
+			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle" aria-expanded="false" aria-label="Expand conversation">' +
+			'<svg class="wp-mcp-ai-chat__transcript-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />' +
+			'</svg>' +
+			'<span class="screen-reader-text">Expand conversation</span>' +
+			'</button>' +
 			'</div>' +
+			'<div class="wp-mcp-ai-chat__messages" role="log" aria-live="polite" aria-atomic="false"></div>' +
 			'<form class="wp-mcp-ai-chat__form">' +
-			'<div class="wp-mcp-ai-chat__input-wrapper">' +
-			'<textarea class="wp-mcp-ai-chat__input" rows="3" placeholder="' + placeholderEscaped + '"></textarea>' +
+			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
+			'<div class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="Assistant tool tasks" hidden></div>' +
+			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="' + placeholderEscaped + '" required></textarea>' +
+			'<div class="wp-mcp-ai-chat__attachments" hidden>' +
+			'<div class="wp-mcp-ai-chat__attachments-header">Attachments</div>' +
+			'<ul class="wp-mcp-ai-chat__attachments-list"></ul>' +
+			'</div>' +
 			'<div class="wp-mcp-ai-chat__actions">' +
-			'<button type="button" class="wp-mcp-ai-chat__attach" aria-label="' + attachLabelEscaped + '" style="display: none;">' +
-			'<span class="dashicons dashicons-paperclip"></span>' +
+			'<input type="file" class="wp-mcp-ai-chat__file-input" multiple hidden />' +
+			'<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" hidden />' +
+			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="' + transcribeLabelEscaped + '">' +
+			'<svg class="wp-mcp-ai-chat__transcribe-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2z"></path>' +
+			'<path d="M12 16a7 7 0 0 0 6.93-6H17a5 5 0 0 1-10 0H5.07A7 7 0 0 0 12 16zm-1 2.05V21h2v-2.95A9 9 0 0 0 20.95 11H19a7 7 0 0 1-14 0H3.05A9 9 0 0 0 11 18.05z"></path>' +
+			'</svg>' +
+			'<span class="screen-reader-text">' + transcribeLabelEscaped + '</span>' +
 			'</button>' +
-			'<button type="button" class="wp-mcp-ai-chat__transcribe" aria-label="' + transcribeLabelEscaped + '" style="display: none;">' +
-			'<span class="dashicons dashicons-microphone"></span>' +
-			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__attach">' + attachLabelEscaped + '</button>' +
 			'<button type="submit" class="wp-mcp-ai-chat__submit">' + sendLabelEscaped + '</button>' +
 			'</div>' +
-			'</div>' +
-			'<input type="file" class="wp-mcp-ai-chat__file-input" style="display: none;" />' +
-			'<input type="file" class="wp-mcp-ai-chat__transcribe-input" accept="audio/*" style="display: none;" />' +
 			'</form>' +
-			'<div class="wp-mcp-ai-chat__tool-shortcuts"></div>' +
-			'<div class="wp-mcp-ai-chat__controls" style="display: none;">' +
-			'<button type="button" class="wp-mcp-ai-chat__transcript-toggle"></button>' +
-			'<button type="button" class="wp-mcp-ai-chat__new-chat"></button>' +
-			'<button type="button" class="wp-mcp-ai-chat__history-toggle"></button>' +
+			'<div class="wp-mcp-ai-chat__controls">' +
+			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>' +
+			'<div class="wp-mcp-ai-chat__control-buttons">' +
+			'<button type="button" class="wp-mcp-ai-chat__save" aria-label="Save conversation" title="Save conversation">' +
+			'<svg class="wp-mcp-ai-chat__save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM5 5v14h14V9h-4V5H5z" />' +
+			'<path d="M7 5h6v3H7V5zm5 9a2 2 0 11-4 0 2 2 0 014 0z" />' +
+			'</svg>' +
+			'<span class="screen-reader-text">Save conversation</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__export" aria-label="Export conversation" title="Export conversation">' +
+			'<svg class="wp-mcp-ai-chat__export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 16a1 1 0 01-1-1V5a1 1 0 012 0v10a1 1 0 01-1 1z" />' +
+			'<path d="M12 16a1 1 0 01-.707-.293l-4-4a1 1 0 011.414-1.414L12 13.586l3.293-3.293a1 1 0 011.414 1.414l-4 4A1 1 0 0112 16z" />' +
+			'<path d="M5 19a1 1 0 010-2h14a1 1 0 010 2H5z" />' +
+			'</svg>' +
+			'<span class="screen-reader-text">Export conversation</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__history-toggle" aria-expanded="false" aria-controls="' + instanceId + '-history" aria-label="Show previous conversations">' +
+			'<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />' +
+			'<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />' +
+			'</svg>' +
+			'<span class="screen-reader-text">Show previous conversations</span>' +
+			'</button>' +
+			'<button type="button" class="wp-mcp-ai-chat__new-chat" aria-label="Start new conversation">' +
+			'<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+			'<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />' +
+			'</svg>' +
+			'<span class="screen-reader-text">Start new conversation</span>' +
+			'</button>' +
 			'</div>' +
-			'<div class="wp-mcp-ai-chat__history" style="display: none;">' +
+			'</div>' +
+			'<section class="wp-mcp-ai-chat__history" id="' + instanceId + '-history" hidden aria-label="Previous conversations">' +
 			'<div class="wp-mcp-ai-chat__history-header">' +
 			'<button type="button" class="wp-mcp-ai-chat__history-refresh" aria-label="Refresh conversation history" title="Refresh conversation history">' +
 			'<svg class="wp-mcp-ai-chat__history-refresh-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -235,9 +271,9 @@
 			'<span class="screen-reader-text">Refresh conversation history</span>' +
 			'</button>' +
 			'</div>' +
-			'<div class="wp-mcp-ai-chat__history-status"></div>' +
-			'<div class="wp-mcp-ai-chat__history-list"></div>' +
-			'</div>' +
+			'<div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>' +
+			'<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>' +
+			'</section>' +
 			'</div>';
 	}
 
