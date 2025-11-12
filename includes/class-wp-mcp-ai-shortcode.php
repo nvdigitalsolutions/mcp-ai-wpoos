@@ -471,30 +471,46 @@ class WP_MCP_AI_Shortcode {
 					</button>
 				</div>
 			</form>
-			<div class="wp-mcp-ai-chat__history-launch">
-				<button
-					type="button"
-					class="wp-mcp-ai-chat__history-toggle"
-					aria-expanded="false"
-					aria-controls="<?php echo esc_attr( $instance_id ); ?>-history"
-					aria-label="<?php echo esc_attr__( 'Show previous conversations', 'wp-mcp-ai' ); ?>"
-				>
-					<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-						<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />
-						<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />
-					</svg>
-					<span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'wp-mcp-ai' ); ?></span>
-				</button>
-				<button
-					type="button"
-					class="wp-mcp-ai-chat__new-chat"
-					aria-label="<?php echo esc_attr__( 'Start new conversation', 'wp-mcp-ai' ); ?>"
-				>
-					<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-						<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
-					</svg>
-					<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'wp-mcp-ai' ); ?></span>
-				</button>
+			<div class="wp-mcp-ai-chat__controls">
+				<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>
+				<div class="wp-mcp-ai-chat__control-buttons">
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__export"
+						aria-label="<?php echo esc_attr__( 'Export conversation', 'wp-mcp-ai' ); ?>"
+						title="<?php echo esc_attr__( 'Export conversation', 'wp-mcp-ai' ); ?>"
+					>
+						<svg class="wp-mcp-ai-chat__export-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M12 16a1 1 0 01-1-1V5a1 1 0 012 0v10a1 1 0 01-1 1z" />
+							<path d="M12 16a1 1 0 01-.707-.293l-4-4a1 1 0 011.414-1.414L12 13.586l3.293-3.293a1 1 0 011.414 1.414l-4 4A1 1 0 0112 16z" />
+							<path d="M5 19a1 1 0 010-2h14a1 1 0 010 2H5z" />
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Export conversation', 'wp-mcp-ai' ); ?></span>
+					</button>
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__history-toggle"
+						aria-expanded="false"
+						aria-controls="<?php echo esc_attr( $instance_id ); ?>-history"
+						aria-label="<?php echo esc_attr__( 'Show previous conversations', 'wp-mcp-ai' ); ?>"
+					>
+						<svg class="wp-mcp-ai-chat__history-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M6 5.5a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h10a1 1 0 110 2H7a1 1 0 01-1-1zm0 6a1 1 0 011-1h7a1 1 0 010 2H7a1 1 0 01-1-1z" />
+							<path d="M5 9a1 1 0 012 0 1 1 0 11-2 0zm0 6a1 1 0 012 0 1 1 0 11-2 0zm0-12a1 1 0 012 0 1 1 0 11-2 0z" />
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Show previous conversations', 'wp-mcp-ai' ); ?></span>
+					</button>
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__new-chat"
+						aria-label="<?php echo esc_attr__( 'Start new conversation', 'wp-mcp-ai' ); ?>"
+					>
+						<svg class="wp-mcp-ai-chat__new-chat-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<path d="M12 4a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H5a1 1 0 110-2h6V5a1 1 0 011-1z" />
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'wp-mcp-ai' ); ?></span>
+					</button>
+				</div>
 			</div>
 			<section class="wp-mcp-ai-chat__history" id="<?php echo esc_attr( $instance_id ); ?>-history" hidden aria-label="<?php esc_attr_e( 'Previous conversations', 'wp-mcp-ai' ); ?>">
 				<div class="wp-mcp-ai-chat__history-header">

@@ -19,15 +19,22 @@
     padding-right: 4px;
 }
 
-.wp-mcp-ai-chat__history-launch {
+.wp-mcp-ai-chat__controls {
     margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.wp-mcp-ai-chat__control-buttons {
     display: flex;
     justify-content: flex-start;
     gap: 0.5rem;
 }
 
 .wp-mcp-ai-chat__history-toggle,
-.wp-mcp-ai-chat__new-chat {
+.wp-mcp-ai-chat__new-chat,
+.wp-mcp-ai-chat__export {
     appearance: none;
     border-radius: 999px;
     border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
@@ -44,14 +51,16 @@
 }
 
 .wp-mcp-ai-chat__history-toggle:hover,
-.wp-mcp-ai-chat__new-chat:hover {
+.wp-mcp-ai-chat__new-chat:hover,
+.wp-mcp-ai-chat__export:hover {
     background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
     border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
     color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
 }
 
 .wp-mcp-ai-chat__history-toggle:focus,
-.wp-mcp-ai-chat__new-chat:focus {
+.wp-mcp-ai-chat__new-chat:focus,
+.wp-mcp-ai-chat__export:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
 }
@@ -63,7 +72,8 @@
 }
 
 .wp-mcp-ai-chat__history-toggle-icon,
-.wp-mcp-ai-chat__new-chat-icon {
+.wp-mcp-ai-chat__new-chat-icon,
+.wp-mcp-ai-chat__export-icon {
     width: 20px;
     height: 20px;
     fill: currentColor;
@@ -1108,3 +1118,195 @@
 .wp-mcp-ai-chat__editor-notice strong {
     font-weight: 600;
 }
+
+/* Quota monitor styles */
+.wp-mcp-ai-chat__quota-monitor {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--wp-mcp-ai-color-text, #111827);
+    background: var(--wp-mcp-ai-color-container-background, #f8fafc);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-chat__quota-label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__quota-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--wp-mcp-ai-color-border, #e2e8f0);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.wp-mcp-ai-chat__quota-fill {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-ok {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-warning {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-critical {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.wp-mcp-ai-chat__quota-text {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__quota-text.wp-mcp-ai-chat__quota-warning {
+    color: #d97706;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-chat__quota-text.wp-mcp-ai-chat__quota-critical {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.wp-mcp-ai-chat__quota-unavailable {
+    font-size: 0.8rem;
+    color: var(--wp-mcp-ai-color-text, rgba(15, 23, 42, 0.6));
+}
+
+/* Keyboard shortcuts help modal */
+.wp-mcp-ai-chat__shortcuts-help {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wp-mcp-ai-chat__shortcuts-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.wp-mcp-ai-chat__shortcuts-modal {
+    position: relative;
+    background: var(--wp-mcp-ai-color-container-background, #ffffff);
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.wp-mcp-ai-chat__shortcuts-title {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__shortcuts-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--wp-mcp-ai-color-text, rgba(15, 23, 42, 0.5));
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat__shortcuts-close:hover {
+    background: var(--wp-mcp-ai-color-hover-background, rgba(15, 23, 42, 0.05));
+    color: var(--wp-mcp-ai-color-text, #0f172a);
+}
+
+.wp-mcp-ai-chat__shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.wp-mcp-ai-chat__shortcut {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--wp-mcp-ai-color-hover-background, rgba(15, 23, 42, 0.02));
+    border-radius: 6px;
+}
+
+.wp-mcp-ai-chat__shortcut-key {
+    flex-shrink: 0;
+    padding: 0.35rem 0.75rem;
+    background: var(--wp-mcp-ai-color-container-background, #ffffff);
+    border: 1px solid var(--wp-mcp-ai-color-border, #cbd5e1);
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--wp-mcp-ai-color-text, #0f172a);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wp-mcp-ai-chat__shortcut-desc {
+    flex: 1;
+    font-size: 0.95rem;
+    color: var(--wp-mcp-ai-color-text, rgba(15, 23, 42, 0.8));
+}
+
+@media (max-width: 600px) {
+    .wp-mcp-ai-chat__quota-monitor {
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+    }
+    
+    .wp-mcp-ai-chat__quota-bar {
+        flex-basis: 100%;
+    }
+    
+    .wp-mcp-ai-chat__shortcuts-modal {
+        padding: 1.5rem;
+    }
+    
+    .wp-mcp-ai-chat__shortcuts-title {
+        font-size: 1.25rem;
+    }
+    
+    .wp-mcp-ai-chat__shortcut {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+

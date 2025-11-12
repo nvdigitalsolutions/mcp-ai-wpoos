@@ -255,6 +255,95 @@
         }
     }
 
+    /**
+     * Filter sessions based on search query.
+     * 
+     * @param {Array} sessions - Array of session objects
+     * @param {string} query - Search query string
+     * @return {Array} Filtered sessions
+     */
+    function filterSessions(sessions, query) {
+        if (!query || typeof query !== 'string') {
+            return sessions;
+        }
+
+        const normalizedQuery = query.toLowerCase().trim();
+        if (!normalizedQuery) {
+            return sessions;
+        }
+
+        return sessions.filter(function(session) {
+            if (!session) {
+                return false;
+            }
+
+            // Search in assistant title
+            if (session.assistant_title && session.assistant_title.toLowerCase().indexOf(normalizedQuery) !== -1) {
+                return true;
+            }
+
+            // Search in preview text
+            if (session.preview && session.preview.toLowerCase().indexOf(normalizedQuery) !== -1) {
+                return true;
+            }
+
+            // Search in assistant model
+            if (session.assistant_model && session.assistant_model.toLowerCase().indexOf(normalizedQuery) !== -1) {
+                return true;
+            }
+
+            // Search in session key
+            if (session.session_key && session.session_key.toLowerCase().indexOf(normalizedQuery) !== -1) {
+                return true;
+            }
+
+            // Search in messages if available
+            if (session.messages && Array.isArray(session.messages)) {
+                for (let i = 0; i < session.messages.length; i++) {
+                    const message = session.messages[i];
+                    if (message && message.content && message.content.toLowerCase().indexOf(normalizedQuery) !== -1) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Handle search input changes.
+     * 
+     * @param {Object} state - Widget state object
+     * @param {string} query - Search query
+     */
+    function handleSearchInput(state, query) {
+        if (!state) {
+            return;
+        }
+
+        state.searchQuery = query || '';
+        
+        // Filter and render sessions
+        const filteredSessions = filterSessions(state.allSessions || state.sessions, state.searchQuery);
+        state.sessions = filteredSessions;
+        
+        renderSessionList(state);
+        
+        // Update status
+        if (state.searchQuery && filteredSessions.length === 0) {
+            setStatus(state, getString(state, 'noSearchResults', 'No sessions match your search.'));
+        } else if (state.searchQuery && filteredSessions.length > 0) {
+            const resultCount = filteredSessions.length;
+            const totalCount = state.allSessions ? state.allSessions.length : state.sessions.length;
+            setStatus(state, getString(state, 'searchResults', 'Showing %d of %d sessions').replace('%d', resultCount).replace('%d', totalCount));
+        } else if (state.sessions.length === 0) {
+            setStatus(state, getString(state, 'emptyList', 'No chat transcripts are stored for this user yet.'));
+        } else {
+            setStatus(state, getString(state, 'selectPrompt', 'Select a chat session to review the conversation.'));
+        }
+    }
+
     function renderSessionList(state) {
         if (!state.listEl) {
             return;
@@ -676,6 +765,7 @@
                 state.loadingList = false;
 
                 state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+                state.allSessions = state.sessions.slice(); // Keep unfiltered copy for search
                 state.totalSessions = typeof data.total === 'number' ? data.total : state.sessions.length;
                 const responseMessage = data && data.message ? data.message : '';
 
@@ -700,8 +790,13 @@
                     state.conversationWrapper.hidden = true;
                 }
 
-                renderSessionList(state);
-                setStatus(state, responseMessage || getString(state, 'selectPrompt', 'Select a chat session to review the conversation.'));
+                // Apply any existing search filter
+                if (state.searchQuery) {
+                    handleSearchInput(state, state.searchQuery);
+                } else {
+                    renderSessionList(state);
+                    setStatus(state, responseMessage || getString(state, 'selectPrompt', 'Select a chat session to review the conversation.'));
+                }
             })
             .catch(function (error) {
                 state.loadingList = false;
@@ -782,7 +877,10 @@
             conversationMetaEl: container.querySelector('.wp-mcp-ai-user-chats__conversation-meta'),
             messagesEl: container.querySelector('.wp-mcp-ai-user-chats__messages'),
             backButton: container.querySelector('.wp-mcp-ai-user-chats__back'),
-            sessions: []
+            searchInput: container.querySelector('.wp-mcp-ai-user-chats__search'),
+            sessions: [],
+            allSessions: [],
+            searchQuery: ''
         };
 
         container.__wpMcpAiUserChats = state;
@@ -791,6 +889,28 @@
             state.backButton.textContent = getString(state, 'back', 'Back to chats');
             state.backButton.addEventListener('click', function () {
                 showSessionList(state);
+            });
+        }
+
+        // Initialize search input
+        if (state.searchInput) {
+            state.searchInput.setAttribute('placeholder', getString(state, 'searchPlaceholder', 'Search sessions...'));
+            
+            // Debounce search input to avoid excessive filtering
+            let searchTimer = null;
+            state.searchInput.addEventListener('input', function (event) {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(function() {
+                    handleSearchInput(state, event.target.value);
+                }, 300);
+            });
+
+            // Clear search on escape key
+            state.searchInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' || event.keyCode === 27) {
+                    state.searchInput.value = '';
+                    handleSearchInput(state, '');
+                }
             });
         }
 

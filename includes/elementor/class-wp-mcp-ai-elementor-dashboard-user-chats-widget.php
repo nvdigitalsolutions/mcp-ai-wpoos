@@ -348,6 +348,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 		echo '<div class="wp-mcp-ai-user-chats__wrapper" data-wp-mcp-ai-user-chats="' . esc_attr( $config_json ) . '">';
 		echo '<div class="wp-mcp-ai-user-chats__status" aria-live="polite"></div>';
 		echo '<div class="wp-mcp-ai-user-chats__list" hidden>';
+		echo '<input type="search" class="wp-mcp-ai-user-chats__search" placeholder="' . esc_attr__( 'Search sessions...', 'wp-mcp-ai' ) . '" aria-label="' . esc_attr__( 'Search chat sessions', 'wp-mcp-ai' ) . '" />';
 		echo '<ul class="wp-mcp-ai-user-chats__sessions"></ul>';
 		echo '</div>';
 		echo '<div class="wp-mcp-ai-user-chats__conversation" hidden>';

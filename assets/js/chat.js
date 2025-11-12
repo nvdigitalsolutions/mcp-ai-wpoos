@@ -50,6 +50,209 @@
     const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
 
     /**
+     * Get localStorage usage statistics.
+     * Calculates total used space and available quota.
+     * 
+     * @return {Object} Object with used, total, and percentage properties
+     */
+    function getLocalStorageQuota() {
+        if (!window.localStorage) {
+            return { used: 0, total: 0, percentage: 0, available: false };
+        }
+
+        let totalSize = 0;
+        let wpMcpAiSize = 0;
+
+        try {
+            // Calculate total localStorage usage
+            for (let i = 0; i < window.localStorage.length; i++) {
+                const key = window.localStorage.key(i);
+                if (!key) {
+                    continue;
+                }
+
+                const value = window.localStorage.getItem(key);
+                if (value) {
+                    const itemSize = key.length + value.length;
+                    totalSize += itemSize;
+
+                    if (key.startsWith(STORAGE_KEY_PREFIX)) {
+                        wpMcpAiSize += itemSize;
+                    }
+                }
+            }
+
+            // Estimate total quota (typically 5-10MB, we'll use conservative estimate)
+            // Most browsers: 5MB, some allow 10MB
+            const estimatedQuota = 5 * 1024 * 1024; // 5MB in bytes
+            const percentage = (totalSize / estimatedQuota) * 100;
+
+            return {
+                used: totalSize,
+                wpMcpAiUsed: wpMcpAiSize,
+                total: estimatedQuota,
+                percentage: Math.min(percentage, 100),
+                available: true,
+                formattedUsed: formatBytes(totalSize),
+                formattedWpMcpAiUsed: formatBytes(wpMcpAiSize),
+                formattedTotal: formatBytes(estimatedQuota)
+            };
+        } catch (error) {
+            if (window.console && console.error) {
+                console.error('Error calculating localStorage quota:', error);
+            }
+            return { used: 0, total: 0, percentage: 0, available: false };
+        }
+    }
+
+    /**
+     * Format bytes to human-readable string.
+     * 
+     * @param {number} bytes - Number of bytes
+     * @return {string} Formatted string (e.g., "1.5 KB", "2.3 MB")
+     */
+    function formatBytes(bytes) {
+        if (bytes === 0) {
+            return '0 Bytes';
+        }
+
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    /**
+     * Export conversation to various formats.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {string} format - Export format ('json', 'markdown', 'text')
+     * @return {Object} Export result with content and filename
+     */
+    function exportConversation(state, format) {
+        if (!state || !state.conversation || !Array.isArray(state.conversation)) {
+            return { success: false, error: 'No conversation to export' };
+        }
+
+        const conversation = state.conversation;
+        const assistantId = state.config ? state.config.assistantId : 'unknown';
+        const sessionKey = state.config ? state.config.sessionKey : '';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        
+        let content = '';
+        let filename = '';
+        let mimeType = 'text/plain';
+
+        try {
+            if (format === 'json') {
+                const exportData = {
+                    assistant_id: assistantId,
+                    session_key: sessionKey,
+                    exported_at: new Date().toISOString(),
+                    messages: conversation
+                };
+                content = JSON.stringify(exportData, null, 2);
+                filename = 'chat-' + assistantId + '-' + timestamp + '.json';
+                mimeType = 'application/json';
+            } else if (format === 'markdown') {
+                const lines = ['# Chat Conversation'];
+                lines.push('');
+                lines.push('**Assistant ID:** ' + assistantId);
+                if (sessionKey) {
+                    lines.push('**Session Key:** ' + sessionKey);
+                }
+                lines.push('**Exported:** ' + new Date().toLocaleString());
+                lines.push('');
+                lines.push('---');
+                lines.push('');
+
+                conversation.forEach(function(message) {
+                    const role = message.role || 'unknown';
+                    const content = message.content || '';
+                    
+                    lines.push('## ' + role.charAt(0).toUpperCase() + role.slice(1));
+                    lines.push('');
+                    lines.push(content);
+                    lines.push('');
+                });
+
+                content = lines.join('\n');
+                filename = 'chat-' + assistantId + '-' + timestamp + '.md';
+                mimeType = 'text/markdown';
+            } else {
+                // Plain text format
+                const lines = ['Chat Conversation'];
+                lines.push('');
+                lines.push('Assistant ID: ' + assistantId);
+                if (sessionKey) {
+                    lines.push('Session Key: ' + sessionKey);
+                }
+                lines.push('Exported: ' + new Date().toLocaleString());
+                lines.push('');
+                lines.push('----------------------------------------');
+                lines.push('');
+
+                conversation.forEach(function(message) {
+                    const role = message.role || 'unknown';
+                    const content = message.content || '';
+                    
+                    lines.push(role.toUpperCase() + ':');
+                    lines.push(content);
+                    lines.push('');
+                });
+
+                content = lines.join('\n');
+                filename = 'chat-' + assistantId + '-' + timestamp + '.txt';
+                mimeType = 'text/plain';
+            }
+
+            return {
+                success: true,
+                content: content,
+                filename: filename,
+                mimeType: mimeType
+            };
+        } catch (error) {
+            if (window.console && console.error) {
+                console.error('Error exporting conversation:', error);
+            }
+            return { success: false, error: error.message || 'Export failed' };
+        }
+    }
+
+    /**
+     * Download exported conversation as a file.
+     * 
+     * @param {string} content - File content
+     * @param {string} filename - File name
+     * @param {string} mimeType - MIME type
+     */
+    function downloadFile(content, filename, mimeType) {
+        try {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(function() {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } catch (error) {
+            if (window.console && console.error) {
+                console.error('Error downloading file:', error);
+            }
+        }
+    }
+
+    /**
      * Save conversation to localStorage with quota management.
      * Includes automatic cleanup of old conversations if quota is exceeded.
      * 
@@ -1839,6 +2042,95 @@
         if (state.transcriptExpanded && state.messagesEl) {
             state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
         }
+    }
+
+    /**
+     * Update quota monitor UI element with current localStorage usage.
+     * 
+     * @param {HTMLElement} monitorEl - The quota monitor element
+     */
+    function updateQuotaMonitor(monitorEl) {
+        if (!monitorEl) {
+            return;
+        }
+
+        const quota = getLocalStorageQuota();
+        
+        if (!quota.available) {
+            monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
+            return;
+        }
+
+        const percentage = quota.percentage;
+        let statusClass = 'wp-mcp-ai-chat__quota-ok';
+        let statusText = 'OK';
+        
+        if (percentage >= 90) {
+            statusClass = 'wp-mcp-ai-chat__quota-critical';
+            statusText = 'Critical';
+        } else if (percentage >= 75) {
+            statusClass = 'wp-mcp-ai-chat__quota-warning';
+            statusText = 'High';
+        }
+
+        monitorEl.innerHTML = '' +
+            '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
+            '<span class="wp-mcp-ai-chat__quota-bar">' +
+                '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
+            '</span> ' +
+            '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
+                quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
+            '</span>';
+
+        // Add tooltip with detailed info
+        monitorEl.setAttribute('title', 
+            'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
+            'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
+            'Status: ' + statusText
+        );
+    }
+
+    /**
+     * Handle conversation export button click.
+     * Shows format selection dialog and triggers download.
+     * 
+     * @param {Object} state - Chat state object
+     */
+    function handleExportConversation(state) {
+        if (!state || !state.conversation || state.conversation.length === 0) {
+            alert(getString('noConversationToExport', 'No conversation to export. Start chatting first!'));
+            return;
+        }
+
+        // Ask user for format
+        const format = prompt(
+            getString('exportFormatPrompt', 'Choose export format:\n- json\n- markdown\n- text'),
+            'json'
+        );
+
+        if (!format) {
+            return; // User cancelled
+        }
+
+        const normalizedFormat = format.toLowerCase().trim();
+        if (normalizedFormat !== 'json' && normalizedFormat !== 'markdown' && normalizedFormat !== 'text') {
+            alert(getString('invalidExportFormat', 'Invalid format. Please choose json, markdown, or text.'));
+            return;
+        }
+
+        const result = exportConversation(state, normalizedFormat);
+        
+        if (!result.success) {
+            alert(getString('exportFailed', 'Export failed: ') + (result.error || 'Unknown error'));
+            return;
+        }
+
+        downloadFile(result.content, result.filename, result.mimeType);
+        
+        setStatus(state.container, getString('exportSuccess', 'Conversation exported successfully as ') + result.filename);
+        setTimeout(function() {
+            clearStatus(state.container);
+        }, 3000);
     }
 
     function startNewConversation(state) {
@@ -4826,6 +5118,144 @@
         window.wpMcpAiLoadSession = loadSessionIntoChat;
     }
 
+    /**
+     * Initialize keyboard shortcuts for the chat interface.
+     * 
+     * @param {Object} state - Chat state object
+     * @param {HTMLElement} container - Chat container element
+     * @param {HTMLElement} exportButton - Export button element (optional)
+     * @param {HTMLElement} newChatButton - New chat button element (optional)
+     */
+    function initializeKeyboardShortcuts(state, container, exportButton, newChatButton) {
+        if (!state || !container) {
+            return;
+        }
+
+        // Track if help modal is open
+        let helpModalOpen = false;
+
+        document.addEventListener('keydown', function(event) {
+            // Don't trigger shortcuts if user is typing in an input/textarea
+            const target = event.target;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                // Allow Escape to work in inputs/textareas
+                if (event.key !== 'Escape' && event.keyCode !== 27) {
+                    return;
+                }
+            }
+
+            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+            const modKey = isMac ? event.metaKey : event.ctrlKey;
+
+            // Ctrl/Cmd + E: Export conversation
+            if (modKey && (event.key === 'e' || event.key === 'E') && exportButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy && state.conversation && state.conversation.length > 0) {
+                    handleExportConversation(state);
+                }
+                return;
+            }
+
+            // Ctrl/Cmd + N: New conversation
+            if (modKey && (event.key === 'n' || event.key === 'N') && newChatButton && !event.shiftKey) {
+                event.preventDefault();
+                if (!state.busy) {
+                    startNewConversation(state);
+                }
+                return;
+            }
+
+            // Ctrl/Cmd + /: Show keyboard shortcuts help
+            if (modKey && event.key === '/') {
+                event.preventDefault();
+                toggleKeyboardShortcutsHelp(container);
+                helpModalOpen = !helpModalOpen;
+                return;
+            }
+
+            // Escape: Close modals or clear status
+            if (event.key === 'Escape' || event.keyCode === 27) {
+                if (helpModalOpen) {
+                    toggleKeyboardShortcutsHelp(container);
+                    helpModalOpen = false;
+                } else {
+                    clearStatus(container);
+                }
+                return;
+            }
+        });
+    }
+
+    /**
+     * Toggle keyboard shortcuts help modal.
+     * 
+     * @param {HTMLElement} container - Chat container element
+     */
+    function toggleKeyboardShortcutsHelp(container) {
+        if (!container) {
+            return;
+        }
+
+        // Check if help modal already exists
+        let helpModal = container.querySelector('.wp-mcp-ai-chat__shortcuts-help');
+        
+        if (helpModal) {
+            // Remove existing modal
+            helpModal.parentNode.removeChild(helpModal);
+            return;
+        }
+
+        // Create help modal
+        helpModal = document.createElement('div');
+        helpModal.className = 'wp-mcp-ai-chat__shortcuts-help';
+        
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const modKeyName = isMac ? 'Cmd' : 'Ctrl';
+
+        helpModal.innerHTML = '' +
+            '<div class="wp-mcp-ai-chat__shortcuts-overlay"></div>' +
+            '<div class="wp-mcp-ai-chat__shortcuts-modal">' +
+                '<h3 class="wp-mcp-ai-chat__shortcuts-title">Keyboard Shortcuts</h3>' +
+                '<button type="button" class="wp-mcp-ai-chat__shortcuts-close" aria-label="Close">&times;</button>' +
+                '<div class="wp-mcp-ai-chat__shortcuts-list">' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + E</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Export conversation</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + N</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Start new conversation</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">' + modKeyName + ' + /</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Show this help</span>' +
+                    '</div>' +
+                    '<div class="wp-mcp-ai-chat__shortcut">' +
+                        '<kbd class="wp-mcp-ai-chat__shortcut-key">Escape</kbd>' +
+                        '<span class="wp-mcp-ai-chat__shortcut-desc">Close modals or clear status</span>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+
+        container.appendChild(helpModal);
+
+        // Add close button functionality
+        const closeButton = helpModal.querySelector('.wp-mcp-ai-chat__shortcuts-close');
+        const overlay = helpModal.querySelector('.wp-mcp-ai-chat__shortcuts-overlay');
+        
+        if (closeButton) {
+            closeButton.addEventListener('click', function() {
+                toggleKeyboardShortcutsHelp(container);
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                toggleKeyboardShortcutsHelp(container);
+            });
+        }
+    }
+
     function init() {
         const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
@@ -5007,6 +5437,28 @@
                 });
             }
 
+            // Initialize export and quota monitoring UI controls
+            const exportButton = container.querySelector('.wp-mcp-ai-chat__export');
+            const quotaMonitor = container.querySelector('.wp-mcp-ai-chat__quota-monitor');
+            
+            if (exportButton) {
+                exportButton.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+                    handleExportConversation(state);
+                });
+            }
+            
+            // Update quota monitor periodically
+            if (quotaMonitor) {
+                updateQuotaMonitor(quotaMonitor);
+                // Update quota monitor every 30 seconds
+                setInterval(function() {
+                    updateQuotaMonitor(quotaMonitor);
+                }, 30000);
+            }
+
             textarea.setAttribute('placeholder', getString('placeholder', textarea.getAttribute('placeholder')));
             form.addEventListener('submit', function (event) {
                 handleSubmit(event, state);
@@ -5072,6 +5524,9 @@
 
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+
+            // Initialize keyboard shortcuts
+            initializeKeyboardShortcuts(state, container, exportButton, newChatButton);
 
             // Store state globally for cross-widget communication
             container.__wpMcpAiChatState = state;
