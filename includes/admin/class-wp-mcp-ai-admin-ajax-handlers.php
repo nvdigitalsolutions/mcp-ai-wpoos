@@ -38,8 +38,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 * Safe AJAX handler wrapper that catches any output before JSON responses.
 		 *
 		 * Prevents PHP errors, warnings, and notices from breaking JSON responses.
+		 *
+		 * Note: Accepts variable parameters for compatibility with WordPress action hooks,
+		 * but does not use them. WordPress's do_action() may pass parameters to callbacks.
 		 */
-		public function safe_ajax_handler() {
+		public function safe_ajax_handler( ...$args ) {
 			// Clean any previous output.
 			$this->clean_all_buffers();
 
