@@ -89,6 +89,11 @@ class WP_MCP_AI_Performance_Reporter {
 			'metrics'         => array(),
 		);
 
+		// Skip analysis if Performance Monitor CCT is not available (base version mode).
+		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
+			return $component_data;
+		}
+
 		foreach ( $test_types as $test_type ) {
 			$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends(
 				$component,

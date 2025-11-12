@@ -45,7 +45,7 @@ $error_service->record_error_with_metrics( 'chat_ui', 'Error', $context, true );
 
 ### 2. Performance Monitor CCT Enhancements
 
-**File:** `includes/class-wp-mcp-ai-performance-monitor-cct.php`
+**File:** `includes/services/class-wp-mcp-ai-performance-monitor-service.php`
 
 Enhanced the Performance Monitor Custom Content Type with error tracking fields:
 
@@ -427,7 +427,7 @@ No migration needed - new feature only:
 3. `docs/error-tracking-service.md` (350 lines)
 
 ### Modified Files (4)
-1. `includes/class-wp-mcp-ai-performance-monitor-cct.php` (+60 lines)
+1. `includes/services/class-wp-mcp-ai-performance-monitor-service.php` (+60 lines)
 2. `includes/admin/class-wp-mcp-ai-performance-reporter.php` (+40 lines)
 3. `includes/services-init.php` (+10 lines)
 4. `docs/performance-monitoring.md` (+60 lines)

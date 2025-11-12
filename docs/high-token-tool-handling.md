@@ -435,7 +435,7 @@ A: You can still configure per-model fallbacks in Settings → WP oOS for the mo
 - [Tool Reference](./tool-reference.md) - Documentation for all available tools
 - [REST API](./rest-api.md) - REST API endpoints and usage
 - [Admin Settings](./admin-settings.md) - Complete settings documentation
-- [Token Budget Manager](../includes/class-wp-mcp-ai-token-budget-manager.php) - Source code
+- [Token Budget Manager](../includes/services/class-wp-mcp-ai-token-budget-service.php) - Source code
 - [Agentic Loop Implementation](../includes/class-wp-mcp-ai-rest.php#L2100-L2170) - Source code
 - [Model Rate Limits CCT](../includes/class-wp-mcp-ai-model-rate-limits-cct.php) - Source code for per-model configuration
 

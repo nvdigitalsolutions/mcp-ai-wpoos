@@ -17,7 +17,7 @@ This breaking change affected any code that programmatically queried CCT items u
 
 The following files were updated to support both old and new JetEngine APIs:
 
-1. `includes/class-wp-mcp-ai-performance-monitor-cct.php` - Core implementation
+1. `includes/services/class-wp-mcp-ai-performance-monitor-service.php` - Core implementation
 2. `includes/admin/class-wp-mcp-ai-performance-reporter.php` - Performance reporting
 3. `includes/elementor/class-wp-mcp-ai-elementor-performance-recommendations-widget.php` - Elementor widget
 4. `includes/elementor/class-wp-mcp-ai-elementor-test-results-table-widget.php` - Elementor widget
