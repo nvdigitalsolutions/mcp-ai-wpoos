@@ -270,6 +270,81 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
 		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
 
+		<!-- Recommendations Notice -->
+		<?php
+		$mismatched_count = count( WP_MCP_AI_Tool_Recommendations::get_mismatched_tools() );
+		$current_preset   = WP_MCP_AI_Tool_Recommendations::detect_current_preset();
+		$presets          = WP_MCP_AI_Tool_Recommendations::get_presets();
+
+		if ( $mismatched_count > 0 || 'custom' === $current_preset ) :
+			?>
+			<div class="notice notice-info inline" style="margin: 15px 0;">
+				<p>
+					<span class="dashicons dashicons-lightbulb" style="color: #f0b849; vertical-align: middle;"></span>
+					<strong><?php esc_html_e( 'Optimization Available:', 'wp-mcp-ai' ); ?></strong>
+					<?php
+					if ( 'custom' === $current_preset ) {
+						esc_html_e( 'Your settings appear to be custom configured. You can apply a preset for optimized performance.', 'wp-mcp-ai' );
+					} else {
+						/* translators: %d: Number of tools that can be optimized */
+						printf( esc_html__( '%d tools have settings that differ from recommended values. Choose a preset to optimize based on your needs.', 'wp-mcp-ai' ), absint( $mismatched_count ) );
+					}
+					?>
+				</p>
+				<p>
+					<label for="wp-mcp-ai-preset-selector" style="font-weight: 600; margin-right: 10px;">
+						<?php esc_html_e( 'Select Preset:', 'wp-mcp-ai' ); ?>
+					</label>
+					<select id="wp-mcp-ai-preset-selector" style="min-width: 200px;">
+						<?php foreach ( $presets as $preset_key => $preset_data ) : ?>
+							<option value="<?php echo esc_attr( $preset_key ); ?>" <?php selected( $current_preset, $preset_key ); ?>>
+								<?php echo esc_html( $preset_data['name'] ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<button type="button" id="wp-mcp-ai-apply-preset" class="button button-secondary">
+						<?php esc_html_e( 'Apply Preset', 'wp-mcp-ai' ); ?>
+					</button>
+					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-secondary" style="margin-left: 10px;">
+						<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+				<div id="wp-mcp-ai-preset-description" style="margin-top: 10px; padding: 8px 12px; background: #f0f0f0; border-left: 3px solid #0073aa; font-size: 13px;">
+					<?php
+					$current_preset_data = isset( $presets[ $current_preset ] ) ? $presets[ $current_preset ] : $presets['balanced'];
+					echo esc_html( $current_preset_data['description'] );
+					?>
+				</div>
+			</div>
+		<?php elseif ( 'balanced' === $current_preset ) : ?>
+			<div class="notice notice-success inline" style="margin: 15px 0;">
+				<p>
+					<span class="dashicons dashicons-yes-alt" style="color: #46b450; vertical-align: middle;"></span>
+					<strong><?php esc_html_e( 'Optimal Configuration:', 'wp-mcp-ai' ); ?></strong>
+					<?php esc_html_e( 'Your tools are using the balanced (recommended) preset with optimal settings for performance and cost.', 'wp-mcp-ai' ); ?>
+					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-small" style="margin-left: 10px;">
+						<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			</div>
+		<?php else : ?>
+			<div class="notice notice-info inline" style="margin: 15px 0;">
+				<p>
+					<span class="dashicons dashicons-admin-settings" style="color: #0073aa; vertical-align: middle;"></span>
+					<strong><?php esc_html_e( 'Current Preset:', 'wp-mcp-ai' ); ?></strong>
+					<?php
+					$current_preset_data = isset( $presets[ $current_preset ] ) ? $presets[ $current_preset ] : null;
+					if ( $current_preset_data ) {
+						echo esc_html( $current_preset_data['name'] ) . ' - ' . esc_html( $current_preset_data['description'] );
+					}
+					?>
+					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-small" style="margin-left: 10px;">
+						<?php esc_html_e( 'Change Preset', 'wp-mcp-ai' ); ?>
+					</button>
+				</p>
+			</div>
+		<?php endif; ?>
+
 		<!-- Tier Reference Card -->
 		<div class="wp-mcp-ai-tier-reference" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
 			<h4 style="margin-top: 0;"><?php esc_html_e( 'Tier Base Limits (tokens/day)', 'wp-mcp-ai' ); ?></h4>
@@ -327,6 +402,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					$model_preference    = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
 					$available_models    = WP_MCP_AI_Tool_Token_Limits::get_available_models();
 
+					// Get recommendation for this tool.
+					$recommendation = WP_MCP_AI_Tool_Recommendations::get_tool_recommendation( $tool_slug );
+					$match_status   = WP_MCP_AI_Tool_Recommendations::check_recommendation_match( $tool_slug, $multiplier, $model_preference );
+
 					// Calculate effective limits for each tier.
 					$free_limit       = (int) ( 50000 * $multiplier );
 					$pro_limit        = (int) ( 200000 * $multiplier );
@@ -345,9 +424,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					} else {
 						$usage_color = '#46b450'; // Green.
 					}
+
+					// Determine row class based on recommendation match.
+					$row_class = $match_status['matches'] ? '' : 'wp-mcp-ai-tool-row-recommended';
 					?>
-					<tr>
-						<td><strong><?php echo esc_html( $tool_name ); ?></strong></td>
+					<tr class="<?php echo esc_attr( $row_class ); ?>" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
+						<td>
+							<strong><?php echo esc_html( $tool_name ); ?></strong>
+							<?php if ( ! $match_status['matches'] ) : ?>
+								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon" 
+									  style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;" 
+									  title="<?php echo esc_attr( $match_status['reason'] ); ?>"></span>
+							<?php endif; ?>
+						</td>
 						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
 						<td>
 							<select 
@@ -381,16 +470,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							</select>
 						</td>
 						<td>
-							<input 
-								type="number" 
-								class="wp-mcp-ai-tool-multiplier-input" 
-								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" 
-								value="<?php echo esc_attr( $multiplier ); ?>" 
-								min="0.1" 
-								max="10" 
-								step="0.1" 
-								style="width: 70px;" 
-							/>×
+							<div style="position: relative; display: inline-block;">
+								<input 
+									type="number" 
+									class="wp-mcp-ai-tool-multiplier-input" 
+									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" 
+									data-recommended="<?php echo esc_attr( $recommendation['multiplier'] ); ?>"
+									value="<?php echo esc_attr( $multiplier ); ?>" 
+									min="0.1" 
+									max="10" 
+									step="0.1" 
+									style="width: 70px;" 
+								/>×
+								<?php if ( ! $match_status['multiplier_matches'] ) : ?>
+									<span class="wp-mcp-ai-recommended-value" style="display: block; font-size: 10px; color: #f0b849; font-style: italic;">
+										<?php
+										/* translators: %s: recommended multiplier value */
+										printf( esc_html__( 'Rec: %s×', 'wp-mcp-ai' ), esc_html( $recommendation['multiplier'] ) );
+										?>
+									</span>
+								<?php endif; ?>
+							</div>
 						</td>
 						<td style="font-size: 11px;">
 							<div title="<?php esc_attr_e( 'Free tier limit', 'wp-mcp-ai' ); ?>">
@@ -418,6 +518,195 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+
+		<!-- Recommendations Modal -->
+		<div id="wp-mcp-ai-recommendations-modal" class="wp-mcp-ai-modal" style="display: none;">
+			<div class="wp-mcp-ai-modal-overlay"></div>
+			<div class="wp-mcp-ai-modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
+				<div class="wp-mcp-ai-modal-header">
+					<h2><?php esc_html_e( 'Tool Configuration Recommendations', 'wp-mcp-ai' ); ?></h2>
+					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
+				</div>
+				<div class="wp-mcp-ai-modal-body">
+					<p class="description">
+						<?php esc_html_e( 'These recommendations are based on analysis of tool complexity, resource requirements, and typical usage patterns. Choose a preset that matches your deployment needs.', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<!-- Presets -->
+					<h3><?php esc_html_e( 'Available Presets', 'wp-mcp-ai' ); ?></h3>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th style="width: 20%;"><?php esc_html_e( 'Preset', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Multiplier Adjustment', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Best For', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							$presets        = WP_MCP_AI_Tool_Recommendations::get_presets();
+							$current_preset = WP_MCP_AI_Tool_Recommendations::detect_current_preset();
+
+							$best_for = array(
+								'conservative' => __( 'Cost Control', 'wp-mcp-ai' ),
+								'balanced'     => __( 'Most Sites', 'wp-mcp-ai' ),
+								'performance'  => __( 'High Traffic', 'wp-mcp-ai' ),
+								'aggressive'   => __( 'Complex Operations', 'wp-mcp-ai' ),
+							);
+
+							foreach ( $presets as $preset_key => $preset_data ) :
+								$is_current = ( $preset_key === $current_preset );
+								?>
+								<tr <?php echo $is_current ? 'style="background-color: #e7f7e7;"' : ''; ?>>
+									<td>
+										<strong><?php echo esc_html( $preset_data['name'] ); ?></strong>
+										<?php if ( $is_current ) : ?>
+											<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+										<?php endif; ?>
+									</td>
+									<td><?php echo esc_html( number_format( $preset_data['multiplier_adjustment'] * 100 ) ); ?>%</td>
+									<td><?php echo esc_html( $preset_data['description'] ); ?></td>
+									<td><?php echo esc_html( isset( $best_for[ $preset_key ] ) ? $best_for[ $preset_key ] : '' ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tool Categories', 'wp-mcp-ai' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'Tools are grouped into categories based on their characteristics. Multipliers are applied to base tier limits.', 'wp-mcp-ai' ); ?>
+					</p>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Tool Count', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Base Multiplier', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							$category_stats = WP_MCP_AI_Tool_Recommendations::get_category_statistics();
+							foreach ( $category_stats as $category => $stats ) :
+								?>
+								<tr>
+									<td><strong><?php echo esc_html( $stats['name'] ); ?></strong></td>
+									<td><?php echo esc_html( $stats['tool_count'] ); ?></td>
+									<td><?php echo esc_html( number_format( $stats['multiplier'], 1 ) ); ?>×</td>
+									<td><?php echo esc_html( $stats['description'] ); ?></td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+
+					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tools Needing Optimization', 'wp-mcp-ai' ); ?></h3>
+					<?php
+					$mismatched = WP_MCP_AI_Tool_Recommendations::get_mismatched_tools();
+					if ( ! empty( $mismatched ) ) :
+						?>
+						<table class="wp-list-table widefat fixed striped">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Tool', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Current Multiplier', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Recommended', 'wp-mcp-ai' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $mismatched as $tool_slug => $mismatch_data ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
+										<td><?php echo esc_html( ucwords( str_replace( '_', ' ', $mismatch_data['category'] ) ) ); ?></td>
+										<td><?php echo esc_html( number_format( $mismatch_data['current_multiplier'], 1 ) ); ?>×</td>
+										<td><strong><?php echo esc_html( number_format( $mismatch_data['recommended_multiplier'], 1 ) ); ?>×</strong></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					<?php else : ?>
+						<div class="notice notice-success inline">
+							<p><?php esc_html_e( 'All tools are using recommended settings!', 'wp-mcp-ai' ); ?></p>
+						</div>
+					<?php endif; ?>
+				</div>
+				<div class="wp-mcp-ai-modal-footer">
+					<button type="button" class="button button-secondary wp-mcp-ai-modal-close">
+						<?php esc_html_e( 'Close', 'wp-mcp-ai' ); ?>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<style>
+			.wp-mcp-ai-tool-row-recommended {
+				background-color: #fffbf0 !important;
+			}
+			.wp-mcp-ai-recommendation-icon {
+				animation: pulse 2s infinite;
+			}
+			@keyframes pulse {
+				0%, 100% { opacity: 1; }
+				50% { opacity: 0.5; }
+			}
+			.wp-mcp-ai-modal {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				z-index: 100000;
+			}
+			.wp-mcp-ai-modal-overlay {
+				position: absolute;
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: rgba(0, 0, 0, 0.7);
+			}
+			.wp-mcp-ai-modal-content {
+				position: relative;
+				background: #fff;
+				margin: 50px auto;
+				padding: 0;
+				border-radius: 4px;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+			}
+			.wp-mcp-ai-modal-header {
+				padding: 20px;
+				border-bottom: 1px solid #ddd;
+				position: relative;
+			}
+			.wp-mcp-ai-modal-header h2 {
+				margin: 0;
+				padding-right: 30px;
+			}
+			.wp-mcp-ai-modal-close {
+				position: absolute;
+				top: 15px;
+				right: 15px;
+				background: none;
+				border: none;
+				font-size: 28px;
+				line-height: 1;
+				cursor: pointer;
+				color: #666;
+			}
+			.wp-mcp-ai-modal-close:hover {
+				color: #000;
+			}
+			.wp-mcp-ai-modal-body {
+				padding: 20px;
+			}
+			.wp-mcp-ai-modal-footer {
+				padding: 15px 20px;
+				border-top: 1px solid #ddd;
+				text-align: right;
+			}
+		</style>
 
 		<p class="submit">
 			<button type="button" id="wp-mcp-ai-save-all-tool-settings" class="button button-primary">

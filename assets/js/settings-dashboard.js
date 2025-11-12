@@ -59,6 +59,15 @@
 			$('.wp-mcp-ai-user-checkbox').on('change', this.handleUserCheckboxChange.bind(this));
 			$('#bulk-tier-selector').on('change', this.handleBulkTierSelectorChange.bind(this));
 			$('#wp-mcp-ai-apply-bulk-tier').on('click', this.handleApplyBulkTier.bind(this));
+
+			// Tool recommendations
+			$('#wp-mcp-ai-view-recommendations').on('click', this.handleViewRecommendations.bind(this));
+			$('#wp-mcp-ai-apply-all-recommendations').on('click', this.handleApplyAllRecommendations.bind(this));
+			$('#wp-mcp-ai-apply-preset').on('click', this.handleApplyPreset.bind(this));
+			$('.wp-mcp-ai-modal-close, .wp-mcp-ai-modal-overlay').on('click', this.handleCloseModal.bind(this));
+
+			// Preset description update
+			$('#wp-mcp-ai-preset-selector').on('change', this.handlePresetChange.bind(this));
 		},
 
 		/**
@@ -662,6 +671,135 @@
 			// Remove peer site (delegated event)
 			$meshPeers.on('click', '.wp-mcp-ai-remove-peer', function() {
 				$(this).closest('tr').remove();
+			});
+		},
+
+		/**
+		 * Handle view recommendations modal.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleViewRecommendations: function(e) {
+			e.preventDefault();
+			$('#wp-mcp-ai-recommendations-modal').fadeIn(200);
+		},
+
+		/**
+		 * Handle apply all recommendations.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleApplyAllRecommendations: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+
+			if (!confirm('Are you sure you want to apply recommended settings to all tools? This will overwrite your current multiplier and model preference settings.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Applying...');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_apply_all_recommendations',
+					nonce: wpMcpAiDashboard.nonce
+				}
+			}, {
+				success: function(response) {
+					if (response.success) {
+						alert(response.data.message || 'Recommendations applied successfully!');
+						window.location.reload();
+					} else {
+						alert(response.data.message || 'Failed to apply recommendations.');
+						$button.prop('disabled', false).text('Apply Recommended Settings to All Tools');
+					}
+				},
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while applying recommendations.');
+					$button.prop('disabled', false).text('Apply Recommended Settings to All Tools');
+				}
+			});
+		},
+
+		/**
+		 * Handle close modal.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleCloseModal: function(e) {
+			e.preventDefault();
+			$('#wp-mcp-ai-recommendations-modal').fadeOut(200);
+		},
+
+		/**
+		 * Handle preset change.
+		 *
+		 * @param {Event} e Change event.
+		 */
+		handlePresetChange: function(e) {
+			const preset = $(e.currentTarget).val();
+			const descriptions = {
+				'conservative': 'Lower token limits for cost control. Best for budget-conscious deployments.',
+				'balanced': 'Optimal balance between performance and cost. Uses our analyzed recommendations.',
+				'performance': 'Higher token limits for maximum performance. Best for high-traffic or demanding applications.',
+				'aggressive': 'Maximum token limits for complex operations. Use when cost is not a concern.'
+			};
+
+			$('#wp-mcp-ai-preset-description').text(descriptions[preset] || descriptions['balanced']);
+		},
+
+		/**
+		 * Handle apply preset.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleApplyPreset: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const preset = $('#wp-mcp-ai-preset-selector').val();
+
+			if (!preset) {
+				alert('Please select a preset.');
+				return;
+			}
+
+			const presetNames = {
+				'conservative': 'Conservative',
+				'balanced': 'Balanced',
+				'performance': 'Performance',
+				'aggressive': 'Aggressive'
+			};
+
+			if (!confirm('Apply the ' + (presetNames[preset] || preset) + ' preset to all tools? This will overwrite your current settings.')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Applying...');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_apply_preset',
+					nonce: wpMcpAiDashboard.nonce,
+					preset: preset
+				}
+			}, {
+				success: function(response) {
+					if (response.success) {
+						alert(response.data.message || 'Preset applied successfully!');
+						window.location.reload();
+					} else {
+						alert(response.data.message || 'Failed to apply preset.');
+						$button.prop('disabled', false).text('Apply Preset');
+					}
+				},
+				error: function(error) {
+					alert(error.userMessage || 'An error occurred while applying the preset.');
+					$button.prop('disabled', false).text('Apply Preset');
+				}
 			});
 		}
 	};
