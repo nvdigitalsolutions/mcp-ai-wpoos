@@ -147,6 +147,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<h3><?php esc_html_e( 'Token Usage by User', 'wp-mcp-ai' ); ?></h3>
 			<p class="description"><?php esc_html_e( 'View and manage token consumption for each user across all AI models and providers.', 'wp-mcp-ai' ); ?></p>
 
+			<!-- Analytics Charts Section -->
+			<div class="wp-mcp-ai-analytics-section" style="margin: 20px 0;">
+				<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+					<h3 style="margin: 0;"><?php esc_html_e( 'Usage Analytics', 'wp-mcp-ai' ); ?></h3>
+					<div>
+						<label for="wp-mcp-ai-chart-period" style="margin-right: 5px;"><?php esc_html_e( 'Time Period:', 'wp-mcp-ai' ); ?></label>
+						<select id="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-select">
+							<option value="7" selected><?php esc_html_e( 'Last 7 Days', 'wp-mcp-ai' ); ?></option>
+							<option value="30"><?php esc_html_e( 'Last 30 Days', 'wp-mcp-ai' ); ?></option>
+							<option value="90"><?php esc_html_e( 'Last 90 Days', 'wp-mcp-ai' ); ?></option>
+						</select>
+						<button type="button" id="wp-mcp-ai-refresh-charts" class="button" style="margin-left: 10px;">
+							<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+							<?php esc_html_e( 'Refresh', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+				</div>
+
+				<!-- Usage Trend Chart -->
+				<div class="wp-mcp-ai-chart-container" style="margin-bottom: 30px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+					<canvas id="wp-mcp-ai-usage-trend-chart" style="width: 100%; height: 300px;"></canvas>
+				</div>
+
+				<!-- Tool Breakdown & Tier Distribution -->
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+					<div class="wp-mcp-ai-chart-container" style="padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+						<canvas id="wp-mcp-ai-tool-breakdown-chart" style="width: 100%; height: 300px;"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-container" style="padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+						<canvas id="wp-mcp-ai-tier-distribution-chart" style="width: 100%; height: 300px;"></canvas>
+					</div>
+				</div>
+			</div>
+
 			<?php if ( empty( $user_ids ) ) : ?>
 				<div class="notice notice-info inline">
 					<p><?php esc_html_e( 'No token usage data has been recorded yet. Usage will appear here once users start interacting with AI assistants.', 'wp-mcp-ai' ); ?></p>
