@@ -4410,23 +4410,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// Future flagship models (placeholders for upcoming releases).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
+					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
+					// Reasoning models (o-series - "thinking models").
+					'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
+					'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
+					'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
+					'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
+					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'             => __( 'GPT-4o mini', 'wp-mcp-ai' ),
+					'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+					'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
+					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
-					'gpt-4.1-mini'            => __( 'GPT-4.1 mini', 'wp-mcp-ai' ),
+					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
 					'gpt-4.1-nano'            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
 					'gpt-4-turbo'             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
 					'gpt-4'                   => __( 'GPT-4', 'wp-mcp-ai' ),
+					// GPT-3.5 series (legacy).
 					'gpt-3.5-turbo'           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
 					'gpt-3.5-turbo-16k'       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
 					'gpt-3.5-turbo-instruct'  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
-					'o1-preview'              => __( 'O1 Preview', 'wp-mcp-ai' ),
-					'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
-					'o4-mini'                 => __( 'o4 mini', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview'    => __( 'GPT-4o audio preview', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview' => __( 'GPT-4o realtime preview', 'wp-mcp-ai' ),
 				);
 			} else {
 				$choices = $cct_models;
@@ -4540,23 +4549,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		protected function format_model_label( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
+				// Future flagship models.
 				'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 				'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+				'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
+				'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
+				// Reasoning models (o-series).
+				'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
+				'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
+				'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
+				'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+				'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
+				// GPT-4o series.
 				'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
 				'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+				'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
+				// Legacy GPT-4 series.
 				'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
 				'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
 				'gpt-4.1-nano'            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
 				'gpt-4-turbo'             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
 				'gpt-4'                   => __( 'GPT-4', 'wp-mcp-ai' ),
+				// GPT-3.5 series.
 				'gpt-3.5-turbo'           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
 				'gpt-3.5-turbo-16k'       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
 				'gpt-3.5-turbo-instruct'  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
-				'o1-preview'              => __( 'O1 Preview', 'wp-mcp-ai' ),
-				'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
-				'o4-mini'                 => __( 'O4 Mini', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
 			);
 
 			if ( isset( $special_cases[ $model_name ] ) ) {
@@ -4690,23 +4708,32 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Fallback to hardcoded choices if CCT is not available or empty.
 			if ( empty( $cct_models ) ) {
 				$choices = array(
+					// Future flagship models (placeholders for upcoming releases).
 					'gpt-5'                   => __( 'GPT-5', 'wp-mcp-ai' ),
 					'gpt-5-mini'              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
+					'gpt-4.5-preview'         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
+					'gpt-4.5-turbo'           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
+					// Reasoning models (o-series - "thinking models").
+					'o1-2024-12-17'           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
+					'o1-preview'              => __( 'o1 Preview', 'wp-mcp-ai' ),
+					'o1-mini'                 => __( 'o1 Mini', 'wp-mcp-ai' ),
+					'o3-mini'                 => __( 'o3 Mini', 'wp-mcp-ai' ),
+					'o4-mini'                 => __( 'o4 Mini', 'wp-mcp-ai' ),
+					// GPT-4o series (current flagship).
 					'gpt-4o'                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'             => __( 'GPT-4o mini', 'wp-mcp-ai' ),
+					'gpt-4o-mini'             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
+					'gpt-4o-audio-preview'    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
+					'gpt-4o-realtime-preview' => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
+					// Legacy GPT-4 series.
 					'gpt-4.1'                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
-					'gpt-4.1-mini'            => __( 'GPT-4.1 mini', 'wp-mcp-ai' ),
+					'gpt-4.1-mini'            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
 					'gpt-4.1-nano'            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
 					'gpt-4-turbo'             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
 					'gpt-4'                   => __( 'GPT-4', 'wp-mcp-ai' ),
+					// GPT-3.5 series (legacy).
 					'gpt-3.5-turbo'           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
 					'gpt-3.5-turbo-16k'       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
 					'gpt-3.5-turbo-instruct'  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
-					'o1-preview'              => __( 'O1 Preview', 'wp-mcp-ai' ),
-					'o1-mini'                 => __( 'O1 Mini', 'wp-mcp-ai' ),
-					'o4-mini'                 => __( 'o4 mini', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview'    => __( 'GPT-4o audio preview', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview' => __( 'GPT-4o realtime preview', 'wp-mcp-ai' ),
 				);
 			} else {
 				$choices = $cct_models;
