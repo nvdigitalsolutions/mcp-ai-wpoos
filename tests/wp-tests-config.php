@@ -71,7 +71,3 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 	define( 'ABSPATH', rtrim( $core_dir, '/\\' ) . '/' );
 }
-
-if ( ! defined( 'WP_LANG_DIR' ) ) {
-	define( 'WP_LANG_DIR', ABSPATH . 'wp-content/languages' );
-}
