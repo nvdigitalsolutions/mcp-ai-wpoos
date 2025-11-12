@@ -136,6 +136,7 @@
 
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
+			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
 			messagesEndpoint: baseRestUrl + '/chat-client',
 			toolsEndpoint: baseRestUrl + '/tools',
 			filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
