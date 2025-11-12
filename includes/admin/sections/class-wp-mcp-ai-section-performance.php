@@ -704,6 +704,10 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
 		}
 
+		if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Performance monitoring not available in base version mode.', 'wp-mcp-ai' ) ) );
+		}
+
 		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : 'rest_api';
 
 		$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, '-7 days' );
