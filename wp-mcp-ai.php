@@ -355,6 +355,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
+	// Load test assistant page.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
+	new WP_MCP_AI_Admin_Test_Assistant();
+
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
