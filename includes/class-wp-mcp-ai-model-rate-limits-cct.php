@@ -643,8 +643,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'supports_streaming'        => true,
 				'supports_function_calling' => true,
 				'supports_vision'           => true,
-				'cost_per_1k_input_tokens'  => 0.0025,
-				'cost_per_1k_output_tokens' => 0.01,
+				'cost_per_1k_input_tokens'  => 0.005,
+				'cost_per_1k_output_tokens' => 0.015,
 				'notes'                     => 'GPT-4o standard tier. Scale tier supports up to 450,000 TPM.',
 			),
 			array(
@@ -780,8 +780,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'supports_streaming'        => true,
 				'supports_function_calling' => true,
 				'supports_vision'           => true,
-				'cost_per_1k_input_tokens'  => 0.00125,
-				'cost_per_1k_output_tokens' => 0.005,
+				'cost_per_1k_input_tokens'  => 0.0035,
+				'cost_per_1k_output_tokens' => 0.0105,
 				'notes'                     => 'Large context window, excellent for long documents.',
 			),
 			array(

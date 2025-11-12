@@ -78,7 +78,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'o1-2024-12-17' => 'o1 (Dec 2024)',
 					'o1-preview'    => 'o1 Preview',
 					'o1-mini'       => 'o1 Mini',
-					'o3-mini'       => 'o3 Mini',
+					'o3-mini'       => 'o3 Mini (24% faster, structured outputs)',
 					// GPT-4o series (current flagship).
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
