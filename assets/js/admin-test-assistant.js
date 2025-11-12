@@ -52,9 +52,14 @@
 			modalClose.addEventListener('click', closeTestModal);
 		}
 
-		// Close modal on backdrop click.
-		if (modalBackdrop) {
-			modalBackdrop.addEventListener('click', closeTestModal);
+		// Close modal on backdrop click only (not when clicking inside the panel).
+		if (modal) {
+			modal.addEventListener('click', function(event) {
+				// Close only if clicking on the modal container or backdrop, not the panel or its contents.
+				if (event.target === modal || event.target === modalBackdrop) {
+					closeTestModal();
+				}
+			});
 		}
 
 		// Close modal on Escape key.
