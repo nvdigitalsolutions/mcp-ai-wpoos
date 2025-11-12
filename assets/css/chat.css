@@ -1108,3 +1108,108 @@
 .wp-mcp-ai-chat__editor-notice strong {
     font-weight: 600;
 }
+
+/* Quota monitor styles */
+.wp-mcp-ai-chat__quota-monitor {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--wp-mcp-ai-color-text, #111827);
+    background: var(--wp-mcp-ai-color-container-background, #f8fafc);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-chat__quota-label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__quota-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--wp-mcp-ai-color-border, #e2e8f0);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.wp-mcp-ai-chat__quota-fill {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-ok {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-warning {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.wp-mcp-ai-chat__quota-fill.wp-mcp-ai-chat__quota-critical {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.wp-mcp-ai-chat__quota-text {
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.wp-mcp-ai-chat__quota-text.wp-mcp-ai-chat__quota-warning {
+    color: #d97706;
+    font-weight: 600;
+}
+
+.wp-mcp-ai-chat__quota-text.wp-mcp-ai-chat__quota-critical {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.wp-mcp-ai-chat__quota-unavailable {
+    font-size: 0.8rem;
+    color: var(--wp-mcp-ai-color-text, rgba(15, 23, 42, 0.6));
+}
+
+/* Export button styles */
+.wp-mcp-ai-chat__export {
+    padding: 0.5rem 1rem;
+    background: var(--wp-mcp-ai-color-button-background, #ffffff);
+    color: var(--wp-mcp-ai-color-button-text, #0f172a);
+    border: 1px solid var(--wp-mcp-ai-color-border, #cbd5e1);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.wp-mcp-ai-chat__export:hover {
+    background: var(--wp-mcp-ai-color-button-hover-background, #f8fafc);
+    border-color: var(--wp-mcp-ai-color-primary, #3b82f6);
+    color: var(--wp-mcp-ai-color-primary, #3b82f6);
+}
+
+.wp-mcp-ai-chat__export:active {
+    transform: scale(0.98);
+}
+
+.wp-mcp-ai-chat__export:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .wp-mcp-ai-chat__quota-monitor {
+        flex-wrap: wrap;
+        font-size: 0.8rem;
+    }
+    
+    .wp-mcp-ai-chat__quota-bar {
+        flex-basis: 100%;
+    }
+}
+
