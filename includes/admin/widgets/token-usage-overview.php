@@ -41,7 +41,7 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=token_manager' ) ); ?>" class="button button-primary">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button button-primary">
 			<?php esc_html_e( 'View Full Report', 'wp-mcp-ai' ); ?>
 		</a>
 	</div>
