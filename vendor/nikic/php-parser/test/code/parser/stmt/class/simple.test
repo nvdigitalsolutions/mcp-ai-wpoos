@@ -1,0 +1,209 @@
+Class declaration
+-----
+<?php
+
+class A extends B implements C, D {
+    const A = 'B', C = 'D';
+
+    public $a = 'b', $c = 'd';
+    protected $e;
+    private $f;
+
+    public function a() {}
+    public static function b($a) {}
+    final public function c() : B {}
+    protected function d() {}
+    private function e() {}
+}
+-----
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: Name(
+            name: B
+        )
+        implements: array(
+            0: Name(
+                name: C
+            )
+            1: Name(
+                name: D
+            )
+        )
+        stmts: array(
+            0: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: 0
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: A
+                        )
+                        value: Scalar_String(
+                            value: B
+                        )
+                    )
+                    1: Const(
+                        name: Identifier(
+                            name: C
+                        )
+                        value: Scalar_String(
+                            value: D
+                        )
+                    )
+                )
+            )
+            1: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PUBLIC (1)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: a
+                        )
+                        default: Scalar_String(
+                            value: b
+                        )
+                    )
+                    1: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: c
+                        )
+                        default: Scalar_String(
+                            value: d
+                        )
+                    )
+                )
+                hooks: array(
+                )
+            )
+            2: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PROTECTED (2)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: e
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+            3: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PRIVATE (4)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: f
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+            4: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: PUBLIC (1)
+                byRef: false
+                name: Identifier(
+                    name: a
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: array(
+                )
+            )
+            5: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: PUBLIC | STATIC (9)
+                byRef: false
+                name: Identifier(
+                    name: b
+                )
+                params: array(
+                    0: Param(
+                        attrGroups: array(
+                        )
+                        flags: 0
+                        type: null
+                        byRef: false
+                        variadic: false
+                        var: Expr_Variable(
+                            name: a
+                        )
+                        default: null
+                        hooks: array(
+                        )
+                    )
+                )
+                returnType: null
+                stmts: array(
+                )
+            )
+            6: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: PUBLIC | FINAL (33)
+                byRef: false
+                name: Identifier(
+                    name: c
+                )
+                params: array(
+                )
+                returnType: Name(
+                    name: B
+                )
+                stmts: array(
+                )
+            )
+            7: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: PROTECTED (2)
+                byRef: false
+                name: Identifier(
+                    name: d
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: array(
+                )
+            )
+            8: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: PRIVATE (4)
+                byRef: false
+                name: Identifier(
+                    name: e
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: array(
+                )
+            )
+        )
+    )
+)

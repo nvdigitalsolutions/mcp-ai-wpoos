@@ -1,0 +1,11 @@
+Readonly class
+-----
+<?php
+
+readonly class Foo
+{
+}
+-----
+readonly class Foo
+{
+}

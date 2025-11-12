@@ -1,0 +1,40 @@
+Semicolon style namespaces
+-----
+<?php
+
+namespace Foo\Bar;
+foo;
+
+namespace Bar;
+bar;
+-----
+array(
+    0: Stmt_Namespace(
+        name: Name(
+            name: Foo\Bar
+        )
+        stmts: array(
+            0: Stmt_Expression(
+                expr: Expr_ConstFetch(
+                    name: Name(
+                        name: foo
+                    )
+                )
+            )
+        )
+    )
+    1: Stmt_Namespace(
+        name: Name(
+            name: Bar
+        )
+        stmts: array(
+            0: Stmt_Expression(
+                expr: Expr_ConstFetch(
+                    name: Name(
+                        name: bar
+                    )
+                )
+            )
+        )
+    )
+)

@@ -1,0 +1,134 @@
+Scalar type declarations
+-----
+<?php
+function test(bool $a, Int $b, FLOAT $c, StRiNg $d, iterable $e, object $f, mixed $g) : void {}
+-----
+array(
+    0: Stmt_Function(
+        attrGroups: array(
+        )
+        byRef: false
+        name: Identifier(
+            name: test
+        )
+        params: array(
+            0: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: bool
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: a
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            1: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: int
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: b
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            2: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: float
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: c
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            3: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: string
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: d
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            4: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: iterable
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: e
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            5: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: object
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: f
+                )
+                default: null
+                hooks: array(
+                )
+            )
+            6: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: Identifier(
+                    name: mixed
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: g
+                )
+                default: null
+                hooks: array(
+                )
+            )
+        )
+        returnType: Identifier(
+            name: void
+        )
+        stmts: array(
+        )
+    )
+)

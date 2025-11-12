@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="manifest" default="setup">
+    <property name="phive.bin" value="phive" />
+
+    <target name="setup" depends="clean,install-tools,install-dependencies"/>
+
+    <target name="clean" unless="clean.done" description="Cleanup build artifacts">
+        <delete dir="${basedir}/tools"/>
+        <delete dir="${basedir}/vendor"/>
+        <delete file="${basedir}/src/autoload.php"/>
+
+        <property name="clean.done" value="true"/>
+    </target>
+
+    <target name="prepare" unless="prepare.done" depends="clean" description="Prepare for build">
+        <property name="prepare.done" value="true"/>
+    </target>
+
+    <target name="install-dependencies" description="Install dependencies with Composer">
+        <exec executable="${basedir}/tools/composer" taskname="composer">
+            <env key="COMPOSER_DISABLE_XDEBUG_WARN" value="1"/>
+            <arg value="install"/>
+            <arg value="--no-interaction"/>
+            <arg value="--no-progress"/>
+            <arg value="--no-ansi"/>
+            <arg value="--optimize-autoloader"/>
+        </exec>
+    </target>
+
+    <target name="install-tools" unless="tools-installed" depends="-tools-installed" description="Install tools with Phive">
+        <exec executable="${phive.bin}" taskname="phive" failonerror="true">
+            <arg value="--no-progress" />
+            <arg value="install"/>
+            <arg value="--copy" />
+            <arg value="--trust-gpg-keys" />
+            <!--        phpab,           phpunit,         phpstan,         psaml,           php-cs-fixer,    composer     -->
+            <arg value="4AA394086372C20A,2A8299CE842DD38C,CF1A108D0E7AE720,12CE0F1D262429A5,E82B2FB314E9906E,CBB3D576F2A0946F" />
+        </exec>
+    </target>
+
+    <target name="php-cs-fixer" depends="install-tools" description="Dry run php csfixer">
+        <exec executable="${basedir}/tools/php-cs-fixer" failonerror="true">
+            <arg value="fix" />
+            <arg value="--dry-run" />
+        </exec>
+    </target>
+
+    <target name="psalm" depends="install-tools,install-dependencies" description="Run psalm">
+        <exec executable="${basedir}/tools/psalm" taskname="psalm-cache-clear">
+            <arg value="--config=psalm.xml" />
+            <arg value="--clear-cache" />
+        </exec>
+
+        <exec executable="${basedir}/tools/psalm" taskname="psalm" failonerror="true">
+            <arg value="--config=psalm.xml" />
+            <arg value="--show-info=true" />
+            <arg value="--stats" />
+        </exec>
+    </target>
+
+    <target name="psalm-baseline" depends="install-tools,install-dependencies" description="Run psalm">
+        <exec executable="${basedir}/tools/psalm" taskname="psalm-cache-clear">
+            <arg value="--config=psalm.xml" />
+            <arg value="--clear-cache" />
+        </exec>
+
+        <exec executable="${basedir}/tools/psalm" taskname="psalm-baseline">
+            <arg value="--config=psalm.xml" />
+            <arg value="--set-baseline=build/psalm-baseline.xml" />
+            <arg value="--show-info=false" />
+        </exec>
+    </target>
+
+    <target name="test" depends="install-tools,install-dependencies" description="Run tests">
+        <exec executable="${basedir}/tools/phpunit" taskname="phpunit"/>
+    </target>
+
+    <target name="phpunit-ci">
+        <condition property="phpunit" value="phpunit.bat" else="phpunit">
+            <os family="windows" />
+        </condition>
+        <exec executable="${basedir}/tools/${phpunit}" taskname="phpunit">
+            <arg value="--coverage-clover build/logs/clover.xml" />
+        </exec>
+    </target>
+
+    <target name="-tools-installed">
+        <available file="${basedir}/tools/phpunit" property="tools-installed" type="file"/>
+    </target>
+</project>
+

@@ -1,0 +1,95 @@
+Union types
+-----
+<?php
+
+class Test {
+    public A&B $prop;
+}
+
+function test(A&B $a): A&B {}
+-----
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: Test
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PUBLIC (1)
+                type: IntersectionType(
+                    types: array(
+                        0: Name(
+                            name: A
+                        )
+                        1: Name(
+                            name: B
+                        )
+                    )
+                )
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: prop
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+        )
+    )
+    1: Stmt_Function(
+        attrGroups: array(
+        )
+        byRef: false
+        name: Identifier(
+            name: test
+        )
+        params: array(
+            0: Param(
+                attrGroups: array(
+                )
+                flags: 0
+                type: IntersectionType(
+                    types: array(
+                        0: Name(
+                            name: A
+                        )
+                        1: Name(
+                            name: B
+                        )
+                    )
+                )
+                byRef: false
+                variadic: false
+                var: Expr_Variable(
+                    name: a
+                )
+                default: null
+                hooks: array(
+                )
+            )
+        )
+        returnType: IntersectionType(
+            types: array(
+                0: Name(
+                    name: A
+                )
+                1: Name(
+                    name: B
+                )
+            )
+        )
+        stmts: array(
+        )
+    )
+)

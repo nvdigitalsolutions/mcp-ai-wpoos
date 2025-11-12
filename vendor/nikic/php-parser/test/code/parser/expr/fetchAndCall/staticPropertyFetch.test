@@ -1,0 +1,72 @@
+Static property fetches
+-----
+<?php
+
+// property name variations
+A::$b;
+A::$$b;
+A::${'b'};
+
+// array access
+A::$b['c'];
+
+// class name variations can be found in staticCall.test
+-----
+array(
+    0: Stmt_Expression(
+        expr: Expr_StaticPropertyFetch(
+            class: Name(
+                name: A
+            )
+            name: VarLikeIdentifier(
+                name: b
+            )
+        )
+        comments: array(
+            0: // property name variations
+        )
+    )
+    1: Stmt_Expression(
+        expr: Expr_StaticPropertyFetch(
+            class: Name(
+                name: A
+            )
+            name: Expr_Variable(
+                name: b
+            )
+        )
+    )
+    2: Stmt_Expression(
+        expr: Expr_StaticPropertyFetch(
+            class: Name(
+                name: A
+            )
+            name: Scalar_String(
+                value: b
+            )
+        )
+    )
+    3: Stmt_Expression(
+        expr: Expr_ArrayDimFetch(
+            var: Expr_StaticPropertyFetch(
+                class: Name(
+                    name: A
+                )
+                name: VarLikeIdentifier(
+                    name: b
+                )
+            )
+            dim: Scalar_String(
+                value: c
+            )
+        )
+        comments: array(
+            0: // array access
+        )
+    )
+    4: Stmt_Nop(
+        comments: array(
+            0: // class name variations can be found in staticCall.test
+        )
+    )
+)

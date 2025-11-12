@@ -1,0 +1,10 @@
+First-class callables
+-----
+<?php
+foo(...);
+$this->foo(...);
+A::foo(...);
+-----
+foo(...);
+$this->foo(...);
+A::foo(...);

@@ -44,6 +44,11 @@
 			const $results = $('.test-results');
 			const originalText = $button.text();
 
+			// Clear previous results and hide container
+			$results.html('');
+			$resultsContainer.hide();
+
+			// Update button state
 			$button.prop('disabled', true).text(wpMcpAiPerformance.runningText || 'Running...');
 
 			$.ajax({
@@ -56,7 +61,6 @@
 				},
 				timeout: 65000, // 65 second timeout for test execution
 				success: function(response) {
-					$resultsContainer.show();
 					
 					if (response.success) {
 						let html = '<div class="notice notice-success"><p><strong>✓ ' + response.data.message + '</strong></p></div>';
@@ -73,6 +77,7 @@
 						}
 						
 						$results.html(html);
+						$resultsContainer.slideDown(300);
 					} else {
 						let html = '<div class="notice notice-error"><p><strong>✗ ' + 
 								   PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
@@ -101,10 +106,10 @@
 						}
 						
 						$results.html(html);
+						$resultsContainer.slideDown(300);
 					}
 				},
 				error: function(jqXHR, textStatus) {
-					$resultsContainer.show();
 					let errorMsg = 'AJAX request failed';
 					
 					if (textStatus === 'timeout') {
@@ -112,6 +117,7 @@
 					}
 					
 					$results.html('<div class="notice notice-error"><p><strong>✗ ' + errorMsg + '</strong></p></div>');
+					$resultsContainer.slideDown(300);
 				},
 				complete: function() {
 					$button.prop('disabled', false).text(originalText);

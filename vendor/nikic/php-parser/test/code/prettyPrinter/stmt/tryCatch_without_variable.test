@@ -1,0 +1,16 @@
+tryCatch without variable
+-----
+<?php
+
+try {
+
+} catch (Exception) {
+
+} finally {
+
+}
+-----
+try {
+} catch (Exception) {
+} finally {
+}

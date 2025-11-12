@@ -1,5 +1,4 @@
 /.codex-wordpress/
-/vendor/
 /.phpunit.result.cache
 /node_modules/
 package-lock.json
@@ -12,6 +11,27 @@ opcache-reset.php
 *.zip
 *.tar.gz
 *.rar
+
+# Ignore all vendor by default
+/vendor/*
+
+# But keep production AND testing dependencies (negation)
+!/vendor/autoload.php
+!/vendor/composer/
+!/vendor/nyholm/
+!/vendor/php-http/
+!/vendor/psr/
+!/vendor/rahul900day/
+!/vendor/symfony/
+!/vendor/phpunit/
+!/vendor/wp-phpunit/
+!/vendor/yoast/
+!/vendor/doctrine/
+!/vendor/myclabs/
+!/vendor/phar-io/
+!/vendor/sebastian/
+!/vendor/theseer/
+!/vendor/nikic/
 
 # Minified assets (generated during build)
 *.min.css

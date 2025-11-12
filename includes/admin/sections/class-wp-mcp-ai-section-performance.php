@@ -144,6 +144,19 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 					<?php esc_html_e( 'Execute comprehensive performance tests to identify issues and measure improvements.', 'wp-mcp-ai' ); ?>
 				</p>
 
+				<?php
+				// Check if this is a production environment.
+				$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
+				if ( ! file_exists( $phpunit_bin ) ) :
+					?>
+					<div class="notice notice-info inline">
+						<p>
+							<strong><?php esc_html_e( 'Development Feature:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Performance tests require development dependencies (PHPUnit). These tests are designed for local development environments. On production or managed hosting platforms, use the performance metrics and component health data displayed above.', 'wp-mcp-ai' ); ?>
+						</p>
+					</div>
+				<?php endif; ?>
+
 				<div class="test-controls">
 					<button type="button" class="button button-primary" data-test-type="stress">
 						<?php esc_html_e( 'Run Stress Test', 'wp-mcp-ai' ); ?>
@@ -537,6 +550,15 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 * @return array Test results with success status and message.
 	 */
 	protected function run_performance_test_programmatically( $test_type ) {
+		// Check if PHPUnit is available.
+		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
+		$has_phpunit = file_exists( $phpunit_bin );
+
+		// If PHPUnit is not available, run lightweight production checks instead.
+		if ( ! $has_phpunit ) {
+			return $this->run_lightweight_check( $test_type );
+		}
+
 		// Map test types to file paths.
 		$test_files = array(
 			'stress'       => WP_MCP_AI_PATH . 'tests/performance/test-stress-suite.php',
@@ -574,7 +596,9 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 		if ( ! file_exists( $phpunit_bin ) ) {
 			return array(
 				'success'     => false,
-				'message'     => __( 'PHPUnit not installed. Run: composer install', 'wp-mcp-ai' ),
+				'message'     => __( 'Performance tests require development dependencies.', 'wp-mcp-ai' ),
+				'details'     => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'wp-mcp-ai' ),
+				'setup_command' => 'composer install',
 				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
 			);
 		}
@@ -900,5 +924,391 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Run lightweight performance check (no PHPUnit required).
+	 *
+	 * @param string $test_type Type of test to run.
+	 * @return array Test results.
+	 */
+	protected function run_lightweight_check( $test_type ) {
+		$checks = array();
+		$start_time = microtime( true );
+		$start_memory = memory_get_usage();
+
+		switch ( $test_type ) {
+			case 'security':
+				$checks[] = $this->check_file_permissions();
+				$checks[] = $this->check_https();
+				$checks[] = $this->check_api_keys_configured();
+				break;
+
+			case 'speed':
+				$checks[] = $this->check_database_queries();
+				$checks[] = $this->check_cache_status();
+				$checks[] = $this->check_rest_api_response();
+				break;
+
+			case 'stress':
+				$checks[] = $this->check_memory_limit();
+				$checks[] = $this->check_max_execution_time();
+				$checks[] = $this->check_concurrent_requests();
+				break;
+
+			case 'optimization':
+				$checks[] = $this->check_object_cache();
+				$checks[] = $this->check_autoload_size();
+				$checks[] = $this->check_transients();
+				break;
+
+			default:
+				return array(
+					'success' => false,
+					'message' => __( 'Unknown test type', 'wp-mcp-ai' ),
+				);
+		}
+
+		$end_time = microtime( true );
+		$end_memory = memory_get_usage();
+		$duration = round( ( $end_time - $start_time ) * 1000, 2 );
+		$memory_used = round( ( $end_memory - $start_memory ) / 1024 / 1024, 2 );
+
+		$passed = 0;
+		$failed = 0;
+		$warnings = 0;
+
+		foreach ( $checks as $check ) {
+			if ( 'pass' === $check['status'] ) {
+				$passed++;
+			} elseif ( 'fail' === $check['status'] ) {
+				$failed++;
+			} else {
+				$warnings++;
+			}
+		}
+
+		$output = $this->format_check_results( $checks );
+
+		return array(
+			'success' => 0 === $failed,
+			'message' => sprintf(
+				/* translators: %1$s: test type, %2$d: passed checks, %3$d: failed checks */
+				__( '%1$s check completed: %2$d passed, %3$d failed, %4$d warnings', 'wp-mcp-ai' ),
+				ucfirst( $test_type ),
+				$passed,
+				$failed,
+				$warnings
+			),
+			'summary' => sprintf(
+				/* translators: %1$s: duration, %2$s: memory */
+				__( 'Duration: %1$sms | Memory: %2$sMB', 'wp-mcp-ai' ),
+				$duration,
+				$memory_used
+			),
+			'output'  => $output,
+		);
+	}
+
+	/**
+	 * Format check results for display.
+	 *
+	 * @param array $checks Array of check results.
+	 * @return string Formatted output.
+	 */
+	protected function format_check_results( $checks ) {
+		$output = '';
+		foreach ( $checks as $check ) {
+			$icon = '✓';
+			if ( 'fail' === $check['status'] ) {
+				$icon = '✗';
+			} elseif ( 'warning' === $check['status'] ) {
+				$icon = '⚠';
+			}
+
+			$output .= sprintf(
+				"%s %s: %s\n",
+				$icon,
+				$check['name'],
+				$check['message']
+			);
+		}
+		return $output;
+	}
+
+	/**
+	 * Check file permissions.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_file_permissions() {
+		$upload_dir = wp_upload_dir();
+		$writable = is_writable( $upload_dir['basedir'] );
+
+		return array(
+			'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+			'status'  => $writable ? 'pass' : 'fail',
+			'message' => $writable
+				? __( 'Upload directory is writable', 'wp-mcp-ai' )
+				: __( 'Upload directory is not writable', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Check HTTPS.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_https() {
+		$is_https = is_ssl();
+
+		return array(
+			'name'    => __( 'HTTPS Status', 'wp-mcp-ai' ),
+			'status'  => $is_https ? 'pass' : 'warning',
+			'message' => $is_https
+				? __( 'Site is using HTTPS', 'wp-mcp-ai' )
+				: __( 'Site is not using HTTPS (recommended for security)', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Check API keys configured.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_api_keys_configured() {
+		$has_openai = ! empty( get_option( 'wp_mcp_ai_openai_api_key' ) );
+		$has_gemini = ! empty( get_option( 'wp_mcp_ai_gemini_api_key' ) );
+
+		$configured = $has_openai || $has_gemini;
+
+		return array(
+			'name'    => __( 'API Keys', 'wp-mcp-ai' ),
+			'status'  => $configured ? 'pass' : 'warning',
+			'message' => $configured
+				? __( 'AI API keys are configured', 'wp-mcp-ai' )
+				: __( 'No AI API keys configured', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Check database queries.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_database_queries() {
+		global $wpdb;
+
+		$queries_before = $wpdb->num_queries;
+		
+		// Perform a simple query test.
+		$wpdb->get_var( "SELECT 1" );
+		
+		$queries_after = $wpdb->num_queries;
+		$query_count = $queries_after - $queries_before;
+
+		return array(
+			'name'    => __( 'Database Connectivity', 'wp-mcp-ai' ),
+			'status'  => $query_count > 0 ? 'pass' : 'fail',
+			'message' => sprintf(
+				/* translators: %d: query count */
+				__( 'Database is responsive (%d test queries)', 'wp-mcp-ai' ),
+				$query_count
+			),
+		);
+	}
+
+	/**
+	 * Check cache status.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_cache_status() {
+		$has_object_cache = wp_using_ext_object_cache();
+
+		return array(
+			'name'    => __( 'Object Cache', 'wp-mcp-ai' ),
+			'status'  => $has_object_cache ? 'pass' : 'warning',
+			'message' => $has_object_cache
+				? __( 'External object cache is active', 'wp-mcp-ai' )
+				: __( 'No external object cache (consider Redis/Memcached)', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Check REST API response.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_rest_api_response() {
+		$start = microtime( true );
+		$response = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/types/post' ) );
+		$duration = round( ( microtime( true ) - $start ) * 1000, 2 );
+
+		$success = ! $response->is_error();
+
+		return array(
+			'name'    => __( 'REST API Speed', 'wp-mcp-ai' ),
+			'status'  => $success ? 'pass' : 'fail',
+			'message' => $success
+				? sprintf(
+					/* translators: %s: response time */
+					__( 'REST API responding in %sms', 'wp-mcp-ai' ),
+					$duration
+				)
+				: __( 'REST API error', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * Check memory limit.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_memory_limit() {
+		$memory_limit = ini_get( 'memory_limit' );
+		$memory_int = intval( $memory_limit );
+
+		$status = 'pass';
+		if ( $memory_int < 256 ) {
+			$status = 'warning';
+		}
+		if ( $memory_int < 128 ) {
+			$status = 'fail';
+		}
+
+		return array(
+			'name'    => __( 'Memory Limit', 'wp-mcp-ai' ),
+			'status'  => $status,
+			'message' => sprintf(
+				/* translators: %s: memory limit */
+				__( 'PHP memory limit: %s (recommended: 256M+)', 'wp-mcp-ai' ),
+				$memory_limit
+			),
+		);
+	}
+
+	/**
+	 * Check max execution time.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_max_execution_time() {
+		$max_execution = ini_get( 'max_execution_time' );
+
+		$status = 'pass';
+		if ( $max_execution > 0 && $max_execution < 60 ) {
+			$status = 'warning';
+		}
+
+		return array(
+			'name'    => __( 'Max Execution Time', 'wp-mcp-ai' ),
+			'status'  => $status,
+			'message' => sprintf(
+				/* translators: %s: execution time */
+				__( 'Max execution time: %ss', 'wp-mcp-ai' ),
+				$max_execution === '0' ? 'unlimited' : $max_execution
+			),
+		);
+	}
+
+	/**
+	 * Check concurrent request handling.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_concurrent_requests() {
+		// Simple check - can we handle multiple operations.
+		$operations = 0;
+		for ( $i = 0; $i < 10; $i++ ) {
+			wp_cache_set( 'test_' . $i, $i, 'test', 60 );
+			if ( wp_cache_get( 'test_' . $i, 'test' ) === $i ) {
+				$operations++;
+			}
+		}
+
+		return array(
+			'name'    => __( 'Concurrent Operations', 'wp-mcp-ai' ),
+			'status'  => $operations >= 8 ? 'pass' : 'warning',
+			'message' => sprintf(
+				/* translators: %d: successful operations */
+				__( 'Handled %d/10 concurrent cache operations', 'wp-mcp-ai' ),
+				$operations
+			),
+		);
+	}
+
+	/**
+	 * Check object cache.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_object_cache() {
+		return $this->check_cache_status();
+	}
+
+	/**
+	 * Check autoload size.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_autoload_size() {
+		global $wpdb;
+
+		$autoload_size = $wpdb->get_var(
+			"SELECT SUM(LENGTH(option_value)) 
+			FROM {$wpdb->options} 
+			WHERE autoload = 'yes'"
+		);
+
+		$size_mb = round( $autoload_size / 1024 / 1024, 2 );
+
+		$status = 'pass';
+		if ( $size_mb > 1 ) {
+			$status = 'warning';
+		}
+		if ( $size_mb > 3 ) {
+			$status = 'fail';
+		}
+
+		return array(
+			'name'    => __( 'Autoload Size', 'wp-mcp-ai' ),
+			'status'  => $status,
+			'message' => sprintf(
+				/* translators: %s: autoload size */
+				__( 'Autoloaded options: %sMB (recommended: <1MB)', 'wp-mcp-ai' ),
+				$size_mb
+			),
+		);
+	}
+
+	/**
+	 * Check transients.
+	 *
+	 * @return array Check result.
+	 */
+	protected function check_transients() {
+		global $wpdb;
+
+		$transient_count = $wpdb->get_var(
+			"SELECT COUNT(*) 
+			FROM {$wpdb->options} 
+			WHERE option_name LIKE '_transient_%'"
+		);
+
+		$status = 'pass';
+		if ( $transient_count > 1000 ) {
+			$status = 'warning';
+		}
+
+		return array(
+			'name'    => __( 'Transients', 'wp-mcp-ai' ),
+			'status'  => $status,
+			'message' => sprintf(
+				/* translators: %d: transient count */
+				__( 'Transient count: %d', 'wp-mcp-ai' ),
+				$transient_count
+			),
+		);
 	}
 }

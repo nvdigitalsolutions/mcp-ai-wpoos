@@ -1,0 +1,86 @@
+Keywords in namespaced name
+-----
+<?php
+namespace fn;
+namespace fn\use;
+namespace self;
+namespace parent;
+namespace static;
+fn\use();
+\fn\use();
+namespace\fn\use();
+private\protected\public\static\abstract\final();
+-----
+array(
+    0: Stmt_Namespace(
+        name: Name(
+            name: fn
+        )
+        stmts: array(
+        )
+    )
+    1: Stmt_Namespace(
+        name: Name(
+            name: fn\use
+        )
+        stmts: array(
+        )
+    )
+    2: Stmt_Namespace(
+        name: Name(
+            name: self
+        )
+        stmts: array(
+        )
+    )
+    3: Stmt_Namespace(
+        name: Name(
+            name: parent
+        )
+        stmts: array(
+        )
+    )
+    4: Stmt_Namespace(
+        name: Name(
+            name: static
+        )
+        stmts: array(
+            0: Stmt_Expression(
+                expr: Expr_FuncCall(
+                    name: Name(
+                        name: fn\use
+                    )
+                    args: array(
+                    )
+                )
+            )
+            1: Stmt_Expression(
+                expr: Expr_FuncCall(
+                    name: Name_FullyQualified(
+                        name: fn\use
+                    )
+                    args: array(
+                    )
+                )
+            )
+            2: Stmt_Expression(
+                expr: Expr_FuncCall(
+                    name: Name_Relative(
+                        name: fn\use
+                    )
+                    args: array(
+                    )
+                )
+            )
+            3: Stmt_Expression(
+                expr: Expr_FuncCall(
+                    name: Name(
+                        name: private\protected\public\static\abstract\final
+                    )
+                    args: array(
+                    )
+                )
+            )
+        )
+    )
+)

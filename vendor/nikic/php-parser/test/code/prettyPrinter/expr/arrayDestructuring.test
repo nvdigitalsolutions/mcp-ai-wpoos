@@ -1,0 +1,13 @@
+Array destructuring
+-----
+<?php
+
+[$a, $b] = [$c, $d];
+[, $a, , , $b, ,] = $foo;
+[, [[$a]], $b] = $bar;
+['a' => $b, 'b' => $a] = $baz;
+-----
+[$a, $b] = [$c, $d];
+[, $a, , , $b, ] = $foo;
+[, [[$a]], $b] = $bar;
+['a' => $b, 'b' => $a] = $baz;

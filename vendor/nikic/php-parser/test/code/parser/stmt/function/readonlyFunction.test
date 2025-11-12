@@ -1,0 +1,30 @@
+readonly function
+-----
+<?php
+function readonly() {}
+readonly();
+-----
+array(
+    0: Stmt_Function(
+        attrGroups: array(
+        )
+        byRef: false
+        name: Identifier(
+            name: readonly
+        )
+        params: array(
+        )
+        returnType: null
+        stmts: array(
+        )
+    )
+    1: Stmt_Expression(
+        expr: Expr_FuncCall(
+            name: Name(
+                name: readonly
+            )
+            args: array(
+            )
+        )
+    )
+)
