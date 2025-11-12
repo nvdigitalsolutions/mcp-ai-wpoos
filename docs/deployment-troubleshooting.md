@@ -4,6 +4,89 @@ This guide captures the most common issues surfaced while testing the MCP REST
 layer and the JetEngine proxy tools. Use it during staging deployments and when
 triaging production incidents.
 
+## Development Dependencies in Production (putenv() Error)
+
+### Problem
+Fatal error: `Call to undefined function putenv()` when activating or using the plugin.
+
+### Root Cause
+This error occurs when:
+1. Development dependencies (like `wp-phpunit`) are installed in production
+2. The hosting provider has disabled the `putenv()` PHP function for security reasons
+3. The wp-phpunit package tries to call `putenv()` during autoload, causing a fatal error
+
+### Solution
+
+**Option 1: Reinstall with Production Dependencies Only (Recommended)**
+
+SSH into your server and run:
+
+```bash
+cd /path/to/wp-content/plugins/wpoos
+composer install --no-dev --optimize-autoloader
+```
+
+This removes all development dependencies and rebuilds the autoloader for production.
+
+**Option 2: Use Pre-built Distribution**
+
+When deploying to production:
+1. Build locally with `composer install --no-dev`
+2. Create a ZIP of the plugin directory
+3. Upload and extract on production server
+4. **Never run `composer install` on production without `--no-dev` flag**
+
+### Prevention
+
+**Best Practices for Deployment:**
+
+1. **Always use `--no-dev` flag in production:**
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   ```
+
+2. **Add to deployment scripts:**
+   ```bash
+   #!/bin/bash
+   # deploy.sh
+   cd /path/to/plugin
+   composer install --no-dev --optimize-autoloader --no-interaction
+   ```
+
+3. **CI/CD Pipeline Example:**
+   ```yaml
+   - name: Install PHP dependencies
+     run: composer install --no-dev --optimize-autoloader --no-interaction
+   ```
+
+4. **Check your composer.lock:**
+   Ensure it doesn't include dev packages in production. Run:
+   ```bash
+   composer show --tree | grep -i phpunit
+   ```
+   Should return nothing in production.
+
+### Verification
+
+After fixing, verify dev dependencies are removed:
+
+```bash
+# Check for wp-phpunit (should not exist in production)
+ls -la vendor/wp-phpunit/
+
+# Check autoload files list
+cat vendor/composer/autoload_files.php | grep phpunit
+
+# Both should return errors or empty results in production
+```
+
+### Plugin Behavior
+
+The plugin includes automatic detection and graceful degradation:
+- If dev dependencies are detected with `putenv()` disabled, the plugin shows an admin warning
+- The plugin will attempt to load production dependencies only (degraded mode)
+- Full functionality is restored once dependencies are properly reinstalled
+
 ## REST API Context Parameter Issues
 
 ### Problem
