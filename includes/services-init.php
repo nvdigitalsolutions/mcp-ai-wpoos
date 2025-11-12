@@ -22,6 +22,8 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestrati
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-budget-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-reporting-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
 
 // Load performance monitor service only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
@@ -166,4 +168,28 @@ function wp_mcp_ai_get_performance_monitor_service() {
 	// Performance monitor is a static class, return the class name
 	// for static method access (e.g., WP_MCP_AI_Performance_Monitor_CCT::store_test_result).
 	return 'WP_MCP_AI_Performance_Monitor_CCT';
+}
+
+/**
+ * Get performance reporting service instance
+ *
+ * Helper function to access performance reporting service.
+ * This service provides business logic for performance analysis and reporting.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_performance_reporting_service() {
+	return 'WP_MCP_AI_Performance_Reporting_Service';
+}
+
+/**
+ * Get token usage service instance
+ *
+ * Helper function to access token usage service.
+ * This service provides business logic for token usage calculations and statistics.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_token_usage_service() {
+	return 'WP_MCP_AI_Token_Usage_Service';
 }

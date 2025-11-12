@@ -40,9 +40,23 @@
 			button.addEventListener('click', function () {
 				const assistantId = button.getAttribute('data-assistant-id');
 				const assistantTitle = button.getAttribute('data-assistant-title');
+				const toolShortcutsJson = button.getAttribute('data-tool-shortcuts');
+				let toolShortcuts = [];
+
+				// Parse tool shortcuts if available
+				if (toolShortcutsJson) {
+					try {
+						toolShortcuts = JSON.parse(toolShortcutsJson);
+						if (!Array.isArray(toolShortcuts)) {
+							toolShortcuts = [];
+						}
+					} catch (e) {
+						toolShortcuts = [];
+					}
+				}
 
 				if (assistantId) {
-					openTestModal(assistantId, assistantTitle);
+					openTestModal(assistantId, assistantTitle, toolShortcuts);
 				}
 			});
 		});
@@ -73,13 +87,19 @@
 	/**
 	 * Open the test modal with chat interface for the specified assistant.
 	 *
-	 * @param {string} assistantId    The assistant post ID.
-	 * @param {string} assistantTitle The assistant title for display.
+	 * @param {string} assistantId     The assistant post ID.
+	 * @param {string} assistantTitle  The assistant title for display.
+	 * @param {Array}  toolShortcuts   Tool shortcuts configuration for the assistant.
 	 */
-	function openTestModal(assistantId, assistantTitle) {
+	function openTestModal(assistantId, assistantTitle, toolShortcuts) {
 		const modal = document.getElementById('wp-mcp-ai-test-modal');
 		const modalTitle = document.getElementById('wp-mcp-ai-test-modal__title');
 		const chatContainer = document.getElementById('wp-mcp-ai-test-chat-container');
+
+		// Default to empty array if not provided
+		if (!Array.isArray(toolShortcuts)) {
+			toolShortcuts = [];
+		}
 
 		if (!modal || !chatContainer) {
 			return;
@@ -108,6 +128,12 @@
 		// Build endpoints from base REST URL
 		const baseRestUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl : '/wp-json/mcp-ai/v1';
 
+		// Get file upload configuration from global config
+		const fileAccept = (window.wpMcpAiChat && window.wpMcpAiChat.fileAccept) ? window.wpMcpAiChat.fileAccept : '';
+		const allowedImageMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedImageMimes) ? window.wpMcpAiChat.allowedImageMimes : [];
+		const allowedFileMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedFileMimes) ? window.wpMcpAiChat.allowedFileMimes : [];
+		const allowedExtensions = (window.wpMcpAiChat && window.wpMcpAiChat.allowedExtensions) ? window.wpMcpAiChat.allowedExtensions : [];
+
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
 			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
@@ -120,15 +146,18 @@
 			sessionKey: generateSessionKey(),
 			enableStreaming: true,
 			canUploadAttachments: true,
-			saveTranscript: false,
-			toolShortcuts: [],
-			fileAccept: '',
-			allowedImageMimes: [],
-			allowedFileMimes: [],
-			allowedExtensions: [],
+			saveTranscript: true, // Enable transcript saving for admin testing
+			allowSensitiveTools: true, // Admin users can access all tools
+			toolShortcuts: toolShortcuts, // Tool shortcuts from assistant config
+			fileAccept: fileAccept,
+			allowedImageMimes: allowedImageMimes,
+			allowedFileMimes: allowedFileMimes,
+			allowedExtensions: allowedExtensions,
 			restNonce: (window.wpMcpAiChat && window.wpMcpAiChat.nonce) ? window.wpMcpAiChat.nonce : '',
 			historyPerPage: 20,
 		};
+
+		// Note: loadAssistantConfig removed as we now pass shortcuts directly
 
 		// Show modal.
 		modal.style.display = 'block';
