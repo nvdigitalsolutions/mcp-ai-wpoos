@@ -3055,11 +3055,26 @@
     }
 
     function buildJsonHeaders(state) {
+        let nonce = '';
+        
+        // Priority: state.config.restNonce > globalConfig.nonce
+        if (state && state.config && state.config.restNonce) {
+            nonce = state.config.restNonce;
+        } else if (globalConfig && globalConfig.nonce) {
+            nonce = globalConfig.nonce;
+        }
+        
         const headers = {
             'Content-Type': 'application/json',
-            'X-WP-Nonce': globalConfig.nonce || '',
+            'Accept': 'application/json',
         };
+        
+        // Add nonce if available
+        if (nonce) {
+            headers['X-WP-Nonce'] = nonce;
+        }
 
+        // Add guest token if available
         if (state && state.config && state.config.guestToken) {
             headers['X-WP-MCP-AI-Guest'] = state.config.guestToken;
         }
