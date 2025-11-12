@@ -355,7 +355,7 @@ composer run pot               # Generate translation template
 - **Tool Reference**: docs/tool-reference.md
 - **REST API Docs**: docs/rest-api.md
 - **Best Practices**: docs/BEST_PRACTICES.md
-- **Code Review**: docs/CODE_REVIEW.md
+- **Code Review**: docs/CODE-REVIEW-MASTER.md
 
 ---
 

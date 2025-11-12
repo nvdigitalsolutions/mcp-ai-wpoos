@@ -15,7 +15,7 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
    - Pre-commit hook template
    - **Start here** for coding standards
 
-2. **[Code Review Report](CODE_REVIEW.md)** (20KB)
+2. **[Code Review Report](CODE-REVIEW-MASTER.md)** (20KB)
    - Comprehensive technical analysis
    - Security assessment (Grade: A-)
    - Performance optimization opportunities
@@ -40,7 +40,7 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
 
 ### For Management & Stakeholders
 
-5. **[Review Summary](REVIEW_SUMMARY.md)** (10KB)
+5. **[Review Summary](CODE-REVIEW-MASTER.md)** (10KB)
    - Executive summary
    - Key metrics (5.5/10 → 7.5/10)
    - Before/after comparison
@@ -92,7 +92,7 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
 
 1. Read [Best Practices Guide](BEST_PRACTICES.md) first
 2. Set up pre-commit hooks (template in Best Practices)
-3. Review [Code Review](CODE_REVIEW.md) for architecture understanding
+3. Review [Code Review](CODE-REVIEW-MASTER.md) for architecture understanding
 4. Check [Action Items](ACTION_ITEMS.md) for current priorities
 
 ### Connect Remote MCP Clients
@@ -104,7 +104,7 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
 
 ### Code Review Follow-up
 
-1. Review [Review Summary](REVIEW_SUMMARY.md) for overview
+1. Review [Review Summary](CODE-REVIEW-MASTER.md) for overview
 2. Check [Action Items](ACTION_ITEMS.md) for your assigned tasks
 3. Reference [Best Practices](BEST_PRACTICES.md) while coding
 4. Update [Remaining Issues](REMAINING_ISSUES.md) as you fix items
@@ -112,7 +112,7 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
 ### Security Audit
 
 1. Start with [Security Policy](../SECURITY.md)
-2. Review security section in [Code Review](CODE_REVIEW.md)
+2. Review security section in [Code Review](CODE-REVIEW-MASTER.md)
 3. Check security items in [Action Items](ACTION_ITEMS.md)
 
 ---
@@ -167,16 +167,16 @@ Welcome to the WP oOS plugin documentation. This directory contains comprehensiv
 → Read [Best Practices](BEST_PRACTICES.md) → Review [Action Items](ACTION_ITEMS.md)
 
 **I need technical details:**
-→ Read [Code Review](CODE_REVIEW.md) → Reference [Best Practices](BEST_PRACTICES.md)
+→ Read [Code Review](CODE-REVIEW-MASTER.md) → Reference [Best Practices](BEST_PRACTICES.md)
 
 **I'm a manager planning work:**
-→ Read [Review Summary](REVIEW_SUMMARY.md) → Check [Action Items](ACTION_ITEMS.md)
+→ Read [Review Summary](CODE-REVIEW-MASTER.md) → Check [Action Items](ACTION_ITEMS.md)
 
 **I'm handling security:**
-→ Read [Security Policy](../SECURITY.md) → Review security section in [Code Review](CODE_REVIEW.md)
+→ Read [Security Policy](../SECURITY.md) → Review security section in [Code Review](CODE-REVIEW-MASTER.md)
 
 **I need a quick overview:**
-→ Read [Review Summary](REVIEW_SUMMARY.md) → This README
+→ Read [Review Summary](CODE-REVIEW-MASTER.md) → This README
 
 ---
 
@@ -248,18 +248,18 @@ chmod +x .git/hooks/pre-commit
 - Reference [Best Practices](BEST_PRACTICES.md) for examples
 
 ### Code Questions
-- Review [Code Review](CODE_REVIEW.md) for architecture
+- Review [Code Review](CODE-REVIEW-MASTER.md) for architecture
 - Check [Best Practices](BEST_PRACTICES.md) for patterns
 - Reference WordPress documentation links in guides
 
 ### Security Questions
 - Review [Security Policy](../SECURITY.md)
-- Check security section in [Code Review](CODE_REVIEW.md)
+- Check security section in [Code Review](CODE-REVIEW-MASTER.md)
 - Contact: security@nvdigitalsolutions.com
 
 ### Project Planning
 - Review [Action Items](ACTION_ITEMS.md) for roadmap
-- Check [Review Summary](REVIEW_SUMMARY.md) for metrics
+- Check [Review Summary](CODE-REVIEW-MASTER.md) for metrics
 - Reference effort estimates for planning
 
 ---
@@ -268,18 +268,18 @@ chmod +x .git/hooks/pre-commit
 
 ### Level 1: Getting Started (1-2 hours)
 1. Read this README
-2. Skim [Review Summary](REVIEW_SUMMARY.md)
+2. Skim [Review Summary](CODE-REVIEW-MASTER.md)
 3. Read code standards section in [Best Practices](BEST_PRACTICES.md)
 
 ### Level 2: Developer Ready (3-4 hours)
 1. Complete Level 1
 2. Read all of [Best Practices](BEST_PRACTICES.md)
-3. Review architecture section in [Code Review](CODE_REVIEW.md)
+3. Review architecture section in [Code Review](CODE-REVIEW-MASTER.md)
 4. Set up pre-commit hooks
 
 ### Level 3: Expert Knowledge (6-8 hours)
 1. Complete Level 2
-2. Read entire [Code Review](CODE_REVIEW.md)
+2. Read entire [Code Review](CODE-REVIEW-MASTER.md)
 3. Review all [Action Items](ACTION_ITEMS.md)
 4. Understand [Security Policy](../SECURITY.md)
 

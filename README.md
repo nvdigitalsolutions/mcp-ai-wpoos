@@ -9,62 +9,62 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🧩 Overview](#-overview)
-- [🏗 System Architecture](#-system-architecture)
-- [🚀 Features](#-features)
-- [📦 Installation](#-installation)
-- [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
-- [📚 Documentation](#-documentation)
+- [🧩 Overview](#overview)
+- [🏗 System Architecture](#system-architecture)
+- [🚀 Features](#features)
+- [📦 Installation](#installation)
+- [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
+- [⚙️ Configuration Checklist](#configuration-checklist-action-items)
+- [📚 Documentation](#documentation)
 
 ### Core Functionality
-- [🧠 Memory & Tool Stack Overview](#-memory--tool-stack-overview)
-- [🛠 Built-in tools & automations](#-built-in-tools--automations)
-- [🗨️ Front-end chat surfaces](#-front-end-chat-surfaces)
-- [💬 Frontend Shortcode](#-frontend-shortcode)
+- [🧠 Memory & Tool Stack Overview](#memory-tool-stack-overview)
+- [🛠 Built-in tools & automations](#built-in-tools-automations)
+- [🗨️ Front-end chat surfaces](#front-end-chat-surfaces)
+- [💬 Frontend Shortcode](#frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini--ollama)
-- [🧱 ChatKit Integration](#-chatkit-integration)
-- [🌐 Crawl4AI Integration](#-crawl4ai-integration)
-- [📡 Job Notification System](#-job-notification-system)
-- [🧊 Elementor Widgets](#-elementor-widgets)
+- [🧠 Language Model Providers](#language-model-providers-openai-gemini-ollama)
+- [🧱 ChatKit Integration](#chatkit-integration)
+- [🌐 Crawl4AI Integration](#crawl4ai-integration)
+- [📡 Job Notification System](#job-notification-system)
+- [🧊 Elementor Widgets](#elementor-widgets)
 
 ### Performance & Optimization
-- [⚡ Message Bundling](#-message-bundling)
-- [🎯 Agentic Loop Token Management](#-agentic-loop-token-management)
-- [🔄 Chat Performance Optimizations](#-chat-performance-optimizations)
-- [🌐 Mesh Compute Routing](#-mesh-compute-routing)
-- [🔗 Federation & Discovery System](#-federation--discovery-system)
+- [⚡ Message Bundling](#message-bundling)
+- [🎯 Agentic Loop Token Management](#agentic-loop-token-management)
+- [🔄 Chat Performance Optimizations](#chat-performance-optimizations)
+- [🌐 Mesh Compute Routing](#mesh-compute-routing)
+- [🔗 Federation & Discovery System](#federation-discovery-system)
 
 ### Remote MCP Setup
-- [🔒 MCP Server Authentication](#-mcp-server-authentication)
-- [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
-- [🛰 REST API Endpoints](#-rest-api-endpoints)
-- [🌊 SSE Streaming Support](#-sse-streaming-support)
-- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-20-endpoint)
-- [🔑 Assistant API Credentials](#-assistant-api-credentials)
+- [🔒 MCP Server Authentication](#mcp-server-authentication)
+- [🌐 Connecting Remote MCP Clients](#connecting-remote-mcp-clients)
+- [🛰 REST API Endpoints](#rest-api-endpoints)
+- [🌊 SSE Streaming Support](#sse-streaming-support)
+- [📝 MCP JSON-RPC 2.0 Endpoint](#mcp-json-rpc-20-endpoint)
+- [🔑 Assistant API Credentials](#assistant-api-credentials)
 
 ### Assistant Management
-- [🛠 Assistant Editor Overview](#-assistant-editor-overview)
-- [📊 Assistant Storage: CPT vs CCT](#-assistant-storage-cpt-vs-cct)
-- [⚡ Assistant Tool Shortcuts](#-assistant-tool-shortcuts)
-- [🧵 REST Chat Payloads & Attachments](#-rest-chat-payloads--attachments)
+- [🛠 Assistant Editor Overview](#assistant-editor-overview)
+- [📊 Assistant Storage: CPT vs CCT](#assistant-storage-cpt-vs-cct)
+- [⚡ Assistant Tool Shortcuts](#assistant-tool-shortcuts)
+- [🧵 REST Chat Payloads & Attachments](#rest-chat-payloads-attachments)
 
 ### Development
-- [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#-development-tooling)
-- [🧪 Testing & QA](#-testing--qa)
-- [🧩 Hooks & Filters](#-hooks--filters)
-- [🧰 WP-CLI Commands](#-wp-cli-commands)
+- [🐳 Local Development with Docker](#local-development-with-docker)
+- [🧑‍💻 Development Tooling](#development-tooling)
+- [🧪 Testing & QA](#testing-qa)
+- [🧩 Hooks & Filters](#hooks-filters)
+- [🧰 WP-CLI Commands](#wp-cli-commands)
 
 ### Reference
-- [🔐 JetEngine Capability Reference](#-jetengine-capability-reference)
-- [🛰 JetEngine REST API Reference](#-jetengine-rest-api-reference)
-- [🧮 Usage Tracking](#-usage-tracking)
-- [🧾 Logging](#-logging)
-- [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies)
-- [✅ Manual QA Scenarios](#-manual-qa-scenarios)
+- [🔐 JetEngine Capability Reference](#jetengine-capability-reference)
+- [🛰 JetEngine REST API Reference](#jetengine-rest-api-reference)
+- [🧮 Usage Tracking](#usage-tracking)
+- [🧾 Logging](#logging)
+- [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
+- [✅ Manual QA Scenarios](#manual-qa-scenarios)
 
 ---
 
@@ -155,7 +155,7 @@ This architecture is embodied in non-transitory computer-readable media (PHP sou
 
 ## 🚀 Features
 
-> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -472,7 +472,7 @@ See [docs/chat-history-persistence.md](docs/chat-history-persistence.md) for com
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
-- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools--dependencies))
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
 
 ---
 
@@ -595,7 +595,7 @@ WP oOS works perfectly with vanilla WordPress, but certain features require thir
 - WordPress-native email (via wp_mail)
 
 **Base Version excludes 30 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (11 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
+- **Third-party WordPress plugins** (11 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
   - Elementor/RankMath/WPCode tools (3)
@@ -613,7 +613,7 @@ To enable the **Full Version** with all third-party integrations and external AP
 define( 'WP_MCP_AI_BASE_VERSION', false );
 ```
 
-📖 See [BASE-VERSION.md](BASE-VERSION.md) for the complete tool list and customization options.
+📖 See BASE-VERSION.md for the complete tool list and customization options.
 
 **When to use Base Version:**
 - Starting fresh with WordPress
@@ -628,7 +628,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Advanced workflows requiring external APIs
 - Need server-side chat transcript storage (requires JetEngine)
 
-📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -649,7 +649,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Best Practices](docs/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- [Code Review Report](docs/CODE_REVIEW.md) - Comprehensive code quality analysis (20KB)
+- [Code Review Report](docs/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
 - [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
 - [MCP JSON-RPC 2.0 Endpoint](docs/mcp-endpoint.md) - Model Context Protocol implementation
@@ -1068,13 +1068,13 @@ The Federation & Discovery system provides three deployment modes:
 - **Burst Capacity**: Simultaneous requests (default: 10)
 
 ➡️ **Complete Documentation:** [docs/federation-discovery.md](docs/federation-discovery.md)
-➡️ **Implementation Summary:** [FEDERATION-IMPLEMENTATION-SUMMARY.md](FEDERATION-IMPLEMENTATION-SUMMARY.md)
+➡️ **Implementation Summary:** FEDERATION-IMPLEMENTATION-SUMMARY.md
 
 ## 🕵️ Code Review
 
-The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds.【F:docs/code-review-report.md†L5-L28】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L348-L644】【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L288-L338】【F:includes/class-wp-mcp-ai-shortcode.php†L209-L473】 One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.【F:docs/code-review-report.md†L23-L28】
+The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds. These findings have been consolidated into the master code review document. One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.
 
-➡️ See [docs/code-review-report.md](docs/code-review-report.md) for the complete findings, recommendations, and action items.【F:docs/code-review-report.md†L1-L28】
+➡️ See [docs/CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
 ## 🔒 MCP Server Authentication
 
@@ -1099,7 +1099,7 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 WP oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
-**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#sse-streaming-support) section for details.
 
 ### Quick Start
 
@@ -1604,8 +1604,8 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the WP oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the WP oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
 
 ---
 
@@ -1771,7 +1771,7 @@ However, certain features require third-party plugins (sold separately). The plu
 - **Rank Math SEO** (1 tool) – SEO analysis and schema data access
 - **WPCode** (1 tool) – Code snippet management and automation
 
-**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+**📖 See the complete breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
 
 ### How It Works
 
@@ -1910,7 +1910,7 @@ Create issues at: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [CODE_REVIEW.md](docs/CODE_REVIEW.md) - Code quality standards
+- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards and comprehensive assessment
 - [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
 
 ### Security Vulnerabilities
