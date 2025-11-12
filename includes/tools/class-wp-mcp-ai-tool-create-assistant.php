@@ -26,13 +26,25 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	const MAX_DOCUMENTS = 20;
 
 	/**
+	 * Flag to track whether the async hook has been registered.
+	 *
+	 * @var bool
+	 */
+	protected static $hook_registered = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * Registers the async hook handler during plugin initialization
 	 * to ensure it's available when WordPress cron runs scheduled events.
+	 * Uses a static flag to prevent duplicate registration when multiple
+	 * instances are created.
 	 */
 	public function __construct() {
-		add_action( 'wp_mcp_ai_create_assistant_async', array( __CLASS__, 'process_async_creation' ) );
+		if ( ! self::$hook_registered ) {
+			add_action( 'wp_mcp_ai_create_assistant_async', array( __CLASS__, 'process_async_creation' ) );
+			self::$hook_registered = true;
+		}
 	}
 
 	/**

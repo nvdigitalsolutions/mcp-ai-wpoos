@@ -334,4 +334,55 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 			'The wp_mcp_ai_create_assistant_async hook should be registered after tool initialization.'
 		);
 	}
+
+	/**
+	 * Test that creating multiple instances does not register the hook multiple times.
+	 */
+	public function test_create_assistant_hook_registered_only_once() {
+		global $wp_filter;
+
+		// Clear any existing registrations from previous tests.
+		if ( isset( $wp_filter['wp_mcp_ai_create_assistant_async'] ) ) {
+			unset( $wp_filter['wp_mcp_ai_create_assistant_async'] );
+		}
+
+		// Create first instance.
+		$tool1 = new WP_MCP_AI_Tool_Create_Assistant();
+
+		// Get the number of callbacks registered.
+		$callbacks_after_first = isset( $wp_filter['wp_mcp_ai_create_assistant_async'] ) 
+			? count( $wp_filter['wp_mcp_ai_create_assistant_async']->callbacks ) 
+			: 0;
+
+		// Create second instance (simulating what happens in process_async_creation).
+		$tool2 = new WP_MCP_AI_Tool_Create_Assistant();
+
+		// Get the number of callbacks after second instance.
+		$callbacks_after_second = isset( $wp_filter['wp_mcp_ai_create_assistant_async'] ) 
+			? count( $wp_filter['wp_mcp_ai_create_assistant_async']->callbacks ) 
+			: 0;
+
+		// Verify the hook is registered.
+		$this->assertGreaterThan( 0, $callbacks_after_first, 'Hook should be registered after first instance.' );
+
+		// Verify the number of callbacks hasn't increased.
+		$this->assertEquals( 
+			$callbacks_after_first, 
+			$callbacks_after_second,
+			'Creating a second instance should not register the hook again.'
+		);
+
+		// Create third instance to be thorough.
+		$tool3 = new WP_MCP_AI_Tool_Create_Assistant();
+
+		$callbacks_after_third = isset( $wp_filter['wp_mcp_ai_create_assistant_async'] ) 
+			? count( $wp_filter['wp_mcp_ai_create_assistant_async']->callbacks ) 
+			: 0;
+
+		$this->assertEquals( 
+			$callbacks_after_first, 
+			$callbacks_after_third,
+			'Creating a third instance should not register the hook again.'
+		);
+	}
 }
