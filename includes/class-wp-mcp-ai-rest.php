@@ -895,6 +895,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$user_id      = absint( $request->get_param( 'user_id' ) );
 			$current_user = get_current_user_id();
 
+			// Check for guest token authentication.
+			$guest_token = $this->extract_guest_token( $request );
+			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				$assistant_id    = absint( $request->get_param( 'assistant_id' ) );
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, $assistant_id );
+
+				if ( $guest_assistant ) {
+					// Guest users (not logged in) can access their own transcripts (user_id = 0).
+					// Set user_id to 0 if not explicitly provided, matching how chat transcripts are saved for guests.
+					if ( ! $user_id ) {
+						$user_id = 0;
+						$request->set_param( 'user_id', $user_id );
+					}
+
+					// Allow guest users to access transcripts with user_id = 0.
+					if ( 0 === $user_id ) {
+						return true;
+					}
+				}
+			}
+
 			if ( ! $user_id && $current_user ) {
 				$user_id = $current_user;
 				$request->set_param( 'user_id', $user_id );
@@ -1105,13 +1126,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Get user ID.
 			$user_id = get_current_user_id();
 
-			if ( ! $user_id ) {
-				return new WP_Error(
-					'wp_mcp_ai_transcripts_missing_user',
-					__( 'You must be logged in to save a transcript.', 'wp-mcp-ai' ),
-					array( 'status' => 401 )
-				);
-			}
+			// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
+			// The permission check already validated the guest token if present.
 
 			// Get assistant configuration for metadata.
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
