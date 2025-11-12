@@ -180,14 +180,6 @@
 				success: function(response) {
 					if (response.success) {
 						const data = response.data;
-						let detailsHTML = '<div class="component-details">';
-						detailsHTML += '<h3>Component: ' + component + '</h3>';
-						detailsHTML += '<p><strong>Trend:</strong> ' + (data.trend || 'N/A') + '</p>';
-						detailsHTML += '<p><strong>Avg Response Time:</strong> ' + (data.avg_response_time || 0).toFixed(2) + ' ms</p>';
-						detailsHTML += '<p><strong>Avg Memory Usage:</strong> ' + (data.avg_memory_usage || 0).toFixed(2) + ' MB</p>';
-						detailsHTML += '<p><strong>Avg DB Queries:</strong> ' + (data.avg_db_queries || 0) + '</p>';
-						detailsHTML += '<p><strong>Total Tests:</strong> ' + (data.total_tests || 0) + '</p>';
-						detailsHTML += '</div>';
 
 						// Show in a modal or alert for now.
 						alert('Component Details:\n\n' + 

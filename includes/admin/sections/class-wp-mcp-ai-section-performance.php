@@ -549,8 +549,9 @@ composer install</pre>
 			'wp-mcp-ai-performance-admin',
 			'wpMcpAiPerformance',
 			array(
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'wp_mcp_ai_performance' ),
+				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+				'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
+				'runningText' => __( 'Running...', 'wp-mcp-ai' ),
 			)
 		);
 	}
