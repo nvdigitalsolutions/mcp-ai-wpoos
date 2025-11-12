@@ -151,8 +151,46 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 					?>
 					<div class="notice notice-info inline">
 						<p>
-							<strong><?php esc_html_e( 'Development Feature:', 'wp-mcp-ai' ); ?></strong>
-							<?php esc_html_e( 'Performance tests require development dependencies (PHPUnit). These tests are designed for local development environments. On production or managed hosting platforms, use the performance metrics and component health data displayed above.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'Test Mode: Lightweight Checks', 'wp-mcp-ai' ); ?></strong><br>
+							<?php esc_html_e( 'Running production-safe performance checks. These work on all hosting platforms including Cloudways.', 'wp-mcp-ai' ); ?>
+						</p>
+						<p>
+							<strong><?php esc_html_e( 'Want Full PHPUnit Test Suites?', 'wp-mcp-ai' ); ?></strong><br>
+							<?php esc_html_e( 'For comprehensive testing with PHPUnit, you need to install development dependencies. This is recommended for local development environments only.', 'wp-mcp-ai' ); ?>
+						</p>
+						<p>
+							<button type="button" class="button button-secondary" id="show-phpunit-instructions">
+								<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'How to Enable Full Tests', 'wp-mcp-ai' ); ?>
+							</button>
+						</p>
+						<div id="phpunit-instructions" style="display:none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-left: 4px solid #2271b1;">
+							<h4><?php esc_html_e( 'Install PHPUnit Test Suite', 'wp-mcp-ai' ); ?></h4>
+							<p><?php esc_html_e( 'Option 1: Via Composer (Local Development)', 'wp-mcp-ai' ); ?></p>
+							<pre style="background: #23282d; color: #f0f0f1; padding: 10px; border-radius: 3px; overflow-x: auto;">cd <?php echo esc_html( WP_MCP_AI_PATH ); ?>
+
+composer install</pre>
+							<p><?php esc_html_e( 'Option 2: Download Pre-packaged Tests', 'wp-mcp-ai' ); ?></p>
+							<p>
+								<a href="https://github.com/nvdigitalsolutions/wp-mcp-ai/releases" class="button" target="_blank">
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Download from GitHub Releases', 'wp-mcp-ai' ); ?>
+								</a>
+								<span class="description" style="margin-left: 10px;">
+									<?php esc_html_e( '(~140 MB - includes PHPUnit test framework)', 'wp-mcp-ai' ); ?>
+								</span>
+							</p>
+							<p class="description">
+								<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
+								<?php esc_html_e( 'PHPUnit is not recommended for production servers. The lightweight checks above are optimized for production use.', 'wp-mcp-ai' ); ?>
+							</p>
+						</div>
+					</div>
+				<?php else : ?>
+					<div class="notice notice-success inline">
+						<p>
+							<strong><?php esc_html_e( 'Test Mode: Full PHPUnit Suite', 'wp-mcp-ai' ); ?></strong><br>
+							<?php esc_html_e( 'PHPUnit is installed. Running comprehensive test suites with detailed assertions.', 'wp-mcp-ai' ); ?>
 						</p>
 					</div>
 				<?php endif; ?>

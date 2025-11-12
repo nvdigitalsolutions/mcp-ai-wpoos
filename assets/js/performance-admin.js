@@ -30,6 +30,29 @@
 			// Export buttons.
 			$('#export-results-json').on('click', this.exportJSON.bind(this));
 			$('#export-results-csv').on('click', this.exportCSV.bind(this));
+
+			// PHPUnit instructions toggle.
+			$('#show-phpunit-instructions').on('click', this.togglePHPUnitInstructions.bind(this));
+		},
+
+		/**
+		 * Toggle PHPUnit installation instructions.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		togglePHPUnitInstructions: function(e) {
+			const $button = $(e.currentTarget);
+			const $instructions = $('#phpunit-instructions');
+
+			$instructions.slideToggle(300);
+
+			// Update button text.
+			const isVisible = $instructions.is(':visible');
+			const icon = isVisible ? 'arrow-up-alt2' : 'download';
+			const text = isVisible ? 'Hide Instructions' : 'How to Enable Full Tests';
+
+			$button.find('.dashicons').removeClass().addClass('dashicons dashicons-' + icon);
+			$button.contents().last()[0].textContent = ' ' + text;
 		},
 
 		/**
