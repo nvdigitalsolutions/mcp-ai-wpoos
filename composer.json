@@ -35,6 +35,7 @@
         }
     },
     "config": {
+        "bin-dir": "vendor/bin",
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
             "php-http/discovery": true
