@@ -685,8 +685,14 @@ class WP_MCP_AI_REST_Validator {
 		$key = (string) $value;
 		$key = preg_replace( '/[^a-zA-Z0-9_-]/', '', $key );
 
-		if ( strlen( $key ) > 100 ) {
-			$key = substr( $key, 0, 100 );
+		// Use the same max length as the transcript recorder to ensure consistency.
+		$max_length = 96;
+		if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
+			$max_length = (int) WP_MCP_AI_Chat_Transcript_Recorder::MAX_SESSION_KEY_LENGTH;
+		}
+
+		if ( strlen( $key ) > $max_length ) {
+			$key = substr( $key, 0, $max_length );
 		}
 
 		return $key;
