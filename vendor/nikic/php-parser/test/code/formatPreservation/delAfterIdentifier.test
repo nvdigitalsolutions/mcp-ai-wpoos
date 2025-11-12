@@ -1,9 +1,0 @@
-DEL after identifier
------
-<?php
-"$a@@{ "\x7f" }@@";
------
-/* do nothing */
------
-<?php
-"$a@@{ "\x7f" }@@";
