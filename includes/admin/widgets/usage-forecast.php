@@ -99,7 +99,7 @@ if ( 'increasing' === $trend ) {
 
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=token_manager' ) ); ?>" class="button">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button">
 			<?php esc_html_e( 'View Analytics', 'wp-mcp-ai' ); ?>
 		</a>
 	</div>

@@ -98,7 +98,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
-		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=token_manager&view=per_site' ) ); ?>" class="button">
+		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager&view=per_site' ) ); ?>" class="button">
 			<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
 		</a>
 	</div>
