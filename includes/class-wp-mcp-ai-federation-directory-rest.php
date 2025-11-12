@@ -191,10 +191,40 @@ class WP_MCP_AI_Federation_Directory_REST {
 	/**
 	 * Check if the current user has admin permissions.
 	 *
-	 * @return bool True if user can manage options.
+	 * @param WP_REST_Request $request Request object.
+	 * @return bool|WP_Error True if user can manage options, WP_Error otherwise.
 	 */
-	public function check_admin_permission() {
-		return current_user_can( 'manage_options' );
+	public function check_admin_permission( $request = null ) {
+		// Verify nonce for logged-in users.
+		if ( is_user_logged_in() && $request instanceof WP_REST_Request ) {
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+			
+			if ( empty( $nonce ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_nonce',
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_invalid_nonce',
+					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		return true;
 	}
 
 	/**
