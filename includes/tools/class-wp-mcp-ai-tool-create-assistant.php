@@ -26,6 +26,16 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	const MAX_DOCUMENTS = 20;
 
 	/**
+	 * Constructor.
+	 *
+	 * Registers the async hook handler during plugin initialization
+	 * to ensure it's available when WordPress cron runs scheduled events.
+	 */
+	public function __construct() {
+		add_action( 'wp_mcp_ai_create_assistant_async', array( __CLASS__, 'process_async_creation' ) );
+	}
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -225,11 +235,6 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$timestamp = time() + 60; // Run in 1 minute.
 		$hook      = 'wp_mcp_ai_create_assistant_async';
 		$args      = array( $job_id );
-
-		// Register the hook handler if not already done.
-		if ( ! has_action( $hook, array( __CLASS__, 'process_async_creation' ) ) ) {
-			add_action( $hook, array( __CLASS__, 'process_async_creation' ) );
-		}
 
 		$scheduled = wp_schedule_single_event( $timestamp, $hook, $args );
 

@@ -318,4 +318,20 @@ class WP_MCP_AI_Create_Assistant_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'scheduled', $result['status'] );
 		$this->assertArrayHasKey( 'scheduled_for', $result );
 	}
+
+	/**
+	 * Test that async hook handler is registered.
+	 */
+	public function test_create_assistant_async_hook_is_registered() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'create_assistant' );
+
+		// Verify that the hook is registered after tool initialization.
+		$this->assertTrue(
+			has_action( 'wp_mcp_ai_create_assistant_async', array( 'WP_MCP_AI_Tool_Create_Assistant', 'process_async_creation' ) ) !== false,
+			'The wp_mcp_ai_create_assistant_async hook should be registered after tool initialization.'
+		);
+	}
 }
