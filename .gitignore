@@ -15,7 +15,7 @@ opcache-reset.php
 # Ignore all vendor by default
 /vendor/*
 
-# But keep production AND testing dependencies (negation)
+# But keep production dependencies only (negation)
 !/vendor/autoload.php
 !/vendor/composer/
 !/vendor/nyholm/
@@ -23,15 +23,6 @@ opcache-reset.php
 !/vendor/psr/
 !/vendor/rahul900day/
 !/vendor/symfony/
-!/vendor/phpunit/
-!/vendor/wp-phpunit/
-!/vendor/yoast/
-!/vendor/doctrine/
-!/vendor/myclabs/
-!/vendor/phar-io/
-!/vendor/sebastian/
-!/vendor/theseer/
-!/vendor/nikic/
 
 # Minified assets (generated during build)
 *.min.css

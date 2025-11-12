@@ -1,6 +1,0 @@
-Void cast
------
-<?php
-(void) foo();
------
-(void) foo();
