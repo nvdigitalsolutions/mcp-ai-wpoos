@@ -57,6 +57,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gpt-4o', $model_names );
 		$this->assertContains( 'gpt-4o-mini', $model_names );
 		$this->assertContains( 'o1-preview', $model_names );
+		$this->assertContains( 'o1-2024-12-17', $model_names );
+		$this->assertContains( 'o3-mini', $model_names );
 		$this->assertContains( 'gpt-5', $model_names );
 		$this->assertContains( 'gpt-5-mini', $model_names );
 	}
@@ -85,6 +87,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT_Test extends WP_UnitTestCase {
 		$this->assertContains( 'gemini-1.5-pro', $model_names );
 		$this->assertContains( 'gemini-1.5-flash', $model_names );
 		$this->assertContains( 'gemini-2.0-flash', $model_names );
+		$this->assertContains( 'gemini-2.5-flash', $model_names );
 	}
 
 	/**
