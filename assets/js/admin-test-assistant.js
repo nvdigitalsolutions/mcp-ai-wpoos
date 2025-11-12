@@ -10,6 +10,18 @@
 	'use strict';
 
 	/**
+	 * Escape HTML to prevent XSS attacks.
+	 *
+	 * @param {string} text Text to escape.
+	 * @return {string} Escaped text.
+	 */
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	/**
 	 * Initialize the test assistant interface.
 	 */
 	function init() {
@@ -69,7 +81,9 @@
 
 		// Update modal title.
 		if (modalTitle) {
-			modalTitle.textContent = assistantTitle || 'Test Assistant';
+			// Escape HTML to prevent XSS.
+			const escapedTitle = escapeHtml(assistantTitle || 'Test Assistant');
+			modalTitle.textContent = escapedTitle;
 		}
 
 		// Clear previous chat container.
@@ -220,6 +234,11 @@
 
 	/**
 	 * Generate a unique session key for the chat instance.
+	 *
+	 * Note: This uses Math.random() which is not cryptographically secure,
+	 * but this is acceptable here as the session key is only used for
+	 * client-side instance identification, not for security purposes.
+	 * Actual authentication is handled by WordPress nonce.
 	 *
 	 * @return {string} Session key.
 	 */
