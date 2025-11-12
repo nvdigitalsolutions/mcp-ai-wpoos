@@ -3,7 +3,7 @@
         'name' => 'wp-mcp-ai/wp-mcp-ai',
         'pretty_version' => 'dev-copilot/fix-critical-error-on-site',
         'version' => 'dev-copilot/fix-critical-error-on-site',
-        'reference' => '7778c00027276d400d893defca8240ea04c98c99',
+        'reference' => '7e7ba7cbd31bc4604e26667435c1c54637cb80af',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -256,7 +256,7 @@
         'wp-mcp-ai/wp-mcp-ai' => array(
             'pretty_version' => 'dev-copilot/fix-critical-error-on-site',
             'version' => 'dev-copilot/fix-critical-error-on-site',
-            'reference' => '7778c00027276d400d893defca8240ea04c98c99',
+            'reference' => '7e7ba7cbd31bc4604e26667435c1c54637cb80af',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
