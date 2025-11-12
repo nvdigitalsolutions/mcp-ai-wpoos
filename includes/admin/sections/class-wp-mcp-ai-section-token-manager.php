@@ -181,7 +181,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Total Cost', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
@@ -224,7 +223,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td><?php echo number_format_i18n( $totals['prompt_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $totals['completion_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $totals['cached_tokens'] ); ?></td>
-								<td><strong>$<?php echo number_format( $totals['total_cost'], 4 ); ?></strong></td>
 								<td>
 									<button type="button" class="button button-small wp-mcp-ai-reset-user-usage" data-user-id="<?php echo esc_attr( $user_id ); ?>" data-user-name="<?php echo esc_attr( $user->display_name ); ?>">
 										<?php esc_html_e( 'Reset', 'wp-mcp-ai' ); ?>
@@ -235,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								</td>
 							</tr>
 							<tr class="wp-mcp-ai-user-details-row" id="user-details-<?php echo esc_attr( $user_id ); ?>" style="display: none;">
-								<td colspan="10">
+								<td colspan="9">
 									<?php $this->render_user_details( $user_id, $usage ); ?>
 								</td>
 							</tr>
@@ -802,7 +800,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
-<th><?php esc_html_e( 'Total Cost', 'wp-mcp-ai' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -816,7 +813,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td><?php echo number_format_i18n( $stats['prompt_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['completion_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['total_tokens'] ); ?></td>
-<td>$<?php echo number_format( isset( $stats['total_cost'] ) ? (float) $stats['total_cost'] : 0.0, 4 ); ?></td>
 								<td><?php echo number_format_i18n( $stats['cached_tokens'] ); ?></td>
 							</tr>
 							<?php
@@ -824,7 +820,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					else :
 						?>
 						<tr>
-							<td colspan="7" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="6" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'wp-mcp-ai' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
@@ -886,7 +882,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Last Used', 'wp-mcp-ai' ); ?></th>
-<th><?php esc_html_e( 'Total Cost', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -899,7 +894,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 										$data['last_used_gmt'],
 										get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
 									);
-$total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 								}
 								?>
 								<tr>
@@ -909,7 +903,6 @@ $total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 									<td><?php echo number_format_i18n( $data['prompt_tokens'] ); ?></td>
 									<td><?php echo number_format_i18n( $data['completion_tokens'] ); ?></td>
 									<td><?php echo number_format_i18n( $data['total_tokens'] ); ?></td>
-<td>$<?php echo number_format( $total_cost, 4 ); ?></td>
 									<td><?php echo number_format_i18n( $data['cached_tokens'] ); ?></td>
 									<td><?php echo esc_html( $last_used ); ?></td>
 								</tr>
@@ -936,10 +929,6 @@ $total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 				'completion_tokens' => 0,
 				'total_tokens'      => 0,
 				'cached_tokens'     => 0,
-'total_cost'        => 0.0,
-'input_cost'        => 0.0,
-'output_cost'       => 0.0,
-'cached_cost'       => 0.0,
 			);
 
 			if ( ! is_array( $usage ) ) {
@@ -961,10 +950,6 @@ $total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
 					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
 					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
-				$totals['total_cost']        += isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
-				$totals['input_cost']        += isset( $data['input_cost'] ) ? (float) $data['input_cost'] : 0.0;
-				$totals['output_cost']       += isset( $data['output_cost'] ) ? (float) $data['output_cost'] : 0.0;
-				$totals['cached_cost']       += isset( $data['cached_cost'] ) ? (float) $data['cached_cost'] : 0.0;
 				}
 			}
 
@@ -1058,7 +1043,6 @@ $total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 							'completion_tokens' => 0,
 							'total_tokens'      => 0,
 							'cached_tokens'     => 0,
-'total_cost'        => 0.0,
 						);
 					}
 
@@ -1070,7 +1054,6 @@ $total_cost = isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 						$stats['by_provider'][ $provider ]['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
 						$stats['by_provider'][ $provider ]['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
 						$stats['by_provider'][ $provider ]['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-$stats['by_provider'][ $provider ]['total_cost']       += isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
 						$stats['by_provider'][ $provider ]['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
 
 						$model_key = $provider . '|' . $model;
@@ -1135,10 +1118,6 @@ $stats['by_provider'][ $provider ]['total_cost']       += isset( $data['total_co
 				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
 				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
 				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-'google'    => __( 'Google', 'wp-mcp-ai' ),
-'azure'     => __( 'Azure OpenAI', 'wp-mcp-ai' ),
-'crawl4ai'  => __( 'Crawl4AI', 'wp-mcp-ai' ),
-'local'     => __( 'Local', 'wp-mcp-ai' ),
 				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 

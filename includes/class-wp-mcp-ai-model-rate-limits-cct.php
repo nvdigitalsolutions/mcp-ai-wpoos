@@ -397,28 +397,8 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'Google',
 						),
 						array(
-							'key'   => 'gemini',
-							'value' => 'Google Gemini',
-						),
-						array(
 							'key'   => 'azure',
 							'value' => 'Azure OpenAI',
-						),
-						array(
-							'key'   => 'ollama',
-							'value' => 'Ollama (Local)',
-						),
-						array(
-							'key'   => 'lm_studio',
-							'value' => 'LM Studio (Local)',
-						),
-						array(
-							'key'   => 'crawl4ai',
-							'value' => 'Crawl4AI',
-						),
-						array(
-							'key'   => 'local',
-							'value' => 'Local/Other',
 						),
 						array(
 							'key'   => 'other',

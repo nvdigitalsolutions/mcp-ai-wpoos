@@ -120,32 +120,6 @@ class WP_MCP_AI_REST_Token_Manager {
 				),
 			)
 		);
-
-		// Get user's model usage with costs.
-		register_rest_route(
-			self::NAMESPACE,
-			'/users/(?P<id>\d+)/model-usage',
-			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'get_user_model_usage' ),
-				'permission_callback' => array( __CLASS__, 'check_user_access' ),
-				'args'                => array(
-					'id'       => array(
-						'required'    => true,
-						'type'        => 'integer',
-						'description' => __( 'User ID.', 'wp-mcp-ai' ),
-					),
-					'provider' => array(
-						'type'        => 'string',
-						'description' => __( 'Optional provider to filter by.', 'wp-mcp-ai' ),
-					),
-					'model'    => array(
-						'type'        => 'string',
-						'description' => __( 'Optional model to filter by.', 'wp-mcp-ai' ),
-					),
-				),
-			)
-		);
 	}
 
 	/**
@@ -337,105 +311,6 @@ class WP_MCP_AI_REST_Token_Manager {
 				'user_id'  => $user_id,
 				'tool'     => $tool_slug,
 				'forecast' => $forecast,
-			)
-		);
-	}
-
-	/**
-	 * Get user's model usage with costs.
-	 *
-	 * @param WP_REST_Request $request Request object.
-	 * @return WP_REST_Response|WP_Error Response object.
-	 */
-	public static function get_user_model_usage( $request ) {
-		$user_id  = absint( $request['id'] );
-		$provider = isset( $request['provider'] ) ? sanitize_key( $request['provider'] ) : '';
-		$model    = isset( $request['model'] ) ? sanitize_text_field( $request['model'] ) : '';
-
-		if ( ! $user_id || ! get_userdata( $user_id ) ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_user',
-				__( 'Invalid user ID.', 'wp-mcp-ai' ),
-				array( 'status' => 404 )
-			);
-		}
-
-		$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
-
-		// Filter by provider if specified.
-		if ( ! empty( $provider ) ) {
-			if ( ! isset( $usage[ $provider ] ) ) {
-				return rest_ensure_response(
-					array(
-						'user_id'  => $user_id,
-						'provider' => $provider,
-						'usage'    => array(),
-					)
-				);
-			}
-			$usage = array( $provider => $usage[ $provider ] );
-		}
-
-		// Filter by model if specified.
-		if ( ! empty( $model ) ) {
-			$filtered_usage = array();
-			foreach ( $usage as $prov => $models ) {
-				if ( isset( $models[ $model ] ) ) {
-					$filtered_usage[ $prov ] = array( $model => $models[ $model ] );
-				}
-			}
-			$usage = $filtered_usage;
-		}
-
-		// Format response with cost data.
-		$formatted_usage = array();
-		$totals          = array(
-			'requests'          => 0,
-			'total_tokens'      => 0,
-			'prompt_tokens'     => 0,
-			'completion_tokens' => 0,
-			'cached_tokens'     => 0,
-			'total_cost'        => 0.0,
-			'input_cost'        => 0.0,
-			'output_cost'       => 0.0,
-			'cached_cost'       => 0.0,
-		);
-
-		foreach ( $usage as $prov => $models ) {
-			foreach ( $models as $mdl => $data ) {
-				$formatted_usage[] = array(
-					'provider'          => $prov,
-					'model'             => $mdl,
-					'requests'          => isset( $data['requests'] ) ? (int) $data['requests'] : 0,
-					'total_tokens'      => isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0,
-					'prompt_tokens'     => isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0,
-					'completion_tokens' => isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0,
-					'cached_tokens'     => isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0,
-					'total_cost'        => isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0,
-					'input_cost'        => isset( $data['input_cost'] ) ? (float) $data['input_cost'] : 0.0,
-					'output_cost'       => isset( $data['output_cost'] ) ? (float) $data['output_cost'] : 0.0,
-					'cached_cost'       => isset( $data['cached_cost'] ) ? (float) $data['cached_cost'] : 0.0,
-					'last_used_gmt'     => isset( $data['last_used_gmt'] ) ? $data['last_used_gmt'] : '',
-				);
-
-				// Accumulate totals.
-				$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-				$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
-				$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
-				$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
-				$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
-				$totals['total_cost']        += isset( $data['total_cost'] ) ? (float) $data['total_cost'] : 0.0;
-				$totals['input_cost']        += isset( $data['input_cost'] ) ? (float) $data['input_cost'] : 0.0;
-				$totals['output_cost']       += isset( $data['output_cost'] ) ? (float) $data['output_cost'] : 0.0;
-				$totals['cached_cost']       += isset( $data['cached_cost'] ) ? (float) $data['cached_cost'] : 0.0;
-			}
-		}
-
-		return rest_ensure_response(
-			array(
-				'user_id' => $user_id,
-				'usage'   => $formatted_usage,
-				'totals'  => $totals,
 			)
 		);
 	}
