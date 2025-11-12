@@ -74,13 +74,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal hardcoded list if static method unavailable.
 			if ( empty( $model_choices ) ) {
 				$model_choices = array(
+					// Latest reasoning models (thinking models).
+					'o1-2024-12-17' => 'o1 (Dec 2024)',
+					'o1-preview'    => 'o1 Preview',
+					'o1-mini'       => 'o1 Mini',
+					'o3-mini'       => 'o3 Mini',
+					// GPT-4o series (current flagship).
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
+					// Legacy models.
 					'gpt-4-turbo'   => 'GPT-4 Turbo',
 					'gpt-4'         => 'GPT-4',
 					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
-					'o1-preview'    => 'o1 Preview',
-					'o1-mini'       => 'o1 Mini',
 				);
 			}
 
@@ -172,11 +177,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_gemini_model'   => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
-					'description' => __( 'The default model to use for Gemini requests. Gemini 1.5 Pro offers the best capabilities while Gemini 1.5 Flash provides faster responses at lower cost.', 'wp-mcp-ai' ),
+					'description' => __( 'The default model to use for Gemini requests. Gemini 2.0 Flash (Experimental) offers the latest capabilities, while Gemini 1.5 Pro provides stable, proven performance. Gemini 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
 					'options'     => array(
-						'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
-						'gemini-1.5-flash' => 'Gemini 1.5 Flash',
-						'gemini-pro'       => 'Gemini Pro',
+						'gemini-2.0-flash-exp' => 'Gemini 2.0 Flash (Experimental)',
+						'gemini-exp-1206'      => 'Gemini Exp 1206 (Experimental)',
+						'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
+						'gemini-1.5-flash'     => 'Gemini 1.5 Flash',
+						'gemini-pro'           => 'Gemini Pro',
 					),
 					'default'     => 'gemini-1.5-pro',
 				),

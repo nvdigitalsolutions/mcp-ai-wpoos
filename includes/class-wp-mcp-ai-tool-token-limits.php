@@ -405,13 +405,18 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$models['openai_group'] = array(
 				'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
 				'options' => array(
+					// Reasoning models.
+					'o1-2024-12-17' => 'o1 (Dec 2024)',
+					'o1-preview'    => 'o1 Preview',
+					'o1-mini'       => 'o1 Mini',
+					'o3-mini'       => 'o3 Mini',
+					// GPT-4o series.
 					'gpt-4o'        => 'GPT-4o',
 					'gpt-4o-mini'   => 'GPT-4o Mini',
+					// Legacy models.
 					'gpt-4-turbo'   => 'GPT-4 Turbo',
 					'gpt-4'         => 'GPT-4',
 					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
-					'o1-preview'    => 'o1 Preview',
-					'o1-mini'       => 'o1 Mini',
 				),
 			);
 		}
@@ -434,6 +439,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 				'label'   => __( 'Google Gemini', 'wp-mcp-ai' ),
 				'options' => array(
 					'gemini-2.0-flash-exp' => 'Gemini 2.0 Flash (Experimental)',
+					'gemini-exp-1206'      => 'Gemini Exp 1206 (Experimental)',
 					'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
 					'gemini-1.5-flash'     => 'Gemini 1.5 Flash',
 				),
