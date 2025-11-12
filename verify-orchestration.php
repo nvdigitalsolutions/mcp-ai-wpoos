@@ -2,6 +2,11 @@
 <?php
 /**
  * Test script to verify orchestration presets functionality
+ *
+ * This is a standalone script that can run outside of WordPress.
+ * Mock WordPress functions are required for standalone execution.
+ *
+ * @package WP_MCP_AI
  */
 
 // Simulate WordPress constants and functions
@@ -9,7 +14,7 @@ define( 'ABSPATH', __DIR__ . '/' );
 define( 'WP_MCP_AI_PATH', __DIR__ . '/' );
 define( 'WP_MCP_AI_VERSION', '1.0.0' );
 
-// Mock WordPress functions
+// Mock WordPress functions (required for standalone execution)
 function __( $text, $domain ) {
 	return $text;
 }
@@ -40,6 +45,13 @@ function wp_kses_post( $text ) {
 
 // Mock settings registry
 class WP_MCP_AI_Settings_Registry {
+	/**
+	 * Mock implementation for standalone script execution.
+	 *
+	 * @param string $key     Setting key.
+	 * @param mixed  $default Default value.
+	 * @return mixed
+	 */
 	public static function get_setting( $key, $default = null ) {
 		return $default;
 	}

@@ -66,7 +66,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			true
 		);
 
-		// Enqueue token manager charts integration (to be created in Phase 3).
+		// Enqueue token manager charts integration script.
 		$charts_path = WP_MCP_AI_PATH . 'assets/js/token-manager-charts.js';
 		if ( file_exists( $charts_path ) ) {
 			wp_enqueue_script(
@@ -92,7 +92,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 	/**
 	 * Get chart data for token usage trends.
 	 *
-	 * This method will be expanded in Phase 3 of the Token Manager enhancement.
+	 * Returns empty data structure that can be populated when
+	 * backend tracking is implemented.
 	 *
 	 * @param array $args Query arguments.
 	 * @return array Chart data in Chart.js format.
@@ -106,7 +107,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		// Placeholder - will be implemented in Phase 3.
+		// Return empty data structure for Chart.js initialization
+		// TODO: Implement data fetching from token usage tracking when available
 		return array(
 			'labels'   => array(),
 			'datasets' => array(),
@@ -116,12 +118,14 @@ class WP_MCP_AI_Chart_JS_Helper {
 	/**
 	 * Get chart data for tier distribution.
 	 *
-	 * This method will be expanded in Phase 3 of the Token Manager enhancement.
+	 * Returns empty data structure that can be populated when
+	 * backend tracking is implemented.
 	 *
 	 * @return array Chart data in Chart.js format.
 	 */
 	public static function get_tier_distribution_data() {
-		// Placeholder - will be implemented in Phase 3.
+		// Return empty data structure for Chart.js initialization
+		// TODO: Implement data fetching from tier tracking when available
 		return array(
 			'labels' => array( 'Free', 'Pro', 'Enterprise' ),
 			'data'   => array( 0, 0, 0 ),

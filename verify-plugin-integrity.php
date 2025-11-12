@@ -3,8 +3,11 @@
 /**
  * Plugin Integrity Verification Script
  *
- * This script verifies the plugin hasn't been breached by recent changes.
+ * This script verifies the plugin hasn't been compromised by recent changes.
  * It performs checks that don't require a full WordPress installation.
+ *
+ * This is a standalone script that can run outside of WordPress to verify
+ * plugin integrity without loading the full WordPress environment.
  *
  * @package WP_MCP_AI
  */

@@ -2,7 +2,8 @@
  * Token Manager Charts Integration
  *
  * Handles Chart.js visualizations for the Token Manager section.
- * This file will be expanded in Phase 3 of the Token Manager enhancement.
+ * Charts are initialized with placeholder configurations and can be
+ * populated with data via AJAX when the backend endpoints are implemented.
  *
  * @package WP_MCP_AI
  */
@@ -39,7 +40,7 @@
 
 			var ctx = canvas.getContext('2d');
 			
-			// Placeholder config - will be populated from server data
+			// Initial configuration - can be populated with data from server
 			var config = {
 				type: 'line',
 				data: {
@@ -86,7 +87,7 @@
 
 			var ctx = canvas.getContext('2d');
 			
-			// Placeholder config - will be populated from server data
+			// Initial configuration - can be populated with data from server
 			var config = {
 				type: 'pie',
 				data: {
@@ -132,30 +133,29 @@
 		loadUsageTrendData: function() {
 			var self = this;
 
-			// Placeholder - Phase 3 will implement actual AJAX call
+			// Check if chart data configuration is available
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
 			}
 
-			// Example AJAX call structure (to be implemented in Phase 3)
-			/*
-			$.ajax({
-				url: wpMcpAiChartData.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_get_usage_trend',
-					nonce: wpMcpAiChartData.nonce,
-					days: 7
-				},
-				success: function(response) {
-					if (response.success && self.charts.usageTrend) {
-						self.charts.usageTrend.data = response.data;
-						self.charts.usageTrend.update();
-					}
-				}
-			});
-			*/
+			// TODO: Implement AJAX endpoint for fetching usage trend data
+			// When implementing, use the following structure:
+			// $.ajax({
+			//     url: wpMcpAiChartData.ajaxUrl,
+			//     type: 'POST',
+			//     data: {
+			//         action: 'wp_mcp_ai_get_usage_trend',
+			//         nonce: wpMcpAiChartData.nonce,
+			//         days: 7
+			//     },
+			//     success: function(response) {
+			//         if (response.success && self.charts.usageTrend) {
+			//             self.charts.usageTrend.data = response.data;
+			//             self.charts.usageTrend.update();
+			//         }
+			//     }
+			// });
 		},
 
 		/**
@@ -164,29 +164,28 @@
 		loadTierDistributionData: function() {
 			var self = this;
 
-			// Placeholder - Phase 3 will implement actual AJAX call
+			// Check if chart data configuration is available
 			if (typeof wpMcpAiChartData === 'undefined') {
 				console.warn('Chart data not available. wpMcpAiChartData not defined.');
 				return;
 			}
 
-			// Example AJAX call structure (to be implemented in Phase 3)
-			/*
-			$.ajax({
-				url: wpMcpAiChartData.ajaxUrl,
-				type: 'POST',
-				data: {
-					action: 'wp_mcp_ai_get_tier_distribution',
-					nonce: wpMcpAiChartData.nonce
-				},
-				success: function(response) {
-					if (response.success && self.charts.tierDistribution) {
-						self.charts.tierDistribution.data.datasets[0].data = response.data.values;
-						self.charts.tierDistribution.update();
-					}
-				}
-			});
-			*/
+			// TODO: Implement AJAX endpoint for fetching tier distribution data
+			// When implementing, use the following structure:
+			// $.ajax({
+			//     url: wpMcpAiChartData.ajaxUrl,
+			//     type: 'POST',
+			//     data: {
+			//         action: 'wp_mcp_ai_get_tier_distribution',
+			//         nonce: wpMcpAiChartData.nonce
+			//     },
+			//     success: function(response) {
+			//         if (response.success && self.charts.tierDistribution) {
+			//             self.charts.tierDistribution.data.datasets[0].data = response.data.values;
+			//             self.charts.tierDistribution.update();
+			//         }
+			//     }
+			// });
 		},
 
 		/**
