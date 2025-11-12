@@ -2025,7 +2025,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Agentic loop: automatically execute tools server-side when LLM requests them.
 			// Default limit prevents infinite loops. /chat-client endpoint applies higher limit via filter.
-			$max_iterations = 5;
+			// Temporarily reduced to 1 to prevent loops on tool errors while quality mapping is being fixed.
+			$max_iterations = 1;
 			$max_iterations = (int) apply_filters( 'wp_mcp_ai_max_agentic_iterations', $max_iterations, $assistant_config );
 			$max_iterations = max( 1, min( 50, $max_iterations ) ); // Safety bounds: 1-50.
 			$iteration      = 0;
