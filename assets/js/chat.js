@@ -2,7 +2,10 @@
     'use strict';
 
     const globalConfig = window.wpMcpAiChat || {};
-    const instances = window.wpMcpAiChatInstances || {};
+    // Initialize instances object if it doesn't exist
+    if (!window.wpMcpAiChatInstances) {
+        window.wpMcpAiChatInstances = {};
+    }
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -4595,8 +4598,13 @@
     function init() {
         const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
         Array.prototype.forEach.call(containers, function (container) {
+            // Skip if already initialized
+            if (container.hasAttribute('data-wp-mcp-ai-initialized')) {
+                return;
+            }
+
             const instanceId = container.getAttribute('id');
-            const config = instances[instanceId];
+            const config = window.wpMcpAiChatInstances[instanceId];
 
             if (!config) {
                 setStatus(container, getString('missingAssistant', 'Assistant configuration missing.'));
@@ -4827,6 +4835,9 @@
             
             // Load and restore conversation from localStorage
             restoreConversationFromStorage(state);
+
+            // Mark container as initialized to prevent double-initialization
+            container.setAttribute('data-wp-mcp-ai-initialized', 'true');
         });
     }
 

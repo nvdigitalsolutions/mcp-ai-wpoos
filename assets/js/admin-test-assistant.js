@@ -52,9 +52,14 @@
 			modalClose.addEventListener('click', closeTestModal);
 		}
 
-		// Close modal on backdrop click.
-		if (modalBackdrop) {
-			modalBackdrop.addEventListener('click', closeTestModal);
+		// Close modal on backdrop click only (not when clicking inside the panel).
+		if (modal) {
+			modal.addEventListener('click', function(event) {
+				// Close only if clicking on the modal container or backdrop, not the panel or its contents.
+				if (event.target === modal || event.target === modalBackdrop) {
+					closeTestModal();
+				}
+			});
 		}
 
 		// Close modal on Escape key.
@@ -100,20 +105,27 @@
 			window.wpMcpAiChatInstances = {};
 		}
 
+		// Build endpoints from base REST URL
+		const baseRestUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl : '/wp-json/mcp-ai/v1';
+
 		window.wpMcpAiChatInstances[instanceId] = {
 			assistantId: assistantId,
-			endpoint: (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) ? window.wpMcpAiChat.restUrl + '/chat' : '/wp-json/mcp-ai/v1/chat',
+			messagesEndpoint: baseRestUrl + '/chat-client',
+			toolsEndpoint: baseRestUrl + '/tools',
+			filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : baseRestUrl + '/files/',
+			transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : baseRestUrl + '/chat-transcripts',
+			crawl4aiTaskEndpoint: baseRestUrl + '/crawl4ai/task/',
+			uploadEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.uploadEndpoint) ? window.wpMcpAiChat.uploadEndpoint : '/wp-json/wp/v2/media',
 			sessionKey: generateSessionKey(),
+			enableStreaming: true,
 			canUploadAttachments: true,
+			saveTranscript: false,
 			toolShortcuts: [],
 			fileAccept: '',
 			allowedImageMimes: [],
 			allowedFileMimes: [],
 			allowedExtensions: [],
 			restNonce: (window.wpMcpAiChat && window.wpMcpAiChat.nonce) ? window.wpMcpAiChat.nonce : '',
-			uploadEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.uploadEndpoint) ? window.wpMcpAiChat.uploadEndpoint : '',
-			filesEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.filesEndpoint) ? window.wpMcpAiChat.filesEndpoint : '',
-			transcriptsEndpoint: (window.wpMcpAiChat && window.wpMcpAiChat.transcriptsEndpoint) ? window.wpMcpAiChat.transcriptsEndpoint : '',
 			historyPerPage: 20,
 		};
 
