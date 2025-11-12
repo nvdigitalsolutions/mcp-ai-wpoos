@@ -1,0 +1,8 @@
+Invalid __halt_compiler() syntax
+-----
+<?php
+__halt_compiler()
+-----
+Syntax error, unexpected EOF, expecting ';' from 2:18 to 2:18
+array(
+)

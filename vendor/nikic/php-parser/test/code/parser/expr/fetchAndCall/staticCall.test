@@ -1,0 +1,182 @@
+Static calls
+-----
+<?php
+
+// method name variations
+A::b();
+A::{'b'}();
+A::$b();
+A::$b['c']();
+A::$b['c']['d']();
+
+// array dereferencing
+A::b()['c'];
+
+// class name variations
+static::b();
+$a::b();
+${'a'}::b();
+$a['b']::c();
+-----
+array(
+    0: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Name(
+                name: A
+            )
+            name: Identifier(
+                name: b
+            )
+            args: array(
+            )
+        )
+        comments: array(
+            0: // method name variations
+        )
+    )
+    1: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Name(
+                name: A
+            )
+            name: Scalar_String(
+                value: b
+            )
+            args: array(
+            )
+        )
+    )
+    2: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Name(
+                name: A
+            )
+            name: Expr_Variable(
+                name: b
+            )
+            args: array(
+            )
+        )
+    )
+    3: Stmt_Expression(
+        expr: Expr_FuncCall(
+            name: Expr_ArrayDimFetch(
+                var: Expr_StaticPropertyFetch(
+                    class: Name(
+                        name: A
+                    )
+                    name: VarLikeIdentifier(
+                        name: b
+                    )
+                )
+                dim: Scalar_String(
+                    value: c
+                )
+            )
+            args: array(
+            )
+        )
+    )
+    4: Stmt_Expression(
+        expr: Expr_FuncCall(
+            name: Expr_ArrayDimFetch(
+                var: Expr_ArrayDimFetch(
+                    var: Expr_StaticPropertyFetch(
+                        class: Name(
+                            name: A
+                        )
+                        name: VarLikeIdentifier(
+                            name: b
+                        )
+                    )
+                    dim: Scalar_String(
+                        value: c
+                    )
+                )
+                dim: Scalar_String(
+                    value: d
+                )
+            )
+            args: array(
+            )
+        )
+    )
+    5: Stmt_Expression(
+        expr: Expr_ArrayDimFetch(
+            var: Expr_StaticCall(
+                class: Name(
+                    name: A
+                )
+                name: Identifier(
+                    name: b
+                )
+                args: array(
+                )
+            )
+            dim: Scalar_String(
+                value: c
+            )
+        )
+        comments: array(
+            0: // array dereferencing
+        )
+    )
+    6: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Name(
+                name: static
+            )
+            name: Identifier(
+                name: b
+            )
+            args: array(
+            )
+        )
+        comments: array(
+            0: // class name variations
+        )
+    )
+    7: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Expr_Variable(
+                name: a
+            )
+            name: Identifier(
+                name: b
+            )
+            args: array(
+            )
+        )
+    )
+    8: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Expr_Variable(
+                name: Scalar_String(
+                    value: a
+                )
+            )
+            name: Identifier(
+                name: b
+            )
+            args: array(
+            )
+        )
+    )
+    9: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Expr_ArrayDimFetch(
+                var: Expr_Variable(
+                    name: a
+                )
+                dim: Scalar_String(
+                    value: b
+                )
+            )
+            name: Identifier(
+                name: c
+            )
+            args: array(
+            )
+        )
+    )
+)

@@ -1,0 +1,107 @@
+Class constant modifiers
+-----
+<?php
+
+class Foo {
+    const A = 1;
+    public const B = 2;
+    protected const C = 3;
+    private const D = 4;
+    final const E = 5;
+}
+-----
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: Foo
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: 0
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: A
+                        )
+                        value: Scalar_Int(
+                            value: 1
+                        )
+                    )
+                )
+            )
+            1: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: PUBLIC (1)
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: B
+                        )
+                        value: Scalar_Int(
+                            value: 2
+                        )
+                    )
+                )
+            )
+            2: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: PROTECTED (2)
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: C
+                        )
+                        value: Scalar_Int(
+                            value: 3
+                        )
+                    )
+                )
+            )
+            3: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: PRIVATE (4)
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: D
+                        )
+                        value: Scalar_Int(
+                            value: 4
+                        )
+                    )
+                )
+            )
+            4: Stmt_ClassConst(
+                attrGroups: array(
+                )
+                flags: FINAL (32)
+                type: null
+                consts: array(
+                    0: Const(
+                        name: Identifier(
+                            name: E
+                        )
+                        value: Scalar_Int(
+                            value: 5
+                        )
+                    )
+                )
+            )
+        )
+    )
+)

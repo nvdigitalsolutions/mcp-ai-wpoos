@@ -1,0 +1,95 @@
+Namespace types cannot be mixed
+-----
+<?php
+namespace A;
+echo 1;
+namespace B {
+    echo 2;
+}
+echo 3;
+-----
+Cannot mix bracketed namespace declarations with unbracketed namespace declarations from 4:1 to 4:9
+array(
+    0: Stmt_Namespace(
+        name: Name(
+            name: A
+        )
+        stmts: array(
+            0: Stmt_Echo(
+                exprs: array(
+                    0: Scalar_Int(
+                        value: 1
+                    )
+                )
+            )
+        )
+    )
+    1: Stmt_Namespace(
+        name: Name(
+            name: B
+        )
+        stmts: array(
+            0: Stmt_Echo(
+                exprs: array(
+                    0: Scalar_Int(
+                        value: 2
+                    )
+                )
+            )
+        )
+    )
+    2: Stmt_Echo(
+        exprs: array(
+            0: Scalar_Int(
+                value: 3
+            )
+        )
+    )
+)
+-----
+<?php
+namespace A {
+    echo 1;
+}
+echo 2;
+namespace B;
+echo 3;
+-----
+Cannot mix bracketed namespace declarations with unbracketed namespace declarations from 6:1 to 6:9
+array(
+    0: Stmt_Namespace(
+        name: Name(
+            name: A
+        )
+        stmts: array(
+            0: Stmt_Echo(
+                exprs: array(
+                    0: Scalar_Int(
+                        value: 1
+                    )
+                )
+            )
+        )
+    )
+    1: Stmt_Echo(
+        exprs: array(
+            0: Scalar_Int(
+                value: 2
+            )
+        )
+    )
+    2: Stmt_Namespace(
+        name: Name(
+            name: B
+        )
+        stmts: array(
+            0: Stmt_Echo(
+                exprs: array(
+                    0: Scalar_Int(
+                        value: 3
+                    )
+                )
+            )
+        )
+    )
+)

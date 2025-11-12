@@ -1,0 +1,39 @@
+Different name types
+-----
+<?php
+
+A;
+A\B;
+\A\B;
+namespace\A\B;
+-----
+array(
+    0: Stmt_Expression(
+        expr: Expr_ConstFetch(
+            name: Name(
+                name: A
+            )
+        )
+    )
+    1: Stmt_Expression(
+        expr: Expr_ConstFetch(
+            name: Name(
+                name: A\B
+            )
+        )
+    )
+    2: Stmt_Expression(
+        expr: Expr_ConstFetch(
+            name: Name_FullyQualified(
+                name: A\B
+            )
+        )
+    )
+    3: Stmt_Expression(
+        expr: Expr_ConstFetch(
+            name: Name_Relative(
+                name: A\B
+            )
+        )
+    )
+)

@@ -1,0 +1,99 @@
+Invalid group use syntax
+-----
+<?php
+// Missing semicolon
+use Foo\{Bar}
+use Bar\{Foo};
+-----
+Syntax error, unexpected T_USE, expecting ';' from 4:1 to 4:3
+array(
+    0: Stmt_GroupUse(
+        type: TYPE_UNKNOWN (0)
+        prefix: Name(
+            name: Foo
+        )
+        uses: array(
+            0: UseItem(
+                type: TYPE_NORMAL (1)
+                name: Name(
+                    name: Bar
+                )
+                alias: null
+            )
+        )
+        comments: array(
+            0: // Missing semicolon
+        )
+    )
+    1: Stmt_GroupUse(
+        type: TYPE_UNKNOWN (0)
+        prefix: Name(
+            name: Bar
+        )
+        uses: array(
+            0: UseItem(
+                type: TYPE_NORMAL (1)
+                name: Name(
+                    name: Foo
+                )
+                alias: null
+            )
+        )
+    )
+)
+-----
+<?php
+// Missing NS separator
+use Foo {Bar, Baz};
+-----
+Syntax error, unexpected '{', expecting ';' from 3:9 to 3:9
+array(
+    0: Stmt_Use(
+        type: TYPE_NORMAL (1)
+        uses: array(
+            0: UseItem(
+                type: TYPE_UNKNOWN (0)
+                name: Name(
+                    name: Foo
+                )
+                alias: null
+            )
+        )
+        comments: array(
+            0: // Missing NS separator
+        )
+    )
+    1: Stmt_Block(
+        stmts: array(
+            0: Stmt_Expression(
+                expr: Expr_ConstFetch(
+                    name: Name(
+                        name: Bar
+                    )
+                )
+            )
+            1: Stmt_Expression(
+                expr: Expr_ConstFetch(
+                    name: Name(
+                        name: Baz
+                    )
+                )
+            )
+        )
+    )
+)
+-----
+<?php
+// Extra NS separator
+use Foo\{\Bar};
+-----
+Syntax error, unexpected T_NAME_FULLY_QUALIFIED, expecting T_STRING or T_FUNCTION or T_CONST or T_NAME_QUALIFIED from 3:10 to 3:13
+array(
+    0: Stmt_Expression(
+        expr: Expr_ConstFetch(
+            name: Name_FullyQualified(
+                name: Bar
+            )
+        )
+    )
+)

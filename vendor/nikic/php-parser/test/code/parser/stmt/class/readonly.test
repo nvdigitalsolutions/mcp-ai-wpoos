@@ -1,0 +1,43 @@
+Readonly class
+-----
+<?php
+
+readonly class A {
+}
+-----
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: READONLY (64)
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+        )
+    )
+)
+-----
+<?php
+
+final readonly class A {
+}
+-----
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: FINAL | READONLY (96)
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+        )
+    )
+)

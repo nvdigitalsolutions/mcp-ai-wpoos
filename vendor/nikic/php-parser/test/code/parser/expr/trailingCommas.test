@@ -1,0 +1,141 @@
+PHP 7.3 trailing comma additions
+-----
+<?php
+
+foo($a, $b, );
+$foo->bar($a, $b, );
+Foo::bar($a, $b, );
+new Foo($a, $b, );
+unset($a, $b, );
+isset($a, $b, );
+-----
+array(
+    0: Stmt_Expression(
+        expr: Expr_FuncCall(
+            name: Name(
+                name: foo
+            )
+            args: array(
+                0: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: a
+                    )
+                    byRef: false
+                    unpack: false
+                )
+                1: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: b
+                    )
+                    byRef: false
+                    unpack: false
+                )
+            )
+        )
+    )
+    1: Stmt_Expression(
+        expr: Expr_MethodCall(
+            var: Expr_Variable(
+                name: foo
+            )
+            name: Identifier(
+                name: bar
+            )
+            args: array(
+                0: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: a
+                    )
+                    byRef: false
+                    unpack: false
+                )
+                1: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: b
+                    )
+                    byRef: false
+                    unpack: false
+                )
+            )
+        )
+    )
+    2: Stmt_Expression(
+        expr: Expr_StaticCall(
+            class: Name(
+                name: Foo
+            )
+            name: Identifier(
+                name: bar
+            )
+            args: array(
+                0: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: a
+                    )
+                    byRef: false
+                    unpack: false
+                )
+                1: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: b
+                    )
+                    byRef: false
+                    unpack: false
+                )
+            )
+        )
+    )
+    3: Stmt_Expression(
+        expr: Expr_New(
+            class: Name(
+                name: Foo
+            )
+            args: array(
+                0: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: a
+                    )
+                    byRef: false
+                    unpack: false
+                )
+                1: Arg(
+                    name: null
+                    value: Expr_Variable(
+                        name: b
+                    )
+                    byRef: false
+                    unpack: false
+                )
+            )
+        )
+    )
+    4: Stmt_Unset(
+        vars: array(
+            0: Expr_Variable(
+                name: a
+            )
+            1: Expr_Variable(
+                name: b
+            )
+        )
+    )
+    5: Stmt_Expression(
+        expr: Expr_Isset(
+            vars: array(
+                0: Expr_Variable(
+                    name: a
+                )
+                1: Expr_Variable(
+                    name: b
+                )
+            )
+        )
+    )
+)

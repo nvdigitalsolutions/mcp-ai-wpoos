@@ -1,0 +1,257 @@
+Invalid modifier combination
+-----
+<?php class A { public public $a; }
+-----
+Multiple access type modifiers are not allowed from 1:24 to 1:29
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PUBLIC (1)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: a
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+        )
+    )
+)
+-----
+<?php class A { public protected $a; }
+-----
+Multiple access type modifiers are not allowed from 1:24 to 1:32
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: PUBLIC | PROTECTED (3)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: a
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+        )
+    )
+)
+-----
+<?php class C { readonly readonly $a; }
+-----
+Multiple readonly modifiers are not allowed from 1:26 to 1:33
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: C
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: READONLY (64)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: a
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+        )
+    )
+)
+-----
+<?php class A { abstract abstract function a(); }
+-----
+Multiple abstract modifiers are not allowed from 1:26 to 1:33
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: ABSTRACT (16)
+                byRef: false
+                name: Identifier(
+                    name: a
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: null
+            )
+        )
+    )
+)
+-----
+<?php class A { static static $a; }
+-----
+Multiple static modifiers are not allowed from 1:24 to 1:29
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_Property(
+                attrGroups: array(
+                )
+                flags: STATIC (8)
+                type: null
+                props: array(
+                    0: PropertyItem(
+                        name: VarLikeIdentifier(
+                            name: a
+                        )
+                        default: null
+                    )
+                )
+                hooks: array(
+                )
+            )
+        )
+    )
+)
+-----
+<?php class A { final final function a() {} }
+-----
+Multiple final modifiers are not allowed from 1:23 to 1:27
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: FINAL (32)
+                byRef: false
+                name: Identifier(
+                    name: a
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: array(
+                )
+            )
+        )
+    )
+)
+-----
+<?php class A { abstract final function a(); }
+-----
+Cannot use the final modifier on an abstract class member from 1:26 to 1:30
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: 0
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+            0: Stmt_ClassMethod(
+                attrGroups: array(
+                )
+                flags: ABSTRACT | FINAL (48)
+                byRef: false
+                name: Identifier(
+                    name: a
+                )
+                params: array(
+                )
+                returnType: null
+                stmts: null
+            )
+        )
+    )
+)
+-----
+<?php abstract final class A { }
+-----
+Cannot use the final modifier on an abstract class from 1:16 to 1:20
+array(
+    0: Stmt_Class(
+        attrGroups: array(
+        )
+        flags: ABSTRACT | FINAL (48)
+        name: Identifier(
+            name: A
+        )
+        extends: null
+        implements: array(
+        )
+        stmts: array(
+        )
+    )
+)

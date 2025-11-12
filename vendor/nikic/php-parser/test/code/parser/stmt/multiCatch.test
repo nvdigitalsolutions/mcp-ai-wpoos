@@ -1,0 +1,65 @@
+Try/catch with multiple classes
+-----
+<?php
+try {
+    $x;
+} catch (X|Y $e1) {
+    $y;
+} catch (\A|B\C $e2) {
+    $z;
+}
+-----
+array(
+    0: Stmt_TryCatch(
+        stmts: array(
+            0: Stmt_Expression(
+                expr: Expr_Variable(
+                    name: x
+                )
+            )
+        )
+        catches: array(
+            0: Stmt_Catch(
+                types: array(
+                    0: Name(
+                        name: X
+                    )
+                    1: Name(
+                        name: Y
+                    )
+                )
+                var: Expr_Variable(
+                    name: e1
+                )
+                stmts: array(
+                    0: Stmt_Expression(
+                        expr: Expr_Variable(
+                            name: y
+                        )
+                    )
+                )
+            )
+            1: Stmt_Catch(
+                types: array(
+                    0: Name_FullyQualified(
+                        name: A
+                    )
+                    1: Name(
+                        name: B\C
+                    )
+                )
+                var: Expr_Variable(
+                    name: e2
+                )
+                stmts: array(
+                    0: Stmt_Expression(
+                        expr: Expr_Variable(
+                            name: z
+                        )
+                    )
+                )
+            )
+        )
+        finally: null
+    )
+)

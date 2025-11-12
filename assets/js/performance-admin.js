@@ -30,6 +30,29 @@
 			// Export buttons.
 			$('#export-results-json').on('click', this.exportJSON.bind(this));
 			$('#export-results-csv').on('click', this.exportCSV.bind(this));
+
+			// PHPUnit instructions toggle.
+			$('#show-phpunit-instructions').on('click', this.togglePHPUnitInstructions.bind(this));
+		},
+
+		/**
+		 * Toggle PHPUnit installation instructions.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		togglePHPUnitInstructions: function(e) {
+			const $button = $(e.currentTarget);
+			const $instructions = $('#phpunit-instructions');
+
+			$instructions.slideToggle(300);
+
+			// Update button text.
+			const isVisible = $instructions.is(':visible');
+			const icon = isVisible ? 'arrow-up-alt2' : 'download';
+			const text = isVisible ? 'Hide Instructions' : 'How to Enable Full Tests';
+
+			$button.find('.dashicons').removeClass().addClass('dashicons dashicons-' + icon);
+			$button.contents().last()[0].textContent = ' ' + text;
 		},
 
 		/**
@@ -44,6 +67,11 @@
 			const $results = $('.test-results');
 			const originalText = $button.text();
 
+			// Clear previous results and hide container
+			$results.html('');
+			$resultsContainer.hide();
+
+			// Update button state
 			$button.prop('disabled', true).text(wpMcpAiPerformance.runningText || 'Running...');
 
 			$.ajax({
@@ -56,7 +84,6 @@
 				},
 				timeout: 65000, // 65 second timeout for test execution
 				success: function(response) {
-					$resultsContainer.show();
 					
 					if (response.success) {
 						let html = '<div class="notice notice-success"><p><strong>✓ ' + response.data.message + '</strong></p></div>';
@@ -73,6 +100,7 @@
 						}
 						
 						$results.html(html);
+						$resultsContainer.slideDown(300);
 					} else {
 						let html = '<div class="notice notice-error"><p><strong>✗ ' + 
 								   PerformanceAdmin.escapeHtml(response.data.message) + '</strong></p></div>';
@@ -101,10 +129,10 @@
 						}
 						
 						$results.html(html);
+						$resultsContainer.slideDown(300);
 					}
 				},
 				error: function(jqXHR, textStatus) {
-					$resultsContainer.show();
 					let errorMsg = 'AJAX request failed';
 					
 					if (textStatus === 'timeout') {
@@ -112,6 +140,7 @@
 					}
 					
 					$results.html('<div class="notice notice-error"><p><strong>✗ ' + errorMsg + '</strong></p></div>');
+					$resultsContainer.slideDown(300);
 				},
 				complete: function() {
 					$button.prop('disabled', false).text(originalText);

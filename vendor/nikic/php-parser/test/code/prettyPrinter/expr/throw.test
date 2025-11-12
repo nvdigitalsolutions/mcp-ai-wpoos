@@ -1,0 +1,8 @@
+Throw expression
+-----
+<?php
+test(throw $x);
+$a ?? throw new Exception;
+-----
+test(throw $x);
+$a ?? throw new Exception();
