@@ -1135,6 +1135,10 @@ $stats['by_provider'][ $provider ]['total_cost']       += isset( $data['total_co
 				'anthropic' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
 				'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
 				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+'google'    => __( 'Google', 'wp-mcp-ai' ),
+'azure'     => __( 'Azure OpenAI', 'wp-mcp-ai' ),
+'crawl4ai'  => __( 'Crawl4AI', 'wp-mcp-ai' ),
+'local'     => __( 'Local', 'wp-mcp-ai' ),
 				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
 			);
 
