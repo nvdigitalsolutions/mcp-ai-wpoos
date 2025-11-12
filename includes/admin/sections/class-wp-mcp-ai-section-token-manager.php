@@ -147,6 +147,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<h3><?php esc_html_e( 'Token Usage by User', 'wp-mcp-ai' ); ?></h3>
 			<p class="description"><?php esc_html_e( 'View and manage token consumption for each user across all AI models and providers.', 'wp-mcp-ai' ); ?></p>
 
+			<!-- Analytics Charts Section -->
+			<div class="wp-mcp-ai-analytics-section">
+				<div class="wp-mcp-ai-chart-controls">
+					<h3><?php esc_html_e( 'Usage Analytics', 'wp-mcp-ai' ); ?></h3>
+					<div class="wp-mcp-ai-chart-controls-right">
+						<label for="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-label"><?php esc_html_e( 'Time Period:', 'wp-mcp-ai' ); ?></label>
+						<select id="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-select">
+							<option value="7" selected><?php esc_html_e( 'Last 7 Days', 'wp-mcp-ai' ); ?></option>
+							<option value="30"><?php esc_html_e( 'Last 30 Days', 'wp-mcp-ai' ); ?></option>
+							<option value="90"><?php esc_html_e( 'Last 90 Days', 'wp-mcp-ai' ); ?></option>
+						</select>
+						<button type="button" id="wp-mcp-ai-refresh-charts" class="button">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Refresh', 'wp-mcp-ai' ); ?>
+						</button>
+					</div>
+				</div>
+
+				<!-- Usage Trend Chart -->
+				<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-full">
+					<canvas id="wp-mcp-ai-usage-trend-chart"></canvas>
+				</div>
+
+				<!-- Tool Breakdown & Tier Distribution -->
+				<div class="wp-mcp-ai-chart-row">
+					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
+						<canvas id="wp-mcp-ai-tool-breakdown-chart"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
+						<canvas id="wp-mcp-ai-tier-distribution-chart"></canvas>
+					</div>
+				</div>
+			</div>
+
 			<?php if ( empty( $user_ids ) ) : ?>
 				<div class="notice notice-info inline">
 					<p><?php esc_html_e( 'No token usage data has been recorded yet. Usage will appear here once users start interacting with AI assistants.', 'wp-mcp-ai' ); ?></p>
