@@ -368,6 +368,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	new WP_MCP_AI_Auth0_Setup();
 
+	// Load test assistant page (submenu of AI Assistants CPT).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
+	new WP_MCP_AI_Admin_Test_Assistant();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
