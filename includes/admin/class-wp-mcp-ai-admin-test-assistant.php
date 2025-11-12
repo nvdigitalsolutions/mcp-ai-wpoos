@@ -97,17 +97,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 			// Safety check: Ensure REST constants exist.
 			$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
 
+			// Prepare file upload configuration for admin users.
+			$file_config = $this->get_file_upload_config();
+
 			wp_localize_script(
 				'wp-mcp-ai-chat',
 				'wpMcpAiChat',
-				array(
-					'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
-					'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
-					'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
-					'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
-					'historyPerPage'      => 20,
-					'nonce'               => wp_create_nonce( 'wp_rest' ),
-					'strings'             => $this->get_chat_strings(),
+				array_merge(
+					array(
+						'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
+						'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+						'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
+						'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
+						'historyPerPage'      => 20,
+						'nonce'               => wp_create_nonce( 'wp_rest' ),
+						'strings'             => $this->get_chat_strings(),
+					),
+					$file_config
 				)
 			);
 
@@ -317,10 +323,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 									$config = array();
 								}
 
-								$provider   = ! empty( $config['provider'] ) ? $config['provider'] : __( 'Default', 'wp-mcp-ai' );
-								$model      = ! empty( $config['model'] ) ? $config['model'] : __( 'Default', 'wp-mcp-ai' );
-								$tool_count = isset( $config['tools'] ) && is_array( $config['tools'] ) ? count( $config['tools'] ) : 0;
-								$edit_url   = get_edit_post_link( $assistant->ID );
+								$provider       = ! empty( $config['provider'] ) ? $config['provider'] : __( 'Default', 'wp-mcp-ai' );
+								$model          = ! empty( $config['model'] ) ? $config['model'] : __( 'Default', 'wp-mcp-ai' );
+								$tool_count     = isset( $config['tools'] ) && is_array( $config['tools'] ) ? count( $config['tools'] ) : 0;
+								$edit_url       = get_edit_post_link( $assistant->ID );
+								$tool_shortcuts = $this->get_assistant_tool_shortcuts( $assistant->ID );
 								?>
 								<tr>
 									<td>
@@ -347,6 +354,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 											class="button button-primary wp-mcp-ai-test-assistant-btn"
 											data-assistant-id="<?php echo esc_attr( $assistant->ID ); ?>"
 											data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"
+											data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $tool_shortcuts ) ); ?>"
 										>
 											<?php echo esc_html__( 'Test', 'wp-mcp-ai' ); ?>
 										</button>
@@ -375,6 +383,188 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get file upload configuration for the test assistant.
+		 *
+		 * Admin users should have full file upload capabilities.
+		 *
+		 * @return array File upload configuration array.
+		 */
+		private function get_file_upload_config() {
+			$config = array();
+
+			// Admin users can upload files if they have the capability.
+			if ( ! current_user_can( 'upload_files' ) ) {
+				return $config;
+			}
+
+			// Check if Message Attachments class is available.
+			if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
+				return $config;
+			}
+
+			// Get allowed MIME types from the Message Attachments class.
+			$allowed_mime_sets   = WP_MCP_AI_Message_Attachments::get_allowed_mime_types();
+			$allowed_image_mimes = isset( $allowed_mime_sets['image'] ) ? (array) $allowed_mime_sets['image'] : array();
+			$allowed_file_mimes  = isset( $allowed_mime_sets['file'] ) ? (array) $allowed_mime_sets['file'] : array();
+
+			// Get allowed extensions.
+			$allowed_extensions = $this->get_allowed_extensions_for_mimes( array_merge( $allowed_image_mimes, $allowed_file_mimes ) );
+
+			// Build file accept tokens for the input element.
+			$file_accept_tokens = $this->build_file_accept_tokens( $allowed_image_mimes, $allowed_file_mimes, $allowed_extensions );
+
+			// Add to config.
+			if ( ! empty( $allowed_image_mimes ) ) {
+				$config['allowedImageMimes'] = array_values( $allowed_image_mimes );
+			}
+
+			if ( ! empty( $allowed_file_mimes ) ) {
+				$config['allowedFileMimes'] = array_values( $allowed_file_mimes );
+			}
+
+			if ( ! empty( $allowed_extensions ) ) {
+				$config['allowedExtensions'] = array_values( $allowed_extensions );
+			}
+
+			if ( ! empty( $file_accept_tokens ) ) {
+				$config['fileAccept'] = implode( ',', $file_accept_tokens );
+			}
+
+			return $config;
+		}
+
+		/**
+		 * Get allowed file extensions for MIME types.
+		 *
+		 * @param array $allowed_mimes Array of allowed MIME types.
+		 * @return array Array of file extensions.
+		 */
+		private function get_allowed_extensions_for_mimes( array $allowed_mimes ) {
+			if ( empty( $allowed_mimes ) ) {
+				return array();
+			}
+
+			$allowed_mimes = array_values(
+				array_unique(
+					array_filter(
+						array_map( 'strtolower', $allowed_mimes )
+					)
+				)
+			);
+
+			if ( empty( $allowed_mimes ) ) {
+				return array();
+			}
+
+			$extensions = array();
+			$mime_map   = wp_get_mime_types();
+
+			foreach ( $mime_map as $exts => $mime ) {
+				$mime = strtolower( $mime );
+
+				if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+					continue;
+				}
+
+				$parts = array_map( 'trim', explode( '|', $exts ) );
+
+				foreach ( $parts as $extension ) {
+					if ( '' === $extension ) {
+						continue;
+					}
+
+					$extensions[] = strtolower( $extension );
+				}
+			}
+
+			// Add custom MIME type extensions.
+			$custom_mime_extensions = array(
+				'application/x-ndjson' => array( 'ndjson', 'jsonl' ),
+				'application/jsonl'    => array( 'jsonl' ),
+			);
+
+			foreach ( $custom_mime_extensions as $mime => $custom_extensions ) {
+				if ( ! in_array( $mime, $allowed_mimes, true ) ) {
+					continue;
+				}
+
+				foreach ( $custom_extensions as $extension ) {
+					$extension = strtolower( (string) $extension );
+
+					if ( '' === $extension ) {
+						continue;
+					}
+
+					$extensions[] = $extension;
+				}
+			}
+
+			return array_values( array_unique( $extensions ) );
+		}
+
+		/**
+		 * Build file accept tokens for the file input element.
+		 *
+		 * @param array $image_mimes Allowed image MIME types.
+		 * @param array $file_mimes  Allowed file MIME types.
+		 * @param array $extensions  Allowed file extensions.
+		 * @return array Array of accept tokens.
+		 */
+		private function build_file_accept_tokens( array $image_mimes, array $file_mimes, array $extensions ) {
+			$tokens = array();
+
+			foreach ( array_merge( $image_mimes, $file_mimes ) as $mime ) {
+				$mime = strtolower( (string) $mime );
+
+				if ( '' !== $mime ) {
+					$tokens[] = $mime;
+				}
+			}
+
+			foreach ( $extensions as $extension ) {
+				$extension = strtolower( (string) $extension );
+
+				if ( '' === $extension ) {
+					continue;
+				}
+
+				$extension = ltrim( $extension, '.' );
+
+				if ( '' !== $extension ) {
+					$tokens[] = '.' . $extension;
+				}
+			}
+
+			return array_values( array_unique( $tokens ) );
+		}
+
+		/**
+		 * Get assistant tool shortcuts.
+		 *
+		 * @param int $assistant_id Assistant post ID.
+		 * @return array Array of tool shortcuts.
+		 */
+		private function get_assistant_tool_shortcuts( $assistant_id ) {
+			$assistant_id = absint( $assistant_id );
+
+			if ( ! $assistant_id ) {
+				return array();
+			}
+
+			// Safety check: Ensure class exists.
+			if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				return array();
+			}
+
+			// Use the shortcode class method if it exists.
+			if ( method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+				return WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
+			}
+
+			return array();
 		}
 	}
 }
