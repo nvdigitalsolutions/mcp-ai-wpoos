@@ -67,12 +67,6 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		foreach ( $value as $index => $message ) {
-			// Convert objects to arrays for validation.
-			// WordPress REST API may provide stdClass objects when parsing JSON.
-			if ( is_object( $message ) ) {
-				$message = (array) $message;
-			}
-
 			if ( ! is_array( $message ) ) {
 				return new WP_Error(
 					'rest_invalid_param',
@@ -376,12 +370,6 @@ class WP_MCP_AI_REST_Validator {
 		}
 
 		foreach ( $messages as $message ) {
-			// Convert objects to arrays for processing.
-			// WordPress REST API may provide stdClass objects when parsing JSON.
-			if ( is_object( $message ) ) {
-				$message = (array) $message;
-			}
-
 			if ( ! is_array( $message ) ) {
 				continue;
 			}
