@@ -108,7 +108,7 @@ After: Organized by:
 4. BEST_PRACTICES.md → Optimization tips
 
 **For Developers:**
-1. CODE_REVIEW.md → Code quality standards
+1. CODE-REVIEW-MASTER.md → Code quality standards
 2. rest-api.md → API integration
 3. tool-reference.md → Tool development
 4. ACTION_ITEMS.md → Contribution opportunities
@@ -271,7 +271,7 @@ Long-term:
 ### Developers (95% Complete)
 
 **Excellent coverage for:**
-- ✅ Code quality standards (CODE_REVIEW.md)
+- ✅ Code quality standards (CODE-REVIEW-MASTER.md)
 - ✅ REST API documentation
 - ✅ Hook and filter reference
 - ✅ Tool development guide
@@ -379,7 +379,7 @@ Long-term:
 
 ### Code Review Documentation (9.0/10)
 
-**File:** CODE_REVIEW.md (20KB)
+**File:** CODE-REVIEW-MASTER.md (20KB)
 
 **Strengths:**
 - ✅ Comprehensive analysis
@@ -397,7 +397,7 @@ Long-term:
 ### Update Frequency Assessment
 
 **Well-maintained areas:**
-- ✅ CODE_REVIEW.md (Nov 2, 2024)
+- ✅ CODE-REVIEW-MASTER.md (Nov 2, 2024)
 - ✅ New docs added (Nov 4, 2024)
 - ✅ README improved (Nov 4, 2024)
 
@@ -459,7 +459,7 @@ Long-term:
 **Path:**
 ```
 1. Review code structure (60 min)
-2. Study CODE_REVIEW.md (45 min)
+2. Study CODE-REVIEW-MASTER.md (45 min)
 3. Set up dev environment (60 min)
 4. Create custom tool (90 min)
 5. Understand architecture (90 min)

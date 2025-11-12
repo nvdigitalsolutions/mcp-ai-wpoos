@@ -185,9 +185,9 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| [CODE_REVIEW.md](CODE_REVIEW.md) | Comprehensive code review (20KB) | Developers |
-| [REVIEW_SUMMARY.md](REVIEW_SUMMARY.md) | Code review summary (10KB) | Managers |
-| [code-review-report.md](code-review-report.md) | Latest review report | Developers |
+| [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) | **Master Code Review** - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
+| [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
+| [SETTINGS_PAGE_CODE_REVIEW.md](SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
 | [ACTION_ITEMS.md](ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
 
 ### Technical Documentation
@@ -304,7 +304,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 ### Contributing
 1. Read [../CONTRIBUTING.md](../CONTRIBUTING.md)
-2. Review code quality guidelines in [CODE_REVIEW.md](CODE_REVIEW.md)
+2. Review code quality guidelines in [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md)
 3. Follow security practices in [../SECURITY.md](../SECURITY.md)
 4. Submit pull requests with documentation updates
 

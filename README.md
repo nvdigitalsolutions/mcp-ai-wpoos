@@ -649,7 +649,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Best Practices](docs/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- [Code Review Report](docs/CODE_REVIEW.md) - Comprehensive code quality analysis (20KB)
+- [Code Review Report](docs/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
 - [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
 - [MCP JSON-RPC 2.0 Endpoint](docs/mcp-endpoint.md) - Model Context Protocol implementation
@@ -1072,9 +1072,9 @@ The Federation & Discovery system provides three deployment modes:
 
 ## 🕵️ Code Review
 
-The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds.【F:docs/code-review-report.md†L5-L28】【F:includes/tools/class-wp-mcp-ai-tool-send-group-email.php†L348-L644】【F:includes/tools/class-wp-mcp-ai-tool-run-openai-external-action.php†L288-L338】【F:includes/class-wp-mcp-ai-shortcode.php†L209-L473】 One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.【F:docs/code-review-report.md†L23-L28】
+The 2025-10-31 internal review confirms the hardening of the group email automation (header filtering and attachment caps) and the case-sensitive variable handling in the OpenAI external action tool, and only flags a low-severity performance concern around guest token transient churn for public chat embeds. These findings have been consolidated into the master code review document. One follow-up action item recommends re-using or rate-limiting guest tokens to keep the options table tidy on cache-less hosts.
 
-➡️ See [docs/code-review-report.md](docs/code-review-report.md) for the complete findings, recommendations, and action items.【F:docs/code-review-report.md†L1-L28】
+➡️ See [docs/CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) for the complete code quality assessment.
 
 ## 🔒 MCP Server Authentication
 
@@ -1910,7 +1910,7 @@ Create issues at: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues
 We welcome contributions! Please see:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [CODE_REVIEW.md](docs/CODE_REVIEW.md) - Code quality standards
+- [CODE-REVIEW-MASTER.md](docs/CODE-REVIEW-MASTER.md) - Code quality standards and comprehensive assessment
 - [ACTION_ITEMS.md](docs/ACTION_ITEMS.md) - Current development priorities
 
 ### Security Vulnerabilities
