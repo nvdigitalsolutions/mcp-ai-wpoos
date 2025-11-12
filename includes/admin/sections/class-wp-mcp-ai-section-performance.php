@@ -1183,6 +1183,19 @@ composer install</pre>
 		$response = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/types/post' ) );
 		$duration = round( ( microtime( true ) - $start ) * 1000, 2 );
 
+		// Guard against WP_Error objects.
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'name'    => __( 'REST API Speed', 'wp-mcp-ai' ),
+				'status'  => 'warning',
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'REST API unavailable: %s', 'wp-mcp-ai' ),
+					$response->get_error_message()
+				),
+			);
+		}
+
 		$success = ! $response->is_error();
 
 		return array(
