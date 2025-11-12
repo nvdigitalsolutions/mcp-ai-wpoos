@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-server-error-status-500',
-        'version' => 'dev-copilot/fix-server-error-status-500',
-        'reference' => '53344d55144e9932eba8ddefa7de12e184541383',
+        'pretty_version' => 'dev-copilot/fix-fatal-error-opening-file',
+        'version' => 'dev-copilot/fix-fatal-error-opening-file',
+        'reference' => 'd4623a3c912740d031601d88c98b6f1e801f704c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -254,9 +254,9 @@
             'dev_requirement' => false,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-server-error-status-500',
-            'version' => 'dev-copilot/fix-server-error-status-500',
-            'reference' => '53344d55144e9932eba8ddefa7de12e184541383',
+            'pretty_version' => 'dev-copilot/fix-fatal-error-opening-file',
+            'version' => 'dev-copilot/fix-fatal-error-opening-file',
+            'reference' => 'd4623a3c912740d031601d88c98b6f1e801f704c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
