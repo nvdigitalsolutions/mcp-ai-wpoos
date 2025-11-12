@@ -181,6 +181,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
@@ -224,6 +225,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td><?php echo number_format_i18n( $totals['completion_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $totals['cached_tokens'] ); ?></td>
 								<td>
+									<?php
+									$cost = isset( $totals['total_cost'] ) ? $totals['total_cost'] : 0.0;
+									if ( $cost > 0 ) {
+										echo '$' . number_format( $cost, 4 );
+									} else {
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+									}
+									?>
+								</td>
+								<td>
 									<button type="button" class="button button-small wp-mcp-ai-reset-user-usage" data-user-id="<?php echo esc_attr( $user_id ); ?>" data-user-name="<?php echo esc_attr( $user->display_name ); ?>">
 										<?php esc_html_e( 'Reset', 'wp-mcp-ai' ); ?>
 									</button>
@@ -233,7 +244,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								</td>
 							</tr>
 							<tr class="wp-mcp-ai-user-details-row" id="user-details-<?php echo esc_attr( $user_id ); ?>" style="display: none;">
-								<td colspan="9">
+								<td colspan="10">
 									<?php $this->render_user_details( $user_id, $usage ); ?>
 								</td>
 							</tr>
@@ -787,6 +798,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<div class="wp-mcp-ai-stats-card__value"><?php echo number_format_i18n( $site_stats['tools_used'] ); ?></div>
 					</div>
 				</div>
+
+				<div class="wp-mcp-ai-stats-card">
+					<div class="wp-mcp-ai-stats-card__icon">
+						<span class="dashicons dashicons-money-alt"></span>
+					</div>
+					<div class="wp-mcp-ai-stats-card__content">
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Est. Total Cost', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__value">
+							<?php
+							$total_cost = isset( $site_stats['total_cost'] ) ? $site_stats['total_cost'] : 0.0;
+							if ( $total_cost > 0 ) {
+								echo '$' . number_format( $total_cost, 2 );
+							} else {
+								echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+							}
+							?>
+						</div>
+					</div>
+				</div>
 			</div>
 
 			<!-- Usage by Provider -->
@@ -800,6 +830,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -814,13 +845,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td><?php echo number_format_i18n( $stats['completion_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['total_tokens'] ); ?></td>
 								<td><?php echo number_format_i18n( $stats['cached_tokens'] ); ?></td>
+								<td>
+									<?php
+									$provider_cost = isset( $stats['total_cost'] ) ? $stats['total_cost'] : 0.0;
+									if ( $provider_cost > 0 ) {
+										echo '$' . number_format( $provider_cost, 4 );
+									} else {
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+									}
+									?>
+								</td>
 							</tr>
 							<?php
 						endforeach;
 					else :
 						?>
 						<tr>
-							<td colspan="6" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="7" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'wp-mcp-ai' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
@@ -835,6 +876,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
 						<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -847,13 +889,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<td><?php echo esc_html( $this->get_provider_display_name( $model_data['provider'] ) ); ?></td>
 								<td><?php echo number_format_i18n( $model_data['requests'] ); ?></td>
 								<td><?php echo number_format_i18n( $model_data['total_tokens'] ); ?></td>
+								<td>
+									<?php
+									$model_cost = isset( $model_data['total_cost'] ) ? $model_data['total_cost'] : 0.0;
+									if ( $model_cost > 0 ) {
+										echo '$' . number_format( $model_cost, 4 );
+									} else {
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+									}
+									?>
+								</td>
 							</tr>
 							<?php
 						endforeach;
 					else :
 						?>
 						<tr>
-							<td colspan="4" class="no-items"><?php esc_html_e( 'No model data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="5" class="no-items"><?php esc_html_e( 'No model data available yet.', 'wp-mcp-ai' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
@@ -881,6 +933,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
 							<th><?php esc_html_e( 'Last Used', 'wp-mcp-ai' ); ?></th>
 						</tr>
 					</thead>
@@ -895,15 +948,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 										get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
 									);
 								}
+
+								$prompt_tokens     = isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+								$completion_tokens = isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+								$cost              = WP_MCP_AI_Usage_Tracker::calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens );
 								?>
 								<tr>
 									<td><?php echo esc_html( $this->get_provider_display_name( $provider ) ); ?></td>
 									<td><code><?php echo esc_html( $model ); ?></code></td>
 									<td><?php echo number_format_i18n( $data['requests'] ); ?></td>
-									<td><?php echo number_format_i18n( $data['prompt_tokens'] ); ?></td>
-									<td><?php echo number_format_i18n( $data['completion_tokens'] ); ?></td>
+									<td><?php echo number_format_i18n( $prompt_tokens ); ?></td>
+									<td><?php echo number_format_i18n( $completion_tokens ); ?></td>
 									<td><?php echo number_format_i18n( $data['total_tokens'] ); ?></td>
 									<td><?php echo number_format_i18n( $data['cached_tokens'] ); ?></td>
+									<td>
+										<?php
+										if ( $cost > 0 ) {
+											echo '$' . number_format( $cost, 4 );
+										} else {
+											echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+										}
+										?>
+									</td>
 									<td><?php echo esc_html( $last_used ); ?></td>
 								</tr>
 								<?php
@@ -929,6 +995,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				'completion_tokens' => 0,
 				'total_tokens'      => 0,
 				'cached_tokens'     => 0,
+				'total_cost'        => 0.0,
 			);
 
 			if ( ! is_array( $usage ) ) {
@@ -945,11 +1012,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						continue;
 					}
 
+					$prompt_tokens     = isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+					$completion_tokens = isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+
 					$totals['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-					$totals['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
-					$totals['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+					$totals['prompt_tokens']     += $prompt_tokens;
+					$totals['completion_tokens'] += $completion_tokens;
 					$totals['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
 					$totals['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+
+					// Calculate cost for this model.
+					$totals['total_cost'] += WP_MCP_AI_Usage_Tracker::calculate_cost(
+						$provider,
+						$model,
+						$prompt_tokens,
+						$completion_tokens
+					);
 				}
 			}
 
@@ -1025,6 +1103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				'total_users'    => count( $user_ids ),
 				'total_requests' => 0,
 				'total_tokens'   => 0,
+				'total_cost'     => 0.0,
 				'by_provider'    => array(),
 				'top_models'     => array(),
 				'tools_used'     => 0,
@@ -1043,18 +1122,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							'completion_tokens' => 0,
 							'total_tokens'      => 0,
 							'cached_tokens'     => 0,
+							'total_cost'        => 0.0,
 						);
 					}
 
 					foreach ( $models as $model => $data ) {
+						$prompt_tokens     = isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
+						$completion_tokens = isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+						$cost              = WP_MCP_AI_Usage_Tracker::calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens );
+
 						$stats['total_requests'] += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
 						$stats['total_tokens']   += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+						$stats['total_cost']     += $cost;
 
 						$stats['by_provider'][ $provider ]['requests']          += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
-						$stats['by_provider'][ $provider ]['prompt_tokens']     += isset( $data['prompt_tokens'] ) ? (int) $data['prompt_tokens'] : 0;
-						$stats['by_provider'][ $provider ]['completion_tokens'] += isset( $data['completion_tokens'] ) ? (int) $data['completion_tokens'] : 0;
+						$stats['by_provider'][ $provider ]['prompt_tokens']     += $prompt_tokens;
+						$stats['by_provider'][ $provider ]['completion_tokens'] += $completion_tokens;
 						$stats['by_provider'][ $provider ]['total_tokens']      += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
 						$stats['by_provider'][ $provider ]['cached_tokens']     += isset( $data['cached_tokens'] ) ? (int) $data['cached_tokens'] : 0;
+						$stats['by_provider'][ $provider ]['total_cost']        += $cost;
 
 						$model_key = $provider . '|' . $model;
 						if ( ! isset( $all_models[ $model_key ] ) ) {
@@ -1063,11 +1149,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								'model'        => $model,
 								'requests'     => 0,
 								'total_tokens' => 0,
+								'total_cost'   => 0.0,
 							);
 						}
 
 						$all_models[ $model_key ]['requests']     += isset( $data['requests'] ) ? (int) $data['requests'] : 0;
 						$all_models[ $model_key ]['total_tokens'] += isset( $data['total_tokens'] ) ? (int) $data['total_tokens'] : 0;
+						$all_models[ $model_key ]['total_cost']   += $cost;
 					}
 				}
 			}

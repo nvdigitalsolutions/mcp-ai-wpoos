@@ -278,4 +278,107 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 		// The usage tracker should auto-calculate total_tokens as sum of prompt + completion.
 		$this->assertSame( 90, $model_totals['total_tokens'] );
 	}
+
+	public function test_calculate_cost_returns_cost_for_known_model() {
+		// Test with GPT-4o-mini (known model with fallback pricing).
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-4o-mini', 10000, 5000 );
+
+		// Expected: (10000/1000 * 0.00015) + (5000/1000 * 0.0006) = 0.0015 + 0.003 = 0.0045.
+		$this->assertEqualsWithDelta( 0.0045, $cost, 0.00001 );
+	}
+
+	public function test_calculate_cost_returns_zero_for_unknown_model() {
+		// Test with an unknown model that has no pricing.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'unknown', 'unknown-model', 10000, 5000 );
+
+		// Should return 0 for unknown models.
+		$this->assertSame( 0.0, $cost );
+	}
+
+	public function test_calculate_cost_handles_gemini_model() {
+		// Test with Gemini 1.5 Flash (known model with fallback pricing).
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'google', 'gemini-1.5-flash', 100000, 50000 );
+
+		// Expected: (100000/1000 * 0.000075) + (50000/1000 * 0.0003) = 0.0075 + 0.015 = 0.0225.
+		$this->assertEqualsWithDelta( 0.0225, $cost, 0.00001 );
+	}
+
+	public function test_calculate_cost_handles_claude_model() {
+		// Test with Claude 3.5 Sonnet (known model with fallback pricing).
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'anthropic', 'claude-3.5-sonnet', 50000, 25000 );
+
+		// Expected: (50000/1000 * 0.003) + (25000/1000 * 0.015) = 0.15 + 0.375 = 0.525.
+		$this->assertEqualsWithDelta( 0.525, $cost, 0.00001 );
+	}
+
+	public function test_calculate_cost_handles_zero_tokens() {
+		// Test with zero tokens.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-4o', 0, 0 );
+
+		// Should return 0.0.
+		$this->assertSame( 0.0, $cost );
+	}
+
+	public function test_calculate_cost_handles_prefix_match() {
+		// Test with gpt-4o-2024-05-13 which should match gpt-4o prefix.
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-4o-2024-05-13', 10000, 5000 );
+
+		// Expected: (10000/1000 * 0.0025) + (5000/1000 * 0.01) = 0.025 + 0.05 = 0.075.
+		$this->assertEqualsWithDelta( 0.075, $cost, 0.00001 );
+	}
+
+	public function test_calculate_user_total_cost() {
+		$user_id      = self::factory()->user->create();
+		$assistant_id = 42;
+
+		// Record some usage for GPT-4o-mini.
+		$options = array(
+			'provider' => 'openai',
+			'model'    => 'gpt-4o-mini',
+		);
+
+		$response = array(
+			'model'    => 'gpt-4o-mini',
+			'usage'    => array(
+				'prompt_tokens'     => 10000,
+				'completion_tokens' => 5000,
+				'total_tokens'      => 15000,
+			),
+			'provider' => 'openai',
+		);
+
+		WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, $assistant_id, $options, $response );
+
+		// Record some usage for Gemini Flash.
+		$options2 = array(
+			'provider' => 'google',
+			'model'    => 'gemini-1.5-flash',
+		);
+
+		$response2 = array(
+			'model'    => 'gemini-1.5-flash',
+			'usage'    => array(
+				'prompt_tokens'     => 100000,
+				'completion_tokens' => 50000,
+				'total_tokens'      => 150000,
+			),
+			'provider' => 'google',
+		);
+
+		WP_MCP_AI_Usage_Tracker::record_chat_usage( $user_id, 43, $options2, $response2 );
+
+		// Calculate total cost.
+		$total_cost = WP_MCP_AI_Usage_Tracker::calculate_user_total_cost( $user_id );
+
+		// Expected GPT-4o-mini cost: 0.0045.
+		// Expected Gemini Flash cost: 0.0225.
+		// Total: 0.027.
+		$this->assertEqualsWithDelta( 0.027, $total_cost, 0.00001 );
+	}
+
+	public function test_calculate_user_total_cost_returns_zero_for_nonexistent_user() {
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_user_total_cost( 999999 );
+
+		$this->assertSame( 0.0, $cost );
+	}
 }
