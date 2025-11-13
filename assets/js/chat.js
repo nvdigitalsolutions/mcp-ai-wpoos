@@ -5500,7 +5500,7 @@
         };
 
         // Load the session into the chat
-        loadHistorySessionIntoChat(state, session, null, state.messagesEl);
+        loadHistorySessionIntoChat(state, session, null, null);
         
         return true;
     }
