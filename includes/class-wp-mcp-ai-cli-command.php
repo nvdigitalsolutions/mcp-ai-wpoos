@@ -604,6 +604,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			 *     wp mcp-ai queue process --max-concurrent=5
 			 *
 			 * @subcommand process
+			 * @param array $args       Positional arguments.
+			 * @param array $assoc_args Associative arguments.
 			 */
 			public function process( $args, $assoc_args ) {
 				$max_concurrent = isset( $assoc_args['max-concurrent'] ) ? absint( $assoc_args['max-concurrent'] ) : 3;
