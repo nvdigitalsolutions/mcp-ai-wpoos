@@ -25,6 +25,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Performance_Reporting_Service {
 
 	/**
+	 * Settings repository instance
+	 *
+	 * @var WP_MCP_AI_Settings_Repository
+	 */
+	private static $settings_repository;
+
+	/**
+	 * Get settings repository instance
+	 *
+	 * @return WP_MCP_AI_Settings_Repository Settings repository instance.
+	 */
+	private static function get_settings_repository() {
+		if ( null === self::$settings_repository ) {
+			self::$settings_repository = wp_mcp_ai_get_settings_repository();
+		}
+		return self::$settings_repository;
+	}
+
+	/**
+	 * Set settings repository instance (for testing)
+	 *
+	 * @param WP_MCP_AI_Settings_Repository $repository Settings repository instance.
+	 */
+	public static function set_settings_repository( $repository ) {
+		self::$settings_repository = $repository;
+	}
+
+	/**
 	 * Generate a comprehensive performance report.
 	 *
 	 * @param array $options Report options.
@@ -391,7 +419,7 @@ class WP_MCP_AI_Performance_Reporting_Service {
 			);
 		}
 
-		update_option( 'wp_mcp_ai_performance_baselines', $baselines, false );
+		self::get_settings_repository()->update( 'performance_baselines', $baselines );
 
 		return $baselines;
 	}
@@ -402,7 +430,7 @@ class WP_MCP_AI_Performance_Reporting_Service {
 	 * @return array Performance baselines.
 	 */
 	public static function get_baselines() {
-		$baselines = get_option( 'wp_mcp_ai_performance_baselines', array() );
+		$baselines = self::get_settings_repository()->get( 'performance_baselines', array() );
 
 		if ( empty( $baselines ) ) {
 			// Generate baselines if they don't exist.
