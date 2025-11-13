@@ -465,7 +465,7 @@ class WP_MCP_AI_Shortcode {
 			<form class="wp-mcp-ai-chat__form" data-instance-id="<?php echo esc_attr( $instance_id ); ?>">
 				<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>
 				<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>
-					<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>">
+					<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed" aria-expanded="false" aria-controls="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>">
 						<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text"><?php esc_html_e( 'Quick Tasks', 'wp-mcp-ai' ); ?></span>
 						<svg class="wp-mcp-ai-chat__tool-shortcuts-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
 							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
