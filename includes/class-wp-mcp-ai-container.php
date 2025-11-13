@@ -337,12 +337,37 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// REST API components.
+		$this->singleton(
+			'rest.authenticator',
+			function () {
+				return new WP_MCP_AI_REST_Authenticator();
+			}
+		);
+
+		$this->singleton(
+			'rest.validator',
+			function () {
+				return new WP_MCP_AI_REST_Validator();
+			}
+		);
+
+		$this->singleton(
+			'rest.sse_handler',
+			function () {
+				return new WP_MCP_AI_SSE_Handler();
+			}
+		);
+
 		$this->singleton(
 			'rest_controller',
 			function ( $container ) {
 				return new WP_MCP_AI_REST(
 					$container->get( 'tool_registry' ),
-					$container->get( 'router' )
+					$container->get( 'router' ),
+					$container->get( 'rest.authenticator' ),
+					$container->get( 'rest.validator' ),
+					$container->get( 'rest.sse_handler' )
 				);
 			}
 		);

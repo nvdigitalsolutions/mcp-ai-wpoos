@@ -130,16 +130,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param WP_MCP_AI_Tool_Registry         $registry Tool registry instance.
-		 * @param WP_MCP_AI_Language_Model_Router $client   Language model router.
+		 * @param WP_MCP_AI_Tool_Registry         $registry      Tool registry instance.
+		 * @param WP_MCP_AI_Language_Model_Router $client        Language model router.
+		 * @param WP_MCP_AI_REST_Authenticator    $authenticator REST authenticator (optional, for DI).
+		 * @param WP_MCP_AI_REST_Validator        $validator     REST validator (optional, for DI).
+		 * @param WP_MCP_AI_SSE_Handler           $sse_handler   SSE handler (optional, for DI).
 		 */
-		public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_Language_Model_Router $client ) {
+		public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_Language_Model_Router $client, $authenticator = null, $validator = null, $sse_handler = null ) {
 			$this->registry = $registry;
 			$this->client   = $client;
 
-			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
-			$this->validator     = new WP_MCP_AI_REST_Validator();
-			$this->sse_handler   = new WP_MCP_AI_SSE_Handler();
+			// Use dependency injection or fall back to creating instances (backward compatibility).
+			$this->authenticator = $authenticator ?? new WP_MCP_AI_REST_Authenticator();
+			$this->validator     = $validator ?? new WP_MCP_AI_REST_Validator();
+			$this->sse_handler   = $sse_handler ?? new WP_MCP_AI_SSE_Handler();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 
