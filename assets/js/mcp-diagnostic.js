@@ -12,6 +12,12 @@
 	'use strict';
 
 	$( document ).ready( function() {
+		// Check if localized script data is available.
+		if ( typeof wpMcpAiMcpDiagnostic === 'undefined' ) {
+			console.error( 'WP MCP AI: wpMcpAiMcpDiagnostic is not defined. The script may not be properly localized.' );
+			return;
+		}
+
 		// Use localized script data.
 		const ajaxUrl = wpMcpAiMcpDiagnostic.ajaxUrl;
 		const nonce = wpMcpAiMcpDiagnostic.nonce;
