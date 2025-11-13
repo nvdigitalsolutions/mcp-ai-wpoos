@@ -46,6 +46,13 @@ class WP_MCP_AI_Error_Tracking_Service {
 	private static $instance = null;
 
 	/**
+	 * Settings repository instance
+	 *
+	 * @var WP_MCP_AI_Settings_Repository
+	 */
+	private static $settings_repository;
+
+	/**
 	 * Whether error tracking is enabled.
 	 *
 	 * @var bool
@@ -62,6 +69,27 @@ class WP_MCP_AI_Error_Tracking_Service {
 			self::$instance = new self();
 		}
 		return self::$instance;
+	}
+
+	/**
+	 * Get settings repository instance
+	 *
+	 * @return WP_MCP_AI_Settings_Repository Settings repository instance.
+	 */
+	private static function get_settings_repository() {
+		if ( null === self::$settings_repository ) {
+			self::$settings_repository = wp_mcp_ai_get_settings_repository();
+		}
+		return self::$settings_repository;
+	}
+
+	/**
+	 * Set settings repository instance (for testing)
+	 *
+	 * @param WP_MCP_AI_Settings_Repository $repository Settings repository instance.
+	 */
+	public static function set_settings_repository( $repository ) {
+		self::$settings_repository = $repository;
 	}
 
 	/**
@@ -141,7 +169,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @param array $error Error data.
 	 */
 	private function store_error( $error ) {
-		$errors = get_option( self::ERRORS_OPTION, array() );
+		$errors = self::get_settings_repository()->get( 'error_tracking', array() );
 
 		if ( ! is_array( $errors ) ) {
 			$errors = array();
@@ -155,7 +183,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			$errors = array_slice( $errors, -self::MAX_STORED_ERRORS );
 		}
 
-		update_option( self::ERRORS_OPTION, $errors, false );
+		self::get_settings_repository()->update( 'error_tracking', $errors );
 	}
 
 	/**
@@ -202,7 +230,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return array Array of errors.
 	 */
 	public function get_errors_by_component( $component, $time_period = 3600 ) {
-		$errors = get_option( self::ERRORS_OPTION, array() );
+		$errors = self::get_settings_repository()->get( 'error_tracking', array() );
 
 		if ( ! is_array( $errors ) ) {
 			return array();
@@ -230,7 +258,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return array Array of errors.
 	 */
 	public function get_recent_errors( $limit = 50, $time_period = null ) {
-		$errors = get_option( self::ERRORS_OPTION, array() );
+		$errors = self::get_settings_repository()->get( 'error_tracking', array() );
 
 		if ( ! is_array( $errors ) ) {
 			return array();
@@ -267,7 +295,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return array Statistics array.
 	 */
 	public function get_error_statistics( $time_period = 3600 ) {
-		$errors = get_option( self::ERRORS_OPTION, array() );
+		$errors = self::get_settings_repository()->get( 'error_tracking', array() );
 
 		if ( ! is_array( $errors ) ) {
 			return array();
@@ -342,7 +370,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * Clean up old errors beyond retention period.
 	 */
 	public function cleanup_old_errors() {
-		$errors = get_option( self::ERRORS_OPTION, array() );
+		$errors = self::get_settings_repository()->get( 'error_tracking', array() );
 
 		if ( ! is_array( $errors ) ) {
 			return;
@@ -357,7 +385,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 			}
 		}
 
-		update_option( self::ERRORS_OPTION, $filtered, false );
+		self::get_settings_repository()->update( 'error_tracking', $filtered );
 	}
 
 	/**
@@ -406,7 +434,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return bool True on success.
 	 */
 	public function clear_all_errors() {
-		delete_option( self::ERRORS_OPTION );
+		self::get_settings_repository()->delete( 'error_tracking' );
 
 		// Clear all rate caches.
 		$components = array( 'rest_api', 'chat_ui', 'mcp_core', 'elementor', 'cpt_assistant', 'cpt_ai_peer' );
