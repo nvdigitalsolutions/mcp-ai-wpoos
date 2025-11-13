@@ -250,4 +250,125 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		$this->assertTrue( $response['success'], 'Should succeed with 30 days' );
 		$this->assertEquals( 30, count( $response['data']['labels'] ), 'Should have 30 labels' );
 	}
+
+	/**
+	 * Test update chart period AJAX endpoint with valid data.
+	 *
+	 * Following SoC: Tests that handler properly delegates to Chart Helper.
+	 */
+	public function test_update_chart_period_success() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// Set up AJAX request.
+		$_POST['action']   = 'wp_mcp_ai_update_chart_period';
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_analytics' );
+		$_POST['chart_id'] = 'wp-mcp-ai-dashboard-usage-trend';
+		$_POST['period']   = 30;
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_update_chart_period' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected - AJAX handlers call wp_die().
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify success.
+		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
+		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
+		$this->assertArrayHasKey( 'labels', $response['data'], 'Data should have labels' );
+		$this->assertEquals( 30, count( $response['data']['labels'] ), 'Should have 30 labels for 30-day period' );
+	}
+
+	/**
+	 * Test update chart period with invalid chart ID.
+	 *
+	 * Following SoC: Tests input validation.
+	 */
+	public function test_update_chart_period_invalid_chart_id() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// Set up AJAX request with invalid chart ID.
+		$_POST['action']   = 'wp_mcp_ai_update_chart_period';
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_analytics' );
+		$_POST['chart_id'] = 'invalid-chart-id';
+		$_POST['period']   = 30;
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_update_chart_period' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify error.
+		$this->assertFalse( $response['success'], 'AJAX request should fail with invalid chart ID' );
+		$this->assertArrayHasKey( 'data', $response, 'Response should have error data' );
+	}
+
+	/**
+	 * Test refresh chart AJAX endpoint.
+	 *
+	 * Following SoC: Tests that handler properly delegates to Chart Helper.
+	 */
+	public function test_refresh_chart_success() {
+		// Set up admin user.
+		wp_set_current_user( $this->test_user_id );
+
+		// Set up AJAX request.
+		$_POST['action']   = 'wp_mcp_ai_refresh_chart';
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_analytics' );
+		$_POST['chart_id'] = 'wp-mcp-ai-dashboard-usage-trend';
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_refresh_chart' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify success.
+		$this->assertTrue( $response['success'], 'AJAX request should succeed' );
+		$this->assertArrayHasKey( 'data', $response, 'Response should have data' );
+	}
+
+	/**
+	 * Test refresh chart without proper permissions.
+	 *
+	 * Following SoC: Tests permission checking.
+	 */
+	public function test_refresh_chart_without_permissions() {
+		// Create a non-admin user.
+		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		// Set up AJAX request.
+		$_POST['action']   = 'wp_mcp_ai_refresh_chart';
+		$_POST['nonce']    = wp_create_nonce( 'wp_mcp_ai_analytics' );
+		$_POST['chart_id'] = 'wp-mcp-ai-dashboard-usage-trend';
+
+		// Make AJAX request.
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_refresh_chart' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		// Get the response.
+		$response = json_decode( $this->_last_response, true );
+
+		// Verify error.
+		$this->assertFalse( $response['success'], 'AJAX request should fail without proper permissions' );
+	}
 }
+

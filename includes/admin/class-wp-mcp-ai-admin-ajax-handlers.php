@@ -65,6 +65,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_get_usage_trend'        => 'handle_get_usage_trend',
 				'wp_ajax_wp_mcp_ai_get_tier_distribution'  => 'handle_get_tier_distribution',
 				'wp_ajax_wp_mcp_ai_get_tool_breakdown'     => 'handle_get_tool_breakdown',
+				'wp_ajax_wp_mcp_ai_update_chart_period'    => 'handle_update_chart_period',
+				'wp_ajax_wp_mcp_ai_refresh_chart'          => 'handle_refresh_chart',
 			);
 
 			$action         = current_action();
@@ -1083,6 +1085,142 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					'limit'   => $limit,
 				)
 			);
+
+			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle AJAX request to update chart period.
+		 *
+		 * Following SoC: Delegates data retrieval to Chart Helper.
+		 */
+		public function handle_update_chart_period() {
+			// Verify nonce - using analytics nonce for dashboard widgets.
+			$nonce_actions = array( 'wp_mcp_ai_token_charts', 'wp_mcp_ai_analytics' );
+			$nonce_valid   = false;
+
+			foreach ( $nonce_actions as $nonce_action ) {
+				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {
+					$nonce_valid = true;
+					break;
+				}
+			}
+
+			if ( ! $nonce_valid ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get chart ID and period.
+			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( $_POST['chart_id'] ) : '';
+			$period   = isset( $_POST['period'] ) ? absint( $_POST['period'] ) : 7;
+
+			// Validate chart ID.
+			$valid_charts = array(
+				'wp-mcp-ai-dashboard-usage-trend',
+				'wp-mcp-ai-usage-trend-chart',
+				'wp-mcp-ai-tool-breakdown-chart',
+			);
+
+			if ( ! in_array( $chart_id, $valid_charts, true ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get updated data based on chart type (following SoC - delegate to helper).
+			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Route to appropriate data method based on chart ID.
+			$data = array();
+			if ( false !== strpos( $chart_id, 'usage-trend' ) ) {
+				$data = WP_MCP_AI_Chart_JS_Helper::get_usage_trend_data( array( 'days' => $period ) );
+			} elseif ( false !== strpos( $chart_id, 'tool-breakdown' ) ) {
+				$data = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data(
+					array(
+						'days'  => $period,
+						'limit' => 10,
+					)
+				);
+			}
+
+			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle AJAX request to refresh chart data.
+		 *
+		 * Following SoC: Delegates data retrieval to Chart Helper.
+		 */
+		public function handle_refresh_chart() {
+			// Verify nonce - using analytics nonce for dashboard widgets.
+			$nonce_actions = array( 'wp_mcp_ai_token_charts', 'wp_mcp_ai_analytics' );
+			$nonce_valid   = false;
+
+			foreach ( $nonce_actions as $nonce_action ) {
+				if ( check_ajax_referer( $nonce_action, 'nonce', false ) ) {
+					$nonce_valid = true;
+					break;
+				}
+			}
+
+			if ( ! $nonce_valid ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get chart ID.
+			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( $_POST['chart_id'] ) : '';
+
+			// Validate chart ID.
+			$valid_charts = array(
+				'wp-mcp-ai-dashboard-usage-trend',
+				'wp-mcp-ai-usage-trend-chart',
+				'wp-mcp-ai-tier-distribution-chart',
+				'wp-mcp-ai-tool-breakdown-chart',
+				'wp-mcp-ai-dashboard-cost-breakdown',
+			);
+
+			if ( ! in_array( $chart_id, $valid_charts, true ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid chart ID.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get fresh data based on chart type (following SoC - delegate to helper).
+			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Route to appropriate data method based on chart ID.
+			$data = array();
+			if ( false !== strpos( $chart_id, 'usage-trend' ) ) {
+				$data = WP_MCP_AI_Chart_JS_Helper::get_usage_trend_data( array( 'days' => 7 ) );
+			} elseif ( false !== strpos( $chart_id, 'tier-distribution' ) ) {
+				$data = WP_MCP_AI_Chart_JS_Helper::get_tier_distribution_data();
+			} elseif ( false !== strpos( $chart_id, 'tool-breakdown' ) ) {
+				$data = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data( array( 'days' => 7 ) );
+			} elseif ( false !== strpos( $chart_id, 'cost-breakdown' ) ) {
+				// Cost data from Cost Tracking Service (following SoC).
+				if ( class_exists( 'WP_MCP_AI_Cost_Tracking_Service' ) ) {
+					$cost_data = WP_MCP_AI_Cost_Tracking_Service::get_dashboard_cost_summary( 7 );
+					$data      = WP_MCP_AI_Cost_Tracking_Service::get_cost_by_provider_data( 7 );
+				}
+			}
 
 			wp_send_json_success( $data );
 		}
