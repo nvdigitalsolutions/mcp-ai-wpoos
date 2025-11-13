@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-        'version' => 'dev-copilot/move-to-next-step-separation-again',
-        'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+        'pretty_version' => 'dev-copilot/check-mismatch-parameters',
+        'version' => 'dev-copilot/check-mismatch-parameters',
+        'reference' => '5ec82e78e5537590e69533aab27a48aafffb22a5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-            'version' => 'dev-copilot/move-to-next-step-separation-again',
-            'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+            'pretty_version' => 'dev-copilot/check-mismatch-parameters',
+            'version' => 'dev-copilot/check-mismatch-parameters',
+            'reference' => '5ec82e78e5537590e69533aab27a48aafffb22a5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
