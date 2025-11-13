@@ -317,7 +317,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							printf(
 								/* translators: %d: number of tools */
 								esc_html__( 'Total tools registered: %d', 'wp-mcp-ai' ),
-								$tools_count
+								absint( $tools_count )
 							);
 							?>
 						</p>
@@ -456,7 +456,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 											printf(
 												/* translators: %d: number of peer sites */
 												esc_html__( '%d peer sites configured', 'wp-mcp-ai' ),
-												$peer_count
+												absint( $peer_count )
 											);
 										}
 										?>
