@@ -403,6 +403,11 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				return true;
 			}
 
+			// Clear cache before reading settings to ensure fresh comparison.
+			// This prevents false "value unchanged" returns from update_option()
+			// when the cached value is stale but database value matches the new value.
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+
 			// Apply preset settings.
 			if ( ! empty( $preset['settings'] ) ) {
 				foreach ( $preset['settings'] as $key => $value ) {
