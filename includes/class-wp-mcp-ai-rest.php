@@ -120,6 +120,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 */
 	protected $openai_client;
 
+	/**
+	 * Cron Status Service (lazy-loaded).
+	 *
+	 * @var WP_MCP_AI_Cron_Status_Service
+	 */
+	protected $cron_status_service;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -1428,7 +1435,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
 			}
 
-			$service = new WP_MCP_AI_Cron_Status_Service();
+			$service = $this->get_cron_status_service();
 			$user_id = get_current_user_id();
 			$limit   = $request->get_param( 'limit' );
 			if ( ! $limit ) {
@@ -6125,6 +6132,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$this->openai_client = $container->get( 'client.openai' );
 		}
 		return $this->openai_client;
+	}
+
+	/**
+	 * Get Cron Status Service instance (lazy-loaded from container).
+	 *
+	 * @return WP_MCP_AI_Cron_Status_Service Cron Status Service instance.
+	 */
+	protected function get_cron_status_service() {
+		if ( null === $this->cron_status_service ) {
+			$container                  = wp_mcp_ai_container();
+			$this->cron_status_service = $container->get( 'service.cron_status' );
+		}
+		return $this->cron_status_service;
 	}
 
 		/**
