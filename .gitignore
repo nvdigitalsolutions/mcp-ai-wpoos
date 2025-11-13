@@ -33,3 +33,4 @@ opcache-reset.php
 *.min.js
 *.min.css.map
 *.min.js.map
+mcp-diagnostic-debug.php
