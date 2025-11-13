@@ -5899,7 +5899,12 @@
     function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
-        setStatus(state.container, getString('sending', 'Sending…'));
+        setStatus(state.container, {
+            message: getString('sending', 'Sending…'),
+            type: 'processing',
+            showTime: true,
+            startTime: Date.now()
+        });
 
         const payload = {
             assistant_id: state.config.assistantId,
@@ -6175,14 +6180,28 @@
 
         const message = data.message || '';
         const type = data.type || '';
+        const timestamp = data.timestamp ? data.timestamp * 1000 : Date.now(); // Convert to milliseconds
 
         if (type === 'thinking') {
-            setStatus(state.container, message);
+            setStatus(state.container, {
+                message: message,
+                type: 'thinking',
+                showTime: true,
+                startTime: timestamp
+            });
         } else if (type === 'model_switched' || type === 'messages_truncated') {
-            // Show brief notification
-            setStatus(state.container, message);
+            // Show brief notification without timer
+            setStatus(state.container, {
+                message: message,
+                type: 'default',
+                showTime: false
+            });
             setTimeout(function() {
-                setStatus(state.container, getString('sending', 'Sending…'));
+                setStatus(state.container, {
+                    message: getString('sending', 'Sending…'),
+                    type: 'processing',
+                    showTime: false
+                });
             }, 2000);
         }
     }
@@ -6193,6 +6212,7 @@
         }
 
         const type = data.type || '';
+        const timestamp = data.timestamp ? data.timestamp * 1000 : Date.now(); // Convert to milliseconds
 
         if (type === 'start') {
             // Show that tools are being executed
@@ -6201,7 +6221,12 @@
                 getString('executingTools', 'Executing tools: %s'),
                 toolNames || getString('tools', 'multiple tools')
             );
-            setStatus(state.container, message);
+            setStatus(state.container, {
+                message: message,
+                type: 'processing',
+                showTime: true,
+                startTime: timestamp
+            });
 
             // Optionally show tool execution in chat
             appendMessage(state.messagesEl, 'system', {
@@ -6209,10 +6234,15 @@
             });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
-            setStatus(state.container, formatString(
-                getString('executingTool', 'Executing %s…'),
-                toolName
-            ));
+            setStatus(state.container, {
+                message: formatString(
+                    getString('executingTool', 'Executing %s…'),
+                    toolName
+                ),
+                type: 'tool',
+                showTime: true,
+                startTime: timestamp
+            });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
             const result = data.result || {};
@@ -6639,20 +6669,141 @@
         }
     }
 
-    function setStatus(container, message) {
+    /**
+     * Set status message with optional indicator type and time tracking.
+     * 
+     * @param {HTMLElement} container - Chat container element
+     * @param {string|Object} message - Status message or options object
+     * @param {Object} options - Optional settings (type, showTime, startTime)
+     */
+    function setStatus(container, message, options) {
         const statusEl = container.querySelector('.wp-mcp-ai-chat__status');
         if (!statusEl) {
             return;
         }
 
-        if (!message) {
-            statusEl.textContent = '';
+        // Handle both string and object parameters for backward compatibility
+        let messageText = '';
+        let opts = options || {};
+        
+        if (typeof message === 'object' && message !== null) {
+            opts = message;
+            messageText = opts.message || '';
+        } else {
+            messageText = message || '';
+        }
+
+        if (!messageText) {
+            statusEl.innerHTML = '';
             statusEl.hidden = true;
+            statusEl.className = 'wp-mcp-ai-chat__status';
+            // Clear any time tracking
+            if (statusEl._timeInterval) {
+                clearInterval(statusEl._timeInterval);
+                statusEl._timeInterval = null;
+            }
             return;
         }
 
-        statusEl.textContent = message;
+        // Clear existing time interval if any
+        if (statusEl._timeInterval) {
+            clearInterval(statusEl._timeInterval);
+            statusEl._timeInterval = null;
+        }
+
+        // Determine indicator type
+        const type = opts.type || 'default';
+        const showTime = opts.showTime !== false; // Show time by default
+        const startTime = opts.startTime || Date.now();
+        
+        // Build status HTML with indicator
+        let indicatorHTML = '';
+        let statusClass = 'wp-mcp-ai-chat__status';
+        
+        if (type === 'thinking') {
+            statusClass += ' wp-mcp-ai-chat__status--thinking';
+            indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+                '<span class="wp-mcp-ai-chat__status-spinner"></span>' +
+                '</span>';
+        } else if (type === 'processing') {
+            statusClass += ' wp-mcp-ai-chat__status--processing';
+            indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+                '<span class="wp-mcp-ai-chat__status-spinner"></span>' +
+                '</span>';
+        } else if (type === 'streaming') {
+            statusClass += ' wp-mcp-ai-chat__status--streaming';
+            indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+                '<svg class="wp-mcp-ai-chat__status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+                '<path d="M2 10a8 8 0 0116 0H2zm8-8a8 8 0 010 16V2z" opacity="0.3"/>' +
+                '<path d="M10 2a8 8 0 018 8h-2a6 6 0 00-6-6V2z">' +
+                '<animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="1s" repeatCount="indefinite"/>' +
+                '</path>' +
+                '</svg>' +
+                '</span>';
+        } else if (type === 'tool') {
+            indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+                '<svg class="wp-mcp-ai-chat__status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+                '<path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm0 12a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3 10a1 1 0 011-1h1a1 1 0 110 2H4a1 1 0 01-1-1zm12 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zM7.05 4.636a1 1 0 010 1.414L6.343 6.757a1 1 0 11-1.414-1.414L5.636 4.636a1 1 0 011.414 0zm8.485 8.485a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm-9.9 0a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zm8.486-8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414z"/>' +
+                '<animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="2s" repeatCount="indefinite"/>' +
+                '</svg>' +
+                '</span>';
+        }
+        
+        // Build time display
+        let timeHTML = '';
+        if (showTime && (type === 'thinking' || type === 'processing' || type === 'tool')) {
+            timeHTML = '<span class="wp-mcp-ai-chat__status-time" data-start-time="' + startTime + '">0s</span>';
+        }
+        
+        // Escape message text
+        const escapedMessage = escapeHtml(messageText);
+        
+        // Set status content
+        statusEl.className = statusClass;
+        statusEl.innerHTML = indicatorHTML + 
+            '<span class="wp-mcp-ai-chat__status-text">' + escapedMessage + '</span>' + 
+            timeHTML;
         statusEl.hidden = false;
+        
+        // Start time tracking if enabled
+        if (timeHTML) {
+            const timeEl = statusEl.querySelector('.wp-mcp-ai-chat__status-time');
+            if (timeEl) {
+                statusEl._timeInterval = setInterval(function() {
+                    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                    if (timeEl && timeEl.parentNode) {
+                        timeEl.textContent = formatElapsedTime(elapsed);
+                    } else {
+                        // Element removed, clear interval
+                        if (statusEl._timeInterval) {
+                            clearInterval(statusEl._timeInterval);
+                            statusEl._timeInterval = null;
+                        }
+                    }
+                }, 1000);
+            }
+        }
+    }
+
+    /**
+     * Format elapsed time in seconds to human-readable string.
+     * 
+     * @param {number} seconds - Elapsed seconds
+     * @return {string} Formatted time (e.g., "5s", "1m 30s", "2m")
+     */
+    function formatElapsedTime(seconds) {
+        if (seconds < 60) {
+            return seconds + 's';
+        }
+        
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        
+        if (remainingSeconds === 0) {
+            return minutes + 'm';
+        }
+        
+        return minutes + 'm ' + remainingSeconds + 's';
     }
 
     function clearStatus(container) {
