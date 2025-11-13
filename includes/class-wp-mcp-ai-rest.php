@@ -405,6 +405,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 			*/
 
+			// Note: /chat route now handled by Chat Controller (Phase 3.2).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/chat',
@@ -514,7 +516,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
+			// Note: /chat-client route now handled by Chat Controller (Phase 3.2).
+			/*
 			// Register /chat-client endpoint for browser-based chat UI (relaxed iteration limits).
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -625,7 +630,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
+			// Note: /chat-transcripts routes now handled by Chat Controller (Phase 3.2).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/chat-transcripts',
@@ -767,6 +775,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			register_rest_route(
 				self::REST_NAMESPACE,
