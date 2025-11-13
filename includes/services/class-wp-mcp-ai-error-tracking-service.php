@@ -434,7 +434,7 @@ class WP_MCP_AI_Error_Tracking_Service {
 	 * @return bool True on success.
 	 */
 	public function clear_all_errors() {
-		delete_option( self::ERRORS_OPTION );
+		self::get_settings_repository()->delete( 'error_tracking' );
 
 		// Clear all rate caches.
 		$components = array( 'rest_api', 'chat_ui', 'mcp_core', 'elementor', 'cpt_assistant', 'cpt_ai_peer' );

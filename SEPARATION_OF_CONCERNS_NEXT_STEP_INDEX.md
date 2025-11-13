@@ -1,7 +1,9 @@
 # Separation of Concerns - Next Step Documentation Index
 
 **Question**: "What should be the next step for separation of concern?"  
-**Answer**: Phase 1.1 - Settings Repository Migration (2-3 hours, very low risk)
+**Answer**: Phase 1.3 - Extract One Database Query (2-3 hours, medium risk)
+
+**Status**: Phase 1.1 ✅ Complete, Phase 1.2 ✅ Complete
 
 ---
 
@@ -10,17 +12,24 @@
 ### I Want to...
 
 #### ...Implement the Change Right Now
-→ **[QUICK_START_PHASE_1_1.md](QUICK_START_PHASE_1_1.md)** (2 min read)
-- Shows the 3 changes needed
+→ **[QUICK_START_PHASE_1_3.md](QUICK_START_PHASE_1_3.md)** (2 min read) - *Coming Soon*
+- Shows the key changes needed
 - Verification commands
 - Ready to code!
 
 #### ...Follow Step-by-Step Instructions
-→ **[IMPLEMENTATION_GUIDE_PHASE_1_1.md](IMPLEMENTATION_GUIDE_PHASE_1_1.md)** (10 min read)
+→ **[IMPLEMENTATION_GUIDE_PHASE_1_3.md](IMPLEMENTATION_GUIDE_PHASE_1_3.md)** (10 min read) - *Coming Soon*
 - Detailed implementation guide
 - Exact code with line numbers
 - Testing strategy
 - Verification checklist
+
+#### ...See What Was Completed
+→ **[PHASE_1_2_COMPLETE.md](PHASE_1_2_COMPLETE.md)** (5 min read)
+- Phase 1.2 completion summary
+- 3 services migrated successfully
+- Metrics and verification
+- Lessons learned
 
 #### ...Understand the Approach
 → **[NEXT_STEP_SEPARATION_OF_CONCERNS.md](NEXT_STEP_SEPARATION_OF_CONCERNS.md)** (5 min read)
@@ -52,39 +61,45 @@
 
 ## 📋 The Next Step (Quick Summary)
 
-### Phase 1.1: Settings Repository Migration
+### Phase 1.3: Extract One Database Query
 
-**What**: Refactor 1 service to use Settings Repository  
-**Target**: `WP_MCP_AI_Performance_Reporting_Service`  
-**Changes**: Replace `get_option()` and `update_option()` with repository calls  
-**Files**: 3 files, ~15 lines  
+**What**: Extract ONE $wpdb query from REST controller to repository  
+**Target**: Transcript deletion query (line ~1311 in REST controller)  
+**Move to**: `WP_MCP_AI_Transcript_Repository`  
+**Changes**: 2-3 files, ~30 lines  
 **Time**: 2-3 hours  
-**Risk**: 🟢 VERY LOW
+**Risk**: 🟡 MEDIUM
 
-### The 3 Changes
+**Previous Phases**:
+- ✅ Phase 1.1: Performance Reporting Service migrated to Settings Repository
+- ✅ Phase 1.2: 3 more services migrated (Orchestration Health, Performance Monitor, Error Tracking)
+
+### The Approach
 
 ```php
-// 1. Add constructor dependency
-private $settings_repository;
-public function __construct( $settings_repository = null ) {
-    $this->settings_repository = $settings_repository ?? new WP_MCP_AI_Settings_Repository();
+// 1. Find one $wpdb query in REST controller
+// Example: Transcript deletion at line ~1311
+
+// 2. Create repository method
+public function delete_transcript( $transcript_id ) {
+    global $wpdb;
+    // Move query here
 }
 
-// 2. Replace get_option (line ~405)
-$baselines = $this->settings_repository->get( 'performance_baselines', array() );
-
-// 3. Replace update_option (line ~394)
-$this->settings_repository->update( 'performance_baselines', $baselines );
+// 3. Update REST controller to use repository
+$repository = wp_mcp_ai_get_transcript_repository();
+$repository->delete_transcript( $transcript_id );
 ```
 
 ### Why This Is Safe ✅
 
-- Only 1 service (not 12)
-- Only 3 files (not 50+)
-- Internal refactoring only
-- Easy to verify with `grep`
+- Only 1 database query (not dozens)
+- Only 2-3 files affected
+- Encapsulates data access logic
+- Easy to test with mocks
 - Easy to revert if needed
-- Pattern for other services
+- Pattern for extracting more queries
+- Builds on proven Phase 1.1 & 1.2 success
 
 ---
 
