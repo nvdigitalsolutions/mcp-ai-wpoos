@@ -34,3 +34,4 @@ opcache-reset.php
 *.min.css.map
 *.min.js.map
 mcp-diagnostic-debug.php
+BUGFIX_SUMMARY.md
