@@ -7161,7 +7161,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$response = new WP_REST_Response( null, 204 );
 			$response->header( 'Access-Control-Allow-Origin', $allow_origin );
-			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+			$response->header( 'Access-Control-Allow-Methods', 'POST, OPTIONS' );
 			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 			$response->header( 'Access-Control-Max-Age', '3600' );
 			return $response;

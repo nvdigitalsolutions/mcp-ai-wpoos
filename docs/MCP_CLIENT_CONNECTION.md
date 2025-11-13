@@ -2,14 +2,29 @@
 
 This guide explains how to connect MCP clients (like LM Studio, Claude Desktop, OpenAI Agent Builder, etc.) to the WP oOS MCP server.
 
+## Client Compatibility Matrix
+
+| Client | Transport | Auth Method | Status | Notes |
+|--------|-----------|-------------|--------|-------|
+| **OpenAI Agent Builder** | HTTP/REST | Bearer Token | ✅ Fully Supported | Tools included in `initialize` response |
+| **Claude Desktop** | stdio/SSE† | Bearer Token | ⚠️ Via Proxy | Requires HTTP-to-stdio bridge (see below) |
+| **LM Studio** | HTTP/REST | Bearer Token | ✅ Fully Supported | Native HTTP MCP support |
+| **Custom HTTP Clients** | HTTP/REST | Bearer Token | ✅ Fully Supported | Standard JSON-RPC 2.0 |
+| **Cline (VSCode)** | HTTP/REST | Bearer Token | ✅ Fully Supported | Configure as HTTP MCP server |
+| **Continue.dev** | HTTP/REST | Bearer Token | ✅ Fully Supported | Add as MCP server in config |
+
+† Claude Desktop primarily uses stdio transport. For HTTP servers like WP oOS, use `@modelcontextprotocol/server-http` as a bridge.
+
 ## MCP Standard Compliance
 
 WP oOS implements the **Model Context Protocol (MCP) 2024-11-05** specification strictly:
 
 - **Protocol**: JSON-RPC 2.0 over HTTP
-- **Transport**: POST requests for all operations
+- **Transport**: POST requests for all operations  
 - **Streaming**: Server-Sent Events (SSE) support
 - **Methods**: `initialize`, `tools/list`, `tools/call`, `resources/list`, `prompts/list`
+- **CORS**: Full cross-origin support with configurable origins
+- **Content-Type**: `application/json; charset=utf-8`
 
 ## Connection Details
 
@@ -123,6 +138,47 @@ async with ClientSession() as session:
     
     # List available tools
     tools = await session.list_tools()
+```
+
+**Features**:
+- Tools are automatically included in the `initialize` response
+- No separate `tools/list` call needed
+- Full WordPress tool catalog available immediately
+
+### Cline (VSCode Extension)
+
+Add to your Cline MCP settings (`.vscode/mcp_config.json` or VSCode settings):
+
+```json
+{
+  "mcpServers": {
+    "wordpress": {
+      "type": "http",
+      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
+      }
+    }
+  }
+}
+```
+
+### Continue.dev (VSCode/JetBrains)
+
+Add to your `~/.continue/config.json`:
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "WordPress",
+      "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
+      }
+    }
+  ]
+}
 ```
 
 ### Custom MCP Client
