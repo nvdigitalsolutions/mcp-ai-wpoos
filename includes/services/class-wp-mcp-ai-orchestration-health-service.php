@@ -399,8 +399,8 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * Also clears cached health status.
 	 */
 	public static function clear_health_data() {
-		delete_option( 'wp_mcp_ai_recent_activity' );
-		delete_option( 'wp_mcp_ai_recent_errors' );
+		self::get_settings_repository()->delete( 'recent_activity' );
+		self::get_settings_repository()->delete( 'recent_errors' );
 		delete_transient( 'wp_mcp_ai_health_status' );
 	}
 
