@@ -40,6 +40,8 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-t
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-security.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-media.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-comments.php';
 
 // Load integration admin pages.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine.php';
@@ -86,6 +88,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// It's embedded as a sub-tab within Advanced Settings (tab = '__hidden__').
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.

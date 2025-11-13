@@ -547,6 +547,20 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'section.media',
+			function () {
+				return new WP_MCP_AI_Section_Media();
+			}
+		);
+
+		$this->singleton(
+			'section.comments',
+			function () {
+				return new WP_MCP_AI_Section_Comments();
+			}
+		);
+
 		// Services.
 		$this->singleton(
 			'service.chat',
