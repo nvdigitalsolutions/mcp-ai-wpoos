@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Manage_NPM_Packages implements WP_MCP_AI_Tool_Interface {
 	 * @return string Directory path.
 	 */
 	private function get_package_json_dir() {
-		return defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH : plugin_dir_path( dirname( dirname( __FILE__ ) ) );
+		return WP_MCP_AI_PATH;
 	}
 
 	/**
