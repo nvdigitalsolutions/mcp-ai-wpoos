@@ -57,12 +57,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
 
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
+
 			$request_args = array(
-				'timeout' => $this->resolve_timeout( array() ),
+				'timeout' => $timeout,
 				'headers' => array( 'Accept' => 'application/json' ),
 			);
 
-			WP_MCP_AI_Logger::log_event( 'lm_studio_test_connection', 'Testing LM Studio connection.', array( 'url' => $url ) );
+			WP_MCP_AI_Logger::log_event( 'lm_studio_test_connection', 'Testing LM Studio connection.', array( 'url' => $url, 'timeout' => $timeout ) );
 
 			$response = wp_remote_get( $url, $request_args );
 
@@ -118,8 +122,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/v1/models';
 
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
+
 			$request_args = array(
-				'timeout' => $this->resolve_timeout( array() ),
+				'timeout' => $timeout,
 				'headers' => array( 'Accept' => 'application/json' ),
 			);
 
