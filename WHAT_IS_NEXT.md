@@ -2,7 +2,9 @@
 
 **Date**: 2025-11-13  
 **Current Status**: Phase 2 Complete ✅  
-**Branch**: copilot/separation-of-concerns-next-steps
+**Branch**: copilot/update-separation-plan-details
+
+> 💡 **Want a 2-minute answer?** See **[SEPARATION_PLAN_NEXT_STEP.md](SEPARATION_PLAN_NEXT_STEP.md)** for a quick summary.
 
 ---
 
