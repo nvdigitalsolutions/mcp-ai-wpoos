@@ -2526,6 +2526,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Set up SSE headers.
 			$this->send_sse_headers();
 
+			// Track request start time for timing indicators.
+			$request_start_timestamp = time();
+
 			// Send initial status.
 			$this->send_sse_event(
 				'status',
@@ -2533,6 +2536,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'type'         => 'thinking',
 					'message'      => __( 'Processing your request…', 'wp-mcp-ai' ),
 					'assistant_id' => $assistant_id,
+					'timestamp'    => $request_start_timestamp,
 				)
 			);
 
@@ -2580,6 +2584,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							},
 							$tool_calls
 						),
+						'timestamp'  => time(),
 					)
 				);
 
@@ -2601,6 +2606,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'type'      => 'tool_start',
 							'tool_name' => $tool_name,
 							'tool_id'   => $tool_call_id,
+							'timestamp' => time(),
 						)
 					);
 
