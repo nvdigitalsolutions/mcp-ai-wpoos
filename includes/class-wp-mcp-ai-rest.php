@@ -1926,7 +1926,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted.
+			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
+			// This enables the diagnostic page to test MCP endpoint connectivity without requiring
+			// bearer tokens for internal REST API calls made via rest_do_request().
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				// Verify this is an internal request (not from external source).
+				// Internal requests via rest_do_request() won't have HTTP_ORIGIN or HTTP_REFERER headers.
+				$is_internal = empty( $_SERVER['HTTP_ORIGIN'] ) ||
+					( isset( $_SERVER['HTTP_ORIGIN'] ) && wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST ) );
+
+				if ( $is_internal ) {
+					$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
+					return true;
+				}
+			}
+
+			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
 			return new WP_Error(
 				'wp_mcp_ai_mcp_bearer_required',
 				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'wp-mcp-ai' ),
@@ -7152,7 +7167,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$response = new WP_REST_Response( null, 204 );
 			$response->header( 'Access-Control-Allow-Origin', $allow_origin );
-			$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+			$response->header( 'Access-Control-Allow-Methods', 'POST, OPTIONS' );
 			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 			$response->header( 'Access-Control-Max-Age', '3600' );
 			return $response;

@@ -322,4 +322,193 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'nonce', $script_data, 'Localized data should contain nonce' );
 		$this->assertStringContainsString( 'i18n', $script_data, 'Localized data should contain i18n' );
 	}
+
+	/**
+	 * Test that admin users can access MCP endpoint for internal diagnostic testing.
+	 *
+	 * This test verifies the fix for issue #1058 where the MCP diagnostic page
+	 * needs to make internal REST API calls to test the MCP endpoint without
+	 * requiring bearer tokens.
+	 */
+	public function test_admin_can_access_mcp_endpoint_for_diagnostics() {
+		// Simulate an admin user making an internal REST request (like the diagnostic page does).
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		// Process the request internally (simulating rest_do_request()).
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should succeed for admin users making internal requests.
+		$this->assertSame( 200, $response->get_status(), 'Admin user should be able to access MCP endpoint for diagnostic testing' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'jsonrpc', $data, 'Response should include jsonrpc field' );
+		$this->assertSame( '2.0', $data['jsonrpc'], 'Response should be JSON-RPC 2.0' );
+		$this->assertArrayHasKey( 'result', $data, 'Response should include result field' );
+	}
+
+	/**
+	 * Test that non-admin users cannot access MCP endpoint without bearer token.
+	 */
+	public function test_non_admin_cannot_access_mcp_endpoint_without_bearer() {
+		// Create a non-admin user.
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		// Process the request internally.
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should fail for non-admin users without bearer token.
+		$this->assertSame( 401, $response->get_status(), 'Non-admin user should not be able to access MCP endpoint without bearer token' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'code', $data, 'Error response should include code field' );
+		$this->assertSame( 'wp_mcp_ai_mcp_bearer_required', $data['code'], 'Error code should indicate bearer token required' );
+	}
+
+	/**
+	 * Test CORS headers are set correctly for cross-origin MCP client compatibility.
+	 */
+	public function test_mcp_cors_headers_for_client_compatibility() {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		// Verify CORS headers are present.
+		$headers = $response->get_headers();
+
+		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers, 'CORS origin header should be set' );
+		$this->assertSame( '*', $headers['Access-Control-Allow-Origin'], 'CORS should allow all origins by default' );
+	}
+
+	/**
+	 * Test OPTIONS preflight request for CORS compatibility.
+	 */
+	public function test_mcp_options_preflight_request() {
+		$request = new WP_REST_Request( 'OPTIONS', '/mcp-ai/v1/mcp' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		// OPTIONS should return 204 No Content.
+		$this->assertSame( 204, $response->get_status(), 'OPTIONS request should return 204' );
+
+		// Verify CORS preflight headers.
+		$headers = $response->get_headers();
+
+		$this->assertArrayHasKey( 'Access-Control-Allow-Origin', $headers, 'CORS origin header should be set' );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Methods', $headers, 'CORS methods header should be set' );
+		$this->assertArrayHasKey( 'Access-Control-Allow-Headers', $headers, 'CORS allow-headers should be set' );
+
+		// Verify POST is allowed (required for MCP).
+		$this->assertStringContainsString( 'POST', $headers['Access-Control-Allow-Methods'], 'POST method should be allowed' );
+
+		// Verify Authorization header is allowed (required for bearer tokens).
+		$this->assertStringContainsString( 'Authorization', $headers['Access-Control-Allow-Headers'], 'Authorization header should be allowed' );
+	}
+
+	/**
+	 * Test MCP response includes required JSON-RPC 2.0 fields.
+	 */
+	public function test_mcp_response_jsonrpc_compliance() {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+
+		// Verify JSON-RPC 2.0 compliance.
+		$this->assertArrayHasKey( 'jsonrpc', $data, 'Response must include jsonrpc field' );
+		$this->assertSame( '2.0', $data['jsonrpc'], 'jsonrpc must be "2.0"' );
+
+		$this->assertArrayHasKey( 'id', $data, 'Response must include id field' );
+		$this->assertSame( 1, $data['id'], 'Response id must match request id' );
+
+		$this->assertArrayHasKey( 'result', $data, 'Successful response must include result field' );
+		$this->assertArrayNotHasKey( 'error', $data, 'Successful response should not include error field' );
+	}
+
+	/**
+	 * Test MCP initialize response includes required fields for client compatibility.
+	 */
+	public function test_mcp_initialize_includes_required_fields() {
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		$response = rest_get_server()->dispatch( $request );
+		$data     = $response->get_data();
+		$result   = $data['result'];
+
+		// Verify MCP 2024-11-05 required fields.
+		$this->assertArrayHasKey( 'protocolVersion', $result, 'Initialize must include protocolVersion' );
+		$this->assertSame( '2024-11-05', $result['protocolVersion'], 'Protocol version must be 2024-11-05' );
+
+		$this->assertArrayHasKey( 'capabilities', $result, 'Initialize must include capabilities' );
+		$this->assertIsArray( $result['capabilities'], 'Capabilities must be an array' );
+
+		$this->assertArrayHasKey( 'serverInfo', $result, 'Initialize must include serverInfo' );
+		$this->assertIsArray( $result['serverInfo'], 'ServerInfo must be an array' );
+		$this->assertArrayHasKey( 'name', $result['serverInfo'], 'ServerInfo must include name' );
+		$this->assertArrayHasKey( 'version', $result['serverInfo'], 'ServerInfo must include version' );
+
+		// Verify OpenAI Agent Builder compatibility: tools included in initialize.
+		$this->assertArrayHasKey( 'tools', $result, 'Initialize should include tools for OpenAI Agent Builder compatibility' );
+		$this->assertIsArray( $result['tools'], 'Tools must be an array' );
+	}
 }
