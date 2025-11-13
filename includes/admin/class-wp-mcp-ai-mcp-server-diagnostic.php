@@ -534,16 +534,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 
 					if ( ! empty( $recent_activity ) && is_array( $recent_activity ) ) {
-						// Filter for MCP-related activity.
-						$mcp_activity = array_filter(
-							$recent_activity,
-							function ( $item ) {
-								return isset( $item['context'] ) && strpos( $item['context'], 'mcp' ) !== false;
-							}
-						);
+						// Get the last 10 activity entries.
+						$mcp_activity = array_slice( $recent_activity, -10 );
 
 						if ( ! empty( $mcp_activity ) ) {
-							$mcp_activity = array_slice( $mcp_activity, -10 ); // Last 10 items.
 							?>
 							<table class="widefat striped">
 								<thead>
@@ -557,7 +551,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									<?php foreach ( array_reverse( $mcp_activity ) as $activity ) : ?>
 										<tr>
 											<td><?php echo isset( $activity['timestamp'] ) ? esc_html( $activity['timestamp'] ) : '—'; ?></td>
-											<td><code><?php echo isset( $activity['event'] ) ? esc_html( $activity['event'] ) : '—'; ?></code></td>
+											<td><code><?php echo isset( $activity['type'] ) ? esc_html( $activity['type'] ) : '—'; ?></code></td>
 											<td><?php echo isset( $activity['message'] ) ? esc_html( wp_trim_words( $activity['message'], 20 ) ) : '—'; ?></td>
 										</tr>
 									<?php endforeach; ?>
