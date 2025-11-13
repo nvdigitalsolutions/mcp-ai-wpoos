@@ -334,7 +334,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'query_mesh_intelligent'          => 'wordpress-core',
 				'check_site_security'             => 'wordpress-core',
 				'count_tokens'                    => 'wordpress-core',
-				'manage_npm_packages'             => 'wordpress-core',
 
 				// Assistant management.
 				'create_assistant'                => 'wordpress-core',
@@ -899,12 +898,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Query_Mesh_Intelligent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php',
 				'WP_MCP_AI_Tool_Check_Site_Security'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
 			);
-
-			// Conditionally add npm management tool if enabled in settings.
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
-			if ( ! empty( $settings['enable_npm_management'] ) ) {
-				$base_tools['WP_MCP_AI_Tool_Manage_NPM_Packages'] = WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-npm-packages.php';
-			}
 
 			// Additional tools that require third-party plugins or external API credentials.
 			$extended_tools = array(
