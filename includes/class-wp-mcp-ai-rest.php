@@ -113,6 +113,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected $transcript_repository;
 
+	/**
+	 * OpenAI client (lazy-loaded).
+	 *
+	 * @var WP_MCP_AI_OpenAI_Client
+	 */
+	protected $openai_client;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -130,16 +137,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param WP_MCP_AI_Tool_Registry         $registry Tool registry instance.
-		 * @param WP_MCP_AI_Language_Model_Router $client   Language model router.
+		 * @param WP_MCP_AI_Tool_Registry         $registry      Tool registry instance.
+		 * @param WP_MCP_AI_Language_Model_Router $client        Language model router.
+		 * @param WP_MCP_AI_REST_Authenticator    $authenticator REST authenticator (optional, for DI).
+		 * @param WP_MCP_AI_REST_Validator        $validator     REST validator (optional, for DI).
+		 * @param WP_MCP_AI_SSE_Handler           $sse_handler   SSE handler (optional, for DI).
 		 */
-		public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_Language_Model_Router $client ) {
+		public function __construct( WP_MCP_AI_Tool_Registry $registry, WP_MCP_AI_Language_Model_Router $client, $authenticator = null, $validator = null, $sse_handler = null ) {
 			$this->registry = $registry;
 			$this->client   = $client;
 
-			$this->authenticator = new WP_MCP_AI_REST_Authenticator();
-			$this->validator     = new WP_MCP_AI_REST_Validator();
-			$this->sse_handler   = new WP_MCP_AI_SSE_Handler();
+			// Use dependency injection or fall back to creating instances (backward compatibility).
+			$this->authenticator = $authenticator ?? new WP_MCP_AI_REST_Authenticator();
+			$this->validator     = $validator ?? new WP_MCP_AI_REST_Validator();
+			$this->sse_handler   = $sse_handler ?? new WP_MCP_AI_SSE_Handler();
 			add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 			add_action( 'rest_api_init', array( $this, 'clean_output_buffer' ), 1 );
 
@@ -3682,7 +3693,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 			}
 
-			$client = new WP_MCP_AI_OpenAI_Client();
+			$client = $this->get_openai_client();
 			$result = $client->download_file( $file_id );
 
 			if ( is_wp_error( $result ) ) {
@@ -6044,6 +6055,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 			return $this->transcript_repository;
 		}
+
+	/**
+	 * Get OpenAI client instance (lazy-loaded from container).
+	 *
+	 * @return WP_MCP_AI_OpenAI_Client OpenAI client instance.
+	 */
+	protected function get_openai_client() {
+		if ( null === $this->openai_client ) {
+			$container           = wp_mcp_ai_container();
+			$this->openai_client = $container->get( 'client.openai' );
+		}
+		return $this->openai_client;
+	}
 
 		/**
 		 * Format a timestamp string for API responses.
