@@ -19,6 +19,34 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	const SLUG = 'plugin_performance_monitor';
 
 	/**
+	 * Settings repository instance
+	 *
+	 * @var WP_MCP_AI_Settings_Repository
+	 */
+	private static $settings_repository;
+
+	/**
+	 * Get settings repository instance
+	 *
+	 * @return WP_MCP_AI_Settings_Repository Settings repository instance.
+	 */
+	private static function get_settings_repository() {
+		if ( null === self::$settings_repository ) {
+			self::$settings_repository = wp_mcp_ai_get_settings_repository();
+		}
+		return self::$settings_repository;
+	}
+
+	/**
+	 * Set settings repository instance (for testing)
+	 *
+	 * @param WP_MCP_AI_Settings_Repository $repository Settings repository instance.
+	 */
+	public static function set_settings_repository( $repository ) {
+		self::$settings_repository = $repository;
+	}
+
+	/**
 	 * Hook into JetEngine to provision the performance monitoring content type.
 	 */
 	public static function bootstrap() {
@@ -506,7 +534,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	 */
 	protected static function store_test_result_fallback( $test_type, $component, $optimizations_enabled, $metrics, $test_results ) {
 		$option_key = 'wp_mcp_ai_performance_tests';
-		$tests      = get_option( $option_key, array() );
+		$tests      = self::get_settings_repository()->get( 'performance_tests', array() );
 
 		if ( ! is_array( $tests ) ) {
 			$tests = array();
@@ -534,7 +562,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 			$tests = array_slice( $tests, -100, 100, true );
 		}
 
-		update_option( $option_key, $tests, false );
+		self::get_settings_repository()->update( 'performance_tests', $tests );
 
 		return $test_id;
 	}
@@ -549,7 +577,7 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	 */
 	protected static function get_performance_trends_fallback( $component, $since, $test_type ) {
 		$option_key = 'wp_mcp_ai_performance_tests';
-		$tests      = get_option( $option_key, array() );
+		$tests      = self::get_settings_repository()->get( 'performance_tests', array() );
 
 		if ( ! is_array( $tests ) ) {
 			return array( 'trend' => 'no_data' );

@@ -31,6 +31,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Orchestration_Health_Service {
 
 	/**
+	 * Settings repository instance
+	 *
+	 * @var WP_MCP_AI_Settings_Repository
+	 */
+	private static $settings_repository;
+
+	/**
+	 * Get settings repository instance
+	 *
+	 * @return WP_MCP_AI_Settings_Repository Settings repository instance.
+	 */
+	private static function get_settings_repository() {
+		if ( null === self::$settings_repository ) {
+			self::$settings_repository = wp_mcp_ai_get_settings_repository();
+		}
+		return self::$settings_repository;
+	}
+
+	/**
+	 * Set settings repository instance (for testing)
+	 *
+	 * @param WP_MCP_AI_Settings_Repository $repository Settings repository instance.
+	 */
+	public static function set_settings_repository( $repository ) {
+		self::$settings_repository = $repository;
+	}
+
+	/**
 	 * Get current system health status.
 	 *
 	 * Returns health status with graceful degradation if components fail.
@@ -151,7 +179,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 */
 	private static function get_error_rate() {
 		// Get recent errors from the last hour.
-		$recent_errors = get_option( 'wp_mcp_ai_recent_errors', array() );
+		$recent_errors = self::get_settings_repository()->get( 'recent_errors', array() );
 
 		if ( empty( $recent_errors ) ) {
 			return 0.0;
@@ -169,7 +197,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 		}
 
 		// Get total activity count (errors + successful operations).
-		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+		$recent_activity = self::get_settings_repository()->get( 'recent_activity', array() );
 		foreach ( $recent_activity as $activity ) {
 			if ( isset( $activity['timestamp'] ) && $activity['timestamp'] > $one_hour_ago ) {
 				++$total_count;
@@ -190,7 +218,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 */
 	private static function get_average_response_time() {
 		// Get recent activity from the last hour.
-		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+		$recent_activity = self::get_settings_repository()->get( 'recent_activity', array() );
 
 		if ( empty( $recent_activity ) ) {
 			return 0.0;
@@ -342,19 +370,19 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			);
 
 			// Record in recent activity.
-			$recent_activity   = get_option( 'wp_mcp_ai_recent_activity', array() );
+			$recent_activity   = self::get_settings_repository()->get( 'recent_activity', array() );
 			$recent_activity[] = $activity;
 
 			// Keep only last 100 activities.
 			$recent_activity = array_slice( $recent_activity, -100 );
-			update_option( 'wp_mcp_ai_recent_activity', $recent_activity, false );
+			self::get_settings_repository()->update( 'recent_activity', $recent_activity );
 
 			// Record errors separately.
 			if ( $is_error ) {
-				$recent_errors   = get_option( 'wp_mcp_ai_recent_errors', array() );
+				$recent_errors   = self::get_settings_repository()->get( 'recent_errors', array() );
 				$recent_errors[] = $activity;
 				$recent_errors   = array_slice( $recent_errors, -50 );
-				update_option( 'wp_mcp_ai_recent_errors', $recent_errors, false );
+				self::get_settings_repository()->update( 'recent_errors', $recent_errors );
 			}
 		} catch ( Exception $e ) {
 			// Silent fail - don't break plugin operations just for logging.
