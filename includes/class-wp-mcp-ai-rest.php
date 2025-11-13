@@ -13,6 +13,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -363,6 +364,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$chat_controller = new WP_MCP_AI_REST_Chat_Controller( $this, $this->authenticator, $this->validator );
 			$chat_controller->register_routes();
 
+			// Delegate MCP protocol routes to MCP Controller (Phase 3.3).
+			$mcp_controller = new WP_MCP_AI_REST_MCP_Controller( $this, $this->authenticator, $this->validator );
+			$mcp_controller->register_routes();
+
+			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/assistants',
@@ -396,6 +403,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -847,6 +855,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// Note: /sse route now handled by MCP Controller (Phase 3.3).
+			/*
 			// SSE endpoint - GET is standard, POST is optional for LM Studio compatibility.
 			$sse_handlers = array(
 				array(
@@ -888,6 +898,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$sse_handlers,
 				true
 			);
+			*/
 
 			// Register /cron-status endpoint for lightweight cron job status.
 			register_rest_route(
@@ -914,6 +925,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/mcp',
@@ -968,6 +981,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 		}
 
 		/**
