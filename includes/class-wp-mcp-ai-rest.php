@@ -863,12 +863,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'/mcp',
 				array(
 					array(
-						'methods'             => WP_REST_Server::READABLE,
-						'permission_callback' => array( $this, 'permissions_check_mcp_get' ),
-						'callback'            => array( $this, 'handle_mcp_get' ),
-						'args'                => array(),
-					),
-					array(
 						'methods'             => WP_REST_Server::CREATABLE,
 						'permission_callback' => array( $this, 'permissions_check_mcp' ),
 						'callback'            => array( $this, 'handle_mcp_request' ),
@@ -1960,77 +1954,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				)
 			);
-		}
-
-		/**
-		 * Permission callback for GET requests to MCP endpoint.
-		 *
-		 * GET requests are allowed without authentication for server capability discovery.
-		 * This enables LM Studio, IDEs, and other MCP clients to discover server information.
-		 *
-		 * @param WP_REST_Request $request REST request.
-		 * @return bool|WP_Error
-		 */
-		public function permissions_check_mcp_get( WP_REST_Request $request ) {
-			// GET requests are always allowed for capability discovery.
-			// No authentication required - this is read-only server information.
-			return true;
-		}
-
-		/**
-		 * Handle GET requests to MCP endpoint for server capability discovery.
-		 *
-		 * Returns server information and capabilities without requiring authentication.
-		 * This enables LM Studio, IDEs, and other tools to discover the MCP server.
-		 *
-		 * @param WP_REST_Request $request REST request instance.
-		 * @return WP_REST_Response
-		 */
-		public function handle_mcp_get( WP_REST_Request $request ) {
-			// Get server capabilities by calling the initialize method internally.
-			$init_result = $this->mcp_initialize( array(), $request );
-
-			if ( is_wp_error( $init_result ) ) {
-				// Return error in standard format.
-				$response = new WP_REST_Response(
-					array(
-						'error'   => $init_result->get_error_message(),
-						'code'    => $init_result->get_error_code(),
-						'details' => $init_result->get_error_data(),
-					),
-					500
-				);
-			} else {
-				// Return server info and capabilities.
-				$response = new WP_REST_Response(
-					array(
-						'name'            => 'WP oOS',
-						'version'         => WP_MCP_AI_VERSION,
-						'protocolVersion' => '2024-11-05',
-						'capabilities'    => isset( $init_result['capabilities'] ) ? $init_result['capabilities'] : array(),
-						'serverInfo'      => isset( $init_result['serverInfo'] ) ? $init_result['serverInfo'] : array(),
-						'description'     => __( 'WordPress Open Operator System - MCP Server for WordPress', 'wp-mcp-ai' ),
-						'endpoints'       => array(
-							'mcp'        => rest_url( self::REST_NAMESPACE . '/mcp' ),
-							'sse'        => rest_url( self::REST_NAMESPACE . '/sse' ),
-							'assistants' => rest_url( self::REST_NAMESPACE . '/assistants' ),
-						),
-						'methods'         => array(
-							'initialize',
-							'tools/list',
-							'tools/call',
-							'resources/list',
-							'prompts/list',
-						),
-					),
-					200
-				);
-			}
-
-			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
-			$this->add_cors_headers( $response );
-
-			return $response;
 		}
 
 		/**

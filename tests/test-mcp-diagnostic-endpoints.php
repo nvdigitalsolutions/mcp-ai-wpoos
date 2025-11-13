@@ -388,44 +388,4 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'code', $data, 'Error response should include code field' );
 		$this->assertSame( 'wp_mcp_ai_mcp_bearer_required', $data['code'], 'Error code should indicate bearer token required' );
 	}
-
-	/**
-	 * Test GET request to MCP endpoint for server capability discovery.
-	 *
-	 * This test verifies that GET requests to the MCP endpoint return server
-	 * information without requiring authentication, enabling LM Studio and other
-	 * MCP clients to discover the server.
-	 */
-	public function test_mcp_endpoint_get_returns_server_info() {
-		// Make a GET request to the MCP endpoint (no authentication required).
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
-
-		$response = rest_get_server()->dispatch( $request );
-
-		// Should succeed without authentication.
-		$this->assertSame( 200, $response->get_status(), 'GET request should return 200' );
-
-		$data = $response->get_data();
-
-		// Verify server information is returned.
-		$this->assertArrayHasKey( 'name', $data, 'Response should include server name' );
-		$this->assertSame( 'WP oOS', $data['name'], 'Server name should be WP oOS' );
-
-		$this->assertArrayHasKey( 'version', $data, 'Response should include version' );
-		$this->assertSame( WP_MCP_AI_VERSION, $data['version'], 'Version should match plugin version' );
-
-		$this->assertArrayHasKey( 'protocolVersion', $data, 'Response should include protocol version' );
-		$this->assertSame( '2024-11-05', $data['protocolVersion'], 'Protocol version should be 2024-11-05' );
-
-		$this->assertArrayHasKey( 'capabilities', $data, 'Response should include capabilities' );
-		$this->assertIsArray( $data['capabilities'], 'Capabilities should be an array' );
-
-		$this->assertArrayHasKey( 'methods', $data, 'Response should include methods' );
-		$this->assertIsArray( $data['methods'], 'Methods should be an array' );
-		$this->assertContains( 'initialize', $data['methods'], 'Methods should include initialize' );
-		$this->assertContains( 'tools/list', $data['methods'], 'Methods should include tools/list' );
-
-		$this->assertArrayHasKey( 'endpoints', $data, 'Response should include endpoints' );
-		$this->assertIsArray( $data['endpoints'], 'Endpoints should be an array' );
-	}
 }
