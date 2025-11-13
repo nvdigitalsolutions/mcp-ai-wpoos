@@ -510,7 +510,7 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	public static function maybe_update_to_custom() {
 		$active_preset = self::get_active_preset();
 
-		// If already custom or auto, no need to check.
+		// If already custom, no need to check.
 		if ( 'custom' === $active_preset ) {
 			return false;
 		}
