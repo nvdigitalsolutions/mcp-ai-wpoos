@@ -2085,7 +2085,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 *
 		 * @param WP_REST_Request $request Current REST request.
 		 */
-		protected function hydrate_request_body_params( WP_REST_Request $request ) {
+		public function hydrate_request_body_params( WP_REST_Request $request ) {
 			if ( 'GET' !== $request->get_method() ) {
 				return;
 			}
@@ -4041,7 +4041,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param int $assistant_id Assistant post ID.
 		 * @return WP_Post|WP_Error
 		 */
-		protected function validate_assistant_access( $assistant_id ) {
+		public function validate_assistant_access( $assistant_id ) {
 			$assistant_id = absint( $assistant_id );
 
 			// Check cache for repeated validations within the same request (optimization can be disabled with WP_MCP_AI_DISABLE_CACHE).
@@ -5742,7 +5742,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param int $assistant_id Optional assistant ID to filter by.
 		 * @return array|WP_Error
 		 */
-		protected function get_transcript_sessions( $user_id, $per_page, $page, $assistant_id = 0 ) {
+		public function get_transcript_sessions( $user_id, $per_page, $page, $assistant_id = 0 ) {
 			global $wpdb;
 
 			if ( ! $this->transcript_table_exists() ) {
@@ -5818,7 +5818,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param int    $assistant_id Optional assistant ID to filter by.
 		 * @return array|WP_Error
 		 */
-		protected function get_transcript_session( $user_id, $session_key, $assistant_id = 0 ) {
+		public function get_transcript_session( $user_id, $session_key, $assistant_id = 0 ) {
 			global $wpdb;
 
 			WP_MCP_AI_Logger::log_event(
@@ -6095,7 +6095,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param mixed $value Raw session key value.
 		 * @return string
 		 */
-		protected function normalise_transcript_session_key( $value ) {
+		public function normalise_transcript_session_key( $value ) {
 			if ( ! is_scalar( $value ) ) {
 				return '';
 			}
@@ -6120,7 +6120,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 *
 		 * @return WP_MCP_AI_Transcript_Repository Transcript repository instance.
 		 */
-		protected function get_transcript_repository() {
+		public function get_transcript_repository() {
 			if ( null === $this->transcript_repository ) {
 				$this->transcript_repository = wp_mcp_ai_get_transcript_repository();
 			}
