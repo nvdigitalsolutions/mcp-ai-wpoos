@@ -335,6 +335,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'check_site_security'             => 'wordpress-core',
 				'count_tokens'                    => 'wordpress-core',
 
+				// Media and content moderation (AI-powered).
+				'generate_image_alt_text'         => 'wordpress-core',
+				'generate_image_caption'          => 'wordpress-core',
+				'analyze_comment_content'         => 'wordpress-core',
+
 				// Assistant management.
 				'create_assistant'                => 'wordpress-core',
 
@@ -897,6 +902,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Query_Remote_Site'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-remote-site.php',
 				'WP_MCP_AI_Tool_Query_Mesh_Intelligent'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-query-mesh-intelligent.php',
 				'WP_MCP_AI_Tool_Check_Site_Security'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
+				'WP_MCP_AI_Tool_Generate_Image_Alt_Text' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text.php',
+				'WP_MCP_AI_Tool_Generate_Image_Caption'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php',
+				'WP_MCP_AI_Tool_Analyze_Comment_Content' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
