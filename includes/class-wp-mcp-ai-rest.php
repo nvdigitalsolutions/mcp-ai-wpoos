@@ -368,6 +368,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$mcp_controller = new WP_MCP_AI_REST_MCP_Controller( $this, $this->authenticator, $this->validator );
 			$mcp_controller->register_routes();
 
+			// Delegate tools routes to Tools Controller (Phase 3.4).
+			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
+			$tools_controller->register_routes();
+
+			// Delegate admin routes to Admin Controller (Phase 3.4).
+			$admin_controller = new WP_MCP_AI_REST_Admin_Controller( $this, $this->authenticator, $this->validator );
+			$admin_controller->register_routes();
+
+			// Delegate files routes to Files Controller (Phase 3.4).
+			$files_controller = new WP_MCP_AI_REST_Files_Controller( $this, $this->authenticator, $this->validator );
+			$files_controller->register_routes();
+
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 			/*
 			register_rest_route(
@@ -768,6 +780,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// Note: /tools route now handled by Tools Controller (Phase 3.4).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/tools',
@@ -813,7 +827,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
+			// Note: /files route now handled by Files Controller (Phase 3.4).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/files/(?P<file_id>[^/]+)/download',
@@ -854,6 +871,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			// Note: /sse route now handled by MCP Controller (Phase 3.3).
 			/*
@@ -900,6 +918,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 			*/
 
+			// Note: /cron-status route now handled by Admin Controller (Phase 3.4).
+			/*
 			// Register /cron-status endpoint for lightweight cron job status.
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -924,6 +944,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 			/*
@@ -3608,7 +3629,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param mixed $tool_name Raw tool identifier from the REST request.
 		 * @return array
 		 */
-		protected function generate_tool_slug_candidates( $tool_name ) {
+		public function generate_tool_slug_candidates( $tool_name ) {
 			if ( ! is_string( $tool_name ) ) {
 				$tool_name = '';
 			}
@@ -3667,7 +3688,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param string $slug       Target slug to match.
 		 * @return bool
 		 */
-		protected function candidates_include_slug( array $candidates, $slug ) {
+		public function candidates_include_slug( array $candidates, $slug ) {
 			$slug = sanitize_key( $slug );
 
 			if ( '' === $slug ) {
@@ -3700,7 +3721,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param array $allowed_tools  Assistant tool allow-list.
 		 * @return string
 		 */
-		protected function resolve_tool_slug_from_candidates( array $candidates, array $allowed_tools ) {
+		public function resolve_tool_slug_from_candidates( array $candidates, array $allowed_tools ) {
 			if ( empty( $candidates ) ) {
 				return '';
 			}
@@ -3878,7 +3899,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param string $file_id OpenAI file identifier.
 		 * @return array|WP_Error Array containing the attachment ID and metadata, or WP_Error on failure.
 		 */
-		protected function resolve_local_attachment_for_openai_file( $file_id ) {
+		public function resolve_local_attachment_for_openai_file( $file_id ) {
 			if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
 			}
@@ -3989,7 +4010,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param mixed $assistant_id Assistant ID from the request.
 		 * @return int
 		 */
-		protected function resolve_assistant_id( $assistant_id ) {
+		public function resolve_assistant_id( $assistant_id ) {
 			$assistant_id = absint( $assistant_id );
 			if ( $assistant_id ) {
 				return $assistant_id;
@@ -4007,7 +4028,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param int $assistant_id Assistant identifier resolved from the request.
 		 * @return int|WP_Error Scoped assistant identifier or error when the token cannot access the requested assistant.
 		 */
-		protected function apply_token_assistant_scope( $assistant_id ) {
+		public function apply_token_assistant_scope( $assistant_id ) {
 			$assistant_id = absint( $assistant_id );
 			$auth_context = $this->get_auth_context();
 
@@ -5010,7 +5031,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param string $tool_slug        Tool identifier to allow.
 		 * @return array
 		 */
-		protected function ensure_tool_in_config( array $assistant_config, $tool_slug ) {
+		public function ensure_tool_in_config( array $assistant_config, $tool_slug ) {
 			if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
 				$assistant_config['tools'] = array();
 			}
@@ -5045,7 +5066,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param mixed $arguments Tool invocation arguments.
 		 * @return bool
 		 */
-		protected function tool_arguments_include_document_payload( $arguments ) {
+		public function tool_arguments_include_document_payload( $arguments ) {
 			if ( empty( $arguments ) || ! is_array( $arguments ) ) {
 				return false;
 			}
@@ -6146,7 +6167,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 *
 	 * @return WP_MCP_AI_OpenAI_Client OpenAI client instance.
 	 */
-	protected function get_openai_client() {
+	public function get_openai_client() {
 		if ( null === $this->openai_client ) {
 			$container           = wp_mcp_ai_container();
 			$this->openai_client = $container->get( 'client.openai' );
@@ -6159,7 +6180,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 	 *
 	 * @return WP_MCP_AI_Cron_Status_Service Cron Status Service instance.
 	 */
-	protected function get_cron_status_service() {
+	public function get_cron_status_service() {
 		if ( null === $this->cron_status_service ) {
 			$container                  = wp_mcp_ai_container();
 			$this->cron_status_service = $container->get( 'service.cron_status' );
