@@ -244,6 +244,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'repository.transcript',
+			function () {
+				return new WP_MCP_AI_Transcript_Repository();
+			}
+		);
+
 		// Language model clients.
 		$this->singleton(
 			'client.openai',

@@ -107,6 +107,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		protected $file_service;
 
 		/**
+		 * Transcript repository.
+		 *
+		 * @var WP_MCP_AI_Transcript_Repository
+		 */
+		protected $transcript_repository;
+
+		/**
 		 * Tracks authentication details for the current request.
 		 *
 		 * @var array
@@ -1312,8 +1319,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return WP_REST_Response|WP_Error
 		 */
 		public function handle_chat_transcript_delete( WP_REST_Request $request ) {
-			global $wpdb;
-
 			$session_key = $this->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 
 			if ( '' === $session_key ) {
@@ -1334,7 +1339,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			$table = $this->get_transcript_table_name();
+			$repository = $this->get_transcript_repository();
+			$table      = $repository->get_table_name();
 
 			if ( '' === $table ) {
 				return new WP_Error(
@@ -1344,7 +1350,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			if ( ! $this->transcript_table_exists() ) {
+			if ( ! $repository->table_exists() ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_unavailable',
 					__( 'The transcript storage table does not exist.', 'wp-mcp-ai' ),
@@ -1353,14 +1359,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Delete all transcript entries for this session and user.
-			$deleted = $wpdb->delete(
-				$table,
-				array(
-					'session_key'   => $session_key,
-					'cct_author_id' => $user_id,
-				),
-				array( '%s', '%d' )
-			);
+			$deleted = $repository->delete_transcript( $session_key, $user_id );
 
 			if ( false === $deleted ) {
 				return new WP_Error(
@@ -6032,6 +6031,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return substr( $value, 0, $max );
+		}
+
+		/**
+		 * Get transcript repository instance
+		 *
+		 * @return WP_MCP_AI_Transcript_Repository Transcript repository instance.
+		 */
+		protected function get_transcript_repository() {
+			if ( null === $this->transcript_repository ) {
+				$this->transcript_repository = wp_mcp_ai_get_transcript_repository();
+			}
+			return $this->transcript_repository;
 		}
 
 		/**

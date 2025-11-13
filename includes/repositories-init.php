@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once plugin_dir_path( __FILE__ ) . 'repositories/class-wp-mcp-ai-assistant-repository.php';
 require_once plugin_dir_path( __FILE__ ) . 'repositories/class-wp-mcp-ai-credential-repository.php';
 require_once plugin_dir_path( __FILE__ ) . 'repositories/class-wp-mcp-ai-settings-repository.php';
+require_once plugin_dir_path( __FILE__ ) . 'repositories/class-wp-mcp-ai-transcript-repository.php';
 
 /**
  * Initialize repositories
@@ -32,6 +33,7 @@ function wp_mcp_ai_init_repositories() {
 		'assistant'  => $container->get( 'repository.assistant' ),
 		'credential' => $container->get( 'repository.credential' ),
 		'settings'   => $container->get( 'repository.settings' ),
+		'transcript' => $container->get( 'repository.transcript' ),
 	);
 }
 
@@ -63,4 +65,14 @@ function wp_mcp_ai_get_credential_repository() {
 function wp_mcp_ai_get_settings_repository() {
 	$repositories = wp_mcp_ai_init_repositories();
 	return $repositories['settings'];
+}
+
+/**
+ * Get transcript repository instance
+ *
+ * @return WP_MCP_AI_Transcript_Repository Transcript repository instance.
+ */
+function wp_mcp_ai_get_transcript_repository() {
+	$repositories = wp_mcp_ai_init_repositories();
+	return $repositories['transcript'];
 }
