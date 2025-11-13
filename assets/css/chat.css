@@ -195,6 +195,10 @@
     -webkit-overflow-scrolling: touch;
 }
 
+.wp-mcp-ai-chat__tool-shortcuts--collapsed {
+    display: none;
+}
+
 .wp-mcp-ai-chat__tool-shortcuts:empty {
     display: none;
 }
