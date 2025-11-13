@@ -154,6 +154,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				$this->render_logging_table();
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
 			}
+
+			// Render performance monitoring if we're on the performance_monitoring sub-tab.
+			if ( 'performance_monitoring' === $active_subtab ) {
+				echo '</table>'; // Close the form table.
+				$this->render_performance_monitoring();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+			}
 		}
 
 		/**
@@ -343,6 +350,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			}
 
 			return $input;
+		}
+
+		/**
+		 * Render the performance monitoring content.
+		 * This includes both monitoring metrics and performance tests.
+		 */
+		private function render_performance_monitoring() {
+			// Load performance reporter if available.
+			if ( ! class_exists( 'WP_MCP_AI_Performance_Reporter' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
+			}
+
+			// Instantiate the performance section to use its rendering methods.
+			if ( class_exists( 'WP_MCP_AI_Section_Performance' ) ) {
+				$performance_section = new WP_MCP_AI_Section_Performance();
+				$performance_section->render();
+			} else {
+				?>
+				<div class="notice notice-info inline">
+					<p><?php esc_html_e( 'Performance monitoring features are not available. The Performance section class could not be loaded.', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<?php
+			}
 		}
 	}
 }

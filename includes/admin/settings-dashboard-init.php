@@ -82,7 +82,8 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
+		// Performance section is now embedded as a sub-tab within Advanced Settings.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 
 		// Initialize the dashboard controller.
