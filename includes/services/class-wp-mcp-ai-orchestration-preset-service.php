@@ -406,16 +406,23 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 			// Apply preset settings.
 			if ( ! empty( $preset['settings'] ) ) {
 				foreach ( $preset['settings'] as $key => $value ) {
-					$result = WP_MCP_AI_Settings_Registry::update_setting( $key, $value );
-					if ( false === $result ) {
-						WP_MCP_AI_Logger::log_error(
-							sprintf( 'Failed to update setting: %s', $key ),
-							array(
-								'preset_id' => $preset_id,
-								'setting'   => $key,
-								'value'     => $value,
-							)
-						);
+					// Get current value to check if it's already set.
+					$current_value = WP_MCP_AI_Settings_Registry::get_setting( $key );
+					
+					// Only update if value is different to avoid false error logs.
+					// WordPress update_option() returns false when value is unchanged.
+					if ( $current_value !== $value ) {
+						$result = WP_MCP_AI_Settings_Registry::update_setting( $key, $value );
+						if ( false === $result ) {
+							WP_MCP_AI_Logger::log_error(
+								sprintf( 'Failed to update setting: %s', $key ),
+								array(
+									'preset_id' => $preset_id,
+									'setting'   => $key,
+									'value'     => $value,
+								)
+							);
+						}
 					}
 				}
 			}
