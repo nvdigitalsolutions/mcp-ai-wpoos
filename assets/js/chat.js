@@ -3334,19 +3334,10 @@
 
         const sessionKey = session && session.session_key ? session.session_key : '';
 
-        // Find the main chat window relative to the history item to ensure correct targeting
-        const chatContainer = item.closest('.wp-mcp-ai-chat');
-        let chatWindow = chatContainer ? chatContainer.querySelector('.wp-mcp-ai-chat__messages') : null;
-        
-        if (!chatWindow) {
-            // Fallback to state.messagesEl if DOM traversal fails
-            chatWindow = state.messagesEl;
-        }
-
         // Check if we have cached session data
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
             const cachedSession = state.historySessionDetails[sessionKey];
-            loadHistorySessionIntoChat(state, cachedSession, item, chatWindow);
+            loadHistorySessionIntoChat(state, cachedSession, item, null);
             return;
         }
 
@@ -3359,7 +3350,7 @@
                     state.historySessionDetails[sessionKey] = data;
                 }
 
-                loadHistorySessionIntoChat(state, data, item, chatWindow);
+                loadHistorySessionIntoChat(state, data, item, null);
             })
             .catch(function (error) {
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
@@ -5509,7 +5500,7 @@
         };
 
         // Load the session into the chat
-        loadHistorySessionIntoChat(state, session, null, state.messagesEl);
+        loadHistorySessionIntoChat(state, session, null, null);
         
         return true;
     }
