@@ -1,0 +1,339 @@
+<?php
+/**
+ * Cost Calculator for AI Token Usage
+ *
+ * Calculates costs based on provider-specific pricing models.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Cost Calculator class.
+ */
+class WP_MCP_AI_Cost_Calculator {
+
+	/**
+	 * Provider pricing models (USD per 1M tokens).
+	 *
+	 * Prices updated as of November 2024.
+	 * Source: Official provider pricing pages.
+	 */
+	const PRICING = array(
+		'openai'    => array(
+			'gpt-4o'                      => array(
+				'input'  => 2.50,
+				'output' => 10.00,
+			),
+			'gpt-4o-mini'                 => array(
+				'input'  => 0.15,
+				'output' => 0.60,
+			),
+			'gpt-4-turbo'                 => array(
+				'input'  => 10.00,
+				'output' => 30.00,
+			),
+			'gpt-4'                       => array(
+				'input'  => 30.00,
+				'output' => 60.00,
+			),
+			'gpt-3.5-turbo'               => array(
+				'input'  => 0.50,
+				'output' => 1.50,
+			),
+			'o1-preview'                  => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
+			'o1-mini'                     => array(
+				'input'  => 3.00,
+				'output' => 12.00,
+			),
+		),
+		'gemini'    => array(
+			'gemini-1.5-pro'              => array(
+				'input'  => 1.25,
+				'output' => 5.00,
+			),
+			'gemini-1.5-flash'            => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
+			'gemini-2.0-flash'            => array(
+				'input'  => 0.10,
+				'output' => 0.40,
+			),
+			'gemini-pro'                  => array(
+				'input'  => 0.50,
+				'output' => 1.50,
+			),
+		),
+		'anthropic' => array(
+			'claude-3.5-sonnet'           => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3-opus'               => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			'claude-3-sonnet'             => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3-haiku'              => array(
+				'input'  => 0.25,
+				'output' => 1.25,
+			),
+		),
+		'ollama'    => array(
+			'default'                     => array(
+				'input'  => 0.00,
+				'output' => 0.00,
+			),
+		),
+		'lm_studio' => array(
+			'default'                     => array(
+				'input'  => 0.00,
+				'output' => 0.00,
+			),
+		),
+	);
+
+	/**
+	 * Calculate cost for a specific usage record.
+	 *
+	 * @param string $provider      Provider name (e.g., 'openai', 'gemini').
+	 * @param string $model         Model name (e.g., 'gpt-4o', 'gemini-1.5-pro').
+	 * @param int    $input_tokens  Input token count.
+	 * @param int    $output_tokens Output token count.
+	 * @return float Cost in USD.
+	 */
+	public static function calculate_cost( $provider, $model, $input_tokens, $output_tokens ) {
+		$pricing = self::get_model_pricing( $provider, $model );
+
+		if ( ! $pricing ) {
+			return 0.0;
+		}
+
+		$input_cost  = ( $input_tokens / 1000000 ) * $pricing['input'];
+		$output_cost = ( $output_tokens / 1000000 ) * $pricing['output'];
+
+		return $input_cost + $output_cost;
+	}
+
+	/**
+	 * Get pricing for a specific model.
+	 *
+	 * @param string $provider Provider name.
+	 * @param string $model    Model name.
+	 * @return array|null Pricing array with 'input' and 'output' keys, or null if not found.
+	 */
+	public static function get_model_pricing( $provider, $model ) {
+		$provider = sanitize_key( $provider );
+		$model    = sanitize_text_field( $model );
+
+		// Normalize model name (remove version suffixes for matching).
+		$model_normalized = self::normalize_model_name( $model );
+
+		// Check if provider exists in pricing.
+		if ( ! isset( self::PRICING[ $provider ] ) ) {
+			return null;
+		}
+
+		$provider_pricing = self::PRICING[ $provider ];
+
+		// Try exact match first.
+		if ( isset( $provider_pricing[ $model ] ) ) {
+			return $provider_pricing[ $model ];
+		}
+
+		// Try normalized model name.
+		if ( isset( $provider_pricing[ $model_normalized ] ) ) {
+			return $provider_pricing[ $model_normalized ];
+		}
+
+		// For ollama and lm_studio, return default pricing.
+		if ( in_array( $provider, array( 'ollama', 'lm_studio' ), true ) ) {
+			return $provider_pricing['default'];
+		}
+
+		// Try to find a close match (e.g., 'gpt-4-1106-preview' should match 'gpt-4-turbo').
+		foreach ( $provider_pricing as $known_model => $pricing ) {
+			if ( strpos( $model, $known_model ) === 0 || strpos( $known_model, $model ) === 0 ) {
+				return $pricing;
+			}
+		}
+
+		// No pricing found.
+		return null;
+	}
+
+	/**
+	 * Normalize model name for matching.
+	 *
+	 * Removes version suffixes and dates from model names.
+	 *
+	 * @param string $model Model name.
+	 * @return string Normalized model name.
+	 */
+	private static function normalize_model_name( $model ) {
+		// Remove common version suffixes.
+		$model = preg_replace( '/-\d{4}(-\d{2})?(-\d{2})?$/', '', $model );
+		$model = preg_replace( '/-preview$/', '', $model );
+		$model = preg_replace( '/-turbo-preview$/', '-turbo', $model );
+
+		return $model;
+	}
+
+	/**
+	 * Calculate cost breakdown from usage data.
+	 *
+	 * Pure calculation function - does not access database or other services.
+	 *
+	 * @param array  $usage_data Usage data structure (from token tracking).
+	 * @param string $start_date Start date (YYYY-MM-DD).
+	 * @param string $end_date   End date (YYYY-MM-DD).
+	 * @return array Cost breakdown with totals by provider, model, and tool.
+	 */
+	public static function calculate_cost_breakdown( $usage_data, $start_date, $end_date ) {
+		$breakdown = array(
+			'total_cost'  => 0.0,
+			'by_provider' => array(),
+			'by_model'    => array(),
+			'by_tool'     => array(),
+			'by_date'     => array(),
+		);
+
+		// Parse date range.
+		$start_timestamp = strtotime( $start_date );
+		$end_timestamp   = strtotime( $end_date );
+
+		if ( ! $start_timestamp || ! $end_timestamp || ! is_array( $usage_data ) ) {
+			return $breakdown;
+		}
+
+		// Process each tool's usage.
+		foreach ( $usage_data as $tool_slug => $tool_data ) {
+			if ( ! isset( $tool_data['daily'] ) || ! is_array( $tool_data['daily'] ) ) {
+				continue;
+			}
+
+			// Process daily usage within date range.
+			foreach ( $tool_data['daily'] as $date_key => $tokens ) {
+				$date_timestamp = strtotime( $date_key );
+
+				if ( $date_timestamp < $start_timestamp || $date_timestamp > $end_timestamp ) {
+					continue;
+				}
+
+				// Estimate cost based on tokens (we need provider/model info for accurate costs).
+				// For now, use a default estimation. This will be enhanced when we track provider/model.
+				$cost = self::estimate_cost_from_tokens( $tokens );
+
+				$breakdown['total_cost'] += $cost;
+
+				// Aggregate by date.
+				if ( ! isset( $breakdown['by_date'][ $date_key ] ) ) {
+					$breakdown['by_date'][ $date_key ] = 0.0;
+				}
+				$breakdown['by_date'][ $date_key ] += $cost;
+
+				// Aggregate by tool.
+				if ( ! isset( $breakdown['by_tool'][ $tool_slug ] ) ) {
+					$breakdown['by_tool'][ $tool_slug ] = 0.0;
+				}
+				$breakdown['by_tool'][ $tool_slug ] += $cost;
+			}
+		}
+
+		return $breakdown;
+	}
+
+	/**
+	 * Estimate cost from total tokens (when provider/model is unknown).
+	 *
+	 * Uses an average cost based on common models.
+	 *
+	 * @param int $tokens Total token count.
+	 * @return float Estimated cost in USD.
+	 */
+	private static function estimate_cost_from_tokens( $tokens ) {
+		// Use an average of common models: gpt-4o-mini as a reasonable default.
+		// Average of input (0.15) and output (0.60) = 0.375 per 1M tokens.
+		$avg_cost_per_million = 0.375;
+
+		return ( $tokens / 1000000 ) * $avg_cost_per_million;
+	}
+
+	/**
+	 * Get all providers with their models.
+	 *
+	 * @return array Provider => models array.
+	 */
+	public static function get_all_providers() {
+		return self::PRICING;
+	}
+
+	/**
+	 * Get models for a specific provider.
+	 *
+	 * @param string $provider Provider name.
+	 * @return array Model names, or empty array if provider not found.
+	 */
+	public static function get_provider_models( $provider ) {
+		$provider = sanitize_key( $provider );
+
+		if ( ! isset( self::PRICING[ $provider ] ) ) {
+			return array();
+		}
+
+		return array_keys( self::PRICING[ $provider ] );
+	}
+
+	/**
+	 * Calculate ROI from cost and productivity metrics.
+	 *
+	 * Pure calculation function - does not access database or other services.
+	 *
+	 * @param float $total_cost Total cost in USD.
+	 * @param array $metrics    Productivity metrics (time_saved_hours, tasks_automated, hourly_rate).
+	 * @return array ROI data.
+	 */
+	public static function calculate_roi( $total_cost, $metrics ) {
+		$roi = array(
+			'total_cost'      => floatval( $total_cost ),
+			'time_saved'      => isset( $metrics['time_saved_hours'] ) ? floatval( $metrics['time_saved_hours'] ) : 0,
+			'tasks_automated' => isset( $metrics['tasks_automated'] ) ? intval( $metrics['tasks_automated'] ) : 0,
+			'cost_per_task'   => 0.0,
+			'hourly_rate'     => isset( $metrics['hourly_rate'] ) ? floatval( $metrics['hourly_rate'] ) : 50.0,
+			'value_generated' => 0.0,
+			'roi_percentage'  => 0.0,
+		);
+
+		if ( $roi['tasks_automated'] > 0 ) {
+			$roi['cost_per_task'] = $roi['total_cost'] / $roi['tasks_automated'];
+		}
+
+		$roi['value_generated'] = $roi['time_saved'] * $roi['hourly_rate'];
+
+		if ( $roi['total_cost'] > 0 ) {
+			$roi['roi_percentage'] = ( ( $roi['value_generated'] - $roi['total_cost'] ) / $roi['total_cost'] ) * 100;
+		}
+
+		return $roi;
+	}
+
+	/**
+	 * Format cost for display.
+	 *
+	 * @param float $cost Cost in USD.
+	 * @return string Formatted cost string (e.g., "$1.23").
+	 */
+	public static function format_cost( $cost ) {
+		return '$' . number_format( $cost, 4 );
+	}
+}

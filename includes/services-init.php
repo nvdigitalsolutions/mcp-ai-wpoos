@@ -21,6 +21,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cost-tracking-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-budget-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-reporting-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
@@ -192,4 +193,16 @@ function wp_mcp_ai_get_performance_reporting_service() {
  */
 function wp_mcp_ai_get_token_usage_service() {
 	return 'WP_MCP_AI_Token_Usage_Service';
+}
+
+/**
+ * Get cost tracking service instance
+ *
+ * Helper function to access cost tracking service.
+ * This service integrates cost calculation with token usage tracking.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_cost_tracking_service() {
+	return 'WP_MCP_AI_Cost_Tracking_Service';
 }

@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/add-support-for-ai-models',
-        'version' => 'dev-copilot/add-support-for-ai-models',
-        'reference' => '302447d9ad2dd174c57e6f7055a225ba18192c3d',
+        'pretty_version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
+        'version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
+        'reference' => 'aa3502dce00bedebb5a4ab7ec2fe4c09390bf092',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/add-support-for-ai-models',
-            'version' => 'dev-copilot/add-support-for-ai-models',
-            'reference' => '302447d9ad2dd174c57e6f7055a225ba18192c3d',
+            'pretty_version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
+            'version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
+            'reference' => 'aa3502dce00bedebb5a4ab7ec2fe4c09390bf092',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

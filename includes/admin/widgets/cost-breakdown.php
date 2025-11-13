@@ -10,6 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Get cost data from Cost Tracking Service.
+if ( ! isset( $data ) || empty( $data ) ) {
+	$cost_summary = WP_MCP_AI_Cost_Tracking_Service::get_dashboard_cost_summary( 7 );
+	$data         = $cost_summary;
+}
+
 $total_cost   = isset( $data['total_cost'] ) ? $data['total_cost'] : 0.0;
 $by_provider  = isset( $data['by_provider'] ) ? $data['by_provider'] : array();
 $period_start = isset( $data['period_start'] ) ? $data['period_start'] : gmdate( 'Y-m-d', strtotime( '-7 days' ) );
@@ -20,7 +26,9 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 	<!-- Cost Summary -->
 	<div class="wp-mcp-ai-cost-summary">
 		<div class="wp-mcp-ai-cost-total">
-			<span class="wp-mcp-ai-cost-amount">$<?php echo esc_html( number_format( $total_cost, 2 ) ); ?></span>
+			<span class="wp-mcp-ai-cost-amount">
+				<?php echo esc_html( WP_MCP_AI_Cost_Calculator::format_cost( $total_cost ) ); ?>
+			</span>
 			<span class="wp-mcp-ai-cost-period">
 				<?php
 				printf(
@@ -80,6 +88,18 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 								title: {
 									display: true,
 									text: '<?php esc_attr_e( 'Cost by Provider', 'wp-mcp-ai' ); ?>'
+								},
+								tooltip: {
+									callbacks: {
+										label: function(context) {
+											var label = context.label || '';
+											if (label) {
+												label += ': ';
+											}
+											label += '$' + context.parsed.toFixed(4);
+											return label;
+										}
+									}
 								}
 							}
 						}
@@ -91,7 +111,17 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 	<?php else : ?>
 		<div class="wp-mcp-ai-widget-notice" style="margin-top: 20px; padding: 15px; background: #f7f7f7; border-left: 4px solid #2271b1;">
 			<p style="margin: 0;">
-				<?php esc_html_e( 'Cost tracking is currently being implemented. Check back soon for detailed cost breakdowns!', 'wp-mcp-ai' ); ?>
+				<?php
+				if ( $total_cost > 0 ) {
+					printf(
+						/* translators: %s: total cost */
+						esc_html__( 'Estimated cost: %s (based on average pricing)', 'wp-mcp-ai' ),
+						esc_html( WP_MCP_AI_Cost_Calculator::format_cost( $total_cost ) )
+					);
+				} else {
+					esc_html_e( 'No token usage recorded in this period.', 'wp-mcp-ai' );
+				}
+				?>
 			</p>
 		</div>
 	<?php endif; ?>
