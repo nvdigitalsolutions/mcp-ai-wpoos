@@ -91,19 +91,47 @@ PHASE 2: Remove Hard-coded Dependencies (WEEK 4-5)
                     ⏸️  PAUSE - Evaluate if Continue
                                     ↓
 
-PHASE 3: Split REST Controller (WEEK 6-9) - Only if ready
+PHASE 3: Split REST Controller (WEEK 6-10) - In Progress ⏩
 ┌──────────────────────────────────────────────────────────────────────┐
-│  Risk: 🔴 HIGH                                                        │
-│  Time: 3-4 weeks                                                     │
+│  Risk: 🟡 MEDIUM (incremental extraction)                            │
+│  Time: 4-5 weeks total                                               │
 │                                                                       │
-│  ⚠️  This is BIG REFACTORING - only do after Phases 1-2 succeed     │
+│  [✓] Phase 3.1 (Week 6): Base Controller Class                      │
+│      ✅ Abstract base class created (265 lines)                      │
+│      ✅ Multi-client authentication support                          │
+│      ✅ Template method pattern implemented                          │
+│      ✅ 11 unit tests passing                                        │
 │                                                                       │
-│  Split into:                                                          │
-│  - WP_MCP_AI_Chat_Controller                                          │
-│  - WP_MCP_AI_Assistant_Controller                                     │
-│  - WP_MCP_AI_Tool_Controller                                          │
-│  - WP_MCP_AI_Transcript_Controller                                    │
-│  - WP_MCP_AI_File_Controller                                          │
+│  [→] Phase 3.2 (Week 7): Chat Controller ← NEXT STEP                │
+│      Extract chat-related endpoints (~800 lines):                    │
+│      - /chat (MCP clients, 5 iterations)                             │
+│      - /chat-client (Browser clients, 15 iterations)                 │
+│      - /chat-transcripts (List all)                                  │
+│      - /chat-transcripts/{session_key} (Individual ops)              │
+│                                                                       │
+│  [ ] Phase 3.3 (Week 8): MCP Protocol Controller                    │
+│      Extract MCP-specific endpoints (~600 lines):                    │
+│      - /mcp (JSON-RPC 2.0 compliance)                                │
+│      - /sse (Server-sent events streaming)                           │
+│      - /assistants (MCP directory listing)                           │
+│                                                                       │
+│  [ ] Phase 3.4 (Week 9): Tools & Admin Controllers                  │
+│      Extract remaining endpoints (~700 lines):                       │
+│      - /tools (Tool execution)                                       │
+│      - /cron-status (Admin dashboard)                                │
+│      - /files/{id}/download (File operations)                        │
+│                                                                       │
+│  [ ] Phase 3.5 (Week 10): Cleanup & Optimization                    │
+│      Finalize extraction:                                            │
+│      - Convert main REST to router/delegator (~1,500 lines)          │
+│      - Optimize route registration                                   │
+│      - Final testing and validation                                  │
+│                                                                       │
+│  Result After Phase 3:                                               │
+│  - 1 base controller (shared logic)                                  │
+│  - 4 specialized controllers (focused responsibilities)              │
+│  - Main REST controller as router (~1,500 lines, down from 7,289)   │
+│  - Zero breaking changes                                             │
 └──────────────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -111,12 +139,16 @@ PHASE 3: Split REST Controller (WEEK 6-9) - Only if ready
 PROGRESS TRACKER
 ┌──────────────────────────────────────────────────────────────────────┐
 │                                                                       │
-│  Week 1: [✓] Phase 1.1 Complete                                      │
-│  Week 2: [✓] Phase 1.2 Complete                                      │
-│  Week 3: [✓] Phase 1.3 Complete                                      │
-│  Week 4: [✓] Phase 2 Complete                                        │
-│                                                                       │
-│  Phase 3: ⏸️  Decision point - evaluate if needed                    │
+│  Week 1: [✓] Phase 1.1 Complete - Settings Repository Migration     │
+│  Week 2: [✓] Phase 1.2 Complete - 3 More Services                   │
+│  Week 3: [✓] Phase 1.3 Complete - Database Query Extraction         │
+│  Week 4: [✓] Phase 2 Complete - Hard-coded Dependencies Removed     │
+│  Week 5: [✓] Phase 2.2 Complete - Service Layer Complete            │
+│  Week 6: [✓] Phase 3.1 Complete - Base Controller Created           │
+│  Week 7: [→] Phase 3.2 Next - Chat Controller Extraction            │
+│  Week 8: [ ] Phase 3.3 - MCP Protocol Controller                    │
+│  Week 9: [ ] Phase 3.4 - Tools & Admin Controllers                  │
+│  Week 10: [ ] Phase 3.5 - Cleanup & Optimization                    │
 │                                                                       │
 └──────────────────────────────────────────────────────────────────────┘
 
@@ -161,7 +193,24 @@ Phase 2 ✅
   ▸ Flexible dependencies
   ▸ Easier mocking
 
-Phase 3 ✅
+Phase 2.2 ✅
+  ▸ Service layer 100% complete
+  ▸ Zero direct option calls
+  ▸ Consistent DI patterns
+
+Phase 3.1 ✅
+  ▸ Foundation for extraction
+  ▸ Multi-client auth centralized
+  ▸ Template method pattern
+  ▸ Reusable base class
+
+Phase 3.2 → (Next)
+  ▸ Chat logic isolated
+  ▸ ~800 lines extracted
+  ▸ Most-used endpoints focused
+  ▸ SSE streaming preserved
+
+Phase 3.3-3.5 (Future)
   ▸ Maintainable code
   ▸ Clear responsibilities
   ▸ Easy to navigate
@@ -169,11 +218,14 @@ Phase 3 ✅
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CURRENT RECOMMENDATION: START WITH PHASE 1.1
+CURRENT STATUS: PHASE 3.2 - CHAT CONTROLLER EXTRACTION
 
-📖 See IMPLEMENTATION_GUIDE_PHASE_1_1.md for detailed instructions
-⚡ See QUICK_START_PHASE_1_1.md for 30-second overview
-📚 See NEXT_STEP_SEPARATION_OF_CONCERNS.md for rationale
+Phase 3.1 Complete ✅ - Base controller foundation is ready
+Next Step → Phase 3.2 - Extract chat endpoints (~800 lines)
 
-Remember: "Let's not do too much at one time, don't want things to break" ✅
+📖 See SEPARATION_PLAN_NEXT_STEP.md for detailed next steps
+📖 See PHASE_3_VISUAL_GUIDE.md for architecture diagrams
+📖 See PHASE_3_1_COMPLETE.md for what was just completed
+
+Remember: "Incremental progress with validation at each step" ✅
 ```
