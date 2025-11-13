@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-mcp-methods.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -358,6 +359,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Register REST API routes.
 		 */
 		public function register_routes() {
+			// Delegate chat routes to Chat Controller (Phase 3.2).
+			$chat_controller = new WP_MCP_AI_REST_Chat_Controller( $this, $this->authenticator, $this->validator );
+			$chat_controller->register_routes();
+
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/assistants',
