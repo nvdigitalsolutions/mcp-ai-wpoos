@@ -113,6 +113,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected $transcript_repository;
 
+	/**
+	 * OpenAI client (lazy-loaded).
+	 *
+	 * @var WP_MCP_AI_OpenAI_Client
+	 */
+	protected $openai_client;
+
 		/**
 		 * Tracks authentication details for the current request.
 		 *
@@ -3686,7 +3693,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
 			}
 
-			$client = new WP_MCP_AI_OpenAI_Client();
+			$client = $this->get_openai_client();
 			$result = $client->download_file( $file_id );
 
 			if ( is_wp_error( $result ) ) {
@@ -6048,6 +6055,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 			return $this->transcript_repository;
 		}
+
+	/**
+	 * Get OpenAI client instance (lazy-loaded from container).
+	 *
+	 * @return WP_MCP_AI_OpenAI_Client OpenAI client instance.
+	 */
+	protected function get_openai_client() {
+		if ( null === $this->openai_client ) {
+			$container           = wp_mcp_ai_container();
+			$this->openai_client = $container->get( 'client.openai' );
+		}
+		return $this->openai_client;
+	}
 
 		/**
 		 * Format a timestamp string for API responses.

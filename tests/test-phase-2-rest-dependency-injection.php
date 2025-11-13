@@ -208,4 +208,35 @@ class Test_Phase_2_REST_Dependency_Injection extends WP_UnitTestCase {
 		$this->assertStringContainsString( '@param WP_MCP_AI_REST_Validator', $doc_comment, 'Validator param should be documented' );
 		$this->assertStringContainsString( '@param WP_MCP_AI_SSE_Handler', $doc_comment, 'SSE handler param should be documented' );
 	}
+
+	/**
+	 * Test that OpenAI client is lazy-loaded from container.
+	 */
+	public function test_openai_client_lazy_loading() {
+		// Get the REST controller from container.
+		$rest = $this->container->get( 'rest_controller' );
+		
+		// Use reflection to access protected property.
+		$reflection = new ReflectionClass( $rest );
+		$property = $reflection->getProperty( 'openai_client' );
+		$property->setAccessible( true );
+		
+		// Initially null (not loaded yet).
+		$this->assertNull( $property->getValue( $rest ), 'OpenAI client should be null initially' );
+		
+		// Call the getter method.
+		$method = $reflection->getMethod( 'get_openai_client' );
+		$method->setAccessible( true );
+		$client = $method->invoke( $rest );
+		
+		// Now it should be loaded.
+		$this->assertInstanceOf( WP_MCP_AI_OpenAI_Client::class, $client, 'Should return OpenAI client instance' );
+		
+		// Property should now be set.
+		$this->assertInstanceOf( WP_MCP_AI_OpenAI_Client::class, $property->getValue( $rest ), 'Property should be set after lazy load' );
+		
+		// Calling again should return same instance.
+		$client2 = $method->invoke( $rest );
+		$this->assertSame( $client, $client2, 'Should return same instance on subsequent calls' );
+	}
 }
