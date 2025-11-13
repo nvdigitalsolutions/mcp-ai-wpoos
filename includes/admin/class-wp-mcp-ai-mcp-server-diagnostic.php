@@ -557,7 +557,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 									<?php foreach ( array_reverse( $mcp_activity ) as $activity ) : ?>
 										<tr>
 											<td><?php echo isset( $activity['timestamp'] ) ? esc_html( $activity['timestamp'] ) : '—'; ?></td>
-											<td><code><?php echo isset( $activity['event'] ) ? esc_html( $activity['event'] ) : '—'; ?></code></td>
+											<td><code><?php echo isset( $activity['type'] ) ? esc_html( $activity['type'] ) : '—'; ?></code></td>
 											<td><?php echo isset( $activity['message'] ) ? esc_html( wp_trim_words( $activity['message'], 20 ) ) : '—'; ?></td>
 										</tr>
 									<?php endforeach; ?>
