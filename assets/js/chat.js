@@ -1850,6 +1850,7 @@
                 state.voiceChatRecorder.start();
                 state.voiceChatShouldProcess = true;
                 setVoiceChatRecordingState(state, true);
+                updateVoiceChatButtonState(state);
             })
             .catch(function (error) {
                 setStatus(
