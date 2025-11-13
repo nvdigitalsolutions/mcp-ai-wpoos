@@ -158,4 +158,94 @@ class WP_MCP_AI_Orchestration_Slider_Settings_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'memory_warning_threshold', $sanitized );
 		$this->assertSame( 70, $sanitized['memory_warning_threshold'] );
 	}
+
+	/**
+	 * Test that active preset updates to 'custom' when settings diverge.
+	 */
+	public function test_preset_updates_to_custom_when_settings_change() {
+		// Clean slate.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		// Apply balanced preset.
+		$result = WP_MCP_AI_Orchestration_Preset_Service::apply_preset( 'balanced' );
+		$this->assertTrue( $result, 'Preset should be applied successfully' );
+
+		// Verify preset is set to 'balanced'.
+		$active_preset = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
+		$this->assertSame( 'balanced', $active_preset, 'Active preset should be balanced' );
+
+		// Verify settings match the balanced preset.
+		$matches = WP_MCP_AI_Orchestration_Preset_Service::matches_preset( 'balanced' );
+		$this->assertTrue( $matches, 'Settings should match balanced preset' );
+
+		// Now manually change a slider value to something different from balanced preset.
+		// Balanced preset has memory_warning_threshold = 70.
+		WP_MCP_AI_Settings_Registry::update_setting( 'memory_warning_threshold', 80 );
+
+		// Settings should no longer match the balanced preset.
+		$matches_after = WP_MCP_AI_Orchestration_Preset_Service::matches_preset( 'balanced' );
+		$this->assertFalse( $matches_after, 'Settings should not match balanced preset after manual change' );
+
+		// Call maybe_update_to_custom to trigger the auto-update.
+		$updated = WP_MCP_AI_Orchestration_Preset_Service::maybe_update_to_custom();
+		$this->assertTrue( $updated, 'Preset should be updated to custom' );
+
+		// Verify preset is now 'custom'.
+		$active_preset_after = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
+		$this->assertSame( 'custom', $active_preset_after, 'Active preset should be custom after divergence' );
+
+		// Clean up.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+	}
+
+	/**
+	 * Test that preset does not update to custom when settings still match.
+	 */
+	public function test_preset_does_not_update_when_settings_match() {
+		// Clean slate.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		// Apply balanced preset.
+		WP_MCP_AI_Orchestration_Preset_Service::apply_preset( 'balanced' );
+
+		// Verify preset is 'balanced'.
+		$active_preset = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
+		$this->assertSame( 'balanced', $active_preset );
+
+		// Call maybe_update_to_custom without changing any settings.
+		$updated = WP_MCP_AI_Orchestration_Preset_Service::maybe_update_to_custom();
+		$this->assertFalse( $updated, 'Preset should not be updated when settings still match' );
+
+		// Preset should still be 'balanced'.
+		$active_preset_after = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
+		$this->assertSame( 'balanced', $active_preset_after, 'Active preset should still be balanced' );
+
+		// Clean up.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+	}
+
+	/**
+	 * Test that preset does not update when already set to custom.
+	 */
+	public function test_preset_does_not_update_when_already_custom() {
+		// Clean slate.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+
+		// Set preset to custom explicitly.
+		WP_MCP_AI_Settings_Registry::update_setting( 'orchestration_preset', 'custom' );
+
+		// Change some settings.
+		WP_MCP_AI_Settings_Registry::update_setting( 'memory_warning_threshold', 99 );
+
+		// Call maybe_update_to_custom.
+		$updated = WP_MCP_AI_Orchestration_Preset_Service::maybe_update_to_custom();
+		$this->assertFalse( $updated, 'Preset should not be updated when already custom' );
+
+		// Preset should still be 'custom'.
+		$active_preset = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
+		$this->assertSame( 'custom', $active_preset );
+
+		// Clean up.
+		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
+	}
 }
