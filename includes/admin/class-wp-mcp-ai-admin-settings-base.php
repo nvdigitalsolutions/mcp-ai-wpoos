@@ -337,26 +337,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_burst'                  => 10,
 				'federation_jwks_keys'              => array(),
 				'federation_price_hints'            => array(),
-				// Orchestration Layer settings - defaults match "Balanced" preset.
-				'orchestration_preset'              => 'custom',
-				'enable_budget_management'          => false,
-				'enable_predictive_optimization'    => false,
-				'enable_capability_gating'          => false,
-				'enable_cron_orchestration'         => false,
-				'memory_warning_threshold'          => 70,
-				'memory_critical_threshold'         => 85,
-				'error_rate_warning_threshold'      => 5,
-				'error_rate_critical_threshold'     => 10,
-				'high_priority_budget'              => 100,
-				'medium_priority_budget'            => 75,
-				'low_priority_budget'               => 50,
-				'critical_health_reduction'         => 50,
-				'warning_health_reduction'          => 75,
-				'low_tier_max_tokens'               => 2000,
-				'medium_tier_max_tokens'            => 8000,
-				'high_tier_max_tokens'              => 32000,
-				'prediction_confidence_threshold'   => 40,
-				'prediction_safety_buffer'          => 15,
 			);
 		}
 
