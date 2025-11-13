@@ -210,13 +210,13 @@
 			'<form class="wp-mcp-ai-chat__form">' +
 			'<div class="wp-mcp-ai-chat__status" role="status" aria-live="polite" hidden></div>' +
 			'<div class="wp-mcp-ai-chat__tool-shortcuts-wrapper" hidden>' +
-			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle" aria-expanded="true" aria-controls="' + instanceId + '-tool-shortcuts">' +
+			'<button type="button" class="wp-mcp-ai-chat__tool-shortcuts-toggle" aria-expanded="false" aria-controls="' + instanceId + '-tool-shortcuts">' +
 			'<span class="wp-mcp-ai-chat__tool-shortcuts-toggle-text">Quick Tasks</span>' +
 			'<svg class="wp-mcp-ai-chat__tool-shortcuts-toggle-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
 			'<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />' +
 			'</svg>' +
 			'</button>' +
-			'<div id="' + instanceId + '-tool-shortcuts" class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="Assistant tool tasks"></div>' +
+			'<div id="' + instanceId + '-tool-shortcuts" class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="Assistant tool tasks" hidden></div>' +
 			'</div>' +
 			'<textarea class="wp-mcp-ai-chat__input" rows="4" placeholder="' + placeholderEscaped + '" required></textarea>' +
 			'<div class="wp-mcp-ai-chat__attachments" hidden>' +

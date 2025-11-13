@@ -5773,7 +5773,7 @@
                 toolShortcutsContainer: toolShortcutsContainer,
                 toolShortcutsWrapper: toolShortcutsWrapper,
                 toolShortcutsToggle: toolShortcutsToggle,
-                toolShortcutsExpanded: true,
+                toolShortcutsExpanded: false,
                 transcriptToggle: transcriptToggle,
                 historyToggle: historyToggle,
                 historyContainer: historyContainer,
@@ -5807,6 +5807,21 @@
 
             initialiseExistingSpeechButtons(state);
             renderToolShortcuts(state);
+
+            // Initialize tool shortcuts collapsed state
+            if (state.toolShortcutsContainer) {
+                state.toolShortcutsContainer.hidden = !state.toolShortcutsExpanded;
+            }
+            if (state.toolShortcutsToggle) {
+                state.toolShortcutsToggle.setAttribute('aria-expanded', state.toolShortcutsExpanded ? 'true' : 'false');
+                if (state.toolShortcutsToggle.classList) {
+                    if (state.toolShortcutsExpanded) {
+                        state.toolShortcutsToggle.classList.remove('wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed');
+                    } else {
+                        state.toolShortcutsToggle.classList.add('wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed');
+                    }
+                }
+            }
 
             setTranscriptExpanded(state, false);
             setHistoryVisibility(state, false);
