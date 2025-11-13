@@ -473,9 +473,10 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 	 * Check if current settings match a preset.
 	 *
 	 * @param string $preset_id Preset identifier to check against.
+	 * @param array  $settings Optional. Settings array to check. If not provided, uses current saved settings.
 	 * @return bool True if settings match the preset.
 	 */
-	public static function matches_preset( $preset_id ) {
+	public static function matches_preset( $preset_id, $settings = null ) {
 		$presets = self::get_presets();
 
 		if ( ! isset( $presets[ $preset_id ] ) ) {
@@ -490,7 +491,13 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 
 		// Check if all preset settings match current values.
 		foreach ( $preset['settings'] as $key => $expected_value ) {
-			$current_value = WP_MCP_AI_Settings_Registry::get_setting( $key );
+			if ( null !== $settings && isset( $settings[ $key ] ) ) {
+				// Use provided settings array.
+				$current_value = $settings[ $key ];
+			} else {
+				// Fall back to saved settings.
+				$current_value = WP_MCP_AI_Settings_Registry::get_setting( $key );
+			}
 			if ( $current_value !== $expected_value ) {
 				return false;
 			}
