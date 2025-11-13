@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 					throw new Exception( 'Invalid presets array' );
 				}
 
-				$current_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'custom' );
+				$current_preset = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
 
 				// Get the current preset name for display.
 				$current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : __( 'Unknown', 'wp-mcp-ai' );
