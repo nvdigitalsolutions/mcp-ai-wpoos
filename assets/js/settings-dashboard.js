@@ -31,6 +31,9 @@
 
 			// Tab switching
 			$('.nav-tab').on('click', this.handleTabSwitch.bind(this));
+
+			// Sub-tab switching
+			$('.wp-mcp-ai-subtab').on('click', this.handleSubTabSwitch.bind(this));
 		},
 
 		/**
@@ -500,6 +503,17 @@
 			// Just add a visual loading indicator.
 			const $tab = $(e.currentTarget);
 			$tab.addClass('loading');
+		},
+
+		/**
+		 * Handle sub-tab switching (provider sub-tabs).
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleSubTabSwitch: function(e) {
+			// Allow default navigation for sub-tabs.
+			const $subtab = $(e.currentTarget);
+			$subtab.addClass('loading');
 		},
 
 		/**
