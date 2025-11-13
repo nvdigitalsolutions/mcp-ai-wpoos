@@ -52,10 +52,13 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	/**
 	 * Get the tab this section belongs to.
 	 *
+	 * This section is embedded as a sub-tab in Advanced Settings.
+	 * Return a non-existent tab to hide it from main navigation.
+	 *
 	 * @return string
 	 */
 	public function get_tab() {
-		return 'advanced';
+		return '__hidden__';
 	}
 
 	/**
