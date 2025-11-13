@@ -526,7 +526,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * @return string Directory path.
 		 */
 		private function get_package_json_directory() {
-			return WP_MCP_AI_PATH;
+			return defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH : plugin_dir_path( dirname( dirname( dirname( __FILE__ ) ) ) );
 		}
 
 		/**
