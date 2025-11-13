@@ -419,8 +419,14 @@
                         return;
                     }
 
-                    setActiveButton(instanceState, sessionKeyValue);
-                    loadSessionTranscript(instanceState, sessionKeyValue);
+                    // If a target chat widget is available, load the conversation directly into it
+                    // Otherwise, show the read-only view within this widget
+                    if (instanceState.config.targetChatWidget) {
+                        loadSessionIntoTargetChat(instanceState, sessionData);
+                    } else {
+                        setActiveButton(instanceState, sessionKeyValue);
+                        loadSessionTranscript(instanceState, sessionKeyValue);
+                    }
                 });
             })(state, session, button, buttonKey);
 
@@ -431,22 +437,24 @@
             state.sessionButtons[buttonKey] = button;
             listItem.appendChild(button);
             
-            // Add "Load into chat" button if target chat widget is available
+            // Add "View details" button if target chat widget is available
+            // The primary click now loads into chat, this button shows the read-only view
             if (state.config.targetChatWidget) {
-                const loadButton = document.createElement('button');
-                loadButton.type = 'button';
-                loadButton.className = 'wp-mcp-ai-user-chats__load-button';
-                loadButton.textContent = getString(state, 'loadIntoChat', 'Load into chat');
-                loadButton.setAttribute('aria-label', getString(state, 'loadIntoChatLabel', 'Load this conversation into the chat window'));
+                const detailsButton = document.createElement('button');
+                detailsButton.type = 'button';
+                detailsButton.className = 'wp-mcp-ai-user-chats__details-button';
+                detailsButton.textContent = getString(state, 'viewDetails', 'View details');
+                detailsButton.setAttribute('aria-label', getString(state, 'viewDetailsLabel', 'View conversation details in read-only mode'));
                 
-                (function attachLoadListener(instanceState, sessionData, loadButtonEl) {
-                    loadButtonEl.addEventListener('click', function (event) {
+                (function attachDetailsListener(instanceState, sessionData, detailsButtonEl, sessionKeyValue) {
+                    detailsButtonEl.addEventListener('click', function (event) {
                         event.stopPropagation();
-                        loadSessionIntoTargetChat(instanceState, sessionData);
+                        setActiveButton(instanceState, sessionKeyValue);
+                        loadSessionTranscript(instanceState, sessionKeyValue);
                     });
-                })(state, session, loadButton);
+                })(state, session, detailsButton, buttonKey);
                 
-                listItem.appendChild(loadButton);
+                listItem.appendChild(detailsButton);
             }
             
             state.listEl.appendChild(listItem);
