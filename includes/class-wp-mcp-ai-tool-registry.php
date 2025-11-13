@@ -340,6 +340,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_image_caption'          => 'wordpress-core',
 				'analyze_comment_content'         => 'wordpress-core',
 
+				// Data Visualization.
+				'create_chart'                    => 'wordpress-core',
+
 				// Assistant management.
 				'create_assistant'                => 'wordpress-core',
 
@@ -905,6 +908,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Image_Alt_Text' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text.php',
 				'WP_MCP_AI_Tool_Generate_Image_Caption'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
+				'WP_MCP_AI_Tool_Create_Chart'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-chart.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.

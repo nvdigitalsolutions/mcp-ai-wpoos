@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-        'version' => 'dev-copilot/move-to-next-step-separation-again',
-        'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+        'pretty_version' => 'dev-copilot/add-chart-creation-tool',
+        'version' => 'dev-copilot/add-chart-creation-tool',
+        'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-            'version' => 'dev-copilot/move-to-next-step-separation-again',
-            'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+            'pretty_version' => 'dev-copilot/add-chart-creation-tool',
+            'version' => 'dev-copilot/add-chart-creation-tool',
+            'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
