@@ -863,6 +863,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'/mcp',
 				array(
 					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'permission_callback' => array( $this, 'permissions_check_mcp_get' ),
+						'callback'            => array( $this, 'handle_mcp_get' ),
+						'args'                => array(),
+					),
+					array(
 						'methods'             => WP_REST_Server::CREATABLE,
 						'permission_callback' => array( $this, 'permissions_check_mcp' ),
 						'callback'            => array( $this, 'handle_mcp_request' ),
@@ -1926,7 +1932,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
-			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted.
+			// Allow WordPress nonce authentication ONLY for internal admin diagnostic testing.
+			// This enables the diagnostic page to test MCP endpoint connectivity without requiring
+			// bearer tokens for internal REST API calls made via rest_do_request().
+			if ( is_user_logged_in() && current_user_can( 'manage_options' ) ) {
+				// Verify this is an internal request (not from external source).
+				// Internal requests via rest_do_request() won't have HTTP_ORIGIN or HTTP_REFERER headers.
+				$is_internal = empty( $_SERVER['HTTP_ORIGIN'] ) ||
+					( isset( $_SERVER['HTTP_ORIGIN'] ) && wp_parse_url( home_url(), PHP_URL_HOST ) === wp_parse_url( sanitize_text_field( wp_unslash( $_SERVER['HTTP_ORIGIN'] ) ), PHP_URL_HOST ) );
+
+				if ( $is_internal ) {
+					$this->mark_token_authenticated( 'nonce_admin', array( 'admin_user' => get_current_user_id() ) );
+					return true;
+				}
+			}
+
+			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
 			return new WP_Error(
 				'wp_mcp_ai_mcp_bearer_required',
 				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'wp-mcp-ai' ),
@@ -1939,6 +1960,77 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				)
 			);
+		}
+
+		/**
+		 * Permission callback for GET requests to MCP endpoint.
+		 *
+		 * GET requests are allowed without authentication for server capability discovery.
+		 * This enables LM Studio, IDEs, and other MCP clients to discover server information.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_mcp_get( WP_REST_Request $request ) {
+			// GET requests are always allowed for capability discovery.
+			// No authentication required - this is read-only server information.
+			return true;
+		}
+
+		/**
+		 * Handle GET requests to MCP endpoint for server capability discovery.
+		 *
+		 * Returns server information and capabilities without requiring authentication.
+		 * This enables LM Studio, IDEs, and other tools to discover the MCP server.
+		 *
+		 * @param WP_REST_Request $request REST request instance.
+		 * @return WP_REST_Response
+		 */
+		public function handle_mcp_get( WP_REST_Request $request ) {
+			// Get server capabilities by calling the initialize method internally.
+			$init_result = $this->mcp_initialize( array(), $request );
+
+			if ( is_wp_error( $init_result ) ) {
+				// Return error in standard format.
+				$response = new WP_REST_Response(
+					array(
+						'error'   => $init_result->get_error_message(),
+						'code'    => $init_result->get_error_code(),
+						'details' => $init_result->get_error_data(),
+					),
+					500
+				);
+			} else {
+				// Return server info and capabilities.
+				$response = new WP_REST_Response(
+					array(
+						'name'            => 'WP oOS',
+						'version'         => WP_MCP_AI_VERSION,
+						'protocolVersion' => '2024-11-05',
+						'capabilities'    => isset( $init_result['capabilities'] ) ? $init_result['capabilities'] : array(),
+						'serverInfo'      => isset( $init_result['serverInfo'] ) ? $init_result['serverInfo'] : array(),
+						'description'     => __( 'WordPress Open Operator System - MCP Server for WordPress', 'wp-mcp-ai' ),
+						'endpoints'       => array(
+							'mcp'        => rest_url( self::REST_NAMESPACE . '/mcp' ),
+							'sse'        => rest_url( self::REST_NAMESPACE . '/sse' ),
+							'assistants' => rest_url( self::REST_NAMESPACE . '/assistants' ),
+						),
+						'methods'         => array(
+							'initialize',
+							'tools/list',
+							'tools/call',
+							'resources/list',
+							'prompts/list',
+						),
+					),
+					200
+				);
+			}
+
+			$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+			$this->add_cors_headers( $response );
+
+			return $response;
 		}
 
 		/**

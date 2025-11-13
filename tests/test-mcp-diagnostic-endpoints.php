@@ -322,4 +322,110 @@ class WP_MCP_AI_MCP_Diagnostic_Endpoints_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'nonce', $script_data, 'Localized data should contain nonce' );
 		$this->assertStringContainsString( 'i18n', $script_data, 'Localized data should contain i18n' );
 	}
+
+	/**
+	 * Test that admin users can access MCP endpoint for internal diagnostic testing.
+	 *
+	 * This test verifies the fix for issue #1058 where the MCP diagnostic page
+	 * needs to make internal REST API calls to test the MCP endpoint without
+	 * requiring bearer tokens.
+	 */
+	public function test_admin_can_access_mcp_endpoint_for_diagnostics() {
+		// Simulate an admin user making an internal REST request (like the diagnostic page does).
+		wp_set_current_user( $this->admin_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		// Process the request internally (simulating rest_do_request()).
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should succeed for admin users making internal requests.
+		$this->assertSame( 200, $response->get_status(), 'Admin user should be able to access MCP endpoint for diagnostic testing' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'jsonrpc', $data, 'Response should include jsonrpc field' );
+		$this->assertSame( '2.0', $data['jsonrpc'], 'Response should be JSON-RPC 2.0' );
+		$this->assertArrayHasKey( 'result', $data, 'Response should include result field' );
+	}
+
+	/**
+	 * Test that non-admin users cannot access MCP endpoint without bearer token.
+	 */
+	public function test_non_admin_cannot_access_mcp_endpoint_without_bearer() {
+		// Create a non-admin user.
+		$subscriber_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'Content-Type', 'application/json' );
+
+		$message = array(
+			'jsonrpc' => '2.0',
+			'id'      => 1,
+			'method'  => 'initialize',
+			'params'  => array(),
+		);
+
+		$request->set_body( wp_json_encode( $message ) );
+
+		// Process the request internally.
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should fail for non-admin users without bearer token.
+		$this->assertSame( 401, $response->get_status(), 'Non-admin user should not be able to access MCP endpoint without bearer token' );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'code', $data, 'Error response should include code field' );
+		$this->assertSame( 'wp_mcp_ai_mcp_bearer_required', $data['code'], 'Error code should indicate bearer token required' );
+	}
+
+	/**
+	 * Test GET request to MCP endpoint for server capability discovery.
+	 *
+	 * This test verifies that GET requests to the MCP endpoint return server
+	 * information without requiring authentication, enabling LM Studio and other
+	 * MCP clients to discover the server.
+	 */
+	public function test_mcp_endpoint_get_returns_server_info() {
+		// Make a GET request to the MCP endpoint (no authentication required).
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		// Should succeed without authentication.
+		$this->assertSame( 200, $response->get_status(), 'GET request should return 200' );
+
+		$data = $response->get_data();
+
+		// Verify server information is returned.
+		$this->assertArrayHasKey( 'name', $data, 'Response should include server name' );
+		$this->assertSame( 'WP oOS', $data['name'], 'Server name should be WP oOS' );
+
+		$this->assertArrayHasKey( 'version', $data, 'Response should include version' );
+		$this->assertSame( WP_MCP_AI_VERSION, $data['version'], 'Version should match plugin version' );
+
+		$this->assertArrayHasKey( 'protocolVersion', $data, 'Response should include protocol version' );
+		$this->assertSame( '2024-11-05', $data['protocolVersion'], 'Protocol version should be 2024-11-05' );
+
+		$this->assertArrayHasKey( 'capabilities', $data, 'Response should include capabilities' );
+		$this->assertIsArray( $data['capabilities'], 'Capabilities should be an array' );
+
+		$this->assertArrayHasKey( 'methods', $data, 'Response should include methods' );
+		$this->assertIsArray( $data['methods'], 'Methods should be an array' );
+		$this->assertContains( 'initialize', $data['methods'], 'Methods should include initialize' );
+		$this->assertContains( 'tools/list', $data['methods'], 'Methods should include tools/list' );
+
+		$this->assertArrayHasKey( 'endpoints', $data, 'Response should include endpoints' );
+		$this->assertIsArray( $data['endpoints'], 'Endpoints should be an array' );
+	}
 }
