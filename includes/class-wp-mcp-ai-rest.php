@@ -876,6 +876,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				true
 			);
 
+			// Register /cron-status endpoint for lightweight cron job status.
+			register_rest_route(
+				self::REST_NAMESPACE,
+				'/cron-status',
+				array(
+					array(
+						'methods'             => WP_REST_Server::READABLE,
+						'permission_callback' => array( $this, 'permissions_check' ),
+						'callback'            => array( $this, 'handle_cron_status_request' ),
+						'args'                => array(
+							'limit' => array(
+								'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
+								'type'              => 'integer',
+								'required'          => false,
+								'default'           => 10,
+								'sanitize_callback' => 'absint',
+								'minimum'           => 1,
+								'maximum'           => 50,
+							),
+						),
+					),
+				),
+				true
+			);
+
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/mcp',
@@ -1387,6 +1412,39 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
 				)
 			);
+		}
+
+		/**
+		 * Handle cron status request
+		 *
+		 * Returns lightweight status information about cron jobs.
+		 *
+		 * @param WP_REST_Request $request Request object.
+		 * @return WP_REST_Response|WP_Error Response object or error.
+		 */
+		public function handle_cron_status_request( WP_REST_Request $request ) {
+			// Load the cron status service.
+			if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
+			}
+
+			$service = new WP_MCP_AI_Cron_Status_Service();
+			$user_id = get_current_user_id();
+			$limit   = $request->get_param( 'limit' );
+			if ( ! $limit ) {
+				$limit = 10;
+			}
+
+			// Get status summary and counts.
+			$jobs   = $service->get_status_summary( $user_id, $limit );
+			$counts = $service->get_status_counts( $user_id );
+
+			$response = array(
+				'jobs'   => $jobs,
+				'counts' => $counts,
+			);
+
+			return rest_ensure_response( $response );
 		}
 
 		/**

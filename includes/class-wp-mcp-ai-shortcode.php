@@ -51,17 +51,39 @@ class WP_MCP_AI_Shortcode {
 	public function register_assets() {
 		$script_relative = 'assets/js/chat.js';
 		$style_relative  = 'assets/css/chat.css';
+		$cron_status_script_relative = 'assets/js/cron-status-service.js';
+		$cron_status_style_relative  = 'assets/css/cron-status.css';
 
 		$script_path = WP_MCP_AI_URL . $script_relative;
 		$style_path  = WP_MCP_AI_URL . $style_relative;
+		$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
+		$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
 
 		$script_version = $this->get_asset_version( $script_relative );
 		$style_version  = $this->get_asset_version( $style_relative );
+		$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
+		$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
+
+		// Register cron status assets (loaded before chat.js).
+		wp_register_script(
+			'wp-mcp-ai-cron-status',
+			$cron_status_script_path,
+			array(),
+			$cron_status_script_version,
+			true
+		);
+
+		wp_register_style(
+			'wp-mcp-ai-cron-status',
+			$cron_status_style_path,
+			array(),
+			$cron_status_style_version
+		);
 
 		wp_register_style(
 			self::STYLE_HANDLE,
 			$style_path,
-			array(),
+			array( 'wp-mcp-ai-cron-status' ), // Depend on cron status CSS.
 			$style_version
 		);
 
@@ -76,7 +98,7 @@ class WP_MCP_AI_Shortcode {
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			$script_path,
-			array(),
+			array( 'wp-mcp-ai-cron-status' ), // Depend on cron status service.
 			$script_version,
 			true
 		);
@@ -505,6 +527,15 @@ class WP_MCP_AI_Shortcode {
 			</form>
 			<div class="wp-mcp-ai-chat__controls">
 				<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>
+				<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>
+					<span class="wp-mcp-ai-chat__cron-status-label"><?php esc_html_e( 'Jobs:', 'wp-mcp-ai' ); ?></span>
+					<span class="wp-mcp-ai-chat__cron-status-pending" title="<?php esc_attr_e( 'Pending jobs', 'wp-mcp-ai' ); ?>">
+						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
+					</span>
+					<span class="wp-mcp-ai-chat__cron-status-completed" title="<?php esc_attr_e( 'Completed jobs', 'wp-mcp-ai' ); ?>">
+						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
+					</span>
+				</div>
 				<div class="wp-mcp-ai-chat__control-buttons">
 					<button
 						type="button"

@@ -72,24 +72,46 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 			// Enqueue chat.js and its dependencies.
 			$script_relative = 'assets/js/chat.js';
 			$style_relative  = 'assets/css/chat.css';
+			$cron_status_script_relative = 'assets/js/cron-status-service.js';
+			$cron_status_style_relative  = 'assets/css/cron-status.css';
 
 			$script_path = WP_MCP_AI_URL . $script_relative;
 			$style_path  = WP_MCP_AI_URL . $style_relative;
+			$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
+			$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
 
 			$script_version = $this->get_asset_version( $script_relative );
 			$style_version  = $this->get_asset_version( $style_relative );
+			$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
+			$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
+
+			// Enqueue cron status service first.
+			wp_enqueue_script(
+				'wp-mcp-ai-cron-status',
+				$cron_status_script_path,
+				array(),
+				$cron_status_script_version,
+				true
+			);
+
+			wp_enqueue_style(
+				'wp-mcp-ai-cron-status',
+				$cron_status_style_path,
+				array(),
+				$cron_status_style_version
+			);
 
 			wp_enqueue_style(
 				'wp-mcp-ai-chat',
 				$style_path,
-				array(),
+				array( 'wp-mcp-ai-cron-status' ),
 				$style_version
 			);
 
 			wp_enqueue_script(
 				'wp-mcp-ai-chat',
 				$script_path,
-				array(),
+				array( 'wp-mcp-ai-cron-status' ),
 				$script_version,
 				true
 			);

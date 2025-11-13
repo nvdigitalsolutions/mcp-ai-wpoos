@@ -8236,9 +8236,115 @@
         return div.innerHTML;
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
+    /**
+     * Initialize cron status display for a chat container
+     * 
+     * @param {HTMLElement} container - Chat container element
+     * @param {Object} config - Chat instance configuration
+     */
+    function initializeCronStatus(container, config) {
+        if (!container || !config) {
+            return;
+        }
+
+        const cronStatusEl = container.querySelector('.wp-mcp-ai-chat__cron-status');
+        if (!cronStatusEl) {
+            return;
+        }
+
+        // Check if cron status service is available
+        if (typeof window.wpMcpAiCronStatus === 'undefined') {
+            return;
+        }
+
+        const instanceId = container.getAttribute('id');
+        if (!instanceId) {
+            return;
+        }
+
+        // Build cron status endpoint
+        const restUrl = config.messagesEndpoint || '';
+        const cronStatusEndpoint = restUrl.replace(/\/chat(-client)?$/, '/cron-status');
+        const nonce = config.restNonce || '';
+
+        // Update cron status display
+        function updateCronStatusDisplay(data) {
+            if (!data || !data.counts) {
+                return;
+            }
+
+            const counts = data.counts;
+            const total = counts.total || 0;
+
+            // Hide if no jobs
+            if (total === 0) {
+                cronStatusEl.setAttribute('hidden', '');
+                return;
+            }
+
+            // Show and update counts
+            cronStatusEl.removeAttribute('hidden');
+
+            const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending .wp-mcp-ai-chat__cron-status-count');
+            const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed .wp-mcp-ai-chat__cron-status-count');
+
+            if (pendingEl) {
+                pendingEl.textContent = counts.pending || 0;
+                pendingEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-pending';
+                if (counts.pending > 0) {
+                    pendingEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-pending--active';
+                }
+            }
+
+            if (completedEl) {
+                completedEl.textContent = counts.completed || 0;
+                completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
+                if (counts.completed > 0) {
+                    completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+                }
+            }
+        }
+
+        // Start polling for cron status
+        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay);
+
+        // Stop polling when chat is destroyed or hidden
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'hidden') {
+                    if (container.hasAttribute('hidden')) {
+                        window.wpMcpAiCronStatus.stopPolling(instanceId);
+                    }
+                }
+            });
+        });
+
+        observer.observe(container, { attributes: true });
+    }
+
+    /**
+     * Enhanced init function to include cron status
+     */
+    function initWithCronStatus() {
+        // Call original init
         init();
+
+        // Initialize cron status for all chat containers after a brief delay
+        setTimeout(function() {
+            const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+            Array.prototype.forEach.call(containers, function(container) {
+                const instanceId = container.getAttribute('id');
+                const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+                if (config) {
+                    initializeCronStatus(container, config);
+                }
+            });
+        }, 500);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initWithCronStatus);
+    } else {
+        initWithCronStatus();
     }
 })();
