@@ -64,38 +64,41 @@ function wp_mcp_ai_init_settings_dashboard() {
 
 	// Wrap initialization in try-catch to prevent silent failures.
 	try {
-		// Register all sections with the registry.
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Overview() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_General() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Custom_Filters() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Providers() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Authentication() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Tools() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Orchestration() );
+		// Get container for dependency management.
+		$container = wp_mcp_ai_container();
+
+		// Register all sections with the registry using container.
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.overview' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.general' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.custom_filters' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.providers' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
 		// Gmail & Crawl4AI Integration has its own dedicated page (wp-mcp-ai-gmail-crawl4ai) and should not appear in settings tabs.
-		// WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Integrations() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_JetEngine_Integration() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_WooCommerce_Integration() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Elementor_Integration() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Token_Manager() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Security() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Performance() );
-		WP_MCP_AI_Settings_Registry::register_section( new WP_MCP_AI_Section_Advanced() );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.
 		// Store the instance globally for potential access by other code.
-		$GLOBALS['wp_mcp_ai_settings_dashboard'] = new WP_MCP_AI_Settings_Dashboard();
+		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
 
 		// Initialize integration admin pages.
-		$GLOBALS['wp_mcp_ai_admin_jetengine']   = new WP_MCP_AI_Admin_JetEngine_Integration();
-		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = new WP_MCP_AI_Admin_WooCommerce_Integration();
-		$GLOBALS['wp_mcp_ai_admin_elementor']   = new WP_MCP_AI_Admin_Elementor_Integration();
-		$GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = new WP_MCP_AI_Admin_Gmail_Crawl_Integration();
+		$GLOBALS['wp_mcp_ai_admin_jetengine']   = $container->get( 'admin.jetengine_integration' );
+		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = $container->get( 'admin.woocommerce_integration' );
+		$GLOBALS['wp_mcp_ai_admin_elementor']   = $container->get( 'admin.elementor_integration' );
+		$GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );
 
 		// Initialize the custom filters applicator.
 		// This applies saved filter values to WordPress filters.
-		$GLOBALS['wp_mcp_ai_custom_filters_applicator'] = new WP_MCP_AI_Custom_Filters_Applicator();
+		$GLOBALS['wp_mcp_ai_custom_filters_applicator'] = $container->get( 'admin.custom_filters_applicator' );
 	} catch ( Throwable $e ) {
 		// Log the error if logging is enabled.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {

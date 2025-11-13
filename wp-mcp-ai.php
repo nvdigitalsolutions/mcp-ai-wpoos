@@ -471,7 +471,7 @@ if ( is_admin() ) {
 
 	// Load test assistant page (submenu of AI Assistants CPT).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
-	new WP_MCP_AI_Admin_Test_Assistant();
+	wp_mcp_ai_container()->get( 'admin.test_assistant' );
 
 	// Load create assistant button and modal.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php';
@@ -660,23 +660,23 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			$registry = WP_MCP_AI_Tool_Registry::get_instance();
 			$registry->init();
 
-			$openai_client    = new WP_MCP_AI_OpenAI_Client();
-			$gemini_client    = new WP_MCP_AI_Gemini_Client();
-			$ollama_client    = new WP_MCP_AI_Ollama_Client();
-			$lm_studio_client = new WP_MCP_AI_LM_Studio_Client();
-			$anthropic_client = new WP_MCP_AI_Anthropic_Client();
-			$router           = new WP_MCP_AI_Language_Model_Router( $openai_client, $gemini_client, $ollama_client, $lm_studio_client, $anthropic_client );
+			// Get container for dependency management.
+			$container = wp_mcp_ai_container();
+
+			// Initialize language model clients and router through container.
+			$router = $container->get( 'router' );
 
 			$this->resource_manager = WP_MCP_AI_Resource_Manager::instance();
 
-			$this->assistant_cpt      = new WP_MCP_AI_Assistant_CPT( $registry );
-			$this->crawl4ai_local_api = new WP_MCP_AI_Crawl4AI_Local_API();
-			$this->rest_controller    = new WP_MCP_AI_REST( $registry, $router );
-			$this->shortcodes         = new WP_MCP_AI_Shortcodes();
-			$this->federation         = new WP_MCP_AI_Federation( $registry );
+			// Initialize core components through container.
+			$this->assistant_cpt      = $container->get( 'assistant_cpt' );
+			$this->crawl4ai_local_api = $container->get( 'crawl4ai_local_api' );
+			$this->rest_controller    = $container->get( 'rest_controller' );
+			$this->shortcodes         = $container->get( 'shortcodes' );
+			$this->federation         = $container->get( 'federation' );
 
 			if ( is_admin() ) {
-				$this->admin_cron_manager = new WP_MCP_AI_Admin_Cron_Manager();
+				$this->admin_cron_manager = $container->get( 'admin.cron_manager' );
 			}
 
 			// Maintain backward compatibility with code that accesses $GLOBALS directly.

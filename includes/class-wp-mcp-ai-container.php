@@ -244,11 +244,53 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		// Language model clients.
+		$this->singleton(
+			'client.openai',
+			function () {
+				return new WP_MCP_AI_OpenAI_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.gemini',
+			function () {
+				return new WP_MCP_AI_Gemini_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.ollama',
+			function () {
+				return new WP_MCP_AI_Ollama_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.lm_studio',
+			function () {
+				return new WP_MCP_AI_LM_Studio_Client();
+			}
+		);
+
+		$this->singleton(
+			'client.anthropic',
+			function () {
+				return new WP_MCP_AI_Anthropic_Client();
+			}
+		);
+
 		// Core managers.
 		$this->singleton(
 			'router',
-			function () {
-				return new WP_MCP_AI_Language_Model_Router();
+			function ( $container ) {
+				return new WP_MCP_AI_Language_Model_Router(
+					$container->get( 'client.openai' ),
+					$container->get( 'client.gemini' ),
+					$container->get( 'client.ollama' ),
+					$container->get( 'client.lm_studio' ),
+					$container->get( 'client.anthropic' )
+				);
 			}
 		);
 
@@ -269,7 +311,232 @@ class WP_MCP_AI_Container {
 		$this->singleton(
 			'tool_registry',
 			function () {
-				return new WP_MCP_AI_Tool_Registry();
+				return WP_MCP_AI_Tool_Registry::get_instance();
+			}
+		);
+
+		// Core components.
+		$this->singleton(
+			'assistant_cpt',
+			function ( $container ) {
+				return new WP_MCP_AI_Assistant_CPT( $container->get( 'tool_registry' ) );
+			}
+		);
+
+		$this->singleton(
+			'crawl4ai_local_api',
+			function () {
+				return new WP_MCP_AI_Crawl4AI_Local_API();
+			}
+		);
+
+		$this->singleton(
+			'rest_controller',
+			function ( $container ) {
+				return new WP_MCP_AI_REST(
+					$container->get( 'tool_registry' ),
+					$container->get( 'router' )
+				);
+			}
+		);
+
+		$this->singleton(
+			'shortcodes',
+			function () {
+				return new WP_MCP_AI_Shortcodes();
+			}
+		);
+
+		$this->singleton(
+			'federation',
+			function ( $container ) {
+				return new WP_MCP_AI_Federation( $container->get( 'tool_registry' ) );
+			}
+		);
+
+		// Admin components.
+		$this->singleton(
+			'admin.cron_manager',
+			function () {
+				return new WP_MCP_AI_Admin_Cron_Manager();
+			}
+		);
+
+		$this->singleton(
+			'admin.test_assistant',
+			function () {
+				return new WP_MCP_AI_Admin_Test_Assistant();
+			}
+		);
+
+		$this->singleton(
+			'admin.ajax_handlers',
+			function () {
+				return new WP_MCP_AI_Admin_AJAX_Handlers();
+			}
+		);
+
+		$this->singleton(
+			'admin.settings_base',
+			function () {
+				return new WP_MCP_AI_Admin_Settings_Base();
+			}
+		);
+
+		$this->singleton(
+			'admin.settings_renderer',
+			function ( $container ) {
+				return new WP_MCP_AI_Admin_Settings_Renderer(
+					$container->get( 'admin.settings_base' )
+				);
+			}
+		);
+
+		$this->singleton(
+			'admin.oauth_manager',
+			function () {
+				return new WP_MCP_AI_OAuth_Manager();
+			}
+		);
+
+		$this->singleton(
+			'admin.settings_dashboard',
+			function () {
+				return new WP_MCP_AI_Settings_Dashboard();
+			}
+		);
+
+		$this->singleton(
+			'admin.jetengine_integration',
+			function () {
+				return new WP_MCP_AI_Admin_JetEngine_Integration();
+			}
+		);
+
+		$this->singleton(
+			'admin.woocommerce_integration',
+			function () {
+				return new WP_MCP_AI_Admin_WooCommerce_Integration();
+			}
+		);
+
+		$this->singleton(
+			'admin.elementor_integration',
+			function () {
+				return new WP_MCP_AI_Admin_Elementor_Integration();
+			}
+		);
+
+		$this->singleton(
+			'admin.gmail_crawl_integration',
+			function () {
+				return new WP_MCP_AI_Admin_Gmail_Crawl_Integration();
+			}
+		);
+
+		$this->singleton(
+			'admin.custom_filters_applicator',
+			function () {
+				return new WP_MCP_AI_Custom_Filters_Applicator();
+			}
+		);
+
+		// Settings sections.
+		$this->singleton(
+			'section.overview',
+			function () {
+				return new WP_MCP_AI_Section_Overview();
+			}
+		);
+
+		$this->singleton(
+			'section.general',
+			function () {
+				return new WP_MCP_AI_Section_General();
+			}
+		);
+
+		$this->singleton(
+			'section.custom_filters',
+			function () {
+				return new WP_MCP_AI_Section_Custom_Filters();
+			}
+		);
+
+		$this->singleton(
+			'section.providers',
+			function () {
+				return new WP_MCP_AI_Section_Providers();
+			}
+		);
+
+		$this->singleton(
+			'section.authentication',
+			function () {
+				return new WP_MCP_AI_Section_Authentication();
+			}
+		);
+
+		$this->singleton(
+			'section.tools',
+			function () {
+				return new WP_MCP_AI_Section_Tools();
+			}
+		);
+
+		$this->singleton(
+			'section.orchestration',
+			function () {
+				return new WP_MCP_AI_Section_Orchestration();
+			}
+		);
+
+		$this->singleton(
+			'section.jetengine_integration',
+			function () {
+				return new WP_MCP_AI_Section_JetEngine_Integration();
+			}
+		);
+
+		$this->singleton(
+			'section.woocommerce_integration',
+			function () {
+				return new WP_MCP_AI_Section_WooCommerce_Integration();
+			}
+		);
+
+		$this->singleton(
+			'section.elementor_integration',
+			function () {
+				return new WP_MCP_AI_Section_Elementor_Integration();
+			}
+		);
+
+		$this->singleton(
+			'section.token_manager',
+			function () {
+				return new WP_MCP_AI_Section_Token_Manager();
+			}
+		);
+
+		$this->singleton(
+			'section.security',
+			function () {
+				return new WP_MCP_AI_Section_Security();
+			}
+		);
+
+		$this->singleton(
+			'section.performance',
+			function () {
+				return new WP_MCP_AI_Section_Performance();
+			}
+		);
+
+		$this->singleton(
+			'section.advanced',
+			function () {
+				return new WP_MCP_AI_Section_Advanced();
 			}
 		);
 
