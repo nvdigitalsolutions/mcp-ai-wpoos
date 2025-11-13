@@ -471,7 +471,7 @@ class WP_MCP_AI_Shortcode {
 							<path d="M12 15.5a1 1 0 0 1-.7-.29l-5-5a1 1 0 0 1 1.4-1.42L12 13.09l4.3-4.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-.7.29z" />
 						</svg>
 					</button>
-					<div id="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>" class="wp-mcp-ai-chat__tool-shortcuts" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
+					<div id="<?php echo esc_attr( $instance_id . '-tool-shortcuts' ); ?>" class="wp-mcp-ai-chat__tool-shortcuts wp-mcp-ai-chat__tool-shortcuts--collapsed" role="group" aria-label="<?php echo esc_attr__( 'Assistant tool tasks', 'wp-mcp-ai' ); ?>" hidden></div>
 				</div>
 				<textarea id="<?php echo esc_attr( $textarea_id ); ?>" class="wp-mcp-ai-chat__input" rows="4" placeholder="<?php echo esc_attr__( 'Ask something…', 'wp-mcp-ai' ); ?>" required></textarea>
 				<div class="wp-mcp-ai-chat__attachments" hidden>

@@ -2335,6 +2335,14 @@
 
         if (state.toolShortcutsContainer) {
             state.toolShortcutsContainer.hidden = !state.toolShortcutsExpanded;
+            
+            if (state.toolShortcutsContainer.classList) {
+                if (state.toolShortcutsExpanded) {
+                    state.toolShortcutsContainer.classList.remove('wp-mcp-ai-chat__tool-shortcuts--collapsed');
+                } else {
+                    state.toolShortcutsContainer.classList.add('wp-mcp-ai-chat__tool-shortcuts--collapsed');
+                }
+            }
         }
 
         if (state.toolShortcutsToggle) {
@@ -5811,6 +5819,14 @@
             // Initialize tool shortcuts collapsed state
             if (state.toolShortcutsContainer) {
                 state.toolShortcutsContainer.hidden = !state.toolShortcutsExpanded;
+                
+                if (state.toolShortcutsContainer.classList) {
+                    if (state.toolShortcutsExpanded) {
+                        state.toolShortcutsContainer.classList.remove('wp-mcp-ai-chat__tool-shortcuts--collapsed');
+                    } else {
+                        state.toolShortcutsContainer.classList.add('wp-mcp-ai-chat__tool-shortcuts--collapsed');
+                    }
+                }
             }
             if (state.toolShortcutsToggle) {
                 state.toolShortcutsToggle.setAttribute('aria-expanded', state.toolShortcutsExpanded ? 'true' : 'false');
