@@ -467,7 +467,7 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/settings-dashboard-init.php';
 	// Load Auth0 Setup wizard (submenu of wp-mcp-ai-dashboard).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
-	new WP_MCP_AI_Auth0_Setup();
+	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 
 	// Load test assistant page (submenu of AI Assistants CPT).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
@@ -958,7 +958,8 @@ if ( ! function_exists( 'wp_mcp_ai_check_activation_security' ) ) {
 		// Load the security check tool.
 		require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php';
 
-		$security_tool = new WP_MCP_AI_Tool_Check_Site_Security();
+		// Use container to create instance (supports dependency injection for testing).
+		$security_tool = wp_mcp_ai_make( 'WP_MCP_AI_Tool_Check_Site_Security' );
 		$result        = $security_tool->execute( array(), array( 'user_id' => get_current_user_id() ) );
 
 		// Store result for admin notice display.

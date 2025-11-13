@@ -441,6 +441,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'admin.auth0_setup',
+			function () {
+				return new WP_MCP_AI_Auth0_Setup();
+			}
+		);
+
 		// Settings sections.
 		$this->singleton(
 			'section.overview',
