@@ -21,6 +21,8 @@
     const COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
     const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
     const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
+    const VOICE_CHAT_RECORDING_CLASS = 'wp-mcp-ai-chat__voice-chat--recording';
+    const VOICE_CHAT_PROCESSING_CLASS = 'wp-mcp-ai-chat__voice-chat--processing';
     const MAX_TRANSCRIBE_BYTES = 26214400;
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -1760,6 +1762,280 @@
         parts.push(String(secs).padStart(2, '0'));
 
         return parts.join(':');
+    }
+
+    /**
+     * Voice Chat Functions
+     */
+    function handleVoiceChatButtonClick(state) {
+        if (!state || state.voiceChatProcessing) {
+            return;
+        }
+
+        if (state.isVoiceChatRecording) {
+            stopVoiceChatRecording(state);
+            return;
+        }
+
+        if (!state.canUploadAttachments) {
+            return;
+        }
+
+        if (supportsAudioRecording()) {
+            startVoiceChatRecording(state);
+        } else {
+            setStatus(
+                state.container,
+                getString('voiceChatUnavailable', 'Voice chat is not available in your browser.')
+            );
+        }
+    }
+
+    function startVoiceChatRecording(state) {
+        if (!state || !supportsAudioRecording()) {
+            return;
+        }
+
+        state.voiceChatShouldProcess = false;
+
+        if (state.voiceChatButton) {
+            state.voiceChatButton.disabled = true;
+        }
+
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then(function (stream) {
+                state.voiceChatStream = stream;
+                state.voiceChatChunks = [];
+
+                try {
+                    state.voiceChatRecorder = new MediaRecorder(stream);
+                } catch (error) {
+                    stopVoiceChatStream(state);
+                    setStatus(
+                        state.container,
+                        getString('voiceChatRecorderError', 'Could not start voice recording.')
+                    );
+                    updateVoiceChatButtonState(state);
+                    return;
+                }
+
+                state.voiceChatRecorder.addEventListener('dataavailable', function (event) {
+                    if (event.data && event.data.size > 0) {
+                        state.voiceChatChunks.push(event.data);
+                    }
+                });
+
+                state.voiceChatRecorder.addEventListener('stop', function () {
+                    stopVoiceChatStream(state);
+
+                    if (!state.voiceChatShouldProcess) {
+                        state.voiceChatChunks = [];
+                        updateVoiceChatButtonState(state);
+                        return;
+                    }
+
+                    if (!state.voiceChatChunks || !state.voiceChatChunks.length) {
+                        setStatus(state.container, getString('voiceChatNoData', 'No audio was recorded.'));
+                        updateVoiceChatButtonState(state);
+                        return;
+                    }
+
+                    const blob = new Blob(state.voiceChatChunks, { type: 'audio/webm' });
+                    state.voiceChatChunks = [];
+
+                    processVoiceChatAudio(state, blob);
+                });
+
+                state.voiceChatRecorder.start();
+                state.voiceChatShouldProcess = true;
+                setVoiceChatRecordingState(state, true);
+            })
+            .catch(function (error) {
+                setStatus(
+                    state.container,
+                    getString('voiceChatPermissionDenied', 'Microphone access was denied.')
+                );
+                updateVoiceChatButtonState(state);
+            });
+    }
+
+    function stopVoiceChatRecording(state) {
+        if (!state) {
+            return;
+        }
+
+        setVoiceChatRecordingState(state, false);
+
+        if (state.voiceChatRecorder && state.voiceChatRecorder.state !== 'inactive') {
+            state.voiceChatRecorder.stop();
+        } else {
+            stopVoiceChatStream(state);
+            updateVoiceChatButtonState(state);
+        }
+    }
+
+    function stopVoiceChatStream(state) {
+        if (!state || !state.voiceChatStream) {
+            return;
+        }
+
+        try {
+            state.voiceChatStream.getTracks().forEach(function (track) {
+                track.stop();
+            });
+        } catch (error) {}
+
+        state.voiceChatStream = null;
+    }
+
+    function setVoiceChatRecordingState(state, recording) {
+        if (!state) {
+            return;
+        }
+
+        state.isVoiceChatRecording = !!recording;
+
+        const button = state.voiceChatButton;
+        if (button && button.classList) {
+            if (state.isVoiceChatRecording) {
+                button.classList.add(VOICE_CHAT_RECORDING_CLASS);
+            } else {
+                button.classList.remove(VOICE_CHAT_RECORDING_CLASS);
+            }
+        }
+
+        if (button) {
+            const label = state.isVoiceChatRecording
+                ? getString('stopVoiceChat', 'Stop voice chat')
+                : getString('voiceChat', 'Voice chat');
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
+        }
+
+        if (state.container) {
+            if (state.isVoiceChatRecording) {
+                setStatus(state.container, getString('voiceChatRecording', 'Recording… tap to stop and send.'));
+            } else if (!state.voiceChatProcessing && !state.busy) {
+                setStatus(state.container, '');
+            }
+        }
+    }
+
+    function updateVoiceChatButtonState(state) {
+        if (!state) {
+            return;
+        }
+
+        const button = state.voiceChatButton;
+
+        const canUse = !!state.canUploadAttachments;
+        let disabled = !canUse || state.busy || state.uploading > 0 || state.voiceChatProcessing;
+
+        if (state.isVoiceChatRecording) {
+            disabled = false;
+        }
+
+        if (button) {
+            button.disabled = disabled;
+
+            if (!canUse) {
+                button.hidden = true;
+            } else {
+                button.hidden = false;
+            }
+        }
+    }
+
+    function processVoiceChatAudio(state, blob) {
+        if (!state || !blob || state.voiceChatProcessing) {
+            return;
+        }
+
+        if (blob.size > MAX_TRANSCRIBE_BYTES) {
+            setStatus(
+                state.container,
+                getString(
+                    'voiceChatFileTooLarge',
+                    'The recorded audio is too large. Please try a shorter message.'
+                )
+            );
+            updateVoiceChatButtonState(state);
+            return;
+        }
+
+        state.voiceChatProcessing = true;
+        updateVoiceChatButtonState(state);
+
+        const button = state.voiceChatButton;
+        if (button && button.classList) {
+            button.classList.add(VOICE_CHAT_PROCESSING_CLASS);
+        }
+
+        setStatus(state.container, getString('voiceChatProcessing', 'Processing your voice message…'));
+
+        const file = new File([blob], 'voice-chat-' + Date.now() + '.webm', {
+            type: 'audio/webm',
+            lastModified: Date.now(),
+        });
+
+        let uploadedRecord = null;
+
+        uploadAudioForTranscription(state, file)
+            .then(function (record) {
+                uploadedRecord = record;
+                if (!record || typeof record.id === 'undefined') {
+                    throw new Error('Upload failed');
+                }
+
+                if (state.attachmentLibrary && record.fileId) {
+                    state.attachmentLibrary[record.fileId] = record;
+                }
+
+                return requestTranscription(state, record);
+            })
+            .then(function (response) {
+                const result = extractTranscriptionResult(response);
+                
+                if (!result || !result.text || !result.text.trim()) {
+                    throw new Error('No text transcribed');
+                }
+
+                // Enable voice chat mode to auto-play the response
+                state.voiceChatModeActive = true;
+
+                // Automatically send the transcribed text as a message
+                state.textarea.value = result.text.trim();
+                setStatus(state.container, getString('voiceChatSending', 'Sending your message…'));
+
+                // Trigger form submission
+                const form = state.container.querySelector('.wp-mcp-ai-chat__form');
+                if (form) {
+                    const submitEvent = new Event('submit', {
+                        bubbles: true,
+                        cancelable: true,
+                    });
+                    form.dispatchEvent(submitEvent);
+                }
+            })
+            .catch(function (error) {
+                setStatus(
+                    state.container,
+                    getString('voiceChatError', 'Voice chat processing failed. Please try again.')
+                );
+
+                if (window.console && console.error) {
+                    console.error('Voice chat failed', error);
+                }
+            })
+            .finally(function () {
+                state.voiceChatProcessing = false;
+                const button = state.voiceChatButton;
+                if (button && button.classList) {
+                    button.classList.remove(VOICE_CHAT_PROCESSING_CLASS);
+                }
+                updateVoiceChatButtonState(state);
+            });
     }
 
     function handleToolShortcutClick(state, button) {
@@ -5383,6 +5659,7 @@
             const fileInput = container.querySelector('.wp-mcp-ai-chat__file-input');
             const transcribeButton = container.querySelector('.wp-mcp-ai-chat__transcribe');
             const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
+            const voiceChatButton = container.querySelector('.wp-mcp-ai-chat__voice-chat');
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
             const transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
             const newChatButton = container.querySelector('.wp-mcp-ai-chat__new-chat');
@@ -5459,6 +5736,7 @@
                 fileInput: fileInput,
                 transcribeButton: transcribeButton,
                 transcribeInput: transcribeInput,
+                voiceChatButton: voiceChatButton,
                 toolShortcutsContainer: toolShortcutsContainer,
                 transcriptToggle: transcriptToggle,
                 historyToggle: historyToggle,
@@ -5632,8 +5910,17 @@
                 });
             }
 
+            if (state.canUploadAttachments && voiceChatButton) {
+                voiceChatButton.hidden = false;
+                voiceChatButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    handleVoiceChatButtonClick(state);
+                });
+            }
+
             updateAttachButtonState(state);
             updateTranscribeButtonState(state);
+            updateVoiceChatButtonState(state);
 
             // Initialize keyboard shortcuts
             initializeKeyboardShortcuts(state, container, saveButton, exportButton, newChatButton);
@@ -6062,6 +6349,18 @@
                         }
                         attachSpeechButton(bubble, state, streamResult.content);
                         attachCopyButton(bubble, streamResult.content);
+
+                        // Auto-play speech if voice chat mode is active
+                        if (state.voiceChatModeActive && bubble) {
+                            setTimeout(function() {
+                                const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                                if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
+                                    handleSpeechButtonClick(state, speechButton);
+                                }
+                                // Reset voice chat mode after auto-playing
+                                state.voiceChatModeActive = false;
+                            }, 300);
+                        }
                     }
 
                     state.conversation.push({
@@ -6938,6 +7237,19 @@
             const speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(bubble, speechState, speechText);
             attachCopyButton(bubble, speechText);
+
+            // Auto-play speech if voice chat mode is active
+            if (speechState && speechState.voiceChatModeActive) {
+                // Find the speech button and trigger it after a short delay
+                setTimeout(function() {
+                    const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                    if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
+                        handleSpeechButtonClick(speechState, speechButton);
+                    }
+                    // Reset voice chat mode after auto-playing
+                    speechState.voiceChatModeActive = false;
+                }, 300);
+            }
         }
 
         entry.appendChild(bubble);
