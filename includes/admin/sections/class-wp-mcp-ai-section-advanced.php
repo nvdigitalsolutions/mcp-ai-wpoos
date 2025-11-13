@@ -88,17 +88,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
-				'performance'            => array(
-					'id'     => 'performance',
-					'label'  => __( 'Performance', 'wp-mcp-ai' ),
-					'icon'   => 'dashicons-performance',
-					'fields' => array( 'memory_max_file_bytes' ),
-				),
 				'performance_monitoring' => array(
 					'id'     => 'performance_monitoring',
 					'label'  => __( 'Performance Monitoring', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-chart-line',
 					'fields' => array(), // No form fields, custom content only.
+				),
+				'performance'            => array(
+					'id'     => 'performance',
+					'label'  => __( 'Performance', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-performance',
+					'fields' => array( 'memory_max_file_bytes' ),
 				),
 				'debugging'              => array(
 					'id'     => 'debugging',
@@ -122,11 +122,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function get_active_subtab() {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'performance';
+			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'performance_monitoring';
 			$subtab_groups = $this->get_subtab_groups();
 
 			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
-				$subtab = 'performance';
+				$subtab = 'performance_monitoring';
 			}
 
 			return $subtab;
