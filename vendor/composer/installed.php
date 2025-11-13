@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/re-implement-existing-feature',
-        'version' => 'dev-copilot/re-implement-existing-feature',
-        'reference' => '34fc827633931ba362d97d5f8de3100cc4359f3b',
+        'pretty_version' => 'dev-copilot/add-support-for-ai-models',
+        'version' => 'dev-copilot/add-support-for-ai-models',
+        'reference' => '302447d9ad2dd174c57e6f7055a225ba18192c3d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/re-implement-existing-feature',
-            'version' => 'dev-copilot/re-implement-existing-feature',
-            'reference' => '34fc827633931ba362d97d5f8de3100cc4359f3b',
+            'pretty_version' => 'dev-copilot/add-support-for-ai-models',
+            'version' => 'dev-copilot/add-support-for-ai-models',
+            'reference' => '302447d9ad2dd174c57e6f7055a225ba18192c3d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
