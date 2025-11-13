@@ -27,6 +27,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Assistant_Service {
 
 	/**
+	 * Settings repository instance
+	 *
+	 * @var WP_MCP_AI_Settings_Repository
+	 */
+	private $settings_repository;
+
+	/**
+	 * Constructor
+	 *
+	 * @param WP_MCP_AI_Settings_Repository $settings_repository Settings repository (optional, for DI).
+	 */
+	public function __construct( $settings_repository = null ) {
+		// Use dependency injection or fall back to getting from container (backward compatibility).
+		$this->settings_repository = $settings_repository ?? wp_mcp_ai_get_settings_repository();
+	}
+
+	/**
 	 * Validate assistant exists and user has access
 	 *
 	 * @param int $assistant_id Assistant post ID.
@@ -107,7 +124,7 @@ class WP_MCP_AI_Assistant_Service {
 	 * @return int|null Default assistant ID or null if none set.
 	 */
 	public function get_default_assistant_id() {
-		$default_assistant = get_option( 'wp_mcp_ai_default_assistant' );
+		$default_assistant = $this->settings_repository->get( 'default_assistant' );
 
 		if ( ! $default_assistant ) {
 			return null;

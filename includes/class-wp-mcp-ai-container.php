@@ -608,8 +608,10 @@ class WP_MCP_AI_Container {
 
 		$this->singleton(
 			'service.assistant',
-			function () {
-				return new WP_MCP_AI_Assistant_Service();
+			function ( $container ) {
+				return new WP_MCP_AI_Assistant_Service(
+					$container->get( 'settings_repository' )
+				);
 			}
 		);
 
@@ -626,6 +628,13 @@ class WP_MCP_AI_Container {
 			'service.file',
 			function () {
 				return new WP_MCP_AI_File_Service();
+			}
+		);
+
+		$this->singleton(
+			'service.cron_status',
+			function () {
+				return new WP_MCP_AI_Cron_Status_Service();
 			}
 		);
 	}
