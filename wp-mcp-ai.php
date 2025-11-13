@@ -442,6 +442,8 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-auth0-github.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-wordpress-gravatar.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 }
 
 // Clean any output that may have been generated during includes.
@@ -528,6 +530,12 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	}
 	if ( class_exists( 'WP_MCP_AI_Integration_WordPress_Gravatar' ) ) {
 		WP_MCP_AI_Integration_WordPress_Gravatar::init();
+	}
+	if ( class_exists( 'WP_MCP_AI_Media' ) ) {
+		WP_MCP_AI_Media::get_instance();
+	}
+	if ( class_exists( 'WP_MCP_AI_Comments' ) ) {
+		WP_MCP_AI_Comments::get_instance();
 	}
 }
 
