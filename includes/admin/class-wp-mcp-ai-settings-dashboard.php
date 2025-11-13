@@ -27,10 +27,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 		/**
 		 * Constructor.
+		 *
+		 * @param WP_MCP_AI_Admin_AJAX_Handlers|null $ajax_handlers Optional. AJAX handlers instance for dependency injection.
 		 */
-		public function __construct() {
-			// Initialize AJAX handlers.
-			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
+		public function __construct( $ajax_handlers = null ) {
+			// Initialize AJAX handlers using dependency injection or create instance.
+			$this->ajax_handlers = $ajax_handlers ?? wp_mcp_ai_container()->get( 'admin.ajax_handlers' );
 
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );

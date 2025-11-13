@@ -67,13 +67,19 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 		/**
 		 * Constructor.
+		 *
+		 * @param WP_MCP_AI_Admin_Settings_Base|null    $settings_base Optional. Settings base instance for dependency injection.
+		 * @param WP_MCP_AI_Admin_AJAX_Handlers|null    $ajax_handlers Optional. AJAX handlers instance for dependency injection.
+		 * @param WP_MCP_AI_Admin_Settings_Renderer|null $renderer      Optional. Renderer instance for dependency injection.
+		 * @param WP_MCP_AI_OAuth_Manager|null           $oauth_manager Optional. OAuth manager instance for dependency injection.
 		 */
-		public function __construct() {
-			// Initialize component classes.
-			$this->settings_base = new WP_MCP_AI_Admin_Settings_Base();
-			$this->ajax_handlers = new WP_MCP_AI_Admin_AJAX_Handlers();
-			$this->renderer      = new WP_MCP_AI_Admin_Settings_Renderer( $this->settings_base );
-			$this->oauth_manager = new WP_MCP_AI_OAuth_Manager();
+		public function __construct( $settings_base = null, $ajax_handlers = null, $renderer = null, $oauth_manager = null ) {
+			// Initialize component classes using dependency injection or container.
+			$container           = wp_mcp_ai_container();
+			$this->settings_base = $settings_base ?? $container->get( 'admin.settings_base' );
+			$this->ajax_handlers = $ajax_handlers ?? $container->get( 'admin.ajax_handlers' );
+			$this->renderer      = $renderer ?? $container->get( 'admin.settings_renderer' );
+			$this->oauth_manager = $oauth_manager ?? $container->get( 'admin.oauth_manager' );
 
 			add_action( 'admin_menu', array( $this, 'register_settings_page' ) );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
