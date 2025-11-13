@@ -2166,7 +2166,10 @@
             container.appendChild(button);
         });
 
-        container.hidden = !container.children.length;
+        // Show/hide the wrapper based on whether there are shortcuts
+        if (state.toolShortcutsWrapper) {
+            state.toolShortcutsWrapper.hidden = !container.children.length;
+        }
     }
 
     function initialiseExistingSpeechButtons(state) {
@@ -2315,6 +2318,36 @@
 
         if (state.transcriptExpanded && state.messagesEl) {
             state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
+        }
+    }
+
+    /**
+     * Toggle the tool shortcuts section visibility.
+     *
+     * @param {Object} state - Chat state object
+     */
+    function toggleToolShortcuts(state) {
+        if (!state) {
+            return;
+        }
+
+        state.toolShortcutsExpanded = !state.toolShortcutsExpanded;
+
+        if (state.toolShortcutsContainer) {
+            state.toolShortcutsContainer.hidden = !state.toolShortcutsExpanded;
+        }
+
+        if (state.toolShortcutsToggle) {
+            const expanded = state.toolShortcutsExpanded;
+            state.toolShortcutsToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            
+            if (state.toolShortcutsToggle.classList) {
+                if (expanded) {
+                    state.toolShortcutsToggle.classList.remove('wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed');
+                } else {
+                    state.toolShortcutsToggle.classList.add('wp-mcp-ai-chat__tool-shortcuts-toggle--collapsed');
+                }
+            }
         }
     }
 
@@ -5659,6 +5692,8 @@
             const transcribeInput = container.querySelector('.wp-mcp-ai-chat__transcribe-input');
             const voiceChatButton = container.querySelector('.wp-mcp-ai-chat__voice-chat');
             const toolShortcutsContainer = container.querySelector('.' + TOOL_SHORTCUT_CONTAINER_CLASS);
+            const toolShortcutsWrapper = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-wrapper');
+            const toolShortcutsToggle = container.querySelector('.wp-mcp-ai-chat__tool-shortcuts-toggle');
             const transcriptToggle = container.querySelector('.wp-mcp-ai-chat__transcript-toggle');
             const newChatButton = container.querySelector('.wp-mcp-ai-chat__new-chat');
             const historyToggle = container.querySelector('.wp-mcp-ai-chat__history-toggle');
@@ -5736,6 +5771,9 @@
                 transcribeInput: transcribeInput,
                 voiceChatButton: voiceChatButton,
                 toolShortcutsContainer: toolShortcutsContainer,
+                toolShortcutsWrapper: toolShortcutsWrapper,
+                toolShortcutsToggle: toolShortcutsToggle,
+                toolShortcutsExpanded: true,
                 transcriptToggle: transcriptToggle,
                 historyToggle: historyToggle,
                 historyContainer: historyContainer,
@@ -5800,6 +5838,16 @@
                     }
 
                     setTranscriptExpanded(state, !state.transcriptExpanded);
+                });
+            }
+
+            if (toolShortcutsToggle) {
+                toolShortcutsToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    toggleToolShortcuts(state);
                 });
             }
 
