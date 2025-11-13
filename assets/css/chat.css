@@ -750,6 +750,78 @@
     fill: currentColor;
 }
 
+.wp-mcp-ai-chat__voice-chat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--wp-mcp-ai-color-attach-border, #c3c4c7);
+    background: #fff;
+    color: var(--wp-mcp-ai-color-voice-chat-text, #1d2327);
+    padding: 0;
+    cursor: pointer;
+    transition: background 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.wp-mcp-ai-chat__voice-chat:hover,
+.wp-mcp-ai-chat__voice-chat:focus {
+    background: var(--wp-mcp-ai-color-voice-chat-hover-background, #f0f0f0);
+    color: var(--wp-mcp-ai-color-voice-chat-text, #1d2327);
+    border-color: var(--wp-mcp-ai-color-attach-hover-border, #a7aaad);
+}
+
+.wp-mcp-ai-chat__voice-chat:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background: #f6f7f7;
+}
+
+.wp-mcp-ai-chat__voice-chat--recording {
+    background: linear-gradient(120deg, #ef4444, #dc2626);
+    border-color: #991b1b;
+    color: #fff;
+    animation: wp-mcp-ai-voice-pulse 1.5s ease-in-out infinite;
+}
+
+.wp-mcp-ai-chat__voice-chat--recording:hover,
+.wp-mcp-ai-chat__voice-chat--recording:focus {
+    background: linear-gradient(120deg, #dc2626, #b91c1c);
+    border-color: #7f1d1d;
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__voice-chat--processing {
+    background: var(--wp-mcp-ai-color-voice-chat-processing-background, #3b82f6);
+    border-color: var(--wp-mcp-ai-color-voice-chat-processing-border, #1d4ed8);
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__voice-chat--processing:hover,
+.wp-mcp-ai-chat__voice-chat--processing:focus {
+    background: var(--wp-mcp-ai-color-voice-chat-processing-background, #2563eb);
+    border-color: var(--wp-mcp-ai-color-voice-chat-processing-border, #1e40af);
+    color: #fff;
+}
+
+.wp-mcp-ai-chat__voice-chat-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+}
+
+@keyframes wp-mcp-ai-voice-pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+}
+
 .wp-mcp-ai-chat__attach {
     background: transparent;
     border: 1px solid var(--wp-mcp-ai-color-attach-border, #c3c4c7);

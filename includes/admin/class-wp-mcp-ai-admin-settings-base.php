@@ -343,6 +343,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_predictive_optimization'    => false,
 				'enable_capability_gating'          => false,
 				'enable_cron_orchestration'         => false,
+				'cron_job_retention_period'         => '24',
 				'memory_warning_threshold'          => 70,
 				'memory_critical_threshold'         => 85,
 				'error_rate_warning_threshold'      => 5,
