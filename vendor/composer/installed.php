@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
-        'version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
-        'reference' => 'aa3502dce00bedebb5a4ab7ec2fe4c09390bf092',
+        'pretty_version' => 'dev-copilot/verify-mcp-server-diagnostics',
+        'version' => 'dev-copilot/verify-mcp-server-diagnostics',
+        'reference' => '32a25704a0f5ac8fe3625ab23b54d6958ce8be74',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
-            'version' => 'dev-copilot/move-to-next-phase-performance-enhancements',
-            'reference' => 'aa3502dce00bedebb5a4ab7ec2fe4c09390bf092',
+            'pretty_version' => 'dev-copilot/verify-mcp-server-diagnostics',
+            'version' => 'dev-copilot/verify-mcp-server-diagnostics',
+            'reference' => '32a25704a0f5ac8fe3625ab23b54d6958ce8be74',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
