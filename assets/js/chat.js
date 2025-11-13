@@ -2001,6 +2001,9 @@
                     throw new Error('No text transcribed');
                 }
 
+                // Enable voice chat mode to auto-play the response
+                state.voiceChatModeActive = true;
+
                 // Automatically send the transcribed text as a message
                 state.textarea.value = result.text.trim();
                 setStatus(state.container, getString('voiceChatSending', 'Sending your message…'));
@@ -6346,6 +6349,18 @@
                         }
                         attachSpeechButton(bubble, state, streamResult.content);
                         attachCopyButton(bubble, streamResult.content);
+
+                        // Auto-play speech if voice chat mode is active
+                        if (state.voiceChatModeActive && bubble) {
+                            setTimeout(function() {
+                                const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                                if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
+                                    handleSpeechButtonClick(state, speechButton);
+                                }
+                                // Reset voice chat mode after auto-playing
+                                state.voiceChatModeActive = false;
+                            }, 300);
+                        }
                     }
 
                     state.conversation.push({
@@ -7222,6 +7237,19 @@
             const speechText = options && options.speech ? options.speech.text || '' : text;
             attachSpeechButton(bubble, speechState, speechText);
             attachCopyButton(bubble, speechText);
+
+            // Auto-play speech if voice chat mode is active
+            if (speechState && speechState.voiceChatModeActive) {
+                // Find the speech button and trigger it after a short delay
+                setTimeout(function() {
+                    const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                    if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
+                        handleSpeechButtonClick(speechState, speechButton);
+                    }
+                    // Reset voice chat mode after auto-playing
+                    speechState.voiceChatModeActive = false;
+                }, 300);
+            }
         }
 
         entry.appendChild(bubble);
