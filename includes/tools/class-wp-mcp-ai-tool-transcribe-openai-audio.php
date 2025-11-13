@@ -321,6 +321,7 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 			'audio/wav',       // WAV.
 			'audio/x-wav',     // WAV (alternate).
 			'audio/webm',      // WebM.
+			'video/webm',      // WebM (video container with audio).
 			'audio/ogg',       // OGG.
 			'audio/m4a',       // M4A.
 			'audio/x-m4a',     // M4A (alternate).

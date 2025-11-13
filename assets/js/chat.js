@@ -1797,10 +1797,7 @@
         }
 
         state.voiceChatShouldProcess = false;
-
-        if (state.voiceChatButton) {
-            state.voiceChatButton.disabled = true;
-        }
+        updateVoiceChatButtonState(state);
 
         navigator.mediaDevices
             .getUserMedia({ audio: true })
