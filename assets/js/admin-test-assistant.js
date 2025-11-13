@@ -239,6 +239,15 @@
 			'</form>' +
 			'<div class="wp-mcp-ai-chat__controls">' +
 			'<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>' +
+			'<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>' +
+			'<span class="wp-mcp-ai-chat__cron-status-label">Jobs:</span>' +
+			'<span class="wp-mcp-ai-chat__cron-status-pending" title="Pending jobs">' +
+			'<span class="wp-mcp-ai-chat__cron-status-count">0</span>' +
+			'</span>' +
+			'<span class="wp-mcp-ai-chat__cron-status-completed" title="Completed jobs">' +
+			'<span class="wp-mcp-ai-chat__cron-status-count">0</span>' +
+			'</span>' +
+			'</div>' +
 			'<div class="wp-mcp-ai-chat__control-buttons">' +
 			'<button type="button" class="wp-mcp-ai-chat__save" aria-label="Save conversation" title="Save conversation">' +
 			'<svg class="wp-mcp-ai-chat__save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
