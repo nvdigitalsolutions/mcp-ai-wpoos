@@ -85,6 +85,11 @@ function absint( $maybeint ) {
 	return abs( (int) $maybeint );
 }
 
+function wp_cache_delete( $key, $group = '' ) {
+	// Mock - do nothing for tests. In real WordPress, this clears object cache.
+	return true;
+}
+
 // Mock WP_Error class.
 class WP_Error {
 	private $code;
