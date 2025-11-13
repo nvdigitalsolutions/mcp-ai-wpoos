@@ -630,10 +630,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				return;
 			}
 
-			// Build the MCP endpoint URL.
-			$rest_url = rest_url( 'mcp-ai/v1/mcp' );
-
-			// Create a JSON-RPC 2.0 initialize request.
+			// Create a JSON-RPC 2.0 initialize request body.
 			$request_body = wp_json_encode(
 				array(
 					'jsonrpc' => '2.0',
@@ -643,25 +640,20 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				)
 			);
 
-			// Make internal request.
-			$response = wp_remote_post(
-				$rest_url,
-				array(
-					'headers' => array(
-						'Content-Type' => 'application/json',
-						'X-WP-Nonce'   => wp_create_nonce( 'wp_rest' ),
-					),
-					'body'    => $request_body,
-					'timeout' => 30,
-				)
-			);
+			// Use internal REST request instead of HTTP call.
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+			$request->set_header( 'Content-Type', 'application/json' );
+			$request->set_body( $request_body );
+
+			// Process the request internally.
+			$response = rest_do_request( $request );
 
 			if ( is_wp_error( $response ) ) {
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Connection failed: %s', 'wp-mcp-ai' ),
+							__( 'Request failed: %s', 'wp-mcp-ai' ),
 							$response->get_error_message()
 						),
 					)
@@ -669,9 +661,8 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				return;
 			}
 
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$response_body = wp_remote_retrieve_body( $response );
-			$data          = json_decode( $response_body, true );
+			$response_code = $response->get_status();
+			$data          = $response->get_data();
 
 			if ( 200 !== $response_code ) {
 				wp_send_json_error(
@@ -721,10 +712,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				return;
 			}
 
-			// Build the MCP endpoint URL.
-			$rest_url = rest_url( 'mcp-ai/v1/mcp' );
-
-			// Create a JSON-RPC 2.0 request.
+			// Create a JSON-RPC 2.0 request body.
 			$request_body = wp_json_encode(
 				array(
 					'jsonrpc' => '2.0',
@@ -734,18 +722,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				)
 			);
 
-			// Make internal request.
-			$response = wp_remote_post(
-				$rest_url,
-				array(
-					'headers' => array(
-						'Content-Type' => 'application/json',
-						'X-WP-Nonce'   => wp_create_nonce( 'wp_rest' ),
-					),
-					'body'    => $request_body,
-					'timeout' => 30,
-				)
-			);
+			// Use internal REST request instead of HTTP call.
+			$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+			$request->set_header( 'Content-Type', 'application/json' );
+			$request->set_body( $request_body );
+
+			// Process the request internally.
+			$response = rest_do_request( $request );
 
 			if ( is_wp_error( $response ) ) {
 				wp_send_json_error(
@@ -760,9 +743,8 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				return;
 			}
 
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$response_body = wp_remote_retrieve_body( $response );
-			$data          = json_decode( $response_body, true );
+			$response_code = $response->get_status();
+			$data          = $response->get_data();
 
 			if ( 200 !== $response_code ) {
 				wp_send_json_error(
