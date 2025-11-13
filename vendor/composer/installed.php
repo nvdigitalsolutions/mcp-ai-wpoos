@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-ajax-bug-1058',
-        'version' => 'dev-copilot/fix-ajax-bug-1058',
-        'reference' => '1e7f23bdfa6653c42b4cb761a9fde2d7b977711f',
+        'pretty_version' => 'dev-copilot/make-tool-section-collapsible',
+        'version' => 'dev-copilot/make-tool-section-collapsible',
+        'reference' => '406f08cfe51e00da6f5cc4f5c91b07d36ea997aa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -254,9 +254,9 @@
             'dev_requirement' => false,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-ajax-bug-1058',
-            'version' => 'dev-copilot/fix-ajax-bug-1058',
-            'reference' => '1e7f23bdfa6653c42b4cb761a9fde2d7b977711f',
+            'pretty_version' => 'dev-copilot/make-tool-section-collapsible',
+            'version' => 'dev-copilot/make-tool-section-collapsible',
+            'reference' => '406f08cfe51e00da6f5cc4f5c91b07d36ea997aa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
