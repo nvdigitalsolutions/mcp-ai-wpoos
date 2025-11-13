@@ -849,6 +849,70 @@
 	margin-bottom: 1rem;
 }
 
+/* Provider Sub-tabs */
+.wp-mcp-ai-provider-subtabs {
+	margin-top: 15px;
+}
+
+.wp-mcp-ai-subtab-nav {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 0;
+	border-bottom: 1px solid #ddd;
+	background: #f6f7f7;
+	padding: 8px 12px 0;
+	border-radius: 4px 4px 0 0;
+}
+
+.wp-mcp-ai-subtab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border: 1px solid transparent;
+	border-bottom: none;
+	background: transparent;
+	color: #646970;
+	text-decoration: none;
+	font-size: 13px;
+	line-height: 1.4;
+	border-radius: 4px 4px 0 0;
+	transition: all 0.2s ease;
+	position: relative;
+	bottom: -1px;
+}
+
+.wp-mcp-ai-subtab .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+}
+
+.wp-mcp-ai-subtab:hover {
+	background-color: #e9ecef;
+	color: #0073aa;
+}
+
+.wp-mcp-ai-subtab-active {
+	background-color: #fff;
+	border-color: #ddd;
+	border-bottom-color: #fff;
+	color: #0073aa;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-subtab-content {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+}
+
+.wp-mcp-ai-subtab-content .form-table {
+	margin-top: 0;
+}
+
 @media screen and (max-width: 782px) {
 	.wp-mcp-ai-health-banner {
 		flex-direction: column;
@@ -863,5 +927,15 @@
 
 	.wp-mcp-ai-presets-grid {
 		grid-template-columns: 1fr;
+	}
+
+	.wp-mcp-ai-subtab-nav {
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+
+	.wp-mcp-ai-subtab {
+		font-size: 12px;
+		padding: 6px 10px;
 	}
 }
