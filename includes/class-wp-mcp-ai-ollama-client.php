@@ -31,8 +31,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No Ollama endpoint URL configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 			}
 
-			$url      = untrailingslashit( $endpoint_url ) . '/api/tags';
-			$response = wp_remote_get( $url, array( 'timeout' => $this->resolve_timeout( array() ) ) );
+			$url = untrailingslashit( $endpoint_url ) . '/api/tags';
+
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
+
+			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Ollama connection failed.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
@@ -55,8 +60,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 			}
 
-			$url      = untrailingslashit( $endpoint_url ) . '/api/tags';
-			$response = wp_remote_get( $url, array( 'timeout' => $this->resolve_timeout( array() ) ) );
+			$url = untrailingslashit( $endpoint_url ) . '/api/tags';
+
+			// Use a minimum of 30 seconds for listing models from local providers.
+			// Local network connections may have higher latency than localhost.
+			$timeout = max( 30, $this->resolve_timeout( array() ) );
+
+			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
