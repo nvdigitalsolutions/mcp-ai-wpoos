@@ -78,6 +78,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'description'    => __( 'Automatically clears OPcache when plugin files are updated. Helps ensure code changes take effect immediately without manually clearing cache. Recommended for development environments.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'enable_npm_management'   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'NPM Package Management', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable NPM package management tool', 'wp-mcp-ai' ),
+					'description'    => __( 'Allows AI assistants to manage npm packages (list, install, update, remove). Only enable in development environments. Requires npm to be installed on the server.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 		}
 
@@ -105,6 +112,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'label'  => __( 'Debugging & Logs', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
 					'fields' => array( 'enable_extended_logging' ),
+				),
+				'npm_management'         => array(
+					'id'     => 'npm_management',
+					'label'  => __( 'NPM Management', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-editor-code',
+					'fields' => array( 'enable_npm_management' ),
 				),
 				'system'                 => array(
 					'id'     => 'system',
@@ -165,6 +178,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			if ( 'performance_monitoring' === $active_subtab ) {
 				echo '</table>'; // Close the form table.
 				$this->render_performance_monitoring();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+			}
+
+			// Render NPM management UI if we're on the npm_management sub-tab.
+			if ( 'npm_management' === $active_subtab ) {
+				echo '</table>'; // Close the form table.
+				$this->render_npm_management_ui();
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
 			}
 		}
@@ -379,6 +399,221 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 				<?php
 			}
+		}
+
+		/**
+		 * Render the NPM package management UI.
+		 */
+		private function render_npm_management_ui() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$is_enabled = ! empty( $settings['enable_npm_management'] );
+
+			if ( ! $is_enabled ) {
+				?>
+				<div class="notice notice-warning inline">
+					<p><?php esc_html_e( 'NPM package management is currently disabled. Enable it above to use this feature.', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<?php
+				return;
+			}
+
+			// Check if npm is available.
+			$npm_available = $this->check_npm_availability();
+
+			?>
+			<div class="wp-mcp-ai-npm-management-section" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'NPM Package Management', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage npm packages for the WordPress plugin development environment. The npm management tool is available to AI assistants when enabled.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<?php if ( is_wp_error( $npm_available ) ) : ?>
+					<div class="notice notice-error inline">
+						<p><strong><?php esc_html_e( 'NPM Not Available:', 'wp-mcp-ai' ); ?></strong> <?php echo esc_html( $npm_available->get_error_message() ); ?></p>
+					</div>
+				<?php else : ?>
+					<div class="notice notice-success inline">
+						<p>
+							<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
+							<?php
+							printf(
+								/* translators: %s: npm version */
+								esc_html__( 'NPM is available (version: %s)', 'wp-mcp-ai' ),
+								'<code>' . esc_html( $npm_available ) . '</code>'
+							);
+							?>
+						</p>
+					</div>
+
+					<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 3px;">
+						<h4><?php esc_html_e( 'Tool Information', 'wp-mcp-ai' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'The "Manage NPM Packages" tool allows AI assistants to:', 'wp-mcp-ai' ); ?>
+						</p>
+						<ul style="list-style: disc; padding-left: 20px; margin: 10px 0;">
+							<li><?php esc_html_e( 'List all installed npm packages and their versions', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Install new packages (as regular or dev dependencies)', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Update existing packages to their latest versions', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Remove packages that are no longer needed', 'wp-mcp-ai' ); ?></li>
+						</ul>
+						<p class="description">
+							<strong><?php esc_html_e( 'Package Directory:', 'wp-mcp-ai' ); ?></strong>
+							<code><?php echo esc_html( $this->get_package_json_directory() ); ?></code>
+						</p>
+						<p class="description">
+							<strong style="color: #d63638;"><?php esc_html_e( 'Security Warning:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'This tool executes npm commands on your server. Only enable in development environments and ensure only trusted users have access to AI assistants with this tool enabled.', 'wp-mcp-ai' ); ?>
+						</p>
+					</div>
+
+					<?php $this->render_installed_packages(); ?>
+				<?php endif; ?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Check if npm is available on the system.
+		 *
+		 * @return string|WP_Error NPM version string or WP_Error.
+		 */
+		private function check_npm_availability() {
+			if ( ! function_exists( 'proc_open' ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_proc_disabled',
+					__( 'Process execution functions (proc_open) are disabled on this server.', 'wp-mcp-ai' )
+				);
+			}
+
+			$command = 'npm --version 2>&1';
+
+			$descriptors = array(
+				0 => array( 'pipe', 'r' ),
+				1 => array( 'pipe', 'w' ),
+				2 => array( 'pipe', 'w' ),
+			);
+
+			$process = proc_open( $command, $descriptors, $pipes );
+
+			if ( ! is_resource( $process ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_proc_failed',
+					__( 'Failed to execute npm command.', 'wp-mcp-ai' )
+				);
+			}
+
+			fclose( $pipes[0] );
+			$output = trim( stream_get_contents( $pipes[1] ) );
+			$errors = trim( stream_get_contents( $pipes[2] ) );
+			fclose( $pipes[1] );
+			fclose( $pipes[2] );
+
+			$return_code = proc_close( $process );
+
+			if ( 0 !== $return_code || empty( $output ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_npm_not_found',
+					__( 'npm is not installed or not accessible on this server.', 'wp-mcp-ai' )
+				);
+			}
+
+			return $output;
+		}
+
+		/**
+		 * Get the directory containing package.json.
+		 *
+		 * @return string Directory path.
+		 */
+		private function get_package_json_directory() {
+			return defined( 'WP_MCP_AI_PATH' ) ? WP_MCP_AI_PATH : plugin_dir_path( dirname( dirname( dirname( __FILE__ ) ) ) );
+		}
+
+		/**
+		 * Render the list of currently installed packages.
+		 */
+		private function render_installed_packages() {
+			$package_dir = $this->get_package_json_directory();
+			$package_json_file = $package_dir . 'package.json';
+
+			if ( ! file_exists( $package_json_file ) ) {
+				?>
+				<div style="margin-top: 20px;">
+					<p class="description"><?php esc_html_e( 'No package.json file found in the plugin directory.', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<?php
+				return;
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$package_json = file_get_contents( $package_json_file );
+			$package_data = json_decode( $package_json, true );
+
+			if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $package_data ) ) {
+				?>
+				<div style="margin-top: 20px;">
+					<p class="description"><?php esc_html_e( 'Unable to parse package.json file.', 'wp-mcp-ai' ); ?></p>
+				</div>
+				<?php
+				return;
+			}
+
+			$dependencies = isset( $package_data['dependencies'] ) ? $package_data['dependencies'] : array();
+			$dev_dependencies = isset( $package_data['devDependencies'] ) ? $package_data['devDependencies'] : array();
+
+			?>
+			<div style="margin-top: 20px;">
+				<h4><?php esc_html_e( 'Currently Installed Packages', 'wp-mcp-ai' ); ?></h4>
+
+				<?php if ( ! empty( $dependencies ) ) : ?>
+					<div style="margin-top: 15px;">
+						<h5><?php esc_html_e( 'Production Dependencies', 'wp-mcp-ai' ); ?></h5>
+						<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+							<thead>
+								<tr>
+									<th scope="col" style="width: 40%;"><?php esc_html_e( 'Package Name', 'wp-mcp-ai' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Version', 'wp-mcp-ai' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $dependencies as $name => $version ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $name ); ?></code></td>
+										<td><?php echo esc_html( $version ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $dev_dependencies ) ) : ?>
+					<div style="margin-top: 15px;">
+						<h5><?php esc_html_e( 'Development Dependencies', 'wp-mcp-ai' ); ?></h5>
+						<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+							<thead>
+								<tr>
+									<th scope="col" style="width: 40%;"><?php esc_html_e( 'Package Name', 'wp-mcp-ai' ); ?></th>
+									<th scope="col"><?php esc_html_e( 'Version', 'wp-mcp-ai' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $dev_dependencies as $name => $version ) : ?>
+									<tr>
+										<td><code><?php echo esc_html( $name ); ?></code></td>
+										<td><?php echo esc_html( $version ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( empty( $dependencies ) && empty( $dev_dependencies ) ) : ?>
+					<p class="description"><?php esc_html_e( 'No packages are currently listed in package.json.', 'wp-mcp-ai' ); ?></p>
+				<?php endif; ?>
+			</div>
+			<?php
 		}
 	}
 }
