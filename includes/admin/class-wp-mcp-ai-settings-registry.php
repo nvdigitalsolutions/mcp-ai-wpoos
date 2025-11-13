@@ -151,7 +151,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		public static function update_setting( $key, $value ) {
 			$settings         = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$settings[ $key ] = $value;
-			return update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+			$result           = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+			
+			// Clear object cache to ensure fresh reads.
+			if ( $result ) {
+				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			}
+			
+			return $result;
 		}
 
 		/**
@@ -163,7 +170,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Registry' ) ) {
 		public static function update_settings( $settings ) {
 			$current = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$updated = array_merge( $current, $settings );
-			return update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $updated );
+			$result  = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $updated );
+			
+			// Clear object cache to ensure fresh reads.
+			if ( $result ) {
+				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			}
+			
+			return $result;
 		}
 	}
 }
