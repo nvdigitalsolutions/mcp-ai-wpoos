@@ -88,19 +88,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
-				'performance' => array(
+				'performance'            => array(
 					'id'     => 'performance',
 					'label'  => __( 'Performance', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'memory_max_file_bytes' ),
 				),
-				'debugging'   => array(
+				'performance_monitoring' => array(
+					'id'     => 'performance_monitoring',
+					'label'  => __( 'Performance Monitoring', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-chart-line',
+					'fields' => array(), // No form fields, custom content only.
+				),
+				'debugging'              => array(
 					'id'     => 'debugging',
 					'label'  => __( 'Debugging & Logs', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
 					'fields' => array( 'enable_extended_logging' ),
 				),
-				'system'      => array(
+				'system'                 => array(
 					'id'     => 'system',
 					'label'  => __( 'System', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-settings',
