@@ -14,6 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-cron-status-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -397,6 +398,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate MCP protocol routes to MCP Controller (Phase 3.3).
 			$mcp_controller = new WP_MCP_AI_REST_MCP_Controller( $this, $this->authenticator, $this->validator );
 			$mcp_controller->register_routes();
+
+			// Delegate cron status routes to Cron Status Controller.
+			$cron_controller = new WP_MCP_AI_REST_Cron_Status_Controller( $this->authenticator, $this->validator );
+			$cron_controller->register_routes();
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 			/*
@@ -939,6 +944,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 			*/
 
+			// Note: /cron-status route now handled by Cron Status Controller.
+			/*
 			// Register /cron-status endpoint for lightweight cron job status.
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -963,6 +970,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 			/*
