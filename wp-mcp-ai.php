@@ -46,7 +46,16 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 			wp_kses_post( $message )
 		);
 	}
-	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
+
+	/**
+	 * Register PHP version notice on init to avoid early translation loading.
+	 *
+	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 */
+	function wp_mcp_ai_register_php_version_notice() {
+		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
+	}
+	add_action( 'init', 'wp_mcp_ai_register_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -100,7 +109,16 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 					wp_kses_post( $message )
 				);
 			}
-			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
+
+			/**
+			 * Register dev deps error notice on init to avoid early translation loading.
+			 *
+			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+			 */
+			function wp_mcp_ai_register_dev_deps_error_notice() {
+				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
+			}
+			add_action( 'init', 'wp_mcp_ai_register_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -490,8 +508,8 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -1023,14 +1041,15 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3>WP oOS Security Warning</h3>
+			<h3><?php esc_html_e( 'WP oOS Security Warning', 'wp-mcp-ai' ); ?></h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
 				<p>
 					<?php
 					printf(
-						'Security Check Results: %1$d critical issue(s), %2$d warning(s)',
+						/* translators: 1: number of critical issues, 2: number of warnings */
+						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
 						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
 						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
 					);
@@ -1055,16 +1074,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 			<?php endif; ?>
 
 			<p>
-				This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.
+				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' ); ?>
 			</p>
 			<p>
 				<em>
 					<?php
 					printf(
-						wp_kses(
-							'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.',
-							array( 'code' => array() )
-						),
+						/* translators: %s: code snippet for wp-config.php */
+						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
 						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
 					);
 					?>
