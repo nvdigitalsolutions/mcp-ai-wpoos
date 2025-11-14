@@ -22,13 +22,23 @@ class WP_MCP_AI_Model_Pricing_Checker {
 	 */
 	public static function bootstrap() {
 		add_action( self::CRON_HOOK, array( __CLASS__, 'check_pricing' ) );
-		add_action( 'admin_notices', array( __CLASS__, 'show_price_change_notice' ) );
+		// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
+		add_action( 'init', array( __CLASS__, 'register_admin_notices' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_dismiss_price_notice', array( __CLASS__, 'dismiss_price_notice' ) );
 
 		// Schedule cron job if not already scheduled.
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_event( time(), 'monthly', self::CRON_HOOK );
 		}
+	}
+
+	/**
+	 * Register admin notices on init action.
+	 *
+	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 */
+	public static function register_admin_notices() {
+		add_action( 'admin_notices', array( __CLASS__, 'show_price_change_notice' ) );
 	}
 
 	/**

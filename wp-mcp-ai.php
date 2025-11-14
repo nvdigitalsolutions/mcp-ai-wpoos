@@ -490,13 +490,22 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
 	}
-	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
+
+	/**
+	 * Register plugin action links on init to avoid early translation loading.
+	 *
+	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 */
+	function wp_mcp_ai_register_plugin_action_links() {
+		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
+	}
+	add_action( 'init', 'wp_mcp_ai_register_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1014,15 +1023,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3><?php esc_html_e( 'WP oOS Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<h3>WP oOS Security Warning</h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
 				<p>
 					<?php
 					printf(
-						/* translators: 1: Number of critical issues, 2: Number of warnings */
-						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
+						'Security Check Results: %1$d critical issue(s), %2$d warning(s)',
 						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
 						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
 					);
@@ -1047,17 +1055,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 			<?php endif; ?>
 
 			<p>
-				<?php
-				esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' );
-				?>
+				This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.
 			</p>
 			<p>
 				<em>
 					<?php
 					printf(
-						/* translators: %s: Code snippet */
 						wp_kses(
-							__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
+							'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.',
 							array( 'code' => array() )
 						),
 						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
@@ -1070,8 +1075,15 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 	}
 }
 
-// Hook the activation security notice to admin_notices.
-add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+/**
+ * Register activation security notice on init to avoid early translation loading.
+ *
+ * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ */
+function wp_mcp_ai_register_activation_security_notice() {
+	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+}
+add_action( 'init', 'wp_mcp_ai_register_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**

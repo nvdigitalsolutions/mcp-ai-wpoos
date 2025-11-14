@@ -110,7 +110,16 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			// Hook into chat requests.
 			add_action( 'wp_mcp_ai_before_chat_request', array( $this, 'monitor_chat_request' ), 1, 2 );
 
-			// Add admin notices for violations.
+			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
+			add_action( 'init', array( $this, 'register_admin_notices' ) );
+		}
+
+		/**
+		 * Register admin notices on init action.
+		 *
+		 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+		 */
+		public function register_admin_notices() {
 			add_action( 'admin_notices', array( $this, 'display_violation_notices' ) );
 		}
 

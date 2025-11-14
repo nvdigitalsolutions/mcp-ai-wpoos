@@ -22,8 +22,18 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_clear_shutdown', array( __CLASS__, 'handle_clear_shutdown' ) );
 			add_action( 'admin_post_wp_mcp_ai_clear_violations', array( __CLASS__, 'handle_clear_violations' ) );
 			add_action( 'admin_post_wp_mcp_ai_verify_root_key', array( __CLASS__, 'handle_verify_root_key' ) );
-			add_action( 'admin_notices', array( __CLASS__, 'display_root_key_notices' ) );
+			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
+			add_action( 'init', array( __CLASS__, 'register_admin_notices' ) );
 			add_filter( 'wp_mcp_ai_admin_settings_sanitize', array( __CLASS__, 'sanitize_monitor_settings' ), 10, 2 );
+		}
+
+		/**
+		 * Register admin notices on init action.
+		 *
+		 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+		 */
+		public static function register_admin_notices() {
+			add_action( 'admin_notices', array( __CLASS__, 'display_root_key_notices' ) );
 		}
 
 		/**
