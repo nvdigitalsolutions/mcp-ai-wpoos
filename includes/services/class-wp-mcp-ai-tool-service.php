@@ -166,21 +166,27 @@ class WP_MCP_AI_Tool_Service {
 	 * @return array List of tools.
 	 */
 	public function get_available_tools( $assistant_id = null ) {
-		$all_tools = $this->registry->get_registered_tools();
+		$all_tools = $this->registry->get_tools();
 		$tools     = array();
 
-		foreach ( $all_tools as $slug => $definition ) {
-			// Check capability if specified.
-			$capability = $definition['required_capability'] ?? '';
+		foreach ( $all_tools as $tool ) {
+			if ( ! is_object( $tool ) || ! method_exists( $tool, 'get_slug' ) ) {
+				continue;
+			}
+
+			$slug = $tool->get_slug();
+
+			// Check capability if the tool has one.
+			$capability = $this->registry->get_tool_capability( $slug );
 			if ( $capability && ! current_user_can( $capability ) ) {
 				continue; // User doesn't have required capability.
 			}
 
 			$tools[] = array(
 				'slug'        => $slug,
-				'name'        => $definition['name'] ?? $slug,
-				'description' => $definition['description'] ?? '',
-				'category'    => $definition['category'] ?? 'general',
+				'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
+				'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
+				'category'    => 'general', // Default category, can be enhanced later.
 			);
 		}
 

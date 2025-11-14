@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/update-readme-and-docs',
-        'version' => 'dev-copilot/update-readme-and-docs',
-        'reference' => 'f446600d58697a2a1a89c24c66e7c22d88496e76',
+        'pretty_version' => 'dev-copilot/fix-undefined-method-error-again',
+        'version' => 'dev-copilot/fix-undefined-method-error-again',
+        'reference' => '6ba458c4b24d3027347fab9cd0d397fbce21905a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/update-readme-and-docs',
-            'version' => 'dev-copilot/update-readme-and-docs',
-            'reference' => 'f446600d58697a2a1a89c24c66e7c22d88496e76',
+            'pretty_version' => 'dev-copilot/fix-undefined-method-error-again',
+            'version' => 'dev-copilot/fix-undefined-method-error-again',
+            'reference' => '6ba458c4b24d3027347fab9cd0d397fbce21905a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

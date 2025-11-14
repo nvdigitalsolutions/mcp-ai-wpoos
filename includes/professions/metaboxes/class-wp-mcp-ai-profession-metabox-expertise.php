@@ -210,6 +210,6 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 		}
 
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		return $registry->get_all_tools();
+		return $registry->get_tools();
 	}
 }

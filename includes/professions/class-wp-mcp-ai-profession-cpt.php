@@ -401,7 +401,7 @@ class WP_MCP_AI_Profession_CPT {
 		$available_tools = array();
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$registry        = WP_MCP_AI_Tool_Registry::get_instance();
-			$available_tools = $registry->get_all_tools();
+			$available_tools = $registry->get_tools();
 		}
 
 		?>
