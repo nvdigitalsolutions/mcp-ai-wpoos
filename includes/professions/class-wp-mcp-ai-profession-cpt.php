@@ -81,9 +81,14 @@ class WP_MCP_AI_Profession_CPT {
 	 * Initialize metabox instances.
 	 */
 	protected function init_metaboxes() {
-		// Metaboxes will be created in separate files following the pattern
-		// used in includes/assistants/metaboxes/.
-		// For now, we'll register them when they're created.
+		// Load metabox classes.
+		require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes-loader.php';
+
+		// Initialize metabox instances.
+		$this->metaboxes = array(
+			'details'   => new WP_MCP_AI_Profession_Metabox_Details(),
+			'expertise' => new WP_MCP_AI_Profession_Metabox_Expertise(),
+		);
 	}
 
 	/**
@@ -264,25 +269,16 @@ class WP_MCP_AI_Profession_CPT {
 			return;
 		}
 
-		// Details metabox - will be implemented in separate file.
-		add_meta_box(
-			'wp_mcp_ai_profession_details',
-			__( 'Profession Details', 'wp-mcp-ai' ),
-			array( $this, 'render_details_metabox' ),
-			self::POST_TYPE,
-			'normal',
-			'high'
-		);
-
-		// Expertise metabox.
-		add_meta_box(
-			'wp_mcp_ai_profession_expertise',
-			__( 'Expertise & Knowledge', 'wp-mcp-ai' ),
-			array( $this, 'render_expertise_metabox' ),
-			self::POST_TYPE,
-			'normal',
-			'high'
-		);
+		foreach ( $this->metaboxes as $metabox ) {
+			add_meta_box(
+				$metabox->get_id(),
+				$metabox->get_title(),
+				array( $metabox, 'render' ),
+				self::POST_TYPE,
+				$metabox->get_context(),
+				$metabox->get_priority()
+			);
+		}
 	}
 
 	/**
@@ -525,6 +521,12 @@ class WP_MCP_AI_Profession_CPT {
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
 	 */
+	/**
+	 * Save profession post meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
 	public function save_post( $post_id, $post ) {
 		// Verify nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_profession_nonce'] ) ||
@@ -542,46 +544,11 @@ class WP_MCP_AI_Profession_CPT {
 			return;
 		}
 
-		// Save category.
-		if ( isset( $_POST['profession_category'] ) ) {
-			update_post_meta( $post_id, self::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
-		}
-
-		// Save role description.
-		if ( isset( $_POST['profession_role_description'] ) ) {
-			update_post_meta( $post_id, self::META_ROLE_DESCRIPTION, wp_kses_post( wp_unslash( $_POST['profession_role_description'] ) ) );
-		}
-
-		// Save warnings.
-		if ( isset( $_POST['profession_warnings'] ) && is_array( $_POST['profession_warnings'] ) ) {
-			$warnings = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_warnings'] ) );
-			$warnings = array_filter( $warnings ); // Remove empty values.
-			update_post_meta( $post_id, self::META_WARNINGS, array_values( $warnings ) );
-		} else {
-			delete_post_meta( $post_id, self::META_WARNINGS );
-		}
-
-		// Save expertise.
-		if ( isset( $_POST['profession_expertise'] ) && is_array( $_POST['profession_expertise'] ) ) {
-			$expertise = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_expertise'] ) );
-			$expertise = array_filter( $expertise );
-			update_post_meta( $post_id, self::META_EXPERTISE, array_values( $expertise ) );
-		} else {
-			delete_post_meta( $post_id, self::META_EXPERTISE );
-		}
-
-		// Save default tools.
-		if ( isset( $_POST['profession_default_tools'] ) && is_array( $_POST['profession_default_tools'] ) ) {
-			$default_tools = array_map( 'sanitize_key', wp_unslash( $_POST['profession_default_tools'] ) );
-			$default_tools = array_filter( $default_tools );
-			update_post_meta( $post_id, self::META_DEFAULT_TOOLS, array_values( $default_tools ) );
-		} else {
-			delete_post_meta( $post_id, self::META_DEFAULT_TOOLS );
-		}
-
-		// Save knowledge base.
-		if ( isset( $_POST['profession_knowledge_base'] ) ) {
-			update_post_meta( $post_id, self::META_KNOWLEDGE_BASE, wp_kses_post( wp_unslash( $_POST['profession_knowledge_base'] ) ) );
+		// Delegate to metaboxes.
+		foreach ( $this->metaboxes as $metabox ) {
+			if ( method_exists( $metabox, 'save' ) ) {
+				$metabox->save( $post_id, $post );
+			}
 		}
 	}
 
