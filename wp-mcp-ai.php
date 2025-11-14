@@ -37,8 +37,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	 */
 	function wp_mcp_ai_php_version_notice() {
 		$message = sprintf(
-			/* translators: 1: Current PHP version, 2: Required PHP version */
-			__( '<strong>WP Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.', 'wp-mcp-ai' ),
+			'<strong>WP Open Operator System</strong> requires PHP version %2$s or higher. You are running PHP version %1$s. Please contact your hosting provider to upgrade PHP.',
 			PHP_VERSION,
 			'7.4.0'
 		);
@@ -95,10 +94,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			 * Display notice about dev dependencies in production.
 			 */
 			function wp_mcp_ai_dev_deps_error_notice() {
-				$message = sprintf(
-					/* translators: Deployment configuration error message */
-					__( '<strong>WP Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.', 'wp-mcp-ai' )
-				);
+				$message = '<strong>WP Open Operator System</strong> detected development dependencies in production environment. Your hosting provider has disabled the <code>putenv()</code> function, which is required by testing libraries. Please reinstall dependencies with <code>composer install --no-dev</code> to resolve this issue. Until fixed, some plugin features may not work correctly.';
 				printf(
 					'<div class="notice notice-error"><p>%s</p></div>',
 					wp_kses_post( $message )
