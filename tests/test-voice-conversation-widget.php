@@ -86,8 +86,10 @@ class WP_MCP_AI_Voice_Conversation_Widget_Test extends WP_UnitTestCase {
 
 		// Check for Elementor editor detection function.
 		$this->assertStringContainsString( 'isElementorEditor', $js_content, 'JavaScript should have Elementor editor detection function' );
-		$this->assertStringContainsString( 'typeof elementor', $js_content, 'JavaScript should check for elementor object' );
-		$this->assertStringContainsString( 'elementor.isEditMode', $js_content, 'JavaScript should check edit mode' );
+		// Check for primary method - elementorFrontend.isEditMode() used in preview iframe
+		$this->assertStringContainsString( 'elementorFrontend.isEditMode', $js_content, 'JavaScript should check elementorFrontend.isEditMode()' );
+		// Check for fallback - elementor.isEditMode for other editor contexts
+		$this->assertStringContainsString( 'elementor.isEditMode', $js_content, 'JavaScript should check elementor.isEditMode as fallback' );
 	}
 
 	/**

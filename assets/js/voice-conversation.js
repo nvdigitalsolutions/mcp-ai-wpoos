@@ -329,7 +329,15 @@
 	 * Check if we're in Elementor editor mode
 	 */
 	function isElementorEditor() {
-		return typeof elementor !== 'undefined' && elementor.isEditMode;
+		// Check for elementorFrontend.isEditMode() - available in preview iframe
+		if ( typeof elementorFrontend !== 'undefined' && typeof elementorFrontend.isEditMode === 'function' ) {
+			return elementorFrontend.isEditMode();
+		}
+		// Fallback check for elementor.isEditMode - available in some editor contexts
+		if ( typeof elementor !== 'undefined' && elementor.isEditMode ) {
+			return true;
+		}
+		return false;
 	}
 
 	// Initialize on document ready (only if not in Elementor editor)

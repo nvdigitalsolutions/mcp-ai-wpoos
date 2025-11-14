@@ -16,7 +16,9 @@ Uncaught TypeError: Cannot read properties of undefined (reading 'hasClass')
 
 1. **Elementor Editor Detection**
    - Added `isElementorEditor()` function to detect editor mode
-   - Prevents initialization when `typeof elementor !== 'undefined' && elementor.isEditMode`
+   - Checks `elementorFrontend.isEditMode()` (primary - available in preview iframe)
+   - Falls back to `elementor.isEditMode` for other editor contexts
+   - Prevents initialization when in Elementor editor or preview
 
 2. **Conditional Initialization**
    - Document ready callback now checks editor state before initializing

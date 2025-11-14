@@ -21,13 +21,21 @@ In the Elementor editor environment, this caused conflicts with WordPress core a
 
 ## Solution Summary
 
-### 1. Editor Detection (Lines 326-328)
+### 1. Editor Detection (Lines 331-341)
 ```javascript
 function isElementorEditor() {
-    return typeof elementor !== 'undefined' && elementor.isEditMode;
+    // Check for elementorFrontend.isEditMode() - available in preview iframe
+    if (typeof elementorFrontend !== 'undefined' && typeof elementorFrontend.isEditMode === 'function') {
+        return elementorFrontend.isEditMode();
+    }
+    // Fallback check for elementor.isEditMode - available in some editor contexts
+    if (typeof elementor !== 'undefined' && elementor.isEditMode) {
+        return true;
+    }
+    return false;
 }
 ```
-Detects when code is running in Elementor editor mode.
+Detects when code is running in Elementor editor or preview mode. Uses `elementorFrontend.isEditMode()` as primary check (available in preview iframe) with fallback to `elementor.isEditMode`.
 
 ### 2. Conditional Initialization (Lines 330-335)
 ```javascript
