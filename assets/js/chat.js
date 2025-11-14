@@ -3361,6 +3361,16 @@
         if (userId !== null) {
             url += '&user_id=' + encodeURIComponent(userId);
         }
+        
+        // Add assistant_id parameter
+        let assistantId = null;
+        if (state && state.config && typeof state.config.assistantId !== 'undefined') {
+            assistantId = state.config.assistantId;
+        }
+        
+        if (assistantId !== null) {
+            url += '&assistant_id=' + encodeURIComponent(assistantId);
+        }
 
         return fetch(url, {
             method: 'GET',
