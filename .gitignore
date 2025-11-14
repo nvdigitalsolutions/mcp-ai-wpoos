@@ -36,3 +36,4 @@ opcache-reset.php
 *.min.js.map
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
+test-storage-service.html

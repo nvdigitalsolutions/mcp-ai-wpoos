@@ -12,6 +12,7 @@
 		"wp": "readonly",
 		"wpMcpAiChat": "readonly",
 		"wpMcpAiChatInstances": "readonly",
+		"wpMcpAiChatStorage": "readonly",
 		"wpMcpAiUserChats": "readonly",
 		"wpMcpAiAdmin": "readonly"
 	},

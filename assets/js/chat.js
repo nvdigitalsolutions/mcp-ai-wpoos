@@ -6,6 +6,9 @@
     if (!window.wpMcpAiChatInstances) {
         window.wpMcpAiChatInstances = {};
     }
+
+    // Storage service compatibility layer - use external service if available
+    const storageService = window.wpMcpAiChatStorage || null;
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -37,10 +40,14 @@
 
     /**
      * Get localStorage key for a specific assistant.
+     * Uses storage service if available, otherwise uses internal implementation.
      * @param {string} assistantId - The assistant ID.
      * @return {string} The storage key.
      */
     function getStorageKey(assistantId) {
+        if (storageService && storageService.getStorageKey) {
+            return storageService.getStorageKey(assistantId);
+        }
         return STORAGE_KEY_PREFIX + assistantId;
     }
 
@@ -277,20 +284,29 @@
     /**
      * Get localStorage usage statistics (async).
      * Uses caching and requestIdleCallback to avoid blocking the main thread.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Function} callback - Called with quota data
      */
     function getLocalStorageQuota(callback) {
+        if (storageService && storageService.getLocalStorageQuota) {
+            return storageService.getLocalStorageQuota(callback);
+        }
         quotaMonitorCache.getQuota(callback);
     }
 
     /**
      * Format bytes to human-readable string.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {number} bytes - Number of bytes
      * @return {string} Formatted string (e.g., "1.5 KB", "2.3 MB")
      */
     function formatBytes(bytes) {
+        if (storageService && storageService.formatBytes) {
+            return storageService.formatBytes(bytes);
+        }
+
         if (bytes === 0) {
             return '0 Bytes';
         }
@@ -304,12 +320,17 @@
 
     /**
      * Export conversation to various formats.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Object} state - Chat state object
      * @param {string} format - Export format ('json', 'markdown', 'text')
      * @return {Object} Export result with content and filename
      */
     function exportConversation(state, format) {
+        if (storageService && storageService.exportConversation) {
+            return storageService.exportConversation(state, format);
+        }
+
         if (!state || !state.conversation || !Array.isArray(state.conversation)) {
             return { success: false, error: 'No conversation to export' };
         }
@@ -434,12 +455,17 @@
     /**
      * Save conversation to localStorage with quota management.
      * Includes automatic cleanup of old conversations if quota is exceeded.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Object} state - Chat state object
      * @param {Object} options - Optional settings
      * @return {Object} Result object with success status
      */
     function saveConversationToStorage(state, options) {
+        if (storageService && storageService.saveConversationToStorage) {
+            return storageService.saveConversationToStorage(state, options);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return { success: false, skipped: true };
         }
@@ -534,10 +560,15 @@
     /**
      * Clean up old localStorage entries to free up space.
      * Removes entries older than STORAGE_EXPIRY_MS.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @return {number} Number of entries cleaned up
      */
     function cleanupOldStorageEntries() {
+        if (storageService && storageService.cleanupOldStorageEntries) {
+            return storageService.cleanupOldStorageEntries();
+        }
+
         if (!window.localStorage) {
             return 0;
         }
@@ -596,7 +627,18 @@
         return cleaned;
     }
 
+    /**
+     * Load conversation from localStorage.
+     * Uses storage service if available, otherwise uses internal implementation.
+     * 
+     * @param {Object} state - Chat state object
+     * @return {Object|null} Loaded conversation data or null
+     */
     function loadConversationFromStorage(state) {
+        if (storageService && storageService.loadConversationFromStorage) {
+            return storageService.loadConversationFromStorage(state);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return null;
         }
@@ -642,7 +684,17 @@
         }
     }
 
+    /**
+     * Clear conversation from localStorage.
+     * Uses storage service if available, otherwise uses internal implementation.
+     * 
+     * @param {Object} state - Chat state object
+     */
     function clearConversationFromStorage(state) {
+        if (storageService && storageService.clearConversationFromStorage) {
+            return storageService.clearConversationFromStorage(state);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return;
         }
