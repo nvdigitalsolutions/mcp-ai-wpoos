@@ -42,6 +42,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-p
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-media.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-comments.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php';
 
 // Load integration admin pages.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine.php';
@@ -90,6 +91,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.
