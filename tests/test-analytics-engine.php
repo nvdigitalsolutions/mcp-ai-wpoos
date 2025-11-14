@@ -414,4 +414,31 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$this->assertEquals( 0, $trends['statistics']['mean'] );
 		$this->assertEquals( 0, $trends['statistics']['count'] );
 	}
+
+	/**
+	 * Test rebuild_usage_from_transcripts method.
+	 *
+	 * This test verifies that the method can handle the case when
+	 * JetEngine CCT is not available, returning appropriate error messages.
+	 */
+	public function test_rebuild_usage_from_transcripts_without_jetengine() {
+		$user_id = $this->test_users[0];
+
+		// Call rebuild when JetEngine is not available.
+		$result = WP_MCP_AI_Analytics_Engine::rebuild_usage_from_transcripts( $user_id );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'transcripts_processed', $result );
+		$this->assertArrayHasKey( 'users_updated', $result );
+		$this->assertArrayHasKey( 'tokens_recovered', $result );
+		$this->assertArrayHasKey( 'errors', $result );
+
+		// Should have 0 results since JetEngine is not available in test environment.
+		$this->assertEquals( 0, $result['transcripts_processed'] );
+		$this->assertEquals( 0, $result['users_updated'] );
+		$this->assertEquals( 0, $result['tokens_recovered'] );
+
+		// Should have an error message.
+		$this->assertNotEmpty( $result['errors'] );
+	}
 }

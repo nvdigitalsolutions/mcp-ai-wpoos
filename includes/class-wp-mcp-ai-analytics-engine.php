@@ -568,4 +568,197 @@ class WP_MCP_AI_Analytics_Engine {
 			return 'low';
 		}
 	}
+
+	/**
+	 * Rebuild usage analytics data from chat transcripts stored in CCT.
+	 *
+	 * This method can be used to recover/rebuild analytics data when it was not
+	 * being tracked initially but chat transcripts were being saved. The transcripts
+	 * contain token usage information in their metadata.
+	 *
+	 * @param int  $user_id   User ID to rebuild data for (0 for all users).
+	 * @param bool $overwrite Whether to overwrite existing usage data (default: false).
+	 * @return array {
+	 *     Rebuild results.
+	 *
+	 *     @type int   $transcripts_processed Number of transcripts processed.
+	 *     @type int   $users_updated         Number of users whose data was updated.
+	 *     @type int   $tokens_recovered      Total tokens recovered.
+	 *     @type array $errors                Any errors encountered.
+	 * }
+	 */
+	public static function rebuild_usage_from_transcripts( $user_id = 0, $overwrite = false ) {
+		// Verify JetEngine and CCT are available.
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			return array(
+				'transcripts_processed' => 0,
+				'users_updated'         => 0,
+				'tokens_recovered'      => 0,
+				'errors'                => array( 'JetEngine CCT not available' ),
+			);
+		}
+
+		global $wpdb;
+
+		$repository = new WP_MCP_AI_Transcript_Repository();
+		$table      = $repository->get_table_name();
+
+		if ( ! $table || ! $repository->table_exists() ) {
+			return array(
+				'transcripts_processed' => 0,
+				'users_updated'         => 0,
+				'tokens_recovered'      => 0,
+				'errors'                => array( 'Transcript table not found' ),
+			);
+		}
+
+		$results = array(
+			'transcripts_processed' => 0,
+			'users_updated'         => 0,
+			'tokens_recovered'      => 0,
+			'errors'                => array(),
+		);
+
+		// Build query to fetch transcripts.
+		$where = '';
+		if ( $user_id > 0 ) {
+			$where = $wpdb->prepare( 'WHERE cct_author_id = %d', $user_id );
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table is validated, $where is prepared above.
+		$transcripts = $wpdb->get_results( "SELECT _ID, cct_author_id, metadata, request_started_at FROM {$table} {$where} ORDER BY request_started_at ASC" );
+
+		if ( empty( $transcripts ) ) {
+			return $results;
+		}
+
+		$users_data = array();
+
+		foreach ( $transcripts as $transcript ) {
+			$results['transcripts_processed']++;
+
+			$transcript_user_id = absint( $transcript->cct_author_id );
+			if ( ! $transcript_user_id ) {
+				continue;
+			}
+
+			// Parse metadata.
+			$metadata = maybe_unserialize( $transcript->metadata );
+			if ( ! is_string( $metadata ) ) {
+				$metadata = wp_json_encode( $metadata );
+			}
+			$metadata = json_decode( $metadata, true );
+
+			if ( ! isset( $metadata['usage'] ) || ! is_array( $metadata['usage'] ) ) {
+				continue;
+			}
+
+			$usage_data = $metadata['usage'];
+
+			// Extract token counts.
+			$prompt_tokens     = isset( $usage_data['prompt_tokens'] ) ? absint( $usage_data['prompt_tokens'] ) : 0;
+			$completion_tokens = isset( $usage_data['completion_tokens'] ) ? absint( $usage_data['completion_tokens'] ) : 0;
+			$total_tokens      = isset( $usage_data['total_tokens'] ) ? absint( $usage_data['total_tokens'] ) : ( $prompt_tokens + $completion_tokens );
+
+			if ( $total_tokens <= 0 ) {
+				continue;
+			}
+
+			$results['tokens_recovered'] += $total_tokens;
+
+			// Parse timestamp.
+			$timestamp = strtotime( $transcript->request_started_at );
+			if ( ! $timestamp ) {
+				$timestamp = time();
+			}
+
+			$date_key = gmdate( 'Y-m-d', $timestamp );
+			$hour_key = gmdate( 'Y-m-d-H', $timestamp );
+
+			// Initialize user data structure if not exists.
+			if ( ! isset( $users_data[ $transcript_user_id ] ) ) {
+				$users_data[ $transcript_user_id ] = array();
+			}
+
+			// Use a generic tool name for chat interactions.
+			$tool_slug = 'chat_interaction';
+
+			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ] ) ) {
+				$users_data[ $transcript_user_id ][ $tool_slug ] = array(
+					'total_tokens' => 0,
+					'requests'     => 0,
+					'first_used'   => '',
+					'last_used'    => '',
+					'daily'        => array(),
+					'hourly'       => array(),
+				);
+			}
+
+			// Aggregate data.
+			$users_data[ $transcript_user_id ][ $tool_slug ]['total_tokens'] += $total_tokens;
+			$users_data[ $transcript_user_id ][ $tool_slug ]['requests']++;
+
+			// Track first/last usage.
+			$current_timestamp = gmdate( 'Y-m-d H:i:s', $timestamp );
+			if ( empty( $users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] ) ) {
+				$users_data[ $transcript_user_id ][ $tool_slug ]['first_used'] = $current_timestamp;
+			}
+			$users_data[ $transcript_user_id ][ $tool_slug ]['last_used'] = $current_timestamp;
+
+			// Aggregate daily usage.
+			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] ) ) {
+				$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] = 0;
+			}
+			$users_data[ $transcript_user_id ][ $tool_slug ]['daily'][ $date_key ] += $total_tokens;
+
+			// Aggregate hourly usage.
+			if ( ! isset( $users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] ) ) {
+				$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] = 0;
+			}
+			$users_data[ $transcript_user_id ][ $tool_slug ]['hourly'][ $hour_key ] += $total_tokens;
+		}
+
+		// Update user meta for each user.
+		foreach ( $users_data as $uid => $tools_data ) {
+			if ( ! $overwrite ) {
+				// Merge with existing data.
+				$existing = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $uid );
+				if ( ! empty( $existing ) ) {
+					foreach ( $tools_data as $tool => $data ) {
+						if ( isset( $existing[ $tool ] ) ) {
+							// Merge tool data.
+							$existing[ $tool ]['total_tokens'] = ( $existing[ $tool ]['total_tokens'] ?? 0 ) + $data['total_tokens'];
+							$existing[ $tool ]['requests']     = ( $existing[ $tool ]['requests'] ?? 0 ) + $data['requests'];
+
+							// Merge daily data.
+							foreach ( $data['daily'] as $date => $tokens ) {
+								$existing[ $tool ]['daily'][ $date ] = ( $existing[ $tool ]['daily'][ $date ] ?? 0 ) + $tokens;
+							}
+
+							// Merge hourly data.
+							foreach ( $data['hourly'] as $hour => $tokens ) {
+								$existing[ $tool ]['hourly'][ $hour ] = ( $existing[ $tool ]['hourly'][ $hour ] ?? 0 ) + $tokens;
+							}
+
+							// Update first/last used.
+							if ( empty( $existing[ $tool ]['first_used'] ) || $data['first_used'] < $existing[ $tool ]['first_used'] ) {
+								$existing[ $tool ]['first_used'] = $data['first_used'];
+							}
+							if ( empty( $existing[ $tool ]['last_used'] ) || $data['last_used'] > $existing[ $tool ]['last_used'] ) {
+								$existing[ $tool ]['last_used'] = $data['last_used'];
+							}
+						} else {
+							$existing[ $tool ] = $data;
+						}
+					}
+					$tools_data = $existing;
+				}
+			}
+
+			update_user_meta( $uid, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $tools_data );
+			$results['users_updated']++;
+		}
+
+		return $results;
+	}
 }
