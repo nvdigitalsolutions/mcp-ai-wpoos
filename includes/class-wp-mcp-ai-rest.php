@@ -2110,6 +2110,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return true;
 			}
 
+			// Check for guest token authentication.
+			$guest_token = $this->extract_guest_token( $request );
+			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+
+				if ( $guest_assistant ) {
+					// Guest users can view their own cron jobs (user_id = 0).
+					$this->set_authenticated_user_id( 0 );
+					return true;
+				}
+			}
+
 			// Check for WordPress nonce authentication.
 			$nonce = $request->get_header( 'X-WP-Nonce' );
 
@@ -2121,6 +2133,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'status'  => 401,
 						'actions' => array(
 							'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
 							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
 						),
 					)
