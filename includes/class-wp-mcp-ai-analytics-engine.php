@@ -436,14 +436,20 @@ class WP_MCP_AI_Analytics_Engine {
 		$patterns   = self::detect_patterns( $user_id );
 
 		// Project future usage.
-		$current_time  = time();
-		$days_from_base = ( $current_time - min( array_keys( $data_points ) ) ) / DAY_IN_SECONDS;
+		$projected_7d  = 0;
+		$projected_30d = 0;
 
-		$projected_7d  = (int) ( $trend['slope'] * ( $days_from_base + 7 ) + $trend['intercept'] );
-		$projected_30d = (int) ( $trend['slope'] * ( $days_from_base + 30 ) + $trend['intercept'] );
+		// Only calculate projections if we have data points.
+		if ( ! empty( $data_points ) ) {
+			$current_time   = time();
+			$days_from_base = ( $current_time - min( array_keys( $data_points ) ) ) / DAY_IN_SECONDS;
 
-		$projected_7d  = max( 0, $projected_7d );
-		$projected_30d = max( 0, $projected_30d );
+			$projected_7d  = (int) ( $trend['slope'] * ( $days_from_base + 7 ) + $trend['intercept'] );
+			$projected_30d = (int) ( $trend['slope'] * ( $days_from_base + 30 ) + $trend['intercept'] );
+
+			$projected_7d  = max( 0, $projected_7d );
+			$projected_30d = max( 0, $projected_30d );
+		}
 
 		return array(
 			'daily_usage'   => $daily_totals,

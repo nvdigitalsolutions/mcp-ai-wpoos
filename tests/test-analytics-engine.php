@@ -377,4 +377,41 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		$this->assertGreaterThan( 0, $trends['projected_7d'] );
 		$this->assertGreaterThan( 0, $trends['projected_30d'] );
 	}
+
+	/**
+	 * Test get_user_trends with empty usage data.
+	 *
+	 * This test ensures the method handles users with no usage data gracefully,
+	 * preventing the ValueError that was occurring on line 440.
+	 */
+	public function test_get_user_trends_empty_data() {
+		$user_id = $this->test_users[0];
+
+		// Ensure user has no usage data.
+		delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
+
+		$trends = WP_MCP_AI_Analytics_Engine::get_user_trends( $user_id, 30 );
+
+		$this->assertIsArray( $trends );
+		$this->assertArrayHasKey( 'daily_usage', $trends );
+		$this->assertArrayHasKey( 'trend', $trends );
+		$this->assertArrayHasKey( 'statistics', $trends );
+		$this->assertArrayHasKey( 'patterns', $trends );
+		$this->assertArrayHasKey( 'projected_7d', $trends );
+		$this->assertArrayHasKey( 'projected_30d', $trends );
+
+		// With no data, daily_usage should be empty.
+		$this->assertEmpty( $trends['daily_usage'] );
+
+		// Should return stable trend with no data.
+		$this->assertEquals( 'stable', $trends['trend']['direction'] );
+
+		// Projections should be 0 with no data.
+		$this->assertEquals( 0, $trends['projected_7d'] );
+		$this->assertEquals( 0, $trends['projected_30d'] );
+
+		// Statistics should handle empty data gracefully.
+		$this->assertEquals( 0, $trends['statistics']['mean'] );
+		$this->assertEquals( 0, $trends['statistics']['count'] );
+	}
 }
