@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP oOS Performance Test - setTimeout Violations Fix</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .test-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: white;
+        }
+        .test-container h2 {
+            margin-top: 0;
+            color: #0073aa;
+        }
+        .status-display {
+            min-height: 60px;
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fafafa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background: #0073aa;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #17a2b8;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .violation-monitor {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f7e7;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .counter {
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>WP oOS Performance Test - setTimeout Violations Fix</h1>
+    <p class="subtitle">Testing DOM update batching to eliminate setTimeout handler violations</p>
+    
+    <div class="warning">
+        <strong>⚠️ Important:</strong> Open Chrome DevTools Console (F12) to monitor performance violations.<br>
+        Look for messages like: <code>[Violation] 'setTimeout' handler took XXms</code>
+    </div>
+
+    <div class="info">
+        <strong>What This Tests:</strong>
+        <ul>
+            <li>Status updates with timers (simulates chat status display)</li>
+            <li>Rapid DOM manipulations in setTimeout callbacks</li>
+            <li>Quota monitor updates (innerHTML changes)</li>
+            <li>Multiple concurrent setTimeout operations</li>
+        </ul>
+    </div>
+
+    <!-- Test 1: Without Batching -->
+    <div class="test-container">
+        <h2>Test 1: Without DOM Batching (OLD - Causes Violations)</h2>
+        <p>This simulates the old code that triggers setTimeout violations by doing heavy DOM work directly in callbacks.</p>
+        
+        <div id="status-old" class="status-display">
+            <em>Click "Start Test" to begin</em>
+        </div>
+        
+        <button onclick="testOldMethod()" id="btn-old">Start Test (Old Method)</button>
+        <button onclick="clearDisplay('old')" style="background: #dc3545;">Clear</button>
+        
+        <div id="monitor-old" class="violation-monitor" style="display:none;">
+            <strong>Operations Log:</strong><br>
+            <div id="log-old"></div>
+        </div>
+    </div>
+
+    <!-- Test 2: With Batching -->
+    <div class="test-container">
+        <h2>Test 2: With DOM Batching (NEW - Eliminates Violations)</h2>
+        <p>This uses requestAnimationFrame batching to group DOM updates and prevent violations.</p>
+        
+        <div id="status-new" class="status-display">
+            <em>Click "Start Test" to begin</em>
+        </div>
+        
+        <button onclick="testNewMethod()" id="btn-new">Start Test (New Method)</button>
+        <button onclick="clearDisplay('new')" style="background: #dc3545;">Clear</button>
+        
+        <div id="monitor-new" class="violation-monitor" style="display:none;">
+            <strong>Operations Log:</strong><br>
+            <div id="log-new"></div>
+        </div>
+    </div>
+
+    <div class="success">
+        <strong>✓ Expected Results:</strong>
+        <ul>
+            <li><strong>Old Method:</strong> You should see multiple <code>[Violation] 'setTimeout' handler took XXms</code> in console</li>
+            <li><strong>New Method:</strong> Significantly fewer or no setTimeout violations in console</li>
+            <li>Both methods produce the same visual result, but new method performs better</li>
+        </ul>
+    </div>
+
+    <script>
+        // DOM Update Batcher (same as in chat.js)
+        const domUpdateBatcher = (function() {
+            let pendingUpdates = [];
+            let rafScheduled = false;
+
+            function performUpdates() {
+                rafScheduled = false;
+                const updates = pendingUpdates.slice();
+                pendingUpdates = [];
+
+                updates.forEach(function(updateFn) {
+                    try {
+                        updateFn();
+                    } catch (error) {
+                        console.error('Error in batched DOM update:', error);
+                    }
+                });
+            }
+
+            return {
+                schedule: function(updateFn) {
+                    if (typeof updateFn !== 'function') {
+                        return;
+                    }
+
+                    pendingUpdates.push(updateFn);
+
+                    if (!rafScheduled) {
+                        rafScheduled = true;
+                        requestAnimationFrame(performUpdates);
+                    }
+                }
+            };
+        })();
+
+        function log(type, message) {
+            const logEl = document.getElementById('log-' + type);
+            const monitorEl = document.getElementById('monitor-' + type);
+            if (logEl && monitorEl) {
+                monitorEl.style.display = 'block';
+                const timestamp = new Date().toLocaleTimeString();
+                logEl.innerHTML += `[${timestamp}] ${message}<br>`;
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+        }
+
+        function clearDisplay(type) {
+            const statusEl = document.getElementById('status-' + type);
+            const logEl = document.getElementById('log-' + type);
+            const monitorEl = document.getElementById('monitor-' + type);
+            
+            if (statusEl) statusEl.innerHTML = '<em>Cleared</em>';
+            if (logEl) logEl.innerHTML = '';
+            if (monitorEl) monitorEl.style.display = 'none';
+        }
+
+        // Simulate heavy DOM operation (like quota monitor innerHTML update)
+        function heavyDOMUpdate(element, iteration) {
+            // Build complex HTML string (simulates quota monitor)
+            let html = '<div style="padding: 10px; border-left: 3px solid #0073aa;">';
+            html += '<strong>Update #' + iteration + '</strong><br>';
+            html += '<span>Storage: <span style="color: #28a745;">OK</span></span><br>';
+            html += '<div style="width: 100%; height: 4px; background: #ddd; margin: 5px 0;">';
+            html += '<div style="width: 45%; height: 100%; background: #28a745;"></div>';
+            html += '</div>';
+            html += '<small>45% used (2.3 MB / 5 MB)</small><br>';
+            html += '<small>Timestamp: ' + new Date().toLocaleTimeString() + '</small>';
+            html += '</div>';
+            
+            element.innerHTML = html;
+        }
+
+        // Test OLD method - direct DOM manipulation in setTimeout
+        function testOldMethod() {
+            console.log('%c=== OLD METHOD TEST STARTED ===', 'color: red; font-weight: bold;');
+            console.log('Watch for setTimeout violations below...');
+            
+            const statusEl = document.getElementById('status-old');
+            const btnEl = document.getElementById('btn-old');
+            btnEl.disabled = true;
+            
+            log('old', 'Test started - watch console for violations');
+            
+            // Simulate multiple rapid setTimeout calls with heavy DOM work
+            for (let i = 1; i <= 20; i++) {
+                setTimeout(function() {
+                    // Direct DOM manipulation - causes violations
+                    heavyDOMUpdate(statusEl, i);
+                    log('old', 'Update #' + i + ' completed (direct DOM)');
+                }, i * 100);
+            }
+            
+            setTimeout(function() {
+                btnEl.disabled = false;
+                log('old', 'Test completed - check console for violations');
+                console.log('%c=== OLD METHOD TEST COMPLETED ===', 'color: red; font-weight: bold;');
+            }, 2500);
+        }
+
+        // Test NEW method - batched DOM updates
+        function testNewMethod() {
+            console.log('%c=== NEW METHOD TEST STARTED ===', 'color: green; font-weight: bold;');
+            console.log('This should have fewer/no setTimeout violations...');
+            
+            const statusEl = document.getElementById('status-new');
+            const btnEl = document.getElementById('btn-new');
+            btnEl.disabled = true;
+            
+            log('new', 'Test started - watch console (should be clean)');
+            
+            // Simulate multiple rapid setTimeout calls BUT batch DOM work
+            for (let i = 1; i <= 20; i++) {
+                setTimeout(function() {
+                    // Schedule DOM update in RAF - prevents violations
+                    domUpdateBatcher.schedule(function() {
+                        heavyDOMUpdate(statusEl, i);
+                    });
+                    log('new', 'Update #' + i + ' scheduled (batched RAF)');
+                }, i * 100);
+            }
+            
+            setTimeout(function() {
+                btnEl.disabled = false;
+                log('new', 'Test completed - check console (should be clean!)');
+                console.log('%c=== NEW METHOD TEST COMPLETED ===', 'color: green; font-weight: bold;');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
