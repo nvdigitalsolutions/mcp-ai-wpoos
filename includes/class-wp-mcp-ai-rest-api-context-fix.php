@@ -74,8 +74,10 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $result;
 		}
 
-		// Check if this is a GET request with context parameter.
-		$context = $request->get_param( 'context' );
+		// Check if this request has a context query parameter.
+		// We must check query params directly because context is a query string parameter.
+		$query_params = $request->get_query_params();
+		$context      = isset( $query_params['context'] ) ? $query_params['context'] : '';
 
 		// For requests with context parameter or edit-related endpoints, ensure no caching.
 		if ( ! empty( $context ) || self::is_edit_endpoint( $route ) ) {
@@ -171,10 +173,11 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			if ( ! empty( $parsed['query'] ) ) {
 				parse_str( $parsed['query'], $uri_params );
 
-				// Check for context parameter in URI but not in request.
-				if ( isset( $uri_params['context'] ) && ! $request->get_param( 'context' ) ) {
+				// Check for context parameter in URI but not in request query params.
+				$query_params = $request->get_query_params();
+				if ( isset( $uri_params['context'] ) && ! isset( $query_params['context'] ) ) {
 					// Query string is being stripped - log for debugging.
-					if ( function_exists( 'WP_MCP_AI_Logger' ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 						WP_MCP_AI_Logger::log_event(
 							'warning',
 							'REST API context parameter stripped from request',
@@ -235,7 +238,8 @@ class WP_MCP_AI_REST_API_Context_Fix {
 			return $response;
 		}
 
-		if ( strpos( $request_uri, '?context=' ) !== false && ! $request->get_param( 'context' ) ) {
+		$query_params = $request->get_query_params();
+		if ( strpos( $request_uri, '?context=' ) !== false && ! isset( $query_params['context'] ) ) {
 			// Add diagnostic information to the error.
 			$error_data = $response->get_error_data();
 			if ( ! is_array( $error_data ) ) {

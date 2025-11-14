@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/enhance-token-manager-functionality-another-one',
-        'version' => 'dev-copilot/enhance-token-manager-functionality-another-one',
-        'reference' => 'dc02debcc3a1e2fc282afc8cfe6ecc011e452165',
+        'pretty_version' => 'dev-copilot/fix-rest-api-context-parameter',
+        'version' => 'dev-copilot/fix-rest-api-context-parameter',
+        'reference' => 'c98f7cdc248b6e28b0255a86fa0039aeba2cb9ef',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/enhance-token-manager-functionality-another-one',
-            'version' => 'dev-copilot/enhance-token-manager-functionality-another-one',
-            'reference' => 'dc02debcc3a1e2fc282afc8cfe6ecc011e452165',
+            'pretty_version' => 'dev-copilot/fix-rest-api-context-parameter',
+            'version' => 'dev-copilot/fix-rest-api-context-parameter',
+            'reference' => 'c98f7cdc248b6e28b0255a86fa0039aeba2cb9ef',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
