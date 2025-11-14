@@ -449,6 +449,13 @@
 		handleFormSubmit: function(e) {
 			const $form = $(e.target);
 			const $submit = $form.find('input[type="submit"]');
+			const formMethod = ($form.attr('method') || 'get').toLowerCase();
+			
+			// Skip settings field validation for GET forms (e.g., search/filter forms).
+			// GET forms are used for filtering and searching, not for saving settings.
+			if (formMethod === 'get') {
+				return;
+			}
 			
 			// Get form data for logging.
 			const formData = new FormData($form[0]);
@@ -471,7 +478,7 @@
 			console.log('[WP oOS Settings] Fields being submitted:', fieldCount);
 			console.log('[WP oOS Settings] Field names:', Object.keys(settingsData).join(', '));
 			console.log('[WP oOS Settings] Form action:', $form.attr('action'));
-			console.log('[WP oOS Settings] Form method:', $form.attr('method'));
+			console.log('[WP oOS Settings] Form method:', formMethod);
 			
 			// Check for potential issues.
 			if (fieldCount === 0) {
