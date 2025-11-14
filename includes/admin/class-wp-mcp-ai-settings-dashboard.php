@@ -39,6 +39,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
 
+			// Hide WordPress admin footer on the settings dashboard to prevent overlay issues.
+			add_filter( 'admin_footer_text', array( $this, 'hide_admin_footer_text' ) );
+			add_filter( 'update_footer', array( $this, 'hide_update_footer_text' ), 999 );
+
 			// Register AJAX handlers.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -373,6 +377,54 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				</form>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Hide the WordPress admin footer text on the WP oOS settings dashboard.
+		 *
+		 * @param string $footer_text The default footer text.
+		 * @return string Empty string on settings dashboard, original text elsewhere.
+		 */
+		public function hide_admin_footer_text( $footer_text ) {
+			if ( ! $this->is_settings_dashboard() ) {
+				return $footer_text;
+			}
+
+			return '';
+		}
+
+		/**
+		 * Hide the WordPress version footer text on the WP oOS settings dashboard.
+		 *
+		 * @param string $footer_text The default version footer text.
+		 * @return string Empty string on settings dashboard, original text elsewhere.
+		 */
+		public function hide_update_footer_text( $footer_text ) {
+			if ( ! $this->is_settings_dashboard() ) {
+				return $footer_text;
+			}
+
+			return '';
+		}
+
+		/**
+		 * Check if the current admin page is the WP oOS settings dashboard.
+		 *
+		 * @return bool True if on settings dashboard, false otherwise.
+		 */
+		protected function is_settings_dashboard() {
+			if ( ! function_exists( 'get_current_screen' ) ) {
+				return false;
+			}
+
+			$screen = get_current_screen();
+			if ( ! $screen ) {
+				return false;
+			}
+
+			// Check if we're on the settings dashboard.
+			// The screen ID format is 'toplevel_page_{page_slug}'.
+			return 'toplevel_page_' . self::PAGE_SLUG === $screen->id;
 		}
 	}
 }
