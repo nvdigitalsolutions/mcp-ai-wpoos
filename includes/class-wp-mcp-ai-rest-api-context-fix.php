@@ -177,7 +177,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 				$query_params = $request->get_query_params();
 				if ( isset( $uri_params['context'] ) && ! isset( $query_params['context'] ) ) {
 					// Query string is being stripped - log for debugging.
-					if ( function_exists( 'WP_MCP_AI_Logger' ) ) {
+					if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 						WP_MCP_AI_Logger::log_event(
 							'warning',
 							'REST API context parameter stripped from request',
