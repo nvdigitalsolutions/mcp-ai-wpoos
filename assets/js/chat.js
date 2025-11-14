@@ -7248,6 +7248,11 @@
             hasText &&
             !hasAttachments &&
             shouldDisplayJsonResponse(role, text, allowMarkdown);
+        const showTruncatedResponse =
+            hasText &&
+            !showJsonResponse &&
+            !allowMarkdown &&
+            isTruncatedByOrchestration(text);
 
         if (!hasText && !hasAttachments) {
             return null;
@@ -7262,6 +7267,9 @@
         if (showJsonResponse) {
             bubble.classList.add('wp-mcp-ai-chat__bubble--json');
             bubble.appendChild(createJsonResponseElement(text));
+        } else if (showTruncatedResponse) {
+            bubble.classList.add('wp-mcp-ai-chat__bubble--truncated');
+            bubble.appendChild(createTruncatedResponseElement(text));
         } else if (hasText) {
             if (allowMarkdown) {
                 bubble.innerHTML = renderMarkdown(text);
@@ -7370,6 +7378,14 @@
         }
     }
 
+    function isTruncatedByOrchestration(text) {
+        if (!text || typeof text !== 'string') {
+            return false;
+        }
+
+        return text.includes('[... Result truncated by orchestration layer to fit within budget constraints ...]');
+    }
+
     function createJsonResponseElement(text) {
         const details = document.createElement('details');
         details.className = 'wp-mcp-ai-chat__json-response';
@@ -7394,6 +7410,36 @@
 
         const pre = document.createElement('pre');
         pre.className = 'wp-mcp-ai-chat__json-content';
+        pre.textContent = text;
+        details.appendChild(pre);
+
+        return details;
+    }
+
+    function createTruncatedResponseElement(text) {
+        const details = document.createElement('details');
+        details.className = 'wp-mcp-ai-chat__truncated-response';
+
+        const summary = document.createElement('summary');
+        summary.className = 'wp-mcp-ai-chat__truncated-summary';
+
+        const icon = document.createElement('span');
+        icon.className = 'wp-mcp-ai-chat__truncated-icon';
+        icon.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path d="M12 8.5a1 1 0 0 1 .7.29l5 5a1 1 0 0 1-1.4 1.42L12 10.91l-4.3 4.3a1 1 0 1 1-1.4-1.42l5-5a1 1 0 0 1 .7-.29z" />' +
+            '</svg>';
+        summary.appendChild(icon);
+
+        const label = document.createElement('span');
+        label.className = 'wp-mcp-ai-chat__truncated-label';
+        label.textContent = getString('truncatedResponse', 'Truncated response (click to expand)');
+        summary.appendChild(label);
+
+        details.appendChild(summary);
+
+        const pre = document.createElement('pre');
+        pre.className = 'wp-mcp-ai-chat__truncated-content';
         pre.textContent = text;
         details.appendChild(pre);
 
