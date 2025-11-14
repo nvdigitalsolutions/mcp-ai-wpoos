@@ -310,4 +310,47 @@ class Test_REST_API_Context_Fix extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'context', $headers['Vary'] );
 		}
 	}
+
+	/**
+	 * Test that context parameter is correctly detected from query params
+	 *
+	 * This test verifies the fix for the issue where context parameters
+	 * might not be correctly detected when using get_param() instead of
+	 * checking query params directly.
+	 */
+	public function test_context_query_parameter_detection() {
+		// Create a test post.
+		$post_id = $this->factory->post->create(
+			array(
+				'post_title'  => 'Test Post',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Create admin user.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+
+		// Create request with context as query parameter.
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id );
+		$request->set_query_params( array( 'context' => 'edit' ) );
+
+		// Verify that query params are set correctly.
+		$query_params = $request->get_query_params();
+		$this->assertArrayHasKey( 'context', $query_params );
+		$this->assertEquals( 'edit', $query_params['context'] );
+
+		$server   = rest_get_server();
+		$response = $server->dispatch( $request );
+
+		// Check that response is successful.
+		$this->assertEquals( 200, $response->get_status() );
+
+		// Check that no-cache headers are present (proving context was detected).
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Cache-Control', $headers );
+		$this->assertStringContainsString( 'no-cache', $headers['Cache-Control'] );
+		$this->assertStringContainsString( 'no-store', $headers['Cache-Control'] );
+		$this->assertStringContainsString( 'must-revalidate', $headers['Cache-Control'] );
+	}
 }
