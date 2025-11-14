@@ -1,6 +1,6 @@
 # Current State: Assistant & Processing in Agentic Workflows
 
-**Last Updated:** December 14, 2024  
+**Last Updated:** November 14, 2025  
 **Plugin Version:** 1.0.0  
 **Status:** Production Documentation
 
@@ -148,10 +148,10 @@ WP Open Operator System (WP oOS) implements a sophisticated **agentic workflow**
 ┌─────────────────────────────────────────────────────────────────┐
 │                        DATA LAYER                                │
 │                                                                  │
-│  ┌─────────────────┐  ┌──────────────┐  ┌────────────────────┐ │
-│  │  Assistants     │  │  Settings    │  │  Chat Transcripts  │ │
-│  │  (CPT/CCT)      │  │  (Options)   │  │  (localStorage/CCT)│ │
-│  └─────────────────┘  └──────────────┘  └────────────────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌──────────┐  ┌──────────┐ │
+│  │ Assistants  │  │ Professions │  │ Settings │  │  Chat    │ │
+│  │ (CPT/CCT)   │  │ (CPT/CCT)   │  │ (Options)│  │Transcripts│ │
+│  └─────────────┘  └─────────────┘  └──────────┘  └──────────┘ │
 │                                                                  │
 │  WordPress Database + Optional JetEngine CCT Storage             │
 └─────────────────────────────────────────────────────────────────┘
@@ -220,6 +220,74 @@ if ( is_wp_error( $assistant ) ) {
 
 $config = $assistant_service->get_assistant_config( $assistant_id );
 ```
+
+### Profession Integration
+
+**Professions** provide pre-configured templates for creating specialized AI assistants with domain-specific knowledge, tools, and behavior patterns.
+
+#### Profession Custom Post Type
+
+A **Profession** is stored as a WordPress Custom Post Type (`mcp_ai_profession`) and contains:
+
+| Property | Type | Description | Storage |
+|----------|------|-------------|---------|
+| **ID** | int | WordPress post ID | `wp_posts.ID` |
+| **Name** | string | Profession display name | `wp_posts.post_title` |
+| **Description** | text | Brief profession description | `wp_posts.post_content` |
+| **Slug** | string | Unique identifier | `wp_posts.post_name` |
+| **Category** | string | advisory/creative/technical/healthcare/legal/financial/other | Post Meta |
+| **Role Description** | text | Primary role and responsibilities for AI instructions | Post Meta |
+| **Expertise Areas** | array | Specific areas of expertise | Post Meta |
+| **Warnings** | array | Disclaimers the AI should communicate | Post Meta |
+| **Knowledge Base** | text | Domain-specific knowledge content (markdown) | Post Meta |
+| **Default Tools** | array | Recommended tool slugs for this profession | Post Meta |
+
+#### Profession Workflow
+
+1. **Discovery**: Use `list_professions` tool to browse available professions
+2. **Details**: Use `get_profession` tool to retrieve full profession data
+3. **Assistant Creation**: Profession data automatically populates assistant configuration:
+   - System prompt includes role description and warnings
+   - Base knowledge populated with profession knowledge base
+   - Default tools pre-selected
+   - Expertise areas inform assistant behavior
+4. **Management**: Use `save_profession` tool to create/update professions
+5. **Analytics**: Use `get_profession_stats` tool for profession insights
+
+#### Profession Service Responsibilities
+
+**WP_MCP_AI_Profession_Service** handles:
+
+1. **Retrieval**: Get professions by slug, ID, or category
+2. **Transformation**: Format profession data for assistants or display
+3. **Merging**: Combine multiple professions for hybrid assistants
+4. **Validation**: Check profession existence and data integrity
+
+```php
+// Example: Using Professions in Assistant Creation
+$profession_service = wp_mcp_ai_get_profession_service();
+$profession = $profession_service->get_profession( 'data_scientist' );
+
+// Profession data is merged into assistant configuration
+$assistant_config = array(
+    'name'           => 'Data Science Assistant',
+    'system_prompt'  => $profession['role_description'] . "\n\nWarnings:\n" . implode( "\n", $profession['warnings'] ),
+    'base_knowledge' => $profession['knowledge_base'],
+    'tools'          => $profession['default_tools'],
+);
+```
+
+#### Profession Categories
+
+Professions are organized into categories:
+
+- **Advisory/Consulting**: Business advisors, career counselors, consultants
+- **Creative Services**: Designers, writers, artists, content creators
+- **Technical/STEM**: Engineers, developers, data scientists, researchers
+- **Healthcare/Medical**: Medical professionals, therapists, nutritionists
+- **Legal**: Attorneys, paralegals, legal researchers
+- **Financial**: Accountants, financial planners, analysts
+- **Other**: Miscellaneous professions
 
 ---
 
@@ -706,6 +774,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface {
 | **WordPress Core** | 15 | get_recent_posts, search_content, get_site_summary |
 | **Media** | 8 | search_attachments, download_image, get_media_info |
 | **Users** | 6 | get_users, get_current_user, update_user_meta |
+| **Professions** | 4 | list_professions, get_profession, save_profession, get_profession_stats |
 | **WooCommerce** | 8 | get_woo_products, get_woo_orders, update_product |
 | **JetEngine** | 12 | get_jetengine_items, create_cct_item, query_relations |
 | **Elementor** | 5 | get_elementor_templates, apply_template |
@@ -843,6 +912,9 @@ class WP_MCP_AI_Rate_Limit_Manager {
 - get_jetengine_items
 - get_woo_products
 - get_rankmath_seo
+- list_professions
+- get_profession
+- get_profession_stats
 
 ```php
 class WP_MCP_AI_Agentic_Workflow_Optimizer {
@@ -992,6 +1064,22 @@ User Message
 - Custom table with identical fields
 - Enables advanced queries and relations
 - Synced bidirectionally with CPT
+
+#### Professions Storage
+
+**Primary**: WordPress Custom Post Type
+- Post table: `wp_posts` (post_type = 'mcp_ai_profession')
+- Meta table: `wp_postmeta` (category, expertise, tools, knowledge base)
+
+**Optional**: JetEngine CCT
+- Custom table for profession data
+- Advanced filtering by category and expertise
+- Relationship queries with assistants
+
+**Caching**:
+- Object cache for profession queries (1 hour TTL)
+- Cache group: `wp_mcp_ai_professions`
+- Automatically cleared on profession save/delete
 
 #### Chat Transcripts Storage
 
@@ -1324,6 +1412,97 @@ Iteration 2:
 ```
 
 **Result**: 3 iterations, error recovery successful
+
+---
+
+### Example 5: Creating Assistant from Profession
+
+**User**: "Create a data science assistant for my team"
+
+```php
+Iteration 0:
+  LLM decides: Need to explore available professions
+  
+  Tool Call:
+    name: "list_professions"
+    arguments: {category: "technical", detailed: true}
+  
+  Tool Result:
+    {
+      success: true,
+      count: 12,
+      professions: {
+        "data_scientist": {
+          name: "Data Scientist",
+          category: "technical",
+          expertise: ["Machine learning", "Data visualization", "Statistics"],
+          ...
+        },
+        ...
+      }
+    }
+
+Iteration 1:
+  LLM found matching profession
+  Decides: Get full profession details
+  
+  Tool Call:
+    name: "get_profession"
+    arguments: {profession_slug: "data_scientist"}
+  
+  Tool Result:
+    {
+      success: true,
+      profession: {
+        id: 456,
+        name: "Data Scientist",
+        role_description: "Helps with data analysis, ML models...",
+        expertise: ["Machine learning", "Statistics", "Python"],
+        warnings: ["Always validate data sources", "Results require expert review"],
+        knowledge_base: "# Data Science Best Practices\n...",
+        default_tools: ["analyze_data", "create_chart", "get_recent_posts"]
+      }
+    }
+
+Iteration 2:
+  LLM has profession data
+  Decides: Create assistant with profession configuration
+  
+  Tool Call:
+    name: "create_assistant"
+    arguments: {
+      name: "Data Science Team Assistant",
+      profession: "data_scientist",
+      description: "Helps team with data analysis and ML projects",
+      tools: ["analyze_data", "create_chart", "get_recent_posts", "search_content"]
+    }
+  
+  Tool Result:
+    {
+      success: true,
+      assistant_id: 789,
+      message: "Assistant created with Data Scientist profession template"
+    }
+
+Iteration 3:
+  LLM has completed assistant creation
+  
+  Final Response:
+    "I've created a Data Science Team Assistant for you! The assistant 
+     is configured with data science expertise including machine learning, 
+     statistics, and data visualization. It has the recommended tools 
+     enabled and will always remind users to validate data sources and 
+     review results with an expert. You can start using it right away!"
+```
+
+**Result**: 4 iterations, profession-based assistant created
+
+**Benefits of Profession Integration**:
+- Pre-configured domain expertise
+- Consistent best practices across assistants
+- Built-in warnings and disclaimers
+- Recommended tools automatically selected
+- Knowledge base provides context
 
 ---
 
