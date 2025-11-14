@@ -54,6 +54,21 @@ class WP_MCP_AI_Profession_CPT {
 	const META_KNOWLEDGE_BASE = '_wp_mcp_ai_profession_knowledge_base';
 
 	/**
+	 * Meta key for memory files (array of attachment IDs).
+	 */
+	const META_MEMORY_FILES = '_wp_mcp_ai_profession_memory_files';
+
+	/**
+	 * Meta key for vector store ID.
+	 */
+	const META_VECTOR_STORE_ID = '_wp_mcp_ai_profession_vector_store_id';
+
+	/**
+	 * Meta key for supported MIME types (array).
+	 */
+	const META_SUPPORTED_MIME_TYPES = '_wp_mcp_ai_profession_supported_mime_types';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -86,8 +101,9 @@ class WP_MCP_AI_Profession_CPT {
 
 		// Initialize metabox instances.
 		$this->metaboxes = array(
-			'details'   => new WP_MCP_AI_Profession_Metabox_Details(),
-			'expertise' => new WP_MCP_AI_Profession_Metabox_Expertise(),
+			'details'        => new WP_MCP_AI_Profession_Metabox_Details(),
+			'expertise'      => new WP_MCP_AI_Profession_Metabox_Expertise(),
+			'base-knowledge' => new WP_MCP_AI_Profession_Metabox_Base_Knowledge(),
 		);
 	}
 
@@ -229,6 +245,48 @@ class WP_MCP_AI_Profession_CPT {
 				'show_in_rest'      => false,
 			)
 		);
+
+		// Memory files.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_MEMORY_FILES,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Memory files (attachment IDs) for this profession', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_memory_files' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Vector store ID.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_VECTOR_STORE_ID,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'External vector store identifier', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_vector_store_id' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Supported MIME types.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_SUPPORTED_MIME_TYPES,
+			array(
+				'type'              => 'array',
+				'description'       => __( 'Supported MIME types for file uploads', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
 	}
 
 	/**
@@ -243,6 +301,38 @@ class WP_MCP_AI_Profession_CPT {
 		}
 
 		return array_map( 'sanitize_text_field', $value );
+	}
+
+	/**
+	 * Sanitize memory files meta value.
+	 *
+	 * @param mixed $value Raw memory files value.
+	 * @return array Sanitized array of attachment IDs.
+	 */
+	public function sanitize_memory_files( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		// Ensure all values are positive integers (attachment IDs).
+		$sanitized = array_map( 'absint', $value );
+
+		// Remove any zero values (invalid IDs).
+		return array_filter( $sanitized );
+	}
+
+	/**
+	 * Sanitize vector store ID meta value.
+	 *
+	 * @param mixed $value Raw vector store ID.
+	 * @return string Sanitized vector store ID.
+	 */
+	public function sanitize_vector_store_id( $value ) {
+		if ( ! is_string( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( $value );
 	}
 
 	/**

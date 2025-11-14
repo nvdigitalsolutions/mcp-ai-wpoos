@@ -15,3 +15,4 @@ require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-pr
 // Load metabox implementations.
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-details.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-expertise.php';
+require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-base-knowledge.php';
