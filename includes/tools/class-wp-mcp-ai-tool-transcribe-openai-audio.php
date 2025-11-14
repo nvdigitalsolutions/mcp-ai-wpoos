@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php'
 /**
  * Provides a tool for transcribing or translating audio attachments via OpenAI.
  */
-class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_MODEL   = 'gpt-4o-mini-transcribe';
 	const DEFAULT_FORMAT  = 'verbose_json';
 	const MAX_AUDIO_BYTES = 26214400; // 25MB default limit.
@@ -351,6 +351,17 @@ class WP_MCP_AI_Tool_Transcribe_OpenAI_Audio implements WP_MCP_AI_Tool_Interface
 					array_map( 'strtolower', (array) $mimes )
 				)
 			)
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
 		);
 	}
 }

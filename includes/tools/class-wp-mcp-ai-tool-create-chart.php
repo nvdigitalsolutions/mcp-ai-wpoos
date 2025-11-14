@@ -618,6 +618,7 @@ HTML;
 	public function get_capability_flags() {
 		return array(
 			'read-only',       // Does not modify site data (unless saving attachment).
+			'requires-capability',  // Requires user capabilities.
 			'write',           // Can create attachments when save_as_attachment is true.
 			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
 			'external-api',    // Loads Chart.js from CDN.

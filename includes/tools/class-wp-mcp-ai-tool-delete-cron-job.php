@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to delete scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -97,6 +97,17 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface {
 			'job_id'  => $job_id,
 			'hook'    => isset( $job['hook'] ) ? $job['hook'] : '',
 			'message' => __( 'Cron job deleted successfully.', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
 		);
 	}
 }

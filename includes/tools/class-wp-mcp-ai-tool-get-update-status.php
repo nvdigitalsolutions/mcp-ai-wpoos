@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a structured snapshot of available WordPress updates.
  */
-class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -184,5 +184,16 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

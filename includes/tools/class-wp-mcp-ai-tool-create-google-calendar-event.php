@@ -14,7 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Provides an assistant tool that creates events in Google Calendar.
  */
-class WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const TOKEN_GRANT_TYPE            = 'urn:ietf:params:oauth:grant-type:jwt-bearer';
 	const DEFAULT_SCOPE               = 'https://www.googleapis.com/auth/calendar.events';
@@ -736,5 +736,16 @@ class WP_MCP_AI_Tool_Create_Google_Calendar_Event implements WP_MCP_AI_Tool_Inte
 	 */
 	protected function base64url_encode( $data ) {
 		return rtrim( strtr( base64_encode( $data ), '+/', '-_' ), '=' );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

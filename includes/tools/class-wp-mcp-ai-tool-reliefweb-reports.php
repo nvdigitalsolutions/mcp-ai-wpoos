@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Queries the ReliefWeb API for recent humanitarian reports.
  */
-class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Base endpoint for ReliefWeb report searches.
 	 */
@@ -300,6 +300,17 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface {
 			'total'    => isset( $decoded['totalCount'] ) ? (int) $decoded['totalCount'] : null,
 			'returned' => isset( $decoded['count'] ) ? (int) $decoded['count'] : count( $results ),
 			'results'  => $results,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
 		);
 	}
 }

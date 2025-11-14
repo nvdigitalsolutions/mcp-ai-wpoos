@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Searches for accessible attachments and returns metadata plus download links.
  */
-class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Maximum number of attachments that can be returned in a single call.
 	 */
@@ -118,10 +118,11 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 			$mime_types = array_values( array_unique( $mime_types ) );
 		}
 
-		$results      = array();
-		$skipped      = 0;
-		$query_offset = 0;
-		$batch_size   = min( max( $limit * 3, $limit ), 100 );
+		$results       = array();
+		$skipped       = 0;
+		$query_offset  = 0;
+		$batch_size    = min( max( $limit * 3, $limit ), 100 );
+		$results_count = 0;
 
 		do {
 			$query_args = array(
@@ -173,8 +174,9 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 				}
 
 				$results[] = $record;
+				++$results_count;
 
-				if ( count( $results ) >= $limit ) {
+				if ( $results_count >= $limit ) {
 					break 2;
 				}
 			}
@@ -184,7 +186,7 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 			if ( $query_offset >= (int) $attachments->found_posts ) {
 				break;
 			}
-		} while ( count( $results ) < $limit );
+		} while ( $results_count < $limit );
 
 		return $results;
 	}
@@ -244,5 +246,16 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities to access attachments.
+		);
 	}
 }

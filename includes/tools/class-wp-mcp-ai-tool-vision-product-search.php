@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
  * Note: This tool intentionally does NOT include authentication credentials,
  * demonstrating what happens when Vision API calls are made without proper auth.
  */
-class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_REQUIRED_CAPABILITY = 'manage_options';
 	const VISION_API_ENDPOINT         = 'https://vision.googleapis.com/v1/images:annotate';
 
@@ -227,5 +227,16 @@ class WP_MCP_AI_Tool_Vision_Product_Search implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $decoded;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

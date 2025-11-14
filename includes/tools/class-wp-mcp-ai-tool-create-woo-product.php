@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -657,6 +657,17 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
 		return array(
 			'featured_image_id' => $primary_id,
 			'gallery_image_ids' => $product->get_gallery_image_ids(),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
 		);
 	}
 }
