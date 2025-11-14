@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
 require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-service.php';
+require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-seeder.php';
 
 // Initialize profession system.
