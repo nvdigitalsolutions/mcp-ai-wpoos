@@ -179,11 +179,41 @@ None of the failures represent critical security vulnerabilities or data loss ri
    - Unit tests should run without external dependencies
    - Integration tests should be optional or run in separate pipeline
    - Consider using test groups: `--group=unit`, `--group=integration`
+   - **Plugin Installation for Integration Tests**: WordPress.org API access may be blocked in CI environments
+     - Pre-package required plugins in test environment
+     - Use GitHub releases or direct downloads as fallback
+     - Consider using plugin stub/mock classes for basic integration tests
 
 3. **Test Environment**:
    - Document which tests require which plugins
    - Provide mock implementations for external services where possible
    - Consider using test doubles for optional dependencies
+   - **WP-CLI Available**: WP-CLI 2.12.0 installed for plugin management
+   - **Network Restrictions**: Direct downloads from WordPress.org are blocked in this environment
+     - WooCommerce, Elementor, JetEngine cannot be auto-installed
+     - Recommend pre-staging plugins in Docker images or test fixtures
+     - Alternative: Create stub implementations for testing
+
+#### Plugin Installation Attempt
+
+**Date**: November 14, 2025
+
+Attempted to install missing plugins (WooCommerce, Elementor, JetEngine) to enable full integration test coverage:
+
+1. ✅ **WP-CLI Installed**: Successfully installed WP-CLI 2.12.0
+2. ✅ **WordPress Core Setup**: Created wp-config.php and installed WordPress database
+3. ❌ **Plugin Downloads Blocked**: WordPress.org API is not accessible from this environment
+   - WooCommerce installation failed
+   - Elementor installation failed
+   - JetEngine (premium) not available via WP-CLI
+
+**Impact**: ~150 integration tests requiring these plugins will continue to fail or be skipped.
+
+**Recommendation for Future Testing**:
+- Pre-install plugins in Docker container images
+- Include plugin ZIP files in test fixtures directory
+- Use plugin stubs/mocks for basic functionality testing
+- Run full integration tests in environments with internet access
 
 ---
 
