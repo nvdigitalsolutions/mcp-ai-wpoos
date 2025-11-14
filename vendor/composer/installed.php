@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-        'version' => 'dev-copilot/move-to-next-step-separation-again',
-        'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+        'pretty_version' => 'dev-copilot/fix-save-conversation-error',
+        'version' => 'dev-copilot/fix-save-conversation-error',
+        'reference' => '655f739cc19328f7b9ecaa87ffbbfd06f8414852',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/move-to-next-step-separation-again',
-            'version' => 'dev-copilot/move-to-next-step-separation-again',
-            'reference' => '0675fb7aa9a21328defc9d8a9497f24c2d1b12ce',
+            'pretty_version' => 'dev-copilot/fix-save-conversation-error',
+            'version' => 'dev-copilot/fix-save-conversation-error',
+            'reference' => '655f739cc19328f7b9ecaa87ffbbfd06f8414852',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

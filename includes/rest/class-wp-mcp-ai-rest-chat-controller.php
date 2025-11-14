@@ -117,15 +117,44 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_chat_transcript_save' ),
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
-						'transcript'  => array(
-							'description' => __( 'Chat transcript to save.', 'wp-mcp-ai' ),
-							'type'        => 'object',
-							'required'    => true,
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant for this chat transcript.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
 						),
-						'session_key' => array(
-							'description' => __( 'Optional session key.', 'wp-mcp-ai' ),
-							'type'        => 'string',
-							'required'    => false,
+						'session_key'  => array(
+							'description'       => __( 'Session key for this conversation.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'messages'     => array(
+							'description'       => __( 'Array of conversation messages.', 'wp-mcp-ai' ),
+							'type'              => 'array',
+							'required'          => true,
+							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
+							'items'             => array(
+								'type'       => 'object',
+								'properties' => array(
+									'role'    => array(
+										'type' => 'string',
+										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
+									),
+									'content' => array(
+										'description' => __( 'Message content. Can be a string or array of content parts.', 'wp-mcp-ai' ),
+										'oneOf'       => array(
+											array( 'type' => 'string' ),
+											array(
+												'type'  => 'array',
+												'items' => array(
+													'type' => 'object',
+												),
+											),
+										),
+									),
+								),
+							),
 						),
 					),
 				),
