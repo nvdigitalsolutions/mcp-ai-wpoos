@@ -1041,4 +1041,72 @@ class WP_MCP_AI_Admin_Settings_Test extends WP_UnitTestCase {
 		// Verify that jquery-ui-sortable is in the dependencies.
 		$this->assertContains( 'jquery-ui-sortable', $script_data->deps, 'The wp-mcp-ai-admin-settings script should have jquery-ui-sortable as a dependency.' );
 	}
+
+	/**
+	 * Ensure admin footer text is hidden on the settings page.
+	 */
+	public function test_hide_admin_footer_text_on_settings_page() {
+		// Create admin settings instance.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Mock the screen object for the settings page.
+		set_current_screen( 'settings_page_wp-mcp-ai-settings' );
+
+		// Test that footer text is hidden.
+		$result = $admin_settings->hide_admin_footer_text( 'Thank you for creating with WordPress.' );
+		$this->assertSame( '', $result );
+
+		// Clean up.
+		set_current_screen( 'dashboard' );
+	}
+
+	/**
+	 * Ensure admin footer text is not hidden on other pages.
+	 */
+	public function test_hide_admin_footer_text_preserves_text_on_other_pages() {
+		// Create admin settings instance.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Mock the screen object for a different page.
+		set_current_screen( 'dashboard' );
+
+		// Test that footer text is preserved.
+		$original_text = 'Thank you for creating with WordPress.';
+		$result        = $admin_settings->hide_admin_footer_text( $original_text );
+		$this->assertSame( $original_text, $result );
+	}
+
+	/**
+	 * Ensure update footer text is hidden on the settings page.
+	 */
+	public function test_hide_update_footer_text_on_settings_page() {
+		// Create admin settings instance.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Mock the screen object for the settings page.
+		set_current_screen( 'settings_page_wp-mcp-ai-settings' );
+
+		// Test that version footer text is hidden.
+		$result = $admin_settings->hide_update_footer_text( 'Version 6.8.3' );
+		$this->assertSame( '', $result );
+
+		// Clean up.
+		set_current_screen( 'dashboard' );
+	}
+
+	/**
+	 * Ensure update footer text is not hidden on other pages.
+	 */
+	public function test_hide_update_footer_text_preserves_text_on_other_pages() {
+		// Create admin settings instance.
+		$admin_settings = new WP_MCP_AI_Admin_Settings();
+
+		// Mock the screen object for a different page.
+		set_current_screen( 'dashboard' );
+
+		// Test that version footer text is preserved.
+		$original_text = 'Version 6.8.3';
+		$result        = $admin_settings->hide_update_footer_text( $original_text );
+		$this->assertSame( $original_text, $result );
+	}
 }
