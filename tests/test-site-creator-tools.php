@@ -66,6 +66,15 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	 * Test update_option tool execution.
 	 */
 	public function test_update_option_execution() {
+		// Enable site creator features.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'              => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -127,6 +136,15 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	 * Test update_option with missing option name.
 	 */
 	public function test_update_option_missing_name() {
+		// Enable site creator features.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'              => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
@@ -147,6 +165,36 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( 'WP_Error', $result, 'Should return error for missing option name.' );
 		$this->assertSame( 'wp_mcp_ai_missing_option_name', $result->get_error_code() );
+	}
+
+	/**
+	 * Test update_option when feature is disabled.
+	 */
+	public function test_update_option_feature_disabled() {
+		// Ensure feature is disabled.
+		update_option( 'wp_mcp_ai_settings', array() );
+
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		$tool = $registry->get_tool( 'update_option' );
+
+		$admin_id = $this->factory->user->create(
+			array(
+				'role' => 'administrator',
+			)
+		);
+
+		$result = $tool->execute(
+			array(
+				'option_name'  => 'test_option',
+				'option_value' => 'value',
+			),
+			array( 'user_id' => $admin_id )
+		);
+
+		$this->assertInstanceOf( 'WP_Error', $result, 'Should return error when feature is disabled.' );
+		$this->assertSame( 'wp_mcp_ai_feature_disabled', $result->get_error_code() );
 	}
 
 	/**
@@ -208,6 +256,15 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 	 * Test site_creator with options only.
 	 */
 	public function test_site_creator_with_options() {
+		// Enable site creator features.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_site_creator'              => true,
+				'site_creator_allow_option_updates' => true,
+			)
+		);
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 

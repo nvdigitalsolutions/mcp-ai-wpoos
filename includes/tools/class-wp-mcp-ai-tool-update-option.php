@@ -65,6 +65,15 @@ class WP_MCP_AI_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if site creator features are enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_option_updates'] ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_feature_disabled',
+				__( 'The update_option tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai' )
+			);
+		}
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {

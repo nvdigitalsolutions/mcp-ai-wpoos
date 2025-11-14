@@ -593,6 +593,13 @@ class WP_MCP_AI_Container {
 			}
 		);
 
+		$this->singleton(
+			'section.site_creator',
+			function () {
+				return new WP_MCP_AI_Section_Site_Creator();
+			}
+		);
+
 		// Services.
 		$this->singleton(
 			'service.chat',
