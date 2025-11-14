@@ -43,6 +43,11 @@ class WP_MCP_AI_HTTP_Helper {
 	 * 2. Local and private network addresses typically don't have valid SSL certificates
 	 * 3. This causes "SSL certificate subject name mismatch" errors
 	 *
+	 * Also ensures adequate timeout for private network connections:
+	 * 1. Private IPs accessed through proxies (e.g., Cloudflare) may have higher latency
+	 * 2. Connection timeouts can occur before the overall request timeout
+	 * 3. Uses a minimum of 30 seconds to prevent premature connection failures
+	 *
 	 * Supports all common local LLM and development server configurations:
 	 * - Ollama on localhost: localhost:11434
 	 * - Ollama on local network: 192.168.1.100:11434
@@ -65,6 +70,15 @@ class WP_MCP_AI_HTTP_Helper {
 			// Allow HTTP (non-SSL) requests to local/private addresses.
 			// Some WordPress setups or plugins enforce HTTPS globally, which breaks local requests.
 			$args['reject_unsafe_urls'] = false;
+
+			// Ensure adequate timeout for private network connections.
+			// Private IPs (especially through proxies like Cloudflare) may have higher latency.
+			// Use a minimum of 30 seconds to prevent premature connection timeouts.
+			if ( isset( $args['timeout'] ) && is_numeric( $args['timeout'] ) ) {
+				$args['timeout'] = max( 30, absint( $args['timeout'] ) );
+			} else {
+				$args['timeout'] = 30;
+			}
 		}
 
 		return $args;

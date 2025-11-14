@@ -265,4 +265,110 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( true, 'example.com', 'https://example.com' ) );
 		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( true, '8.8.8.8', 'http://8.8.8.8' ) );
 	}
+
+	/**
+	 * Test that handle_loopback_requests sets minimum timeout for private IPs.
+	 */
+	public function test_handle_loopback_requests_sets_minimum_timeout() {
+		// Test with no timeout set - should default to 30 seconds.
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+		);
+		$url  = 'http://192.168.2.220:11434/api/tags';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		$this->assertEquals( 30, $modified['timeout'] );
+		$this->assertFalse( $modified['sslverify'] );
+		$this->assertFalse( $modified['reject_unsafe_urls'] );
+	}
+
+	/**
+	 * Test that handle_loopback_requests preserves higher timeout values.
+	 */
+	public function test_handle_loopback_requests_preserves_higher_timeout() {
+		// Test with timeout set to 120 seconds - should preserve it.
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+			'timeout'            => 120,
+		);
+		$url  = 'http://192.168.2.220:11434/api/tags';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		$this->assertEquals( 120, $modified['timeout'] );
+		$this->assertFalse( $modified['sslverify'] );
+		$this->assertFalse( $modified['reject_unsafe_urls'] );
+	}
+
+	/**
+	 * Test that handle_loopback_requests enforces minimum timeout for low values.
+	 */
+	public function test_handle_loopback_requests_enforces_minimum_timeout() {
+		// Test with timeout set to 10 seconds - should increase to 30.
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+			'timeout'            => 10,
+		);
+		$url  = 'http://192.168.2.220:11434/api/tags';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		$this->assertEquals( 30, $modified['timeout'] );
+		$this->assertFalse( $modified['sslverify'] );
+		$this->assertFalse( $modified['reject_unsafe_urls'] );
+	}
+
+	/**
+	 * Test that handle_loopback_requests doesn't set timeout for public IPs.
+	 */
+	public function test_handle_loopback_requests_no_timeout_for_public_ips() {
+		// Test with a public IP - should not modify timeout.
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+			'timeout'            => 10,
+		);
+		$url  = 'https://api.openai.com/v1/chat/completions';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		// Timeout should remain unchanged (10 seconds).
+		$this->assertEquals( 10, $modified['timeout'] );
+		// SSL settings should remain unchanged.
+		$this->assertTrue( $modified['sslverify'] );
+		$this->assertTrue( $modified['reject_unsafe_urls'] );
+	}
+
+	/**
+	 * Test that handle_loopback_requests applies to all private IP ranges.
+	 */
+	public function test_handle_loopback_requests_timeout_for_all_private_ranges() {
+		// Test 10.x.x.x range.
+		$args1 = array( 'timeout' => 5 );
+		$url1  = 'http://10.0.0.50:11434/api/tags';
+		$modified1 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args1, $url1 );
+		$this->assertEquals( 30, $modified1['timeout'] );
+
+		// Test 172.16-31.x.x range.
+		$args2 = array( 'timeout' => 5 );
+		$url2  = 'http://172.16.0.10:11434/api/tags';
+		$modified2 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args2, $url2 );
+		$this->assertEquals( 30, $modified2['timeout'] );
+
+		// Test 192.168.x.x range.
+		$args3 = array( 'timeout' => 5 );
+		$url3  = 'http://192.168.1.100:11434/api/tags';
+		$modified3 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args3, $url3 );
+		$this->assertEquals( 30, $modified3['timeout'] );
+
+		// Test localhost.
+		$args4 = array( 'timeout' => 5 );
+		$url4  = 'http://localhost:11434/api/tags';
+		$modified4 = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args4, $url4 );
+		$this->assertEquals( 30, $modified4['timeout'] );
+	}
 }
