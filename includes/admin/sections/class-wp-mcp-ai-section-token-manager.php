@@ -88,6 +88,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-admin-site-alt3"></span>
 						<?php esc_html_e( 'Per Site', 'wp-mcp-ai' ); ?>
 					</a>
+					<?php if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) : ?>
+						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'analytics' === $active_view ? 'active' : ''; ?>">
+							<span class="dashicons dashicons-chart-line"></span>
+							<?php esc_html_e( 'Analytics', 'wp-mcp-ai' ); ?>
+						</a>
+					<?php endif; ?>
 				</nav>
 
 				<!-- View Content -->
@@ -99,6 +105,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							break;
 						case 'per_site':
 							$this->render_per_site_view();
+							break;
+						case 'analytics':
+							if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
+								$this->render_analytics_view();
+							} else {
+								$this->render_per_user_view();
+							}
 							break;
 						case 'per_user':
 						default:
@@ -1066,6 +1079,139 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 */
 		private function get_provider_display_name( $provider ) {
 			return WP_MCP_AI_Token_Usage_Service::get_provider_display_name( $provider );
+		}
+
+		/**
+		 * Render analytics view with sub-tabs.
+		 */
+		private function render_analytics_view() {
+			$analytics_tab = isset( $_GET['analytics_tab'] ) ? sanitize_key( $_GET['analytics_tab'] ) : 'trends'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+			// Enqueue Chart.js for analytics charts.
+			if ( class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				WP_MCP_AI_Chart_JS_Helper::enqueue_chart_js();
+			}
+
+			?>
+			<div class="wp-mcp-ai-analytics">
+				<!-- Analytics Sub-Tabs -->
+				<nav class="wp-mcp-ai-analytics__nav" style="margin-bottom: 20px; border-bottom: 1px solid #ccc;">
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'trends' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'trends' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'trends' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'trends' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+						<span class="dashicons dashicons-chart-line"></span>
+						<?php esc_html_e( 'Trends', 'wp-mcp-ai' ); ?>
+					</a>
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'patterns' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'patterns' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'patterns' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'patterns' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+						<span class="dashicons dashicons-chart-bar"></span>
+						<?php esc_html_e( 'Patterns', 'wp-mcp-ai' ); ?>
+					</a>
+					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'anomalies' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'anomalies' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'anomalies' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'anomalies' === $analytics_tab ? 'bold' : 'normal'; ?>;">
+						<span class="dashicons dashicons-warning"></span>
+						<?php esc_html_e( 'Anomalies', 'wp-mcp-ai' ); ?>
+					</a>
+				</nav>
+
+				<!-- Analytics Content -->
+				<div class="wp-mcp-ai-analytics__content">
+					<?php
+					switch ( $analytics_tab ) {
+						case 'patterns':
+							$this->render_analytics_patterns_tab();
+							break;
+						case 'anomalies':
+							$this->render_analytics_anomalies_tab();
+							break;
+						case 'trends':
+						default:
+							$this->render_analytics_trends_tab();
+							break;
+					}
+					?>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Get URL for analytics sub-tab.
+		 *
+		 * @param string $analytics_tab Analytics tab name.
+		 * @return string
+		 */
+		private function get_analytics_tab_url( $analytics_tab ) {
+			return add_query_arg(
+				array(
+					'page'          => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
+					'tab'           => 'token_manager',
+					'view'          => 'analytics',
+					'analytics_tab' => $analytics_tab,
+				),
+				admin_url( 'admin.php' )
+			);
+		}
+
+		/**
+		 * Render analytics trends tab.
+		 */
+		private function render_analytics_trends_tab() {
+			?>
+			<div class="wp-mcp-ai-analytics-trends-content">
+				<h3><?php esc_html_e( 'Usage Trend Analysis', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Linear regression analysis of token usage over time with trend projections.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<?php
+				$data = array(
+					'user_id' => 0, // Site-wide.
+					'days'    => 30,
+				);
+				include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-trends.php';
+				?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render analytics patterns tab.
+		 */
+		private function render_analytics_patterns_tab() {
+			?>
+			<div class="wp-mcp-ai-analytics-patterns-content">
+				<h3><?php esc_html_e( 'Usage Pattern Analysis', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Discover hourly and daily usage patterns to optimize resource allocation.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<?php
+				$data = array(
+					'user_id' => get_current_user_id(),
+				);
+				include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-patterns.php';
+				?>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render analytics anomalies tab.
+		 */
+		private function render_analytics_anomalies_tab() {
+			?>
+			<div class="wp-mcp-ai-analytics-anomalies-content">
+				<h3><?php esc_html_e( 'Anomaly Detection', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Statistical anomaly detection using Z-score analysis to identify unusual usage patterns.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<?php
+				$data = array(
+					'user_id'   => 0, // Site-wide.
+					'threshold' => 3.0,
+				);
+				include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-anomalies.php';
+				?>
+			</div>
+			<?php
 		}
 
 		/**

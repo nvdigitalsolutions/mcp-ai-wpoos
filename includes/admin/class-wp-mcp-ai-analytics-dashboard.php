@@ -59,6 +59,27 @@ class WP_MCP_AI_Analytics_Dashboard {
 			__( 'AI Usage Forecast', 'wp-mcp-ai' ),
 			array( __CLASS__, 'render_usage_forecast_widget' )
 		);
+
+		// Analytics Engine widgets (Phase 7, Week 5-6).
+		if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
+			wp_add_dashboard_widget(
+				'wp_mcp_ai_analytics_trends',
+				__( 'AI Usage Trends', 'wp-mcp-ai' ),
+				array( __CLASS__, 'render_analytics_trends_widget' )
+			);
+
+			wp_add_dashboard_widget(
+				'wp_mcp_ai_analytics_patterns',
+				__( 'AI Usage Patterns', 'wp-mcp-ai' ),
+				array( __CLASS__, 'render_analytics_patterns_widget' )
+			);
+
+			wp_add_dashboard_widget(
+				'wp_mcp_ai_analytics_anomalies',
+				__( 'AI Anomaly Detection', 'wp-mcp-ai' ),
+				array( __CLASS__, 'render_analytics_anomalies_widget' )
+			);
+		}
 	}
 
 	/**
@@ -164,6 +185,38 @@ class WP_MCP_AI_Analytics_Dashboard {
 	public static function render_usage_forecast_widget() {
 		$data = self::get_usage_forecast_data();
 		include WP_MCP_AI_PATH . 'includes/admin/widgets/usage-forecast.php';
+	}
+
+	/**
+	 * Render analytics trends widget.
+	 */
+	public static function render_analytics_trends_widget() {
+		$data = array(
+			'user_id' => 0, // Site-wide.
+			'days'    => 30,
+		);
+		include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-trends.php';
+	}
+
+	/**
+	 * Render analytics patterns widget.
+	 */
+	public static function render_analytics_patterns_widget() {
+		$data = array(
+			'user_id' => get_current_user_id(),
+		);
+		include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-patterns.php';
+	}
+
+	/**
+	 * Render analytics anomalies widget.
+	 */
+	public static function render_analytics_anomalies_widget() {
+		$data = array(
+			'user_id'   => 0, // Site-wide.
+			'threshold' => 3.0,
+		);
+		include WP_MCP_AI_PATH . 'includes/admin/widgets/analytics-anomalies.php';
 	}
 
 	/**
