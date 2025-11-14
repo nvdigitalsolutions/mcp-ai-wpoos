@@ -53,9 +53,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.
 /**
  * Initialize the settings dashboard system.
  *
- * Note: This is the NEW modular settings dashboard. The legacy monolithic
- * settings page (class-wp-mcp-ai-admin-settings.php) continues to function
- * alongside this new system during the transition period.
+ * Note: This is the primary settings dashboard system. The legacy monolithic
+ * settings page (class-wp-mcp-ai-admin-settings.php) is no longer registered
+ * but the class remains for backward compatibility with its static methods.
  */
 function wp_mcp_ai_init_settings_dashboard() {
 	// Only initialize once.

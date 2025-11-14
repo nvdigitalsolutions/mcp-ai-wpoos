@@ -4372,7 +4372,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$redirect = wp_get_referer();
 
 			if ( ! $redirect ) {
-				$redirect = admin_url( 'options-general.php?page=' . self::PAGE_SLUG );
+				// Redirect to new settings dashboard instead of legacy settings page.
+				$redirect = admin_url( 'admin.php?page=wp-mcp-ai-dashboard' );
 			}
 
 			wp_safe_redirect( $redirect );
