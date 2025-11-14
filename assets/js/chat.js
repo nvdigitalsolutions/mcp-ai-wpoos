@@ -52,20 +52,143 @@
     const MESSAGE_BUNDLE_DELAY_MS = 800; // Wait 800ms before sending bundled messages
 
     /**
-     * Get localStorage usage statistics.
-     * Calculates total used space and available quota.
-     * 
-     * @return {Object} Object with used, total, and percentage properties
+     * Scroll to bottom batching utility to prevent forced reflows.
+     * Uses requestAnimationFrame to batch multiple scroll requests.
      */
-    function getLocalStorageQuota() {
-        if (!window.localStorage) {
-            return { used: 0, total: 0, percentage: 0, available: false };
+    const scrollBatcher = (function() {
+        let pendingScrolls = new Map();
+        let rafScheduled = false;
+
+        function performScrolls() {
+            rafScheduled = false;
+            pendingScrolls.forEach(function(scrollTo, element) {
+                if (element && element.parentNode) {
+                    element.scrollTop = scrollTo;
+                }
+            });
+            pendingScrolls.clear();
         }
 
-        let totalSize = 0;
-        let wpMcpAiSize = 0;
+        return {
+            /**
+             * Schedule a scroll to bottom operation.
+             * @param {Element} element - The element to scroll
+             */
+            scrollToBottom: function(element) {
+                if (!element || !OPTIMIZATIONS_ENABLED) {
+                    // Fallback to immediate scroll if optimizations disabled
+                    if (element) {
+                        element.scrollTop = element.scrollHeight;
+                    }
+                    return;
+                }
 
-        try {
+                // Store the element for batched scrolling
+                // We use 'bottom' as a marker, actual scrollHeight will be read in RAF
+                pendingScrolls.set(element, 'bottom');
+
+                if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(function() {
+                        // Read all scroll heights first (batch reads)
+                        const scrollOperations = new Map();
+                        pendingScrolls.forEach(function(_, element) {
+                            if (element && element.parentNode) {
+                                scrollOperations.set(element, element.scrollHeight);
+                            }
+                        });
+                        
+                        // Then perform all writes (batch writes)
+                        scrollOperations.forEach(function(scrollHeight, element) {
+                            element.scrollTop = scrollHeight;
+                        });
+                        
+                        pendingScrolls.clear();
+                        rafScheduled = false;
+                    });
+                }
+            }
+        };
+    })();
+
+    /**
+     * Quota monitor cache and async calculation.
+     * Prevents blocking the main thread with heavy localStorage iteration.
+     */
+    const quotaMonitorCache = {
+        lastCalculated: 0,
+        cachedQuota: { used: 0, total: 0, percentage: 0, available: false },
+        calculating: false,
+        CACHE_DURATION: 30000, // Cache for 30 seconds
+        
+        /**
+         * Get cached quota or trigger async calculation.
+         * 
+         * @param {Function} callback - Called with quota data when available
+         */
+        getQuota: function(callback) {
+            const now = Date.now();
+            const cacheValid = (now - this.lastCalculated) < this.CACHE_DURATION;
+            
+            // Return cached data if still valid
+            if (cacheValid && this.cachedQuota.available) {
+                if (callback) {
+                    callback(this.cachedQuota);
+                }
+                return;
+            }
+            
+            // Don't trigger multiple calculations
+            if (this.calculating) {
+                if (callback) {
+                    // Return stale cache while calculating
+                    callback(this.cachedQuota);
+                }
+                return;
+            }
+            
+            this.calculating = true;
+            
+            // Use requestIdleCallback for the heavy calculation
+            const performCalculation = function() {
+                try {
+                    const quota = this.calculateQuotaSync();
+                    this.cachedQuota = quota;
+                    this.lastCalculated = Date.now();
+                    this.calculating = false;
+                    
+                    if (callback) {
+                        callback(quota);
+                    }
+                } catch (error) {
+                    this.calculating = false;
+                    if (window.console && console.error) {
+                        console.error('Error calculating localStorage quota:', error);
+                    }
+                }
+            }.bind(this);
+            
+            // Use requestIdleCallback when available, otherwise use setTimeout
+            if (OPTIMIZATIONS_ENABLED && window.requestIdleCallback) {
+                window.requestIdleCallback(performCalculation, { timeout: 2000 });
+            } else {
+                setTimeout(performCalculation, 0);
+            }
+        },
+        
+        /**
+         * Synchronous quota calculation (called in idle callback).
+         * 
+         * @return {Object} Quota data object
+         */
+        calculateQuotaSync: function() {
+            if (!window.localStorage) {
+                return { used: 0, total: 0, percentage: 0, available: false };
+            }
+
+            let totalSize = 0;
+            let wpMcpAiSize = 0;
+
             // Calculate total localStorage usage
             for (let i = 0; i < window.localStorage.length; i++) {
                 const key = window.localStorage.key(i);
@@ -85,7 +208,6 @@
             }
 
             // Estimate total quota (typically 5-10MB, we'll use conservative estimate)
-            // Most browsers: 5MB, some allow 10MB
             const estimatedQuota = 5 * 1024 * 1024; // 5MB in bytes
             const percentage = (totalSize / estimatedQuota) * 100;
 
@@ -99,12 +221,17 @@
                 formattedWpMcpAiUsed: formatBytes(wpMcpAiSize),
                 formattedTotal: formatBytes(estimatedQuota)
             };
-        } catch (error) {
-            if (window.console && console.error) {
-                console.error('Error calculating localStorage quota:', error);
-            }
-            return { used: 0, total: 0, percentage: 0, available: false };
         }
+    };
+
+    /**
+     * Get localStorage usage statistics (async).
+     * Uses caching and requestIdleCallback to avoid blocking the main thread.
+     * 
+     * @param {Function} callback - Called with quota data
+     */
+    function getLocalStorageQuota(callback) {
+        quotaMonitorCache.getQuota(callback);
     }
 
     /**
@@ -2326,7 +2453,7 @@
         }
 
         if (state.transcriptExpanded && state.messagesEl) {
-            state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
+            scrollBatcher.scrollToBottom(state.messagesEl);
         }
     }
 
@@ -2373,45 +2500,51 @@
      * 
      * @param {HTMLElement} monitorEl - The quota monitor element
      */
+    /**
+     * Update quota monitor UI element with current localStorage usage.
+     * Uses async quota calculation to avoid blocking the main thread.
+     * 
+     * @param {Element} monitorEl - The quota monitor element
+     */
     function updateQuotaMonitor(monitorEl) {
         if (!monitorEl) {
             return;
         }
 
-        const quota = getLocalStorageQuota();
-        
-        if (!quota.available) {
-            monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
-            return;
-        }
+        getLocalStorageQuota(function(quota) {
+            if (!quota.available) {
+                monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
+                return;
+            }
 
-        const percentage = quota.percentage;
-        let statusClass = 'wp-mcp-ai-chat__quota-ok';
-        let statusText = 'OK';
-        
-        if (percentage >= 90) {
-            statusClass = 'wp-mcp-ai-chat__quota-critical';
-            statusText = 'Critical';
-        } else if (percentage >= 75) {
-            statusClass = 'wp-mcp-ai-chat__quota-warning';
-            statusText = 'High';
-        }
+            const percentage = quota.percentage;
+            let statusClass = 'wp-mcp-ai-chat__quota-ok';
+            let statusText = 'OK';
+            
+            if (percentage >= 90) {
+                statusClass = 'wp-mcp-ai-chat__quota-critical';
+                statusText = 'Critical';
+            } else if (percentage >= 75) {
+                statusClass = 'wp-mcp-ai-chat__quota-warning';
+                statusText = 'High';
+            }
 
-        monitorEl.innerHTML = '' +
-            '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
-            '<span class="wp-mcp-ai-chat__quota-bar">' +
-                '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
-            '</span> ' +
-            '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
-                quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
-            '</span>';
+            monitorEl.innerHTML = '' +
+                '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
+                '<span class="wp-mcp-ai-chat__quota-bar">' +
+                    '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
+                '</span> ' +
+                '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
+                    quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
+                '</span>';
 
-        // Add tooltip with detailed info
-        monitorEl.setAttribute('title', 
-            'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
-            'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
-            'Status: ' + statusText
-        );
+            // Add tooltip with detailed info
+            monitorEl.setAttribute('title', 
+                'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
+                'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
+                'Status: ' + statusText
+            );
+        });
     }
 
     /**
@@ -6118,7 +6251,7 @@
 
         // Scroll to bottom after restoration
         if (state.messagesEl) {
-            state.messagesEl.scrollTop = state.messagesEl.scrollHeight;
+            scrollBatcher.scrollToBottom(state.messagesEl);
         }
     }
 
@@ -7342,7 +7475,7 @@
 
         entry.appendChild(bubble);
         listEl.appendChild(entry);
-        listEl.scrollTop = listEl.scrollHeight;
+        scrollBatcher.scrollToBottom(listEl);
 
         return entry;
     }
