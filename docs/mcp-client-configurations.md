@@ -52,7 +52,7 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 
 ### LM Studio
 
-**Recommended Configuration (JSON-RPC, No SSE):**
+**Recommended Configuration:**
 
 ```json
 {
@@ -75,21 +75,31 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 4. Use the configuration above, replacing:
    - `your-site.com` with your WordPress site URL
    - `cred_xxxxx.SECRET` with your actual credential token
-5. **Do NOT** enable SSE or add SSE configuration
+5. **Do NOT** add `?stream=true` to the URL
 6. Save and LM Studio will automatically connect
 
-**Important:** LM Studio uses `mcpServers` object format (same as Claude Desktop), not an array.
+**Important Notes:**
+- LM Studio uses `mcpServers` object format (same as Claude Desktop), not an array
+- LM Studio uses **Streamable HTTP transport** (MCP 2024-11-05 spec)
+- The `/mcp` endpoint returns JSON by default (NOT SSE)
+- LM Studio sends `Accept: text/event-stream` header but expects JSON responses
 
-**Troubleshooting SSE Errors:**
+**✅ Fixed - November 2024:**
 
-If you previously experienced: `SSE error: Invalid content type, expected "text/event-stream"`
+Previous issue where LM Studio showed `SSE error: undefined` has been resolved!
 
-**This has been fixed!** The `/mcp` endpoint now defaults to JSON discovery (not SSE), making it fully compatible with LM Studio.
+**What was the problem?**
+- LM Studio sends `Accept: text/event-stream` header by default
+- Previous code incorrectly interpreted this as a request for SSE streaming
+- LM Studio received SSE when it expected JSON, causing "SSE error: undefined"
 
-- The endpoint automatically detects what format you need
-- POST requests use JSON-RPC 2.0 protocol  
-- GET requests return JSON discovery information
+**What was fixed?**
+- `/mcp` endpoint no longer triggers SSE based on Accept header
+- GET requests always return JSON discovery information
+- POST requests use JSON-RPC 2.0 protocol
 - SSE is only used when explicitly requested via `?stream=true` parameter
+
+See [LM Studio SSE Fix Documentation](LM_STUDIO_SSE_FIX.md) for complete details.
 
 ---
 
