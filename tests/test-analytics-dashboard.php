@@ -281,4 +281,77 @@ class Test_Analytics_Dashboard extends WP_UnitTestCase {
 			$this->fail( 'Widget rendering produced an error: ' . $e->getMessage() );
 		}
 	}
+
+	/**
+	 * Test that user caching is working to prevent performance issues.
+	 */
+	public function test_user_caching_prevents_multiple_queries() {
+		// Clear any existing cache.
+		delete_transient( 'wp_mcp_ai_chart_user_ids' );
+		delete_transient( 'wp_mcp_ai_dashboard_user_ids' );
+
+		// Create some test users.
+		$user_ids = array();
+		for ( $i = 0; $i < 5; $i++ ) {
+			$user_ids[] = $this->factory->user->create(
+				array(
+					'role' => 'subscriber',
+				)
+			);
+		}
+
+		// First call should query the database and set the cache.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Chart_JS_Helper' );
+		$method     = $reflection->getMethod( 'get_cached_user_ids' );
+		$method->setAccessible( true );
+
+		$first_call = $method->invoke( null );
+		$this->assertIsArray( $first_call, 'First call should return an array' );
+		$this->assertNotEmpty( $first_call, 'First call should return users' );
+
+		// Verify cache was set.
+		$cached = get_transient( 'wp_mcp_ai_chart_user_ids' );
+		$this->assertNotFalse( $cached, 'Cache should be set after first call' );
+
+		// Second call should use the cache (same result).
+		$second_call = $method->invoke( null );
+		$this->assertEquals( $first_call, $second_call, 'Second call should return same cached data' );
+
+		// Clean up.
+		delete_transient( 'wp_mcp_ai_chart_user_ids' );
+		delete_transient( 'wp_mcp_ai_dashboard_user_ids' );
+	}
+
+	/**
+	 * Test that user limit filter works correctly.
+	 */
+	public function test_user_limit_filter() {
+		// Clear cache.
+		delete_transient( 'wp_mcp_ai_chart_user_ids' );
+
+		// Create more users than the default limit.
+		for ( $i = 0; $i < 10; $i++ ) {
+			$this->factory->user->create(
+				array(
+					'role' => 'subscriber',
+				)
+			);
+		}
+
+		// Set a low limit via filter.
+		add_filter( 'wp_mcp_ai_chart_max_users', fn() => 3 );
+
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Chart_JS_Helper' );
+		$method     = $reflection->getMethod( 'get_cached_user_ids' );
+		$method->setAccessible( true );
+
+		$users = $method->invoke( null );
+
+		// Verify the limit was applied.
+		$this->assertLessThanOrEqual( 3, count( $users ), 'User count should respect the filter limit' );
+
+		// Clean up.
+		remove_all_filters( 'wp_mcp_ai_chart_max_users' );
+		delete_transient( 'wp_mcp_ai_chart_user_ids' );
+	}
 }
