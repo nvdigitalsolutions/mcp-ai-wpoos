@@ -89,9 +89,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// It's embedded as a sub-tab within Advanced Settings (tab = '__hidden__').
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
+		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
 
 		// Initialize the dashboard controller.
 		// This creates the top-level "WP oOS" menu item.
