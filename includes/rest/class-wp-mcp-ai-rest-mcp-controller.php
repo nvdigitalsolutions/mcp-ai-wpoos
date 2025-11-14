@@ -271,34 +271,33 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	/**
 	 * Handle GET requests to /mcp endpoint.
 	 *
-	 * Implements SSE as the default transport per MCP 2024-11-05 Streamable HTTP.
-	 * This allows MCP clients (like LM Studio) to establish SSE connections directly
-	 * to the /mcp endpoint instead of requiring a separate /sse endpoint.
+	 * Returns MCP server discovery information as JSON by default.
+	 * This ensures compatibility with MCP clients like LM Studio that expect
+	 * JSON-RPC protocol information, not SSE streams.
 	 *
-	 * SSE is the default behavior. Discovery JSON is only returned if explicitly
-	 * requested via the 'discovery' query parameter.
+	 * SSE streaming is opt-in via the 'stream' parameter or Accept header.
 	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function handle_mcp_get_request( WP_REST_Request $request ) {
-		// Check if client explicitly requested discovery info.
-		$wants_discovery = $request->get_param( 'discovery' ) === 'true' || $request->get_param( 'discovery' ) === '1';
+		// Check if client explicitly requested SSE streaming.
+		$wants_streaming = $request->get_param( 'stream' ) === 'true' || $request->get_param( 'stream' ) === '1';
 
-		// Check Accept header - if client explicitly rejects SSE, show discovery.
+		// Check Accept header - if client explicitly requests SSE, stream.
 		$accept_header = $request->get_header( 'Accept' );
-		if ( $accept_header && false !== strpos( $accept_header, 'application/json' ) && false === strpos( $accept_header, 'text/event-stream' ) ) {
-			$wants_discovery = true;
+		if ( $accept_header && false !== strpos( $accept_header, 'text/event-stream' ) ) {
+			$wants_streaming = true;
 		}
 
-		if ( $wants_discovery ) {
-			// Client explicitly wants discovery info - return JSON.
-			return $this->return_discovery_info( $request );
+		if ( $wants_streaming ) {
+			// Client explicitly wants SSE stream.
+			return $this->handle_sse_handshake( $request );
 		}
 
-		// Default behavior: Establish SSE connection.
-		// This is the recommended transport per MCP 2024-11-05.
-		return $this->handle_sse_handshake( $request );
+		// Default behavior: Return discovery JSON.
+		// This is compatible with LM Studio and other JSON-RPC clients.
+		return $this->return_discovery_info( $request );
 	}
 
 	/**
@@ -322,35 +321,36 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'prompts'   => array( 'listChanged' => true ),
 				'sse'       => array(
 					'enabled' => true,
-					'default' => true,
-					'note'    => 'GET /mcp defaults to SSE. Add ?discovery=true for this JSON response.',
+					'default' => false,
+					'note'    => 'SSE available via ?stream=true or Accept: text/event-stream header',
 				),
 			),
 			'transports'      => array(
-				'sse'     => array(
-					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
-					'methods'  => array( 'GET' ),
-					'default'  => true,
-					'note'     => 'Default transport - GET /mcp establishes SSE connection',
-				),
 				'jsonrpc' => array(
 					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
 					'methods'  => array( 'POST' ),
-					'note'     => 'POST with JSON-RPC 2.0 payload',
+					'default'  => true,
+					'note'     => 'Primary transport - POST with JSON-RPC 2.0 payload',
+				),
+				'sse'     => array(
+					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
+					'methods'  => array( 'GET' ),
+					'default'  => false,
+					'note'     => 'Optional streaming - GET /mcp?stream=true or Accept: text/event-stream',
 				),
 			),
 			'endpoints'       => array(
 				'mcp'        => rest_url( self::REST_NAMESPACE . '/mcp' ),
-				'no-sse'     => rest_url( self::REST_NAMESPACE . '/no-sse' ),
+				'sse'        => rest_url( self::REST_NAMESPACE . '/sse' ),
 				'assistants' => rest_url( self::REST_NAMESPACE . '/assistants' ),
 				'chat'       => rest_url( self::REST_NAMESPACE . '/chat' ),
 				'tools'      => rest_url( self::REST_NAMESPACE . '/tools' ),
 			),
 			'usage'           => array(
-				'sse_default'   => 'GET /mcp (default - establishes SSE stream)',
-				'discovery'     => 'GET /mcp?discovery=true (returns this JSON)',
-				'no_sse'        => 'GET /no-sse (assistant directory without SSE)',
-				'jsonrpc'       => 'POST /mcp (JSON-RPC 2.0 protocol)',
+				'discovery'  => 'GET /mcp (default - returns this discovery JSON)',
+				'streaming'  => 'GET /mcp?stream=true (establishes SSE stream)',
+				'jsonrpc'    => 'POST /mcp (JSON-RPC 2.0 protocol - recommended)',
+				'legacy_sse' => 'GET /sse (dedicated SSE endpoint)',
 			),
 		);
 

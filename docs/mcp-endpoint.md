@@ -7,11 +7,41 @@ The `/mcp` endpoint implements the Model Context Protocol (MCP) specification ve
 **MCP Specification Version:** 2024-11-05  
 **Implementation Status:** Standards-compliant with MCP core features
 
-## Endpoint URL
+## Endpoint Methods
+
+The `/mcp` endpoint supports both GET and POST methods:
+
+### GET Request (Discovery)
+
+```
+GET /wp-json/mcp-ai/v1/mcp
+```
+
+**Default Behavior:** Returns JSON discovery information about the MCP server, including:
+- Server name and version
+- Protocol version
+- Available capabilities
+- Transport options
+- Endpoint URLs
+
+**Optional SSE Streaming:** Add `?stream=true` parameter or `Accept: text/event-stream` header to receive Server-Sent Events stream instead.
+
+**Use Case:** LM Studio, Claude Desktop, and other MCP clients use this to discover server capabilities.
+
+### POST Request (JSON-RPC)
 
 ```
 POST /wp-json/mcp-ai/v1/mcp
 ```
+
+**Primary Transport:** JSON-RPC 2.0 protocol for executing MCP methods like:
+- `initialize` - Handshake and capability exchange
+- `tools/list` - List available tools
+- `tools/call` - Execute a tool
+- `resources/list` - List available resources
+- `prompts/list` - List available prompts
+
+**Use Case:** All MCP protocol operations (this is the recommended method for most operations).
 
 ## What's New in MCP 2024-11-05
 
@@ -535,23 +565,37 @@ All errors follow JSON-RPC 2.0 error format. Common errors:
 
 ## Comparison with SSE Endpoint
 
-| Feature | `/mcp` (JSON-RPC) | `/sse` (SSE) |
-|---------|--------|--------|
-| Protocol | JSON-RPC 2.0 | Server-Sent Events |
-| Direction | Bidirectional (request/response) | Unidirectional (server→client) |
-| Use Case | Tool execution, queries | Real-time updates, streaming |
-| Connection | Per-request or session-based | Persistent |
-| Format | JSON | Event stream |
-| Batching | ✅ Supported (2024-11-05) | ❌ Not applicable |
-| Progress Updates | ✅ Via notifications | ✅ Via events |
-| Transport | Streamable HTTP | Traditional SSE |
-| Reconnection | ✅ Session-based recovery | ⚠️ Limited |
+| Feature | `/mcp` GET (Discovery) | `/mcp` POST (JSON-RPC) | `/sse` (SSE) |
+|---------|--------|--------|--------|
+| Protocol | HTTP GET | JSON-RPC 2.0 | Server-Sent Events |
+| Direction | Client→Server | Bidirectional | Server→Client |
+| Use Case | Capability discovery | Tool execution, queries | Real-time updates |
+| Connection | Single request | Per-request or session | Persistent stream |
+| Format | JSON | JSON | Event stream |
+| Default | ✅ Yes (for GET) | ✅ Yes (for POST) | ❌ Opt-in via ?stream=true |
+| Content-Type | `application/json` | `application/json` | `text/event-stream` |
+| LM Studio Compatible | ✅ Yes | ✅ Yes | ⚠️ Optional |
+| Batching | ❌ Not applicable | ✅ Supported (2024-11-05) | ❌ Not applicable |
+| Progress Updates | ❌ Not applicable | ✅ Via notifications | ✅ Via events |
+| Reconnection | ❌ Not applicable | ✅ Session-based | ⚠️ Limited |
 
 ## Transport Improvements (MCP 2024-11-05)
 
-The MCP specification now recommends **Streamable HTTP** transport over traditional HTTP + SSE:
+The MCP specification now recommends **JSON-RPC over HTTP** as the primary transport:
 
-### Traditional HTTP + SSE
+### JSON-RPC Transport (Recommended)
+- Simple request/response model
+- Well-established protocol (JSON-RPC 2.0)
+- Easy to implement and debug
+- Works with all HTTP clients
+
+### SSE Transport (Optional)
+- Real-time streaming capability
+- Persistent connection for updates
+- Opt-in via `?stream=true` parameter
+- Useful for long-running operations
+
+### Traditional HTTP + SSE (Legacy)
 - Separate connections for requests and events
 - Complex reconnection logic
 - Limited bidirectional support
@@ -563,10 +607,12 @@ The MCP specification now recommends **Streamable HTTP** transport over traditio
 - Maintains compatibility with JSON-RPC 2.0
 
 **WP oOS Implementation:**
-- ✅ Supports both traditional and streamable transports
-- ✅ Automatic fallback for older clients
+- ✅ JSON-RPC as primary transport (POST /mcp)
+- ✅ Discovery via GET /mcp (returns JSON by default)
+- ✅ Optional SSE streaming (GET /mcp?stream=true)
+- ✅ Automatic content-type detection based on Accept header
 - ✅ Session-based state recovery
-- ✅ Compatible with all major MCP clients
+- ✅ Compatible with LM Studio, Claude Desktop, and all major MCP clients
 
 ## MCP 2024-11-05 Feature Summary
 
