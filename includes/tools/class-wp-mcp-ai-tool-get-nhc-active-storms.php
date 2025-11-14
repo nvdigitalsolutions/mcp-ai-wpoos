@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides the JSON summary of active storms from the National Hurricane Center.
  */
-class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface {
 	const ENDPOINT = 'https://www.nhc.noaa.gov/CurrentStorms.json';
 
 	/**
@@ -175,18 +175,5 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return $data;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',         // Only reads hurricane/storm data.
-			'external-api',      // Makes external API requests to NHC.
-			'network-dependent', // Requires internet connectivity.
-			'cacheable',         // Results can be cached.
-			'non-deterministic', // Data changes as storms evolve.
-		);
 	}
 }

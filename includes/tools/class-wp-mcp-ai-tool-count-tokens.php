@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * for planning and budgeting purposes. For production-critical token counting,
  * consider using OpenAI's tiktoken library on the client side.
  */
-class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface {
 
 	/**
 	 * Number of tokens added per message for formatting (im_start, role, im_end).
@@ -414,16 +414,5 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		// Get encoder for the encoding type.
 		return \Rahul900day\Tiktoken\Tiktoken::getEncoding( $encoding );
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',  // Counts tokens without modifying data.
-			'local-only', // No external API calls.
-			'cacheable',  // Same input produces same output.
-		);
 	}
 }

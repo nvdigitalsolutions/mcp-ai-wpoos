@@ -16,7 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for generating speech audio via OpenAI.
  */
-class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface {
 	const DEFAULT_MODEL  = 'gpt-4o-mini-tts';
 	const DEFAULT_VOICE  = 'alloy';
 	const DEFAULT_FORMAT = 'mp3';

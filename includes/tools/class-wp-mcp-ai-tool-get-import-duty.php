@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Retrieves import duty rates from the ITA Tariff Rates API.
  */
-class WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface {
 	const API_ENDPOINT = 'https://api.trade.gov/v1/tariff_rates/search';
 
 	/**
@@ -359,17 +359,5 @@ class WP_MCP_AI_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP_MCP
 		}
 
 		return $filtered;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',         // Only reads import duty data.
-			'external-api',      // Makes external API requests.
-			'network-dependent', // Requires internet connectivity.
-			'cacheable',         // Results can be cached for same queries.
-		);
 	}
 }

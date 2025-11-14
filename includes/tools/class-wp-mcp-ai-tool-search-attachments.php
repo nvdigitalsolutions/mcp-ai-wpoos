@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Searches for accessible attachments and returns metadata plus download links.
  */
-class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Maximum number of attachments that can be returned in a single call.
 	 */
@@ -244,17 +244,5 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return $payload;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',  // Only reads attachment data.
-			'local-only', // No external API calls.
-			'cacheable',  // Results can be cached.
-			'paginated',  // Supports limit and offset parameters.
-		);
 	}
 }

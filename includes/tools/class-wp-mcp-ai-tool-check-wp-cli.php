@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Reports on the current WP-CLI environment.
  */
-class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -474,17 +474,5 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$path = wp_normalize_path( $path );
 
 		return rtrim( $path, '/' );
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',           // Diagnostic tool, does not modify state.
-			'local-only',          // Checks local WP-CLI installation.
-			'requires-capability', // Requires 'manage_options' capability.
-			'cacheable',           // Results don't change frequently.
-		);
 	}
 }

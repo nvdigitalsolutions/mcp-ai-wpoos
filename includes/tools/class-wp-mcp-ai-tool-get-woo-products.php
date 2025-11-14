@@ -17,7 +17,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 /**
  * Provides WooCommerce product listings with core merchandising metadata.
  */
-class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *
@@ -171,19 +171,5 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return $results;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',       // Only reads product data.
-			'local-only',      // No external API calls.
-			'requires-plugin', // Requires WooCommerce plugin.
-			'cacheable',       // Results can be cached.
-			'paginated',       // Supports pagination parameters.
-			'large-response',  // May return substantial product data.
-		);
 	}
 }
