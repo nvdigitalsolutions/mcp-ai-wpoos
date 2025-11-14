@@ -111,6 +111,40 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'handle_chat_transcripts' ),
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
+					'args'                => array(
+						'session_key'  => array(
+							'description'       => __( 'Optional session key to retrieve a specific conversation.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+						),
+						'user_id'      => array(
+							'description'       => __( 'User ID for filtering transcripts.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'assistant_id' => array(
+							'description'       => __( 'Assistant ID for filtering transcripts.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'page'         => array(
+							'description'       => __( 'Page number for pagination.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 1,
+							'sanitize_callback' => 'absint',
+						),
+						'per_page'     => array(
+							'description'       => __( 'Number of items per page.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 20,
+							'sanitize_callback' => 'absint',
+						),
+					),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
