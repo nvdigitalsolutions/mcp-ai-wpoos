@@ -180,6 +180,18 @@ class WP_MCP_AI_Cache_Helper {
 	}
 
 	/**
+	 * Invalidate all orchestration-related caches.
+	 *
+	 * Called when orchestration settings are updated.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_orchestration_caches() {
+		self::delete( 'health_status' );
+		self::delete( 'active_cron_count' );
+	}
+
+	/**
 	 * Build cache key with prefix
 	 *
 	 * @param string $key Cache key.

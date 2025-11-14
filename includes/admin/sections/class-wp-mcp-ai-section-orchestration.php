@@ -531,8 +531,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 				// Active cron jobs - use cached count for performance.
 				if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-					// Use transient cache to avoid expensive lookups on every page load.
-					$active_jobs = get_transient( 'wp_mcp_ai_active_cron_count' );
+					// Use Cache Helper to avoid expensive lookups on every page load.
+					$active_jobs = WP_MCP_AI_Cache_Helper::get( 'active_cron_count' );
 
 					if ( false === $active_jobs ) {
 						$cron_jobs   = WP_MCP_AI_Cron_Manager::get_jobs();
@@ -558,8 +558,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							}
 						}
 
-						// Cache for 5 minutes.
-						set_transient( 'wp_mcp_ai_active_cron_count', $active_jobs, 5 * MINUTE_IN_SECONDS );
+						// Cache for 5 minutes using Cache Helper.
+						WP_MCP_AI_Cache_Helper::set( 'active_cron_count', $active_jobs, WP_MCP_AI_Cache_Helper::ANALYTICS_EXPIRATION );
 					}
 				} else {
 					$active_jobs = 0;

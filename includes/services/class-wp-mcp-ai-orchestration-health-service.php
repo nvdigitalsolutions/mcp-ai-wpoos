@@ -70,7 +70,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	public static function get_health_status( $force_refresh = false ) {
 		// Check cache first for performance.
 		if ( ! $force_refresh ) {
-			$cached = get_transient( 'wp_mcp_ai_health_status' );
+			$cached = WP_MCP_AI_Cache_Helper::get( 'health_status' );
 			if ( false !== $cached && is_array( $cached ) ) {
 				return $cached;
 			}
@@ -90,7 +90,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			);
 
 			// Cache for 1 minute to reduce load on admin dashboard.
-			set_transient( 'wp_mcp_ai_health_status', $health_status, MINUTE_IN_SECONDS );
+			WP_MCP_AI_Cache_Helper::set( 'health_status', $health_status, MINUTE_IN_SECONDS );
 
 			return $health_status;
 
@@ -401,7 +401,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	public static function clear_health_data() {
 		self::get_settings_repository()->delete( 'recent_activity' );
 		self::get_settings_repository()->delete( 'recent_errors' );
-		delete_transient( 'wp_mcp_ai_health_status' );
+		WP_MCP_AI_Cache_Helper::delete( 'health_status' );
 	}
 
 	/**
@@ -410,7 +410,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * Call this when settings change to force refresh on next load.
 	 */
 	public static function clear_health_cache() {
-		delete_transient( 'wp_mcp_ai_health_status' );
+		WP_MCP_AI_Cache_Helper::delete( 'health_status' );
 	}
 
 	/**
