@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Updates or creates WordPress options in the wp_options table.
  */
-class WP_MCP_AI_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Update_Option implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -113,19 +113,6 @@ class WP_MCP_AI_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 					__( 'Option "%s" was not updated (the new value may be the same as the old value).', 'wp-mcp-ai' ),
 					$option_name
 				),
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'write',                // Modifies data.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires manage_options capability.
-			'state-changing',       // Modifies database state.
-			'idempotent',           // Safe to call multiple times.
 		);
 	}
 }

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Lists available professions with their details.
  */
-class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -111,17 +111,6 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 			'count'       => count( $detailed_professions ),
 			'category'    => $category ?: 'all',
 			'professions' => $detailed_professions,
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read',         // Reads profession data.
-			'local-only',   // No external API calls.
-			'safe',         // Read-only operation.
 		);
 	}
 }

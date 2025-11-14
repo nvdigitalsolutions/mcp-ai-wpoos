@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Gets detailed information about a profession.
  */
-class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -90,17 +90,6 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'success'    => true,
 			'profession' => $profession,
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read',         // Reads profession data.
-			'local-only',   // No external API calls.
-			'safe',         // Read-only operation.
 		);
 	}
 }

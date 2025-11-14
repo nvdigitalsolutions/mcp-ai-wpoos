@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates or updates a profession.
  */
-class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -197,18 +197,6 @@ class WP_MCP_AI_Tool_Save_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP
 					__( 'Profession "%s" created successfully.', 'wp-mcp-ai' ),
 					$data['title']
 				),
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'write',                // Creates/updates posts.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires manage_options.
-			'state-changing',       // Modifies database.
 		);
 	}
 }

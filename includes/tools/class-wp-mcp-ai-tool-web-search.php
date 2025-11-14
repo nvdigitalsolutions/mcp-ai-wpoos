@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 /**
  * Performs lightweight web searches and returns the top results.
  */
-class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -365,20 +365,5 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		return count( $results ) >= $max_results;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'requires-credentials', // May require API credentials depending on provider.
-			'read-only',            // Only retrieves data, does not modify state.
-			'external-api',         // Makes external HTTP requests.
-			'rate-limited',         // Subject to provider rate limits.
-			'cacheable',            // Results can be cached for short periods.
-			'network-dependent',    // Requires internet connectivity.
-			'non-deterministic',    // Results may vary over time.
-		);
 	}
 }

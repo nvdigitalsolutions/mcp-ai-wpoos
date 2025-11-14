@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows privileged users to create WP-Cron jobs.
  */
-class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -191,23 +191,6 @@ class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'scheduled_for' => wp_date( DATE_ATOM, $timestamp ),
 			'args'          => $args,
 			'message'       => __( 'Cron event scheduled successfully.', 'wp-mcp-ai' ),
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'write',                // Creates scheduled tasks.
-			'local-only',           // No external API calls.
-			'requires-capability',  // Requires 'manage_options' capability.
-			'state-changing',       // Modifies scheduled tasks.
-			'async',                // Scheduled tasks run asynchronously.
-			'deferred-result',      // Result available later, not immediately.
-			'requires-polling',     // May need to poll for completion status.
-			'may-timeout',          // Should not wait for cron execution in same request.
-			'background-only',      // Cron execution happens in background.
 		);
 	}
 }
