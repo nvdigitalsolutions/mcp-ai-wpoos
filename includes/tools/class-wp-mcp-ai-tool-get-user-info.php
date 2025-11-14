@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns basic information about a WordPress user.
  */
-class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -104,6 +104,18 @@ class WP_MCP_AI_Tool_Get_User_Info implements WP_MCP_AI_Tool_Interface {
 			'registered'   => $user->user_registered,
 			'first_name'   => get_user_meta( $user_id, 'first_name', true ),
 			'last_name'    => get_user_meta( $user_id, 'last_name', true ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',           // Only reads user data.
+			'local-only',          // No external API calls.
+			'pii-data',            // Returns personally identifiable information.
+			'requires-capability', // Requires appropriate permissions.
 		);
 	}
 }

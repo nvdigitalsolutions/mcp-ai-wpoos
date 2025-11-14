@@ -1,0 +1,18 @@
+
+/**
+ * {@inheritdoc}
+ */
+public function get_capability_flags() {
+ array(
+ly',           // Only reads user data.
+ly',          // No external API calls.
+           // Returns personally identifiable information.
+', // Requires appropriate permissions.
+DMETHOD
+
+# Remove last closing brace and add our method
+head -n -1 includes/tools/class-wp-mcp-ai-tool-get-user-info.php > /tmp/get-user-info-temp.php
+cat /tmp/get-user-info-temp.php includes/tools/class-wp-mcp-ai-tool-get-user-info.php.tmp > includes/tools/class-wp-mcp-ai-tool-get-user-info.php
+rm includes/tools/class-wp-mcp-ai-tool-get-user-info.php.tmp /tmp/get-user-info-temp.php
+
+echo "✓ Added method to get-user-info"

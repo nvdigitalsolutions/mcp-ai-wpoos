@@ -16,7 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 /**
  * Allows users to list all scheduled WordPress cron jobs.
  */
-class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -139,6 +139,18 @@ class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface {
 				_n( 'Found %d cron job.', 'Found %d cron jobs.', count( $formatted_jobs ), 'wp-mcp-ai' ),
 				count( $formatted_jobs )
 			),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',           // Only reads cron job data.
+			'local-only',          // No external API calls.
+			'requires-capability', // Requires 'manage_options' capability.
+			'cacheable',           // Results don't change frequently.
 		);
 	}
 }
