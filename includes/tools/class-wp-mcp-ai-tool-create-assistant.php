@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Allows users to create AI assistants with custom instructions and knowledge base.
  */
-class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Maximum size for base knowledge documents (in bytes).
 	 * OpenAI has a 512MB limit per file, but we'll use 10MB as a safe default.
@@ -1776,5 +1776,19 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface {
 		);
 
 		wp_mail( $notify_email, $subject, $message );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Creates assistant posts and attachments.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires 'edit_posts' capability.
+			'state-changing',       // Modifies database state.
+			'async-capable',        // Supports async execution via cron.
+			'may-timeout',          // Document creation may take time.
+		);
 	}
 }

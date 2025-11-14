@@ -14,7 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Analyzes comment content to detect spam, toxicity, and other moderation concerns.
  */
-class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -429,5 +429,19 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $result;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'consumes-tokens',           // Uses AI model tokens.
+			'external-api',              // Makes external API calls.
+			'network-dependent',         // Requires internet connectivity.
+			'requires-credentials',      // Requires API credentials.
+			'read-only',                 // Only reads data, doesn't modify.
+			'non-deterministic',         // Results may vary.
+		);
 	}
 }

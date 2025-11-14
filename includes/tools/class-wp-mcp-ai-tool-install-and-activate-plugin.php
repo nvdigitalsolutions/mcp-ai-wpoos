@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Installs plugins from the WordPress.org repository and activates them.
  */
-class WP_MCP_AI_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -321,5 +321,20 @@ class WP_MCP_AI_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_Inter
 	private function get_plugin_data( $plugin_file ) {
 		$plugins = get_plugins();
 		return isset( $plugins[ $plugin_file ] ) ? $plugins[ $plugin_file ] : array( 'Name' => $plugin_file );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Installs and activates plugins.
+			'external-api',         // Calls WordPress.org API.
+			'network-dependent',    // Requires internet connectivity.
+			'requires-capability',  // Requires install_plugins and activate_plugins.
+			'state-changing',       // Modifies site state.
+			'async',                // May take significant time.
+			'performance-impact',   // May temporarily affect site performance.
+		);
 	}
 }

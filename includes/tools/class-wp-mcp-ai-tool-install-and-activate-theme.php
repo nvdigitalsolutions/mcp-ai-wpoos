@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Installs themes from the WordPress.org repository and activates them.
  */
-class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -270,5 +270,20 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		}
 
 		return true;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Installs and activates themes.
+			'external-api',         // Calls WordPress.org API.
+			'network-dependent',    // Requires internet connectivity.
+			'requires-capability',  // Requires install_themes and switch_themes.
+			'state-changing',       // Modifies site state.
+			'async',                // May take significant time.
+			'performance-impact',   // Changes site appearance immediately.
+		);
 	}
 }

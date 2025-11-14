@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * This tool delegates to other tools to perform tasks like creating content,
  * installing plugins, and configuring settings.
  */
-class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -383,5 +383,22 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return implode( ', ', $summary_parts ) . '.';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',                // Creates and modifies data.
+			'external-api',         // May call external APIs via delegated tools.
+			'network-dependent',    // Requires internet for plugin/theme installation.
+			'requires-capability',  // Requires manage_options capability.
+			'state-changing',       // Modifies site state extensively.
+			'async',                // May take significant time.
+			'long-running',         // Could take several minutes for complex sites.
+			'performance-impact',   // May temporarily affect site performance.
+			'non-deterministic',    // Results vary based on external factors.
+		);
 	}
 }

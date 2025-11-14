@@ -20,7 +20,7 @@ if ( ! trait_exists( 'WP_MCP_AI_Tool_Restrict_From_Chat_Client' ) ) {
  * This tool is restricted from chat-client by default for security reasons
  * as it allows code execution.
  */
-class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_WPCode_Snippet implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 
 	/**
