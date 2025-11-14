@@ -28,11 +28,31 @@ class WP_MCP_AI_Analytics_Dashboard {
 	const CACHE_DURATION = 300;
 
 	/**
+	 * Cache duration for computed statistics (5 minutes).
+	 * Separate from user IDs cache to allow independent invalidation.
+	 */
+	const STATS_CACHE_DURATION = 300;
+
+	/**
 	 * Initialize the analytics dashboard.
 	 */
 	public static function init() {
 		add_action( 'wp_dashboard_setup', array( __CLASS__, 'register_widgets' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+
+		// Invalidate statistics cache when usage is tracked.
+		add_action( 'wp_mcp_ai_usage_tracked', array( __CLASS__, 'invalidate_stats_cache' ) );
+	}
+
+	/**
+	 * Invalidate statistics cache.
+	 *
+	 * Called when usage data changes to ensure fresh statistics on next load.
+	 */
+	public static function invalidate_stats_cache() {
+		delete_transient( 'wp_mcp_ai_dashboard_usage_overview' );
+		delete_transient( 'wp_mcp_ai_dashboard_usage_forecast' );
+		delete_transient( 'wp_mcp_ai_dashboard_current_stats' );
 	}
 
 	/**
@@ -175,6 +195,14 @@ class WP_MCP_AI_Analytics_Dashboard {
 	 * @return array Chart data.
 	 */
 	private static function get_usage_overview_data() {
+		// Try to get from cache.
+		$cache_key = 'wp_mcp_ai_dashboard_usage_overview';
+		$data      = get_transient( $cache_key );
+
+		if ( false !== $data && is_array( $data ) ) {
+			return $data;
+		}
+
 		// Get 7-day usage trend data.
 		$trend_data = WP_MCP_AI_Chart_JS_Helper::get_usage_trend_data(
 			array(
@@ -195,12 +223,17 @@ class WP_MCP_AI_Analytics_Dashboard {
 			)
 		);
 
-		return array(
+		$data = array(
 			'trend'         => $trend_data,
 			'tiers'         => $tier_data,
 			'current_stats' => $current_stats,
 			'gauge'         => $gauge_data,
 		);
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $data, self::STATS_CACHE_DURATION );
+
+		return $data;
 	}
 
 	/**
@@ -227,6 +260,14 @@ class WP_MCP_AI_Analytics_Dashboard {
 	 * @return array Forecast data.
 	 */
 	private static function get_usage_forecast_data() {
+		// Try to get from cache.
+		$cache_key = 'wp_mcp_ai_dashboard_usage_forecast';
+		$data      = get_transient( $cache_key );
+
+		if ( false !== $data && is_array( $data ) ) {
+			return $data;
+		}
+
 		$forecast_data = array(
 			'projected_usage' => 0,
 			'projected_date'  => gmdate( 'Y-m-d', strtotime( '+7 days' ) ),
@@ -236,6 +277,8 @@ class WP_MCP_AI_Analytics_Dashboard {
 
 		// Use existing forecast functionality if available.
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			// Cache empty result for 5 minutes.
+			set_transient( $cache_key, $forecast_data, self::STATS_CACHE_DURATION );
 			return $forecast_data;
 		}
 
@@ -288,6 +331,9 @@ class WP_MCP_AI_Analytics_Dashboard {
 			}
 		}
 
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $forecast_data, self::STATS_CACHE_DURATION );
+
 		return $forecast_data;
 	}
 
@@ -297,6 +343,14 @@ class WP_MCP_AI_Analytics_Dashboard {
 	 * @return array Current stats.
 	 */
 	private static function get_current_usage_stats() {
+		// Try to get from cache.
+		$cache_key = 'wp_mcp_ai_dashboard_current_stats';
+		$stats     = get_transient( $cache_key );
+
+		if ( false !== $stats && is_array( $stats ) ) {
+			return $stats;
+		}
+
 		$stats = array(
 			'today_tokens'     => 0,
 			'week_tokens'      => 0,
@@ -347,6 +401,9 @@ class WP_MCP_AI_Analytics_Dashboard {
 			$stats['month_tokens']     = $month_tokens;
 			$stats['average_per_user'] = $active_count > 0 ? (int) ( $month_tokens / $active_count ) : 0;
 		}
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $stats, self::STATS_CACHE_DURATION );
 
 		return $stats;
 	}

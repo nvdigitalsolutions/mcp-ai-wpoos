@@ -239,6 +239,36 @@ class WP_MCP_AI_Tool_Token_Limits {
 	}
 
 	/**
+	 * Get tier information including daily limit.
+	 *
+	 * @param string $tier Tier identifier (free, pro, enterprise).
+	 * @return array Tier information with daily_limit key.
+	 */
+	public static function get_tier_info( $tier ) {
+		$tier = sanitize_key( $tier );
+
+		// Get base limit from tier.
+		$daily_limit = isset( self::$tier_limits[ $tier ] ) ? self::$tier_limits[ $tier ] : self::DEFAULT_GENERAL_LIMIT;
+
+		/**
+		 * Filter tier information.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $tier_info Tier information.
+		 * @param string $tier      Tier identifier.
+		 */
+		return apply_filters(
+			'wp_mcp_ai_tier_info',
+			array(
+				'tier'        => $tier,
+				'daily_limit' => $daily_limit,
+			),
+			$tier
+		);
+	}
+
+	/**
 	 * Get tier-based token limit for a user and tool.
 	 *
 	 * @param int    $user_id   User ID.
