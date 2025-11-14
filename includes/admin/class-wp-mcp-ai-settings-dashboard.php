@@ -63,6 +63,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_get_tool_breakdown', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_update_chart_period', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_refresh_chart', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_toggle_tool', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 		}
 
 		/**
@@ -262,6 +263,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				file_exists( $css_path ) ? filemtime( $css_path ) : '1.0.0'
 			);
 
+			// Enqueue tools manager styles if on tools tab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+				$tools_css_path = WP_MCP_AI_PATH . 'assets/css/tools-manager.css';
+				wp_enqueue_style(
+					'wp-mcp-ai-tools-manager',
+					WP_MCP_AI_URL . 'assets/css/tools-manager.css',
+					array( 'wp-mcp-ai-dashboard' ),
+					file_exists( $tools_css_path ) ? filemtime( $tools_css_path ) : '1.0.0'
+				);
+			}
+
 			// Enqueue AJAX error service (must be loaded before other scripts) with filemtime for cache busting.
 			wp_enqueue_script(
 				'wp-mcp-ai-ajax-error-service',
@@ -280,6 +293,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				true
 			);
 
+			// Enqueue tools manager scripts if on tools tab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'tools' === $_GET['tab'] ) {
+				$tools_js_path = WP_MCP_AI_PATH . 'assets/js/tools-manager.js';
+				wp_enqueue_script(
+					'wp-mcp-ai-tools-manager',
+					WP_MCP_AI_URL . 'assets/js/tools-manager.js',
+					array( 'jquery', 'wp-mcp-ai-ajax-error-service' ),
+					file_exists( $tools_js_path ) ? filemtime( $tools_js_path ) : '1.0.0',
+					true
+				);
+			}
+
 			// Localize script with settings.
 			wp_localize_script(
 				'wp-mcp-ai-dashboard',
@@ -287,6 +313,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				array(
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp_mcp_ai_dashboard' ),
+				)
+			);
+
+			// Add admin nonce for tools manager.
+			wp_localize_script(
+				'wp-mcp-ai-dashboard',
+				'wpMcpAiAdmin',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( 'wp_mcp_ai_admin' ),
+					'i18n'    => array(
+						'enabled'  => __( 'Enabled', 'wp-mcp-ai' ),
+						'disabled' => __( 'Disabled', 'wp-mcp-ai' ),
+					),
 				)
 			);
 		}

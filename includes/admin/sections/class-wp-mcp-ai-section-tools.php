@@ -628,10 +628,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							function ( $tool ) use ( $search ) {
 								$slug        = $tool->get_slug();
 								$description = $tool->get_description();
+								$name        = $this->get_tool_display_name( $slug );
 								$search_term = strtolower( $search );
 
 								return false !== stripos( $slug, $search_term ) ||
-									   false !== stripos( $description, $search_term );
+									   false !== stripos( $description, $search_term ) ||
+									   false !== stripos( $name, $search_term );
 							}
 						);
 
@@ -671,10 +673,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 									// Check if tool has dependencies.
 									$dependencies = $this->check_tool_dependencies( $slug );
 									$is_available = $dependencies['available'];
-									$status_text  = $is_available ? __( 'Available', 'wp-mcp-ai' ) : __( 'Unavailable', 'wp-mcp-ai' );
-									$status_color = $is_available ? '#46b450' : '#dc3232';
+
+									// Check if tool is enabled.
+									$is_enabled   = $registry->is_tool_enabled( $slug );
+									$status_text  = $is_enabled ? __( 'Enabled', 'wp-mcp-ai' ) : __( 'Disabled', 'wp-mcp-ai' );
+									$status_color = $is_enabled ? '#46b450' : '#999';
+
+									// If tool is unavailable due to dependencies, override status.
+									if ( ! $is_available ) {
+										$status_text  = __( 'Unavailable', 'wp-mcp-ai' );
+										$status_color = '#dc3232';
+									}
 									?>
-									<tr>
+									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>">
 										<td>
 											<strong><?php echo esc_html( $name ); ?></strong>
 										</td>
@@ -691,13 +702,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<?php endif; ?>
 										</td>
 										<td>
-											<span style="display: inline-block; padding: 4px 8px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 11px; font-weight: bold;">
+											<span class="wp-mcp-ai-tool-status" style="display: inline-block; padding: 4px 8px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 11px; font-weight: bold;">
 												<?php echo esc_html( $status_text ); ?>
 											</span>
 										</td>
 										<td>
 											<?php if ( $is_available ) : ?>
-												<span class="dashicons dashicons-yes-alt" style="color: #46b450;" title="<?php esc_attr_e( 'Tool is available', 'wp-mcp-ai' ); ?>"></span>
+												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+													<input type="checkbox" 
+														   class="wp-mcp-ai-tool-toggle" 
+														   data-tool-slug="<?php echo esc_attr( $slug ); ?>"
+														   <?php checked( $is_enabled ); ?>
+														   style="opacity: 0; width: 0; height: 0;">
+													<span class="wp-mcp-ai-toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 24px; transition: .4s;"></span>
+												</label>
 											<?php else : ?>
 												<span class="dashicons dashicons-warning" style="color: #dc3232;" title="<?php esc_attr_e( 'Tool is unavailable due to missing dependencies', 'wp-mcp-ai' ); ?>"></span>
 											<?php endif; ?>

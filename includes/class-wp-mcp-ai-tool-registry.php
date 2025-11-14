@@ -826,5 +826,64 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				}
 			}
 		}
+
+		/**
+		 * Get the list of globally disabled tools.
+		 *
+		 * @return array Array of disabled tool slugs.
+		 */
+		public function get_disabled_tools() {
+			$disabled = get_option( 'wp_mcp_ai_disabled_tools', array() );
+			return is_array( $disabled ) ? $disabled : array();
+		}
+
+		/**
+		 * Check if a tool is globally enabled.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return bool True if enabled, false if disabled.
+		 */
+		public function is_tool_enabled( $slug ) {
+			$disabled_tools = $this->get_disabled_tools();
+			return ! in_array( $slug, $disabled_tools, true );
+		}
+
+		/**
+		 * Enable a tool globally.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return bool True on success, false on failure.
+		 */
+		public function enable_tool( $slug ) {
+			$slug           = sanitize_key( $slug );
+			$disabled_tools = $this->get_disabled_tools();
+
+			$key = array_search( $slug, $disabled_tools, true );
+			if ( false !== $key ) {
+				unset( $disabled_tools[ $key ] );
+				$disabled_tools = array_values( $disabled_tools ); // Re-index array.
+				return update_option( 'wp_mcp_ai_disabled_tools', $disabled_tools );
+			}
+
+			return true; // Already enabled.
+		}
+
+		/**
+		 * Disable a tool globally.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return bool True on success, false on failure.
+		 */
+		public function disable_tool( $slug ) {
+			$slug           = sanitize_key( $slug );
+			$disabled_tools = $this->get_disabled_tools();
+
+			if ( ! in_array( $slug, $disabled_tools, true ) ) {
+				$disabled_tools[] = $slug;
+				return update_option( 'wp_mcp_ai_disabled_tools', $disabled_tools );
+			}
+
+			return true; // Already disabled.
+		}
 	}
 }
