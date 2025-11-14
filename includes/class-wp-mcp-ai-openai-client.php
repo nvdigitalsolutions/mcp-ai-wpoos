@@ -2351,8 +2351,9 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		/**
 		 * Prepare the payload used when calling the Responses API.
 		 *
-		 * @param array $original_messages Original chat messages.
+		 * @param array $original_messages   Original chat messages.
 		 * @param array $normalised_messages Messages after normalisation.
+		 * @param array $attachments         Attachment data (optional).
 		 * @return array
 		 */
 		protected function prepare_responses_input( array $original_messages, array $normalised_messages, array $attachments = array() ) {
