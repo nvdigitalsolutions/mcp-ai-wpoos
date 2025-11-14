@@ -113,11 +113,12 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',      // Only reads post data.
-			'local-only',     // No external API calls.
-			'cacheable',      // Results can be cached.
-			'paginated',      // Supports limit parameter.
-			'large-response', // May return substantial data.
+			'read-only',           // Only reads post data.
+			'local-only',          // No external API calls.
+			'requires-capability', // Requires 'read' capability.
+			'cacheable',           // Results can be cached.
+			'paginated',           // Supports limit parameter.
+			'large-response',      // May return substantial data.
 		);
 	}
 }

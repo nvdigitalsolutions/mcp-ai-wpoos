@@ -84,9 +84,10 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',  // Only reads site data.
-			'local-only', // No external API calls.
-			'cacheable',  // Results can be cached.
+			'read-only',           // Only reads site data.
+			'local-only',          // No external API calls.
+			'requires-capability', // Requires 'manage_options' capability.
+			'cacheable',           // Results can be cached.
 		);
 	}
 }

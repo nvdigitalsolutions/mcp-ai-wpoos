@@ -481,9 +481,10 @@ class WP_MCP_AI_Tool_Check_WP_CLI implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',  // Diagnostic tool, does not modify state.
-			'local-only', // Checks local WP-CLI installation.
-			'cacheable',  // Results don't change frequently.
+			'read-only',           // Diagnostic tool, does not modify state.
+			'local-only',          // Checks local WP-CLI installation.
+			'requires-capability', // Requires 'manage_options' capability.
+			'cacheable',           // Results don't change frequently.
 		);
 	}
 }
