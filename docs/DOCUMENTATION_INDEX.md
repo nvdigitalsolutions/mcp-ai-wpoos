@@ -41,8 +41,9 @@ This document provides a comprehensive index of all documentation available for 
 ### For System Administrators
 1. [deployment-troubleshooting.md](deployment-troubleshooting.md) - Troubleshooting guide
 2. [mcp-server-authentication.md](mcp-server-authentication.md) - Authentication setup
-3. [rate-limit-protection.md](rate-limit-protection.md) - Rate limiting configuration
-4. [multisite-support.md](multisite-support.md) - Multisite considerations
+3. [tools-manager.md](tools-manager.md) - Tools Manager admin interface guide
+4. [rate-limit-protection.md](rate-limit-protection.md) - Rate limiting configuration
+5. [multisite-support.md](multisite-support.md) - Multisite considerations
 5. [mesh-compute-pooling.md](mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ---
@@ -132,6 +133,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [rest-api.md](rest-api.md) | Complete REST API documentation (15KB) | Developers |
 | [tool-reference.md](tool-reference.md) | All 65+ built-in tools catalog (24KB) | Users/Devs |
 | [tool-grouping.md](tool-grouping.md) | Tool categorization system (WordPress Core, Plugins, External) | Users/Admins |
+| [tools-manager.md](tools-manager.md) | Tools Manager admin interface guide | Admins/Users |
 | [gemini-api-enhancements.md](gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](tool-image-download.md) | Image download tool specifics | Developers |

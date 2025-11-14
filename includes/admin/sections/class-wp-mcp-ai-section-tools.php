@@ -182,6 +182,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
+				'tools_manager' => array(
+					'id'     => 'tools_manager',
+					'label'  => __( 'Tools Manager', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-list-view',
+					'fields' => array(), // Custom rendering, no form fields.
+				),
 				'features'     => array(
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
@@ -216,11 +222,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_active_subtab() {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'features';
+			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'tools_manager';
 			$subtab_groups = $this->get_subtab_groups();
 
 			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
-				$subtab = 'features';
+				$subtab = 'tools_manager';
 			}
 
 			return $subtab;
@@ -326,6 +332,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			}
 
 			$active_group = $subtab_groups[ $active_subtab ];
+
+			// Special handling for tools_manager subtab.
+			if ( 'tools_manager' === $active_subtab ) {
+				$this->render_tools_manager();
+				return;
+			}
 
 			// Render fields for the active sub-tab.
 			foreach ( $active_group['fields'] as $key ) {
@@ -506,6 +518,297 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Render the Tools Manager view.
+		 *
+		 * Displays all registered tools in a categorized table with enable/disable functionality.
+		 */
+		private function render_tools_manager() {
+			$registry      = WP_MCP_AI_Tool_Registry::get_instance();
+			$all_tools     = $registry->get_tools();
+			$tool_groups   = $registry->get_tool_group_map();
+			$group_labels  = $registry->get_tool_group_labels();
+
+			// Group tools by category.
+			$categorized_tools = array(
+				'wordpress-core'    => array(),
+				'wordpress-plugins' => array(),
+				'external-tools'    => array(),
+				'other'             => array(),
+			);
+
+			foreach ( $all_tools as $tool ) {
+				$slug  = $tool->get_slug();
+				$group = isset( $tool_groups[ $slug ] ) ? $tool_groups[ $slug ] : 'other';
+
+				if ( ! isset( $categorized_tools[ $group ] ) ) {
+					$categorized_tools[ $group ] = array();
+				}
+
+				$categorized_tools[ $group ][] = $tool;
+			}
+
+			// Get search/filter parameters.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$search = isset( $_GET['tool_search'] ) ? sanitize_text_field( wp_unslash( $_GET['tool_search'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
+
+			?>
+			<div class="wp-mcp-ai-tools-manager">
+				<!-- Header Section -->
+				<div style="margin-bottom: 20px;">
+					<h3><?php esc_html_e( 'Tools Manager', 'wp-mcp-ai' ); ?></h3>
+					<p class="description">
+						<?php
+						printf(
+							/* translators: %d: Total number of registered tools */
+							esc_html__( 'View and manage all %d registered AI tools. Tools can be filtered by category and searched by name or description.', 'wp-mcp-ai' ),
+							count( $all_tools )
+						);
+						?>
+					</p>
+				</div>
+
+				<!-- Search and Filter Bar -->
+				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+					<form method="get" action="" style="display: flex; gap: 10px; align-items: center;">
+						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
+						<input type="hidden" name="tab" value="tools">
+						<input type="hidden" name="subtab" value="tools_manager">
+
+						<label for="tool_search" style="font-weight: 600;">
+							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
+						</label>
+						<input type="search" 
+							   id="tool_search" 
+							   name="tool_search" 
+							   value="<?php echo esc_attr( $search ); ?>" 
+							   placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+							   style="flex: 1; max-width: 300px;">
+
+						<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
+							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
+						</label>
+						<select id="tool_group" name="tool_group" style="min-width: 200px;">
+							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
+							<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
+									<?php echo esc_html( $group_label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+
+						<button type="submit" class="button">
+							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
+						</button>
+
+						<?php if ( ! empty( $search ) || ! empty( $filter_group ) ) : ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=tools_manager' ) ); ?>" class="button">
+								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
+							</a>
+						<?php endif; ?>
+					</form>
+				</div>
+
+				<!-- Tools by Category -->
+				<?php
+				foreach ( $categorized_tools as $category => $tools ) :
+					// Skip if category is empty or filtered out.
+					if ( empty( $tools ) || ( ! empty( $filter_group ) && $filter_group !== $category ) ) {
+						continue;
+					}
+
+					// Apply search filter.
+					if ( ! empty( $search ) ) {
+						$tools = array_filter(
+							$tools,
+							function ( $tool ) use ( $search ) {
+								$slug        = $tool->get_slug();
+								$description = $tool->get_description();
+								$search_term = strtolower( $search );
+
+								return false !== stripos( $slug, $search_term ) ||
+									   false !== stripos( $description, $search_term );
+							}
+						);
+
+						if ( empty( $tools ) ) {
+							continue;
+						}
+					}
+
+					$category_label = isset( $group_labels[ $category ] ) ? $group_labels[ $category ] : __( 'Other', 'wp-mcp-ai' );
+					?>
+
+					<div class="wp-mcp-ai-tools-category" style="margin-bottom: 30px;">
+						<h4 style="margin-bottom: 10px; padding: 10px; background: #f0f0f0; border-left: 4px solid #0073aa;">
+							<?php echo esc_html( $category_label ); ?>
+							<span class="badge" style="background: #0073aa; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; margin-left: 10px;">
+								<?php echo count( $tools ); ?>
+							</span>
+						</h4>
+
+						<table class="wp-list-table widefat fixed striped" style="margin-bottom: 20px;">
+							<thead>
+								<tr>
+									<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 15%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 40%;"><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 15%;"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 10%;"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php
+								foreach ( $tools as $tool ) :
+									$slug        = $tool->get_slug();
+									$description = $tool->get_description();
+									$name        = $this->get_tool_display_name( $slug );
+
+									// Check if tool has dependencies.
+									$dependencies = $this->check_tool_dependencies( $slug );
+									$is_available = $dependencies['available'];
+									$status_text  = $is_available ? __( 'Available', 'wp-mcp-ai' ) : __( 'Unavailable', 'wp-mcp-ai' );
+									$status_color = $is_available ? '#46b450' : '#dc3232';
+									?>
+									<tr>
+										<td>
+											<strong><?php echo esc_html( $name ); ?></strong>
+										</td>
+										<td>
+											<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
+										</td>
+										<td>
+											<?php echo esc_html( $description ); ?>
+											<?php if ( ! empty( $dependencies['missing'] ) ) : ?>
+												<div style="margin-top: 5px; font-size: 12px; color: #dc3232;">
+													<strong><?php esc_html_e( 'Missing:', 'wp-mcp-ai' ); ?></strong>
+													<?php echo esc_html( implode( ', ', $dependencies['missing'] ) ); ?>
+												</div>
+											<?php endif; ?>
+										</td>
+										<td>
+											<span style="display: inline-block; padding: 4px 8px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 11px; font-weight: bold;">
+												<?php echo esc_html( $status_text ); ?>
+											</span>
+										</td>
+										<td>
+											<?php if ( $is_available ) : ?>
+												<span class="dashicons dashicons-yes-alt" style="color: #46b450;" title="<?php esc_attr_e( 'Tool is available', 'wp-mcp-ai' ); ?>"></span>
+											<?php else : ?>
+												<span class="dashicons dashicons-warning" style="color: #dc3232;" title="<?php esc_attr_e( 'Tool is unavailable due to missing dependencies', 'wp-mcp-ai' ); ?>"></span>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+
+				<?php endforeach; ?>
+
+				<?php if ( ! empty( $search ) && empty( array_filter( $categorized_tools ) ) ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %s: Search term */
+								esc_html__( 'No tools found matching "%s". Try a different search term.', 'wp-mcp-ai' ),
+								esc_html( $search )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+
+				<!-- Information Footer -->
+				<div style="margin-top: 30px; padding: 15px; background: #f0f6fc; border: 1px solid #c3e6ff; border-radius: 4px;">
+					<h4 style="margin-top: 0;">
+						<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
+						<?php esc_html_e( 'About Tool Categories', 'wp-mcp-ai' ); ?>
+					</h4>
+					<ul style="margin-left: 20px;">
+						<li>
+							<strong><?php esc_html_e( 'WordPress Core:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Tools that work with base WordPress installation without any external dependencies.', 'wp-mcp-ai' ); ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'WordPress Plugins:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Tools that require specific third-party WordPress plugins to be installed and active.', 'wp-mcp-ai' ); ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'External Tools:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Tools that require external API credentials or third-party service integrations.', 'wp-mcp-ai' ); ?>
+						</li>
+					</ul>
+					<p style="margin-bottom: 0;">
+						<?php
+						printf(
+							/* translators: %s: Link to tool documentation */
+							wp_kses_post( __( 'For detailed information about each tool and its requirements, see the <a href="%s" target="_blank">Tool Reference Documentation</a>.', 'wp-mcp-ai' ) ),
+							esc_url( 'https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/tool-reference.md' )
+						);
+						?>
+					</p>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Get display name for a tool.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return string Display name.
+		 */
+		private function get_tool_display_name( $slug ) {
+			// Convert slug to title case.
+			$name = str_replace( '_', ' ', $slug );
+			return ucwords( $name );
+		}
+
+		/**
+		 * Check tool dependencies.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array Array with 'available' (bool) and 'missing' (array of missing dependencies).
+		 */
+		private function check_tool_dependencies( $slug ) {
+			$missing = array();
+
+			// Check for plugin-specific tools.
+			$plugin_requirements = array(
+				'get_elementor_templates'        => array( 'plugin' => 'Elementor', 'check' => 'class_exists', 'value' => '\Elementor\Plugin' ),
+				'get_woo_recent_orders'          => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
+				'get_woo_products'               => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
+				'create_woo_product'             => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
+				'get_jetengine_items'            => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
+				'list_jetengine_rest_routes'     => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
+				'invoke_jetengine_route'         => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
+				'get_jetformbuilder_forms'       => array( 'plugin' => 'JetFormBuilder', 'check' => 'class_exists', 'value' => 'Jet_Form_Builder\Plugin' ),
+				'get_jetformbuilder_submissions' => array( 'plugin' => 'JetFormBuilder', 'check' => 'class_exists', 'value' => 'Jet_Form_Builder\Plugin' ),
+				'get_rankmath_seo'               => array( 'plugin' => 'Rank Math SEO', 'check' => 'function_exists', 'value' => 'rank_math' ),
+				'create_wpcode_snippet'          => array( 'plugin' => 'WPCode', 'check' => 'class_exists', 'value' => 'WPCode' ),
+				'generate_simple_jwt_token'      => array( 'plugin' => 'Simple JWT Login', 'check' => 'class_exists', 'value' => 'SimpleJWTLogin\SimpleJWTLogin' ),
+			);
+
+			if ( isset( $plugin_requirements[ $slug ] ) ) {
+				$requirement = $plugin_requirements[ $slug ];
+				$check_func  = $requirement['check'];
+				$check_value = $requirement['value'];
+
+				if ( ! $check_func( $check_value ) ) {
+					$missing[] = $requirement['plugin'];
+				}
+			}
+
+			return array(
+				'available' => empty( $missing ),
+				'missing'   => $missing,
+			);
 		}
 	}
 }
