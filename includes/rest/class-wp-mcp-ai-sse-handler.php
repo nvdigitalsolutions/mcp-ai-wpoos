@@ -98,7 +98,10 @@ class WP_MCP_AI_SSE_Handler {
 	/**
 	 * Determine whether the current request prefers an event stream response.
 	 *
-	 * Checks for explicit stream parameter or Accept header indicating text/event-stream.
+	 * Checks ONLY for explicit stream parameter.
+	 * Accept header is NOT used because MCP clients like LM Studio send
+	 * "Accept: text/event-stream" by default but expect JSON responses
+	 * (Streamable HTTP transport, MCP 2024-11-05 spec).
 	 *
 	 * @since 1.0.0
 	 *
@@ -137,24 +140,9 @@ class WP_MCP_AI_SSE_Handler {
 			return true;
 		}
 
-		if ( false === $explicit_stream ) {
-			return false;
-		}
-
-		$accept_header = $request->get_header( 'accept' );
-
-		if ( is_string( $accept_header ) && '' !== $accept_header ) {
-			$normalized_accept = strtolower( $accept_header );
-
-			if ( preg_match( '#(^|,|\s)text/event-stream(?:(?=\s*[;,])|$)#i', $normalized_accept ) ) {
-				return true;
-			}
-		}
-
-		if ( false === $explicit_stream ) {
-			return false;
-		}
-
+		// Always return false if not explicitly requested.
+		// Do NOT check Accept header - LM Studio and other MCP clients
+		// send "Accept: text/event-stream" but expect JSON responses.
 		return false;
 	}
 
