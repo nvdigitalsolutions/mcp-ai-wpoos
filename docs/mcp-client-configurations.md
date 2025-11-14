@@ -82,12 +82,14 @@ WordPress WP oOS supports **two distinct methods** for MCP connectivity:
 
 **Troubleshooting SSE Errors:**
 
-If you get: `SSE error: Invalid content type, expected "text/event-stream"`
+If you previously experienced: `SSE error: Invalid content type, expected "text/event-stream"`
 
-**Solution:**
-- Use the JSON-RPC endpoint (`/mcp`) instead of SSE
-- Remove any SSE configuration
-- The error occurs when LM Studio tries to use SSE but receives regular JSON
+**This has been fixed!** The `/mcp` endpoint now defaults to JSON discovery (not SSE), making it fully compatible with LM Studio.
+
+- The endpoint automatically detects what format you need
+- POST requests use JSON-RPC 2.0 protocol  
+- GET requests return JSON discovery information
+- SSE is only used when explicitly requested via `?stream=true` parameter
 
 ---
 
