@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-undefined-method-error-again',
-        'version' => 'dev-copilot/fix-undefined-method-error-again',
-        'reference' => '6ba458c4b24d3027347fab9cd0d397fbce21905a',
+        'pretty_version' => 'dev-copilot/fix-duplicate-test-class-declaration',
+        'version' => 'dev-copilot/fix-duplicate-test-class-declaration',
+        'reference' => 'eec1012cd7df4757b45a699577ae408dd9aad6bf',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-undefined-method-error-again',
-            'version' => 'dev-copilot/fix-undefined-method-error-again',
-            'reference' => '6ba458c4b24d3027347fab9cd0d397fbce21905a',
+            'pretty_version' => 'dev-copilot/fix-duplicate-test-class-declaration',
+            'version' => 'dev-copilot/fix-duplicate-test-class-declaration',
+            'reference' => 'eec1012cd7df4757b45a699577ae408dd9aad6bf',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
