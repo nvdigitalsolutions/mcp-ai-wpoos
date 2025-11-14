@@ -264,6 +264,74 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Get capability flags for a specific tool.
+		 *
+		 * Retrieves the capability flags from a tool if it implements
+		 * the WP_MCP_AI_Tool_Capability_Flags_Interface.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array<string> Array of capability flag strings, empty array if tool not found or no flags.
+		 */
+		public function get_tool_capability_flags( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array();
+			}
+
+			// Check if tool implements capability flags interface.
+			if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+				$flags = $tool->get_capability_flags();
+				return is_array( $flags ) ? $flags : array();
+			}
+
+			return array();
+		}
+
+		/**
+		 * Get capability flags for all registered tools.
+		 *
+		 * Returns a map of tool slugs to their capability flags arrays.
+		 * Only includes tools that implement the capability flags interface.
+		 *
+		 * @return array<string, array<string>> Map of tool slugs to capability flag arrays.
+		 */
+		public function get_all_tool_capability_flags() {
+			$flags_map = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( ! empty( $flags ) ) {
+					$flags_map[ $slug ] = $flags;
+				}
+			}
+
+			return $flags_map;
+		}
+
+		/**
+		 * Get tools that have a specific capability flag.
+		 *
+		 * Filters all registered tools to find those that declare the specified
+		 * capability flag.
+		 *
+		 * @param string $flag Capability flag to filter by (e.g., 'read-only', 'external-api').
+		 * @return array<WP_MCP_AI_Tool_Interface> Array of tool instances that have the flag.
+		 */
+		public function get_tools_by_capability_flag( $flag ) {
+			$matching_tools = array();
+
+			foreach ( $this->tools as $slug => $tool ) {
+				$flags = $this->get_tool_capability_flags( $slug );
+				if ( in_array( $flag, $flags, true ) ) {
+					$matching_tools[] = $tool;
+				}
+			}
+
+			return $matching_tools;
+		}
+
+		/**
 		 * Retrieve the default tool grouping map keyed by tool slug.
 		 *
 		 * @return array<string, string>
