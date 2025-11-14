@@ -96,11 +96,11 @@ Jobs are classified based on WordPress cron state:
 
 ### Security & Privacy
 
-- **Authentication**: Requires valid WordPress REST nonce
+- **Authentication**: Requires valid WordPress REST nonce, bearer token, or mesh API key
+- **Authorization**: Any authenticated user can access the endpoint (no specific capability required)
 - **User Filtering**: 
   - Regular users see only their own jobs
   - Administrators see all jobs
-- **Capability Check**: Uses existing permission system
 - **Data Minimization**: Returns only essential fields
 
 ### Performance

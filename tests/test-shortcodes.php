@@ -324,4 +324,41 @@ class Test_Shortcodes extends WP_UnitTestCase {
 
 		wp_set_current_user( $this->admin_id );
 	}
+
+	/**
+	 * Ensure the instance config includes restNonce for cron-status endpoint authentication.
+	 */
+	public function test_chat_shortcode_instance_config_includes_rest_nonce() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'RestNonce Config Assistant',
+			)
+		);
+
+		wp_scripts()->reset();
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+		$registered = wp_scripts()->registered[ $handle ];
+
+		// Check instance config has restNonce for cron-status authentication.
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+		$this->assertMatchesRegularExpression( '/"restNonce":"[^"]+"/', $instance_config, 'Instance config should include restNonce for cron-status endpoint.' );
+
+		// Parse the JSON to verify it's a valid nonce.
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*({.*?});/', $instance_config, $matches );
+		if ( ! empty( $matches[1] ) ) {
+			$config = json_decode( $matches[1], true );
+			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+			$this->assertArrayHasKey( 'restNonce', $config, 'Instance config should have restNonce key.' );
+			$this->assertNotEmpty( $config['restNonce'], 'restNonce should not be empty.' );
+			$this->assertTrue( wp_verify_nonce( $config['restNonce'], 'wp_rest' ), 'restNonce should be a valid wp_rest nonce.' );
+		}
+	}
 }

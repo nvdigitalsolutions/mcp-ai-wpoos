@@ -412,6 +412,7 @@ class WP_MCP_AI_Shortcode {
 				'allowSensitiveTools'   => (bool) $allow_sensitive_tools,
 				'sessionKey'            => $session_key,
 				'historyPerPage'        => 20,
+				'restNonce'             => wp_create_nonce( 'wp_rest' ),
 			);
 
 			$tool_shortcuts = self::get_assistant_tool_shortcuts( $assistant_id );

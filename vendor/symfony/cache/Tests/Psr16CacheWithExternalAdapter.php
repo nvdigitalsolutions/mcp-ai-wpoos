@@ -23,6 +23,8 @@ class Psr16CacheWithExternalAdapter extends SimpleCacheTest
 {
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->skippedTests['testSetTtl'] =
         $this->skippedTests['testSetMultipleTtl'] = 'The ExternalAdapter test class does not support TTLs.';
     }

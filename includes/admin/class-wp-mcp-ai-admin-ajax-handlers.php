@@ -41,6 +41,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 *
 		 * Note: Accepts variable parameters for compatibility with WordPress action hooks,
 		 * but does not use them. WordPress's do_action() may pass parameters to callbacks.
+		 *
+		 * @param mixed ...$args Variable arguments passed by WordPress hooks (not used).
 		 */
 		public function safe_ajax_handler( ...$args ) {
 			// Clean any previous output.

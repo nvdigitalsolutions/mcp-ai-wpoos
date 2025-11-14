@@ -916,7 +916,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					array(
 						'methods'             => WP_REST_Server::READABLE,
-						'permission_callback' => array( $this, 'permissions_check' ),
+						'permission_callback' => array( $this, 'permissions_check_cron_status' ),
 						'callback'            => array( $this, 'handle_cron_status_request' ),
 						'args'                => array(
 							'limit' => array(
@@ -1465,8 +1465,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$service = $this->get_cron_status_service();
-			$user_id = get_current_user_id();
-			$limit   = $request->get_param( 'limit' );
+
+			// Get authenticated user ID from auth context (supports bearer tokens, nonces, mesh keys).
+			$auth_context = $this->get_auth_context();
+			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
+
+			$limit = $request->get_param( 'limit' );
 			if ( ! $limit ) {
 				$limit = 10;
 			}
@@ -2058,6 +2062,103 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				)
 			);
+		}
+
+		/**
+		 * Permission check for cron-status endpoint.
+		 *
+		 * Only requires authentication - any logged-in user can see their own cron jobs.
+		 * Admins can see all cron jobs.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_cron_status( WP_REST_Request $request ) {
+			$this->reset_auth_context();
+
+			// Check for mesh API key authentication.
+			$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+			if ( ! empty( $mesh_key ) ) {
+				$mesh_validated = $this->validate_mesh_key( $mesh_key );
+
+				if ( true === $mesh_validated ) {
+					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+					return true;
+				} elseif ( is_wp_error( $mesh_validated ) ) {
+					return $mesh_validated;
+				}
+			}
+
+			// Check for bearer token authentication.
+			$bearer = $request->get_header( 'Authorization' );
+			if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+				$token = trim( $matches[1] );
+				$local = $this->validate_local_token( $token, $request );
+
+				if ( true === $local ) {
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				$validated = $this->validate_bearer_token( $token, $request );
+
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				return true;
+			}
+
+			// Check for guest token authentication.
+			$guest_token = $this->extract_guest_token( $request );
+			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+
+				if ( $guest_assistant ) {
+					// Guest users can view their own cron jobs (user_id = 0).
+					$this->set_authenticated_user_id( 0 );
+					return true;
+				}
+			}
+
+			// Check for WordPress nonce authentication.
+			$nonce = $request->get_header( 'X-WP-Nonce' );
+
+			if ( empty( $nonce ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_credentials',
+					__( 'Authentication is required to view cron status.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 401,
+						'actions' => array(
+							'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
+							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+				return new WP_Error(
+					'rest_invalid_nonce',
+					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					array(
+						'status'  => rest_authorization_required_code(),
+						'actions' => array(
+							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			// Any authenticated user can view their own cron jobs.
+			// The service layer will filter jobs by user ID.
+			// A valid nonce proves the user is authenticated.
+			$this->set_authenticated_user_id( get_current_user_id() );
+
+			return true;
 		}
 
 		/**

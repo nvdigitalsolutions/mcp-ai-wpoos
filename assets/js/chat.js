@@ -456,7 +456,8 @@
 
             return {
                 conversation: Array.isArray(data.conversation) ? data.conversation : [],
-                sessionKey: data.sessionKey || ''
+                sessionKey: data.sessionKey || '',
+                assistantId: data.assistantId || state.config.assistantId
             };
         } catch (error) {
             // Return null if parsing fails
@@ -498,7 +499,11 @@
      */
     function saveConversationToCCT(state, options) {
         // Return resolved promise if conditions aren't met for saving
-        if (!state || !state.config || !state.config.assistantId) {
+        // Use originalAssistantId if available (for when loading sessions from different assistants)
+        // Otherwise fall back to config.assistantId for backwards compatibility
+        const assistantIdToCheck = state.originalAssistantId || (state.config && state.config.assistantId);
+        
+        if (!state || !assistantIdToCheck) {
             return Promise.resolve({ success: true, skipped: true });
         }
 
@@ -521,8 +526,12 @@
         const timeout = opts.timeout || 15000;
         const silent = opts.silent !== false; // Silent by default
 
+        // Use originalAssistantId if available (for when loading sessions from different assistants)
+        // Otherwise fall back to config.assistantId for backwards compatibility
+        const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
+
         const payload = {
-            assistant_id: state.config.assistantId,
+            assistant_id: assistantIdToUse,
             session_key: state.config.sessionKey,
             messages: state.conversation
         };
@@ -3223,12 +3232,8 @@
         });
     }
 
-    function loadHistorySessionIntoChat(state, session, activeItem, chatWindow) {
-        // Prioritize state.messagesEl over chatWindow for loading into the main chat window
-        // The chatWindow parameter is kept for backwards compatibility
-        const messagesEl = state.messagesEl || chatWindow;
-        
-        if (!state || !messagesEl) {
+    function loadHistorySessionIntoChat(state, session, activeItem) {
+        if (!state || !state.messagesEl) {
             return;
         }
 
@@ -3257,7 +3262,7 @@
             state.config.assistantId = assistantId;
         }
 
-        messagesEl.textContent = '';
+        state.messagesEl.textContent = '';
         state.conversation = [];
         state.pendingAttachments = [];
         state.validationNotice = '';
@@ -3279,7 +3284,7 @@
         const messages = Array.isArray(session.messages) ? session.messages : [];
 
         if (!messages.length) {
-            appendMessage(messagesEl, 'system', {
+            appendMessage(state.messagesEl, 'system', {
                 text: getString('historyNoMessages', 'No messages were saved for this conversation.'),
             });
             setTranscriptExpanded(state, true);
@@ -3314,7 +3319,7 @@
             const payload = { text: trimmedContent };
             const allowMarkdown = role === 'assistant';
 
-            appendMessage(messagesEl, role, payload, allowMarkdown);
+            appendMessage(state.messagesEl, role, payload, allowMarkdown);
             if (hasContent || role === 'tool') {
                 state.conversation.push({ role: role, content: trimmedContent });
             }
@@ -3337,7 +3342,7 @@
         // Check if we have cached session data
         if (sessionKey && state.historySessionDetails && state.historySessionDetails[sessionKey]) {
             const cachedSession = state.historySessionDetails[sessionKey];
-            loadHistorySessionIntoChat(state, cachedSession, item, null);
+            loadHistorySessionIntoChat(state, cachedSession, item);
             return;
         }
 
@@ -3350,7 +3355,7 @@
                     state.historySessionDetails[sessionKey] = data;
                 }
 
-                loadHistorySessionIntoChat(state, data, item, null);
+                loadHistorySessionIntoChat(state, data, item);
             })
             .catch(function (error) {
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
@@ -5500,7 +5505,7 @@
         };
 
         // Load the session into the chat
-        loadHistorySessionIntoChat(state, session, null, null);
+        loadHistorySessionIntoChat(state, session, null);
         
         return true;
     }
@@ -5757,6 +5762,7 @@
                 uploading: 0,
                 config: instanceConfig,
                 canUploadAttachments: instanceConfig.canUploadAttachments,
+                originalAssistantId: instanceConfig.assistantId, // Store original assistant_id for transcript saves
                 container: container,
                 textarea: textarea,
                 messagesEl: messagesEl,
@@ -6020,6 +6026,12 @@
         // This ensures we don't mix conversations from different sessions.
         if (saved.sessionKey && !state.config.sessionKey) {
             state.config.sessionKey = saved.sessionKey;
+        }
+
+        // Restore assistant ID if available
+        // This ensures the conversation context is maintained on page reload
+        if (saved.assistantId && saved.assistantId !== state.config.assistantId) {
+            state.config.assistantId = saved.assistantId;
         }
 
         // Restore conversation state

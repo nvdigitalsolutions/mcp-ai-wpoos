@@ -21,6 +21,10 @@ $successes = array();
 
 /**
  * Check PHP syntax for all PHP files in the plugin.
+ *
+ * @param string $root_dir   Root directory to scan.
+ * @param array  &$errors    Array to collect errors.
+ * @param array  &$successes Array to collect successes.
  */
 function check_php_syntax( $root_dir, &$errors, &$successes ) {
 	echo "1. Checking PHP Syntax...\n";
@@ -77,6 +81,10 @@ function check_php_syntax( $root_dir, &$errors, &$successes ) {
 
 /**
  * Verify Composer dependencies are installed.
+ *
+ * @param string $root_dir   Root directory to scan.
+ * @param array  &$errors    Array to collect errors.
+ * @param array  &$successes Array to collect successes.
  */
 function check_composer_dependencies( $root_dir, &$errors, &$successes ) {
 	echo "2. Checking Composer Dependencies...\n";
@@ -143,6 +151,11 @@ function check_composer_dependencies( $root_dir, &$errors, &$successes ) {
 
 /**
  * Verify main plugin file structure.
+ *
+ * @param string $root_dir   Root directory to scan.
+ * @param array  &$errors    Array to collect errors.
+ * @param array  &$successes Array to collect successes.
+ * @param array  &$warnings  Array to collect warnings.
  */
 function check_plugin_structure( $root_dir, &$errors, &$successes, &$warnings ) {
 	echo "3. Checking Plugin Structure...\n";
@@ -194,6 +207,10 @@ function check_plugin_structure( $root_dir, &$errors, &$successes, &$warnings ) 
 
 /**
  * Check critical include files.
+ *
+ * @param string $root_dir   Root directory to scan.
+ * @param array  &$errors    Array to collect errors.
+ * @param array  &$successes Array to collect successes.
  */
 function check_include_files( $root_dir, &$errors, &$successes ) {
 	echo "4. Checking Critical Include Files...\n";
@@ -229,6 +246,10 @@ function check_include_files( $root_dir, &$errors, &$successes ) {
 
 /**
  * Verify test infrastructure.
+ *
+ * @param string $root_dir   Root directory to scan.
+ * @param array  &$errors    Array to collect errors.
+ * @param array  &$successes Array to collect successes.
  */
 function check_test_infrastructure( $root_dir, &$errors, &$successes ) {
 	echo "5. Checking Test Infrastructure...\n";

@@ -23,7 +23,7 @@ class MyWakeup
         return ['sub', 'baz'];
     }
 
-    public function __wakeup(): void
+    public function __wakeup()
     {
         if (123 === $this->sub) {
             $this->bis = 123;

@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\VarExporter\Tests\Fixtures;
 
-class SimpleObject extends \stdClass
+class SimpleObject
 {
     public function getMethod(): string
     {

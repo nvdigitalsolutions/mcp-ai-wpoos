@@ -346,30 +346,50 @@ final class Path
         $extension = ltrim($extension, '.');
 
         // No extension for paths
-        if (str_ends_with($path, '/')) {
+        if ('/' === substr($path, -1)) {
             return $path;
         }
 
         // No actual extension in path
-        if (!$actualExtension) {
-            return $path.(str_ends_with($path, '.') ? '' : '.').$extension;
+        if (empty($actualExtension)) {
+            return $path.('.' === substr($path, -1) ? '' : '.').$extension;
         }
 
         return substr($path, 0, -\strlen($actualExtension)).$extension;
     }
 
-    /**
-     * Returns whether the given path is absolute.
-     */
     public static function isAbsolute(string $path): bool
     {
-        return '' !== $path && (strspn($path, '/\\', 0, 1)
-            || (\strlen($path) > 3 && ctype_alpha($path[0])
-                && ':' === $path[1]
-                && strspn($path, '/\\', 2, 1)
-            )
-            || null !== parse_url($path, \PHP_URL_SCHEME)
-        );
+        if ('' === $path) {
+            return false;
+        }
+
+        // Strip scheme
+        if (false !== ($schemeSeparatorPosition = strpos($path, '://')) && 1 !== $schemeSeparatorPosition) {
+            $path = substr($path, $schemeSeparatorPosition + 3);
+        }
+
+        $firstCharacter = $path[0];
+
+        // UNIX root "/" or "\" (Windows style)
+        if ('/' === $firstCharacter || '\\' === $firstCharacter) {
+            return true;
+        }
+
+        // Windows root
+        if (\strlen($path) > 1 && ctype_alpha($firstCharacter) && ':' === $path[1]) {
+            // Special case: "C:"
+            if (2 === \strlen($path)) {
+                return true;
+            }
+
+            // Normal case: "C:/ or "C:\"
+            if ('/' === $path[2] || '\\' === $path[2]) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function isRelative(string $path): bool
@@ -648,7 +668,7 @@ final class Path
             }
 
             // Only add slash if previous part didn't end with '/' or '\'
-            if (!\in_array(substr($finalPath, -1), ['/', '\\'], true)) {
+            if (!\in_array(substr($finalPath, -1), ['/', '\\'])) {
                 $finalPath .= '/';
             }
 

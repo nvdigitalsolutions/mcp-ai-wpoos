@@ -18,13 +18,6 @@ use Symfony\Component\VarExporter\Internal\LazyObjectRegistry as Registry;
 use Symfony\Component\VarExporter\Internal\LazyObjectState;
 use Symfony\Component\VarExporter\Internal\LazyObjectTrait;
 
-if (\PHP_VERSION_ID >= 80400) {
-    trigger_deprecation('symfony/var-exporter', '7.3', 'The "%s" trait is deprecated, use native lazy objects instead.', LazyProxyTrait::class);
-}
-
-/**
- * @deprecated since Symfony 7.3, use native lazy objects instead
- */
 trait LazyProxyTrait
 {
     use LazyObjectTrait;
@@ -39,32 +32,14 @@ trait LazyProxyTrait
     {
         if (self::class !== $class = $instance ? $instance::class : static::class) {
             $skippedProperties = ["\0".self::class."\0lazyObjectState" => true];
+        } elseif (\defined($class.'::LAZY_OBJECT_PROPERTY_SCOPES')) {
+            Hydrator::$propertyScopes[$class] ??= $class::LAZY_OBJECT_PROPERTY_SCOPES;
         }
 
-        if (!isset(Registry::$defaultProperties[$class])) {
-            Registry::$classReflectors[$class] ??= new \ReflectionClass($class);
-            $instance ??= Registry::$classReflectors[$class]->newInstanceWithoutConstructor();
-            Registry::$defaultProperties[$class] ??= (array) $instance;
-
-            if (self::class === $class && \defined($class.'::LAZY_OBJECT_PROPERTY_SCOPES')) {
-                Hydrator::$propertyScopes[$class] ??= $class::LAZY_OBJECT_PROPERTY_SCOPES;
-            }
-
-            Registry::$classResetters[$class] ??= Registry::getClassResetters($class);
-        } else {
-            $instance ??= Registry::$classReflectors[$class]->newInstanceWithoutConstructor();
-        }
-
-        if (isset($instance->lazyObjectState)) {
-            $instance->lazyObjectState->initializer = $initializer;
-            unset($instance->lazyObjectState->realInstance);
-
-            return $instance;
-        }
-
+        $instance ??= (Registry::$classReflectors[$class] ??= new \ReflectionClass($class))->newInstanceWithoutConstructor();
         $instance->lazyObjectState = new LazyObjectState($initializer);
 
-        foreach (Registry::$classResetters[$class] as $reset) {
+        foreach (Registry::$classResetters[$class] ??= Registry::getClassResetters($class) as $reset) {
             $reset($instance, $skippedProperties ??= []);
         }
 
@@ -74,7 +49,7 @@ trait LazyProxyTrait
     /**
      * Returns whether the object is initialized.
      *
-     * @param bool $partial Whether partially initialized objects should be considered as initialized
+     * @param $partial Whether partially initialized objects should be considered as initialized
      */
     #[Ignore]
     public function isLazyObjectInitialized(bool $partial = false): bool
@@ -298,6 +273,10 @@ trait LazyProxyTrait
         }
 
         $this->lazyObjectState = clone $this->lazyObjectState;
+
+        if (isset($this->lazyObjectState->realInstance)) {
+            $this->lazyObjectState->realInstance = clone $this->lazyObjectState->realInstance;
+        }
     }
 
     public function __serialize(): array
