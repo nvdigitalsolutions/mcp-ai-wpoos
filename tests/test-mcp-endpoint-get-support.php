@@ -84,12 +84,12 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that GET request to /mcp returns endpoint discovery information.
+	 * Test that GET request to /mcp defaults to SSE stream.
 	 *
-	 * Per MCP 2024-11-05 spec, clients should be able to discover endpoint
-	 * capabilities and available transports via GET request.
+	 * Per the new requirement, SSE should be the default transport.
+	 * GET requests should establish SSE connections by default.
 	 */
-	public function test_mcp_get_returns_discovery_info() {
+	public function test_mcp_get_defaults_to_sse() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 
@@ -97,6 +97,40 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'GET /mcp should return a REST response' );
 		$this->assertSame( 200, $response->get_status(), 'GET /mcp should return 200 status' );
+
+		// Check that response has SSE content type (default behavior).
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers, 'Response should include Content-Type header' );
+		$this->assertStringStartsWith(
+			'text/event-stream',
+			$headers['Content-Type'],
+			'GET /mcp should default to SSE (text/event-stream)'
+		);
+	}
+
+	/**
+	 * Test that GET request to /mcp with discovery parameter returns JSON.
+	 *
+	 * Clients can explicitly request discovery info by adding ?discovery=true.
+	 */
+	public function test_mcp_get_with_discovery_param_returns_json() {
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'discovery', 'true' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response, 'GET /mcp?discovery=true should return a REST response' );
+		$this->assertSame( 200, $response->get_status(), 'GET /mcp?discovery=true should return 200 status' );
+
+		// Check that response is JSON (not SSE).
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers, 'Response should include Content-Type header' );
+		$this->assertStringStartsWith(
+			'application/json',
+			$headers['Content-Type'],
+			'Discovery request should return JSON'
+		);
 
 		$data = $response->get_data();
 
@@ -108,30 +142,55 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'protocolVersion', $data, 'Response should include protocol version' );
 		$this->assertSame( '2024-11-05', $data['protocolVersion'], 'Should support MCP 2024-11-05' );
 
-		// Verify capabilities.
+		// Verify SSE is marked as default.
 		$this->assertArrayHasKey( 'capabilities', $data, 'Response should include capabilities' );
-		$this->assertArrayHasKey( 'tools', $data['capabilities'], 'Capabilities should include tools' );
 		$this->assertArrayHasKey( 'sse', $data['capabilities'], 'Capabilities should include SSE info' );
 		$this->assertTrue( $data['capabilities']['sse']['enabled'], 'SSE should be enabled' );
+		$this->assertTrue( $data['capabilities']['sse']['default'], 'SSE should be marked as default' );
 
-		// Verify transports.
+		// Verify transports show SSE as default.
 		$this->assertArrayHasKey( 'transports', $data, 'Response should include transports' );
-		$this->assertArrayHasKey( 'jsonrpc', $data['transports'], 'Should support JSON-RPC transport' );
 		$this->assertArrayHasKey( 'sse', $data['transports'], 'Should support SSE transport' );
-
-		// Verify endpoints.
-		$this->assertArrayHasKey( 'endpoints', $data, 'Response should include endpoints' );
-		$this->assertArrayHasKey( 'mcp', $data['endpoints'], 'Should include MCP endpoint' );
-		$this->assertArrayHasKey( 'assistants', $data['endpoints'], 'Should include assistants endpoint' );
+		$this->assertTrue( $data['transports']['sse']['default'], 'SSE transport should be marked as default' );
 	}
 
 	/**
-	 * Test that GET request with Accept: text/event-stream establishes SSE.
+	 * Test that GET request with Accept: application/json returns discovery.
 	 *
-	 * Per MCP 2024-11-05, clients can establish SSE connections by sending
-	 * GET request with Accept: text/event-stream header to the /mcp endpoint.
+	 * If a client explicitly requests JSON via Accept header, they should
+	 * get discovery info instead of SSE stream.
 	 */
-	public function test_mcp_get_with_sse_header_returns_sse() {
+	public function test_mcp_get_with_json_accept_header_returns_discovery() {
+		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
+		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_header( 'Accept', 'application/json' );
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertInstanceOf( WP_REST_Response::class, $response, 'GET /mcp with JSON Accept should return a REST response' );
+		$this->assertSame( 200, $response->get_status(), 'JSON request should return 200 status' );
+
+		// Check that response is JSON (not SSE).
+		$headers = $response->get_headers();
+		$this->assertArrayHasKey( 'Content-Type', $headers, 'Response should include Content-Type header' );
+		$this->assertStringStartsWith(
+			'application/json',
+			$headers['Content-Type'],
+			'Content-Type should be application/json when explicitly requested'
+		);
+
+		// Verify it's discovery data.
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'name', $data, 'Should return discovery data' );
+		$this->assertArrayHasKey( 'capabilities', $data, 'Should include capabilities' );
+	}
+
+	/**
+	 * Test that GET request with Accept: text/event-stream still works.
+	 *
+	 * Explicitly requesting SSE should still work, even though it's now the default.
+	 */
+	public function test_mcp_get_with_sse_accept_header_returns_sse() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
@@ -147,7 +206,7 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 		$this->assertStringStartsWith(
 			'text/event-stream',
 			$headers['Content-Type'],
-			'Content-Type should be text/event-stream for SSE'
+			'Content-Type should be text/event-stream'
 		);
 	}
 
@@ -261,6 +320,7 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	public function test_discovery_includes_correct_endpoint_urls() {
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
+		$request->set_param( 'discovery', 'true' ); // Explicitly request discovery.
 
 		$response = rest_get_server()->dispatch( $request );
 		$data     = $response->get_data();
@@ -275,7 +335,12 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 
 		// Verify transport endpoint URLs.
 		$this->assertArrayHasKey( 'transports', $data );
-		$this->assertStringContainsString( '/mcp-ai/v1/mcp', $data['transports']['jsonrpc']['endpoint'] );
 		$this->assertStringContainsString( '/mcp-ai/v1/mcp', $data['transports']['sse']['endpoint'] );
+		$this->assertStringContainsString( '/mcp-ai/v1/mcp', $data['transports']['jsonrpc']['endpoint'] );
+
+		// Verify usage examples are included.
+		$this->assertArrayHasKey( 'usage', $data, 'Should include usage examples' );
+		$this->assertArrayHasKey( 'sse_default', $data['usage'], 'Should explain SSE is default' );
+		$this->assertArrayHasKey( 'discovery', $data['usage'], 'Should explain how to get discovery' );
 	}
 }

@@ -1,36 +1,189 @@
-# MCP Endpoint GET Support - Fix for LM Studio 404 Error
+# MCP Endpoint Updates - SSE as Default
 
-## Issue
-LM Studio users were experiencing a 404 error when trying to connect to the MCP endpoint at `/wp-json/mcp-ai/v1/mcp`.
+## Changes Summary
 
-## Root Cause
-The `/mcp` endpoint only supported POST requests for JSON-RPC 2.0 protocol. According to the MCP 2024-11-05 specification, the endpoint should also support:
-1. GET requests for endpoint discovery
-2. GET requests with `Accept: text/event-stream` header for SSE connections
-3. Streamable HTTP transport
+### 1. SSE is Now the Default Transport
+**GET `/wp-json/mcp-ai/v1/mcp`** now defaults to establishing an SSE (Server-Sent Events) connection.
 
-## Solution
-Added GET request support to the `/mcp` endpoint with the following behavior:
+**Previous Behavior:**
+- GET /mcp → Returns JSON discovery info
+- GET /mcp with Accept: text/event-stream → Establishes SSE
+- GET /sse → Establishes SSE
 
-### GET Request Handling
-- **Without `Accept: text/event-stream`**: Returns JSON discovery information including:
-  - Server name, version, and protocol version
-  - Available capabilities (tools, resources, prompts, SSE)
-  - Supported transports (JSON-RPC POST, SSE GET)
-  - Endpoint URLs for all MCP services
+**New Behavior:**
+- GET /mcp → **Establishes SSE (DEFAULT)**
+- GET /mcp?discovery=true → Returns JSON discovery info
+- GET /mcp with Accept: application/json → Returns JSON discovery info
+- GET /no-sse → Returns assistant directory without SSE
 
-- **With `Accept: text/event-stream`**: Establishes Server-Sent Events connection for real-time streaming
+### 2. Endpoint Renamed: `/sse` → `/no-sse`
+The `/sse` endpoint has been renamed to `/no-sse` because SSE is now the default behavior on `/mcp`.
 
-### CORS Enhancements
-Updated CORS headers to support MCP 2024-11-05 requirements:
-- Added `GET` to `Access-Control-Allow-Methods`
-- Added `Accept` and `Mcp-Session-Id` to `Access-Control-Allow-Headers`
-- Added `Access-Control-Expose-Headers: Mcp-Session-Id` for session management
+- **Old:** `/wp-json/mcp-ai/v1/sse` (for SSE connections)
+- **New:** `/wp-json/mcp-ai/v1/no-sse` (for non-SSE assistant directory)
 
-### Backward Compatibility
-- POST requests for JSON-RPC 2.0 continue to work as before
-- OPTIONS requests for CORS preflight continue to work
-- No breaking changes to existing integrations
+## Rationale
+
+Per the MCP 2024-11-05 specification:
+1. **Streamable HTTP** is the recommended transport method
+2. SSE provides real-time updates and better client experience
+3. Making SSE the default aligns with modern protocol expectations
+4. Clients that need JSON can explicitly request it
+
+## Use Cases
+
+### LM Studio Configuration (Works as-is)
+```json
+{
+  "mcpServers": {
+    "wordpress-site": {
+      "url": "https://bots.nvdigital.solutions/wp-json/mcp-ai/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer cred_xxxxx.SECRET"
+      },
+      "timeout": 30000
+    }
+  }
+}
+```
+
+**What happens:**
+1. LM Studio sends GET to `/mcp`
+2. Server establishes SSE connection (default)
+3. Real-time updates stream to client
+4. POST requests for JSON-RPC still work
+
+### Getting Discovery Info
+```bash
+# Explicit discovery request
+curl https://your-site.com/wp-json/mcp-ai/v1/mcp?discovery=true
+
+# Or with Accept header
+curl -H "Accept: application/json" https://your-site.com/wp-json/mcp-ai/v1/mcp
+```
+
+### Non-SSE Assistant Directory
+```bash
+# For clients that don't support SSE
+curl https://your-site.com/wp-json/mcp-ai/v1/no-sse
+```
+
+## Migration Guide
+
+### For Existing Integrations
+
+**If you were using GET /mcp:**
+- **Before:** Returned JSON discovery
+- **After:** Establishes SSE connection
+- **Fix:** Add `?discovery=true` parameter to get JSON
+
+**If you were using GET /sse:**
+- **Before:** Established SSE
+- **After:** Endpoint renamed to `/no-sse` (returns JSON)
+- **Fix:** Use GET `/mcp` instead (SSE is now default)
+
+### Code Examples
+
+**Before:**
+```javascript
+// Old way - SSE required specific endpoint
+const sseUrl = 'https://site.com/wp-json/mcp-ai/v1/sse';
+const evtSource = new EventSource(sseUrl);
+```
+
+**After:**
+```javascript
+// New way - SSE is default on /mcp
+const sseUrl = 'https://site.com/wp-json/mcp-ai/v1/mcp';
+const evtSource = new EventSource(sseUrl);
+```
+
+## Benefits
+
+1. **✅ Simpler Configuration:** No need to specify SSE headers
+2. **✅ Better Performance:** SSE provides real-time updates
+3. **✅ MCP 2024-11-05 Compliant:** Follows latest specification
+4. **✅ Backward Compatible:** JSON-RPC POST still works
+5. **✅ Explicit Fallback:** Discovery available via parameter
+
+## Technical Details
+
+### Request Flow
+
+| Request | Response |
+|---------|----------|
+| `GET /mcp` | SSE stream (default) |
+| `GET /mcp?discovery=true` | JSON discovery |
+| `GET /mcp` + `Accept: application/json` | JSON discovery |
+| `GET /no-sse` | JSON assistant directory |
+| `POST /mcp` + JSON-RPC | JSON-RPC response |
+
+### Discovery Response Format
+```json
+{
+  "name": "WP oOS MCP Server",
+  "protocolVersion": "2024-11-05",
+  "capabilities": {
+    "sse": {
+      "enabled": true,
+      "default": true,
+      "note": "GET /mcp defaults to SSE. Add ?discovery=true for this JSON response."
+    }
+  },
+  "transports": {
+    "sse": {
+      "endpoint": "https://site.com/wp-json/mcp-ai/v1/mcp",
+      "methods": ["GET"],
+      "default": true
+    },
+    "jsonrpc": {
+      "endpoint": "https://site.com/wp-json/mcp-ai/v1/mcp",
+      "methods": ["POST"]
+    }
+  },
+  "usage": {
+    "sse_default": "GET /mcp (default - establishes SSE stream)",
+    "discovery": "GET /mcp?discovery=true (returns this JSON)",
+    "no_sse": "GET /no-sse (assistant directory without SSE)"
+  }
+}
+```
+
+## Files Changed
+
+1. `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php`
+   - Renamed `/sse` route to `/no-sse`
+   - Updated `handle_mcp_get_request()` to default to SSE
+   - Added `handle_no_sse_request()` method
+   - Updated discovery response format
+
+2. `tests/test-mcp-endpoint-get-support.php`
+   - Updated tests for SSE default behavior
+   - Added test for discovery parameter
+   - Added test for Accept header handling
+
+3. `bin/test-mcp-get-support.sh`
+   - Updated test script for new default behavior
+   - Added tests for `/no-sse` endpoint
+
+## Testing
+
+### Automated Tests
+```bash
+composer test tests/test-mcp-endpoint-get-support.php
+```
+
+### Manual Tests
+```bash
+SITE_URL=https://your-site.com bash bin/test-mcp-get-support.sh
+```
+
+## Date
+November 14, 2025
+
+## Version
+To be included in next release (1.1.0+)
+
 
 ## Files Changed
 1. `includes/rest/class-wp-mcp-ai-rest-mcp-controller.php`
