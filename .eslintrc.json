@@ -13,6 +13,8 @@
 		"wpMcpAiChat": "readonly",
 		"wpMcpAiChatInstances": "readonly",
 		"wpMcpAiChatStorage": "readonly",
+		"wpMcpAiChatClipboard": "readonly",
+		"wpMcpAiChatDomBatcher": "readonly",
 		"wpMcpAiUserChats": "readonly",
 		"wpMcpAiAdmin": "readonly"
 	},

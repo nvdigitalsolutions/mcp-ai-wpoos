@@ -9,6 +9,9 @@
 
     // Storage service compatibility layer - use external service if available
     const storageService = window.wpMcpAiChatStorage || null;
+
+    // Clipboard service compatibility layer - use external service if available
+    const clipboardService = window.wpMcpAiChatClipboard || null;
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -1259,7 +1262,18 @@
         bubble.appendChild(button);
     }
 
+    /**
+     * Update copy button visual state.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {HTMLElement} button - The copy button element
+     * @param {string} stateName - State name ('idle', 'copied', 'error')
+     */
     function updateCopyButtonState(button, stateName) {
+        if (clipboardService && clipboardService.updateCopyButtonState) {
+            return clipboardService.updateCopyButtonState(button, stateName);
+        }
+
         if (!button) {
             return;
         }
@@ -1287,7 +1301,18 @@
         button.setAttribute('title', 'Copy response');
     }
 
+    /**
+     * Copy text to clipboard using modern API.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to copy
+     * @return {Promise<boolean>} Promise resolving to success status
+     */
     function copyTextToClipboard(text) {
+        if (clipboardService && clipboardService.copyTextToClipboard) {
+            return clipboardService.copyTextToClipboard(text);
+        }
+
         if (!text) {
             return Promise.resolve(false);
         }
@@ -1341,7 +1366,18 @@
         });
     }
 
+    /**
+     * Attach copy button to a message bubble.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {HTMLElement} bubble - Message bubble element
+     * @param {string} text - Optional explicit text to copy
+     */
     function attachCopyButton(bubble, text) {
+        if (clipboardService && clipboardService.attachCopyButton) {
+            return clipboardService.attachCopyButton(bubble, text);
+        }
+
         if (!bubble) {
             return;
         }
