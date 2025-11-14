@@ -50,7 +50,16 @@ class WP_MCP_AI_Profession_Seeder {
 		}
 
 		$repository = new WP_MCP_AI_Profession_Repository();
-		$professions = self::get_default_professions();
+		
+		// Try to load from JSON files first.
+		$loader = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+		$professions = $loader->load_all();
+		
+		// Fallback to hard-coded professions if JSON loading fails.
+		if ( is_wp_error( $professions ) || empty( $professions ) ) {
+			error_log( 'WP_MCP_AI: JSON loading failed, using hard-coded professions. Error: ' . ( is_wp_error( $professions ) ? $professions->get_error_message() : 'Empty result' ) );
+			$professions = self::get_default_professions();
+		}
 
 		foreach ( $professions as $profession_data ) {
 			$repository->save( $profession_data );
