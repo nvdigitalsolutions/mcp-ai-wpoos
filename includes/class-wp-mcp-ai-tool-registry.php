@@ -85,7 +85,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->load_default_tools();
 
 			if ( is_admin() && ! empty( $this->unavailable_tool_messages ) ) {
-				add_action( 'admin_notices', array( $this, 'render_unavailable_tool_notices' ) );
+				// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
+				add_action( 'init', array( $this, 'register_admin_notices' ) );
 			}
 
 			/**
@@ -94,6 +95,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			 * @param WP_MCP_AI_Tool_Registry $registry Registry instance.
 			 */
 			do_action( 'wp_mcp_ai_register_tools', $this );
+		}
+
+		/**
+		 * Register admin notices on init action.
+		 *
+		 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+		 */
+		public function register_admin_notices() {
+			add_action( 'admin_notices', array( $this, 'render_unavailable_tool_notices' ) );
 		}
 
 		/**

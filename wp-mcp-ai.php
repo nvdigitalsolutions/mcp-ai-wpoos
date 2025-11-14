@@ -496,7 +496,16 @@ if ( is_admin() ) {
 
 		return array_merge( $plugin_links, $links );
 	}
-	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
+
+	/**
+	 * Register plugin action links on init to avoid early translation loading.
+	 *
+	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 */
+	function wp_mcp_ai_register_plugin_action_links() {
+		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
+	}
+	add_action( 'init', 'wp_mcp_ai_register_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -1070,8 +1079,15 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 	}
 }
 
-// Hook the activation security notice to admin_notices.
-add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+/**
+ * Register activation security notice on init to avoid early translation loading.
+ *
+ * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ */
+function wp_mcp_ai_register_activation_security_notice() {
+	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+}
+add_action( 'init', 'wp_mcp_ai_register_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**

@@ -75,8 +75,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			add_action( 'admin_post_wp_mcp_ai_issue_credential', array( $this, 'handle_issue_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_revoke_credential', array( $this, 'handle_revoke_credential' ) );
 			add_action( 'admin_post_wp_mcp_ai_delete_credential', array( $this, 'handle_delete_credential' ) );
-			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
+			// Register admin_notices on init to avoid early translation loading (WordPress 6.7.0+).
+			add_action( 'init', array( $this, 'register_admin_notices' ) );
 			add_action( 'delete_' . self::POST_TYPE, array( $this, 'cleanup_deleted_assistant_credentials' ) );
+		}
+
+		/**
+		 * Register admin notices on init action.
+		 *
+		 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+		 */
+		public function register_admin_notices() {
+			add_action( 'admin_notices', array( $this, 'render_admin_notices' ) );
 		}
 
 		/**
