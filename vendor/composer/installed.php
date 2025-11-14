@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-save-conversation-error',
-        'version' => 'dev-copilot/fix-save-conversation-error',
-        'reference' => '655f739cc19328f7b9ecaa87ffbbfd06f8414852',
+        'pretty_version' => 'dev-copilot/fix-cron-status-unauthorized',
+        'version' => 'dev-copilot/fix-cron-status-unauthorized',
+        'reference' => 'd025f28a692715f01f60008abb65ab6abdfc6bc9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-save-conversation-error',
-            'version' => 'dev-copilot/fix-save-conversation-error',
-            'reference' => '655f739cc19328f7b9ecaa87ffbbfd06f8414852',
+            'pretty_version' => 'dev-copilot/fix-cron-status-unauthorized',
+            'version' => 'dev-copilot/fix-cron-status-unauthorized',
+            'reference' => 'd025f28a692715f01f60008abb65ab6abdfc6bc9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
