@@ -143,6 +143,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				)
 			);
 
+			// Preload tiers for all users to optimize performance.
+			if ( ! empty( $user_ids ) && class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+				WP_MCP_AI_Tool_Token_Limits::preload_user_tiers( $user_ids );
+			}
+
 			?>
 			<h3><?php esc_html_e( 'Token Usage by User', 'wp-mcp-ai' ); ?></h3>
 			<p class="description"><?php esc_html_e( 'View and manage token consumption for each user across all AI models and providers.', 'wp-mcp-ai' ); ?></p>

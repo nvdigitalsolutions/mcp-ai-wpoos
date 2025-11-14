@@ -25,6 +25,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cost-tracki
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-budget-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-reporting-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 
 // Load performance monitor service only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
@@ -205,4 +206,16 @@ function wp_mcp_ai_get_token_usage_service() {
  */
 function wp_mcp_ai_get_cost_tracking_service() {
 	return 'WP_MCP_AI_Cost_Tracking_Service';
+}
+
+/**
+ * Get token performance service instance
+ *
+ * Helper function to access token performance service.
+ * This service provides performance metrics and optimization statistics.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_token_performance_service() {
+	return 'WP_MCP_AI_Token_Performance_Service';
 }

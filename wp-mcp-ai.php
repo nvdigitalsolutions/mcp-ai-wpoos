@@ -394,6 +394,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-db-optimizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-recommendations.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
@@ -705,6 +706,11 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			WP_MCP_AI_Usage_Tracker::init();
 			WP_MCP_AI_Tool_Token_Limits::init();
+
+			// Initialize database optimizations for token management.
+			if ( class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {
+				WP_MCP_AI_Token_DB_Optimizer::init();
+			}
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
 				// Check if Elementor widgets are enabled in settings.
