@@ -160,9 +160,9 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 	 * Process site options.
 	 *
-	 * @param array                      $options  Options to update.
-	 * @param WP_MCP_AI_Tool_Registry    $registry Tool registry instance.
-	 * @param array                      $context  Execution context.
+	 * @param array                   $options  Options to update.
+	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
+	 * @param array                   $context  Execution context.
 	 * @return array Results of option updates.
 	 */
 	private function process_options( $options, $registry, $context ) {
@@ -187,9 +187,9 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 	 * Process theme installation and activation.
 	 *
-	 * @param string                     $theme_slug Theme slug.
-	 * @param WP_MCP_AI_Tool_Registry    $registry   Tool registry instance.
-	 * @param array                      $context    Execution context.
+	 * @param string                  $theme_slug Theme slug.
+	 * @param WP_MCP_AI_Tool_Registry $registry   Tool registry instance.
+	 * @param array                   $context    Execution context.
 	 * @return array|WP_Error Result of theme installation.
 	 */
 	private function process_theme( $theme_slug, $registry, $context ) {
@@ -203,9 +203,9 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 	 * Process plugin installations and activations.
 	 *
-	 * @param array                      $plugins  Plugin slugs to install.
-	 * @param WP_MCP_AI_Tool_Registry    $registry Tool registry instance.
-	 * @param array                      $context  Execution context.
+	 * @param array                   $plugins  Plugin slugs to install.
+	 * @param WP_MCP_AI_Tool_Registry $registry Tool registry instance.
+	 * @param array                   $context  Execution context.
 	 * @return array Results of plugin installations.
 	 */
 	private function process_plugins( $plugins, $registry, $context ) {
@@ -227,9 +227,9 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 	 * Process content creation.
 	 *
-	 * @param array                      $content_items Content items to create.
-	 * @param WP_MCP_AI_Tool_Registry    $registry      Tool registry instance.
-	 * @param array                      $context       Execution context.
+	 * @param array                   $content_items Content items to create.
+	 * @param WP_MCP_AI_Tool_Registry $registry      Tool registry instance.
+	 * @param array                   $context       Execution context.
 	 * @return array Results of content creation.
 	 */
 	private function process_content( $content_items, $registry, $context ) {
@@ -318,7 +318,7 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! empty( $results['options'] ) ) {
 			foreach ( $results['options'] as $result ) {
 				if ( ! is_wp_error( $result ) ) {
-					$options_updated++;
+					++$options_updated;
 				}
 			}
 		}
@@ -327,7 +327,7 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! empty( $results['plugins'] ) ) {
 			foreach ( $results['plugins'] as $result ) {
 				if ( ! is_wp_error( $result ) ) {
-					$plugins_installed++;
+					++$plugins_installed;
 				}
 			}
 		}
@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! empty( $results['content'] ) ) {
 			foreach ( $results['content'] as $result ) {
 				if ( ! is_wp_error( $result ) ) {
-					$content_created++;
+					++$content_created;
 				}
 			}
 		}

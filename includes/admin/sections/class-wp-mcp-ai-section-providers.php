@@ -235,142 +235,142 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			);
 		}
 
-/**
- * Get provider groups configuration.
- *
- * @return array
- */
-	private function get_provider_groups() {
-		return array(
-			'priority'  => array(
-				'id'     => 'priority',
-				'label'  => __( 'Priority Order', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-sort',
-				'fields' => array( 'provider_priority_list' ),
-),
-			'openai'    => array(
-				'id'     => 'openai',
-				'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-admin-generic',
-				'fields' => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
-),
-			'anthropic' => array(
-				'id'     => 'anthropic',
-				'label'  => __( 'Anthropic', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-admin-generic',
-				'fields' => array( 'anthropic_api_key', 'anthropic_model' ),
-),
-			'gemini'    => array(
-				'id'     => 'gemini',
-				'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-admin-generic',
-				'fields' => array( 'gemini_api_key', 'default_gemini_model' ),
-),
-			'ollama'    => array(
-				'id'     => 'ollama',
-				'label'  => __( 'Ollama (Local)', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-desktop',
-				'fields' => array( 'ollama_endpoint_url', 'ollama_model' ),
-),
-			'lm_studio' => array(
-				'id'     => 'lm_studio',
-				'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
-				'icon'   => 'dashicons-desktop',
-				'fields' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
-),
-);
-}
+		/**
+		 * Get provider groups configuration.
+		 *
+		 * @return array
+		 */
+		private function get_provider_groups() {
+			return array(
+				'priority'  => array(
+					'id'     => 'priority',
+					'label'  => __( 'Priority Order', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-sort',
+					'fields' => array( 'provider_priority_list' ),
+				),
+				'openai'    => array(
+					'id'     => 'openai',
+					'label'  => __( 'OpenAI', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-generic',
+					'fields' => array( 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id' ),
+				),
+				'anthropic' => array(
+					'id'     => 'anthropic',
+					'label'  => __( 'Anthropic', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-generic',
+					'fields' => array( 'anthropic_api_key', 'anthropic_model' ),
+				),
+				'gemini'    => array(
+					'id'     => 'gemini',
+					'label'  => __( 'Google Gemini', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-generic',
+					'fields' => array( 'gemini_api_key', 'default_gemini_model' ),
+				),
+				'ollama'    => array(
+					'id'     => 'ollama',
+					'label'  => __( 'Ollama (Local)', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-desktop',
+					'fields' => array( 'ollama_endpoint_url', 'ollama_model' ),
+				),
+				'lm_studio' => array(
+					'id'     => 'lm_studio',
+					'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-desktop',
+					'fields' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
+				),
+			);
+		}
 
-/**
- * Get active sub-tab.
- *
- * @return string
- */
-	private function get_active_subtab() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-		$subtab          = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'priority';
-		$provider_groups = $this->get_provider_groups();
+		/**
+		 * Get active sub-tab.
+		 *
+		 * @return string
+		 */
+		private function get_active_subtab() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$subtab          = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'priority';
+			$provider_groups = $this->get_provider_groups();
 
-		if ( ! isset( $provider_groups[ $subtab ] ) ) {
-		$subtab = 'priority';
-}
+			if ( ! isset( $provider_groups[ $subtab ] ) ) {
+				$subtab = 'priority';
+			}
 
-		return $subtab;
-}
+			return $subtab;
+		}
 
-/**
- * Render the section wrapper with sub-tabs.
- */
-	public function render_wrapper() {
-		$description     = $this->get_description();
-		$provider_groups = $this->get_provider_groups();
-		$active_subtab   = $this->get_active_subtab();
-?>
+		/**
+		 * Render the section wrapper with sub-tabs.
+		 */
+		public function render_wrapper() {
+			$description     = $this->get_description();
+			$provider_groups = $this->get_provider_groups();
+			$active_subtab   = $this->get_active_subtab();
+			?>
 		<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 <h2><?php echo esc_html( $this->get_title() ); ?></h2>
-		<?php if ( $description ) : ?>
+			<?php if ( $description ) : ?>
 <p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
 		<?php endif; ?>
 
 <div class="wp-mcp-ai-provider-subtabs">
 <nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Provider sub-tabs', 'wp-mcp-ai' ); ?>">
-		<?php foreach ( $provider_groups as $group ) : ?>
-		<?php
-		$subtab_url = add_query_arg(
-array(
-'page'   => 'wp-mcp-ai-dashboard',
-'tab'    => 'providers',
-'subtab' => $group['id'],
-),
-admin_url( 'admin.php' )
-);
-$is_active  = ( $group['id'] === $active_subtab );
-?>
+			<?php foreach ( $provider_groups as $group ) : ?>
+				<?php
+				$subtab_url = add_query_arg(
+					array(
+						'page'   => 'wp-mcp-ai-dashboard',
+						'tab'    => 'providers',
+						'subtab' => $group['id'],
+					),
+					admin_url( 'admin.php' )
+				);
+				$is_active  = ( $group['id'] === $active_subtab );
+				?>
 <a href="<?php echo esc_url( $subtab_url ); ?>" 
-   class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
-   data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+	class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+	data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 <span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
-		<?php echo esc_html( $group['label'] ); ?>
+				<?php echo esc_html( $group['label'] ); ?>
 </a>
 		<?php endforeach; ?>
 </nav>
 
 <div class="wp-mcp-ai-subtab-content">
 <table class="form-table" role="presentation">
-		<?php $this->render(); ?>
+			<?php $this->render(); ?>
 </table>
 </div>
 </div>
 </div>
-		<?php
-}
+			<?php
+		}
 
-/**
- * Render section fields.
- */
-	public function render() {
-		$fields          = $this->get_fields();
-		$provider_groups = $this->get_provider_groups();
-		$active_subtab   = $this->get_active_subtab();
+		/**
+		 * Render section fields.
+		 */
+		public function render() {
+			$fields          = $this->get_fields();
+			$provider_groups = $this->get_provider_groups();
+			$active_subtab   = $this->get_active_subtab();
 
-// Get the active group.
-		if ( ! isset( $provider_groups[ $active_subtab ] ) ) {
-return;
-}
+			// Get the active group.
+			if ( ! isset( $provider_groups[ $active_subtab ] ) ) {
+				return;
+			}
 
-		$active_group = $provider_groups[ $active_subtab ];
+			$active_group = $provider_groups[ $active_subtab ];
 
-// Render fields for the active sub-tab.
-		if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
-$this->render_provider_priority_list( $fields['provider_priority_list'] );
-} else {
-foreach ( $active_group['fields'] as $key ) {
-		if ( isset( $fields[ $key ] ) ) {
-$this->render_field( $key, $fields[ $key ] );
-}
-}
-}
-}
+			// Render fields for the active sub-tab.
+			if ( 'priority' === $active_subtab && isset( $fields['provider_priority_list'] ) ) {
+				$this->render_provider_priority_list( $fields['provider_priority_list'] );
+			} else {
+				foreach ( $active_group['fields'] as $key ) {
+					if ( isset( $fields[ $key ] ) ) {
+						$this->render_field( $key, $fields[ $key ] );
+					}
+				}
+			}
+		}
 
 		/**
 		 * Render the provider priority list field.

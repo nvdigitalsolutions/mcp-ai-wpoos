@@ -132,7 +132,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 	 */
 	public function provide_transcript_handler() {
 		if ( ! $this->transcript_handler ) {
-			$test_instance           = $this;
+			$test_instance            = $this;
 			$this->transcript_handler = new class( $test_instance ) {
 				private $test_instance;
 				public function __construct( $test_instance ) {
@@ -178,7 +178,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 	/**
 	 * Test 1: Save and retrieve simple conversation
-	 * 
+	 *
 	 * This test verifies:
 	 * 1. POST /chat-transcripts saves data to CCT (via mock handler)
 	 * 2. Saved data structure allows retrieval (simulated via filtering saved_records)
@@ -205,11 +205,15 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Save via POST /chat-transcripts.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key,
-			'messages'     => $messages,
-		) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key,
+					'messages'     => $messages,
+				)
+			)
+		);
 
 		$response = rest_get_server()->dispatch( $request );
 
@@ -253,7 +257,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$retrieved = array_values( $retrieved_records )[0];
 
 		// Simulate extract_request_messages() - decode the payload.
-		$retrieved_payload = json_decode( $retrieved['request_payload'], true );
+		$retrieved_payload  = json_decode( $retrieved['request_payload'], true );
 		$retrieved_messages = $retrieved_payload['messages'];
 
 		// Verify retrieved messages match what was saved.
@@ -266,7 +270,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// ✓ Data can be queried by session_key + user_id (simulated)
 		// ✓ Messages can be extracted from saved payload (simulated)
 		// ✓ Retrieved messages match original (simulated)
-		// 
+		//
 		// Note: Actual GET request would work with real JetEngine CCT database.
 	}
 
@@ -291,11 +295,15 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key_1,
-			'messages'     => $messages_1,
-		) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key_1,
+					'messages'     => $messages_1,
+				)
+			)
+		);
 
 		rest_get_server()->dispatch( $request );
 
@@ -316,11 +324,15 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key_2,
-			'messages'     => $messages_2,
-		) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key_2,
+					'messages'     => $messages_2,
+				)
+			)
+		);
 
 		rest_get_server()->dispatch( $request );
 
@@ -388,11 +400,15 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Save the conversation.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key,
-			'messages'     => $messages,
-		) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key,
+					'messages'     => $messages,
+				)
+			)
+		);
 
 		$response = rest_get_server()->dispatch( $request );
 
@@ -443,32 +459,40 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$session_key_1 = 'test_assistant1_' . wp_generate_password( 12, false );
 		$request       = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key_1,
-			'messages'     => array(
+		$request->set_body(
+			wp_json_encode(
 				array(
-					'role'    => 'user',
-					'content' => 'Message for assistant 1',
-				),
-			),
-		) ) );
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key_1,
+					'messages'     => array(
+						array(
+							'role'    => 'user',
+							'content' => 'Message for assistant 1',
+						),
+					),
+				)
+			)
+		);
 		rest_get_server()->dispatch( $request );
 
 		// Save conversation for assistant 2.
 		$session_key_2 = 'test_assistant2_' . wp_generate_password( 12, false );
 		$request       = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id_2,
-			'session_key'  => $session_key_2,
-			'messages'     => array(
+		$request->set_body(
+			wp_json_encode(
 				array(
-					'role'    => 'user',
-					'content' => 'Message for assistant 2',
-				),
-			),
-		) ) );
+					'assistant_id' => self::$assistant_id_2,
+					'session_key'  => $session_key_2,
+					'messages'     => array(
+						array(
+							'role'    => 'user',
+							'content' => 'Message for assistant 2',
+						),
+					),
+				)
+			)
+		);
 		rest_get_server()->dispatch( $request );
 
 		// Filter by assistant 1.
@@ -508,7 +532,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 
 	/**
 	 * Test 6: Verify saved data structure for retrieval
-	 * 
+	 *
 	 * This test verifies that data is saved in the correct format so it can be retrieved.
 	 * The retrieval verification is done by inspecting the saved record structure.
 	 */
@@ -530,11 +554,15 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		// Save the conversation.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		$request->set_body( wp_json_encode( array(
-			'assistant_id' => self::$assistant_id,
-			'session_key'  => $session_key,
-			'messages'     => $messages,
-		) ) );
+		$request->set_body(
+			wp_json_encode(
+				array(
+					'assistant_id' => self::$assistant_id,
+					'session_key'  => $session_key,
+					'messages'     => $messages,
+				)
+			)
+		);
 
 		rest_get_server()->dispatch( $request );
 
@@ -587,7 +615,7 @@ class Test_Chat_Conversation_CCT_Integration extends WP_UnitTestCase {
 		$retrieved = array_values( $retrieved_records )[0];
 
 		// Step 2: extract_request_messages() decodes request_payload
-		$retrieved_payload = json_decode( $retrieved['request_payload'], true );
+		$retrieved_payload  = json_decode( $retrieved['request_payload'], true );
 		$retrieved_messages = $retrieved_payload['messages'];
 
 		// Step 3: Messages are reconstructed and returned to client

@@ -242,10 +242,10 @@ class WP_MCP_AI_Chart_JS_Helper {
 				$user_tier = WP_MCP_AI_Tool_Token_Limits::get_user_tier( $user_id );
 
 				if ( isset( $tier_counts[ $user_tier ] ) ) {
-					$tier_counts[ $user_tier ]++;
+					++$tier_counts[ $user_tier ];
 				} else {
 					// Fallback to free tier for unknown tiers.
-					$tier_counts['free']++;
+					++$tier_counts['free'];
 				}
 			}
 		} else {
@@ -260,9 +260,9 @@ class WP_MCP_AI_Chart_JS_Helper {
 				$user_tier = sanitize_key( $user_tier );
 
 				if ( isset( $tier_counts[ $user_tier ] ) ) {
-					$tier_counts[ $user_tier ]++;
+					++$tier_counts[ $user_tier ];
 				} else {
-					$tier_counts['free']++;
+					++$tier_counts['free'];
 				}
 			}
 		}

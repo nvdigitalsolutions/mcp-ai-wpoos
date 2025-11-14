@@ -59,7 +59,7 @@ class WP_MCP_AI_New_Tools_Registration_Test extends WP_UnitTestCase {
 	 * Test that all three tools are in the tool group map.
 	 */
 	public function test_new_tools_are_in_group_map() {
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry  = WP_MCP_AI_Tool_Registry::get_instance();
 		$group_map = $registry->get_tool_group_map();
 
 		$this->assertArrayHasKey( 'generate_image_alt_text', $group_map, 'generate_image_alt_text should be in group map' );

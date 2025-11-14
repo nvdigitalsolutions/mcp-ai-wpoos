@@ -352,9 +352,9 @@ class WP_MCP_AI_Usage_Tracker {
 	 * @return float Cost in USD. Returns 0 if pricing data unavailable.
 	 */
 	public static function calculate_cost( $provider, $model, $prompt_tokens, $completion_tokens ) {
-		$provider         = sanitize_key( $provider );
-		$model            = sanitize_text_field( $model );
-		$prompt_tokens    = max( 0, (int) $prompt_tokens );
+		$provider          = sanitize_key( $provider );
+		$model             = sanitize_text_field( $model );
+		$prompt_tokens     = max( 0, (int) $prompt_tokens );
 		$completion_tokens = max( 0, (int) $completion_tokens );
 
 		// Get pricing from Model Rate Limits CCT if available.
@@ -463,19 +463,58 @@ class WP_MCP_AI_Usage_Tracker {
 
 		// Common model pricing (as of November 2024).
 		$pricing_map = array(
-			'gpt-4o'              => array( 'input_cost_per_1k' => 0.0025, 'output_cost_per_1k' => 0.01 ),
-			'gpt-4o-mini'         => array( 'input_cost_per_1k' => 0.00015, 'output_cost_per_1k' => 0.0006 ),
-			'gpt-4-turbo'         => array( 'input_cost_per_1k' => 0.01, 'output_cost_per_1k' => 0.03 ),
-			'gpt-4'               => array( 'input_cost_per_1k' => 0.03, 'output_cost_per_1k' => 0.06 ),
-			'gpt-3.5-turbo'       => array( 'input_cost_per_1k' => 0.0005, 'output_cost_per_1k' => 0.0015 ),
-			'o1-preview'          => array( 'input_cost_per_1k' => 0.015, 'output_cost_per_1k' => 0.06 ),
-			'o1-mini'             => array( 'input_cost_per_1k' => 0.003, 'output_cost_per_1k' => 0.012 ),
-			'gemini-1.5-pro'      => array( 'input_cost_per_1k' => 0.00125, 'output_cost_per_1k' => 0.005 ),
-			'gemini-1.5-flash'    => array( 'input_cost_per_1k' => 0.000075, 'output_cost_per_1k' => 0.0003 ),
-			'gemini-2.0-flash'    => array( 'input_cost_per_1k' => 0.0001, 'output_cost_per_1k' => 0.0004 ),
-			'claude-3.5-sonnet'   => array( 'input_cost_per_1k' => 0.003, 'output_cost_per_1k' => 0.015 ),
-			'claude-3-opus'       => array( 'input_cost_per_1k' => 0.015, 'output_cost_per_1k' => 0.075 ),
-			'claude-3-haiku'      => array( 'input_cost_per_1k' => 0.00025, 'output_cost_per_1k' => 0.00125 ),
+			'gpt-4o'            => array(
+				'input_cost_per_1k'  => 0.0025,
+				'output_cost_per_1k' => 0.01,
+			),
+			'gpt-4o-mini'       => array(
+				'input_cost_per_1k'  => 0.00015,
+				'output_cost_per_1k' => 0.0006,
+			),
+			'gpt-4-turbo'       => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.03,
+			),
+			'gpt-4'             => array(
+				'input_cost_per_1k'  => 0.03,
+				'output_cost_per_1k' => 0.06,
+			),
+			'gpt-3.5-turbo'     => array(
+				'input_cost_per_1k'  => 0.0005,
+				'output_cost_per_1k' => 0.0015,
+			),
+			'o1-preview'        => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.06,
+			),
+			'o1-mini'           => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.012,
+			),
+			'gemini-1.5-pro'    => array(
+				'input_cost_per_1k'  => 0.00125,
+				'output_cost_per_1k' => 0.005,
+			),
+			'gemini-1.5-flash'  => array(
+				'input_cost_per_1k'  => 0.000075,
+				'output_cost_per_1k' => 0.0003,
+			),
+			'gemini-2.0-flash'  => array(
+				'input_cost_per_1k'  => 0.0001,
+				'output_cost_per_1k' => 0.0004,
+			),
+			'claude-3.5-sonnet' => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-3-opus'     => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.075,
+			),
+			'claude-3-haiku'    => array(
+				'input_cost_per_1k'  => 0.00025,
+				'output_cost_per_1k' => 0.00125,
+			),
 		);
 
 		// Try exact match first.

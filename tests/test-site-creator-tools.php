@@ -70,7 +70,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_site_creator'              => true,
+				'enable_site_creator'               => true,
 				'site_creator_allow_option_updates' => true,
 			)
 		);
@@ -140,7 +140,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_site_creator'              => true,
+				'enable_site_creator'               => true,
 				'site_creator_allow_option_updates' => true,
 			)
 		);
@@ -260,7 +260,7 @@ class WP_MCP_AI_Site_Creator_Tools_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_site_creator'              => true,
+				'enable_site_creator'               => true,
 				'site_creator_allow_option_updates' => true,
 			)
 		);

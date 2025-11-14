@@ -48,7 +48,7 @@ class Test_MCP_Diagnostic_Internal_Calls extends WP_UnitTestCase {
 	 * Test that the diagnostic methods use proper internal REST handling.
 	 */
 	public function test_diagnostic_uses_proper_rest_response_methods() {
-		$file_path = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
+		$file_path    = WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-mcp-server-diagnostic.php';
 		$file_content = file_get_contents( $file_path );
 
 		// Should use $response->get_status() instead of wp_remote_retrieve_response_code.

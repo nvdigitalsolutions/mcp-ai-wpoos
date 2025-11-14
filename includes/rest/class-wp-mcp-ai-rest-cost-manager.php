@@ -132,31 +132,31 @@ class WP_MCP_AI_REST_Cost_Manager {
 				'callback'            => array( __CLASS__, 'get_user_roi' ),
 				'permission_callback' => array( __CLASS__, 'check_cost_access_permission' ),
 				'args'                => array(
-					'id'                => array(
+					'id'               => array(
 						'required'          => true,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 						'validate_callback' => array( __CLASS__, 'validate_user_id' ),
 					),
-					'time_saved_hours'  => array(
+					'time_saved_hours' => array(
 						'required'          => false,
 						'type'              => 'number',
 						'sanitize_callback' => 'floatval',
 						'default'           => 0,
 					),
-					'tasks_automated'   => array(
+					'tasks_automated'  => array(
 						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
 						'default'           => 0,
 					),
-					'hourly_rate'       => array(
+					'hourly_rate'      => array(
 						'required'          => false,
 						'type'              => 'number',
 						'sanitize_callback' => 'floatval',
 						'default'           => 50.0,
 					),
-					'days'              => array(
+					'days'             => array(
 						'required'          => false,
 						'type'              => 'integer',
 						'sanitize_callback' => 'absint',
@@ -201,12 +201,12 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 		return rest_ensure_response(
 			array(
-				'user_id'     => $user_id,
-				'start_date'  => $start_date,
-				'end_date'    => $end_date,
-				'breakdown'   => $breakdown,
-				'total_cost'  => $breakdown['total_cost'],
-				'formatted'   => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
+				'user_id'    => $user_id,
+				'start_date' => $start_date,
+				'end_date'   => $end_date,
+				'breakdown'  => $breakdown,
+				'total_cost' => $breakdown['total_cost'],
+				'formatted'  => WP_MCP_AI_Cost_Calculator::format_cost( $breakdown['total_cost'] ),
 			)
 		);
 	}
@@ -328,7 +328,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 	 * @return bool|WP_Error True if authorized, error otherwise.
 	 */
 	public static function check_cost_access_permission( $request ) {
-		$user_id        = $request->get_param( 'id' );
+		$user_id         = $request->get_param( 'id' );
 		$current_user_id = get_current_user_id();
 
 		// Must be logged in.

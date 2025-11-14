@@ -198,7 +198,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		// Verify nonce for logged-in users.
 		if ( is_user_logged_in() && $request instanceof WP_REST_Request ) {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
-			
+
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',

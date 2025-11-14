@@ -54,7 +54,7 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	 * Add test usage data.
 	 */
 	private function add_test_usage_data() {
-		$today = gmdate( 'Y-m-d' );
+		$today     = gmdate( 'Y-m-d' );
 		$yesterday = gmdate( 'Y-m-d', strtotime( '-1 day' ) );
 
 		// Add usage for free tier user.
@@ -72,7 +72,7 @@ class Test_Chart_Data extends WP_UnitTestCase {
 
 		// Add usage for pro tier user.
 		$usage_data = array(
-			'general_tools' => array(
+			'general_tools'    => array(
 				'total_tokens' => 15000,
 				'requests'     => 30,
 				'daily'        => array(
@@ -210,7 +210,7 @@ class Test_Chart_Data extends WP_UnitTestCase {
 	 */
 	public function test_get_tool_breakdown_data_with_limit() {
 		$limit = 5;
-		$data = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data( array( 'limit' => $limit ) );
+		$data  = WP_MCP_AI_Chart_JS_Helper::get_tool_breakdown_data( array( 'limit' => $limit ) );
 
 		$this->assertLessThanOrEqual( $limit, count( $data['labels'] ), 'Should not exceed limit' );
 		$this->assertLessThanOrEqual( $limit, count( $data['values'] ), 'Should not exceed limit' );

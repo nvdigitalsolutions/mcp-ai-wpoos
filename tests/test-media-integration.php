@@ -124,8 +124,8 @@ class WP_MCP_AI_Media_Integration_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_ai_media_library'    => true,
-				'ai_media_generate_alt_text' => true,
+				'enable_ai_media_library'     => true,
+				'ai_media_generate_alt_text'  => true,
 				'ai_media_overwrite_existing' => false,
 			)
 		);

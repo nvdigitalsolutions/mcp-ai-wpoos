@@ -47,7 +47,7 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 	 * Add test usage data.
 	 */
 	private function add_test_usage_data() {
-		$today = gmdate( 'Y-m-d' );
+		$today      = gmdate( 'Y-m-d' );
 		$usage_data = array(
 			'general_tools' => array(
 				'total_tokens' => 5000,
@@ -371,4 +371,3 @@ class Test_Chart_AJAX_Handlers extends WP_Ajax_UnitTestCase {
 		$this->assertFalse( $response['success'], 'AJAX request should fail without proper permissions' );
 	}
 }
-

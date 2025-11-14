@@ -159,7 +159,7 @@ class WP_MCP_AI_Preset_Application_Fix_Test extends WP_UnitTestCase {
 	 * Test different presets produce different multiplier values.
 	 */
 	public function test_presets_produce_different_multipliers() {
-		$presets = array( 'conservative', 'balanced', 'aggressive' );
+		$presets         = array( 'conservative', 'balanced', 'aggressive' );
 		$multiplier_sets = array();
 
 		foreach ( $presets as $preset ) {

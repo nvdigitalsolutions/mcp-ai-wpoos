@@ -64,15 +64,15 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 	 * Test that GET route exists for /chat-transcripts/{session_key}.
 	 */
 	public function test_get_route_exists() {
-		$routes = rest_get_server()->get_routes();
-		$namespace = '/mcp-ai/v1';
+		$routes        = rest_get_server()->get_routes();
+		$namespace     = '/mcp-ai/v1';
 		$route_pattern = '/chat-transcripts/(?P<session_key>[^/]+)';
-		
+
 		$this->assertArrayHasKey( $namespace . $route_pattern, $routes, 'Route should be registered' );
-		
-		$route = $routes[ $namespace . $route_pattern ];
+
+		$route   = $routes[ $namespace . $route_pattern ];
 		$methods = array();
-		
+
 		foreach ( $route as $handler ) {
 			if ( isset( $handler['methods'] ) ) {
 				if ( is_array( $handler['methods'] ) ) {
@@ -82,7 +82,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 				}
 			}
 		}
-		
+
 		$this->assertContains( 'GET', $methods, 'GET method should be registered for the route' );
 	}
 
@@ -100,7 +100,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
-		
+
 		// The response might be 200 with null session (if JetEngine not available) or 503.
 		// What's important is that it doesn't 404.
 		$status = $response->get_status();
@@ -164,7 +164,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
-		
+
 		// Should not be a 404 error.
 		$this->assertNotEquals( 404, $response->get_status(), 'Should not return 404 for valid request with user_id' );
 	}
@@ -184,7 +184,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
-		
+
 		// Should not be a 404 error.
 		$this->assertNotEquals( 404, $response->get_status(), 'Should not return 404 when assistant_id is provided' );
 	}
@@ -204,7 +204,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
-		
+
 		// Admin should not get permission denied.
 		$this->assertNotContains(
 			$response->get_status(),
@@ -261,7 +261,7 @@ class Test_Chat_Transcript_Get_By_Session_Key extends WP_UnitTestCase {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertInstanceOf( WP_REST_Response::class, $response, 'Response should be a WP_REST_Response' );
-		
+
 		// Guest with valid token should not get permission denied.
 		$this->assertNotContains(
 			$response->get_status(),

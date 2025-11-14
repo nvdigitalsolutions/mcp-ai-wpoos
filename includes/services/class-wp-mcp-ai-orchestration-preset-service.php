@@ -413,7 +413,7 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 				foreach ( $preset['settings'] as $key => $value ) {
 					// Get current value to check if it's already set.
 					$current_value = WP_MCP_AI_Settings_Registry::get_setting( $key );
-					
+
 					// Only update if value is different to avoid false error logs.
 					// WordPress update_option() returns false when value is unchanged.
 					if ( $current_value !== $value ) {

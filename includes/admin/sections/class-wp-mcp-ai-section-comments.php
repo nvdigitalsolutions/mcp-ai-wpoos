@@ -66,14 +66,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Comments' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_ai_comments_moderation'       => array(
+				'enable_ai_comments_moderation'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Comments Moderation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_comments_sensitivity'             => array(
+				'ai_comments_sensitivity'              => array(
 					'type'        => 'select',
 					'label'       => __( 'Moderation Sensitivity', 'wp-mcp-ai' ),
 					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'wp-mcp-ai' ),
@@ -84,7 +84,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Comments' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'ai_comments_min_confidence'          => array(
+				'ai_comments_min_confidence'           => array(
 					'type'        => 'select',
 					'label'       => __( 'Minimum Confidence Level', 'wp-mcp-ai' ),
 					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'wp-mcp-ai' ),

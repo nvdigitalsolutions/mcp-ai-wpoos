@@ -44,7 +44,7 @@ class Test_Transcript_Repository extends WP_UnitTestCase {
 	 */
 	public function test_get_table_name_without_jetengine() {
 		$table_name = $this->repository->get_table_name();
-		
+
 		// Without JetEngine CCT class, should return empty string.
 		$this->assertEquals( '', $table_name );
 	}
@@ -54,7 +54,7 @@ class Test_Transcript_Repository extends WP_UnitTestCase {
 	 */
 	public function test_table_exists_without_jetengine() {
 		$exists = $this->repository->table_exists();
-		
+
 		// Without JetEngine CCT class, should return false.
 		$this->assertFalse( $exists );
 	}
@@ -64,7 +64,7 @@ class Test_Transcript_Repository extends WP_UnitTestCase {
 	 */
 	public function test_delete_transcript_without_table() {
 		$result = $this->repository->delete_transcript( 'test_session', 1 );
-		
+
 		// Without table, should return false.
 		$this->assertFalse( $result );
 	}
@@ -92,7 +92,7 @@ class Test_Transcript_Repository extends WP_UnitTestCase {
 		// This test verifies the method signature is correct.
 		// Even without table, it should not throw errors when called with valid params.
 		$result = $this->repository->delete_transcript( 'valid_session_key', 123 );
-		
+
 		// Should return false (table doesn't exist), not throw error.
 		$this->assertFalse( $result );
 	}

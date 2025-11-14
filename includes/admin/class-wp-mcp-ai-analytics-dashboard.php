@@ -255,22 +255,22 @@ class WP_MCP_AI_Analytics_Dashboard {
 		);
 
 		// Get all users.
-		$users = get_users( array( 'fields' => 'ID' ) );
+		$users                = get_users( array( 'fields' => 'ID' ) );
 		$stats['total_users'] = count( $users );
 
 		// Calculate usage across all users.
 		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
-			$active_count  = 0;
-			$total_tokens  = 0;
-			$today_tokens  = 0;
-			$week_tokens   = 0;
-			$month_tokens  = 0;
+			$active_count = 0;
+			$total_tokens = 0;
+			$today_tokens = 0;
+			$week_tokens  = 0;
+			$month_tokens = 0;
 
 			foreach ( $users as $user_id ) {
 				$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
 
 				if ( ! empty( $usage ) ) {
-					$active_count++;
+					++$active_count;
 
 					foreach ( $usage as $provider => $models ) {
 						foreach ( $models as $model => $totals ) {

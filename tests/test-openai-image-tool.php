@@ -769,7 +769,7 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 			remove_filter( 'pre_http_request', $http_stub, 10 );
 
-			$this->assertNotNull( $captured_request, "Request not captured for quality: " . var_export( $invalid_quality, true ) );
+			$this->assertNotNull( $captured_request, 'Request not captured for quality: ' . var_export( $invalid_quality, true ) );
 			$payload = json_decode( $captured_request['args']['body'], true );
 			// All invalid qualities should fall back to 'medium'.
 			$this->assertSame( 'medium', $payload['quality'], "Quality should be 'medium' for invalid value: " . var_export( $invalid_quality, true ) );

@@ -66,7 +66,14 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				'headers' => array( 'Accept' => 'application/json' ),
 			);
 
-			WP_MCP_AI_Logger::log_event( 'lm_studio_test_connection', 'Testing LM Studio connection.', array( 'url' => $url, 'timeout' => $timeout ) );
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_test_connection',
+				'Testing LM Studio connection.',
+				array(
+					'url'     => $url,
+					'timeout' => $timeout,
+				)
+			);
 
 			$response = wp_remote_get( $url, $request_args );
 

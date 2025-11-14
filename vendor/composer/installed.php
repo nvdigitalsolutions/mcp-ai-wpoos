@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
+        'pretty_version' => 'dev-copilot/setup-wordpress-test-environment',
+        'version' => 'dev-copilot/setup-wordpress-test-environment',
+        'reference' => '0adb4c9a1c64cea7f08356cab649be1cbcb9b30e',
         'pretty_version' => 'dev-copilot/add-chart-creation-tool',
         'version' => 'dev-copilot/add-chart-creation-tool',
         'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
@@ -590,6 +593,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
+            'pretty_version' => 'dev-copilot/setup-wordpress-test-environment',
+            'version' => 'dev-copilot/setup-wordpress-test-environment',
+            'reference' => '0adb4c9a1c64cea7f08356cab649be1cbcb9b30e',
             'pretty_version' => 'dev-copilot/add-chart-creation-tool',
             'version' => 'dev-copilot/add-chart-creation-tool',
             'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
