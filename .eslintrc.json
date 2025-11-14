@@ -14,6 +14,7 @@
 		"wpMcpAiChatInstances": "readonly",
 		"wpMcpAiChatStorage": "readonly",
 		"wpMcpAiChatClipboard": "readonly",
+		"wpMcpAiChatMarkdown": "readonly",
 		"wpMcpAiChatDomBatcher": "readonly",
 		"wpMcpAiUserChats": "readonly",
 		"wpMcpAiAdmin": "readonly"

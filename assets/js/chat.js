@@ -12,6 +12,9 @@
 
     // Clipboard service compatibility layer - use external service if available
     const clipboardService = window.wpMcpAiChatClipboard || null;
+
+    // Markdown service compatibility layer - use external service if available
+    const markdownService = window.wpMcpAiChatMarkdown || null;
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -7753,7 +7756,18 @@
         return details;
     }
 
+    /**
+     * Render markdown to HTML.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Markdown text
+     * @return {string} HTML output
+     */
     function renderMarkdown(text) {
+        if (markdownService && markdownService.renderMarkdown) {
+            return markdownService.renderMarkdown(text);
+        }
+
         if (!text) {
             return '';
         }
@@ -7977,7 +7991,18 @@
         return html;
     }
 
+    /**
+     * Render inline label with inline code support.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to render
+     * @return {string} Rendered HTML
+     */
     function renderInlineLabel(text) {
+        if (markdownService && markdownService.renderInlineLabel) {
+            return markdownService.renderInlineLabel(text);
+        }
+
         if (!text) {
             return '';
         }
@@ -8005,7 +8030,18 @@
         return processed;
     }
 
+    /**
+     * Sanitize URL to prevent XSS.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} url - URL to sanitize
+     * @return {string} Sanitized URL or '#' if invalid
+     */
     function sanitizeUrl(url) {
+        if (markdownService && markdownService.sanitizeUrl) {
+            return markdownService.sanitizeUrl(url);
+        }
+
         if (!url) {
             return '#';
         }
@@ -8030,7 +8066,18 @@
         return trimmed.replace(/"/g, '%22');
     }
 
+    /**
+     * Escape HTML to prevent XSS.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to escape
+     * @return {string} Escaped text
+     */
     function escapeHtml(text) {
+        if (markdownService && markdownService.escapeHtml) {
+            return markdownService.escapeHtml(text);
+        }
+
         return String(text).replace(/[&<>"']/g, function (character) {
             switch (character) {
                 case '&':
@@ -8049,7 +8096,18 @@
         });
     }
 
+    /**
+     * Format inline markdown (bold, italic, strikethrough).
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to format
+     * @return {string} Formatted HTML
+     */
     function formatInline(text) {
+        if (markdownService && markdownService.formatInline) {
+            return markdownService.formatInline(text);
+        }
+
         let result = text;
         result = result.replace(/~~(?=\S)(.+?)(?<=\S)~~/g, '<del>$1</del>');
         result = result.replace(/\*\*(?=\S)(.+?)(?<=\S)\*\*/g, '<strong>$1</strong>');
