@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 cd "$ROOT_DIR"
 
-export WP_CORE_DIR="/tmp/wordpress-core/wordpress"
+export WP_CORE_DIR="/tmp/wordpress"
 
 echo "========================================"
 echo "WP oOS Plugin - Test Suite Analysis"
