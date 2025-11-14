@@ -2568,38 +2568,41 @@
         }
 
         getLocalStorageQuota(function(quota) {
-            if (!quota.available) {
-                monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
-                return;
-            }
+            // Batch DOM updates to prevent setTimeout violations
+            domUpdateBatcher.schedule(function() {
+                if (!quota.available) {
+                    monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
+                    return;
+                }
 
-            const percentage = quota.percentage;
-            let statusClass = 'wp-mcp-ai-chat__quota-ok';
-            let statusText = 'OK';
-            
-            if (percentage >= 90) {
-                statusClass = 'wp-mcp-ai-chat__quota-critical';
-                statusText = 'Critical';
-            } else if (percentage >= 75) {
-                statusClass = 'wp-mcp-ai-chat__quota-warning';
-                statusText = 'High';
-            }
+                const percentage = quota.percentage;
+                let statusClass = 'wp-mcp-ai-chat__quota-ok';
+                let statusText = 'OK';
+                
+                if (percentage >= 90) {
+                    statusClass = 'wp-mcp-ai-chat__quota-critical';
+                    statusText = 'Critical';
+                } else if (percentage >= 75) {
+                    statusClass = 'wp-mcp-ai-chat__quota-warning';
+                    statusText = 'High';
+                }
 
-            monitorEl.innerHTML = '' +
-                '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
-                '<span class="wp-mcp-ai-chat__quota-bar">' +
-                    '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
-                '</span> ' +
-                '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
-                    quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
-                '</span>';
+                monitorEl.innerHTML = '' +
+                    '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
+                    '<span class="wp-mcp-ai-chat__quota-bar">' +
+                        '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
+                    '</span> ' +
+                    '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
+                        quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
+                    '</span>';
 
-            // Add tooltip with detailed info
-            monitorEl.setAttribute('title', 
-                'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
-                'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
-                'Status: ' + statusText
-            );
+                // Add tooltip with detailed info
+                monitorEl.setAttribute('title', 
+                    'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
+                    'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
+                    'Status: ' + statusText
+                );
+            });
         });
     }
 
@@ -8581,14 +8584,17 @@
         init();
 
         // Initialize cron status for all chat containers after a brief delay
+        // Use requestIdleCallback to avoid blocking main thread
         setTimeout(function() {
-            const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
-            Array.prototype.forEach.call(containers, function(container) {
-                const instanceId = container.getAttribute('id');
-                const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
-                if (config) {
-                    initializeCronStatus(container, config);
-                }
+            domUpdateBatcher.schedule(function() {
+                const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+                Array.prototype.forEach.call(containers, function(container) {
+                    const instanceId = container.getAttribute('id');
+                    const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+                    if (config) {
+                        initializeCronStatus(container, config);
+                    }
+                });
             });
         }, 500);
     }
