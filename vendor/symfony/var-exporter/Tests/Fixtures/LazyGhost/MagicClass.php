@@ -27,7 +27,7 @@ class MagicClass
         return $this->data[$name] ?? null;
     }
 
-    public function __set($name, $value): void
+    public function __set($name, $value)
     {
         $this->data[$name] = $value;
     }
@@ -37,7 +37,7 @@ class MagicClass
         return isset($this->data[$name]);
     }
 
-    public function __unset($name): void
+    public function __unset($name)
     {
         unset($this->data[$name]);
     }

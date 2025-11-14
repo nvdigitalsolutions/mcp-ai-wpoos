@@ -21,6 +21,8 @@ class Psr16CacheProxyTest extends SimpleCacheTest
 {
     protected function setUp(): void
     {
+        parent::setUp();
+
         try {
             \assert(false === true, new \Exception());
             $this->skippedTests['testGetInvalidKeys'] =
@@ -45,12 +47,12 @@ class Psr16CacheProxyTest extends SimpleCacheTest
     public function testProxy()
     {
         $pool = new ArrayAdapter();
-        $cache = new Psr16Cache(new ProxyAdapter($pool, 'my-namespace'));
+        $cache = new Psr16Cache(new ProxyAdapter($pool, 'my-namespace.'));
 
         $this->assertNull($cache->get('some-key'));
         $this->assertTrue($cache->set('some-other-key', 'value'));
 
-        $item = $pool->withSubNamespace('my-namespace')->getItem('some-other-key', 'value');
+        $item = $pool->getItem('my-namespace.some-other-key', 'value');
         $this->assertTrue($item->isHit());
         $this->assertSame('value', $item->get());
     }

@@ -11,7 +11,7 @@
 
 namespace Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy;
 
-class StringMagicGetClass extends \stdClass
+class StringMagicGetClass
 {
     public function __get(string $name): string
     {

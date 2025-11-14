@@ -19,17 +19,17 @@ if (version_compare(phpversion('relay'), '0.12.1', '>=')) {
     {
         public function hgetWithMeta($hash, $member): \Relay\Relay|array|false
         {
-            return $this->initializeLazyObject()->getWithMeta(...\func_get_args());
+            return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->hgetWithMeta(...\func_get_args());
         }
 
         public function select($db): \Relay\Relay|bool|string
         {
-            return $this->initializeLazyObject()->select(...\func_get_args());
+            return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->select(...\func_get_args());
         }
 
         public function watch($key, ...$other_keys): \Relay\Relay|bool|string
         {
-            return $this->initializeLazyObject()->watch(...\func_get_args());
+            return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->watch(...\func_get_args());
         }
     }
 } else {
@@ -40,12 +40,12 @@ if (version_compare(phpversion('relay'), '0.12.1', '>=')) {
     {
         public function select($db): \Relay\Relay|bool
         {
-            return $this->initializeLazyObject()->select(...\func_get_args());
+            return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->select(...\func_get_args());
         }
 
         public function watch($key, ...$other_keys): \Relay\Relay|bool
         {
-            return $this->initializeLazyObject()->watch(...\func_get_args());
+            return ($this->lazyObjectState->realInstance ??= ($this->lazyObjectState->initializer)())->watch(...\func_get_args());
         }
     }
 }

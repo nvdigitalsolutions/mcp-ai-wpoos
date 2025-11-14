@@ -213,7 +213,7 @@ final class HttpClientDataCollector extends DataCollector implements LateDataCol
             }
         }
 
-        $dataArg = $dataArg ? implode(' ', $dataArg) : null;
+        $dataArg = empty($dataArg) ? null : implode(' ', $dataArg);
 
         foreach (explode("\n", $trace['info']['debug']) as $line) {
             $line = substr($line, 0, -1);

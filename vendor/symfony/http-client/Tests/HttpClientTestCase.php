@@ -201,20 +201,20 @@ abstract class HttpClientTestCase extends BaseHttpClientTestCase
 
         $client->reset();
 
-        $expected = <<<EOTXT
-            Request: "GET https://127.0.0.1:3000/json"
-            Queueing pushed response: "https://127.0.0.1:3000/json/1"
-            Queueing pushed response: "https://127.0.0.1:3000/json/2"
-            Queueing pushed response: "https://127.0.0.1:3000/json/3"
-            Response: "200 https://127.0.0.1:3000/json" %f seconds
-            Accepting pushed response: "GET https://127.0.0.1:3000/json/1"
-            Response: "200 https://127.0.0.1:3000/json/1" %f seconds
-            Accepting pushed response: "GET https://127.0.0.1:3000/json/2"
-            Response: "200 https://127.0.0.1:3000/json/2" %f seconds
-            Accepting pushed response: "GET https://127.0.0.1:3000/json/3"
-            Response: "200 https://127.0.0.1:3000/json/3" %f seconds
-            EOTXT;
-        $this->assertStringMatchesFormat($expected, implode("\n", $logger->logs));
+        $expected = [
+            'Request: "GET https://127.0.0.1:3000/json"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/1"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/2"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/3"',
+            'Response: "200 https://127.0.0.1:3000/json"',
+            'Accepting pushed response: "GET https://127.0.0.1:3000/json/1"',
+            'Response: "200 https://127.0.0.1:3000/json/1"',
+            'Accepting pushed response: "GET https://127.0.0.1:3000/json/2"',
+            'Response: "200 https://127.0.0.1:3000/json/2"',
+            'Accepting pushed response: "GET https://127.0.0.1:3000/json/3"',
+            'Response: "200 https://127.0.0.1:3000/json/3"',
+        ];
+        $this->assertSame($expected, $logger->logs);
     }
 
     public function testPause()
@@ -289,19 +289,19 @@ abstract class HttpClientTestCase extends BaseHttpClientTestCase
 
         $client->reset();
 
-        $expected = <<<EOTXT
-            Request: "GET https://127.0.0.1:3000/json"
-            Queueing pushed response: "https://127.0.0.1:3000/json/1"
-            Queueing pushed response: "https://127.0.0.1:3000/json/2"
-            Queueing pushed response: "https://127.0.0.1:3000/json/3"
-            Response: "200 https://127.0.0.1:3000/json" %f seconds
-            Accepting pushed response: "GET https://127.0.0.1:3000/json/1"
-            Response: "200 https://127.0.0.1:3000/json/1" %f seconds
-            Accepting pushed response: "GET https://127.0.0.1:3000/json/2"
-            Response: "200 https://127.0.0.1:3000/json/2" %f seconds
-            Unused pushed response: "https://127.0.0.1:3000/json/3"
-            EOTXT;
-        $this->assertStringMatchesFormat($expected, implode("\n", $logger->logs));
+        $expected = [
+            'Request: "GET https://127.0.0.1:3000/json"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/1"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/2"',
+            'Queueing pushed response: "https://127.0.0.1:3000/json/3"',
+            'Response: "200 https://127.0.0.1:3000/json"',
+            'Accepting pushed response: "GET https://127.0.0.1:3000/json/1"',
+            'Response: "200 https://127.0.0.1:3000/json/1"',
+            'Accepting pushed response: "GET https://127.0.0.1:3000/json/2"',
+            'Response: "200 https://127.0.0.1:3000/json/2"',
+            'Unused pushed response: "https://127.0.0.1:3000/json/3"',
+        ];
+        $this->assertSame($expected, $logger->logs);
     }
 
     public function testDnsFailure()
@@ -330,12 +330,7 @@ abstract class HttpClientTestCase extends BaseHttpClientTestCase
             'KEY_FILE' => __DIR__.'/Fixtures/tls/server.key',
             'CERT_FILE' => __DIR__.'/Fixtures/tls/server.crt',
         ]);
-
-        try {
-            $process->start();
-        } catch (ProcessFailedException $e) {
-            self::markTestSkipped('vulcain failed: '.$e->getMessage());
-        }
+        $process->start();
 
         register_shutdown_function($process->stop(...));
         sleep('\\' === \DIRECTORY_SEPARATOR ? 10 : 1);
@@ -445,7 +440,7 @@ abstract class HttpClientTestCase extends BaseHttpClientTestCase
         ]);
 
         $this->assertSame(200, $response->getStatusCode());
-        $this->assertStringContainsStringIgnoringCase("\r\nContent-Length: ", $response->getInfo('debug'));
+        $this->assertStringContainsString("\r\nContent-Length: ", $response->getInfo('debug'));
     }
 
     public function testNullBody()
@@ -712,25 +707,5 @@ abstract class HttpClientTestCase extends BaseHttpClientTestCase
         $stream->current();
 
         $this->addToAssertionCount(1);
-    }
-
-    public function testUnixSocket()
-    {
-        if (!file_exists('/var/run/docker.sock')) {
-            $this->markTestSkipped('Docker socket not found.');
-        }
-
-        $client = $this->getHttpClient(__FUNCTION__)
-            ->withOptions([
-                'base_uri' => 'http://docker',
-                'bindto' => '/run/docker.sock',
-            ]);
-
-        $response = $client->request('GET', '/info');
-
-        $this->assertSame(200, $response->getStatusCode());
-
-        $info = $response->getInfo();
-        $this->assertSame('/run/docker.sock', $info['primary_ip']);
     }
 }

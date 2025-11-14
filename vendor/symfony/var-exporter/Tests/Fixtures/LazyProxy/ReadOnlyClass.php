@@ -11,10 +11,10 @@
 
 namespace Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy;
 
-abstract readonly class ReadOnlyClass
+readonly class ReadOnlyClass
 {
     public function __construct(
-        public int $foo,
+        public int $foo
     ) {
     }
 }

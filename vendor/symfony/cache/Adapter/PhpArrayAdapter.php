@@ -35,6 +35,7 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     use ContractsTrait;
     use ProxyTrait;
 
+    private string $file;
     private array $keys;
     private array $values;
 
@@ -42,13 +43,12 @@ class PhpArrayAdapter implements AdapterInterface, CacheInterface, PruneableInte
     private static array $valuesCache = [];
 
     /**
-     * @param string           $file         The PHP file where values are cached
+     * @param string           $file         The PHP file were values are cached
      * @param AdapterInterface $fallbackPool A pool to fallback on when an item is not hit
      */
-    public function __construct(
-        private string $file,
-        AdapterInterface $fallbackPool,
-    ) {
+    public function __construct(string $file, AdapterInterface $fallbackPool)
+    {
+        $this->file = $file;
         $this->pool = $fallbackPool;
         self::$createCacheItem ??= \Closure::bind(
             static function ($key, $value, $isHit) {
@@ -320,7 +320,7 @@ EOF;
 
         $dump .= "\n], [\n\n{$dumpedValues}\n]];\n";
 
-        $tmpFile = tempnam(\dirname($this->file), basename($this->file));
+        $tmpFile = uniqid($this->file, true);
 
         file_put_contents($tmpFile, $dump);
         @chmod($tmpFile, 0666 & ~umask());
