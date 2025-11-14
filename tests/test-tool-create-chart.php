@@ -312,6 +312,36 @@ class WP_MCP_AI_Tool_Create_Chart_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test tool rules for orchestration.
+	 */
+	public function test_tool_rules() {
+		$rules = $this->tool->get_tool_rules();
+
+		$this->assertIsArray( $rules );
+		$this->assertArrayHasKey( 'parameter_constraints', $rules );
+		$this->assertArrayHasKey( 'timeout_constraints', $rules );
+		$this->assertArrayHasKey( 'response_constraints', $rules );
+		$this->assertArrayHasKey( 'dependencies', $rules );
+		$this->assertArrayHasKey( 'orchestration_hints', $rules );
+		$this->assertArrayHasKey( 'resource_usage', $rules );
+
+		// Check parameter constraints.
+		$this->assertEquals( array( 'type', 'data' ), $rules['parameter_constraints']['required_fields'] );
+		$this->assertEquals( 10, $rules['parameter_constraints']['max_datasets'] );
+		$this->assertEquals( 1000, $rules['parameter_constraints']['max_data_points'] );
+
+		// Check orchestration hints.
+		$this->assertTrue( $rules['orchestration_hints']['can_run_parallel'] );
+		$this->assertFalse( $rules['orchestration_hints']['requires_lock'] );
+		$this->assertTrue( $rules['orchestration_hints']['idempotent'] );
+
+		// Check resource usage.
+		$this->assertFalse( $rules['resource_usage']['memory_intensive'] );
+		$this->assertFalse( $rules['resource_usage']['cpu_intensive'] );
+		$this->assertFalse( $rules['resource_usage']['io_intensive'] );
+	}
+
+	/**
 	 * Test shortcut tasks.
 	 */
 	public function test_shortcut_tasks() {

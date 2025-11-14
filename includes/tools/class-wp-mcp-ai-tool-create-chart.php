@@ -20,7 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
  * - Rendering Layer: Generates Chart.js configuration and HTML
  * - Storage Layer: Optionally saves chart as HTML file attachment
  */
-class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	const CHARTJS_VERSION = '4.4.0';
 	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
@@ -622,6 +622,52 @@ HTML;
 			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
 			'external-api',    // Loads Chart.js from CDN.
 			'network-dependent', // Requires internet for Chart.js CDN.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_tool_rules() {
+		return array(
+			'parameter_constraints' => array(
+				'required_fields'  => array( 'type', 'data' ),
+				'optional_fields'  => array( 'options', 'title', 'width', 'height', 'save_as_attachment', 'file_name' ),
+				'max_datasets'     => 10,  // Maximum datasets per chart.
+				'max_data_points'  => 1000, // Maximum data points per dataset.
+			),
+			'timeout_constraints'   => array(
+				'recommended_timeout' => 30,  // Chart generation is fast.
+				'max_execution_time'  => 60,  // Maximum time for file operations.
+			),
+			'response_constraints'  => array(
+				'max_size'           => 2097152, // 2MB max HTML size.
+				'supports_streaming' => false,
+				'supports_pagination' => false,
+			),
+			'dependencies'          => array(
+				'required_extensions' => array(), // No PHP extensions required.
+				'external_services'   => array(
+					'chartjs_cdn' => array(
+						'url'      => self::CHARTJS_CDN_URL,
+						'required' => true,
+						'purpose'  => 'Chart.js library loading',
+					),
+				),
+			),
+			'orchestration_hints'   => array(
+				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.
+				'requires_lock'    => false,  // No exclusive resources needed.
+				'cache_ttl'        => 0,      // Don't cache - each chart is unique.
+				'retry_strategy'   => 'simple', // Simple retry on failure.
+				'max_retries'      => 2,
+				'idempotent'       => true,   // Same input always produces same output.
+			),
+			'resource_usage'        => array(
+				'memory_intensive' => false,  // Minimal memory usage.
+				'cpu_intensive'    => false,  // Minimal CPU usage.
+				'io_intensive'     => false,  // Only I/O when saving attachment.
+			),
 		);
 	}
 }
