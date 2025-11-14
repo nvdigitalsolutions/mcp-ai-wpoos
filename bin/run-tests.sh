@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Set WordPress core directory
-export WP_CORE_DIR="/tmp/wordpress-core/wordpress"
+export WP_CORE_DIR="/tmp/wordpress"
 
 # Check if WordPress core exists
 if [ ! -f "$WP_CORE_DIR/wp-settings.php" ]; then
