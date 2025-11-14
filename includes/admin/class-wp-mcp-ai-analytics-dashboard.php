@@ -143,10 +143,18 @@ class WP_MCP_AI_Analytics_Dashboard {
 		// Get current usage stats.
 		$current_stats = self::get_current_usage_stats();
 
+		// Get gauge chart data for current usage percentage.
+		$gauge_data = WP_MCP_AI_Chart_JS_Helper::get_usage_gauge_data(
+			array(
+				'user_id' => 0, // Site-wide.
+			)
+		);
+
 		return array(
 			'trend'         => $trend_data,
 			'tiers'         => $tier_data,
 			'current_stats' => $current_stats,
+			'gauge'         => $gauge_data,
 		);
 	}
 

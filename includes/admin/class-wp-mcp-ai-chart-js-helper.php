@@ -608,6 +608,133 @@ class WP_MCP_AI_Chart_JS_Helper {
 			),
 		);
 	}
+
+	/**
+	 * Get gauge chart data for current usage percentage.
+	 *
+	 * Returns data showing current usage vs limit for a user or site-wide.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array Chart data in Chart.js format.
+	 */
+	public static function get_usage_gauge_data( $args = array() ) {
+		$defaults = array(
+			'user_id' => 0, // 0 for site-wide.
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$total_usage = 0;
+		$total_limit = 0;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			return array(
+				'percentage' => 0,
+				'usage'      => 0,
+				'limit'      => 0,
+				'label'      => __( 'Usage', 'wp-mcp-ai' ),
+			);
+		}
+
+		// Determine which users to query.
+		$user_ids = array();
+
+		if ( ! empty( $args['user_id'] ) ) {
+			$user_ids = array( absint( $args['user_id'] ) );
+		} else {
+			// Get all users for site-wide calculation.
+			$user_ids = get_users( array( 'fields' => 'ID' ) );
+		}
+
+		// Calculate total usage and limits.
+		foreach ( $user_ids as $user_id ) {
+			// Get today's usage.
+			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+
+			if ( ! empty( $usage ) && is_array( $usage ) ) {
+				$today = gmdate( 'Y-m-d' );
+
+				foreach ( $usage as $tool_slug => $tool_data ) {
+					if ( isset( $tool_data['daily'] ) && is_array( $tool_data['daily'] ) && isset( $tool_data['daily'][ $today ] ) ) {
+						$total_usage += absint( $tool_data['daily'][ $today ] );
+					}
+				}
+			}
+
+			// Get user's tier limit.
+			$user_tier = WP_MCP_AI_Tool_Token_Limits::get_user_tier( $user_id );
+			$tier_info = WP_MCP_AI_Tool_Token_Limits::get_tier_info( $user_tier );
+
+			if ( isset( $tier_info['daily_limit'] ) ) {
+				$total_limit += absint( $tier_info['daily_limit'] );
+			}
+		}
+
+		// Calculate percentage.
+		$percentage = 0;
+		if ( $total_limit > 0 ) {
+			$percentage = min( 100, ( $total_usage / $total_limit ) * 100 );
+		}
+
+		// Determine color based on usage percentage.
+		$color = 'rgba(75, 192, 192, 1)'; // Green (default).
+		if ( $percentage >= 90 ) {
+			$color = 'rgba(255, 99, 132, 1)'; // Red.
+		} elseif ( $percentage >= 75 ) {
+			$color = 'rgba(255, 159, 64, 1)'; // Orange.
+		} elseif ( $percentage >= 50 ) {
+			$color = 'rgba(255, 205, 86, 1)'; // Yellow.
+		}
+
+		return array(
+			'percentage' => round( $percentage, 1 ),
+			'usage'      => $total_usage,
+			'limit'      => $total_limit,
+			'label'      => __( 'Current Usage', 'wp-mcp-ai' ),
+			'color'      => $color,
+			'datasets'   => array(
+				array(
+					'data'            => array( round( $percentage, 1 ), 100 - round( $percentage, 1 ) ),
+					'backgroundColor' => array( $color, 'rgba(201, 203, 207, 0.2)' ),
+					'borderWidth'     => 0,
+					'circumference'   => 180,
+					'rotation'        => 270,
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get chart configuration for gauge chart.
+	 *
+	 * Returns Chart.js configuration object for doughnut gauge chart.
+	 *
+	 * @return array Chart.js config.
+	 */
+	public static function get_usage_gauge_config() {
+		return array(
+			'type'    => 'doughnut',
+			'options' => array(
+				'responsive'          => true,
+				'maintainAspectRatio' => false,
+				'circumference'       => 180,
+				'rotation'            => 270,
+				'cutout'              => '75%',
+				'plugins'             => array(
+					'legend'  => array(
+						'display' => false,
+					),
+					'tooltip' => array(
+						'enabled' => false,
+					),
+					'title'   => array(
+						'display' => true,
+						'text'    => __( 'Token Usage', 'wp-mcp-ai' ),
+					),
+				),
+			),
+		);
+	}
 }
 
 // Initialize the helper.
