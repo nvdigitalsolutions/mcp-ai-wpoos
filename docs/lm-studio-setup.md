@@ -187,6 +187,31 @@ The plugin uses these LM Studio endpoints:
 3. Network latency (remote setup)
    - **Solution:** Use local setup or faster network connection
 
+### "WordPress timed out waiting for a response" Error
+
+**Since version X.X.X**, the plugin automatically uses a **120-second minimum timeout** for LM Studio requests.
+
+**Why this matters:**
+- Local AI models are much slower than cloud APIs
+- Complex queries can take 60-120+ seconds to generate responses
+- The plugin no longer caps timeouts at PHP's `max_execution_time` setting for external HTTP requests
+
+**If you still get timeout errors:**
+1. **Increase the custom timeout** in **Settings → WP oOS → Request Timeout**
+   - Set to 180 or 240 seconds for complex queries
+   - This overrides the default 120-second minimum
+
+2. **Use a smaller/faster model**
+   - 7B models respond faster than 70B models
+   - Quantized models (Q4, Q5) are faster than full-precision
+
+3. **Enable GPU acceleration** in LM Studio
+   - CPU-only inference is significantly slower
+
+4. **Simplify your prompts**
+   - Shorter prompts = faster responses
+   - Break complex requests into smaller parts
+
 ## Performance Tips
 
 1. **Use GPU Acceleration**

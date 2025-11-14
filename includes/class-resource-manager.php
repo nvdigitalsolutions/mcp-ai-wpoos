@@ -189,9 +189,11 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 		/**
 		 * Get the recommended request timeout based on the current workload tier.
 		 *
+		 * @param bool $ignore_execution_time Whether to ignore max_execution_time constraint.
+		 *                                    Set to true for external HTTP requests to local AI providers.
 		 * @return int Recommended timeout in seconds.
 		 */
-		public function get_request_timeout() {
+		public function get_request_timeout( $ignore_execution_time = false ) {
 			$tier               = $this->get_workload_tier();
 			$max_execution_time = $this->get_max_execution_time();
 
@@ -203,9 +205,15 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 
 			$base_timeout = isset( $timeout_map[ $tier ] ) ? $timeout_map[ $tier ] : 60;
 
-			// Ensure timeout doesn't exceed max_execution_time minus a buffer.
-			$max_allowed_timeout = max( 5, $max_execution_time - 5 );
-			$timeout             = min( $base_timeout, $max_allowed_timeout );
+			// For external HTTP requests (e.g., to local AI providers), we can ignore
+			// max_execution_time since the HTTP API handles the wait without consuming PHP time.
+			if ( ! $ignore_execution_time ) {
+				// Ensure timeout doesn't exceed max_execution_time minus a buffer.
+				$max_allowed_timeout = max( 5, $max_execution_time - 5 );
+				$timeout             = min( $base_timeout, $max_allowed_timeout );
+			} else {
+				$timeout = $base_timeout;
+			}
 
 			/**
 			 * Filter the recommended request timeout.
@@ -213,8 +221,9 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 			 * @param int    $timeout             The recommended timeout in seconds.
 			 * @param string $tier                The current workload tier.
 			 * @param int    $max_execution_time  The PHP max_execution_time setting.
+			 * @param bool   $ignore_execution_time Whether execution time constraint was ignored.
 			 */
-			return apply_filters( 'wp_mcp_ai_resource_request_timeout', $timeout, $tier, $max_execution_time );
+			return apply_filters( 'wp_mcp_ai_resource_request_timeout', $timeout, $tier, $max_execution_time, $ignore_execution_time );
 		}
 
 		/**
