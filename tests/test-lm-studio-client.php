@@ -520,4 +520,68 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	/**
+	 * Test that chat completions use a minimum timeout of 120 seconds.
+	 */
+	public function test_chat_completion_uses_minimum_120_second_timeout() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_args = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_args ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/chat/completions' ) !== false ) {
+					$captured_args = $args;
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'chatcmpl-123',
+								'object'  => 'chat.completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'index'         => 0,
+										'message'       => array(
+											'role'    => 'assistant',
+											'content' => 'Test response',
+										),
+										'finish_reason' => 'stop',
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify timeout is at least 120 seconds for chat completions.
+		$this->assertNotNull( $captured_args, 'Request args should be captured' );
+		$this->assertArrayHasKey( 'timeout', $captured_args );
+		$this->assertGreaterThanOrEqual( 120, $captured_args['timeout'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }

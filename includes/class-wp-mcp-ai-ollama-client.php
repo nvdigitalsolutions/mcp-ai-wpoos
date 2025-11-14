@@ -114,7 +114,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				array(
 					'headers' => array( 'Content-Type' => 'application/json' ),
 					'body'    => wp_json_encode( $payload ),
-					'timeout' => $this->resolve_timeout( $options ),
+					// Use higher minimum timeout for local AI models which need more time to generate responses.
+					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 				)
 			);
 
@@ -226,7 +227,9 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 		protected function resolve_timeout( array $options ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			// Use ignore_execution_time=true for local AI providers since these are external
+			// HTTP requests that don't consume PHP execution time while waiting.
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );
 			}
@@ -329,7 +332,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				array(
 					'headers' => array( 'Content-Type' => 'application/json' ),
 					'body'    => wp_json_encode( $payload ),
-					'timeout' => $this->resolve_timeout( $options ),
+					// Use higher minimum timeout for local AI models which need more time to generate responses.
+					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 				)
 			);
 

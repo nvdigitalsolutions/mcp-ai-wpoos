@@ -397,4 +397,57 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'model', $payload );
 		$this->assertSame( 'codellama', $payload['model'] );
 	}
+
+	/**
+	 * Ensure chat completions use a minimum timeout of 120 seconds.
+	 */
+	public function test_chat_completion_uses_minimum_120_second_timeout() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client        = new WP_MCP_AI_Ollama_Client();
+		$captured_args = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_args ) {
+			$captured_args = $args;
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'llama2',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Test response',
+						),
+						'done'    => true,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		// Verify timeout is at least 120 seconds for chat completions.
+		$this->assertNotNull( $captured_args );
+		$this->assertArrayHasKey( 'timeout', $captured_args );
+		$this->assertGreaterThanOrEqual( 120, $captured_args['timeout'] );
+	}
 }

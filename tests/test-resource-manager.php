@@ -155,11 +155,11 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		add_filter(
 			'wp_mcp_ai_resource_request_timeout',
-			function ( $timeout, $tier, $max_execution_time ) {
+			function ( $timeout, $tier, $max_execution_time, $ignore_execution_time ) {
 				return 90;
 			},
 			10,
-			3
+			4
 		);
 
 		$timeout = $manager->get_request_timeout();
@@ -167,5 +167,28 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		$this->assertSame( 90, $timeout );
 
 		remove_all_filters( 'wp_mcp_ai_resource_request_timeout' );
+	}
+
+	/**
+	 * Test that get_request_timeout respects ignore_execution_time parameter.
+	 */
+	public function test_get_request_timeout_ignores_execution_time_when_requested() {
+		$manager = WP_MCP_AI_Resource_Manager::instance();
+
+		// Get timeout with execution time constraint (default).
+		$timeout_with_constraint = $manager->get_request_timeout( false );
+
+		// Get timeout without execution time constraint.
+		$timeout_without_constraint = $manager->get_request_timeout( true );
+
+		// Both should be integers and at least 5 seconds.
+		$this->assertIsInt( $timeout_with_constraint );
+		$this->assertIsInt( $timeout_without_constraint );
+		$this->assertGreaterThanOrEqual( 5, $timeout_with_constraint );
+		$this->assertGreaterThanOrEqual( 5, $timeout_without_constraint );
+
+		// When ignoring execution time, timeout should not be capped by max_execution_time.
+		// It should match the base timeout for the tier (30, 60, or 120).
+		$this->assertContains( $timeout_without_constraint, array( 30, 60, 120 ) );
 	}
 }
