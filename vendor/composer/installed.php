@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
+        'pretty_version' => 'dev-copilot/fix-lm-studio-connection-error',
+        'version' => 'dev-copilot/fix-lm-studio-connection-error',
+        'reference' => '57b02e94f7068815129180e360524cfa1e0cab6c',
         'pretty_version' => 'dev-copilot/next-steps-for-bug-report',
         'version' => 'dev-copilot/next-steps-for-bug-report',
         'reference' => '7b38b8d35f84ac48b88469002e5bc4dae241015b',
@@ -587,6 +590,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
+            'pretty_version' => 'dev-copilot/fix-lm-studio-connection-error',
+            'version' => 'dev-copilot/fix-lm-studio-connection-error',
+            'reference' => '57b02e94f7068815129180e360524cfa1e0cab6c',
             'pretty_version' => 'dev-copilot/next-steps-for-bug-report',
             'version' => 'dev-copilot/next-steps-for-bug-report',
             'reference' => '7b38b8d35f84ac48b88469002e5bc4dae241015b',
