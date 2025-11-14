@@ -12,7 +12,7 @@
 namespace Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy;
 
 #[\AllowDynamicProperties]
-class TestClass extends \stdClass
+class TestClass
 {
     public function __construct(
         protected \stdClass $dep,

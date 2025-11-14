@@ -15,13 +15,12 @@ use Doctrine\DBAL\Configuration;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver\AbstractMySQLDriver;
 use Doctrine\DBAL\Driver\Middleware;
-use Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\DefaultSchemaManagerFactory;
 use Doctrine\DBAL\Schema\Schema;
-use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\DoctrineDbalAdapter;
+use Symfony\Component\Cache\Tests\Fixtures\DriverWrapper;
 
 /**
  * @requires extension pdo_sqlite
@@ -61,7 +60,7 @@ class DoctrineDbalAdapterTest extends AdapterTestCase
         $middleware = $this->createMock(Middleware::class);
         $middleware
             ->method('wrap')
-            ->willReturn(new class($connection->getDriver()) extends AbstractDriverMiddleware {});
+            ->willReturn(new DriverWrapper($connection->getDriver()));
 
         $config = $this->getDbalConfig();
         $config->setMiddlewares([$middleware]);
@@ -117,7 +116,7 @@ class DoctrineDbalAdapterTest extends AdapterTestCase
         $adapter = new DoctrineDbalAdapter($connection);
         $adapter->configureSchema($schema, $connection, fn () => true);
         $table = $schema->getTable('cache_items');
-        $this->assertSame([], $table->getColumns(), 'The table was not overwritten');
+        $this->assertEmpty($table->getColumns(), 'The table was not overwritten');
     }
 
     /**
@@ -181,7 +180,7 @@ class DoctrineDbalAdapterTest extends AdapterTestCase
         return 1 !== (int) $result->fetchOne();
     }
 
-    private function createConnectionMock(): Connection&MockObject
+    private function createConnectionMock()
     {
         $connection = $this->createMock(Connection::class);
         $driver = $this->createMock(AbstractMySQLDriver::class);
@@ -192,10 +191,12 @@ class DoctrineDbalAdapterTest extends AdapterTestCase
         return $connection;
     }
 
-    private function getDbalConfig(): Configuration
+    private function getDbalConfig()
     {
         $config = new Configuration();
-        $config->setSchemaManagerFactory(new DefaultSchemaManagerFactory());
+        if (class_exists(DefaultSchemaManagerFactory::class)) {
+            $config->setSchemaManagerFactory(new DefaultSchemaManagerFactory());
+        }
 
         return $config;
     }

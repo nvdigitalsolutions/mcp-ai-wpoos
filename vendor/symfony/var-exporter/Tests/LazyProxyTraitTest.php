@@ -16,11 +16,10 @@ use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactory;
 use Symfony\Component\Serializer\Mapping\Loader\AttributeLoader;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\VarExporter\Exception\LogicException;
+use Symfony\Component\VarExporter\LazyProxyTrait;
 use Symfony\Component\VarExporter\ProxyHelper;
-use Symfony\Component\VarExporter\Tests\Fixtures\LazyGhost\RegularClass;
 use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\AbstractHooked;
 use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\AsymmetricVisibility;
-use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\ConcreteReadOnlyClass;
 use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\FinalPublicClass;
 use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\Hooked;
 use Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\ReadOnlyClass;
@@ -51,9 +50,6 @@ try {
     restore_error_handler();
 }
 
-/**
- * @requires PHP 8.4
- */
 class LazyProxyTraitTest extends TestCase
 {
     public function testGetter()
@@ -111,15 +107,15 @@ class LazyProxyTraitTest extends TestCase
         });
 
         $clone = clone $proxy;
-        $this->assertSame(\PHP_VERSION_ID >= 80400 ? 1 : 0, $initCounter);
+        $this->assertSame(0, $initCounter);
 
         $dep1 = $proxy->getDep();
-        $this->assertSame(\PHP_VERSION_ID >= 80400 ? 1 : 1, $initCounter);
+        $this->assertSame(1, $initCounter);
 
         $dep2 = $clone->getDep();
-        $this->assertSame(\PHP_VERSION_ID >= 80400 ? 1 : 2, $initCounter);
+        $this->assertSame(2, $initCounter);
 
-        $this->assertSame(\PHP_VERSION_ID >= 80400, $dep1 === $dep2);
+        $this->assertNotSame($dep1, $dep2);
     }
 
     public function testUnserialize()
@@ -215,19 +211,24 @@ class LazyProxyTraitTest extends TestCase
 
     public function testFinalPublicClass()
     {
-        $this->expectException(LogicException::class, 'Cannot generate lazy proxy: method "Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\FinalPublicClass::increment()" is final.');
-        $this->createLazyProxy(FinalPublicClass::class, fn () => new FinalPublicClass());
+        $proxy = $this->createLazyProxy(FinalPublicClass::class, fn () => new FinalPublicClass());
+
+        $this->assertSame(1, $proxy->increment());
+        $this->assertSame(2, $proxy->increment());
+        $this->assertSame(1, $proxy->decrement());
     }
 
     public function testOverwritePropClass()
     {
-        $this->expectException(LogicException::class, 'Cannot generate lazy proxy: method "Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\FinalPublicClass::increment()" is final.');
-        $this->createLazyProxy(TestOverwritePropClass::class, fn () => new TestOverwritePropClass('123', 5));
+        $proxy = $this->createLazyProxy(TestOverwritePropClass::class, fn () => new TestOverwritePropClass('123', 5));
+
+        $this->assertSame('123', $proxy->getDep());
+        $this->assertSame(1, $proxy->increment());
     }
 
     public function testWither()
     {
-        $obj = new class extends \stdClass {
+        $obj = new class {
             public $foo = 123;
 
             public function withFoo($foo): static
@@ -243,12 +244,12 @@ class LazyProxyTraitTest extends TestCase
         $clone = $proxy->withFoo(234);
         $this->assertSame($clone::class, $proxy::class);
         $this->assertSame(234, $clone->foo);
-        $this->assertSame(\PHP_VERSION_ID >= 80400 ? 123 : 234, $obj->foo);
+        $this->assertSame(234, $obj->foo);
     }
 
     public function testFluent()
     {
-        $obj = new class extends \stdClass {
+        $obj = new class {
             public $foo = 123;
 
             public function setFoo($foo): static
@@ -266,7 +267,7 @@ class LazyProxyTraitTest extends TestCase
 
     public function testIndirectModification()
     {
-        $obj = new class extends \stdClass {
+        $obj = new class {
             public array $foo;
         };
         $proxy = $this->createLazyProxy($obj::class, fn () => $obj);
@@ -276,6 +277,9 @@ class LazyProxyTraitTest extends TestCase
         $this->assertSame([123], $proxy->foo);
     }
 
+    /**
+     * @requires PHP 8.2
+     */
     public function testReadOnlyClass()
     {
         if (\PHP_VERSION_ID < 80300) {
@@ -283,9 +287,25 @@ class LazyProxyTraitTest extends TestCase
             $this->expectExceptionMessage('Cannot generate lazy proxy with PHP < 8.3: class "Symfony\Component\VarExporter\Tests\Fixtures\LazyProxy\ReadOnlyClass" is readonly.');
         }
 
-        $proxy = $this->createLazyProxy(ReadOnlyClass::class, fn () => new ConcreteReadOnlyClass(123));
+        $proxy = $this->createLazyProxy(ReadOnlyClass::class, fn () => new ReadOnlyClass(123));
 
         $this->assertSame(123, $proxy->foo);
+    }
+
+    public function testLazyDecoratorClass()
+    {
+        $obj = new class extends TestClass {
+            use LazyProxyTrait {
+                createLazyProxy as private;
+            }
+
+            public function __construct()
+            {
+                self::createLazyProxy(fn () => new TestClass((object) ['foo' => 123]), $this);
+            }
+        };
+
+        $this->assertSame(['foo' => 123], (array) $obj->getDep());
     }
 
     public function testNormalization()
@@ -301,31 +321,6 @@ class LazyProxyTraitTest extends TestCase
         $this->assertSame(['property' => 'property', 'method' => 'method'], $output);
     }
 
-    public function testReinitRegularLazyProxy()
-    {
-        $object = $this->createLazyProxy(RegularClass::class, fn () => new RegularClass(123));
-
-        $this->assertSame(123, $object->foo);
-
-        $object::createLazyProxy(fn () => new RegularClass(234), $object);
-
-        $this->assertSame(234, $object->foo);
-    }
-
-    /**
-     * @requires PHP 8.3
-     */
-    public function testReinitReadonlyLazyProxy()
-    {
-        $object = $this->createLazyProxy(ReadOnlyClass::class, fn () => new ConcreteReadOnlyClass(123));
-
-        $this->assertSame(123, $object->foo);
-
-        $object::createLazyProxy(fn () => new ConcreteReadOnlyClass(234), $object);
-
-        $this->assertSame(234, $object->foo);
-    }
-
     /**
      * @requires PHP 8.4
      */
@@ -339,7 +334,7 @@ class LazyProxyTraitTest extends TestCase
         });
 
         $this->assertSame(123, $object->notBacked);
-        $this->assertTrue($initialized);
+        $this->assertFalse($initialized);
         $this->assertSame(234, $object->backed);
         $this->assertTrue($initialized);
 
@@ -409,20 +404,6 @@ class LazyProxyTraitTest extends TestCase
         $this->assertSame(123, $object->foo);
     }
 
-    public function testInternalClass()
-    {
-        $now = new \DateTimeImmutable();
-        $initialized = false;
-        $object = $this->createLazyProxy(\DateTimeImmutable::class, function () use ($now, &$initialized) {
-            $initialized = true;
-
-            return $now;
-        });
-
-        $this->assertSame(date('Y'), $object->format('Y'));
-        $this->assertTrue($initialized);
-    }
-
     /**
      * @template T
      *
@@ -430,7 +411,7 @@ class LazyProxyTraitTest extends TestCase
      *
      * @return T
      */
-    protected function createLazyProxy(string $class, \Closure $initializer): object
+    private function createLazyProxy(string $class, \Closure $initializer): object
     {
         $r = new \ReflectionClass($class);
 
@@ -442,7 +423,7 @@ class LazyProxyTraitTest extends TestCase
         $class = str_replace('\\', '_', $class).'_'.md5($proxy);
 
         if (!class_exists($class, false)) {
-            eval(($r->isReadOnly() ? 'readonly ' : '').'class '.$class.' '.$proxy);
+            eval((\PHP_VERSION_ID >= 80200 && $r->isReadOnly() ? 'readonly ' : '').'class '.$class.' '.$proxy);
         }
 
         return $class::createLazyProxy($initializer);

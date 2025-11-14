@@ -41,10 +41,11 @@ class AsyncDecoratorTraitTest extends NativeHttpClientTest
         return new class($decoratedClient ?? parent::getHttpClient($testCase), $chunkFilter) implements HttpClientInterface {
             use AsyncDecoratorTrait;
 
-            public function __construct(
-                HttpClientInterface $client,
-                private ?\Closure $chunkFilter = null,
-            ) {
+            private ?\Closure $chunkFilter;
+
+            public function __construct(HttpClientInterface $client, ?\Closure $chunkFilter = null)
+            {
+                $this->chunkFilter = $chunkFilter;
                 $this->client = $client;
             }
 

@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0
+class ComposerStaticInit6b0c7e545818eb04ed2fbae7f8aaaf3a
 {
     public static $files = array (
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
@@ -843,7 +843,6 @@ class ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0
         'TheSeer\\Tokenizer\\NamespaceUriException' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUriException.php',
         'TheSeer\\Tokenizer\\Token' => __DIR__ . '/..' . '/theseer/tokenizer/src/Token.php',
         'TheSeer\\Tokenizer\\TokenCollection' => __DIR__ . '/..' . '/theseer/tokenizer/src/TokenCollection.php',
-        'TheSeer\\Tokenizer\\TokenCollectionException' => __DIR__ . '/..' . '/theseer/tokenizer/src/TokenCollectionException.php',
         'TheSeer\\Tokenizer\\Tokenizer' => __DIR__ . '/..' . '/theseer/tokenizer/src/Tokenizer.php',
         'TheSeer\\Tokenizer\\XMLSerializer' => __DIR__ . '/..' . '/theseer/tokenizer/src/XMLSerializer.php',
         '©' => __DIR__ . '/..' . '/symfony/cache/Traits/ValueWrapper.php',
@@ -852,9 +851,9 @@ class ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInitd4ae525eb5b96d5849545a1faa8ad4a0::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit6b0c7e545818eb04ed2fbae7f8aaaf3a::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit6b0c7e545818eb04ed2fbae7f8aaaf3a::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit6b0c7e545818eb04ed2fbae7f8aaaf3a::$classMap;
 
         }, null, ClassLoader::class);
     }

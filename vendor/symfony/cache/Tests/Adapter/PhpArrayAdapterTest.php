@@ -58,8 +58,6 @@ class PhpArrayAdapterTest extends AdapterTestCase
 
         'testDefaultLifeTime' => 'PhpArrayAdapter does not allow configuring a default lifetime.',
         'testPrune' => 'PhpArrayAdapter just proxies',
-
-        'testNamespaces' => 'PhpArrayAdapter does not support namespaces.',
     ];
 
     protected static string $file;
