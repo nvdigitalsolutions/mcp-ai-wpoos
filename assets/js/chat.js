@@ -7344,10 +7344,6 @@
             return false;
         }
 
-        if (role !== 'tool') {
-            return false;
-        }
-
         return isLikelyJson(text);
     }
 
