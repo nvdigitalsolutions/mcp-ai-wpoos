@@ -45,11 +45,13 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * Register MCP protocol routes.
 	 */
 	public function register_routes() {
-		// /mcp - JSON-RPC 2.0 MCP protocol endpoint.
+		// /mcp - JSON-RPC 2.0 MCP protocol endpoint with SSE support.
+		// Implements MCP 2024-11-05 specification with Streamable HTTP transport.
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/mcp',
 			array(
+				// POST - JSON-RPC 2.0 requests.
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'permission_callback' => array( $this, 'permissions_check_mcp' ),
@@ -92,6 +94,21 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 						),
 					),
 				),
+				// GET - SSE discovery and Streamable HTTP transport (MCP 2024-11-05).
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_mcp_get_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'Optional assistant ID for SSE stream.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				// OPTIONS - CORS preflight.
 				array(
 					'methods'             => 'OPTIONS',
 					'permission_callback' => '__return_true',
@@ -101,46 +118,26 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			true
 		);
 
-		// /sse - Server-Sent Events streaming endpoint.
-		// GET is standard, POST is optional for LM Studio compatibility.
-		$sse_handlers = array(
+		// /no-sse - Legacy endpoint for clients that don't support SSE.
+		// Since GET /mcp now defaults to SSE, this endpoint provides non-SSE access.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/no-sse',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'permission_callback' => array( $this, 'permissions_check' ),
-				'callback'            => array( $this, 'handle_sse_handshake' ),
-				'args'                => array(
-					'assistant_id' => array(
-						'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
-						'type'              => 'integer',
-						'required'          => false,
-						'sanitize_callback' => 'absint',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_no_sse_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant for directory listing.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
 					),
 				),
 			),
-		);
-
-		// Add POST support if enabled in settings (non-standard, for LM Studio bugs).
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
-		if ( ! empty( $settings['sse_enable_post_method'] ) ) {
-			$sse_handlers[] = array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'permission_callback' => array( $this, 'permissions_check' ),
-				'callback'            => array( $this, 'handle_sse_handshake' ),
-				'args'                => array(
-					'assistant_id' => array(
-						'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
-						'type'              => 'integer',
-						'required'          => false,
-						'sanitize_callback' => 'absint',
-					),
-				),
-			);
-		}
-
-		register_rest_route(
-			self::REST_NAMESPACE,
-			'/sse',
-			$sse_handlers,
 			true
 		);
 
@@ -236,7 +233,21 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
-	 * Handle SSE (Server-Sent Events) handshake.
+	 * Handle no-sse endpoint (non-SSE assistant directory).
+	 *
+	 * Since GET /mcp now defaults to SSE, this endpoint provides
+	 * a way to get assistant directory without SSE streaming.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_no_sse_request( WP_REST_Request $request ) {
+		// Return assistant directory as JSON (no SSE).
+		return $this->handle_assistants_index( $request );
+	}
+
+	/**
+	 * Handle SSE handshake (kept for internal use).
 	 *
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return WP_REST_Response|WP_Error
@@ -255,5 +266,120 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	public function handle_assistants_index( WP_REST_Request $request ) {
 		// Delegate to main controller.
 		return $this->main_controller->handle_assistants_index( $request );
+	}
+
+	/**
+	 * Handle GET requests to /mcp endpoint.
+	 *
+	 * Implements SSE as the default transport per MCP 2024-11-05 Streamable HTTP.
+	 * This allows MCP clients (like LM Studio) to establish SSE connections directly
+	 * to the /mcp endpoint instead of requiring a separate /sse endpoint.
+	 *
+	 * SSE is the default behavior. Discovery JSON is only returned if explicitly
+	 * requested via the 'discovery' query parameter.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_mcp_get_request( WP_REST_Request $request ) {
+		// Check if client explicitly requested discovery info.
+		$wants_discovery = $request->get_param( 'discovery' ) === 'true' || $request->get_param( 'discovery' ) === '1';
+
+		// Check Accept header - if client explicitly rejects SSE, show discovery.
+		$accept_header = $request->get_header( 'Accept' );
+		if ( $accept_header && false !== strpos( $accept_header, 'application/json' ) && false === strpos( $accept_header, 'text/event-stream' ) ) {
+			$wants_discovery = true;
+		}
+
+		if ( $wants_discovery ) {
+			// Client explicitly wants discovery info - return JSON.
+			return $this->return_discovery_info( $request );
+		}
+
+		// Default behavior: Establish SSE connection.
+		// This is the recommended transport per MCP 2024-11-05.
+		return $this->handle_sse_handshake( $request );
+	}
+
+	/**
+	 * Return MCP endpoint discovery information.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response
+	 */
+	protected function return_discovery_info( WP_REST_Request $request ) {
+		// Return MCP endpoint discovery information.
+		$response_data = array(
+			'name'            => 'WP oOS MCP Server',
+			'version'         => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'dev',
+			'protocolVersion' => '2024-11-05',
+			'capabilities'    => array(
+				'tools'     => array( 'listChanged' => true ),
+				'resources' => array(
+					'subscribe'   => true,
+					'listChanged' => true,
+				),
+				'prompts'   => array( 'listChanged' => true ),
+				'sse'       => array(
+					'enabled' => true,
+					'default' => true,
+					'note'    => 'GET /mcp defaults to SSE. Add ?discovery=true for this JSON response.',
+				),
+			),
+			'transports'      => array(
+				'sse'     => array(
+					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
+					'methods'  => array( 'GET' ),
+					'default'  => true,
+					'note'     => 'Default transport - GET /mcp establishes SSE connection',
+				),
+				'jsonrpc' => array(
+					'endpoint' => rest_url( self::REST_NAMESPACE . '/mcp' ),
+					'methods'  => array( 'POST' ),
+					'note'     => 'POST with JSON-RPC 2.0 payload',
+				),
+			),
+			'endpoints'       => array(
+				'mcp'        => rest_url( self::REST_NAMESPACE . '/mcp' ),
+				'no-sse'     => rest_url( self::REST_NAMESPACE . '/no-sse' ),
+				'assistants' => rest_url( self::REST_NAMESPACE . '/assistants' ),
+				'chat'       => rest_url( self::REST_NAMESPACE . '/chat' ),
+				'tools'      => rest_url( self::REST_NAMESPACE . '/tools' ),
+			),
+			'usage'           => array(
+				'sse_default'   => 'GET /mcp (default - establishes SSE stream)',
+				'discovery'     => 'GET /mcp?discovery=true (returns this JSON)',
+				'no_sse'        => 'GET /no-sse (assistant directory without SSE)',
+				'jsonrpc'       => 'POST /mcp (JSON-RPC 2.0 protocol)',
+			),
+		);
+
+		$response = new WP_REST_Response( $response_data, 200 );
+		$response->header( 'Content-Type', 'application/json; charset=utf-8' );
+
+		// Add CORS headers.
+		$this->add_cors_headers( $response );
+
+		return $response;
+	}
+
+	/**
+	 * Add CORS headers to response.
+	 *
+	 * @param WP_REST_Response $response Response object.
+	 */
+	protected function add_cors_headers( $response ) {
+		// Delegate to main controller if it has the method.
+		if ( method_exists( $this->main_controller, 'add_cors_headers' ) ) {
+			$this->main_controller->add_cors_headers( $response );
+			return;
+		}
+
+		// Otherwise add basic CORS headers.
+		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
+		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
+		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );
+		$response->header( 'Access-Control-Max-Age', '3600' );
 	}
 }

@@ -709,6 +709,11 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * By default, allows all origins for maximum compatibility. Can be restricted
 	 * via the 'wp_mcp_ai_cors_allow_origin' filter for production environments.
 	 *
+	 * Supports MCP 2024-11-05 specification requirements including:
+	 * - GET requests for SSE/Streamable HTTP
+	 * - Session management via Mcp-Session-Id header
+	 * - Accept header for content negotiation
+	 *
 	 * @param WP_REST_Response $response Response object to modify.
 	 */
 	protected function add_cors_headers( $response ) {
@@ -736,8 +741,9 @@ trait WP_MCP_AI_REST_MCP_Methods {
 		$allow_origin = apply_filters( 'wp_mcp_ai_cors_allow_origin', '*' );
 
 		$response->header( 'Access-Control-Allow-Origin', $allow_origin );
-		$response->header( 'Access-Control-Allow-Methods', 'POST, OPTIONS' );
-		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
+		$response->header( 'Access-Control-Allow-Methods', 'GET, POST, OPTIONS' );
+		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest, Accept, Mcp-Session-Id' );
+		$response->header( 'Access-Control-Expose-Headers', 'Mcp-Session-Id' );
 		$response->header( 'Access-Control-Max-Age', '3600' );
 	}
 }
