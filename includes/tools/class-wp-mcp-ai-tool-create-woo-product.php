@@ -19,7 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php
 /**
  * Creates draft WooCommerce products using a reference identifier.
  */
-class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether WooCommerce is available.
 	 *

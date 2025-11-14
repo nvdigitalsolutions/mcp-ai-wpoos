@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php
 /**
  * Provides a tool for sending a group email based on an uploaded file.
  */
-class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const DEFAULT_MAX_RECIPIENTS = 100;
 
 	/**

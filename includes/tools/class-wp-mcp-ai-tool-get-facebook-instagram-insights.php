@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for querying Meta Graph API insights endpoints.
  */
-class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Facebook_Instagram_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Graph API version used for requests.
 	 */

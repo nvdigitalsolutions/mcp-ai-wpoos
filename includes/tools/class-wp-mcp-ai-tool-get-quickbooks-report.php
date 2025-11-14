@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves QuickBooks Online reports using the configured credentials.
  */
-class WP_MCP_AI_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Base URL for the QuickBooks Online reports API.
 	 */
@@ -275,5 +275,19 @@ class WP_MCP_AI_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return null;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads QuickBooks report data.
+			'external-api',         // Makes external API requests to QuickBooks.
+			'network-dependent',    // Requires internet connectivity.
+			'requires-credentials', // Requires QuickBooks API credentials.
+			'pii-data',             // Financial reports may contain sensitive data.
+			'rate-limited',         // Subject to API rate limits.
+		);
 	}
 }
