@@ -39,6 +39,7 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 		<div class="wp-mcp-ai-period-selector">
 			<label for="wp-mcp-ai-usage-period" style="margin-right: 8px;"><?php esc_html_e( 'Period:', 'wp-mcp-ai' ); ?></label>
 			<select id="wp-mcp-ai-usage-period" class="wp-mcp-ai-chart-period" data-chart-id="wp-mcp-ai-dashboard-usage-trend">
+				<option value="1"><?php esc_html_e( 'Today', 'wp-mcp-ai' ); ?></option>
 				<option value="7" selected><?php esc_html_e( '7 Days', 'wp-mcp-ai' ); ?></option>
 				<option value="30"><?php esc_html_e( '30 Days', 'wp-mcp-ai' ); ?></option>
 				<option value="90"><?php esc_html_e( '90 Days', 'wp-mcp-ai' ); ?></option>
