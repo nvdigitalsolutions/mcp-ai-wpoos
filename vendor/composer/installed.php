@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
+        'pretty_version' => 'dev-copilot/add-chart-creation-tool',
+        'version' => 'dev-copilot/add-chart-creation-tool',
+        'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
         'pretty_version' => 'dev-copilot/update-composer-for-node-20',
         'version' => 'dev-copilot/update-composer-for-node-20',
         'reference' => 'b1e185be534b999fde6e0488dd9aa00d89084635',
@@ -587,6 +590,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
+            'pretty_version' => 'dev-copilot/add-chart-creation-tool',
+            'version' => 'dev-copilot/add-chart-creation-tool',
+            'reference' => '77d389a0306878cd5baa17d0c64b740efa6b76fa',
             'pretty_version' => 'dev-copilot/update-composer-for-node-20',
             'version' => 'dev-copilot/update-composer-for-node-20',
             'reference' => 'b1e185be534b999fde6e0488dd9aa00d89084635',
