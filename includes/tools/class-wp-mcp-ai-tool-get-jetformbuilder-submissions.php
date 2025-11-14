@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provide a condensed view of JetFormBuilder form submissions.
  */
-class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether JetFormBuilder appears to be available.
 	 *
@@ -544,5 +544,19 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions implements WP_MCP_AI_Tool_In
 		}
 
 		return null;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',           // Only reads submission data.
+			'local-only',          // No external API calls.
+			'requires-plugin',     // Requires JetFormBuilder plugin.
+			'pii-data',            // Form submissions may contain personal information.
+			'requires-capability', // Requires appropriate permissions.
+			'paginated',           // Supports pagination parameters.
+		);
 	}
 }

@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates a Simple JWT Login bearer token for the current user.
  */
-class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether the tool can be registered.
 	 *
@@ -302,6 +302,19 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 			'user_id'    => $user->ID,
 			'expires_at' => $expires_at,
 			'payload'    => $payload,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'write',               // Creates JWT tokens.
+			'local-only',          // No external API calls.
+			'requires-plugin',     // Requires Simple JWT Login or similar plugin.
+			'state-changing',      // Generates tokens that grant access.
+			'requires-capability', // Requires 'manage_options' capability.
 		);
 	}
 }
