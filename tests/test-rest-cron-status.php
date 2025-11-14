@@ -203,4 +203,31 @@ class Test_REST_Cron_Status extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'completed', $data['counts'] );
 		$this->assertArrayHasKey( 'total', $data['counts'] );
 	}
+
+	/**
+	 * Test that any authenticated user (even without edit_posts capability) can access their cron status.
+	 */
+	public function test_cron_status_accessible_to_all_authenticated_users() {
+		// Create a subscriber user (no edit_posts capability).
+		$subscriber_id = $this->factory->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber_id );
+
+		// Create a job for this subscriber.
+		$hook      = 'wp_mcp_ai_test_subscriber';
+		$timestamp = time() + HOUR_IN_SECONDS;
+		wp_schedule_single_event( $timestamp, $hook, array() );
+		WP_MCP_AI_Cron_Manager::record_job( $hook, array(), 'single', $timestamp, $subscriber_id );
+
+		$request  = new WP_REST_Request( 'GET', '/mcp-ai/v1/cron-status' );
+		$response = rest_do_request( $request );
+
+		// Subscriber should be able to access their own cron jobs.
+		$this->assertEquals( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'jobs', $data );
+		$this->assertCount( 1, $data['jobs'] );
+		$this->assertEquals( $hook, $data['jobs'][0]['hook'] );
+		$this->assertEquals( $subscriber_id, $data['jobs'][0]['created_by'] );
+	}
 }
