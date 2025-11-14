@@ -1,0 +1,87 @@
+/**
+ * Tools Manager Styles
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Toggle switch container */
+.wp-mcp-ai-toggle-switch {
+	position: relative;
+	display: inline-block;
+	width: 50px;
+	height: 24px;
+}
+
+/* Hide default checkbox */
+.wp-mcp-ai-toggle-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+/* The slider */
+.wp-mcp-ai-toggle-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	border-radius: 24px;
+	transition: .4s;
+}
+
+.wp-mcp-ai-toggle-slider:before {
+	position: absolute;
+	content: "";
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	border-radius: 50%;
+	transition: .4s;
+}
+
+/* Checked state */
+.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider {
+	background-color: #46b450;
+}
+
+.wp-mcp-ai-tool-toggle:focus + .wp-mcp-ai-toggle-slider {
+	box-shadow: 0 0 1px #46b450;
+}
+
+.wp-mcp-ai-tool-toggle:checked + .wp-mcp-ai-toggle-slider:before {
+	transform: translateX(26px);
+}
+
+/* Disabled state */
+.wp-mcp-ai-tool-toggle:disabled + .wp-mcp-ai-toggle-slider {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* Tools manager table improvements */
+.wp-mcp-ai-tools-manager table.wp-list-table {
+	border: 1px solid #c3c4c7;
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table th {
+	font-weight: 600;
+	background: #f6f7f7;
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug] {
+	transition: background-color 0.2s;
+}
+
+.wp-mcp-ai-tools-manager table.wp-list-table tr[data-tool-slug]:hover {
+	background-color: #f9f9f9;
+}
+
+/* Status badge animation */
+.wp-mcp-ai-tool-status {
+	transition: background-color 0.3s, color 0.3s;
+}

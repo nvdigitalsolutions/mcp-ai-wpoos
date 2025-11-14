@@ -71,6 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_get_model_distribution' => 'handle_get_model_distribution',
 				'wp_ajax_wp_mcp_ai_update_chart_period'    => 'handle_update_chart_period',
 				'wp_ajax_wp_mcp_ai_refresh_chart'          => 'handle_refresh_chart',
+				'wp_ajax_wp_mcp_ai_toggle_tool'            => 'handle_toggle_tool',
 			);
 
 			$action         = current_action();
@@ -1329,6 +1330,84 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle tool toggle (enable/disable).
+		 *
+		 * @since 1.0.0
+		 */
+		public function handle_toggle_tool() {
+			// Verify nonce.
+			check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
+
+			// Check permissions.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to manage tools.', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
+			// Get tool slug.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$tool_slug = isset( $_POST['tool_slug'] ) ? sanitize_key( wp_unslash( $_POST['tool_slug'] ) ) : '';
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action = isset( $_POST['tool_action'] ) ? sanitize_key( wp_unslash( $_POST['tool_action'] ) ) : '';
+
+			if ( empty( $tool_slug ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Tool slug is required.', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
+			if ( ! in_array( $action, array( 'enable', 'disable' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action.', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
+			// Get tool registry.
+			$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+			// Check if tool exists.
+			if ( ! $registry->is_tool_registered( $tool_slug ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Tool not found.', 'wp-mcp-ai' ),
+					)
+				);
+			}
+
+			// Perform action.
+			$success = false;
+			if ( 'enable' === $action ) {
+				$success = $registry->enable_tool( $tool_slug );
+			} else {
+				$success = $registry->disable_tool( $tool_slug );
+			}
+
+			if ( $success ) {
+				wp_send_json_success(
+					array(
+						'message' => 'enable' === $action
+							? __( 'Tool enabled successfully.', 'wp-mcp-ai' )
+							: __( 'Tool disabled successfully.', 'wp-mcp-ai' ),
+						'enabled' => 'enable' === $action,
+					)
+				);
+			} else {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Failed to update tool status.', 'wp-mcp-ai' ),
+					)
+				);
+			}
 		}
 	}
 }
