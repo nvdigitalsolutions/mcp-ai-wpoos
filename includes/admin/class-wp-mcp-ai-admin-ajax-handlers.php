@@ -117,10 +117,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout      = max( 5, $timeout );
+			$timeout      = max( 30, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -167,10 +169,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout      = max( 5, $timeout );
+			$timeout      = max( 30, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -217,10 +221,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout      = max( 5, $timeout );
+			$timeout      = max( 30, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -267,10 +273,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get timeout from settings.
+			// Use a minimum of 30 seconds for connection tests to local providers.
+			// Local network connections may have higher latency than localhost.
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout      = max( 5, $timeout );
+			$timeout      = max( 30, $timeout );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
