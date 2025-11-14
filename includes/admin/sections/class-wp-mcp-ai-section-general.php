@@ -127,6 +127,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		}
 
 		/**
+		 * Get sub-tab groups configuration.
+		 *
+		 * @return array
+		 */
+		private function get_subtab_groups() {
+			return array(
+				'core'      => array(
+					'id'     => 'core',
+					'label'  => __( 'Core Settings', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-settings',
+					'fields' => array( 'default_provider', 'default_assistant' ),
+				),
+				'behavior'  => array(
+					'id'     => 'behavior',
+					'label'  => __( 'Behavior & Limits', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-performance',
+					'fields' => array( 'max_history_messages', 'request_timeout' ),
+				),
+				'data'      => array(
+					'id'     => 'data',
+					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-database',
+					'fields' => array( 'enable_logging', 'delete_on_uninstall' ),
+				),
+			);
+		}
+
+		/**
+		 * Get active sub-tab.
+		 *
+		 * @return string
+		 */
+		private function get_active_subtab() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'core';
+			$subtab_groups = $this->get_subtab_groups();
+
+			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
+				$subtab = 'core';
+			}
+
+			return $subtab;
+		}
+
+		/**
 		 * Get assistant options for select dropdown.
 		 *
 		 * @return array
