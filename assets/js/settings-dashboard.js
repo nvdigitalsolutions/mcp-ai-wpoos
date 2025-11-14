@@ -453,8 +453,9 @@
 			
 			// Skip settings field validation for GET forms (e.g., search/filter forms).
 			// GET forms are used for filtering and searching, not for saving settings.
+			// Return true to explicitly allow default form submission.
 			if (formMethod === 'get') {
-				return;
+				return true;
 			}
 			
 			// Get form data for logging.
