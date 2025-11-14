@@ -662,6 +662,7 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Federation & Discovery](docs/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
+- **[Optimization Recommendations](OPTIMIZATION_RECOMMENDATIONS.md)** - Comprehensive code review with performance, security, and architecture enhancements
 - [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
 - [High Token Tool Handling](docs/high-token-tool-handling.md) - Agentic loop token management
 - [Job Notification System](docs/job-notification-system.md) - Real-time async job updates
