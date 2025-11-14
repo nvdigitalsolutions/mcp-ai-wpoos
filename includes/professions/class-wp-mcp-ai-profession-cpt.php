@@ -81,9 +81,14 @@ class WP_MCP_AI_Profession_CPT {
 	 * Initialize metabox instances.
 	 */
 	protected function init_metaboxes() {
-		// Metaboxes will be created in separate files following the pattern
-		// used in includes/assistants/metaboxes/.
-		// For now, we'll register them when they're created.
+		// Load metabox classes.
+		require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes-loader.php';
+
+		// Initialize metabox instances.
+		$this->metaboxes = array(
+			'details'   => new WP_MCP_AI_Profession_Metabox_Details(),
+			'expertise' => new WP_MCP_AI_Profession_Metabox_Expertise(),
+		);
 	}
 
 	/**
@@ -264,25 +269,16 @@ class WP_MCP_AI_Profession_CPT {
 			return;
 		}
 
-		// Details metabox - will be implemented in separate file.
-		add_meta_box(
-			'wp_mcp_ai_profession_details',
-			__( 'Profession Details', 'wp-mcp-ai' ),
-			array( $this, 'render_details_metabox' ),
-			self::POST_TYPE,
-			'normal',
-			'high'
-		);
-
-		// Expertise metabox.
-		add_meta_box(
-			'wp_mcp_ai_profession_expertise',
-			__( 'Expertise & Knowledge', 'wp-mcp-ai' ),
-			array( $this, 'render_expertise_metabox' ),
-			self::POST_TYPE,
-			'normal',
-			'high'
-		);
+		foreach ( $this->metaboxes as $metabox ) {
+			add_meta_box(
+				$metabox->get_id(),
+				$metabox->get_title(),
+				array( $metabox, 'render' ),
+				self::POST_TYPE,
+				$metabox->get_context(),
+				$metabox->get_priority()
+			);
+		}
 	}
 
 	/**
@@ -390,10 +386,22 @@ class WP_MCP_AI_Profession_CPT {
 	 */
 	public function render_expertise_metabox( $post ) {
 		$expertise      = get_post_meta( $post->ID, self::META_EXPERTISE, true );
+		$default_tools  = get_post_meta( $post->ID, self::META_DEFAULT_TOOLS, true );
 		$knowledge_base = get_post_meta( $post->ID, self::META_KNOWLEDGE_BASE, true );
 
 		if ( ! is_array( $expertise ) ) {
 			$expertise = array();
+		}
+
+		if ( ! is_array( $default_tools ) ) {
+			$default_tools = array();
+		}
+
+		// Get available tools from registry.
+		$available_tools = array();
+		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry        = WP_MCP_AI_Tool_Registry::get_instance();
+			$available_tools = $registry->get_all_tools();
 		}
 
 		?>
@@ -420,6 +428,45 @@ class WP_MCP_AI_Profession_CPT {
 						<p class="description">
 							<?php esc_html_e( 'List specific areas of expertise for this profession.', 'wp-mcp-ai' ); ?>
 						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="profession_default_tools">
+							<?php esc_html_e( 'Default Tools', 'wp-mcp-ai' ); ?>
+						</label>
+					</th>
+					<td>
+						<?php if ( ! empty( $available_tools ) ) : ?>
+							<div id="profession-default-tools-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
+								<?php foreach ( $available_tools as $tool ) : ?>
+									<?php
+									$tool_slug = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+									$tool_name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
+									$tool_desc = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
+									$is_checked = in_array( $tool_slug, $default_tools, true );
+									?>
+									<div style="margin-bottom: 8px;">
+										<label style="display: inline-flex; align-items: flex-start; cursor: pointer;">
+											<input type="checkbox" name="profession_default_tools[]" value="<?php echo esc_attr( $tool_slug ); ?>" <?php checked( $is_checked ); ?> style="margin-right: 8px; margin-top: 2px;" />
+											<span>
+												<strong><?php echo esc_html( $tool_name ); ?></strong>
+												<?php if ( $tool_desc ) : ?>
+													<br><small style="color: #666;"><?php echo esc_html( wp_trim_words( $tool_desc, 15 ) ); ?></small>
+												<?php endif; ?>
+											</span>
+										</label>
+									</div>
+								<?php endforeach; ?>
+							</div>
+							<p class="description">
+								<?php esc_html_e( 'Select the default tools that should be pre-selected when creating assistants with this profession. Choose 4-8 essential tools that align with the profession\'s expertise.', 'wp-mcp-ai' ); ?>
+							</p>
+						<?php else : ?>
+							<p class="description">
+								<?php esc_html_e( 'No tools available. Tools will be loaded after the tool registry is initialized.', 'wp-mcp-ai' ); ?>
+							</p>
+						<?php endif; ?>
 					</td>
 				</tr>
 				<tr>
@@ -474,6 +521,12 @@ class WP_MCP_AI_Profession_CPT {
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post    Post object.
 	 */
+	/**
+	 * Save profession post meta.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
 	public function save_post( $post_id, $post ) {
 		// Verify nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_profession_nonce'] ) ||
@@ -491,37 +544,11 @@ class WP_MCP_AI_Profession_CPT {
 			return;
 		}
 
-		// Save category.
-		if ( isset( $_POST['profession_category'] ) ) {
-			update_post_meta( $post_id, self::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );
-		}
-
-		// Save role description.
-		if ( isset( $_POST['profession_role_description'] ) ) {
-			update_post_meta( $post_id, self::META_ROLE_DESCRIPTION, wp_kses_post( wp_unslash( $_POST['profession_role_description'] ) ) );
-		}
-
-		// Save warnings.
-		if ( isset( $_POST['profession_warnings'] ) && is_array( $_POST['profession_warnings'] ) ) {
-			$warnings = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_warnings'] ) );
-			$warnings = array_filter( $warnings ); // Remove empty values.
-			update_post_meta( $post_id, self::META_WARNINGS, array_values( $warnings ) );
-		} else {
-			delete_post_meta( $post_id, self::META_WARNINGS );
-		}
-
-		// Save expertise.
-		if ( isset( $_POST['profession_expertise'] ) && is_array( $_POST['profession_expertise'] ) ) {
-			$expertise = array_map( 'sanitize_text_field', wp_unslash( $_POST['profession_expertise'] ) );
-			$expertise = array_filter( $expertise );
-			update_post_meta( $post_id, self::META_EXPERTISE, array_values( $expertise ) );
-		} else {
-			delete_post_meta( $post_id, self::META_EXPERTISE );
-		}
-
-		// Save knowledge base.
-		if ( isset( $_POST['profession_knowledge_base'] ) ) {
-			update_post_meta( $post_id, self::META_KNOWLEDGE_BASE, wp_kses_post( wp_unslash( $_POST['profession_knowledge_base'] ) ) );
+		// Delegate to metaboxes.
+		foreach ( $this->metaboxes as $metabox ) {
+			if ( method_exists( $metabox, 'save' ) ) {
+				$metabox->save( $post_id, $post );
+			}
 		}
 	}
 

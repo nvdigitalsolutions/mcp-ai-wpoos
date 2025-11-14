@@ -242,6 +242,67 @@ A **Profession** is stored as a WordPress Custom Post Type (`mcp_ai_profession`)
 | **Knowledge Base** | text | Domain-specific knowledge content (markdown) | Post Meta |
 | **Default Tools** | array | Recommended tool slugs for this profession | Post Meta |
 
+#### Default Tools Array
+
+The **Default Tools** field is a critical component of profession templates that defines which tools are most relevant for a given profession.
+
+**Purpose**: 
+- Provides recommended tool slugs that align with the profession's expertise
+- Automatically pre-selects appropriate tools when creating assistants from this profession
+- Ensures new assistants have domain-appropriate capabilities from the start
+
+**Storage**:
+- Stored in `wp_postmeta` table as serialized array
+- Meta key: `default_tools`
+- Value format: `array( 'tool_slug_1', 'tool_slug_2', ... )`
+
+**How Default Tools are Applied**:
+
+When an assistant is created from a profession template, the `default_tools` array is automatically applied to the assistant's enabled tools configuration:
+
+```php
+// Profession defines recommended tools
+$profession['default_tools'] = array(
+    'search_content',
+    'get_recent_posts',
+    'create_post',
+    'get_user_info'
+);
+
+// These tools are pre-selected when creating assistant
+$assistant_config['tools'] = $profession['default_tools'];
+```
+
+**Examples by Profession Category**:
+
+- **Data Scientist**: `['analyze_data', 'create_chart', 'get_recent_posts', 'search_content']`
+- **Content Writer**: `['create_post', 'search_content', 'get_elementor_templates', 'save_post']`
+- **E-commerce Manager**: `['get_woo_products', 'get_woo_recent_orders', 'create_woo_product', 'search_content']`
+- **SEO Specialist**: `['get_rankmath_seo', 'search_content', 'save_post', 'get_recent_posts']`
+- **Social Media Manager**: `['post_facebook_instagram', 'post_linkedin_update', 'create_post', 'search_attachments']`
+
+**Tool Selection Best Practices**:
+
+1. **Relevance**: Only include tools directly related to the profession's responsibilities
+2. **Minimal Set**: Limit to 4-8 essential tools to avoid overwhelming new users
+3. **Read + Write Balance**: Include both information retrieval and action tools
+4. **Capability Awareness**: Ensure selected tools match the typical capability level for the profession
+5. **Cross-Platform**: Consider tools that work across different WordPress configurations
+
+**Customization**:
+
+Administrators can modify default tools when:
+- Creating custom profession templates via `save_profession` tool
+- Manually editing profession post meta in WordPress admin
+- Using filters to programmatically adjust tool recommendations
+
+**Validation**:
+
+The system validates that:
+- All tool slugs in the array correspond to registered tools
+- Tools are available in the current WordPress installation
+- User has necessary capabilities to use the specified tools
+
 #### Profession Workflow
 
 1. **Discovery**: Use `list_professions` tool to browse available professions
@@ -288,6 +349,194 @@ Professions are organized into categories:
 - **Legal**: Attorneys, paralegals, legal researchers
 - **Financial**: Accountants, financial planners, analysts
 - **Other**: Miscellaneous professions
+
+#### Profession Default Tools
+
+The profession integration provides **4 specialized tools** that enable AI assistants to discover, manage, and utilize profession templates:
+
+##### 1. List Professions (`list_professions`)
+
+**Purpose**: Discover available professions that can be used when creating AI assistants.
+
+**Parameters**:
+- `category` (optional): Filter by category (advisory, creative, technical, healthcare, legal, financial, other)
+- `detailed` (optional, boolean): If true, returns detailed information including expertise areas and default tools. Default: false
+
+**Use Cases**:
+- Browse available profession templates
+- Filter professions by domain/category
+- Get quick overview of all professions
+- Discover profession options for assistant creation
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "count": 12,
+  "professions": {
+    "data_scientist": {
+      "name": "Data Scientist",
+      "category": "technical",
+      "description": "Helps with data analysis and ML projects",
+      "expertise": ["Machine learning", "Statistics", "Python"],
+      "default_tools": ["analyze_data", "create_chart", "get_recent_posts"]
+    }
+  }
+}
+```
+
+##### 2. Get Profession (`get_profession`)
+
+**Purpose**: Retrieve detailed information about a specific profession.
+
+**Parameters**:
+- `profession_slug` (required): The slug of the profession to retrieve (e.g., "data_scientist", "graphic_designer")
+
+**Returns**:
+- Complete profession data including:
+  - Role description
+  - Expertise areas
+  - Warnings/disclaimers
+  - Knowledge base content (markdown)
+  - Default tools array
+  - Category and metadata
+
+**Use Cases**:
+- Get full profession details before creating assistant
+- Review profession knowledge base
+- Inspect recommended tools for a profession
+- Understand profession expertise areas
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "profession": {
+    "id": 456,
+    "name": "Data Scientist",
+    "slug": "data_scientist",
+    "category": "technical",
+    "role_description": "Helps with data analysis, ML models, and statistical insights",
+    "expertise": ["Machine learning", "Statistics", "Python", "R"],
+    "warnings": [
+      "Always validate data sources",
+      "Results require expert review"
+    ],
+    "knowledge_base": "# Data Science Best Practices\n...",
+    "default_tools": ["analyze_data", "create_chart", "get_recent_posts"]
+  }
+}
+```
+
+##### 3. Save Profession (`save_profession`)
+
+**Purpose**: Create a new profession or update an existing one.
+
+**Parameters**:
+- `title` (required): Display name (e.g., "Data Scientist")
+- `slug` (required): Unique identifier (e.g., "data_scientist")
+- `description` (optional): Brief profession description
+- `category` (required): One of: advisory, creative, technical, healthcare, legal, financial, other
+- `role_description` (optional): Role description for AI instructions
+- `expertise` (optional, array): Expertise areas (e.g., ["Machine learning", "Statistics"])
+- `warnings` (optional, array): Disclaimers the AI should communicate
+- `knowledge_base` (optional): Domain-specific knowledge content (markdown)
+- `default_tools` (optional, array): Recommended tool slugs
+
+**Use Cases**:
+- Create custom profession templates
+- Update existing profession definitions
+- Add domain-specific knowledge bases
+- Configure profession-specific tool recommendations
+
+**Example Usage**:
+```json
+{
+  "title": "Marine Biologist",
+  "slug": "marine_biologist",
+  "category": "technical",
+  "role_description": "Specializes in marine ecosystems and ocean science",
+  "expertise": ["Marine ecology", "Oceanography", "Conservation"],
+  "default_tools": ["search_content", "get_recent_posts", "web_search"]
+}
+```
+
+##### 4. Get Profession Stats (`get_profession_stats`)
+
+**Purpose**: Retrieve statistics and analytics about professions.
+
+**Parameters**: None
+
+**Returns**:
+- Total profession count
+- Count by category
+- Category distribution percentages
+- Analytics metadata
+
+**Use Cases**:
+- Monitor profession library growth
+- Analyze profession category distribution
+- Generate profession usage reports
+- Track profession system health
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "total": 42,
+  "by_category": {
+    "technical": 15,
+    "creative": 10,
+    "advisory": 8,
+    "healthcare": 5,
+    "legal": 2,
+    "financial": 2
+  },
+  "percentages": {
+    "technical": 35.7,
+    "creative": 23.8,
+    "advisory": 19.0
+  }
+}
+```
+
+#### Tool Workflow Pattern
+
+The profession tools work together in a typical workflow:
+
+1. **Discovery** → Use `list_professions` to browse available options
+2. **Inspection** → Use `get_profession` to get full details
+3. **Assistant Creation** → Apply profession template to new assistant
+4. **Management** → Use `save_profession` to create/update professions
+5. **Analytics** → Use `get_profession_stats` for insights
+
+**Example Complete Workflow**:
+
+```php
+// Step 1: Discover professions
+list_professions({ category: "technical", detailed: true })
+
+// Step 2: Get specific profession details
+get_profession({ profession_slug: "data_scientist" })
+
+// Step 3: Create assistant using profession
+// Profession data automatically populates:
+// - System prompt (role_description + warnings)
+// - Base knowledge (knowledge_base)
+// - Enabled tools (default_tools)
+
+// Step 4: Create custom profession (if needed)
+save_profession({
+  title: "Custom Analyst",
+  slug: "custom_analyst",
+  category: "technical",
+  expertise: ["Data analysis", "Reporting"],
+  default_tools: ["analyze_data", "create_chart"]
+})
+
+// Step 5: Check statistics
+get_profession_stats()
+```
 
 ---
 
