@@ -499,7 +499,11 @@
      */
     function saveConversationToCCT(state, options) {
         // Return resolved promise if conditions aren't met for saving
-        if (!state || !state.config || !state.config.assistantId) {
+        // Use originalAssistantId if available (for when loading sessions from different assistants)
+        // Otherwise fall back to config.assistantId for backwards compatibility
+        const assistantIdToCheck = state.originalAssistantId || (state.config && state.config.assistantId);
+        
+        if (!state || !assistantIdToCheck) {
             return Promise.resolve({ success: true, skipped: true });
         }
 
@@ -522,8 +526,12 @@
         const timeout = opts.timeout || 15000;
         const silent = opts.silent !== false; // Silent by default
 
+        // Use originalAssistantId if available (for when loading sessions from different assistants)
+        // Otherwise fall back to config.assistantId for backwards compatibility
+        const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
+
         const payload = {
-            assistant_id: state.config.assistantId,
+            assistant_id: assistantIdToUse,
             session_key: state.config.sessionKey,
             messages: state.conversation
         };
@@ -5754,6 +5762,7 @@
                 uploading: 0,
                 config: instanceConfig,
                 canUploadAttachments: instanceConfig.canUploadAttachments,
+                originalAssistantId: instanceConfig.assistantId, // Store original assistant_id for transcript saves
                 container: container,
                 textarea: textarea,
                 messagesEl: messagesEl,
