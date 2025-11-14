@@ -92,10 +92,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'admin_notices', array( $this, 'maybe_render_simple_jwt_login_notice' ) );
 			add_action( 'admin_notices', array( $this, 'maybe_render_opcache_warning' ) );
 
-			// Hide WordPress admin footer on the settings page to prevent overlay issues.
-			add_filter( 'admin_footer_text', array( $this, 'hide_admin_footer_text' ) );
-			add_filter( 'update_footer', array( $this, 'hide_update_footer_text' ), 999 );
-
 			// Delegate AJAX handlers to the AJAX component.
 			add_action( 'wp_ajax_wp_mcp_ai_test_ollama_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_ollama_models', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -3157,54 +3153,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			return false;
-		}
-
-		/**
-		 * Hide the WordPress admin footer text on the WP oOS settings page.
-		 *
-		 * @param string $footer_text The default footer text.
-		 * @return string Empty string on settings page, original text elsewhere.
-		 */
-		public function hide_admin_footer_text( $footer_text ) {
-			if ( ! $this->is_settings_page() ) {
-				return $footer_text;
-			}
-
-			return '';
-		}
-
-		/**
-		 * Hide the WordPress version footer text on the WP oOS settings page.
-		 *
-		 * @param string $footer_text The default version footer text.
-		 * @return string Empty string on settings page, original text elsewhere.
-		 */
-		public function hide_update_footer_text( $footer_text ) {
-			if ( ! $this->is_settings_page() ) {
-				return $footer_text;
-			}
-
-			return '';
-		}
-
-		/**
-		 * Check if the current admin page is the WP oOS settings page.
-		 *
-		 * @return bool True if on settings page, false otherwise.
-		 */
-		protected function is_settings_page() {
-			if ( ! function_exists( 'get_current_screen' ) ) {
-				return false;
-			}
-
-			$screen = get_current_screen();
-			if ( ! $screen ) {
-				return false;
-			}
-
-			// Check if we're on the settings page.
-			// The screen ID format is 'settings_page_{page_slug}'.
-			return 'settings_page_' . self::PAGE_SLUG === $screen->id;
 		}
 
 		/**

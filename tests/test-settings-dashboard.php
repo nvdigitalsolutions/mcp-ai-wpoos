@@ -394,4 +394,72 @@ class Test_Settings_Dashboard extends WP_UnitTestCase {
 		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/js/ajax-error-service.js', 'AJAX error service JS file should exist' );
 		$this->assertFileExists( WP_MCP_AI_PATH . 'assets/js/settings-dashboard.js', 'Dashboard JS file should exist' );
 	}
+
+	/**
+	 * Test that admin footer text is hidden on the settings dashboard.
+	 */
+	public function test_hide_admin_footer_text_on_settings_dashboard() {
+		// Create settings dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Mock the screen object for the settings dashboard.
+		set_current_screen( 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// Test that footer text is hidden.
+		$result = $dashboard->hide_admin_footer_text( 'Thank you for creating with WordPress.' );
+		$this->assertSame( '', $result );
+
+		// Clean up.
+		set_current_screen( 'dashboard' );
+	}
+
+	/**
+	 * Test that admin footer text is not hidden on other pages.
+	 */
+	public function test_hide_admin_footer_text_preserves_text_on_other_pages() {
+		// Create settings dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Mock the screen object for a different page.
+		set_current_screen( 'dashboard' );
+
+		// Test that footer text is preserved.
+		$original_text = 'Thank you for creating with WordPress.';
+		$result        = $dashboard->hide_admin_footer_text( $original_text );
+		$this->assertSame( $original_text, $result );
+	}
+
+	/**
+	 * Test that update footer text is hidden on the settings dashboard.
+	 */
+	public function test_hide_update_footer_text_on_settings_dashboard() {
+		// Create settings dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Mock the screen object for the settings dashboard.
+		set_current_screen( 'toplevel_page_wp-mcp-ai-dashboard' );
+
+		// Test that version footer text is hidden.
+		$result = $dashboard->hide_update_footer_text( 'Version 6.8.3' );
+		$this->assertSame( '', $result );
+
+		// Clean up.
+		set_current_screen( 'dashboard' );
+	}
+
+	/**
+	 * Test that update footer text is not hidden on other pages.
+	 */
+	public function test_hide_update_footer_text_preserves_text_on_other_pages() {
+		// Create settings dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Mock the screen object for a different page.
+		set_current_screen( 'dashboard' );
+
+		// Test that version footer text is preserved.
+		$original_text = 'Version 6.8.3';
+		$result        = $dashboard->hide_update_footer_text( $original_text );
+		$this->assertSame( $original_text, $result );
+	}
 }
