@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
-        'pretty_version' => 'dev-copilot/fix-composer-dependency-issues',
-        'version' => 'dev-copilot/fix-composer-dependency-issues',
-        'reference' => '59c716c0d09638d2ec908ff1d89cc81eec2318ee',
+        'pretty_version' => 'dev-copilot/update-composer-for-node-20',
+        'version' => 'dev-copilot/update-composer-for-node-20',
+        'reference' => 'b1e185be534b999fde6e0488dd9aa00d89084635',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -587,9 +587,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
-            'pretty_version' => 'dev-copilot/fix-composer-dependency-issues',
-            'version' => 'dev-copilot/fix-composer-dependency-issues',
-            'reference' => '59c716c0d09638d2ec908ff1d89cc81eec2318ee',
+            'pretty_version' => 'dev-copilot/update-composer-for-node-20',
+            'version' => 'dev-copilot/update-composer-for-node-20',
+            'reference' => 'b1e185be534b999fde6e0488dd9aa00d89084635',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
