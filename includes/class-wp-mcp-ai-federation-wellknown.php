@@ -165,7 +165,7 @@ class WP_MCP_AI_Federation_WellKnown {
 	 * @return array Array of capability slugs.
 	 */
 	protected function get_available_capabilities() {
-		$tools        = $this->registry->get_all_tools();
+		$tools        = $this->registry->get_tools();
 		$capabilities = array();
 
 		foreach ( $tools as $tool ) {

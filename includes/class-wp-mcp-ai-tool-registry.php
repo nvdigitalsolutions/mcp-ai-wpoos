@@ -513,6 +513,30 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Get tool-specific execution rules.
+		 *
+		 * Retrieves rules from the tool if it implements the WP_MCP_AI_Tool_Rules_Interface.
+		 *
+		 * @param string $slug Tool slug.
+		 * @return array Tool rules or empty array if tool doesn't define rules.
+		 */
+		protected function get_tool_rules( $slug ) {
+			$tool = $this->get_tool( $slug );
+
+			if ( ! $tool ) {
+				return array();
+			}
+
+			// Check if tool implements the rules interface.
+			if ( $tool instanceof WP_MCP_AI_Tool_Rules_Interface ) {
+				$rules = $tool->get_tool_rules();
+				return is_array( $rules ) ? $rules : array();
+			}
+
+			return array();
+		}
+
+		/**
 		 * Validate tool execution against its rules.
 		 *
 		 * Checks if the current environment and parameters meet the tool's requirements.
