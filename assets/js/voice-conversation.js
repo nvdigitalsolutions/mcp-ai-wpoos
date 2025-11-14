@@ -123,6 +123,11 @@
 			this.updateButtonState();
 
 			try {
+				// Check if API configuration is available
+				if ( typeof wpMcpAiVoice === 'undefined' || ! wpMcpAiVoice.apiUrl ) {
+					throw new Error( 'API configuration is not available' );
+				}
+
 				// Create audio blob from chunks
 				const audioBlob = new Blob( this.audioChunks, { type: 'audio/webm' } );
 
@@ -320,13 +325,32 @@
 		} );
 	}
 
-	// Initialize on document ready
-	$( document ).ready( initVoiceConversation );
+	/**
+	 * Check if we're in Elementor editor mode
+	 */
+	function isElementorEditor() {
+		// Check for elementorFrontend.isEditMode() - available in preview iframe
+		if ( typeof elementorFrontend !== 'undefined' && typeof elementorFrontend.isEditMode === 'function' ) {
+			return elementorFrontend.isEditMode();
+		}
+		// Fallback check for elementor.isEditMode - available in some editor contexts
+		if ( typeof elementor !== 'undefined' && elementor.isEditMode ) {
+			return true;
+		}
+		return false;
+	}
 
-	// Reinitialize on Elementor preview refresh
+	// Initialize on document ready (only if not in Elementor editor)
+	$( document ).ready( function() {
+		if ( ! isElementorEditor() ) {
+			initVoiceConversation();
+		}
+	} );
+
+	// Initialize for Elementor frontend
 	$( window ).on( 'elementor/frontend/init', function() {
 		if ( typeof elementorFrontend !== 'undefined' ) {
-			elementorFrontend.hooks.addAction( 'frontend/element_ready/widget', initVoiceConversation );
+			elementorFrontend.hooks.addAction( 'frontend/element_ready/wp_mcp_ai_voice_conversation_button.default', initVoiceConversation );
 		}
 	} );
 
