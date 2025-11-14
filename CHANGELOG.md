@@ -6,6 +6,14 @@
 # WP oOS – Changelog
 
 ## [Unreleased]
+### Removed
+- **Orchestration Capability Flags System**: Reverted PR #1142 which caused site crashes
+  - Removed 4 orchestration interfaces (Capability_Flags, Rules, Flow_Stage, Context_Restrictions)
+  - Removed ~1,600 lines of orchestration code from 22 tool files
+  - Removed dedicated test files and orchestration examples
+  - Cleaned up tool registry validation methods
+  - Note: This was an experimental feature that caused stability issues
+
 ### Added
 - **MCP 2024-11-05 Specification Support**: Updated documentation to align with the latest Model Context Protocol specification
   - OAuth 2.1 security enhancements (PKCE, token rotation, mandatory HTTPS)
