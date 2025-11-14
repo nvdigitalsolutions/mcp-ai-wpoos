@@ -456,7 +456,8 @@
 
             return {
                 conversation: Array.isArray(data.conversation) ? data.conversation : [],
-                sessionKey: data.sessionKey || ''
+                sessionKey: data.sessionKey || '',
+                assistantId: data.assistantId || state.config.assistantId
             };
         } catch (error) {
             // Return null if parsing fails
@@ -6016,6 +6017,12 @@
         // This ensures we don't mix conversations from different sessions.
         if (saved.sessionKey && !state.config.sessionKey) {
             state.config.sessionKey = saved.sessionKey;
+        }
+
+        // Restore assistant ID if available
+        // This ensures the conversation context is maintained on page reload
+        if (saved.assistantId && saved.assistantId !== state.config.assistantId) {
+            state.config.assistantId = saved.assistantId;
         }
 
         // Restore conversation state
