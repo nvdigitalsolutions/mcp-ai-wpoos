@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * site based on current load, response times, and task complexity. It supports
  * automatic failover and retry logic for resilient distributed compute.
  */
-class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -127,18 +127,6 @@ class WP_MCP_AI_Tool_Query_Mesh_Intelligent implements WP_MCP_AI_Tool_Interface,
 				'routing_method' => $routing_strategy,
 				'query_success'  => true,
 			),
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',         // Only reads data from mesh network.
-			'external-api',      // Makes external HTTP requests.
-			'network-dependent', // Requires internet connectivity.
-			'may-timeout',       // Network requests may exceed timeout.
 		);
 	}
 }

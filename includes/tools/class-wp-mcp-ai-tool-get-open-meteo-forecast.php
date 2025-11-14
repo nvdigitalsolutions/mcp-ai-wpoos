@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves hourly weather forecast data from Open-Meteo.
  */
-class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -345,18 +345,5 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		}
 
 		return $payload;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'read-only',         // Only reads weather forecast data.
-			'external-api',      // Makes external API requests to Open-Meteo.
-			'network-dependent', // Requires internet connectivity.
-			'cacheable',         // Results can be cached.
-			'non-deterministic', // Weather data changes frequently.
-		);
 	}
 }

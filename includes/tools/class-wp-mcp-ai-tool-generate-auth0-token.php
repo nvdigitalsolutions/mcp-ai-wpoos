@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Generates an Auth0 bearer token using OAuth 2.0 client credentials flow.
  */
-class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface {
 	/**
 	 * Determine whether the tool can be registered.
 	 *
@@ -237,20 +237,6 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			'expires_in'   => $expires_in,
 			'expires_at'   => $expires_at,
 			'scope'        => $scope,
-		);
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function get_capability_flags() {
-		return array(
-			'write',                // Creates authentication tokens.
-			'external-api',         // Makes external API requests to Auth0.
-			'network-dependent',    // Requires internet connectivity.
-			'requires-credentials', // Requires Auth0 API credentials.
-			'rate-limited',         // Subject to API rate limits.
-			'state-changing',       // Generates tokens that grant access.
 		);
 	}
 }
