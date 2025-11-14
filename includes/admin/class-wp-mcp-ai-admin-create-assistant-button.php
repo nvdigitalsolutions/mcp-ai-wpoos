@@ -309,9 +309,24 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 	/**
 	 * Get profession options.
 	 *
+	 * Now integrates with profession CPT system.
+	 * Falls back to hardcoded list for backward compatibility.
+	 *
 	 * @return array Profession key => label pairs.
 	 */
 	protected static function get_professions() {
+		// Try to get professions from CPT system.
+		if ( function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
+			$profession_service = wp_mcp_ai_get_profession_service();
+			$professions        = $profession_service->get_professions_for_dropdown();
+
+			// If we have professions from CPT, use them.
+			if ( ! empty( $professions ) ) {
+				return $professions;
+			}
+		}
+
+		// Fallback to hardcoded list for backward compatibility.
 		return array(
 			'tax_advisor'              => __( 'Tax Advisor', 'wp-mcp-ai' ),
 			'accountant'               => __( 'Accountant', 'wp-mcp-ai' ),

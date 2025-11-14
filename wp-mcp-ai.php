@@ -414,6 +414,9 @@ require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 // Load repository layer (Phase 4 refactoring - Milestone 9).
 require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 
+// Load profession management system (separates profession data from hardcoded arrays).
+require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
+
 // Service layer already loaded earlier (after container, before model-selector).
 
 // Load federation system components.
