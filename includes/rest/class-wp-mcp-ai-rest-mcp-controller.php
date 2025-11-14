@@ -181,6 +181,17 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
+	 * General permission check for authenticated endpoints.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check( $request );
+	}
+
+	/**
 	 * Permission check for MCP protocol endpoint.
 	 *
 	 * @param WP_REST_Request $request REST request instance.
