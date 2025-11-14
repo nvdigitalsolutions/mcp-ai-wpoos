@@ -29,11 +29,6 @@ class WP_MCP_AI_Chart_JS_Helper {
 	const MAX_USERS_FOR_CHARTS = 100;
 
 	/**
-	 * Cache duration for user IDs (5 minutes).
-	 */
-	const CACHE_DURATION = 300;
-
-	/**
 	 * Initialize the helper.
 	 */
 	public static function init() {
@@ -120,9 +115,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 	 * @return array Array of user IDs.
 	 */
 	private static function get_cached_user_ids() {
-		// Try to get from cache.
-		$cache_key = 'wp_mcp_ai_chart_user_ids';
-		$user_ids  = get_transient( $cache_key );
+		// Try to get from cache using Cache Helper.
+		$user_ids = WP_MCP_AI_Cache_Helper::get( 'dashboard_user_ids' );
 
 		if ( false !== $user_ids && is_array( $user_ids ) ) {
 			return $user_ids;
@@ -139,8 +133,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			)
 		);
 
-		// Cache for 5 minutes.
-		set_transient( $cache_key, $user_ids, self::CACHE_DURATION );
+		// Cache for 5 minutes using Cache Helper.
+		WP_MCP_AI_Cache_Helper::set( 'dashboard_user_ids', $user_ids, WP_MCP_AI_Cache_Helper::ANALYTICS_EXPIRATION );
 
 		return $user_ids;
 	}

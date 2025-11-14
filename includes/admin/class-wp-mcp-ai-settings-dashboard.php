@@ -212,9 +212,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Clear caches when settings are updated.
 			if ( 'orchestration' === $active_tab ) {
-				// Clear orchestration-related caches.
-				delete_transient( 'wp_mcp_ai_health_status' );
-				delete_transient( 'wp_mcp_ai_active_cron_count' );
+				// Clear orchestration-related caches using Cache Helper.
+				WP_MCP_AI_Cache_Helper::invalidate_orchestration_caches();
 
 				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
 					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();

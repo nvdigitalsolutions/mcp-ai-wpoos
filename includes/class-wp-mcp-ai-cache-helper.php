@@ -62,6 +62,13 @@ class WP_MCP_AI_Cache_Helper {
 	const ELEMENTOR_OPTIONS_EXPIRATION = HOUR_IN_SECONDS;
 
 	/**
+	 * Cache expiration for dashboard analytics (5 minutes)
+	 *
+	 * @var int
+	 */
+	const ANALYTICS_EXPIRATION = 5 * MINUTE_IN_SECONDS;
+
+	/**
 	 * Get cached value
 	 *
 	 * @param string $key Cache key (without prefix).
@@ -156,6 +163,32 @@ class WP_MCP_AI_Cache_Helper {
 		self::delete( 'assistants_list' );
 		self::delete( 'assistants_list_ids' );
 		self::delete( 'elementor_assistant_options' );
+	}
+
+	/**
+	 * Invalidate all analytics dashboard caches.
+	 *
+	 * Called when usage data changes to ensure fresh statistics on next load.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_analytics_caches() {
+		self::delete( 'dashboard_usage_overview' );
+		self::delete( 'dashboard_usage_forecast' );
+		self::delete( 'dashboard_current_stats' );
+		self::delete( 'dashboard_user_ids' );
+	}
+
+	/**
+	 * Invalidate all orchestration-related caches.
+	 *
+	 * Called when orchestration settings are updated.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_orchestration_caches() {
+		self::delete( 'health_status' );
+		self::delete( 'active_cron_count' );
 	}
 
 	/**
