@@ -96,6 +96,9 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 
 	/**
 	 * Test request_wants_event_stream with Accept header for text/event-stream.
+	 *
+	 * UPDATED: Accept header should NOT trigger SSE mode (LM Studio fix).
+	 * Only explicit stream parameter should trigger SSE.
 	 */
 	public function test_request_wants_event_stream_with_accept_header() {
 		$request = new WP_REST_Request();
@@ -103,11 +106,15 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 
 		$result = $this->handler->request_wants_event_stream( $request );
 
-		$this->assertTrue( $result );
+		// Changed from assertTrue to assertFalse - Accept header is now ignored.
+		$this->assertFalse( $result, 'Accept header should NOT trigger SSE mode (LM Studio fix)' );
 	}
 
 	/**
 	 * Test request_wants_event_stream with Accept header containing text/event-stream.
+	 *
+	 * UPDATED: Accept header should NOT trigger SSE mode (LM Studio fix).
+	 * Only explicit stream parameter should trigger SSE.
 	 */
 	public function test_request_wants_event_stream_with_accept_header_mixed() {
 		$request = new WP_REST_Request();
@@ -115,7 +122,8 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 
 		$result = $this->handler->request_wants_event_stream( $request );
 
-		$this->assertTrue( $result );
+		// Changed from assertTrue to assertFalse - Accept header is now ignored.
+		$this->assertFalse( $result, 'Accept header should NOT trigger SSE mode (LM Studio fix)' );
 	}
 
 	/**
@@ -139,6 +147,39 @@ class Test_SSE_Handler extends WP_UnitTestCase {
 		$result = $this->handler->request_wants_event_stream( $request );
 
 		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Test LM Studio scenario: Accept header with explicit stream parameter.
+	 *
+	 * This tests the fix for the LM Studio 500 error issue.
+	 * LM Studio sends Accept: text/event-stream but the explicit stream parameter
+	 * should control whether SSE is used, not the Accept header.
+	 */
+	public function test_lm_studio_scenario_accept_header_with_explicit_stream_true() {
+		$request = new WP_REST_Request();
+		$request->set_header( 'accept', 'text/event-stream' );
+		$request->set_param( 'stream', 'true' );
+
+		$result = $this->handler->request_wants_event_stream( $request );
+
+		$this->assertTrue( $result, 'Explicit stream=true should enable SSE even with Accept header' );
+	}
+
+	/**
+	 * Test LM Studio scenario: Accept header without stream parameter.
+	 *
+	 * This is the exact scenario that was causing the 500 error.
+	 * LM Studio sends Accept: text/event-stream but expects JSON.
+	 */
+	public function test_lm_studio_scenario_accept_header_without_stream_param() {
+		$request = new WP_REST_Request();
+		$request->set_header( 'accept', 'text/event-stream' );
+		// No stream parameter
+
+		$result = $this->handler->request_wants_event_stream( $request );
+
+		$this->assertFalse( $result, 'Accept header alone should NOT trigger SSE (LM Studio fix)' );
 	}
 
 	/**
