@@ -47,6 +47,22 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'WP oOS Settings Dashboard Diagnostic', 'wp-mcp-ai' ); ?></h1>
+				<?php
+				// Determine which settings system is in use by checking the admin menu.
+				// This must be done early as it's referenced throughout the diagnostic.
+				global $menu, $submenu;
+				$using_old_settings = false;
+				
+				// Check for old settings under Settings submenu.
+				if ( isset( $submenu['options-general.php'] ) ) {
+					foreach ( $submenu['options-general.php'] as $item ) {
+						if ( isset( $item[2] ) && 'wp-mcp-ai-settings' === $item[2] ) {
+							$using_old_settings = true;
+							break;
+						}
+					}
+				}
+				?>
 				
 				<div class="card">
 					<h2><?php esc_html_e( '1. Constants', 'wp-mcp-ai' ); ?></h2>
@@ -224,20 +240,10 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 				<div class="card">
 					<h2><?php esc_html_e( '5. Admin Menu Pages', 'wp-mcp-ai' ); ?></h2>
 					<?php
-					global $menu, $submenu;
-					$found_old   = false;
+					// Reuse $using_old_settings that was already determined at the top of the page.
+					$found_old   = $using_old_settings;
 					$found_new   = false;
 					$found_auth0 = false;
-
-					// Check for old settings under Settings submenu.
-					if ( isset( $submenu['options-general.php'] ) ) {
-						foreach ( $submenu['options-general.php'] as $item ) {
-							if ( isset( $item[2] ) && 'wp-mcp-ai-settings' === $item[2] ) {
-								$found_old = true;
-								break;
-							}
-						}
-					}
 
 					// Check for new dashboard as top-level menu.
 					if ( isset( $menu ) ) {
