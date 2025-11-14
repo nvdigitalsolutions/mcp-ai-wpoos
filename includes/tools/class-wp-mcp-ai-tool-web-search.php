@@ -373,6 +373,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	public function get_capability_flags() {
 		return array(
 			'requires-credentials', // May require API credentials depending on provider.
+			'requires-capability',  // Requires user capabilities.
 			'read-only',            // Only retrieves data, does not modify state.
 			'external-api',         // Makes external HTTP requests.
 			'rate-limited',         // Subject to provider rate limits.

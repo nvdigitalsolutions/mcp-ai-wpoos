@@ -20,7 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
 /**
  * Finds pricing information for BJ's, Sam's Club, and Costco by querying Crawl4AI's web search endpoint.
  */
-class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
 	const DEFAULT_MAX_RESULTS = 5;
 
@@ -635,5 +635,16 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface {
 		$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
 
 		return max( 5, $timeout );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }
