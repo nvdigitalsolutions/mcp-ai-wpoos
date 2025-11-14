@@ -447,10 +447,24 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get human-readable profession name.
 	 *
+	 * Now integrates with profession CPT system.
+	 * Falls back to hardcoded names for backward compatibility.
+	 *
 	 * @param string $profession_key Profession key.
 	 * @return string Profession name.
 	 */
 	protected function get_profession_name( $profession_key ) {
+		// Try to get name from profession CPT system.
+		if ( function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
+			$profession_service = wp_mcp_ai_get_profession_service();
+			$profession_data    = $profession_service->get_profession( $profession_key );
+
+			if ( $profession_data && ! empty( $profession_data['name'] ) ) {
+				return $profession_data['name'];
+			}
+		}
+
+		// Fallback to hardcoded names for backward compatibility.
 		$professions = array(
 			'tax_advisor'              => __( 'Tax Advisor', 'wp-mcp-ai' ),
 			'accountant'               => __( 'Accountant', 'wp-mcp-ai' ),
@@ -573,12 +587,53 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get profession-specific expertise.
 	 *
+	 * Now integrates with profession CPT system to retrieve profession data.
+	 * Falls back to hardcoded logic for backward compatibility.
+	 *
 	 * @param array  $professions    Profession keys.
 	 * @param array  $regions        Region keys.
 	 * @param string $industry_focus Industry focus.
 	 * @return array Expertise data.
 	 */
 	protected function get_profession_expertise( $professions, $regions, $industry_focus ) {
+		// Try to get expertise from profession CPT system.
+		if ( function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
+			$profession_service = wp_mcp_ai_get_profession_service();
+			$merged_data        = $profession_service->merge_profession_data( $professions );
+
+			// If profession system has data, use it.
+			if ( ! empty( $merged_data['roles'] ) || ! empty( $merged_data['expertise'] ) ) {
+				$expertise = array(
+					'role'      => ! empty( $merged_data['roles'] ) ? implode( ' ', $merged_data['roles'] ) : 'You are a knowledgeable professional assistant.',
+					'expertise' => $merged_data['expertise'],
+					'warnings'  => $merged_data['warnings'],
+				);
+
+				// Add region-specific expertise.
+				foreach ( $regions as $region ) {
+					$region_name              = $this->get_region_name( $region );
+					$expertise['expertise'][] = "{$region_name}-specific regulations and requirements";
+				}
+
+				// Add industry focus if provided.
+				if ( '' !== $industry_focus ) {
+					$expertise['expertise'][] = ucfirst( $industry_focus ) . ' industry knowledge';
+				}
+
+				// Add location-specific warning.
+				if ( count( $regions ) > 0 && ! in_array( 'global', $regions, true ) ) {
+					$expertise['warnings'][] = 'Requirements and regulations vary significantly by jurisdiction';
+				}
+
+				// Deduplicate.
+				$expertise['expertise'] = array_values( array_unique( $expertise['expertise'] ) );
+				$expertise['warnings']  = array_values( array_unique( $expertise['warnings'] ) );
+
+				return $expertise;
+			}
+		}
+
+		// Fallback to legacy hardcoded logic for backward compatibility.
 		$expertise = array(
 			'role'      => '',
 			'expertise' => array(),
@@ -980,10 +1035,25 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Select appropriate tools based on professions.
 	 *
+	 * Now integrates with the profession CPT system to retrieve default tools.
+	 * Falls back to hardcoded logic for backward compatibility.
+	 *
 	 * @param array $professions Profession keys.
 	 * @return array Tool slugs.
 	 */
 	protected function select_tools_for_professions( $professions ) {
+		// Try to get tools from profession CPT system.
+		if ( function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
+			$profession_service = wp_mcp_ai_get_profession_service();
+			$merged_data        = $profession_service->merge_profession_data( $professions );
+
+			// If profession system has tools defined, use them.
+			if ( ! empty( $merged_data['tools'] ) ) {
+				return array_values( array_unique( $merged_data['tools'] ) );
+			}
+		}
+
+		// Fallback to legacy hardcoded logic for backward compatibility.
 		$tools = array();
 
 		// Always include basic research tools.

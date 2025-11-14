@@ -919,6 +919,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Install_And_Activate_Plugin' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-install-and-activate-plugin.php',
 				'WP_MCP_AI_Tool_Install_And_Activate_Theme' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-install-and-activate-theme.php',
 				'WP_MCP_AI_Tool_Site_Creator'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-site-creator.php',
+				// Profession management tools.
+				'WP_MCP_AI_Tool_List_Professions'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-professions.php',
+				'WP_MCP_AI_Tool_Get_Profession'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
+				'WP_MCP_AI_Tool_Save_Profession'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-profession.php',
+				'WP_MCP_AI_Tool_Profession_Stats'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-profession-stats.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
