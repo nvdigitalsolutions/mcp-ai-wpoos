@@ -34,6 +34,48 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 		</div>
 	</div>
 
+	<!-- Gauge Chart for Current Usage Percentage -->
+	<div class="wp-mcp-ai-gauge-container" style="margin-top: 20px;">
+		<div style="display: flex; align-items: center; gap: 20px;">
+			<div style="flex: 0 0 200px; height: 120px; position: relative;">
+				<?php
+				// Following SoC: Pass data to canvas via data attribute, not inline JS.
+				$gauge_data = isset( $data['gauge'] ) ? $data['gauge'] : array();
+				?>
+				<canvas 
+					id="wp-mcp-ai-dashboard-usage-gauge" 
+					data-gauge-data="<?php echo esc_attr( wp_json_encode( $gauge_data ) ); ?>">
+				</canvas>
+			</div>
+			<div style="flex: 1;">
+				<?php
+				// Presentation only - display pre-calculated values from data layer.
+				$percentage = isset( $gauge_data['percentage'] ) ? $gauge_data['percentage'] : 0;
+				$usage      = isset( $gauge_data['usage'] ) ? $gauge_data['usage'] : 0;
+				$limit      = isset( $gauge_data['limit'] ) ? $gauge_data['limit'] : 0;
+				?>
+				<div style="font-size: 24px; font-weight: bold; margin-bottom: 5px;">
+					<?php echo esc_html( number_format( $percentage, 1 ) ); ?>%
+				</div>
+				<div style="font-size: 14px; color: #666; margin-bottom: 10px;">
+					<?php esc_html_e( 'of daily limit used', 'wp-mcp-ai' ); ?>
+				</div>
+				<div style="font-size: 12px; color: #999;">
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: 1: Current usage, 2: Total limit */
+							__( '%1$s / %2$s tokens', 'wp-mcp-ai' ),
+							number_format_i18n( $usage ),
+							number_format_i18n( $limit )
+						)
+					);
+					?>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Chart Controls - Following SoC: Presentation separated from logic -->
 	<div class="wp-mcp-ai-chart-controls" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center;">
 		<div class="wp-mcp-ai-period-selector">
@@ -55,7 +97,15 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 
 	<!-- Usage Trend Chart -->
 	<div class="wp-mcp-ai-chart-container" style="margin-top: 15px; position: relative;">
-		<canvas id="wp-mcp-ai-dashboard-usage-trend" width="400" height="200"></canvas>
+		<?php
+		// Following SoC: Pass data to canvas via data attribute, chart init happens in JS.
+		?>
+		<canvas 
+			id="wp-mcp-ai-dashboard-usage-trend" 
+			width="400" 
+			height="200"
+			data-chart-data="<?php echo esc_attr( wp_json_encode( $data['trend'] ?? array() ) ); ?>">
+		</canvas>
 		<div class="wp-mcp-ai-chart-loading" style="display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
 			<span class="spinner is-active"></span>
 		</div>
@@ -68,101 +118,3 @@ $current_stats = isset( $data['current_stats'] ) ? $data['current_stats'] : arra
 		</a>
 	</div>
 </div>
-
-<script type="text/javascript">
-jQuery(document).ready(function($) {
-	// Initialize usage trend chart with enhanced features (following SoC principles).
-	if (typeof Chart !== 'undefined') {
-		var ctx = document.getElementById('wp-mcp-ai-dashboard-usage-trend');
-		if (ctx) {
-			var chartData = <?php echo wp_json_encode( $data['trend'] ?? array() ); ?>;
-			
-			// Create chart instance with zoom/pan plugins and enhanced tooltips.
-			var chart = new Chart(ctx.getContext('2d'), {
-				type: 'line',
-				data: chartData,
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					interaction: {
-						mode: 'index',
-						intersect: false
-					},
-					plugins: {
-						legend: {
-							display: false
-						},
-						title: {
-							display: true,
-							text: '<?php esc_attr_e( '7-Day Token Usage Trend', 'wp-mcp-ai' ); ?>'
-						},
-						tooltip: {
-							enabled: true,
-							backgroundColor: 'rgba(0, 0, 0, 0.8)',
-							titleColor: '#fff',
-							bodyColor: '#fff',
-							borderColor: '#2271b1',
-							borderWidth: 1,
-							padding: 12,
-							displayColors: false,
-							callbacks: {
-								title: function(tooltipItems) {
-									return tooltipItems[0].label;
-								},
-								label: function(context) {
-									var label = context.dataset.label || '';
-									if (label) {
-										label += ': ';
-									}
-									label += new Intl.NumberFormat().format(context.parsed.y) + ' tokens';
-									return label;
-								},
-								afterLabel: function(context) {
-									// Add percentage of max if available.
-									var dataset = context.dataset.data;
-									var maxValue = Math.max.apply(null, dataset);
-									var percentage = ((context.parsed.y / maxValue) * 100).toFixed(1);
-									return 'Peak: ' + percentage + '%';
-								}
-							}
-						},
-						// Note: Zoom plugin would be loaded here if Chart.js zoom plugin is available.
-						// For now, users can use browser zoom or we can add it in future enhancement.
-					},
-					scales: {
-						y: {
-							beginAtZero: true,
-							title: {
-								display: true,
-								text: '<?php esc_attr_e( 'Tokens', 'wp-mcp-ai' ); ?>'
-							},
-							ticks: {
-								callback: function(value) {
-									// Format large numbers with K/M suffixes.
-									if (value >= 1000000) {
-										return (value / 1000000).toFixed(1) + 'M';
-									}
-									if (value >= 1000) {
-										return (value / 1000).toFixed(1) + 'K';
-									}
-									return value;
-								}
-							}
-						},
-						x: {
-							grid: {
-								display: false
-							}
-						}
-					}
-				}
-			});
-			
-			// Register chart with Analytics Dashboard for export/period change functionality.
-			if (typeof window.WpMcpAiAnalyticsDashboard !== 'undefined') {
-				window.WpMcpAiAnalyticsDashboard.registerChart('wp-mcp-ai-dashboard-usage-trend', chart);
-			}
-		}
-	}
-});
-</script>

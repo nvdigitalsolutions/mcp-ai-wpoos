@@ -22,9 +22,165 @@
 		 * Initialize the dashboard.
 		 */
 		init: function() {
-			// Charts are initialized inline in widget templates.
-			// This file handles additional interactions and updates.
+			// Initialize charts.
+			this.initCharts();
+			// Bind UI events.
 			this.bindEvents();
+		},
+
+		/**
+		 * Initialize charts.
+		 *
+		 * Separation of Concerns: Chart initialization logic lives in JS, not in PHP templates.
+		 */
+		initCharts: function() {
+			this.initGaugeChart();
+			this.initUsageTrendChart();
+		},
+
+		/**
+		 * Initialize gauge chart for current usage percentage.
+		 */
+		initGaugeChart: function() {
+			var gaugeCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-gauge');
+			if (!gaugeCanvas || typeof Chart === 'undefined') {
+				return;
+			}
+
+			// Get gauge data from data attribute.
+			var gaugeData = $(gaugeCanvas).data('gauge-data');
+			if (!gaugeData) {
+				return;
+			}
+
+			// Create gauge chart (doughnut with half circle).
+			var gaugeChart = new Chart(gaugeCanvas.getContext('2d'), {
+				type: 'doughnut',
+				data: {
+					labels: [gaugeData.label || 'Usage', 'Available'],
+					datasets: gaugeData.datasets || [{
+						data: [0, 100],
+						backgroundColor: ['rgba(201, 203, 207, 0.2)', 'rgba(201, 203, 207, 0.2)'],
+						borderWidth: 0
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					circumference: 180,
+					rotation: 270,
+					cutout: '70%',
+					plugins: {
+						legend: {
+							display: false
+						},
+						tooltip: {
+							enabled: false
+						}
+					}
+				}
+			});
+
+			// Register gauge chart.
+			this.registerChart('wp-mcp-ai-dashboard-usage-gauge', gaugeChart);
+		},
+
+		/**
+		 * Initialize usage trend line chart.
+		 */
+		initUsageTrendChart: function() {
+			var trendCanvas = document.getElementById('wp-mcp-ai-dashboard-usage-trend');
+			if (!trendCanvas || typeof Chart === 'undefined') {
+				return;
+			}
+
+			// Get chart data from data attribute.
+			var chartData = $(trendCanvas).data('chart-data');
+			if (!chartData) {
+				return;
+			}
+
+			// Create chart instance with enhanced tooltips.
+			var chart = new Chart(trendCanvas.getContext('2d'), {
+				type: 'line',
+				data: chartData,
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+						mode: 'index',
+						intersect: false
+					},
+					plugins: {
+						legend: {
+							display: false
+						},
+						title: {
+							display: true,
+							text: '7-Day Token Usage Trend'
+						},
+						tooltip: {
+							enabled: true,
+							backgroundColor: 'rgba(0, 0, 0, 0.8)',
+							titleColor: '#fff',
+							bodyColor: '#fff',
+							borderColor: '#2271b1',
+							borderWidth: 1,
+							padding: 12,
+							displayColors: false,
+							callbacks: {
+								title: function(tooltipItems) {
+									return tooltipItems[0].label;
+								},
+								label: function(context) {
+									var label = context.dataset.label || '';
+									if (label) {
+										label += ': ';
+									}
+									label += new Intl.NumberFormat().format(context.parsed.y) + ' tokens';
+									return label;
+								},
+								afterLabel: function(context) {
+									// Add percentage of peak.
+									var dataset = context.dataset.data;
+									var maxValue = Math.max.apply(null, dataset);
+									var percentage = ((context.parsed.y / maxValue) * 100).toFixed(1);
+									return 'Peak: ' + percentage + '%';
+								}
+							}
+						}
+					},
+					scales: {
+						y: {
+							beginAtZero: true,
+							title: {
+								display: true,
+								text: 'Tokens'
+							},
+							ticks: {
+								callback: function(value) {
+									// Format large numbers with K/M suffixes.
+									if (value >= 1000000) {
+										return (value / 1000000).toFixed(1) + 'M';
+									}
+									if (value >= 1000) {
+										return (value / 1000).toFixed(1) + 'K';
+									}
+									return value;
+								}
+							}
+						},
+						x: {
+							grid: {
+								display: false
+							}
+						}
+					}
+				}
+			});
+
+			// Register chart.
+			this.registerChart('wp-mcp-ai-dashboard-usage-trend', chart);
 		},
 
 		/**
