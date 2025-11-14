@@ -17,6 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Analytics_Dashboard {
 
 	/**
+	 * Maximum number of users to process for dashboard widgets.
+	 * Can be overridden with wp_mcp_ai_dashboard_max_users filter.
+	 */
+	const MAX_USERS_FOR_DASHBOARD = 100;
+
+	/**
+	 * Cache duration for user IDs (5 minutes).
+	 */
+	const CACHE_DURATION = 300;
+
+	/**
 	 * Initialize the analytics dashboard.
 	 */
 	public static function init() {
@@ -50,6 +61,40 @@ class WP_MCP_AI_Analytics_Dashboard {
 			__( 'AI Usage Forecast', 'wp-mcp-ai' ),
 			array( __CLASS__, 'render_usage_forecast_widget' )
 		);
+	}
+
+	/**
+	 * Get cached user IDs for dashboard widgets.
+	 *
+	 * Caches user IDs for 5 minutes to prevent repeated database queries.
+	 * Limits to MAX_USERS_FOR_DASHBOARD users by default.
+	 *
+	 * @return array Array of user IDs.
+	 */
+	private static function get_cached_user_ids() {
+		// Try to get from cache.
+		$cache_key = 'wp_mcp_ai_dashboard_user_ids';
+		$user_ids  = get_transient( $cache_key );
+
+		if ( false !== $user_ids && is_array( $user_ids ) ) {
+			return $user_ids;
+		}
+
+		// Get max users from filter (default 100).
+		$max_users = apply_filters( 'wp_mcp_ai_dashboard_max_users', self::MAX_USERS_FOR_DASHBOARD );
+
+		// Fetch fresh user IDs with limit.
+		$user_ids = get_users(
+			array(
+				'fields' => 'ID',
+				'number' => $max_users,
+			)
+		);
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $user_ids, self::CACHE_DURATION );
+
+		return $user_ids;
 	}
 
 	/**
@@ -194,8 +239,8 @@ class WP_MCP_AI_Analytics_Dashboard {
 			return $forecast_data;
 		}
 
-		// Get all users to calculate site-wide trend.
-		$users                = get_users( array( 'fields' => 'ID' ) );
+		// Get cached users to calculate site-wide trend.
+		$users                = self::get_cached_user_ids();
 		$total_current_usage  = 0;
 		$total_forecast_usage = 0;
 		$forecast_count       = 0;
@@ -262,8 +307,8 @@ class WP_MCP_AI_Analytics_Dashboard {
 			'average_per_user' => 0,
 		);
 
-		// Get all users.
-		$users                = get_users( array( 'fields' => 'ID' ) );
+		// Get cached users.
+		$users                = self::get_cached_user_ids();
 		$stats['total_users'] = count( $users );
 
 		// Calculate usage across all users.

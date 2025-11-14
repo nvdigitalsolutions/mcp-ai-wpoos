@@ -56,13 +56,21 @@ class WP_MCP_AI_Cost_Tracking_Service {
 			'by_user'     => array(),
 		);
 
-		// Get all users who have token usage.
-		$users = get_users(
-			array(
-				'meta_key' => '_wp_mcp_ai_tool_token_usage',
-				'fields'   => 'ID',
-			)
-		);
+		// Get users who have token usage (with caching).
+		$cache_key = 'wp_mcp_ai_cost_tracking_user_ids';
+		$users     = get_transient( $cache_key );
+
+		if ( false === $users ) {
+			$users = get_users(
+				array(
+					'meta_key' => '_wp_mcp_ai_tool_token_usage',
+					'fields'   => 'ID',
+					'number'   => 100, // Limit to 100 users for performance.
+				)
+			);
+			// Cache for 5 minutes.
+			set_transient( $cache_key, $users, 300 );
+		}
 
 		foreach ( $users as $user_id ) {
 			$user_breakdown = self::get_user_cost_breakdown( $user_id, $start_date, $end_date );

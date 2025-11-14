@@ -23,6 +23,17 @@ class WP_MCP_AI_Chart_JS_Helper {
 	const CHART_JS_VERSION = '4.4.1';
 
 	/**
+	 * Maximum number of users to process for charts.
+	 * Can be overridden with wp_mcp_ai_chart_max_users filter.
+	 */
+	const MAX_USERS_FOR_CHARTS = 100;
+
+	/**
+	 * Cache duration for user IDs (5 minutes).
+	 */
+	const CACHE_DURATION = 300;
+
+	/**
 	 * Initialize the helper.
 	 */
 	public static function init() {
@@ -101,6 +112,40 @@ class WP_MCP_AI_Chart_JS_Helper {
 	}
 
 	/**
+	 * Get cached user IDs for charts.
+	 *
+	 * Caches user IDs for 5 minutes to prevent repeated database queries.
+	 * Limits to MAX_USERS_FOR_CHARTS users by default.
+	 *
+	 * @return array Array of user IDs.
+	 */
+	private static function get_cached_user_ids() {
+		// Try to get from cache.
+		$cache_key = 'wp_mcp_ai_chart_user_ids';
+		$user_ids  = get_transient( $cache_key );
+
+		if ( false !== $user_ids && is_array( $user_ids ) ) {
+			return $user_ids;
+		}
+
+		// Get max users from filter (default 100).
+		$max_users = apply_filters( 'wp_mcp_ai_chart_max_users', self::MAX_USERS_FOR_CHARTS );
+
+		// Fetch fresh user IDs with limit.
+		$user_ids = get_users(
+			array(
+				'fields' => 'ID',
+				'number' => $max_users,
+			)
+		);
+
+		// Cache for 5 minutes.
+		set_transient( $cache_key, $user_ids, self::CACHE_DURATION );
+
+		return $user_ids;
+	}
+
+	/**
 	 * Get chart data for token usage trends.
 	 *
 	 * @param array $args Query arguments.
@@ -161,8 +206,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			// Specific user.
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			// Cached users (limited to 100 by default).
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users and tools.
@@ -234,7 +279,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		);
 
 		// Count users by tier using WP_MCP_AI_Tool_Token_Limits if available.
-		$users = get_users( array( 'fields' => 'ID' ) );
+		$users = self::get_cached_user_ids();
 
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			// Use the proper tier detection method.
@@ -305,7 +350,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		if ( ! empty( $args['user_id'] ) ) {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage by tool.
@@ -375,7 +420,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
 			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users.
@@ -466,7 +511,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
 			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users.
@@ -643,7 +688,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
 			// Get all users for site-wide calculation.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Calculate total usage and limits.
