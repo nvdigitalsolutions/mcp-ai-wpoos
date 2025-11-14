@@ -1,6 +1,14 @@
 # LM Studio MCP Connection Fix - Summary
 
-## Issue Description
+## ⚠️ UPDATED - November 2024
+
+**This document describes a previous fix. A new issue and fix have been identified.**
+
+**Please see [LM_STUDIO_SSE_FIX.md](LM_STUDIO_SSE_FIX.md) for the latest fix addressing "SSE error: undefined" issues.**
+
+---
+
+## Previous Issue Description (2024)
 
 LM Studio clients were unable to connect to the WP oOS MCP server, receiving SSE errors with undefined content type:
 
@@ -18,11 +26,11 @@ LM Studio clients were unable to connect to the WP oOS MCP server, receiving SSE
 }
 ```
 
-## Root Cause
+## Previous Root Cause
 
 The `/mcp` endpoint was defaulting to SSE (Server-Sent Events) streaming for GET requests, but LM Studio expected JSON discovery information instead. This caused a content-type mismatch and connection failures.
 
-## Solution Implemented
+## Previous Solution Implemented (Superseded)
 
 ### 1. Changed GET /mcp Behavior
 
@@ -33,9 +41,25 @@ The `/mcp` endpoint was defaulting to SSE (Server-Sent Events) streaming for GET
 **After:**
 - GET `/mcp` → Returns JSON discovery (Content-Type: application/json) **[DEFAULT]**
 - GET `/mcp?stream=true` → Returns SSE stream
-- GET `/mcp` with `Accept: text/event-stream` → Returns SSE stream
+- GET `/mcp` with `Accept: text/event-stream` → Returns SSE stream ⚠️ **THIS WAS THE PROBLEM!**
 
-### 2. Updated Discovery Response
+## November 2024 Update
+
+**The previous fix introduced a new issue:**
+
+The fix added Accept header detection for SSE, but LM Studio's MCP client sends `Accept: text/event-stream` by default while expecting JSON responses (Streamable HTTP transport). This caused the "SSE error: undefined" to return.
+
+**New Fix:**
+- Removed Accept header check completely
+- SSE only triggered by explicit `?stream=true` parameter
+- `/mcp` endpoint always returns JSON for GET requests
+- Aligns with MCP 2024-11-05 Streamable HTTP specification
+
+See [LM_STUDIO_SSE_FIX.md](LM_STUDIO_SSE_FIX.md) for complete details.
+
+---
+
+## Previous Documentation (Historical Reference)
 
 The JSON discovery now clearly indicates:
 - **JSON-RPC as primary transport** (POST /mcp)
