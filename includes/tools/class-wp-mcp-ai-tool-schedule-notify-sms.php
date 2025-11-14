@@ -19,7 +19,7 @@ use NotifyLk\ApiException;
 /**
  * Provides a tool for scheduling Notify.lk SMS messages.
  */
-class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const CRON_HOOK = 'wp_mcp_ai_notifylk_send_scheduled_sms';
 
 	/**
@@ -493,5 +493,16 @@ class WP_MCP_AI_Tool_Schedule_Notify_SMS implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return md5( $encoded );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for sending WhatsApp Cloud API messages.
  */
-class WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for WhatsApp API requests.
 	 */
@@ -314,5 +314,16 @@ class WP_MCP_AI_Tool_Send_WhatsApp_Message implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return substr( $value, 0, 2 ) . str_repeat( '*', $length - 4 ) . substr( $value, -2 );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

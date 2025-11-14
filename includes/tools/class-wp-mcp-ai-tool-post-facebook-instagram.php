@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for publishing content to Facebook Pages and Instagram business accounts.
  */
-class WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Graph API version used for requests.
 	 */
@@ -477,5 +477,16 @@ class WP_MCP_AI_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Interface
 		$sanitized = esc_url_raw( $url );
 
 		return $sanitized ? $sanitized : '';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

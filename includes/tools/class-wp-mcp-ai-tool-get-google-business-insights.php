@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for querying Google Business Profile insights.
  */
-class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for Google Business API calls.
 	 */
@@ -348,5 +348,16 @@ class WP_MCP_AI_Tool_Get_Google_Business_Insights implements WP_MCP_AI_Tool_Inte
 		}
 
 		return preg_replace( '/[^A-Za-z0-9_\/]/', '', $time_zone );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

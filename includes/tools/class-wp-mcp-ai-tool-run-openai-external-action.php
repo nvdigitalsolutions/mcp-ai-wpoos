@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 /**
  * Provides an integration point for OpenAI external actions.
  */
-class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	const RESPONSES_ENDPOINT = 'https://api.openai.com/v1/responses';
 
 	/**
@@ -444,5 +444,16 @@ class WP_MCP_AI_Tool_Run_OpenAI_External_Action implements WP_MCP_AI_Tool_Interf
 		}
 
 		return $log_payload;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

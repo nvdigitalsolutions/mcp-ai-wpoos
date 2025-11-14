@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides basic site metadata and content statistics.
  */
-class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -76,6 +76,17 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface {
 			'posts_published'  => isset( $post_counts->publish ) ? (int) $post_counts->publish : 0,
 			'pages_published'  => isset( $page_counts->publish ) ? (int) $page_counts->publish : 0,
 			'total_users'      => isset( $users['total_users'] ) ? (int) $users['total_users'] : 0,
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
 		);
 	}
 }

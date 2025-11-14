@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for querying TikTok Open API insight endpoints.
  */
-class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for TikTok API calls.
 	 */
@@ -328,5 +328,16 @@ class WP_MCP_AI_Tool_Get_Tiktok_Insights implements WP_MCP_AI_Tool_Interface {
 		$granularity = preg_replace( '/[^A-Z_]/', '', $granularity );
 
 		return $granularity;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }

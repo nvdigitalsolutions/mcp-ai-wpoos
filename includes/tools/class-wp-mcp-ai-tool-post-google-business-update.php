@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for creating Google Business Profile posts via the My Business API.
  */
-class WP_MCP_AI_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Default timeout for Google Business requests.
 	 */
@@ -348,5 +348,16 @@ class WP_MCP_AI_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_Inter
 		$sanitized = esc_url_raw( $url );
 
 		return $sanitized ? $sanitized : '';
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires user capabilities.
+		);
 	}
 }
