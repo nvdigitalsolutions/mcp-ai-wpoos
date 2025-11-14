@@ -184,6 +184,15 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		// Delegate to main controller.
 		return $this->main_controller->permissions_check( $request );
 	}
@@ -195,6 +204,15 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check_mcp( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		// Delegate to main controller for now.
 		return $this->main_controller->permissions_check_mcp( $request );
 	}
@@ -206,6 +224,15 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check_assistant_create( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		// Delegate to main controller for now.
 		return $this->main_controller->permissions_check_assistant_create( $request );
 	}
