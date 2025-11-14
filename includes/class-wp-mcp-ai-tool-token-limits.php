@@ -126,12 +126,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 	}
 
 	/**
-	 * Get user's token limit tier.
+	 * Get user's token limit tier with caching.
 	 *
-	 * @param int $user_id User ID.
+	 * @param int  $user_id User ID.
+	 * @param bool $use_cache Whether to use cached value. Default true.
 	 * @return string Tier identifier.
 	 */
-	public static function get_user_tier( $user_id ) {
+	public static function get_user_tier( $user_id, $use_cache = true ) {
 		$user_id = absint( $user_id );
 
 		if ( ! $user_id ) {
@@ -143,6 +144,16 @@ class WP_MCP_AI_Tool_Token_Limits {
 			 * @param string $tier Default tier for non-logged-in users.
 			 */
 			return apply_filters( 'wp_mcp_ai_default_guest_tier', self::TIER_FREE );
+		}
+
+		// Check cache first if enabled.
+		if ( $use_cache ) {
+			$cache_key = "wp_mcp_ai_user_tier_{$user_id}";
+			$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai' );
+
+			if ( false !== $cached ) {
+				return $cached;
+			}
 		}
 
 		// Check user meta for custom tier.
@@ -157,12 +168,19 @@ class WP_MCP_AI_Tool_Token_Limits {
 					// Tier has expired, delete custom tier and proceed to role-based detection.
 					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier' );
 					delete_user_meta( $user_id, '_wp_mcp_ai_token_tier_expires' );
+					self::invalidate_tier_cache( $user_id );
 				} else {
-					// Tier is still valid.
+					// Tier is still valid - cache and return.
+					if ( $use_cache ) {
+						wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $custom_tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+					}
 					return $custom_tier;
 				}
 			} else {
-				// No expiration, tier is permanent.
+				// No expiration, tier is permanent - cache and return.
+				if ( $use_cache ) {
+					wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $custom_tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+				}
 				return $custom_tier;
 			}
 		}
@@ -179,7 +197,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 			 * @param string $tier    Default tier.
 			 * @param int    $user_id User ID.
 			 */
-			return apply_filters( 'wp_mcp_ai_default_invalid_user_tier', self::TIER_FREE, $user_id );
+			$tier = apply_filters( 'wp_mcp_ai_default_invalid_user_tier', self::TIER_FREE, $user_id );
+			if ( $use_cache ) {
+				wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+			}
+			return $tier;
 		}
 
 		foreach ( $user->roles as $role ) {
@@ -193,7 +215,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 				 * @param int    $user_id User ID.
 				 * @param string $role    User role.
 				 */
-				return apply_filters( 'wp_mcp_ai_user_tier_by_role', self::$role_tier_map[ $role ], $user_id, $role );
+				$tier = apply_filters( 'wp_mcp_ai_user_tier_by_role', self::$role_tier_map[ $role ], $user_id, $role );
+				if ( $use_cache ) {
+					wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+				}
+				return $tier;
 			}
 		}
 
@@ -205,7 +231,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 		 * @param string $tier    Default tier.
 		 * @param int    $user_id User ID.
 		 */
-		return apply_filters( 'wp_mcp_ai_default_user_tier', self::TIER_FREE, $user_id );
+		$tier = apply_filters( 'wp_mcp_ai_default_user_tier', self::TIER_FREE, $user_id );
+		if ( $use_cache ) {
+			wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+		}
+		return $tier;
 	}
 
 	/**
@@ -1742,6 +1772,41 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$user_id   = absint( $user_id );
 		$cache_key = "wp_mcp_ai_user_tier_{$user_id}";
 		wp_cache_delete( $cache_key, 'wp_mcp_ai' );
+	}
+
+	/**
+	 * Preload tiers for multiple users into cache.
+	 *
+	 * Optimizes performance when displaying bulk user lists by reducing
+	 * individual get_user_meta calls.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $user_ids Array of user IDs to preload.
+	 * @return int Number of tiers preloaded.
+	 */
+	public static function preload_user_tiers( $user_ids ) {
+		if ( empty( $user_ids ) || ! is_array( $user_ids ) ) {
+			return 0;
+		}
+
+		$user_ids = array_map( 'absint', $user_ids );
+		$user_ids = array_filter( $user_ids );
+
+		if ( empty( $user_ids ) ) {
+			return 0;
+		}
+
+		$preloaded = 0;
+
+		foreach ( $user_ids as $user_id ) {
+			// Get tier (without cache) and store in cache.
+			$tier = self::get_user_tier( $user_id, false );
+			wp_cache_set( "wp_mcp_ai_user_tier_{$user_id}", $tier, 'wp_mcp_ai', HOUR_IN_SECONDS );
+			++$preloaded;
+		}
+
+		return $preloaded;
 	}
 
 	/**
