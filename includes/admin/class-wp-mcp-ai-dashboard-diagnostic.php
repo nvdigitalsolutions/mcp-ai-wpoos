@@ -47,6 +47,22 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 			?>
 			<div class="wrap">
 				<h1><?php esc_html_e( 'WP oOS Settings Dashboard Diagnostic', 'wp-mcp-ai' ); ?></h1>
+				<?php
+				// Determine which settings system is in use by checking the admin menu.
+				// This must be done early as it's referenced throughout the diagnostic.
+				global $menu, $submenu;
+				$using_old_settings = false;
+				
+				// Check for old settings under Settings submenu.
+				if ( isset( $submenu['options-general.php'] ) ) {
+					foreach ( $submenu['options-general.php'] as $item ) {
+						if ( isset( $item[2] ) && 'wp-mcp-ai-settings' === $item[2] ) {
+							$using_old_settings = true;
+							break;
+						}
+					}
+				}
+				?>
 				
 				<div class="card">
 					<h2><?php esc_html_e( '1. Constants', 'wp-mcp-ai' ); ?></h2>
@@ -156,7 +172,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 					<h2><?php esc_html_e( '4. Global Variables', 'wp-mcp-ai' ); ?></h2>
 					<p>
 						<strong><?php esc_html_e( 'Active Settings System:', 'wp-mcp-ai' ); ?></strong>
-						<span style="color: green;"><?php esc_html_e( 'New Settings Dashboard', 'wp-mcp-ai' ); ?></span>
+						<span style="color: green;"><?php esc_html_e( 'Settings Dashboard', 'wp-mcp-ai' ); ?></span>
 					</p>
 					<table class="widefat striped">
 						<thead>
@@ -185,9 +201,9 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<td>
 									<?php
 									if ( $using_old_settings ) {
-										esc_html_e( 'Not needed (legacy mode)', 'wp-mcp-ai' );
+										esc_html_e( 'Not needed (legacy mode - should not occur)', 'wp-mcp-ai' );
 									} else {
-										esc_html_e( 'New settings dashboard instance', 'wp-mcp-ai' );
+										esc_html_e( 'Settings dashboard instance', 'wp-mcp-ai' );
 									}
 									?>
 								</td>
@@ -201,18 +217,18 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 								<td>
 									<?php
 									if ( $admin_settings_exists ) {
-										echo '<span style="color: green;">✓ Set</span>';
+										echo '<span style="color: orange;">⚠ Set (legacy)</span>';
 									} else {
-										echo '<span style="color: ' . ( $using_old_settings ? 'red' : 'gray' ) . ';">Not Set</span>';
+										echo '<span style="color: gray;">Not Set</span>';
 									}
 									?>
 								</td>
 								<td>
 									<?php
-									if ( $using_old_settings ) {
-										esc_html_e( 'Legacy admin settings instance', 'wp-mcp-ai' );
+									if ( $admin_settings_exists ) {
+										esc_html_e( 'Legacy admin settings instance detected (should not be set)', 'wp-mcp-ai' );
 									} else {
-										esc_html_e( 'Not needed (new dashboard mode)', 'wp-mcp-ai' );
+										esc_html_e( 'Not set (correct - using new dashboard)', 'wp-mcp-ai' );
 									}
 									?>
 								</td>
@@ -224,20 +240,10 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 				<div class="card">
 					<h2><?php esc_html_e( '5. Admin Menu Pages', 'wp-mcp-ai' ); ?></h2>
 					<?php
-					global $menu, $submenu;
-					$found_old   = false;
+					// Reuse $using_old_settings that was already determined at the top of the page.
+					$found_old   = $using_old_settings;
 					$found_new   = false;
 					$found_auth0 = false;
-
-					// Check for old settings under Settings submenu.
-					if ( isset( $submenu['options-general.php'] ) ) {
-						foreach ( $submenu['options-general.php'] as $item ) {
-							if ( isset( $item[2] ) && 'wp-mcp-ai-settings' === $item[2] ) {
-								$found_old = true;
-								break;
-							}
-						}
-					}
 
 					// Check for new dashboard as top-level menu.
 					if ( isset( $menu ) ) {
@@ -269,9 +275,14 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 						</thead>
 						<tbody>
 							<tr>
-								<td><?php esc_html_e( 'New Dashboard (Top-level WP oOS)', 'wp-mcp-ai' ); ?></td>
+								<td><?php esc_html_e( 'Settings Dashboard (Top-level WP oOS)', 'wp-mcp-ai' ); ?></td>
 								<td><?php echo $found_new ? '<span style="color: green;">✓ Found</span>' : '<span style="color: red;">✗ Not Found</span>'; ?></td>
-								<td>Yes</td>
+								<td>Yes (Required)</td>
+							</tr>
+							<tr>
+								<td><?php esc_html_e( 'Legacy Settings Page (Under Settings)', 'wp-mcp-ai' ); ?></td>
+								<td><?php echo $found_old ? '<span style="color: orange;">⚠ Found (should not exist)</span>' : '<span style="color: green;">✓ Not Found (correct)</span>'; ?></td>
+								<td>No (Deprecated)</td>
 							</tr>
 							<tr>
 								<td><?php esc_html_e( 'Auth0 Setup (Under WP oOS)', 'wp-mcp-ai' ); ?></td>
