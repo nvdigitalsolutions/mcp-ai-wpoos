@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP oOS Performance Test - Scroll Batching</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 { color: #333; }
+        .test-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f5f5f5;
+        }
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #0073aa;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f7e7;
+            border-radius: 4px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>WP oOS Performance Test - Scroll Batching</h1>
+    
+    <div class="warning">
+        <strong>Note:</strong> Open DevTools Console (F12) to see violations before/after optimization.
+    </div>
+
+    <div class="test-container">
+        <h2>Test 1: Without Optimization (Old Method)</h2>
+        <p>This simulates the old code that causes forced reflows.</p>
+        <div id="messages-old" class="messages"></div>
+        <button onclick="testOldMethod()">Add 50 Messages (Old Method)</button>
+        <div id="results-old" class="results" style="display:none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 2: With Optimization (New Method)</h2>
+        <p>This uses the new scroll batching technique.</p>
+        <div id="messages-new" class="messages"></div>
+        <button onclick="testNewMethod()">Add 50 Messages (New Method)</button>
+        <div id="results-new" class="results" style="display:none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>How to Verify</h2>
+        <ol>
+            <li>Open Chrome DevTools (F12) and go to the Console tab</li>
+            <li>Click "Add 50 Messages (Old Method)" and watch for violations</li>
+            <li>Clear console</li>
+            <li>Click "Add 50 Messages (New Method)" and notice fewer/no violations</li>
+            <li>Compare the timing results below each test</li>
+        </ol>
+    </div>
+
+    <script>
+        // Simulate scroll batching from WP oOS
+        const scrollBatcher = (function() {
+            let pendingScrolls = new Map();
+            let rafScheduled = false;
+
+            return {
+                scrollToBottom: function(element) {
+                    if (!element) return;
+                    
+                    pendingScrolls.set(element, 'bottom');
+
+                    if (!rafScheduled) {
+                        rafScheduled = true;
+                        requestAnimationFrame(function() {
+                            const scrollOperations = new Map();
+                            pendingScrolls.forEach(function(_, element) {
+                                if (element && element.parentNode) {
+                                    scrollOperations.set(element, element.scrollHeight);
+                                }
+                            });
+                            
+                            scrollOperations.forEach(function(scrollHeight, element) {
+                                element.scrollTop = scrollHeight;
+                            });
+                            
+                            pendingScrolls.clear();
+                            rafScheduled = false;
+                        });
+                    }
+                }
+            };
+        })();
+
+        function testOldMethod() {
+            const container = document.getElementById('messages-old');
+            const results = document.getElementById('results-old');
+            container.innerHTML = '';
+            
+            console.log('🔴 Starting OLD method test - expect forced reflow violations...');
+            const startTime = performance.now();
+            
+            for (let i = 0; i < 50; i++) {
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.textContent = `Message ${i + 1}: This is a test message`;
+                container.appendChild(message);
+                
+                // OLD METHOD: Direct scroll (causes forced reflow)
+                container.scrollTop = container.scrollHeight;
+            }
+            
+            const endTime = performance.now();
+            const duration = (endTime - startTime).toFixed(2);
+            
+            results.style.display = 'block';
+            results.innerHTML = `
+                <strong>Old Method Results:</strong><br>
+                Time: ${duration}ms<br>
+                Messages added: 50<br>
+                Scroll operations: 50 (synchronous)<br>
+                <strong style="color: #d9534f;">Expected: Multiple "Forced reflow" violations in console</strong>
+            `;
+            
+            console.log('🔴 OLD method completed in', duration, 'ms');
+        }
+
+        function testNewMethod() {
+            const container = document.getElementById('messages-new');
+            const results = document.getElementById('results-new');
+            container.innerHTML = '';
+            
+            console.log('✅ Starting NEW method test - should have minimal violations...');
+            const startTime = performance.now();
+            
+            for (let i = 0; i < 50; i++) {
+                const message = document.createElement('div');
+                message.className = 'message';
+                message.textContent = `Message ${i + 1}: This is a test message`;
+                container.appendChild(message);
+                
+                // NEW METHOD: Batched scroll (prevents forced reflow)
+                scrollBatcher.scrollToBottom(container);
+            }
+            
+            const endTime = performance.now();
+            const duration = (endTime - startTime).toFixed(2);
+            
+            results.style.display = 'block';
+            results.innerHTML = `
+                <strong>New Method Results:</strong><br>
+                Time: ${duration}ms<br>
+                Messages added: 50<br>
+                Scroll operations: 1 (batched via RAF)<br>
+                <strong style="color: #5cb85c;">Expected: No "Forced reflow" violations in console</strong>
+            `;
+            
+            console.log('✅ NEW method completed in', duration, 'ms');
+        }
+
+        // Add some instructions
+        console.log('%c WP oOS Performance Test', 'font-size: 20px; font-weight: bold; color: #0073aa;');
+        console.log('Run the tests and compare console violations:');
+        console.log('- Old method: Will show "Forced reflow" violations');
+        console.log('- New method: Should show no violations (batched in RAF)');
+    </script>
+</body>
+</html>
