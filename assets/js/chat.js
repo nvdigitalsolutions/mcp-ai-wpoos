@@ -225,6 +225,56 @@
     };
 
     /**
+     * DOM update batcher to prevent setTimeout violations.
+     * Batches DOM updates using requestAnimationFrame to prevent forced reflows.
+     * Separation of concerns: timing logic separate from DOM manipulation.
+     */
+    const domUpdateBatcher = (function() {
+        let pendingUpdates = [];
+        let rafScheduled = false;
+
+        function performUpdates() {
+            rafScheduled = false;
+            const updates = pendingUpdates.slice();
+            pendingUpdates = [];
+
+            // Execute all updates in a single animation frame
+            updates.forEach(function(updateFn) {
+                try {
+                    updateFn();
+                } catch (error) {
+                    if (window.console && console.error) {
+                        console.error('Error in batched DOM update:', error);
+                    }
+                }
+            });
+        }
+
+        return {
+            /**
+             * Schedule a DOM update to be executed in the next animation frame.
+             * @param {Function} updateFn - Function to execute
+             */
+            schedule: function(updateFn) {
+                if (!OPTIMIZATIONS_ENABLED || typeof updateFn !== 'function') {
+                    // Execute immediately if optimizations disabled
+                    if (typeof updateFn === 'function') {
+                        updateFn();
+                    }
+                    return;
+                }
+
+                pendingUpdates.push(updateFn);
+
+                if (!rafScheduled) {
+                    rafScheduled = true;
+                    requestAnimationFrame(performUpdates);
+                }
+            }
+        };
+    })();
+
+    /**
      * Get localStorage usage statistics (async).
      * Uses caching and requestIdleCallback to avoid blocking the main thread.
      * 
@@ -1280,7 +1330,9 @@
             if (!textToCopy) {
                 updateCopyButtonState(button, 'error');
                 setTimeout(function () {
-                    updateCopyButtonState(button, 'idle');
+                    domUpdateBatcher.schedule(function() {
+                        updateCopyButtonState(button, 'idle');
+                    });
                 }, 2000);
                 return;
             }
@@ -1296,15 +1348,19 @@
                     }
 
                     setTimeout(function () {
-                        updateCopyButtonState(button, 'idle');
-                        button.disabled = false;
+                        domUpdateBatcher.schedule(function() {
+                            updateCopyButtonState(button, 'idle');
+                            button.disabled = false;
+                        });
                     }, 2000);
                 })
                 .catch(function () {
                     updateCopyButtonState(button, 'error');
                     setTimeout(function () {
-                        updateCopyButtonState(button, 'idle');
-                        button.disabled = false;
+                        domUpdateBatcher.schedule(function() {
+                            updateCopyButtonState(button, 'idle');
+                            button.disabled = false;
+                        });
                     }, 2000);
                 });
         });
@@ -2512,38 +2568,41 @@
         }
 
         getLocalStorageQuota(function(quota) {
-            if (!quota.available) {
-                monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
-                return;
-            }
+            // Batch DOM updates to prevent setTimeout violations
+            domUpdateBatcher.schedule(function() {
+                if (!quota.available) {
+                    monitorEl.innerHTML = '<span class="wp-mcp-ai-chat__quota-unavailable">Storage monitoring unavailable</span>';
+                    return;
+                }
 
-            const percentage = quota.percentage;
-            let statusClass = 'wp-mcp-ai-chat__quota-ok';
-            let statusText = 'OK';
-            
-            if (percentage >= 90) {
-                statusClass = 'wp-mcp-ai-chat__quota-critical';
-                statusText = 'Critical';
-            } else if (percentage >= 75) {
-                statusClass = 'wp-mcp-ai-chat__quota-warning';
-                statusText = 'High';
-            }
+                const percentage = quota.percentage;
+                let statusClass = 'wp-mcp-ai-chat__quota-ok';
+                let statusText = 'OK';
+                
+                if (percentage >= 90) {
+                    statusClass = 'wp-mcp-ai-chat__quota-critical';
+                    statusText = 'Critical';
+                } else if (percentage >= 75) {
+                    statusClass = 'wp-mcp-ai-chat__quota-warning';
+                    statusText = 'High';
+                }
 
-            monitorEl.innerHTML = '' +
-                '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
-                '<span class="wp-mcp-ai-chat__quota-bar">' +
-                    '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
-                '</span> ' +
-                '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
-                    quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
-                '</span>';
+                monitorEl.innerHTML = '' +
+                    '<span class="wp-mcp-ai-chat__quota-label">Storage:</span> ' +
+                    '<span class="wp-mcp-ai-chat__quota-bar">' +
+                        '<span class="wp-mcp-ai-chat__quota-fill ' + statusClass + '" style="width: ' + percentage + '%"></span>' +
+                    '</span> ' +
+                    '<span class="wp-mcp-ai-chat__quota-text ' + statusClass + '">' +
+                        quota.formattedUsed + ' / ' + quota.formattedTotal + ' (' + Math.round(percentage) + '%' + (statusText !== 'OK' ? ' - ' + statusText : '') + ')' +
+                    '</span>';
 
-            // Add tooltip with detailed info
-            monitorEl.setAttribute('title', 
-                'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
-                'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
-                'Status: ' + statusText
-            );
+                // Add tooltip with detailed info
+                monitorEl.setAttribute('title', 
+                    'Total localStorage: ' + quota.formattedUsed + ' / ' + quota.formattedTotal + '\n' +
+                    'WP oOS chats: ' + quota.formattedWpMcpAiUsed + '\n' +
+                    'Status: ' + statusText
+                );
+            });
         });
     }
 
@@ -2586,7 +2645,9 @@
         
         setStatus(state.container, getString('exportSuccess', 'Conversation exported successfully as ') + result.filename);
         setTimeout(function() {
-            clearStatus(state.container);
+            domUpdateBatcher.schedule(function() {
+                clearStatus(state.container);
+            });
         }, 3000);
     }
 
@@ -2605,7 +2666,9 @@
         if (!state.conversation || state.conversation.length === 0) {
             setStatus(state.container, getString('noConversationToSave', 'No conversation to save. Start chatting first!'));
             setTimeout(function() {
-                clearStatus(state.container);
+                domUpdateBatcher.schedule(function() {
+                    clearStatus(state.container);
+                });
             }, 3000);
             return;
         }
@@ -2619,7 +2682,9 @@
                 // No save needed or save was skipped
                 setStatus(state.container, getString('saveSkipped', 'Save not available for this conversation.'));
                 setTimeout(function() {
-                    clearStatus(state.container);
+                    domUpdateBatcher.schedule(function() {
+                        clearStatus(state.container);
+                    });
                 }, 3000);
                 return;
             }
@@ -2628,7 +2693,9 @@
                 // Save succeeded
                 setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
                 setTimeout(function() {
-                    clearStatus(state.container);
+                    domUpdateBatcher.schedule(function() {
+                        clearStatus(state.container);
+                    });
                 }, 3000);
             } else {
                 // Save failed
@@ -2640,7 +2707,9 @@
                 }
                 
                 setTimeout(function() {
-                    clearStatus(state.container);
+                    domUpdateBatcher.schedule(function() {
+                        clearStatus(state.container);
+                    });
                 }, 5000);
             }
         }).catch(function(error) {
@@ -2652,7 +2721,9 @@
             }
             
             setTimeout(function() {
-                clearStatus(state.container);
+                domUpdateBatcher.schedule(function() {
+                    clearStatus(state.container);
+                });
             }, 5000);
         });
     }
@@ -7281,17 +7352,22 @@
         if (timeHTML) {
             const timeEl = statusEl.querySelector('.wp-mcp-ai-chat__status-time');
             if (timeEl) {
+                // Use batched DOM updates to prevent setTimeout violations
                 statusEl._timeInterval = setInterval(function() {
                     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                    if (timeEl && timeEl.parentNode) {
-                        timeEl.textContent = formatElapsedTime(elapsed);
-                    } else {
-                        // Element removed, clear interval
-                        if (statusEl._timeInterval) {
-                            clearInterval(statusEl._timeInterval);
-                            statusEl._timeInterval = null;
+                    
+                    // Schedule DOM update in next animation frame to prevent forced reflow
+                    domUpdateBatcher.schedule(function() {
+                        if (timeEl && timeEl.parentNode) {
+                            timeEl.textContent = formatElapsedTime(elapsed);
+                        } else {
+                            // Element removed, clear interval
+                            if (statusEl._timeInterval) {
+                                clearInterval(statusEl._timeInterval);
+                                statusEl._timeInterval = null;
+                            }
                         }
-                    }
+                    });
                 }, 1000);
             }
         }
@@ -8508,14 +8584,17 @@
         init();
 
         // Initialize cron status for all chat containers after a brief delay
+        // Use requestIdleCallback to avoid blocking main thread
         setTimeout(function() {
-            const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
-            Array.prototype.forEach.call(containers, function(container) {
-                const instanceId = container.getAttribute('id');
-                const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
-                if (config) {
-                    initializeCronStatus(container, config);
-                }
+            domUpdateBatcher.schedule(function() {
+                const containers = document.querySelectorAll('[data-wp-mcp-ai-chat]');
+                Array.prototype.forEach.call(containers, function(container) {
+                    const instanceId = container.getAttribute('id');
+                    const config = window.wpMcpAiChatInstances && window.wpMcpAiChatInstances[instanceId];
+                    if (config) {
+                        initializeCronStatus(container, config);
+                    }
+                });
             });
         }, 500);
     }
