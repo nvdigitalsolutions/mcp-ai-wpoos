@@ -147,6 +147,29 @@
         state.statusEl.textContent = message || '';
     }
 
+    /**
+     * Get the current assistant_id from the target chat widget or fallback to config.
+     * This ensures we always get the latest assistant_id, including one restored from localStorage.
+     *
+     * @param {Object} state - The user-chats state object
+     * @return {number} The assistant_id to use
+     */
+    function getAssistantId(state) {
+        // First, try to get from the target chat widget's current state
+        if (state.config.targetChatWidget && state.config.targetChatWidget.__wpMcpAiChatState) {
+            const chatState = state.config.targetChatWidget.__wpMcpAiChatState;
+            if (chatState.config && chatState.config.assistantId) {
+                const chatAssistantId = parseInt(chatState.config.assistantId, 10);
+                if (!isNaN(chatAssistantId) && chatAssistantId > 0) {
+                    return chatAssistantId;
+                }
+            }
+        }
+        
+        // Fallback to the stored config value
+        return state.config.assistantId || 0;
+    }
+
     function formatDate(value) {
         if (!value) {
             return '';
@@ -591,8 +614,9 @@
             user_id: state.config.userId
         };
 
-        if (state.config.assistantId > 0) {
-            params.assistant_id = state.config.assistantId;
+        const assistantId = getAssistantId(state);
+        if (assistantId > 0) {
+            params.assistant_id = assistantId;
         }
 
         const url = buildRestUrl(params);
@@ -676,8 +700,9 @@
             user_id: state.config.userId
         };
 
-        if (state.config.assistantId > 0) {
-            params.assistant_id = state.config.assistantId;
+        const assistantId = getAssistantId(state);
+        if (assistantId > 0) {
+            params.assistant_id = assistantId;
         }
 
         const url = buildRestUrl(params);
@@ -735,8 +760,9 @@
             user_id: state.config.userId
         };
 
-        if (state.config.assistantId > 0) {
-            params.assistant_id = state.config.assistantId;
+        const assistantId = getAssistantId(state);
+        if (assistantId > 0) {
+            params.assistant_id = assistantId;
         }
 
         if (state.config.maxSessions > 0) {
@@ -863,6 +889,18 @@
                 }
                 
                 targetChatWidget = closestWidget;
+            }
+        }
+
+        // Get assistant_id from target chat widget if available
+        // This ensures we use the assistant_id that was restored from localStorage
+        if (targetChatWidget && targetChatWidget.__wpMcpAiChatState) {
+            const chatState = targetChatWidget.__wpMcpAiChatState;
+            if (chatState.config && chatState.config.assistantId) {
+                const chatAssistantId = parseInt(chatState.config.assistantId, 10);
+                if (!isNaN(chatAssistantId) && chatAssistantId > 0) {
+                    assistantId = chatAssistantId;
+                }
             }
         }
 
