@@ -176,6 +176,32 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-analytics-manager.php';
 			add_action( 'rest_api_init', array( 'WP_MCP_AI_REST_Analytics_Manager', 'register_routes' ) );
 
+			// Register Voice Conversation REST endpoints.
+			require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-voice-conversation-controller.php';
+			add_action(
+				'rest_api_init',
+				function() use ( $registry ) {
+					// Get services needed for voice conversation orchestration
+					$assistant_service = null;
+					$chat_service      = null;
+
+					if ( class_exists( 'WP_MCP_AI_Assistant_Service' ) ) {
+						$assistant_service = new WP_MCP_AI_Assistant_Service();
+					}
+
+					if ( class_exists( 'WP_MCP_AI_Chat_Service' ) ) {
+						$chat_service = new WP_MCP_AI_Chat_Service();
+					}
+
+					$voice_controller = new WP_MCP_AI_REST_Voice_Conversation_Controller(
+						$registry,
+						$assistant_service,
+						$chat_service
+					);
+					$voice_controller->register_routes();
+				}
+			);
+
 			add_filter( 'rest_request_after_callbacks', array( $this, 'format_actionable_error' ), 10, 3 );
 			add_filter( 'rest_post_dispatch', array( $this, 'augment_error_actions' ), 10, 3 );
 			add_filter( 'rest_pre_serve_request', array( $this, 'ensure_clean_json_output' ), 10, 4 );
