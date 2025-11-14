@@ -154,6 +154,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<div class="wp-mcp-ai-chart-controls-right">
 						<label for="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-label"><?php esc_html_e( 'Time Period:', 'wp-mcp-ai' ); ?></label>
 						<select id="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-select">
+							<option value="1"><?php esc_html_e( 'Today', 'wp-mcp-ai' ); ?></option>
 							<option value="7" selected><?php esc_html_e( 'Last 7 Days', 'wp-mcp-ai' ); ?></option>
 							<option value="30"><?php esc_html_e( 'Last 30 Days', 'wp-mcp-ai' ); ?></option>
 							<option value="90"><?php esc_html_e( 'Last 90 Days', 'wp-mcp-ai' ); ?></option>
@@ -842,6 +843,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							}
 							?>
 						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Analytics Charts Section -->
+			<div class="wp-mcp-ai-analytics-section" style="margin-top: 30px;">
+				<h4><?php esc_html_e( 'Usage Distribution', 'wp-mcp-ai' ); ?></h4>
+				
+				<!-- Provider & Model Distribution Charts -->
+				<div class="wp-mcp-ai-chart-row">
+					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
+						<canvas id="wp-mcp-ai-provider-distribution-chart"></canvas>
+					</div>
+					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
+						<canvas id="wp-mcp-ai-model-distribution-chart"></canvas>
 					</div>
 				</div>
 			</div>

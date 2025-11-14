@@ -351,6 +351,197 @@ class WP_MCP_AI_Chart_JS_Helper {
 	}
 
 	/**
+	 * Get chart data for provider distribution.
+	 *
+	 * Returns token usage distribution across different providers.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array Chart data in Chart.js format.
+	 */
+	public static function get_provider_distribution_data( $args = array() ) {
+		$defaults = array(
+			'user_id' => 0,
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$provider_usage = array();
+
+		// Determine which users to query.
+		$user_ids = array();
+
+		if ( ! empty( $args['user_id'] ) ) {
+			// Specific user.
+			$user_ids = array( absint( $args['user_id'] ) );
+		} else {
+			// All users.
+			$user_ids = get_users( array( 'fields' => 'ID' ) );
+		}
+
+		// Aggregate usage across users.
+		foreach ( $user_ids as $user_id ) {
+			if ( ! class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				continue;
+			}
+
+			$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+			if ( empty( $usage ) || ! is_array( $usage ) ) {
+				continue;
+			}
+
+			foreach ( $usage as $provider => $models ) {
+				if ( ! isset( $provider_usage[ $provider ] ) ) {
+					$provider_usage[ $provider ] = 0;
+				}
+
+				foreach ( $models as $model => $totals ) {
+					if ( isset( $totals['total_tokens'] ) ) {
+						$provider_usage[ $provider ] += absint( $totals['total_tokens'] );
+					}
+				}
+			}
+		}
+
+		// Sort by usage descending.
+		arsort( $provider_usage );
+
+		// Format data for Chart.js.
+		$labels = array();
+		$values = array();
+		$colors = array(
+			'rgba(54, 162, 235, 0.8)',   // Blue for OpenAI.
+			'rgba(75, 192, 192, 0.8)',   // Teal for Google.
+			'rgba(255, 159, 64, 0.8)',   // Orange for Anthropic.
+			'rgba(153, 102, 255, 0.8)',  // Purple for Ollama.
+			'rgba(255, 99, 132, 0.8)',   // Red for LM Studio.
+			'rgba(255, 205, 86, 0.8)',   // Yellow.
+			'rgba(201, 203, 207, 0.8)',  // Gray.
+		);
+
+		$i = 0;
+		foreach ( $provider_usage as $provider => $tokens ) {
+			$labels[] = ucfirst( $provider );
+			$values[] = $tokens;
+			++$i;
+		}
+
+		return array(
+			'labels'   => $labels,
+			'values'   => $values,
+			'colors'   => array_slice( $colors, 0, count( $labels ) ),
+			'datasets' => array(
+				array(
+					'data'            => $values,
+					'backgroundColor' => array_slice( $colors, 0, count( $labels ) ),
+					'borderWidth'     => 1,
+				),
+			),
+		);
+	}
+
+	/**
+	 * Get chart data for model distribution.
+	 *
+	 * Returns token usage distribution across different AI models.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array Chart data in Chart.js format.
+	 */
+	public static function get_model_distribution_data( $args = array() ) {
+		$defaults = array(
+			'user_id' => 0,
+			'limit'   => 10, // Top N models.
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$model_usage = array();
+
+		// Determine which users to query.
+		$user_ids = array();
+
+		if ( ! empty( $args['user_id'] ) ) {
+			// Specific user.
+			$user_ids = array( absint( $args['user_id'] ) );
+		} else {
+			// All users.
+			$user_ids = get_users( array( 'fields' => 'ID' ) );
+		}
+
+		// Aggregate usage across users.
+		foreach ( $user_ids as $user_id ) {
+			if ( ! class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+				continue;
+			}
+
+			$usage = WP_MCP_AI_Usage_Tracker::get_usage_for_user( $user_id );
+
+			if ( empty( $usage ) || ! is_array( $usage ) ) {
+				continue;
+			}
+
+			foreach ( $usage as $provider => $models ) {
+				foreach ( $models as $model => $totals ) {
+					$key = $provider . '/' . $model;
+					if ( ! isset( $model_usage[ $key ] ) ) {
+						$model_usage[ $key ] = 0;
+					}
+
+					if ( isset( $totals['total_tokens'] ) ) {
+						$model_usage[ $key ] += absint( $totals['total_tokens'] );
+					}
+				}
+			}
+		}
+
+		// Sort by usage descending.
+		arsort( $model_usage );
+
+		// Limit to top N models.
+		$limit = absint( $args['limit'] );
+		if ( $limit > 0 ) {
+			$model_usage = array_slice( $model_usage, 0, $limit, true );
+		}
+
+		// Format data for Chart.js.
+		$labels = array();
+		$values = array();
+		$colors = array(
+			'rgba(54, 162, 235, 0.8)',
+			'rgba(75, 192, 192, 0.8)',
+			'rgba(255, 159, 64, 0.8)',
+			'rgba(153, 102, 255, 0.8)',
+			'rgba(255, 99, 132, 0.8)',
+			'rgba(255, 205, 86, 0.8)',
+			'rgba(201, 203, 207, 0.8)',
+			'rgba(83, 102, 255, 0.8)',
+			'rgba(255, 99, 255, 0.8)',
+			'rgba(99, 255, 132, 0.8)',
+		);
+
+		$i = 0;
+		foreach ( $model_usage as $model => $tokens ) {
+			$labels[] = $model;
+			$values[] = $tokens;
+			++$i;
+		}
+
+		return array(
+			'labels'   => $labels,
+			'values'   => $values,
+			'colors'   => array_slice( $colors, 0, count( $labels ) ),
+			'datasets' => array(
+				array(
+					'data'            => $values,
+					'backgroundColor' => array_slice( $colors, 0, count( $labels ) ),
+					'borderWidth'     => 1,
+				),
+			),
+		);
+	}
+
+	/**
 	 * Get chart configuration for usage trend chart.
 	 *
 	 * Returns Chart.js configuration object.

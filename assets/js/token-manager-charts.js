@@ -30,6 +30,8 @@
 			this.initUsageTrendChart();
 			this.initTierDistributionChart();
 			this.initToolBreakdownChart();
+			this.initProviderDistributionChart();
+			this.initModelDistributionChart();
 			this.bindEvents();
 		},
 
@@ -185,6 +187,90 @@
 		},
 
 		/**
+		 * Initialize provider distribution pie chart.
+		 */
+		initProviderDistributionChart: function() {
+			var canvas = document.getElementById('wp-mcp-ai-provider-distribution-chart');
+			if (!canvas) {
+				return;
+			}
+
+			var ctx = canvas.getContext('2d');
+			
+			// Initial configuration - will be populated from server data
+			var config = {
+				type: 'doughnut',
+				data: {
+					labels: [],
+					datasets: [{
+						data: [],
+						backgroundColor: [],
+						borderWidth: 1
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							display: true,
+							position: 'right'
+						},
+						title: {
+							display: true,
+							text: 'Usage by Provider'
+						}
+					}
+				}
+			};
+
+			this.charts.providerDistribution = new Chart(ctx, config);
+			this.loadProviderDistributionData();
+		},
+
+		/**
+		 * Initialize model distribution pie chart.
+		 */
+		initModelDistributionChart: function() {
+			var canvas = document.getElementById('wp-mcp-ai-model-distribution-chart');
+			if (!canvas) {
+				return;
+			}
+
+			var ctx = canvas.getContext('2d');
+			
+			// Initial configuration - will be populated from server data
+			var config = {
+				type: 'doughnut',
+				data: {
+					labels: [],
+					datasets: [{
+						data: [],
+						backgroundColor: [],
+						borderWidth: 1
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							display: true,
+							position: 'right'
+						},
+						title: {
+							display: true,
+							text: 'Usage by Model (Top 10)'
+						}
+					}
+				}
+			};
+
+			this.charts.modelDistribution = new Chart(ctx, config);
+			this.loadModelDistributionData();
+		},
+
+		/**
 		 * Load usage trend data via AJAX.
 		 */
 		loadUsageTrendData: function() {
@@ -294,6 +380,67 @@
 		},
 
 		/**
+		 * Load provider distribution data via AJAX.
+		 */
+		loadProviderDistributionData: function() {
+			var self = this;
+
+			// Fetch provider distribution data from the server.
+			if (typeof wpMcpAiChartData === 'undefined') {
+				console.warn('Chart data not available. wpMcpAiChartData not defined.');
+				return;
+			}
+
+			$.ajax({
+				url: wpMcpAiChartData.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_provider_distribution',
+					nonce: wpMcpAiChartData.nonce
+				},
+				success: function(response) {
+					if (response.success && self.charts.providerDistribution) {
+						self.charts.providerDistribution.data.labels = response.data.labels;
+						self.charts.providerDistribution.data.datasets[0].data = response.data.values;
+						self.charts.providerDistribution.data.datasets[0].backgroundColor = response.data.colors;
+						self.charts.providerDistribution.update();
+					}
+				}
+			});
+		},
+
+		/**
+		 * Load model distribution data via AJAX.
+		 */
+		loadModelDistributionData: function() {
+			var self = this;
+
+			// Fetch model distribution data from the server.
+			if (typeof wpMcpAiChartData === 'undefined') {
+				console.warn('Chart data not available. wpMcpAiChartData not defined.');
+				return;
+			}
+
+			$.ajax({
+				url: wpMcpAiChartData.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_model_distribution',
+					nonce: wpMcpAiChartData.nonce,
+					limit: 10
+				},
+				success: function(response) {
+					if (response.success && self.charts.modelDistribution) {
+						self.charts.modelDistribution.data.labels = response.data.labels;
+						self.charts.modelDistribution.data.datasets[0].data = response.data.values;
+						self.charts.modelDistribution.data.datasets[0].backgroundColor = response.data.colors;
+						self.charts.modelDistribution.update();
+					}
+				}
+			});
+		},
+
+		/**
 		 * Bind UI events.
 		 */
 		bindEvents: function() {
@@ -317,7 +464,8 @@
 		 */
 		refreshCharts: function() {
 			// Update chart title with period
-			var periodText = this.currentPeriod === 7 ? '7 Days' : 
+			var periodText = this.currentPeriod === 1 ? 'Today' :
+							 this.currentPeriod === 7 ? '7 Days' : 
 							 this.currentPeriod === 30 ? '30 Days' : '90 Days';
 			
 			if (this.charts.usageTrend) {

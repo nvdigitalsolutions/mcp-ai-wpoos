@@ -67,6 +67,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_get_usage_trend'        => 'handle_get_usage_trend',
 				'wp_ajax_wp_mcp_ai_get_tier_distribution'  => 'handle_get_tier_distribution',
 				'wp_ajax_wp_mcp_ai_get_tool_breakdown'     => 'handle_get_tool_breakdown',
+				'wp_ajax_wp_mcp_ai_get_provider_distribution' => 'handle_get_provider_distribution',
+				'wp_ajax_wp_mcp_ai_get_model_distribution' => 'handle_get_model_distribution',
 				'wp_ajax_wp_mcp_ai_update_chart_period'    => 'handle_update_chart_period',
 				'wp_ajax_wp_mcp_ai_refresh_chart'          => 'handle_refresh_chart',
 			);
@@ -1116,6 +1118,76 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				array(
 					'user_id' => $user_id,
 					'days'    => $days,
+					'limit'   => $limit,
+				)
+			);
+
+			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle AJAX request to get provider distribution data for charts.
+		 */
+		public function handle_get_provider_distribution() {
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get chart data.
+			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get parameters.
+			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+
+			$data = WP_MCP_AI_Chart_JS_Helper::get_provider_distribution_data(
+				array(
+					'user_id' => $user_id,
+				)
+			);
+
+			wp_send_json_success( $data );
+		}
+
+		/**
+		 * Handle AJAX request to get model distribution data for charts.
+		 */
+		public function handle_get_model_distribution() {
+			// Verify nonce.
+			if ( ! check_ajax_referer( 'wp_mcp_ai_token_charts', 'nonce', false ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid security token.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Check capabilities.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get chart data.
+			if ( ! class_exists( 'WP_MCP_AI_Chart_JS_Helper' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Chart helper class not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get parameters.
+			$user_id = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
+			$limit   = isset( $_POST['limit'] ) ? absint( $_POST['limit'] ) : 10;
+
+			$data = WP_MCP_AI_Chart_JS_Helper::get_model_distribution_data(
+				array(
+					'user_id' => $user_id,
 					'limit'   => $limit,
 				)
 			);

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'wp-mcp-ai/wp-mcp-ai',
+        'pretty_version' => 'dev-copilot/add-today-option-analysis',
+        'version' => 'dev-copilot/add-today-option-analysis',
+        'reference' => 'c4e3e1515f92fc0479ac27793daa0716309ad952',
         'pretty_version' => 'dev-copilot/add-requires-capability-flag',
         'version' => 'dev-copilot/add-requires-capability-flag',
         'reference' => '0ee0da8f48b0a9d16e576784fa4ad9cec9516eaa',
@@ -587,6 +590,9 @@
             'dev_requirement' => true,
         ),
         'wp-mcp-ai/wp-mcp-ai' => array(
+            'pretty_version' => 'dev-copilot/add-today-option-analysis',
+            'version' => 'dev-copilot/add-today-option-analysis',
+            'reference' => 'c4e3e1515f92fc0479ac27793daa0716309ad952',
             'pretty_version' => 'dev-copilot/add-requires-capability-flag',
             'version' => 'dev-copilot/add-requires-capability-flag',
             'reference' => '0ee0da8f48b0a9d16e576784fa4ad9cec9516eaa',
