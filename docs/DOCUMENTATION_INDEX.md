@@ -155,6 +155,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 | [message-bundling-feature.md](message-bundling-feature.md) | Client-side message bundling optimization | Developers |
 | [high-token-tool-handling.md](high-token-tool-handling.md) | Agentic loop token management | Developers |
 | [token-counting.md](token-counting.md) | Token counting tool for budget management | Users/Devs |
+| [analytics-engine.md](analytics-engine.md) | **NEW:** Analytics Engine for trend analysis, patterns, and anomaly detection (Phase 7) | Developers/Admins |
 | [TOKEN-MANAGER-ENHANCEMENT-PLAN.md](TOKEN-MANAGER-ENHANCEMENT-PLAN.md) | Comprehensive enhancement plan for token usage manager (Phases 1-6) | Developers/Stakeholders |
 | [PHASE-7-ANALYTICS-PLAN.md](PHASE-7-ANALYTICS-PLAN.md) | **NEW:** Phase 7 plan - Advanced analytics, visualization, and cost tracking | Developers/Stakeholders |
 | [QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md](QUICK-REFERENCE-TOKEN-ENHANCEMENTS.md) | Quick reference guide for token manager enhancements (Phases 1-6) | All Users |
