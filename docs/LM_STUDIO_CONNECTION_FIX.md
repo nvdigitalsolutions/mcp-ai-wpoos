@@ -91,7 +91,7 @@ The JSON discovery now clearly indicates:
 
 ### 4. Added Test Coverage
 
-Created `tests/test-mcp-endpoint-get-request.php` with comprehensive tests:
+Created `tests/test-mcp-endpoint-get-request.php` with comprehensive tests (superseded by `tests/test-mcp-endpoint-get-support.php`):
 - ✅ GET /mcp returns JSON by default
 - ✅ GET /mcp?stream=true returns SSE
 - ✅ Accept header detection works correctly
@@ -110,7 +110,7 @@ Created `tests/test-mcp-endpoint-get-request.php` with comprehensive tests:
    - Added endpoint methods section
    - Updated transport comparison
 
-4. `tests/test-mcp-endpoint-get-request.php` (new)
+4. `tests/test-mcp-endpoint-get-request.php` (superseded by `tests/test-mcp-endpoint-get-support.php`)
    - Complete test coverage for new behavior
 
 ## Impact
