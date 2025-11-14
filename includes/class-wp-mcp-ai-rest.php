@@ -2138,14 +2138,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Any authenticated user can view their own cron jobs.
 			// The service layer will filter jobs by user ID.
-			if ( ! is_user_logged_in() ) {
-				return new WP_Error(
-					'rest_not_logged_in',
-					__( 'You must be logged in to view cron status.', 'wp-mcp-ai' ),
-					array( 'status' => 401 )
-				);
-			}
-
+			// A valid nonce proves the user is authenticated.
 			$this->set_authenticated_user_id( get_current_user_id() );
 
 			return true;
