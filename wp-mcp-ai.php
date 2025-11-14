@@ -357,6 +357,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-chart-js-helper.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-analytics-dashboard.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cost-calculator.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-analytics-engine.php';
 require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-oauth-manager.php';
 
 // Load HTTP helper early to prevent SSL issues with loopback addresses.
