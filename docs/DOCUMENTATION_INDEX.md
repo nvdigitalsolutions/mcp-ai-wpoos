@@ -6,7 +6,7 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 53+ files (all in docs/ folder, 5+ key files in root)
+**Total Documentation:** 54+ files (all in docs/ folder, 5+ key files in root)
 
 **📋 Note:** As of November 12, 2025:
 - 107 audit reports and summaries have been consolidated into two organized reference documents:
@@ -23,9 +23,10 @@ This document provides a comprehensive index of all documentation available for 
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
 2. [mcp-ai-plugin-setup-checklist.md](mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [CURRENT-STATE-AGENTIC-WORKFLOW.md](CURRENT-STATE-AGENTIC-WORKFLOW.md) - **NEW:** Understand how assistants and processing work together (comprehensive guide)
-4. [remote-client-quickstart.md](remote-client-quickstart.md) - Quick start for remote clients
-5. [BEST_PRACTICES.md](BEST_PRACTICES.md) - Best practices and recommendations
+3. [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) - **NEW:** Quick visual reference for agentic workflow (print-friendly)
+4. [CURRENT-STATE-AGENTIC-WORKFLOW.md](CURRENT-STATE-AGENTIC-WORKFLOW.md) - **NEW:** Understand how assistants and processing work together (comprehensive guide)
+5. [remote-client-quickstart.md](remote-client-quickstart.md) - Quick start for remote clients
+6. [BEST_PRACTICES.md](BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. [CODE-REVIEW-MASTER.md](CODE-REVIEW-MASTER.md) - **NEW:** Comprehensive code review (95/100 score, consolidates 6 reviews)
@@ -76,6 +77,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [AGENTIC-WORKFLOW-VISUAL-SUMMARY.md](AGENTIC-WORKFLOW-VISUAL-SUMMARY.md) | **NEW:** Quick visual reference showing agentic workflow flow (print-friendly diagrams) | Everyone |
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
