@@ -1465,11 +1465,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$service = $this->get_cron_status_service();
-			
+
 			// Get authenticated user ID from auth context (supports bearer tokens, nonces, mesh keys).
 			$auth_context = $this->get_auth_context();
 			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
-			
+
 			$limit = $request->get_param( 'limit' );
 			if ( ! $limit ) {
 				$limit = 10;
