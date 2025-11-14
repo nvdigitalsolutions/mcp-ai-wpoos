@@ -4,15 +4,15 @@
  */
 
 if ( ! defined( 'DB_NAME' ) ) {
-	define( 'DB_NAME', 'wordpress-tests' );
+	define( 'DB_NAME', 'wordpress_test' );
 }
 
 if ( ! defined( 'DB_USER' ) ) {
-	define( 'DB_USER', 'unused' );
+	define( 'DB_USER', 'root' );
 }
 
 if ( ! defined( 'DB_PASSWORD' ) ) {
-	define( 'DB_PASSWORD', 'unused' );
+	define( 'DB_PASSWORD', '' );
 }
 
 if ( ! defined( 'DB_HOST' ) ) {
@@ -27,17 +27,18 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 	define( 'DB_COLLATE', '' );
 }
 
-if ( ! defined( 'DB_TYPE' ) ) {
-	define( 'DB_TYPE', 'sqlite' );
-}
-
-if ( ! defined( 'DB_DIR' ) ) {
-	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
-}
-
-if ( ! defined( 'DB_FILE' ) ) {
-	define( 'DB_FILE', 'wptests.sqlite' );
-}
+// SQLite configuration for local development (optional)
+// if ( ! defined( 'DB_TYPE' ) ) {
+// 	define( 'DB_TYPE', 'sqlite' );
+// }
+//
+// if ( ! defined( 'DB_DIR' ) ) {
+// 	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
+// }
+//
+// if ( ! defined( 'DB_FILE' ) ) {
+// 	define( 'DB_FILE', 'wptests.sqlite' );
+// }
 
 if ( ! isset( $table_prefix ) ) {
 	$table_prefix = 'wptests_';
