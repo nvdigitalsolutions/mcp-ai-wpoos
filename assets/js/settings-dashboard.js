@@ -481,8 +481,10 @@
 			console.log('[WP oOS Settings] Form method:', formMethod);
 			
 			// Check for potential issues.
+			// Note: Some tabs/subtabs (like tools_manager, advanced > tools) have no form fields by design.
+			// This is expected and not a warning condition.
 			if (fieldCount === 0) {
-				console.warn('[WP oOS Settings] WARNING: No settings fields found in form data!');
+				console.log('[WP oOS Settings] Note: No settings fields in form data (this may be expected for certain tabs)');
 			}
 			
 			if (!activeTab) {
