@@ -137,19 +137,20 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that GET /mcp with Accept: text/event-stream returns SSE stream.
+	 * Test that GET /mcp with Accept: text/event-stream returns JSON (not SSE).
 	 *
-	 * When the client explicitly accepts SSE via the Accept header,
-	 * the endpoint should return an SSE stream.
+	 * This is the LM Studio scenario - LM Studio sends Accept: text/event-stream
+	 * by default, but expects JSON-RPC discovery response, not SSE.
+	 * Accept header should NOT trigger SSE mode for /mcp endpoint.
 	 */
-	public function test_mcp_get_with_sse_accept_header_returns_sse() {
+	public function test_mcp_get_with_sse_accept_header_returns_json() {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$this->bootstrap_rest_controller( $mock_client );
 
-		// GET request with Accept: text/event-stream header.
+		// GET request with Accept: text/event-stream header (LM Studio scenario).
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/mcp' );
 		$request->set_header( 'X-WP-Nonce', wp_create_nonce( 'wp_rest' ) );
 		$request->set_header( 'Accept', 'text/event-stream' );
@@ -159,12 +160,17 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
 		$this->assertSame( 200, $response->get_status(), 'GET /mcp with Accept: text/event-stream should return 200' );
 
+		// Should return JSON, NOT SSE, because Accept header is ignored.
 		$headers = $response->get_headers();
 		$this->assertStringStartsWith(
-			'text/event-stream',
+			'application/json',
 			$headers['Content-Type'] ?? '',
-			'GET /mcp with Accept: text/event-stream should return SSE content type'
+			'GET /mcp with Accept: text/event-stream should return JSON (LM Studio compatibility)'
 		);
+
+		$data = $response->get_data();
+		$this->assertIsArray( $data, 'Response should be a JSON array' );
+		$this->assertArrayHasKey( 'name', $data, 'Discovery response should include server name' );
 	}
 
 	/**
@@ -202,12 +208,12 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that discovery response indicates JSON-RPC as the primary transport.
+	 * Test that discovery response indicates Streamable HTTP as the primary transport.
 	 *
-	 * The discovery information should clearly indicate that JSON-RPC over POST
-	 * is the primary/default transport, with SSE as optional.
+	 * The discovery information should clearly indicate that Streamable HTTP
+	 * (MCP 2024-11-05) is the primary/default transport, with SSE as optional.
 	 */
-	public function test_discovery_indicates_jsonrpc_as_primary_transport() {
+	public function test_discovery_indicates_streamable_http_as_primary_transport() {
 		$mock_client = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -221,13 +227,13 @@ class WP_MCP_AI_MCP_Endpoint_GET_Test extends WP_UnitTestCase {
 		$data     = $response->get_data();
 
 		$this->assertArrayHasKey( 'transports', $data, 'Discovery should include transports' );
-		$this->assertArrayHasKey( 'jsonrpc', $data['transports'], 'Discovery should include JSON-RPC transport' );
+		$this->assertArrayHasKey( 'streamable_http', $data['transports'], 'Discovery should include Streamable HTTP transport' );
 		$this->assertArrayHasKey( 'sse', $data['transports'], 'Discovery should include SSE transport' );
 
-		// JSON-RPC should be marked as default.
+		// Streamable HTTP should be marked as default.
 		$this->assertTrue(
-			$data['transports']['jsonrpc']['default'] ?? false,
-			'JSON-RPC should be marked as default transport'
+			$data['transports']['streamable_http']['default'] ?? false,
+			'Streamable HTTP should be marked as default transport'
 		);
 
 		// SSE should NOT be marked as default.
