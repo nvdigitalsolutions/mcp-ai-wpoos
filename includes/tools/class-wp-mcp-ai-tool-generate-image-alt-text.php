@@ -121,12 +121,12 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Get settings.
-		$settings        = get_option( 'wp_mcp_ai_settings', array() );
+		$settings         = get_option( 'wp_mcp_ai_settings', array() );
 		$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 
 		// Build prompt.
-		$user_context    = isset( $arguments['context'] ) ? sanitize_text_field( $arguments['context'] ) : '';
-		$prompt          = $this->build_prompt( $user_context );
+		$user_context = isset( $arguments['context'] ) ? sanitize_text_field( $arguments['context'] ) : '';
+		$prompt       = $this->build_prompt( $user_context );
 
 		// Call vision model based on provider.
 		$alt_text = $this->call_vision_model( $image_url, $image_content, $prompt, $default_provider );
@@ -306,8 +306,8 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			$image_content = base64_encode( $image_data ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 
-		$model         = 'gemini-1.5-flash';
-		$request_body  = array(
+		$model        = 'gemini-1.5-flash';
+		$request_body = array(
 			'contents' => array(
 				array(
 					'parts' => array(

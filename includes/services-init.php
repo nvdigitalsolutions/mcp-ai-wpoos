@@ -161,11 +161,11 @@ function wp_mcp_ai_get_performance_monitor_service() {
 	if ( wp_mcp_ai_is_base_version() ) {
 		return null;
 	}
-	
+
 	if ( ! class_exists( 'WP_MCP_AI_Performance_Monitor_CCT' ) ) {
 		return null;
 	}
-	
+
 	// Performance monitor is a static class, return the class name
 	// for static method access (e.g., WP_MCP_AI_Performance_Monitor_CCT::store_test_result).
 	return 'WP_MCP_AI_Performance_Monitor_CCT';

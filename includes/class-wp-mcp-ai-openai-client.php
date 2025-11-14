@@ -632,17 +632,17 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				$default_response_format = 'b64_json';
 			}
 
-			$model            = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
-			$size             = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
-			$quality          = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
-			
+			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$size    = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
+			$quality = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
+
 			// Sanitize quality to only allowed values: low, medium, high, auto.
 			// This prevents 400 errors from OpenAI API.
 			$allowed = array( 'low', 'medium', 'high', 'auto' );
 			if ( empty( $quality ) || ! in_array( $quality, $allowed, true ) ) {
 				$quality = 'medium';
 			}
-			
+
 			$requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
 			$response_format  = isset( $options['response_format'] ) && '' !== $options['response_format'] ? sanitize_key( $options['response_format'] ) : $default_response_format;
 

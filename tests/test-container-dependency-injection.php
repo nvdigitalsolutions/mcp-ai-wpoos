@@ -34,7 +34,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_container_singleton() {
 		$container1 = wp_mcp_ai_container();
 		$container2 = wp_mcp_ai_container();
-		
+
 		$this->assertSame( $container1, $container2, 'Container should be a singleton' );
 	}
 
@@ -43,7 +43,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	 */
 	public function test_wp_mcp_ai_helper_function() {
 		$container = wp_mcp_ai();
-		
+
 		$this->assertInstanceOf( WP_MCP_AI_Container::class, $container, 'Helper function should return container' );
 	}
 
@@ -63,7 +63,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	 */
 	public function test_router_registered() {
 		$this->assertTrue( $this->container->has( 'router' ), 'Router should be registered' );
-		
+
 		$router = $this->container->get( 'router' );
 		$this->assertInstanceOf( WP_MCP_AI_Language_Model_Router::class, $router, 'Router should be correct class' );
 	}
@@ -109,7 +109,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_singleton_instances() {
 		$router1 = $this->container->get( 'router' );
 		$router2 = $this->container->get( 'router' );
-		
+
 		$this->assertSame( $router1, $router2, 'Singleton services should return same instance' );
 	}
 
@@ -120,7 +120,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 		$router1 = $this->container->get( 'router' );
 		$this->container->clear();
 		$router2 = $this->container->get( 'router' );
-		
+
 		$this->assertNotSame( $router1, $router2, 'After clear, new instances should be created' );
 	}
 
@@ -130,7 +130,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_constructor_dependency_injection() {
 		// Settings Dashboard accepts AJAX handlers as optional parameter.
 		$dashboard = $this->container->get( 'admin.settings_dashboard' );
-		
+
 		$this->assertInstanceOf( WP_MCP_AI_Settings_Dashboard::class, $dashboard, 'Should create dashboard instance' );
 	}
 
@@ -140,7 +140,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_nonexistent_service_throws_exception() {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'Service "nonexistent.service" not found in container' );
-		
+
 		$this->container->get( 'nonexistent.service' );
 	}
 
@@ -149,7 +149,7 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	 */
 	public function test_get_registered_services() {
 		$services = $this->container->get_registered_services();
-		
+
 		$this->assertIsArray( $services, 'Should return array of service IDs' );
 		$this->assertNotEmpty( $services, 'Should have registered services' );
 		$this->assertContains( 'router', $services, 'Should contain router service' );
@@ -162,9 +162,9 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 	public function test_service_dependencies_wired() {
 		// REST controller depends on tool_registry and router.
 		$rest = $this->container->get( 'rest_controller' );
-		
+
 		$this->assertInstanceOf( WP_MCP_AI_REST::class, $rest, 'Should create REST controller' );
-		
+
 		// Verify dependencies were injected (they should work without errors).
 		// If dependencies weren't properly injected, this would fail.
 		$reflection = new ReflectionClass( $rest );

@@ -1,11 +1,11 @@
 <?php
 /**
  * Tests for chat transcript handling with multiple widgets on the same page.
- * 
+ *
  * This test validates that when a session from one assistant is loaded into
  * a different chat widget, the transcript saves use the target widget's
  * assistant_id, not the loaded session's assistant_id.
- * 
+ *
  * Note: This primarily tests the server-side API. The client-side fix is in
  * assets/js/chat.js where originalAssistantId is preserved and used for
  * transcript saves.
@@ -77,7 +77,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that transcript saves use the correct assistant_id when provided.
-	 * 
+	 *
 	 * Scenario: Widget A loads a session from Assistant B, but saves transcripts
 	 * to Assistant A (the target widget's assistant).
 	 */
@@ -86,7 +86,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 		// Even if the session originally came from Assistant B (assistant_id_2)
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_header( 'Content-Type', 'application/json' );
-		
+
 		// The client-side code (chat.js) will send originalAssistantId
 		// which is Widget A's assistant_id, not the loaded session's assistant_id
 		$request->set_body_params(
@@ -108,7 +108,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 
 		$response = rest_do_request( $request );
 		$this->assertEquals( 200, $response->get_status(), 'Transcript save should succeed' );
-		
+
 		$data = $response->get_data();
 		$this->assertTrue( $data['success'], 'Save should be successful' );
 		$this->assertEquals( $this->assistant_id_1, $data['assistant_id'], 'Saved transcript should use Widget A assistant_id' );
@@ -120,7 +120,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 	public function test_session_retrieval_includes_assistant_id() {
 		// First, save a transcript for assistant 1
 		$session_key = 'test-session-' . time();
-		
+
 		$save_request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat-transcripts' );
 		$save_request->set_header( 'Content-Type', 'application/json' );
 		$save_request->set_body_params(
@@ -149,7 +149,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 
 		$get_response = rest_do_request( $get_request );
 		$this->assertEquals( 200, $get_response->get_status(), 'Session retrieval should succeed' );
-		
+
 		$data = $get_response->get_data();
 		$this->assertArrayHasKey( 'session', $data );
 		$this->assertEquals( $this->assistant_id_1, $data['session']['assistant_id'], 'Retrieved session should have correct assistant_id' );
@@ -157,7 +157,7 @@ class WP_MCP_AI_Chat_Transcript_Multiple_Widgets_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that different assistants maintain separate transcripts.
-	 * 
+	 *
 	 * This ensures that Widget A and Widget B each maintain their own
 	 * transcripts even if they use the same session_key prefix.
 	 */

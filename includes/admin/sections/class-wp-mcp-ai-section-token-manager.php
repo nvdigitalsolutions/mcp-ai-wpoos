@@ -316,13 +316,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
 
 		<!-- Recommendations Notice -->
-		<?php
-		$mismatched_count = count( WP_MCP_AI_Tool_Recommendations::get_mismatched_tools() );
-		$current_preset   = WP_MCP_AI_Tool_Recommendations::detect_current_preset();
-		$presets          = WP_MCP_AI_Tool_Recommendations::get_presets();
+			<?php
+			$mismatched_count = count( WP_MCP_AI_Tool_Recommendations::get_mismatched_tools() );
+			$current_preset   = WP_MCP_AI_Tool_Recommendations::detect_current_preset();
+			$presets          = WP_MCP_AI_Tool_Recommendations::get_presets();
 
-		if ( $mismatched_count > 0 || 'custom' === $current_preset ) :
-			?>
+			if ( $mismatched_count > 0 || 'custom' === $current_preset ) :
+				?>
 			<div class="notice notice-info inline" style="margin: 15px 0;">
 				<p>
 					<span class="dashicons dashicons-lightbulb" style="color: #f0b849; vertical-align: middle;"></span>
@@ -361,7 +361,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					?>
 				</div>
 			</div>
-		<?php elseif ( 'balanced' === $current_preset ) : ?>
+			<?php elseif ( 'balanced' === $current_preset ) : ?>
 			<div class="notice notice-success inline" style="margin: 15px 0;">
 				<p>
 					<span class="dashicons dashicons-yes-alt" style="color: #46b450; vertical-align: middle;"></span>
@@ -441,11 +441,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<tbody>
 				<?php
 				foreach ( $all_tools as $tool_slug => $tool_name ) :
-					$tool_limit          = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
-					$tool_stats          = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
-					$multiplier          = $this->get_tool_multiplier( $tool_slug );
-					$model_preference    = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
-					$available_models    = WP_MCP_AI_Tool_Token_Limits::get_available_models();
+					$tool_limit       = WP_MCP_AI_Tool_Token_Limits::get_tool_limit( $tool_slug );
+					$tool_stats       = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
+					$multiplier       = $this->get_tool_multiplier( $tool_slug );
+					$model_preference = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
+					$available_models = WP_MCP_AI_Tool_Token_Limits::get_available_models();
 
 					// Get recommendation for this tool.
 					$recommendation = WP_MCP_AI_Tool_Recommendations::get_tool_recommendation( $tool_slug );
@@ -478,8 +478,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<strong><?php echo esc_html( $tool_name ); ?></strong>
 							<?php if ( ! $match_status['matches'] ) : ?>
 								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon" 
-									  style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;" 
-									  title="<?php echo esc_attr( $match_status['reason'] ); ?>"></span>
+										style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;" 
+										title="<?php echo esc_attr( $match_status['reason'] ); ?>"></span>
 							<?php endif; ?>
 						</td>
 						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>

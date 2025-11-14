@@ -71,8 +71,8 @@ class WP_MCP_AI_Media {
 		$existing_alt = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
 
 		// Get settings for what to generate.
-		$generate_alt_text = isset( $settings['ai_media_generate_alt_text'] ) ? $settings['ai_media_generate_alt_text'] : true;
-		$generate_caption  = isset( $settings['ai_media_generate_caption'] ) ? $settings['ai_media_generate_caption'] : true;
+		$generate_alt_text  = isset( $settings['ai_media_generate_alt_text'] ) ? $settings['ai_media_generate_alt_text'] : true;
+		$generate_caption   = isset( $settings['ai_media_generate_caption'] ) ? $settings['ai_media_generate_caption'] : true;
 		$overwrite_existing = isset( $settings['ai_media_overwrite_existing'] ) ? $settings['ai_media_overwrite_existing'] : false;
 
 		// Generate alt text if enabled and (doesn't exist OR overwrite is enabled).

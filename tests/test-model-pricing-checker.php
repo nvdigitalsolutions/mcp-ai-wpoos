@@ -94,7 +94,7 @@ class WP_MCP_AI_Model_Pricing_Checker_Test extends WP_UnitTestCase {
 		// Add some price changes.
 		$changes = array(
 			array(
-				'model'   => 'test-model',
+				'model'     => 'test-model',
 				'old_input' => 0.001,
 				'new_input' => 0.002,
 			),

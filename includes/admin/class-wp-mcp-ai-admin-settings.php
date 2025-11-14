@@ -68,8 +68,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Constructor.
 		 *
-		 * @param WP_MCP_AI_Admin_Settings_Base|null    $settings_base Optional. Settings base instance for dependency injection.
-		 * @param WP_MCP_AI_Admin_AJAX_Handlers|null    $ajax_handlers Optional. AJAX handlers instance for dependency injection.
+		 * @param WP_MCP_AI_Admin_Settings_Base|null     $settings_base Optional. Settings base instance for dependency injection.
+		 * @param WP_MCP_AI_Admin_AJAX_Handlers|null     $ajax_handlers Optional. AJAX handlers instance for dependency injection.
 		 * @param WP_MCP_AI_Admin_Settings_Renderer|null $renderer      Optional. Renderer instance for dependency injection.
 		 * @param WP_MCP_AI_OAuth_Manager|null           $oauth_manager Optional. OAuth manager instance for dependency injection.
 		 */

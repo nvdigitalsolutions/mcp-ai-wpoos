@@ -142,7 +142,7 @@ class Test_REST_MCP_Controller extends WP_UnitTestCase {
 	 * Test MCP request delegation.
 	 */
 	public function test_mcp_request_delegates_to_main_controller() {
-		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
+		$request           = new WP_REST_Request( 'POST', '/mcp-ai/v1/mcp' );
 		$expected_response = new WP_REST_Response( array( 'test' => 'data' ) );
 
 		// Expect main controller's handle_mcp_request to be called.
@@ -165,7 +165,7 @@ class Test_REST_MCP_Controller extends WP_UnitTestCase {
 	 * Test SSE handshake delegation.
 	 */
 	public function test_sse_handshake_delegates_to_main_controller() {
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
+		$request           = new WP_REST_Request( 'GET', '/mcp-ai/v1/sse' );
 		$expected_response = new WP_REST_Response( array( 'sse' => 'handshake' ) );
 
 		// Expect main controller's handle_sse_handshake to be called.
@@ -188,7 +188,7 @@ class Test_REST_MCP_Controller extends WP_UnitTestCase {
 	 * Test assistants index delegation.
 	 */
 	public function test_assistants_index_delegates_to_main_controller() {
-		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
+		$request           = new WP_REST_Request( 'GET', '/mcp-ai/v1/assistants' );
 		$expected_response = new WP_REST_Response( array( 'assistants' => array() ) );
 
 		// Expect main controller's handle_assistants_index to be called.

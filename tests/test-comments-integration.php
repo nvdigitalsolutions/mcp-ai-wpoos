@@ -198,7 +198,7 @@ class WP_MCP_AI_Comments_Integration_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_ai_comments_moderation'       => true,
+				'enable_ai_comments_moderation'        => true,
 				'ai_comments_auto_hold_low_confidence' => true,
 			)
 		);
@@ -211,7 +211,7 @@ class WP_MCP_AI_Comments_Integration_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_ai_comments_moderation'       => true,
+				'enable_ai_comments_moderation'        => true,
 				'ai_comments_auto_hold_low_confidence' => false,
 			)
 		);

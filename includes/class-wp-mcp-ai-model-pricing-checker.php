@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Manages monthly pricing checks for AI models.
  */
 class WP_MCP_AI_Model_Pricing_Checker {
-	const CRON_HOOK = 'wp_mcp_ai_check_model_pricing';
-	const OPTION_LAST_CHECK = 'wp_mcp_ai_last_pricing_check';
+	const CRON_HOOK            = 'wp_mcp_ai_check_model_pricing';
+	const OPTION_LAST_CHECK    = 'wp_mcp_ai_last_pricing_check';
 	const OPTION_PRICE_CHANGES = 'wp_mcp_ai_price_changes';
 
 	/**
@@ -54,9 +54,9 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				continue;
 			}
 
-			$model_name   = $model['model_name'];
-			$input_cost   = isset( $model['cost_per_1k_input_tokens'] ) ? $model['cost_per_1k_input_tokens'] : 0;
-			$output_cost  = isset( $model['cost_per_1k_output_tokens'] ) ? $model['cost_per_1k_output_tokens'] : 0;
+			$model_name  = $model['model_name'];
+			$input_cost  = isset( $model['cost_per_1k_input_tokens'] ) ? $model['cost_per_1k_input_tokens'] : 0;
+			$output_cost = isset( $model['cost_per_1k_output_tokens'] ) ? $model['cost_per_1k_output_tokens'] : 0;
 
 			// Check if we have previous data for this model.
 			if ( isset( $previous_pricing[ $model_name ] ) ) {
@@ -66,13 +66,13 @@ class WP_MCP_AI_Model_Pricing_Checker {
 				// Detect price changes.
 				if ( $prev_input != $input_cost || $prev_output != $output_cost ) {
 					$price_changes[] = array(
-						'model'        => $model_name,
-						'provider'     => isset( $model['provider'] ) ? $model['provider'] : 'unknown',
-						'old_input'    => $prev_input,
-						'new_input'    => $input_cost,
-						'old_output'   => $prev_output,
-						'new_output'   => $output_cost,
-						'detected_at'  => current_time( 'mysql' ),
+						'model'       => $model_name,
+						'provider'    => isset( $model['provider'] ) ? $model['provider'] : 'unknown',
+						'old_input'   => $prev_input,
+						'new_input'   => $input_cost,
+						'old_output'  => $prev_output,
+						'new_output'  => $output_cost,
+						'detected_at' => current_time( 'mysql' ),
 					);
 				}
 			}

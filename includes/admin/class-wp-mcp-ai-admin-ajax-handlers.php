@@ -667,9 +667,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Check if any model preferences have changed.
 			$current_preferences = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preferences();
 			foreach ( $model_preferences as $tool_slug => $model ) {
-				$tool_slug           = sanitize_key( $tool_slug );
-				$model               = sanitize_text_field( $model );
-				$current_preference  = isset( $current_preferences[ $tool_slug ] ) ? $current_preferences[ $tool_slug ] : 'default';
+				$tool_slug          = sanitize_key( $tool_slug );
+				$model              = sanitize_text_field( $model );
+				$current_preference = isset( $current_preferences[ $tool_slug ] ) ? $current_preferences[ $tool_slug ] : 'default';
 
 				if ( '' !== $tool_slug && $current_preference !== $model ) {
 					++$changed_count;

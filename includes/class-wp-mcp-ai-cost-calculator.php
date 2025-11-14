@@ -24,79 +24,79 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'    => array(
-			'gpt-4o'                      => array(
+			'gpt-4o'        => array(
 				'input'  => 2.50,
 				'output' => 10.00,
 			),
-			'gpt-4o-mini'                 => array(
+			'gpt-4o-mini'   => array(
 				'input'  => 0.15,
 				'output' => 0.60,
 			),
-			'gpt-4-turbo'                 => array(
+			'gpt-4-turbo'   => array(
 				'input'  => 10.00,
 				'output' => 30.00,
 			),
-			'gpt-4'                       => array(
+			'gpt-4'         => array(
 				'input'  => 30.00,
 				'output' => 60.00,
 			),
-			'gpt-3.5-turbo'               => array(
+			'gpt-3.5-turbo' => array(
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
-			'o1-preview'                  => array(
+			'o1-preview'    => array(
 				'input'  => 15.00,
 				'output' => 60.00,
 			),
-			'o1-mini'                     => array(
+			'o1-mini'       => array(
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
 		),
 		'gemini'    => array(
-			'gemini-1.5-pro'              => array(
+			'gemini-1.5-pro'   => array(
 				'input'  => 1.25,
 				'output' => 5.00,
 			),
-			'gemini-1.5-flash'            => array(
+			'gemini-1.5-flash' => array(
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
-			'gemini-2.0-flash'            => array(
+			'gemini-2.0-flash' => array(
 				'input'  => 0.10,
 				'output' => 0.40,
 			),
-			'gemini-pro'                  => array(
+			'gemini-pro'       => array(
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
 		),
 		'anthropic' => array(
-			'claude-3.5-sonnet'           => array(
+			'claude-3.5-sonnet' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-opus'               => array(
+			'claude-3-opus'     => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-3-sonnet'             => array(
+			'claude-3-sonnet'   => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-haiku'              => array(
+			'claude-3-haiku'    => array(
 				'input'  => 0.25,
 				'output' => 1.25,
 			),
 		),
 		'ollama'    => array(
-			'default'                     => array(
+			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
 			),
 		),
 		'lm_studio' => array(
-			'default'                     => array(
+			'default' => array(
 				'input'  => 0.00,
 				'output' => 0.00,
 			),

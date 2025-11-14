@@ -637,11 +637,11 @@ composer install</pre>
 		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
 		if ( ! file_exists( $phpunit_bin ) ) {
 			return array(
-				'success'     => false,
-				'message'     => __( 'Performance tests require development dependencies.', 'wp-mcp-ai' ),
-				'details'     => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'wp-mcp-ai' ),
+				'success'       => false,
+				'message'       => __( 'Performance tests require development dependencies.', 'wp-mcp-ai' ),
+				'details'       => __( 'These tests are designed for local development environments. On production or managed hosting (like Cloudways), performance monitoring is available through the dashboard metrics above.', 'wp-mcp-ai' ),
 				'setup_command' => 'composer install',
-				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
+				'cli_command'   => './bin/run-performance-tests.sh --suite=' . $test_type,
 			);
 		}
 
@@ -979,8 +979,8 @@ composer install</pre>
 	 * @return array Test results.
 	 */
 	protected function run_lightweight_check( $test_type ) {
-		$checks = array();
-		$start_time = microtime( true );
+		$checks       = array();
+		$start_time   = microtime( true );
 		$start_memory = memory_get_usage();
 
 		switch ( $test_type ) {
@@ -1015,22 +1015,22 @@ composer install</pre>
 				);
 		}
 
-		$end_time = microtime( true );
-		$end_memory = memory_get_usage();
-		$duration = round( ( $end_time - $start_time ) * 1000, 2 );
+		$end_time    = microtime( true );
+		$end_memory  = memory_get_usage();
+		$duration    = round( ( $end_time - $start_time ) * 1000, 2 );
 		$memory_used = round( ( $end_memory - $start_memory ) / 1024 / 1024, 2 );
 
-		$passed = 0;
-		$failed = 0;
+		$passed   = 0;
+		$failed   = 0;
 		$warnings = 0;
 
 		foreach ( $checks as $check ) {
 			if ( 'pass' === $check['status'] ) {
-				$passed++;
+				++$passed;
 			} elseif ( 'fail' === $check['status'] ) {
-				$failed++;
+				++$failed;
 			} else {
-				$warnings++;
+				++$warnings;
 			}
 		}
 
@@ -1089,7 +1089,7 @@ composer install</pre>
 	 */
 	protected function check_file_permissions() {
 		$upload_dir = wp_upload_dir();
-		$writable = is_writable( $upload_dir['basedir'] );
+		$writable   = is_writable( $upload_dir['basedir'] );
 
 		return array(
 			'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
@@ -1146,12 +1146,12 @@ composer install</pre>
 		global $wpdb;
 
 		$queries_before = $wpdb->num_queries;
-		
+
 		// Perform a simple query test.
-		$wpdb->get_var( "SELECT 1" );
-		
+		$wpdb->get_var( 'SELECT 1' );
+
 		$queries_after = $wpdb->num_queries;
-		$query_count = $queries_after - $queries_before;
+		$query_count   = $queries_after - $queries_before;
 
 		return array(
 			'name'    => __( 'Database Connectivity', 'wp-mcp-ai' ),
@@ -1187,7 +1187,7 @@ composer install</pre>
 	 * @return array Check result.
 	 */
 	protected function check_rest_api_response() {
-		$start = microtime( true );
+		$start    = microtime( true );
 		$response = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/types/post' ) );
 		$duration = round( ( microtime( true ) - $start ) * 1000, 2 );
 
@@ -1226,7 +1226,7 @@ composer install</pre>
 	 */
 	protected function check_memory_limit() {
 		$memory_limit = ini_get( 'memory_limit' );
-		$memory_int = intval( $memory_limit );
+		$memory_int   = intval( $memory_limit );
 
 		$status = 'pass';
 		if ( $memory_int < 256 ) {
@@ -1282,7 +1282,7 @@ composer install</pre>
 		for ( $i = 0; $i < 10; $i++ ) {
 			wp_cache_set( 'test_' . $i, $i, 'test', 60 );
 			if ( wp_cache_get( 'test_' . $i, 'test' ) === $i ) {
-				$operations++;
+				++$operations;
 			}
 		}
 

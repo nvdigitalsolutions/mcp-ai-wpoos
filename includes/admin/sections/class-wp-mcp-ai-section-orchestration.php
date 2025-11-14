@@ -619,162 +619,162 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 		}
 
-/**
- * Render section fields.
- */
-public function render() {
-$active_view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		/**
+		 * Render section fields.
+		 */
+		public function render() {
+			$active_view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-?>
+			?>
 <div class="wp-mcp-ai-orchestration-section">
 <!-- View Tabs -->
 <nav class="wp-mcp-ai-orchestration__nav">
 <a href="<?php echo esc_url( $this->get_view_url( 'overview' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'overview' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-dashboard"></span>
-<?php esc_html_e( 'Overview', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Overview', 'wp-mcp-ai' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'settings' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-settings"></span>
-<?php esc_html_e( 'Settings', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Settings', 'wp-mcp-ai' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'thresholds' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-performance"></span>
-<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
 </a>
 </nav>
 
 <!-- View Content -->
 <div class="wp-mcp-ai-orchestration__content">
-<?php
-switch ( $active_view ) {
-case 'settings':
-$this->render_settings_view();
-break;
-case 'thresholds':
-$this->render_thresholds_view();
-break;
-case 'overview':
-default:
-$this->render_overview_view();
-break;
-}
-?>
+			<?php
+			switch ( $active_view ) {
+				case 'settings':
+					$this->render_settings_view();
+					break;
+				case 'thresholds':
+					$this->render_thresholds_view();
+					break;
+				case 'overview':
+				default:
+					$this->render_overview_view();
+					break;
+			}
+			?>
 </div>
 </div>
-<?php
-}
+			<?php
+		}
 
-/**
- * Get URL for a specific view.
- *
- * @param string $view View name.
- * @return string
- */
-private function get_view_url( $view ) {
-return add_query_arg(
-array(
-'page' => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
-'tab'  => 'orchestration',
-'view' => $view,
-),
-admin_url( 'admin.php' )
-);
-}
+		/**
+		 * Get URL for a specific view.
+		 *
+		 * @param string $view View name.
+		 * @return string
+		 */
+		private function get_view_url( $view ) {
+			return add_query_arg(
+				array(
+					'page' => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
+					'tab'  => 'orchestration',
+					'view' => $view,
+				),
+				admin_url( 'admin.php' )
+			);
+		}
 
-/**
- * Render overview view.
- */
-private function render_overview_view() {
-$fields = $this->get_fields();
+		/**
+		 * Render overview view.
+		 */
+		private function render_overview_view() {
+			$fields = $this->get_fields();
 
-// Overview fields: intro, health status, presets, and stats.
-$overview_fields = array(
-'orchestration_intro',
-'health_status',
-'configuration_presets',
-'orchestration_stats',
-);
+			// Overview fields: intro, health status, presets, and stats.
+			$overview_fields = array(
+				'orchestration_intro',
+				'health_status',
+				'configuration_presets',
+				'orchestration_stats',
+			);
 
-foreach ( $overview_fields as $key ) {
-if ( isset( $fields[ $key ] ) ) {
-$field = $fields[ $key ];
-if ( 'html' === $field['type'] ) {
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in getter methods.
-echo $field['content'];
-}
-}
-}
-}
+			foreach ( $overview_fields as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$field = $fields[ $key ];
+					if ( 'html' === $field['type'] ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in getter methods.
+						echo $field['content'];
+					}
+				}
+			}
+		}
 
-/**
- * Render settings view.
- */
-private function render_settings_view() {
-$fields = $this->get_fields();
+		/**
+		 * Render settings view.
+		 */
+		private function render_settings_view() {
+			$fields = $this->get_fields();
 
-// Settings fields: enable/disable toggles and cron retention.
-$settings_fields = array(
-'enable_budget_management',
-'enable_predictive_optimization',
-'enable_capability_gating',
-'enable_cron_orchestration',
-'cron_job_retention_period',
-);
+			// Settings fields: enable/disable toggles and cron retention.
+			$settings_fields = array(
+				'enable_budget_management',
+				'enable_predictive_optimization',
+				'enable_capability_gating',
+				'enable_cron_orchestration',
+				'cron_job_retention_period',
+			);
 
-echo '<h3>' . esc_html__( 'Orchestration Features', 'wp-mcp-ai' ) . '</h3>';
-echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling.', 'wp-mcp-ai' ) . '</p>';
+			echo '<h3>' . esc_html__( 'Orchestration Features', 'wp-mcp-ai' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling.', 'wp-mcp-ai' ) . '</p>';
 
-foreach ( $settings_fields as $key ) {
-if ( isset( $fields[ $key ] ) ) {
-$this->render_field( $key, $fields[ $key ] );
-}
-}
-}
+			foreach ( $settings_fields as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
+			}
+		}
 
-/**
- * Render thresholds view.
- */
-private function render_thresholds_view() {
-$fields = $this->get_fields();
+		/**
+		 * Render thresholds view.
+		 */
+		private function render_thresholds_view() {
+			$fields = $this->get_fields();
 
-// Thresholds fields: all sliders and their section headers.
-$threshold_fields = array(
-'slider_section_health',
-'memory_warning_threshold',
-'memory_critical_threshold',
-'error_rate_warning_threshold',
-'error_rate_critical_threshold',
-'slider_section_budget',
-'high_priority_budget',
-'medium_priority_budget',
-'low_priority_budget',
-'critical_health_reduction',
-'warning_health_reduction',
-'slider_section_tokens',
-'low_tier_max_tokens',
-'medium_tier_max_tokens',
-'high_tier_max_tokens',
-'slider_section_predictive',
-'prediction_confidence_threshold',
-'prediction_safety_buffer',
-);
+			// Thresholds fields: all sliders and their section headers.
+			$threshold_fields = array(
+				'slider_section_health',
+				'memory_warning_threshold',
+				'memory_critical_threshold',
+				'error_rate_warning_threshold',
+				'error_rate_critical_threshold',
+				'slider_section_budget',
+				'high_priority_budget',
+				'medium_priority_budget',
+				'low_priority_budget',
+				'critical_health_reduction',
+				'warning_health_reduction',
+				'slider_section_tokens',
+				'low_tier_max_tokens',
+				'medium_tier_max_tokens',
+				'high_tier_max_tokens',
+				'slider_section_predictive',
+				'prediction_confidence_threshold',
+				'prediction_safety_buffer',
+			);
 
-foreach ( $threshold_fields as $key ) {
-if ( isset( $fields[ $key ] ) ) {
-$field = $fields[ $key ];
-if ( 'html' === $field['type'] ) {
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field content.
-echo $field['content'];
-} elseif ( 'slider' === $field['type'] ) {
-// Use orchestration renderer for sliders.
-if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_slider method.
-echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
-}
-}
-}
-}
-}
+			foreach ( $threshold_fields as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$field = $fields[ $key ];
+					if ( 'html' === $field['type'] ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field content.
+						echo $field['content'];
+					} elseif ( 'slider' === $field['type'] ) {
+						// Use orchestration renderer for sliders.
+						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_slider method.
+							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
+						}
+					}
+				}
+			}
+		}
 
 
 		/**

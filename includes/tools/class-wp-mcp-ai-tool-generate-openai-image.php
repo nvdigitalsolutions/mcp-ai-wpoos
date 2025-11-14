@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Validate quality for the selected model.
 		$quality = isset( $arguments['quality'] ) ? sanitize_key( $arguments['quality'] ) : $defaults['quality'];
-		
+
 		// Sanitize quality to only allowed values: low, medium, high, auto.
 		// This prevents 400 errors from OpenAI API.
 		$allowed = array( 'low', 'medium', 'high', 'auto' );

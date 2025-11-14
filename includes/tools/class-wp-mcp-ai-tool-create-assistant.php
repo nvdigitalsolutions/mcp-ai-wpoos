@@ -75,13 +75,13 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'        => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'The name/title for the AI assistant (e.g., "Jamaica Tax Assistant", "Sri Lanka Customs Broker - Perfumes").', 'wp-mcp-ai' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'professions'  => array(
+				'professions'    => array(
 					'type'        => 'array',
 					'description' => __( 'Select up to 3 professions/specializations for this assistant.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'maxItems'    => 3,
 					'uniqueItems' => true,
 				),
-				'regions'      => array(
+				'regions'        => array(
 					'type'        => 'array',
 					'description' => __( 'Select up to 2 countries/regions where this assistant will operate.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -147,25 +147,25 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					'description' => __( 'Optional specific industry or product focus (e.g., "perfumes", "technology", "restaurants", "retail").', 'wp-mcp-ai' ),
 					'maxLength'   => 200,
 				),
-				'provider'     => array(
+				'provider'       => array(
 					'type'        => 'string',
 					'description' => __( 'Optional AI provider (openai, gemini, ollama, anthropic, lm_studio). Defaults to openai.', 'wp-mcp-ai' ),
 					'enum'        => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio' ),
 					'default'     => 'openai',
 				),
-				'model'        => array(
+				'model'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional model name (e.g., "gpt-4", "gpt-4-turbo", "gemini-pro"). Defaults to gpt-4.', 'wp-mcp-ai' ),
 					'maxLength'   => 100,
 				),
-				'temperature'  => array(
+				'temperature'    => array(
 					'type'        => 'number',
 					'description' => __( 'Optional temperature setting (0-2). Lower is more deterministic. Defaults to 0.7.', 'wp-mcp-ai' ),
 					'minimum'     => 0,
 					'maximum'     => 2,
 					'default'     => 0.7,
 				),
-				'tools'        => array(
+				'tools'          => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of tool slugs to enable for this assistant. If not provided, appropriate tools will be selected automatically.', 'wp-mcp-ai' ),
 					'items'       => array(
@@ -173,12 +173,12 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 					'maxItems'    => 100,
 				),
-				'async'        => array(
+				'async'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'If true, schedules assistant creation via cron and returns immediately. Recommended for complex assistants.', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'notify_email' => array(
+				'notify_email'   => array(
 					'type'        => 'string',
 					'description' => __( 'Email address to notify when async creation completes. Uses current user email if not specified.', 'wp-mcp-ai' ),
 					'format'      => 'email',
@@ -305,9 +305,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array|WP_Error Result or error.
 	 */
 	protected function create_assistant( $arguments, $user_id ) {
-		$title         = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$professions   = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
-		$regions       = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
+		$title          = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$professions    = isset( $arguments['professions'] ) && is_array( $arguments['professions'] ) ? $arguments['professions'] : array();
+		$regions        = isset( $arguments['regions'] ) && is_array( $arguments['regions'] ) ? $arguments['regions'] : array();
 		$industry_focus = isset( $arguments['industry_focus'] ) ? sanitize_text_field( $arguments['industry_focus'] ) : '';
 
 		if ( '' === $title ) {
@@ -396,8 +396,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		update_post_meta( $assistant_id, '_wp_mcp_ai_model', $model );
 
 		// Save temperature (default to 0.7).
-		$temperature = isset( $arguments['temperature'] ) && is_numeric( $arguments['temperature'] ) 
-			? floatval( $arguments['temperature'] ) 
+		$temperature = isset( $arguments['temperature'] ) && is_numeric( $arguments['temperature'] )
+			? floatval( $arguments['temperature'] )
 			: 0.7;
 		if ( $temperature >= 0 && $temperature <= 2 ) {
 			update_post_meta( $assistant_id, '_wp_mcp_ai_temperature', $temperature );
@@ -521,7 +521,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$region_names     = array_map( array( $this, 'get_region_name' ), $regions );
 
 		$instructions = "You are {$title}, an expert AI assistant with the following professional expertise:\n\n";
-		
+
 		$instructions .= "PRIMARY ROLES:\n";
 		foreach ( $profession_names as $profession ) {
 			$instructions .= "- {$profession}\n";
@@ -540,7 +540,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Get domain-specific expertise.
 		$expertise = $this->get_profession_expertise( $professions, $regions, $industry_focus );
-		
+
 		$instructions .= "YOUR ROLE AND RESPONSIBILITIES:\n";
 		$instructions .= $expertise['role'] . "\n\n";
 
@@ -554,7 +554,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$instructions .= "- Provide accurate, professional, and helpful information\n";
 		$instructions .= "- Ask clarifying questions when needed to better assist the user\n";
 		$instructions .= "- Stay within your area of expertise as defined above\n";
-		$instructions .= "- Be aware of regional regulations and requirements for: " . implode( ', ', $region_names ) . "\n";
+		$instructions .= '- Be aware of regional regulations and requirements for: ' . implode( ', ', $region_names ) . "\n";
 		$instructions .= "- Cite specific regulations, laws, or standards when applicable\n";
 		$instructions .= "- Recommend consulting with licensed professionals for complex matters\n";
 		$instructions .= "- Maintain a professional, courteous, and helpful tone\n";
@@ -590,8 +590,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		foreach ( $professions as $profession ) {
 			switch ( $profession ) {
 				case 'tax_advisor':
-					$roles[] = 'tax compliance and planning';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'tax compliance and planning';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'Tax law and regulations',
@@ -606,8 +606,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 				case 'accountant':
 				case 'bookkeeper':
-					$roles[] = 'accounting and financial management';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'accounting and financial management';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'Accounting principles (GAAP/IFRS)',
@@ -622,8 +622,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 				case 'lawyer':
 				case 'legal_advisor':
-					$roles[] = 'legal information and guidance';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'legal information and guidance';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'Legal principles and concepts',
@@ -638,8 +638,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 				case 'customs_broker':
 				case 'import_export_specialist':
-					$roles[] = 'customs clearance and international trade';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'customs clearance and international trade';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'Customs regulations and procedures',
@@ -655,8 +655,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'financial_advisor':
-					$roles[] = 'financial planning and wealth management';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'financial planning and wealth management';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'Financial planning and goal setting',
@@ -670,7 +670,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'business_consultant':
-					$roles[] = 'business strategy and operations';
+					$roles[]                = 'business strategy and operations';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -684,7 +684,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'real_estate_agent':
-					$roles[] = 'real estate transactions and property management';
+					$roles[]                = 'real estate transactions and property management';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -698,8 +698,8 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'healthcare_advisor':
-					$roles[] = 'health information and wellness guidance';
-					$expertise['expertise'] = array_merge(
+					$roles[]                 = 'health information and wellness guidance';
+					$expertise['expertise']  = array_merge(
 						$expertise['expertise'],
 						array(
 							'General health and wellness information',
@@ -712,7 +712,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'marketing_consultant':
-					$roles[] = 'marketing strategy and campaign management';
+					$roles[]                = 'marketing strategy and campaign management';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -726,7 +726,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'hr_consultant':
-					$roles[] = 'human resources and workforce management';
+					$roles[]                = 'human resources and workforce management';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -740,7 +740,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'it_consultant':
-					$roles[] = 'information technology and systems';
+					$roles[]                = 'information technology and systems';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -754,7 +754,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 					break;
 
 				case 'restaurant_consultant':
-					$roles[] = 'restaurant operations and management';
+					$roles[]                = 'restaurant operations and management';
 					$expertise['expertise'] = array_merge(
 						$expertise['expertise'],
 						array(
@@ -771,7 +771,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add region-specific expertise.
 		foreach ( $regions as $region ) {
-			$region_name = $this->get_region_name( $region );
+			$region_name              = $this->get_region_name( $region );
 			$expertise['expertise'][] = "{$region_name}-specific regulations and requirements";
 		}
 
@@ -815,7 +815,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		$region_names     = array_map( array( $this, 'get_region_name' ), $regions );
 
 		// Always create a general knowledge base document.
-		$general_content = "# {$title} - Knowledge Base\n\n";
+		$general_content  = "# {$title} - Knowledge Base\n\n";
 		$general_content .= "## Professional Roles\n";
 		foreach ( $profession_names as $profession ) {
 			$general_content .= "- {$profession}\n";
@@ -842,7 +842,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Generate profession-specific documents.
 		$profession_docs = $this->generate_profession_specific_documents( $professions, $regions, $industry_focus, $title );
-		$documents = array_merge( $documents, $profession_docs );
+		$documents       = array_merge( $documents, $profession_docs );
 
 		return $documents;
 	}
@@ -932,7 +932,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Customs checklist.
 		if ( in_array( 'customs_broker', $professions, true ) || in_array( 'import_export_specialist', $professions, true ) ) {
-			$checklist = "# Customs Clearance Checklist\n\n";
+			$checklist  = "# Customs Clearance Checklist\n\n";
 			$checklist .= "## Pre-Shipment\n";
 			$checklist .= "- [ ] Verify HS code classification\n";
 			$checklist .= "- [ ] Check import restrictions\n";
@@ -940,7 +940,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$checklist .= "- [ ] Prepare commercial invoice\n";
 			$checklist .= "- [ ] Prepare packing list\n";
 			$checklist .= "- [ ] Obtain certificate of origin\n\n";
-			
+
 			$checklist .= "## Upon Arrival\n";
 			$checklist .= "- [ ] File customs entry\n";
 			$checklist .= "- [ ] Pay duties and taxes\n";
@@ -955,13 +955,13 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Tax checklist.
 		if ( in_array( 'tax_advisor', $professions, true ) ) {
-			$tax_doc = "# Tax Filing Preparation Checklist\n\n";
+			$tax_doc  = "# Tax Filing Preparation Checklist\n\n";
 			$tax_doc .= "## Income Documents\n";
 			$tax_doc .= "- [ ] Employment income forms\n";
 			$tax_doc .= "- [ ] Contract/freelance income\n";
 			$tax_doc .= "- [ ] Business income records\n";
 			$tax_doc .= "- [ ] Investment income\n\n";
-			
+
 			$tax_doc .= "## Deduction Documentation\n";
 			$tax_doc .= "- [ ] Charitable contributions\n";
 			$tax_doc .= "- [ ] Business expenses\n";
@@ -1019,7 +1019,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string Generated instructions.
 	 */
 	protected function generate_instructions( $goal, $specialization, $title ) {
-		$instructions = "You are {$title}, an expert AI assistant specialized in the following area:\n\n";
+		$instructions  = "You are {$title}, an expert AI assistant specialized in the following area:\n\n";
 		$instructions .= "PRIMARY GOAL:\n{$goal}\n\n";
 
 		if ( '' !== $specialization ) {
@@ -1068,7 +1068,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function extract_domain_context( $goal, $specialization ) {
 		$goal_lower = strtolower( $goal . ' ' . $specialization );
-		
+
 		$context = array(
 			'role'      => '',
 			'expertise' => array(),
@@ -1077,9 +1077,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Detect domain and set appropriate context.
 		// Tax-related.
-		if ( preg_match('/\b(tax|taxes|taxation|filing)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You help users understand and comply with tax regulations, prepare tax filings, identify deductions, and optimize their tax situation.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(tax|taxes|taxation|filing)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You help users understand and comply with tax regulations, prepare tax filings, identify deductions, and optimize their tax situation.';
+			$context['expertise']  = array(
 				'Tax law and regulations',
 				'Tax filing procedures and deadlines',
 				'Deductions and credits',
@@ -1091,9 +1091,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Legal services.
-		if ( preg_match('/\b(legal|lawyer|attorney|law|litigation|contract)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You provide general legal information and guidance to help users understand their legal options and requirements.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(legal|lawyer|attorney|law|litigation|contract)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You provide general legal information and guidance to help users understand their legal options and requirements.';
+			$context['expertise']  = array(
 				'Legal principles and concepts',
 				'Contract review and drafting guidance',
 				'Regulatory compliance',
@@ -1105,9 +1105,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Accounting/Finance.
-		if ( preg_match('/\b(account|accounting|bookkeeping|finance|financial|cpa)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You assist with accounting principles, financial reporting, bookkeeping, and financial management.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(account|accounting|bookkeeping|finance|financial|cpa)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You assist with accounting principles, financial reporting, bookkeeping, and financial management.';
+			$context['expertise']  = array(
 				'Accounting principles (GAAP/IFRS)',
 				'Financial statement preparation',
 				'Bookkeeping and record-keeping',
@@ -1119,9 +1119,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Customs/Import-Export.
-		if ( preg_match('/\b(custom|customs|broker|import|export|duty|tariff|freight)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You help users navigate customs regulations, import/export procedures, duty calculations, and international trade compliance.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(custom|customs|broker|import|export|duty|tariff|freight)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You help users navigate customs regulations, import/export procedures, duty calculations, and international trade compliance.';
+			$context['expertise']  = array(
 				'Customs regulations and procedures',
 				'Import/export documentation',
 				'Duty and tariff calculations',
@@ -1135,9 +1135,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Healthcare/Medical.
-		if ( preg_match('/\b(medical|health|healthcare|doctor|physician|nurse|clinic)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You provide health information and wellness guidance to help users make informed decisions.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(medical|health|healthcare|doctor|physician|nurse|clinic)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You provide health information and wellness guidance to help users make informed decisions.';
+			$context['expertise']  = array(
 				'General health and wellness information',
 				'Medical terminology and concepts',
 				'Healthcare procedures and systems',
@@ -1149,9 +1149,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Real Estate.
-		if ( preg_match('/\b(real estate|property|realtor|broker|housing|mortgage)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You assist with real estate transactions, property evaluation, and real estate market information.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(real estate|property|realtor|broker|housing|mortgage)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You assist with real estate transactions, property evaluation, and real estate market information.';
+			$context['expertise']  = array(
 				'Real estate market analysis',
 				'Property valuation principles',
 				'Transaction procedures',
@@ -1163,9 +1163,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Restaurant/Food Service.
-		if ( preg_match('/\b(restaurant|cafe|food service|catering|hospitality)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You help restaurant and food service operators manage their business operations, finances, and compliance.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(restaurant|cafe|food service|catering|hospitality)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You help restaurant and food service operators manage their business operations, finances, and compliance.';
+			$context['expertise']  = array(
 				'Restaurant operations management',
 				'Food cost analysis and menu pricing',
 				'Inventory management',
@@ -1176,9 +1176,9 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Small Business.
-		if ( preg_match('/\b(small business|startup|entrepreneur|business owner)\b/i', $goal_lower ) ) {
-			$context['role'] = 'You support small business owners with business operations, planning, and growth strategies.';
-			$context['expertise'] = array(
+		if ( preg_match( '/\b(small business|startup|entrepreneur|business owner)\b/i', $goal_lower ) ) {
+			$context['role']       = 'You support small business owners with business operations, planning, and growth strategies.';
+			$context['expertise']  = array(
 				'Business planning and strategy',
 				'Operations management',
 				'Marketing and customer acquisition',
@@ -1190,16 +1190,16 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Extract location-specific information.
 		$locations = array(
-			'jamaica' => 'Jamaica',
-			'sri lanka' => 'Sri Lanka',
-			'united states' => 'United States',
-			'us\b' => 'United States',
-			'canada' => 'Canada',
-			'uk\b' => 'United Kingdom',
+			'jamaica'        => 'Jamaica',
+			'sri lanka'      => 'Sri Lanka',
+			'united states'  => 'United States',
+			'us\b'           => 'United States',
+			'canada'         => 'Canada',
+			'uk\b'           => 'United Kingdom',
 			'united kingdom' => 'United Kingdom',
-			'australia' => 'Australia',
-			'india' => 'India',
-			'singapore' => 'Singapore',
+			'australia'      => 'Australia',
+			'india'          => 'India',
+			'singapore'      => 'Singapore',
 		);
 
 		foreach ( $locations as $pattern => $location_name ) {
@@ -1211,17 +1211,17 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Extract industry/product specializations.
 		$specializations_detected = array();
-		
-		if ( preg_match('/\b(perfume|fragrance|cosmetic|beauty)\b/i', $goal_lower ) ) {
+
+		if ( preg_match( '/\b(perfume|fragrance|cosmetic|beauty)\b/i', $goal_lower ) ) {
 			$specializations_detected[] = 'Perfume and fragrance industry';
 			$specializations_detected[] = 'Cosmetics regulations and compliance';
 		}
-		
-		if ( preg_match('/\b(technology|software|it|tech)\b/i', $goal_lower ) ) {
+
+		if ( preg_match( '/\b(technology|software|it|tech)\b/i', $goal_lower ) ) {
 			$specializations_detected[] = 'Technology sector';
 		}
-		
-		if ( preg_match('/\b(retail|e-commerce|online store)\b/i', $goal_lower ) ) {
+
+		if ( preg_match( '/\b(retail|e-commerce|online store)\b/i', $goal_lower ) ) {
 			$specializations_detected[] = 'Retail and e-commerce';
 		}
 
@@ -1231,7 +1231,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Default role if no specific domain detected.
 		if ( '' === $context['role'] ) {
-			$context['role'] = 'You are a knowledgeable assistant who helps users achieve their goals by providing accurate information, practical guidance, and professional support.';
+			$context['role']      = 'You are a knowledgeable assistant who helps users achieve their goals by providing accurate information, practical guidance, and professional support.';
 			$context['expertise'] = array(
 				'Research and information gathering',
 				'Problem-solving and analysis',
@@ -1252,14 +1252,14 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return array Array of document data with filename and content.
 	 */
 	protected function generate_knowledge_documents( $goal, $specialization, $title ) {
-		$documents = array();
+		$documents  = array();
 		$goal_lower = strtolower( $goal . ' ' . $specialization );
 
 		// Always create a general knowledge base document.
-		$general_content = "# {$title} - Knowledge Base\n\n";
+		$general_content  = "# {$title} - Knowledge Base\n\n";
 		$general_content .= "## Purpose\n";
 		$general_content .= "{$goal}\n\n";
-		
+
 		if ( '' !== $specialization ) {
 			$general_content .= "## Specialization\n";
 			$general_content .= "{$specialization}\n\n";
@@ -1275,7 +1275,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Generate additional domain-specific documents.
 		$domain_docs = $this->generate_domain_specific_documents( $goal_lower, $title );
-		$documents = array_merge( $documents, $domain_docs );
+		$documents   = array_merge( $documents, $domain_docs );
 
 		return $documents;
 	}
@@ -1381,7 +1381,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Customs checklist for customs brokers.
 		if ( preg_match( '/\b(custom|customs|broker)\b/i', $goal_lower ) ) {
-			$checklist = "# Customs Clearance Checklist\n\n";
+			$checklist  = "# Customs Clearance Checklist\n\n";
 			$checklist .= "## Pre-Shipment\n";
 			$checklist .= "- [ ] Verify HS code classification\n";
 			$checklist .= "- [ ] Check import restrictions and prohibitions\n";
@@ -1390,7 +1390,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$checklist .= "- [ ] Prepare packing list\n";
 			$checklist .= "- [ ] Obtain certificate of origin (if needed)\n";
 			$checklist .= "- [ ] Secure necessary permits/licenses\n\n";
-			
+
 			$checklist .= "## Upon Arrival\n";
 			$checklist .= "- [ ] Receive and review shipping documents\n";
 			$checklist .= "- [ ] File customs entry/declaration\n";
@@ -1398,7 +1398,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 			$checklist .= "- [ ] Coordinate customs inspection (if required)\n";
 			$checklist .= "- [ ] Obtain release order\n";
 			$checklist .= "- [ ] Arrange delivery to consignee\n\n";
-			
+
 			$checklist .= "## Post-Clearance\n";
 			$checklist .= "- [ ] File documents for client records\n";
 			$checklist .= "- [ ] Invoice client for services\n";
@@ -1412,21 +1412,21 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Tax filing checklist for tax assistants.
 		if ( preg_match( '/\b(tax|taxes)\b/i', $goal_lower ) ) {
-			$tax_doc = "# Tax Filing Preparation Checklist\n\n";
+			$tax_doc  = "# Tax Filing Preparation Checklist\n\n";
 			$tax_doc .= "## Income Documents\n";
 			$tax_doc .= "- [ ] W-2 forms (employment income)\n";
 			$tax_doc .= "- [ ] 1099 forms (contract/freelance income)\n";
 			$tax_doc .= "- [ ] Business income records\n";
 			$tax_doc .= "- [ ] Investment income statements\n";
 			$tax_doc .= "- [ ] Rental income records\n\n";
-			
+
 			$tax_doc .= "## Deduction Documentation\n";
 			$tax_doc .= "- [ ] Charitable contribution receipts\n";
 			$tax_doc .= "- [ ] Business expense receipts\n";
 			$tax_doc .= "- [ ] Medical expense records\n";
 			$tax_doc .= "- [ ] Education expense records\n";
 			$tax_doc .= "- [ ] Home office documentation\n\n";
-			
+
 			$tax_doc .= "## Important Deadlines\n";
 			$tax_doc .= "- Personal tax returns: April 15 (or local deadline)\n";
 			$tax_doc .= "- Quarterly estimated taxes: Check local schedule\n";
@@ -1449,7 +1449,7 @@ class WP_MCP_AI_Tool_Create_Assistant implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function select_tools_for_goal( $goal ) {
 		$goal_lower = strtolower( $goal );
-		$tools = array();
+		$tools      = array();
 
 		// Always include basic research tools.
 		$tools[] = 'web_search';

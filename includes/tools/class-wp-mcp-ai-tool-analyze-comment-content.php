@@ -152,22 +152,22 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	private function build_analysis_prompt( $comment_content, $comment_author, $comment_email, $comment_url, $user_ip, $sensitivity ) {
 		$prompt = "Analyze this comment for spam and toxic content. Provide your assessment in JSON format.\n\n";
 
-		$prompt .= "Comment: \"" . $comment_content . "\"\n";
+		$prompt .= 'Comment: "' . $comment_content . "\"\n";
 
 		if ( ! empty( $comment_author ) ) {
-			$prompt .= "Author: " . $comment_author . "\n";
+			$prompt .= 'Author: ' . $comment_author . "\n";
 		}
 
 		if ( ! empty( $comment_email ) ) {
-			$prompt .= "Email: " . $comment_email . "\n";
+			$prompt .= 'Email: ' . $comment_email . "\n";
 		}
 
 		if ( ! empty( $comment_url ) ) {
-			$prompt .= "URL: " . $comment_url . "\n";
+			$prompt .= 'URL: ' . $comment_url . "\n";
 		}
 
 		if ( ! empty( $user_ip ) ) {
-			$prompt .= "IP: " . $user_ip . "\n";
+			$prompt .= 'IP: ' . $user_ip . "\n";
 		}
 
 		$prompt .= "\nSensitivity Level: " . $sensitivity . "\n\n";

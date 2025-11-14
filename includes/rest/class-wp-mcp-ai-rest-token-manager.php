@@ -328,7 +328,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		$current_user_id = get_current_user_id();
 		if ( $current_user_id ) {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
-			
+
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',
@@ -370,7 +370,7 @@ class WP_MCP_AI_REST_Token_Manager {
 		// Verify nonce for logged-in users.
 		if ( is_user_logged_in() ) {
 			$nonce = $request->get_header( 'X-WP-Nonce' );
-			
+
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',

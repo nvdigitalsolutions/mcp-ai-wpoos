@@ -66,7 +66,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_site_creator'           => array(
+				'enable_site_creator'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
@@ -80,7 +80,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_theme_install' => array(
+				'site_creator_allow_theme_install'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),

@@ -104,11 +104,11 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 		$current_theme = wp_get_theme();
 		if ( $current_theme->get_stylesheet() === $slug ) {
 			return array(
-				'success'     => true,
-				'theme_slug'  => $slug,
-				'theme_name'  => $current_theme->get( 'Name' ),
+				'success'        => true,
+				'theme_slug'     => $slug,
+				'theme_name'     => $current_theme->get( 'Name' ),
 				'already_active' => true,
-				'message'     => sprintf(
+				'message'        => sprintf(
 					/* translators: %s: theme name */
 					__( 'Theme "%s" is already active.', 'wp-mcp-ai' ),
 					$current_theme->get( 'Name' )
@@ -185,19 +185,19 @@ class WP_MCP_AI_Tool_Install_And_Activate_Theme implements WP_MCP_AI_Tool_Interf
 			array(
 				'slug'   => $slug,
 				'fields' => array(
-					'description'    => false,
-					'sections'       => false,
-					'rating'         => false,
-					'ratings'        => false,
-					'downloaded'     => false,
-					'downloadlink'   => true,
-					'last_updated'   => false,
-					'homepage'       => false,
-					'tags'           => false,
-					'template'       => false,
-					'parent'         => false,
-					'versions'       => true,
-					'screenshot_url' => false,
+					'description'     => false,
+					'sections'        => false,
+					'rating'          => false,
+					'ratings'         => false,
+					'downloaded'      => false,
+					'downloadlink'    => true,
+					'last_updated'    => false,
+					'homepage'        => false,
+					'tags'            => false,
+					'template'        => false,
+					'parent'          => false,
+					'versions'        => true,
+					'screenshot_url'  => false,
 					'active_installs' => false,
 				),
 			)

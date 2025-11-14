@@ -56,14 +56,16 @@ class Test_Performance_Reporting_Service extends WP_UnitTestCase {
 		$mock_repo->expects( $this->once() )
 			->method( 'get' )
 			->with( 'performance_baselines', array() )
-			->willReturn( array(
-				'rest_api' => array(
-					'avg_response_time' => 100,
-					'avg_memory_usage'  => 1000,
-					'avg_db_queries'    => 5,
-					'updated_at'        => '2025-01-01 00:00:00',
-				),
-			) );
+			->willReturn(
+				array(
+					'rest_api' => array(
+						'avg_response_time' => 100,
+						'avg_memory_usage'  => 1000,
+						'avg_db_queries'    => 5,
+						'updated_at'        => '2025-01-01 00:00:00',
+					),
+				)
+			);
 
 		// Set the mock repository.
 		WP_MCP_AI_Performance_Reporting_Service::set_settings_repository( $mock_repo );
@@ -144,9 +146,9 @@ class Test_Performance_Reporting_Service extends WP_UnitTestCase {
 		$get_baselines_method = $reflection->getMethod( 'get_baselines' );
 		$start_line           = $get_baselines_method->getStartLine();
 		$end_line             = $get_baselines_method->getEndLine();
-		
-		$lines        = file( $filename );
-		$method_code  = implode( '', array_slice( $lines, $start_line - 1, $end_line - $start_line + 1 ) );
+
+		$lines       = file( $filename );
+		$method_code = implode( '', array_slice( $lines, $start_line - 1, $end_line - $start_line + 1 ) );
 
 		// Should NOT contain direct get_option call.
 		$this->assertStringNotContainsString( 'get_option(', $method_code, 'get_baselines should not call get_option directly' );
@@ -166,9 +168,9 @@ class Test_Performance_Reporting_Service extends WP_UnitTestCase {
 		$update_baselines_method = $reflection->getMethod( 'update_baselines' );
 		$start_line              = $update_baselines_method->getStartLine();
 		$end_line                = $update_baselines_method->getEndLine();
-		
-		$lines        = file( $filename );
-		$method_code  = implode( '', array_slice( $lines, $start_line - 1, $end_line - $start_line + 1 ) );
+
+		$lines       = file( $filename );
+		$method_code = implode( '', array_slice( $lines, $start_line - 1, $end_line - $start_line + 1 ) );
 
 		// Should NOT contain direct update_option call.
 		$this->assertStringNotContainsString( 'update_option(', $method_code, 'update_baselines should not call update_option directly' );

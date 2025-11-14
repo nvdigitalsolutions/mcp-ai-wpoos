@@ -29,15 +29,15 @@ if ( ! defined( 'DB_COLLATE' ) ) {
 
 // SQLite configuration for local development (optional)
 // if ( ! defined( 'DB_TYPE' ) ) {
-// 	define( 'DB_TYPE', 'sqlite' );
+// define( 'DB_TYPE', 'sqlite' );
 // }
 //
 // if ( ! defined( 'DB_DIR' ) ) {
-// 	define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
+// define( 'DB_DIR', dirname( __DIR__ ) . '/.codex-wordpress/tests-database' );
 // }
 //
 // if ( ! defined( 'DB_FILE' ) ) {
-// 	define( 'DB_FILE', 'wptests.sqlite' );
+// define( 'DB_FILE', 'wptests.sqlite' );
 // }
 
 if ( ! isset( $table_prefix ) ) {

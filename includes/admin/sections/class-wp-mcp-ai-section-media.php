@@ -66,28 +66,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Media' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'enable_ai_media_library'       => array(
+				'enable_ai_media_library'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Media Library', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze images on upload', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_media_generate_alt_text'    => array(
+				'ai_media_generate_alt_text'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Alt Text', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_generate_caption'     => array(
+				'ai_media_generate_caption'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Captions', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate image captions', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_overwrite_existing'   => array(
+				'ai_media_overwrite_existing' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Overwrite Existing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
