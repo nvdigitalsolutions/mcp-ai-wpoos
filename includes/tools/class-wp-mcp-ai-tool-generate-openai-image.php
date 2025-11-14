@@ -775,6 +775,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	public function get_capability_flags() {
 		return array(
 			'requires-credentials', // Requires OpenAI API credentials.
+			'requires-capability',  // Requires user capabilities.
 			'write',                // Creates media files.
 			'async',                // May take significant time to generate images.
 			'rate-limited',         // Subject to OpenAI rate limits.

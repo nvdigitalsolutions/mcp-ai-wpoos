@@ -395,9 +395,10 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',   // Only reads data, does not modify state.
-			'local-only',  // No external API calls.
-			'cacheable',   // Results can be cached.
+			'read-only',            // Only reads data, does not modify state.
+			'local-only',           // No external API calls.
+			'requires-capability',  // Requires 'read' capability.
+			'cacheable',            // Results can be cached.
 		);
 	}
 }

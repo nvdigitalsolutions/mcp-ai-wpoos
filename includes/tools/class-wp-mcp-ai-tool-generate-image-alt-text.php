@@ -370,6 +370,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	public function get_capability_flags() {
 		return array(
 			'consumes-tokens',           // Uses AI model tokens.
+			'requires-capability',  // Requires user capabilities.
 			'external-api',              // Makes external API calls.
 			'network-dependent',         // Requires internet connectivity.
 			'requires-credentials',      // Requires API credentials.
