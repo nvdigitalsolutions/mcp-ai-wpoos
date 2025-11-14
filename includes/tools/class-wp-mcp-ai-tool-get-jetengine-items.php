@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides access to JetEngine registered post types.
  */
-class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether JetEngine is available.
 	 *
@@ -141,5 +141,18 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',       // Only reads JetEngine data.
+			'local-only',      // No external API calls.
+			'requires-plugin', // Requires JetEngine plugin.
+			'cacheable',       // Results can be cached.
+			'paginated',       // Supports pagination parameters.
+		);
 	}
 }

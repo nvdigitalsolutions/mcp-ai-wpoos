@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a link so administrators can review OpenAI usage analytics.
  */
-class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -68,6 +68,18 @@ class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface {
 			'label'       => __( 'OpenAI Usage Dashboard', 'wp-mcp-ai' ),
 			'url'         => 'https://platform.openai.com/usage',
 			'description' => __( 'Visit the OpenAI platform usage dashboard to review billing, quotas, and consumption analytics.', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',            // Returns information, does not modify state.
+			'external-api',         // Refers to external OpenAI platform.
+			'network-dependent',    // User needs internet to access URL.
+			'requires-credentials', // Requires OpenAI API account.
 		);
 	}
 }

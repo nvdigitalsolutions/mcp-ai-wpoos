@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Executes Site Health tests and returns aggregated results.
  */
-class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Capability required to run the tool.
 	 */
@@ -690,5 +690,17 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $links;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',           // Only reads site health data.
+			'local-only',          // No external API calls.
+			'requires-capability', // Requires 'manage_options' capability.
+			'cacheable',           // Results don't change frequently.
+		);
 	}
 }

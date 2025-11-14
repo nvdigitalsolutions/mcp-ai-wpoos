@@ -15,7 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for publishing LinkedIn UGC posts via the v2 API.
  */
-class WP_MCP_AI_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * LinkedIn API endpoint for creating UGC posts.
 	 */

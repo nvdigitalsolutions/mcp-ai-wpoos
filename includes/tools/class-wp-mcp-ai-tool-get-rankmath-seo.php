@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Retrieves Rank Math SEO insights for a single post.
  */
-class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Check whether the tool can be registered.
 	 *
@@ -308,5 +308,17 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',       // Only reads SEO data.
+			'local-only',      // No external API calls.
+			'requires-plugin', // Requires Rank Math plugin.
+			'cacheable',       // Results can be cached.
+		);
 	}
 }

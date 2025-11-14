@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Wraps the WP_MCP_AI_Remote_Tester inside a callable assistant tool.
  */
-class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -191,5 +191,16 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		/* translators: 1: Overall probe status word, 2: List of per-step status summaries. */
 		return sprintf( __( 'Probe completed with %1$s (%2$s).', 'wp-mcp-ai' ), $status, $step_summary );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',         // Diagnostic tool, does not modify state.
+			'external-api',      // Tests external MCP server connectivity.
+			'network-dependent', // Requires internet connectivity.
+		);
 	}
 }

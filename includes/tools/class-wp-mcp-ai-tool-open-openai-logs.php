@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Provides a link so administrators can inspect OpenAI API logs.
  */
-class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -68,6 +68,19 @@ class WP_MCP_AI_Tool_Open_OpenAI_Logs implements WP_MCP_AI_Tool_Interface {
 			'label'       => __( 'OpenAI Logs Dashboard', 'wp-mcp-ai' ),
 			'url'         => 'https://platform.openai.com/logs',
 			'description' => __( 'Visit the OpenAI platform logs dashboard to review recent API requests, usage details, and error messages.', 'wp-mcp-ai' ),
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',         // Returns information, does not modify state.
+			'external-api',      // Refers to external OpenAI platform.
+			'network-dependent', // User needs internet to access URL.
+			'requires-credentials', // Requires OpenAI API account.
+			'pii-data',          // Usage logs may contain user data.
 		);
 	}
 }

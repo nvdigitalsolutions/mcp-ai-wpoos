@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Invoke JetEngine REST routes using authenticated MCP context.
  */
-class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * Determine whether JetEngine is available.
 	 *
@@ -149,5 +149,17 @@ class WP_MCP_AI_Tool_Invoke_JetEngine_Route implements WP_MCP_AI_Tool_Interface 
 		}
 
 		return $result;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-plugin',     // Requires JetEngine plugin.
+			'requires-capability', // Requires appropriate permissions.
+			'external-api',        // May make external requests depending on route.
+			'network-dependent',   // May require internet depending on route.
+		);
 	}
 }

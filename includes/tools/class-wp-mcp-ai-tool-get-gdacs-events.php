@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Fetches tropical cyclone and flood events from GDACS.
  */
-class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
+class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * GDACS endpoint for tropical cyclone and flood events.
 	 */
@@ -202,5 +202,18 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface {
 		}
 
 		return wp_json_encode( $value );
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'read-only',         // Only reads disaster event data.
+			'external-api',      // Makes external API requests to GDACS.
+			'network-dependent', // Requires internet connectivity.
+			'cacheable',         // Results can be cached.
+			'non-deterministic', // Data changes as events occur.
+		);
 	}
 }
