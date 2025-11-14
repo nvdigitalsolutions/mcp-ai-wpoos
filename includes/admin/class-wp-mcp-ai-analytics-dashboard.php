@@ -17,6 +17,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Analytics_Dashboard {
 
 	/**
+	 * Maximum number of users to query for dashboard widgets.
+	 * Can be filtered via 'wp_mcp_ai_dashboard_max_users'.
+	 */
+	const MAX_USERS_FOR_DASHBOARD = 100;
+
+	/**
+	 * Get cached user IDs for dashboard calculations.
+	 *
+	 * Caches the user IDs for 5 minutes to prevent performance issues
+	 * on sites with many users.
+	 *
+	 * @return array Array of user IDs.
+	 */
+	private static function get_cached_user_ids() {
+		$cache_key = 'wp_mcp_ai_dashboard_user_ids';
+		$user_ids  = get_transient( $cache_key );
+
+		if ( false === $user_ids || ! is_array( $user_ids ) ) {
+			// Get limited number of users for performance.
+			$max_users = apply_filters( 'wp_mcp_ai_dashboard_max_users', self::MAX_USERS_FOR_DASHBOARD );
+			$user_ids  = get_users(
+				array(
+					'fields' => 'ID',
+					'number' => absint( $max_users ),
+				)
+			);
+
+			// Cache for 5 minutes.
+			set_transient( $cache_key, $user_ids, 5 * MINUTE_IN_SECONDS );
+		}
+
+		return $user_ids;
+	}
+
+	/**
 	 * Initialize the analytics dashboard.
 	 */
 	public static function init() {
@@ -194,8 +229,8 @@ class WP_MCP_AI_Analytics_Dashboard {
 			return $forecast_data;
 		}
 
-		// Get all users to calculate site-wide trend.
-		$users                = get_users( array( 'fields' => 'ID' ) );
+		// Get all users to calculate site-wide trend - use cached version.
+		$users                = self::get_cached_user_ids();
 		$total_current_usage  = 0;
 		$total_forecast_usage = 0;
 		$forecast_count       = 0;
@@ -262,8 +297,8 @@ class WP_MCP_AI_Analytics_Dashboard {
 			'average_per_user' => 0,
 		);
 
-		// Get all users.
-		$users                = get_users( array( 'fields' => 'ID' ) );
+		// Get all users - use cached version for performance.
+		$users                = self::get_cached_user_ids();
 		$stats['total_users'] = count( $users );
 
 		// Calculate usage across all users.

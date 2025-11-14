@@ -23,6 +23,41 @@ class WP_MCP_AI_Chart_JS_Helper {
 	const CHART_JS_VERSION = '4.4.1';
 
 	/**
+	 * Maximum number of users to query for site-wide calculations.
+	 * Can be filtered via 'wp_mcp_ai_chart_max_users'.
+	 */
+	const MAX_USERS_FOR_CHARTS = 100;
+
+	/**
+	 * Get cached user IDs for chart calculations.
+	 *
+	 * Caches the user IDs for 5 minutes to prevent performance issues
+	 * on sites with many users.
+	 *
+	 * @return array Array of user IDs.
+	 */
+	private static function get_cached_user_ids() {
+		$cache_key = 'wp_mcp_ai_chart_user_ids';
+		$user_ids  = get_transient( $cache_key );
+
+		if ( false === $user_ids || ! is_array( $user_ids ) ) {
+			// Get limited number of users for performance.
+			$max_users = apply_filters( 'wp_mcp_ai_chart_max_users', self::MAX_USERS_FOR_CHARTS );
+			$user_ids  = get_users(
+				array(
+					'fields' => 'ID',
+					'number' => absint( $max_users ),
+				)
+			);
+
+			// Cache for 5 minutes.
+			set_transient( $cache_key, $user_ids, 5 * MINUTE_IN_SECONDS );
+		}
+
+		return $user_ids;
+	}
+
+	/**
 	 * Initialize the helper.
 	 */
 	public static function init() {
@@ -161,8 +196,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			// Specific user.
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			// All users - limit to prevent performance issues.
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users and tools.
@@ -233,8 +268,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			'enterprise' => 0,
 		);
 
-		// Count users by tier using WP_MCP_AI_Tool_Token_Limits if available.
-		$users = get_users( array( 'fields' => 'ID' ) );
+		// Count users by tier using WP_MCP_AI_Tool_Token_Limits if available - use cached users.
+		$users = self::get_cached_user_ids();
 
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			// Use the proper tier detection method.
@@ -305,7 +340,7 @@ class WP_MCP_AI_Chart_JS_Helper {
 		if ( ! empty( $args['user_id'] ) ) {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage by tool.
@@ -374,8 +409,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			// Specific user.
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			// All users - use cached version.
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users.
@@ -465,8 +500,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 			// Specific user.
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			// All users.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			// All users - use cached version.
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Aggregate usage across users.
@@ -642,8 +677,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 		if ( ! empty( $args['user_id'] ) ) {
 			$user_ids = array( absint( $args['user_id'] ) );
 		} else {
-			// Get all users for site-wide calculation.
-			$user_ids = get_users( array( 'fields' => 'ID' ) );
+			// Get all users for site-wide calculation - use cached version.
+			$user_ids = self::get_cached_user_ids();
 		}
 
 		// Calculate total usage and limits.
