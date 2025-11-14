@@ -78,12 +78,96 @@ class WP_MCP_AI_REST_Cron_Status_Controller extends WP_MCP_AI_REST_Controller_Ba
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check_cron_status( WP_REST_Request $request ) {
-		// Use the standard authenticated check from base controller.
-		$auth_check = $this->permissions_check_authenticated( $request );
+		// Reset auth context.
+		$this->auth_context = array(
+			'user_id'             => absint( get_current_user_id() ),
+			'token_authenticated' => false,
+		);
 
-		if ( is_wp_error( $auth_check ) ) {
-			return $auth_check;
+		// Check for mesh API key authentication.
+		$mesh_key = $request->get_header( 'X-WP-MCP-AI-Mesh-Key' );
+		if ( ! empty( $mesh_key ) && $this->authenticator ) {
+			$mesh_validated = $this->authenticator->validate_mesh_key( $mesh_key );
+
+			if ( true === $mesh_validated ) {
+				$this->authenticator->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+				$this->auth_context = $this->authenticator->get_auth_context();
+				return true;
+			} elseif ( is_wp_error( $mesh_validated ) ) {
+				return $mesh_validated;
+			}
 		}
+
+		// Check for bearer token authentication.
+		$bearer = $request->get_header( 'Authorization' );
+		if ( ! empty( $bearer ) && preg_match( '/^Bearer\s+(.*)$/i', $bearer, $matches ) ) {
+			$token = trim( $matches[1] );
+			
+			if ( $this->authenticator ) {
+				$local = $this->authenticator->validate_local_token( $token, $request );
+
+				if ( true === $local ) {
+					$this->auth_context = $this->authenticator->get_auth_context();
+					return true;
+				} elseif ( $local instanceof WP_Error ) {
+					return $local;
+				}
+
+				$validated = $this->authenticator->validate_bearer_token( $token, $request );
+
+				if ( is_wp_error( $validated ) ) {
+					return $validated;
+				}
+
+				$this->auth_context = $this->authenticator->get_auth_context();
+				return true;
+			}
+		}
+
+		// Check for guest token authentication.
+		if ( $this->authenticator ) {
+			$guest_token = $this->authenticator->extract_guest_token( $request );
+			if ( $guest_token && class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+				$guest_assistant = WP_MCP_AI_Shortcode::validate_guest_token( $guest_token, 0 );
+
+				if ( $guest_assistant ) {
+					// Guest users can view their own cron jobs (user_id = 0).
+					$this->authenticator->set_authenticated_user_id( 0 );
+					$this->auth_context = $this->authenticator->get_auth_context();
+					return true;
+				}
+			}
+		}
+
+		// Check for WordPress nonce authentication.
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+
+		if ( empty( $nonce ) ) {
+			return $this->error(
+				'wp_mcp_ai_missing_credentials',
+				__( 'Authentication is required to view cron status.', 'wp-mcp-ai' ),
+				401,
+				array(
+					'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
+					'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header for public chat surfaces.', 'wp-mcp-ai' ),
+					'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return $this->error(
+				'rest_invalid_nonce',
+				__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+				rest_authorization_required_code(),
+				array(
+					'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+				)
+			);
+		}
+
+		// WordPress nonce is valid. Store current user in auth context.
+		$this->auth_context['user_id'] = get_current_user_id();
 
 		// Any authenticated user can view their own cron jobs.
 		// The service itself handles filtering based on user permissions.
