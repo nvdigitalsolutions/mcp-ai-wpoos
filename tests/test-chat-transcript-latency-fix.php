@@ -383,9 +383,16 @@ class Test_Chat_Transcript_Latency_Fix extends WP_UnitTestCase {
 	/**
 	 * Provide the mock transcript handler for storage.
 	 *
+	 * @param object|null     $handler      Custom handler instance.
+	 * @param int             $assistant_id Assistant identifier.
+	 * @param array           $messages     Sanitised chat messages.
+	 * @param array           $options      Prepared chat options.
+	 * @param array           $response     Language model response payload.
+	 * @param WP_REST_Request $request      REST request instance.
+	 * @param array           $context      Additional context (timings, session key, etc.).
 	 * @return object
 	 */
-	public function provide_transcript_handler() {
+	public function provide_transcript_handler( $handler, $assistant_id, $messages, $options, $response, $request, $context ) {
 		return $this->transcript_handler;
 	}
 }
