@@ -17,6 +17,25 @@
 class WP_MCP_AI_Elementor_Performance_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Create admin user with manage_options capability for AJAX handlers.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+	}
+
+	/**
+	 * Tear down after each test.
+	 */
+	public function tearDown(): void {
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
+
+	/**
 	 * Test widget registration benchmarks.
 	 *
 	 * Measures time to register all Elementor widgets.

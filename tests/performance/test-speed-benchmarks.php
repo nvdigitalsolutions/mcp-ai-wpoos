@@ -25,6 +25,25 @@ class WP_MCP_AI_Speed_Benchmarks_Test extends WP_UnitTestCase {
 	protected $latencies = array();
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Create admin user with manage_options capability for REST API calls.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+	}
+
+	/**
+	 * Tear down after each test.
+	 */
+	public function tearDown(): void {
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
+
+	/**
 	 * Test API endpoint latency baselines.
 	 *
 	 * Measures p50, p95, and p99 latency for REST API endpoints.
