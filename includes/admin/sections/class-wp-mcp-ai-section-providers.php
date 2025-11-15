@@ -210,6 +210,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'The model name to use with Ollama. Must match exactly a model you have pulled (e.g., llama3, mistral, codellama). Use \"ollama list\" in terminal to see available models.', 'wp-mcp-ai' ),
 					'placeholder' => 'llama3',
 				),
+				'ollama_network_interface' => array(
+					'type'        => 'text',
+					'label'       => __( 'Ollama Network Interface (Optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
 
 				// LM Studio Settings.
 				'lm_studio_endpoint_url' => array(
@@ -231,6 +237,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'LM Studio Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model identifier for your loaded LM Studio model. This is typically shown in the LM Studio interface. Some installations accept \"local-model\" as a generic identifier.', 'wp-mcp-ai' ),
 					'placeholder' => 'local-model',
+				),
+				'lm_studio_network_interface' => array(
+					'type'        => 'text',
+					'label'       => __( 'LM Studio Network Interface (Optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'placeholder' => '',
 				),
 			);
 		}
@@ -270,13 +282,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'ollama',
 					'label'  => __( 'Ollama (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'ollama_endpoint_url', 'ollama_model' ),
+					'fields' => array( 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface' ),
 				),
 				'lm_studio' => array(
 					'id'     => 'lm_studio',
 					'label'  => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
+					'fields' => array( 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
 			);
 		}

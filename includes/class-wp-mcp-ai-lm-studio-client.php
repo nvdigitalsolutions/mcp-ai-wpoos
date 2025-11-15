@@ -18,6 +18,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 	class WP_MCP_AI_LM_Studio_Client {
 
 		/**
+		 * Get the configured network interface for HTTP requests.
+		 *
+		 * @return string
+		 */
+		public function get_network_interface() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			return isset( $settings['lm_studio_network_interface'] ) ? sanitize_text_field( $settings['lm_studio_network_interface'] ) : '';
+		}
+
+		/**
 		 * Retrieve the configured LM Studio endpoint URL.
 		 *
 		 * @return string
@@ -37,6 +47,43 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			return isset( $settings['lm_studio_model'] ) ? $settings['lm_studio_model'] : '';
+		}
+
+		/**
+		 * Apply network interface binding to HTTP requests if configured.
+		 *
+		 * @param resource $handle The cURL handle.
+		 * @param array    $parsed_args The HTTP request arguments.
+		 * @param string   $url The request URL.
+		 * @return resource The modified cURL handle.
+		 */
+		public function apply_network_interface( $handle, $parsed_args, $url ) {
+			// Only apply to requests to our LM Studio endpoint.
+			$endpoint_url = $this->get_endpoint_url();
+			if ( empty( $endpoint_url ) || strpos( $url, untrailingslashit( $endpoint_url ) ) !== 0 ) {
+				return $handle;
+			}
+
+			$interface = $this->get_network_interface();
+			if ( ! empty( $interface ) ) {
+				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+			}
+
+			return $handle;
+		}
+
+		/**
+		 * Register HTTP API filters for network interface binding.
+		 */
+		private function register_http_filters() {
+			add_filter( 'http_api_curl', array( $this, 'apply_network_interface' ), 10, 3 );
+		}
+
+		/**
+		 * Unregister HTTP API filters for network interface binding.
+		 */
+		private function unregister_http_filters() {
+			remove_filter( 'http_api_curl', array( $this, 'apply_network_interface' ), 10 );
 		}
 
 		/**
@@ -75,7 +122,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				)
 			);
 
+			$this->register_http_filters();
 			$response = wp_remote_get( $url, $request_args );
+			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'LM Studio connection test failed.', array( 'error' => $response->get_error_message() ) );
@@ -140,7 +189,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_list_models', 'Fetching models from LM Studio.', array( 'url' => $url ) );
 
+			$this->register_http_filters();
 			$response = wp_remote_get( $url, $request_args );
+			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'LM Studio model listing failed.', array( 'error' => $response->get_error_message() ) );
@@ -263,7 +314,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_request', 'Sending request to LM Studio.', array( 'model' => $model ) );
 
+			$this->register_http_filters();
 			$response = wp_remote_post( $url, $request_args );
+			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'LM Studio request failed.', array( 'error' => $response->get_error_message() ) );
@@ -589,7 +642,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			WP_MCP_AI_Logger::log_event( 'lm_studio_completion_request', 'Sending completion request to LM Studio.', array( 'model' => $model ) );
 
+			$this->register_http_filters();
 			$response = wp_remote_post( $url, $request_args );
+			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				WP_MCP_AI_Logger::log_error( 'LM Studio completion request failed.', array( 'error' => $response->get_error_message() ) );
