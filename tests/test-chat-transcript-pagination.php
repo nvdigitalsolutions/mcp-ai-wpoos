@@ -55,6 +55,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that chat transcript endpoint accepts per_page parameter.
 	 */
 	public function test_transcript_endpoint_accepts_per_page_parameter() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 		$request->set_param( 'per_page', 10 );
@@ -73,6 +77,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that chat transcript endpoint accepts page parameter.
 	 */
 	public function test_transcript_endpoint_accepts_page_parameter() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 		$request->set_param( 'page', 2 );
@@ -91,6 +99,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that chat transcript endpoint returns total count.
 	 */
 	public function test_transcript_endpoint_returns_total_count() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 
@@ -108,6 +120,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that per_page parameter defaults to 20 when not provided.
 	 */
 	public function test_transcript_per_page_defaults_to_twenty() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 
@@ -125,6 +141,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that page parameter defaults to 1 when not provided.
 	 */
 	public function test_transcript_page_defaults_to_one() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 
@@ -142,6 +162,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that per_page parameter is capped at 100.
 	 */
 	public function test_transcript_per_page_capped_at_one_hundred() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 		$request->set_param( 'per_page', 500 );
@@ -160,6 +184,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that negative per_page parameter defaults to 1.
 	 */
 	public function test_transcript_negative_per_page_defaults_to_one() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 		$request->set_param( 'per_page', -5 );
@@ -178,6 +206,10 @@ class WP_MCP_AI_Chat_Transcript_Pagination_Test extends WP_UnitTestCase {
 	 * Test that negative page parameter defaults to 1.
 	 */
 	public function test_transcript_negative_page_defaults_to_one() {
+		if ( ! class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
+			$this->markTestSkipped( 'Requires JetEngine CCT to be active and configured' );
+		}
+
 		$request = new WP_REST_Request( 'GET', '/mcp-ai/v1/chat-transcripts' );
 		$request->set_param( 'user_id', $this->admin_id );
 		$request->set_param( 'page', -2 );
