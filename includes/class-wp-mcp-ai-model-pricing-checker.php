@@ -162,6 +162,7 @@ class WP_MCP_AI_Model_Pricing_Checker {
 			$('.wp-mcp-ai-price-notice').on('click', '.notice-dismiss', function() {
 				$.post(ajaxurl, {
 					action: 'wp_mcp_ai_dismiss_price_notice',
+					nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_price_notice' ) ); ?>',
 					count: <?php echo count( $price_changes ); ?>
 				});
 			});
@@ -174,6 +175,15 @@ class WP_MCP_AI_Model_Pricing_Checker {
 	 * Handle AJAX request to dismiss price notice.
 	 */
 	public static function dismiss_price_notice() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_dismiss_price_notice', 'nonce' );
+
+		// Check if user is logged in.
+		if ( ! is_user_logged_in() ) {
+			wp_send_json_error( array( 'message' => __( 'You must be logged in to dismiss notices.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
 		$count = isset( $_POST['count'] ) ? absint( $_POST['count'] ) : 0;
 		update_user_meta( get_current_user_id(), 'wp_mcp_ai_dismissed_price_notice', $count );
 		wp_send_json_success();
