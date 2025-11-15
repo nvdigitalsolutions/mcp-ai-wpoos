@@ -18,6 +18,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 	class WP_MCP_AI_LM_Studio_Client {
 
 		/**
+		 * Get the configured network interface for HTTP requests.
+		 *
+		 * @return string
+		 */
+		public function get_network_interface() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			return isset( $settings['lm_studio_network_interface'] ) ? sanitize_text_field( $settings['lm_studio_network_interface'] ) : '';
+		}
+
+		/**
 		 * Retrieve the configured LM Studio endpoint URL.
 		 *
 		 * @return string

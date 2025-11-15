@@ -15,6 +15,16 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 	 */
 	class WP_MCP_AI_Ollama_Client {
 
+		/**
+		 * Get the configured network interface for HTTP requests.
+		 *
+		 * @return string
+		 */
+		public function get_network_interface() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			return isset( $settings['ollama_network_interface'] ) ? sanitize_text_field( $settings['ollama_network_interface'] ) : '';
+		}
+
 		public function get_endpoint_url() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['ollama_endpoint_url'] ) ? $settings['ollama_endpoint_url'] : '';
@@ -108,7 +118,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				return $payload;
 			}
 
-			$url      = untrailingslashit( $endpoint_url ) . '/api/chat';
+			$url = untrailingslashit( $endpoint_url ) . '/api/chat';
+			
 			$response = wp_remote_post(
 				$url,
 				array(
@@ -326,7 +337,8 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
-			$url      = untrailingslashit( $endpoint_url ) . '/api/generate';
+			$url = untrailingslashit( $endpoint_url ) . '/api/generate';
+			
 			$response = wp_remote_post(
 				$url,
 				array(

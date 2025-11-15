@@ -31,6 +31,9 @@ class WP_MCP_AI_HTTP_Helper {
 		// WordPress blocks requests to local/private IPs by default for security.
 		// This filter explicitly allows them for local AI services like LM Studio, Ollama, etc.
 		add_filter( 'http_request_host_is_external', array( __CLASS__, 'allow_private_network_requests' ), 10, 3 );
+
+		// Register network interface binding for local AI providers.
+		self::register_network_interface_binding();
 	}
 
 	/**
@@ -258,5 +261,56 @@ class WP_MCP_AI_HTTP_Helper {
 		}
 
 		return $is_external;
+	}
+
+	/**
+	 * Apply network interface binding to cURL requests for local AI providers.
+	 *
+	 * This filter is applied to the http_api_curl hook to bind HTTP requests
+	 * to a specific network interface when configured for Ollama or LM Studio.
+	 *
+	 * Use case: When WordPress is hosted remotely (e.g., Cloudways) and needs
+	 * to route requests through a specific network interface to reach local AI
+	 * providers on private network addresses (e.g., 192.168.2.222).
+	 *
+	 * @param resource $handle The cURL handle.
+	 * @param array    $parsed_args The HTTP request arguments.
+	 * @param string   $url The request URL.
+	 * @return resource The modified cURL handle.
+	 */
+	public static function apply_network_interface_binding( $handle, $parsed_args, $url ) {
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+		// Check if this is an Ollama request.
+		if ( isset( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_endpoint_url'] ) ) {
+			$ollama_endpoint = untrailingslashit( $settings['ollama_endpoint_url'] );
+			if ( strpos( $url, $ollama_endpoint ) === 0 && ! empty( $settings['ollama_network_interface'] ) ) {
+				$interface = sanitize_text_field( $settings['ollama_network_interface'] );
+				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+				return $handle;
+			}
+		}
+
+		// Check if this is an LM Studio request.
+		if ( isset( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_endpoint_url'] ) ) {
+			$lm_studio_endpoint = untrailingslashit( $settings['lm_studio_endpoint_url'] );
+			if ( strpos( $url, $lm_studio_endpoint ) === 0 && ! empty( $settings['lm_studio_network_interface'] ) ) {
+				$interface = sanitize_text_field( $settings['lm_studio_network_interface'] );
+				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+				return $handle;
+			}
+		}
+
+		return $handle;
+	}
+
+	/**
+	 * Register network interface binding filter.
+	 *
+	 * This should be called during plugin initialization to enable
+	 * network interface binding for local AI providers.
+	 */
+	public static function register_network_interface_binding() {
+		add_filter( 'http_api_curl', array( __CLASS__, 'apply_network_interface_binding' ), 10, 3 );
 	}
 }
