@@ -80,6 +80,54 @@ This refactoring breaks apart the monolithic `chat.js` file (8,761 lines, 166 fu
 - Time tracking with automatic updates
 - Support for multiple status types
 
+### Phase 5: Audio Service ✅
+**File**: `assets/js/chat-audio-service.js` (1,359 lines)
+
+**Functions Extracted**: 35+
+- **Speech Synthesis (Text-to-Speech)**: 15 functions
+  - `attachSpeechButton(bubble, state, text, buildJsonHeaders)` - Attach speech button to message
+  - `updateSpeechButtonIcon(button, stateName)` - Update button visual state
+  - `stopSpeechPlayback(state, button)` - Stop audio playback
+  - `normalizeSpeechText(text)` - Normalize speech text
+  - `requestSpeechAudio(state, text, buildJsonHeaders)` - Request audio from server
+  - `createSpeechAudio(state, button, url, text)` - Create audio element
+  - `ensureSpeechAudio(state, button, url, text)` - Ensure audio and play
+  - `handleSpeechButtonClick(state, button, buildJsonHeaders)` - Handle button click
+  - `resolveSpeechText(bubble, text)` - Resolve text to speak
+  - And more...
+
+- **Audio Transcription (Speech-to-Text)**: 12 functions
+  - `handleTranscribeButtonClick(state, helpers)` - Handle transcribe button
+  - `updateTranscribeButtonState(state)` - Update button state
+  - `handleTranscribeFileSelection(event, state, helpers)` - Handle file selection
+  - `extractTranscriptionResult(body)` - Extract result from response
+  - `startTranscribeRecording(state, helpers)` - Start recording
+  - `stopTranscribeRecording(state, helpers)` - Stop recording
+  - `stopRecordingStream(state)` - Release media tracks
+  - And more...
+
+- **Voice Chat**: 8 functions
+  - `handleVoiceChatButtonClick(state, helpers)` - Handle voice chat button
+  - `updateVoiceChatButtonState(state)` - Update button state
+  - `startVoiceChatRecording(state, helpers)` - Start voice chat recording
+  - `stopVoiceChatRecording(state, helpers)` - Stop voice chat recording
+  - `stopVoiceChatStream(state)` - Release voice chat stream
+  - And more...
+
+- **Audio Utilities**:
+  - `supportsAudioRecording()` - Check browser support
+  - `registerObjectUrl(url)` - Register object URL for cleanup
+  - `revokeObjectUrls()` - Revoke all object URLs
+
+**Features**:
+- Text-to-speech with caching and playback controls
+- Speech-to-text transcription from microphone or file upload
+- Voice chat with automatic transcription and message sending
+- Browser MediaRecorder API integration
+- Audio blob management and cleanup
+- 25MB file size limit for transcriptions
+- Visual feedback for recording, processing states
+
 ## Architecture Pattern
 
 ### Service Integration
@@ -160,10 +208,10 @@ Chat.js works with or without services:
 ## Metrics
 
 ### Extraction Progress
-- **Phases Completed**: 4 of 8 planned (50%)
-- **Functions Extracted**: 25 functions
-- **Lines Extracted**: ~1,481 lines into services
-- **Service Files Created**: 4 independent modules
+- **Phases Completed**: 5 of 8 planned (62.5%)
+- **Functions Extracted**: 60+ functions
+- **Lines Extracted**: ~2,840 lines into services
+- **Service Files Created**: 5 independent modules
 
 ### Code Quality
 - **Linting**: ✅ All files pass ESLint
@@ -171,9 +219,9 @@ Chat.js works with or without services:
 - **Breaking Changes**: ✅ Zero
 
 ### Remaining Work
-- **Functions Remaining**: ~141 functions
-- **Lines Remaining**: ~7,280 lines in chat.js
-- **Services Planned**: 4 more services to extract
+- **Functions Remaining**: ~105 functions
+- **Lines Remaining**: ~6,048 lines in chat.js (reduced from 8,815)
+- **Services Planned**: 3 more services to extract
 
 ## File Structure
 
@@ -184,9 +232,9 @@ assets/js/
 ├── chat-clipboard-service.js (Phase 2 - copy functionality)
 ├── chat-markdown-service.js (Phase 3 - markdown rendering)
 ├── chat-ui-utilities-service.js (Phase 4 - UI utilities & formatting)
+├── chat-audio-service.js (Phase 5 - speech, transcription, voice chat)
 └── [Future services to be created]
-    ├── chat-message-service.js (Phase 5)
-    ├── chat-audio-service.js (Phase 6)
+    ├── chat-message-service.js (Phase 6)
     ├── chat-api-service.js (Phase 7)
     └── chat-controller.js (Phase 8 - refactored core)
 ```
@@ -201,7 +249,8 @@ Updated `.eslintrc.json` to include new globals:
     "wpMcpAiChatClipboard": "readonly",
     "wpMcpAiChatMarkdown": "readonly",
     "wpMcpAiChatUIUtils": "readonly",
-    "wpMcpAiChatDomBatcher": "readonly"
+    "wpMcpAiChatDomBatcher": "readonly",
+    "wpMcpAiChatAudio": "readonly"
 }
 ```
 
@@ -222,6 +271,9 @@ wp_register_script('wp-mcp-ai-chat-markdown',
     
 wp_register_script('wp-mcp-ai-chat-ui-utils', 
     WP_MCP_AI_URL . 'assets/js/chat-ui-utilities-service.js', array(), VERSION, true);
+
+wp_register_script('wp-mcp-ai-chat-audio', 
+    WP_MCP_AI_URL . 'assets/js/chat-audio-service.js', array(), VERSION, true);
     
 wp_register_script('wp-mcp-ai-chat', 
     WP_MCP_AI_URL . 'assets/js/chat.js', 
@@ -231,6 +283,7 @@ wp_register_script('wp-mcp-ai-chat',
         'wp-mcp-ai-chat-clipboard',
         'wp-mcp-ai-chat-markdown',
         'wp-mcp-ai-chat-ui-utils',
+        'wp-mcp-ai-chat-audio',
     ), 
     VERSION,
     true);
@@ -238,18 +291,12 @@ wp_register_script('wp-mcp-ai-chat',
 
 ## Next Steps
 
-### Phase 5: Message Services
+### Phase 6: Message Services
 Extract ~20 message handling functions:
 - Message rendering
 - Attachment management
 - History management
 - Tool shortcuts
-
-### Phase 6: Audio Services
-Extract ~30 audio-related functions:
-- Speech synthesis (text-to-speech)
-- Audio transcription (speech-to-text)
-- Voice chat functionality
 
 ### Phase 7: API & Streaming Services
 Extract ~20 communication functions:

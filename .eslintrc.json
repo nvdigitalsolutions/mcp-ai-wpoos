@@ -17,6 +17,7 @@
 		"wpMcpAiChatMarkdown": "readonly",
 		"wpMcpAiChatDomBatcher": "readonly",
 		"wpMcpAiChatUIUtils": "readonly",
+		"wpMcpAiChatAudio": "readonly",
 		"wpMcpAiUserChats": "readonly",
 		"wpMcpAiAdmin": "readonly"
 	},
