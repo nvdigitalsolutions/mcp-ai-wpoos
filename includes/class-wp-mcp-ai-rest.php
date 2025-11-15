@@ -5312,7 +5312,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
              FROM {$table}
              WHERE {$where_sql}
              GROUP BY session_key
-             ORDER BY COALESCE(MAX(CASE WHEN response_completed_at > 0 THEN response_completed_at END), MAX(cct_created), MAX(request_started_at)) DESC, session_key ASC
+             ORDER BY MAX(cct_created) DESC, session_key ASC
              LIMIT %d OFFSET %d";
 
 			$query = $wpdb->prepare( $query_template, $query_values );
