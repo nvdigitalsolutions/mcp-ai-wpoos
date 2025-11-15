@@ -55,6 +55,24 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	}
 
 	/**
+	 * Declare script dependencies for this widget.
+	 *
+	 * @return array List of script handles this widget depends on.
+	 */
+	public function get_script_depends() {
+		return array( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+	}
+
+	/**
+	 * Declare style dependencies for this widget.
+	 *
+	 * @return array List of style handles this widget depends on.
+	 */
+	public function get_style_depends() {
+		return array( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+	}
+
+	/**
 	 * Register controls for the widget settings.
 	 */
 	protected function register_controls() {

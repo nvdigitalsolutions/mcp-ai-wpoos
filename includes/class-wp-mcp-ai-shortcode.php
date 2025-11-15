@@ -43,6 +43,7 @@ class WP_MCP_AI_Shortcode {
 		add_shortcode( self::SHORTCODE, array( $this, 'render_shortcode' ) );
 
 		add_action( 'enqueue_block_assets', array( $this, 'maybe_enqueue_style_for_block_themes' ) );
+		add_action( 'elementor/frontend/after_register_scripts', array( $this, 'register_assets' ) );
 	}
 
 	/**
