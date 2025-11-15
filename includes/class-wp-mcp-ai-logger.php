@@ -167,21 +167,31 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 
 			// Check granular settings for specific event types.
 			// Agentic loop events.
-			if ( strpos( $type, 'agentic' ) !== false || in_array( $type, array( 'debug' ), true ) ) {
-				// For 'debug' type, check if it's related to agentic loop via context or allow it.
-				// Since we can't check context here easily, we'll allow debug messages.
-				// The agentic loop specific check will happen in the chat service.
-				return true; // Allow debug for now, will be refined in chat service.
+			if ( strpos( $type, 'agentic' ) !== false ) {
+				return WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled();
 			}
 
 			// API request/response events.
 			$api_event_types = array(
 				'openai_request',
 				'openai_response',
+				'anthropic_request',
+				'anthropic_response',
 				'gemini_request',
 				'gemini_response',
 				'gemini_image_request',
 				'gemini_image_response',
+				'gemini_list_models_response',
+				'gemini_count_tokens',
+				'gemini_count_tokens_response',
+				'gemini_create_embedding',
+				'gemini_embedding_response',
+				'gemini_stream_request',
+				'gemini_stream_response',
+				'lm_studio_request',
+				'lm_studio_response',
+				'lm_studio_completion_request',
+				'lm_studio_completion_response',
 				'openai_external_action_request',
 				'openai_external_action_response',
 			);
@@ -716,10 +726,23 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					'chat_interaction',
 					'openai_request',
 					'openai_response',
-					'gemini_image_request',
-					'gemini_image_response',
+					'anthropic_request',
+					'anthropic_response',
 					'gemini_request',
 					'gemini_response',
+					'gemini_image_request',
+					'gemini_image_response',
+					'gemini_list_models_response',
+					'gemini_count_tokens',
+					'gemini_count_tokens_response',
+					'gemini_create_embedding',
+					'gemini_embedding_response',
+					'gemini_stream_request',
+					'gemini_stream_response',
+					'lm_studio_request',
+					'lm_studio_response',
+					'lm_studio_completion_request',
+					'lm_studio_completion_response',
 					'openai_external_action_request',
 					'openai_external_action_response',
 				)
