@@ -170,29 +170,53 @@ class WP_MCP_AI_Chat_Service {
 			$tool_calls = $this->extract_tool_calls_from_response( $response );
 
 			if ( empty( $tool_calls ) ) {
-				WP_MCP_AI_Logger::log_event(
-					'debug',
-					'Agentic loop completed - no more tool calls',
-					array(
-						'iteration'    => $iteration,
-						'total_iterations' => $iteration,
-						'assistant_id' => $assistant_id,
-					)
-				);
+				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+					WP_MCP_AI_Logger::log_event(
+						'debug',
+						'Agentic loop completed - no more tool calls',
+						array(
+							'iteration'        => $iteration,
+							'total_iterations' => $iteration,
+							'assistant_id'     => $assistant_id,
+						)
+					);
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( sprintf( '[WP oOS Agentic Loop] Completed after %d iterations - no more tool calls', $iteration ) );
+				}
 				break; // No more tools, final response ready.
 			}
 
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'Agentic loop iteration starting',
-				array(
-					'iteration'      => $iteration,
-					'max_iterations' => $max_iterations,
-					'tool_count'     => count( $tool_calls ),
-					'tool_names'     => array_map( function( $call ) { return isset( $call['function']['name'] ) ? $call['function']['name'] : 'unknown'; }, $tool_calls ),
-					'assistant_id'   => $assistant_id,
-				)
-			);
+			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+				$tool_names = array_map(
+					function( $call ) {
+						return isset( $call['function']['name'] ) ? $call['function']['name'] : 'unknown';
+					},
+					$tool_calls
+				);
+
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Agentic loop iteration starting',
+					array(
+						'iteration'      => $iteration,
+						'max_iterations' => $max_iterations,
+						'tool_count'     => count( $tool_calls ),
+						'tool_names'     => $tool_names,
+						'assistant_id'   => $assistant_id,
+					)
+				);
+
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Agentic Loop] Iteration %d/%d - Executing %d tool(s): %s',
+						$iteration + 1,
+						$max_iterations,
+						count( $tool_calls ),
+						implode( ', ', $tool_names )
+					)
+				);
+			}
 
 			// Add assistant message with tool_calls to conversation.
 			$messages[] = array(
@@ -206,17 +230,29 @@ class WP_MCP_AI_Chat_Service {
 			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
 			$iteration_duration = microtime( true ) - $iteration_start_time;
 
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'Tool execution completed for iteration',
-				array(
-					'iteration'       => $iteration,
-					'tool_count'      => count( $tool_calls ),
-					'result_count'    => count( $tool_results ),
-					'execution_time'  => round( $iteration_duration * 1000, 2 ) . 'ms',
-					'assistant_id'    => $assistant_id,
-				)
-			);
+			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Tool execution completed for iteration',
+					array(
+						'iteration'      => $iteration,
+						'tool_count'     => count( $tool_calls ),
+						'result_count'   => count( $tool_results ),
+						'execution_time' => round( $iteration_duration * 1000, 2 ) . 'ms',
+						'assistant_id'   => $assistant_id,
+					)
+				);
+
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
+						$iteration + 1,
+						round( $iteration_duration * 1000, 2 ),
+						count( $tool_results )
+					)
+				);
+			}
 
 			// Add tool results to conversation.
 			foreach ( $tool_results as $tool_result ) {
@@ -226,16 +262,27 @@ class WP_MCP_AI_Chat_Service {
 
 			++$iteration;
 
-			WP_MCP_AI_Logger::log_event(
-				'debug',
-				'Sending follow-up request with tool results',
-				array(
-					'iteration'       => $iteration - 1,
-					'next_iteration'  => $iteration,
-					'message_count'   => count( $messages ),
-					'assistant_id'    => $assistant_id,
-				)
-			);
+			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Sending follow-up request with tool results',
+					array(
+						'iteration'      => $iteration - 1,
+						'next_iteration' => $iteration,
+						'message_count'  => count( $messages ),
+						'assistant_id'   => $assistant_id,
+					)
+				);
+
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log(
+					sprintf(
+						'[WP oOS Agentic Loop] Iteration %d - Sending follow-up request with %d messages',
+						$iteration,
+						count( $messages )
+					)
+				);
+			}
 
 			// Send follow-up request with tool results.
 			$response = $client->create_chat_completion( $messages, $options );

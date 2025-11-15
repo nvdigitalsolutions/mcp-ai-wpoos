@@ -1208,6 +1208,62 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		}
 
 		/**
+		 * Check if agentic loop logging is enabled.
+		 *
+		 * @return bool True if both base logging and agentic loop logging are enabled.
+		 */
+		public static function is_agentic_loop_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+			return ! empty( $settings['enable_agentic_loop_logging'] );
+		}
+
+		/**
+		 * Check if API request/response logging is enabled.
+		 *
+		 * @return bool True if both base logging and API logging are enabled.
+		 */
+		public static function is_api_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+			return ! empty( $settings['enable_api_logging'] );
+		}
+
+		/**
+		 * Check if tool execution logging is enabled.
+		 *
+		 * @return bool True if both base logging and tool execution logging are enabled.
+		 */
+		public static function is_tool_execution_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+			return ! empty( $settings['enable_tool_execution_logging'] );
+		}
+
+		/**
+		 * Check if chat interaction logging is enabled.
+		 *
+		 * @return bool True if both base logging and chat interaction logging are enabled.
+		 */
+		public static function is_chat_interaction_logging_enabled() {
+			if ( ! self::is_logging_enabled() ) {
+				return false;
+			}
+
+			$settings = self::get_settings();
+			return ! empty( $settings['enable_chat_interaction_logging'] );
+		}
+
+		/**
 		 * Write a message to the PHP error log when logging is enabled.
 		 *
 		 * @param string $message Message to log.

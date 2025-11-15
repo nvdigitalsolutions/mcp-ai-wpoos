@@ -67,6 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @param array  $context Additional context for the entry.
 		 */
 		public static function log_event( $type, $message, $context = array() ) {
+			// Check base logging first.
 			if ( ! WP_MCP_AI_Admin_Settings::is_logging_enabled() ) {
 				return;
 			}
@@ -74,7 +75,13 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$type        = sanitize_key( $type );
 			$message     = (string) $message;
 			$raw_context = is_array( $context ) ? $context : array();
-			$context     = self::sanitize_context( $raw_context );
+
+			// Check granular logging settings based on event type.
+			if ( ! self::should_log_event_type( $type ) ) {
+				return;
+			}
+
+			$context = self::sanitize_context( $raw_context );
 
 			$entry = array(
 				'timestamp' => current_time( 'mysql', true ),
@@ -144,6 +151,56 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$line = self::truncate_string( $line, self::MAX_LOG_LINE_LENGTH );
 
 			error_log( $line ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
+
+		/**
+		 * Check if an event type should be logged based on granular settings.
+		 *
+		 * @param string $type Event type.
+		 * @return bool True if the event should be logged.
+		 */
+		protected static function should_log_event_type( $type ) {
+			// Always log errors, warnings, and critical messages.
+			if ( in_array( $type, array( self::LEVEL_CRITICAL, self::LEVEL_ERROR, self::LEVEL_WARNING, 'error', 'warning' ), true ) ) {
+				return true;
+			}
+
+			// Check granular settings for specific event types.
+			// Agentic loop events.
+			if ( strpos( $type, 'agentic' ) !== false || in_array( $type, array( 'debug' ), true ) ) {
+				// For 'debug' type, check if it's related to agentic loop via context or allow it.
+				// Since we can't check context here easily, we'll allow debug messages.
+				// The agentic loop specific check will happen in the chat service.
+				return true; // Allow debug for now, will be refined in chat service.
+			}
+
+			// API request/response events.
+			$api_event_types = array(
+				'openai_request',
+				'openai_response',
+				'gemini_request',
+				'gemini_response',
+				'gemini_image_request',
+				'gemini_image_response',
+				'openai_external_action_request',
+				'openai_external_action_response',
+			);
+			if ( in_array( $type, $api_event_types, true ) ) {
+				return WP_MCP_AI_Admin_Settings::is_api_logging_enabled();
+			}
+
+			// Tool execution events.
+			if ( in_array( $type, array( 'tool_execution', 'tool_error' ), true ) ) {
+				return WP_MCP_AI_Admin_Settings::is_tool_execution_logging_enabled();
+			}
+
+			// Chat interaction events.
+			if ( $type === 'chat_interaction' ) {
+				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
+			}
+
+			// Default: allow other event types when base logging is enabled.
+			return true;
 		}
 
 		/**
