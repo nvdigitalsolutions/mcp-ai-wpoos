@@ -6864,14 +6864,13 @@
 
         const message = data.message || '';
         const type = data.type || '';
-        const timestamp = data.timestamp ? data.timestamp * 1000 : Date.now(); // Convert to milliseconds
 
         if (type === 'thinking') {
             setStatus(state.container, {
                 message: message,
                 type: 'thinking',
                 showTime: true,
-                startTime: timestamp
+                startTime: Date.now()
             });
         } else if (type === 'model_switched' || type === 'messages_truncated') {
             // Show brief notification without timer
@@ -6896,7 +6895,6 @@
         }
 
         const type = data.type || '';
-        const timestamp = data.timestamp ? data.timestamp * 1000 : Date.now(); // Convert to milliseconds
 
         if (type === 'start') {
             // Show that tools are being executed
@@ -6909,7 +6907,7 @@
                 message: message,
                 type: 'processing',
                 showTime: true,
-                startTime: timestamp
+                startTime: Date.now()
             });
 
             // Optionally show tool execution in chat
@@ -6925,7 +6923,7 @@
                 ),
                 type: 'tool',
                 showTime: true,
-                startTime: timestamp
+                startTime: Date.now()
             });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
