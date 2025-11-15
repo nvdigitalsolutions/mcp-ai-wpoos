@@ -14,6 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-chat-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-mcp-controller.php';
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-authenticator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-sse-handler.php';
@@ -371,6 +372,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Delegate MCP protocol routes to MCP Controller (Phase 3.3).
 			$mcp_controller = new WP_MCP_AI_REST_MCP_Controller( $this, $this->authenticator, $this->validator );
 			$mcp_controller->register_routes();
+
+			// Delegate tools and admin routes to Tools Controller (Phase 3.4).
+			$tools_controller = new WP_MCP_AI_REST_Tools_Controller( $this, $this->authenticator, $this->validator );
+			$tools_controller->register_routes();
 
 			// Note: /assistants route now handled by MCP Controller (Phase 3.3).
 			/*
@@ -781,6 +786,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 			*/
 
+			// Note: /tools route now handled by Tools Controller (Phase 3.4).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/tools',
@@ -826,7 +833,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
+			// Note: /files/{file_id}/download route now handled by Tools Controller (Phase 3.4).
+			/*
 			register_rest_route(
 				self::REST_NAMESPACE,
 				'/files/(?P<file_id>[^/]+)/download',
@@ -867,52 +877,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
-
-			// Note: /sse route now handled by MCP Controller (Phase 3.3).
-			/*
-			// SSE endpoint - GET is standard, POST is optional for LM Studio compatibility.
-			$sse_handlers = array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
-					'callback'            => array( $this, 'handle_sse_handshake' ),
-					'args'                => array(
-						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => false,
-							'sanitize_callback' => 'absint',
-						),
-					),
-				),
-			);
-
-			// Add POST support if enabled in settings (non-standard, for LM Studio bugs).
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			if ( ! empty( $settings['sse_enable_post_method'] ) ) {
-				$sse_handlers[] = array(
-					'methods'             => WP_REST_Server::CREATABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
-					'callback'            => array( $this, 'handle_sse_handshake' ),
-					'args'                => array(
-						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant for SSE handshake.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
-							'required'          => false,
-							'sanitize_callback' => 'absint',
-						),
-					),
-				);
-			}
-
-			register_rest_route(
-				self::REST_NAMESPACE,
-				'/sse',
-				$sse_handlers,
-				true
-			);
 			*/
 
+			// Note: /cron-status route now handled by Tools Controller (Phase 3.4).
+			/*
 			// Register /cron-status endpoint for lightweight cron job status.
 			register_rest_route(
 				self::REST_NAMESPACE,
@@ -937,6 +905,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				),
 				true
 			);
+			*/
 
 			// Note: /mcp route now handled by MCP Controller (Phase 3.3).
 			/*
