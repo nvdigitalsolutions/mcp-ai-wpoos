@@ -25,10 +25,15 @@ class WP_MCP_AI_Section_Performance extends WP_MCP_AI_Settings_Section {
 	 * Initialize the section.
 	 */
 	public function __construct() {
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		// Register AJAX handlers for both admin and frontend (needed for Elementor widgets).
 		add_action( 'wp_ajax_wp_mcp_ai_run_performance_test', array( $this, 'ajax_run_test' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_performance_metrics', array( $this, 'ajax_get_metrics' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_export_test_results', array( $this, 'ajax_export_results' ) );
+		
+		// Only register admin-specific hooks when in admin context.
+		if ( is_admin() ) {
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		}
 	}
 
 	/**
