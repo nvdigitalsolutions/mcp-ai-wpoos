@@ -694,7 +694,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'search_items'       => __( 'Search Assistants', 'wp-mcp-ai' ),
 				'not_found'          => __( 'No assistants found', 'wp-mcp-ai' ),
 				'not_found_in_trash' => __( 'No assistants found in Trash', 'wp-mcp-ai' ),
-				'all_items'          => __( 'Assistants', 'wp-mcp-ai' ),
+				'all_items'          => __( 'All Assistants', 'wp-mcp-ai' ),
 			);
 
 			$args = array(
@@ -707,6 +707,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				'capability_type'   => 'post',
 				'supports'          => array( 'title', 'editor' ),
 				'menu_icon'         => 'dashicons-lightbulb',
+				'menu_position'     => 56,
 				'has_archive'       => false,
 				'rewrite'           => false,
 				'show_in_nav_menus' => false,

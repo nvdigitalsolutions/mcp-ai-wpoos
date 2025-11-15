@@ -87,7 +87,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				// Add button after the page title
-				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-assistant-btn" id="wp-mcp-ai-open-create-modal"><?php echo esc_js( __( 'Create AI Assistant', 'wp-mcp-ai' ) ); ?></button>';
+				var button = '<button type="button" class="page-title-action wp-mcp-ai-create-assistant-btn" id="wp-mcp-ai-open-create-modal"><?php echo esc_js( __( 'Build AI Assistant', 'wp-mcp-ai' ) ); ?></button>';
 				$('.wrap h1.wp-heading-inline').after(button);
 			});
 		</script>
@@ -109,7 +109,7 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 			<div class="wp-mcp-ai-modal-overlay"></div>
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
-					<h2><?php esc_html_e( 'Create AI Assistant', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Build AI Assistant', 'wp-mcp-ai' ); ?></h2>
 					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">

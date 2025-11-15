@@ -37,9 +37,9 @@ class WP_MCP_AI_Add_Team_Page {
 	 */
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
-			'edit.php?post_type=mcp_ai_assistant',
-			__( 'Add Team', 'wp-mcp-ai' ),
-			__( 'Add Team', 'wp-mcp-ai' ),
+			'edit.php?post_type=mcp_ai_team',
+			__( 'Build Team', 'wp-mcp-ai' ),
+			__( 'Build Team', 'wp-mcp-ai' ),
 			'edit_posts',
 			'wp-mcp-ai-add-team',
 			array( $this, 'render_page' )

@@ -38,8 +38,8 @@ class WP_MCP_AI_Add_Assistant_Page {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'edit.php?post_type=mcp_ai_assistant',
-			__( 'Add New Assistant', 'wp-mcp-ai' ),
-			__( 'Add New', 'wp-mcp-ai' ),
+			__( 'Build Assistant', 'wp-mcp-ai' ),
+			__( 'Build Assistant', 'wp-mcp-ai' ),
 			'edit_posts',
 			'wp-mcp-ai-add-assistant',
 			array( $this, 'render_page' )
