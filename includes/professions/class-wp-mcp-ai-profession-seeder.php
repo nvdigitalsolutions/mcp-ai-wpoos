@@ -127,6 +127,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Transaction recording', 'wp-mcp-ai' ),
 					__( 'Financial record management', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Complex financial matters should be reviewed by a certified professional', 'wp-mcp-ai' ),
+					__( 'Ensure compliance with applicable accounting standards and regulations', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'get_quickbooks_report' ),
 			),
 			array(
@@ -197,6 +201,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Logistics and supply chain', 'wp-mcp-ai' ),
 					__( 'Trade agreements', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Trade regulations vary by country and are subject to change', 'wp-mcp-ai' ),
+					__( 'Consult licensed customs brokers for complex transactions', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -230,6 +238,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Growth strategies', 'wp-mcp-ai' ),
 					__( 'Process optimization', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Business decisions should be made considering your specific circumstances', 'wp-mcp-ai' ),
+					__( 'Consult qualified professionals for legal, financial, and tax implications', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_woo_products', 'get_woo_recent_orders' ),
 			),
 			array(
@@ -244,6 +256,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Transaction procedures', 'wp-mcp-ai' ),
 					__( 'Mortgage and financing', 'wp-mcp-ai' ),
 					__( 'Property laws and regulations', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Work with licensed real estate professionals for transactions', 'wp-mcp-ai' ),
+					__( 'Property laws and market conditions vary by location', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -277,6 +293,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Customer acquisition', 'wp-mcp-ai' ),
 					__( 'Analytics and ROI tracking', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Marketing results vary based on industry, market conditions, and execution', 'wp-mcp-ai' ),
+					__( 'Ensure compliance with advertising regulations and platform policies', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report', 'post_facebook_instagram' ),
 			),
 			array(
@@ -291,6 +311,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Employee relations', 'wp-mcp-ai' ),
 					__( 'Performance management', 'wp-mcp-ai' ),
 					__( 'Compliance with labor laws', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Employment laws vary by jurisdiction and change frequently', 'wp-mcp-ai' ),
+					__( 'Consult legal counsel for employment-related legal matters', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -307,6 +331,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Technology strategy', 'wp-mcp-ai' ),
 					__( 'Digital transformation', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Always implement proper security measures and backup procedures', 'wp-mcp-ai' ),
+					__( 'Test changes in non-production environments before deployment', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -321,6 +349,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Food cost analysis', 'wp-mcp-ai' ),
 					__( 'Staff management', 'wp-mcp-ai' ),
 					__( 'Health and safety compliance', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Always comply with local health codes and food safety regulations', 'wp-mcp-ai' ),
+					__( 'Licensing and permit requirements vary by location', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -339,6 +371,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Brand identity design', 'wp-mcp-ai' ),
 					__( 'Typography and layout', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Respect copyright and licensing restrictions for all creative works', 'wp-mcp-ai' ),
+					__( 'Obtain proper permissions for client work and usage rights', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image' ),
 			),
 			array(
@@ -353,6 +389,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Marketing collateral', 'wp-mcp-ai' ),
 					__( 'UI/UX design principles', 'wp-mcp-ai' ),
 					__( 'Design software and tools', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Respect copyright and licensing restrictions for all design elements', 'wp-mcp-ai' ),
+					__( 'Clarify usage rights and deliverables in client agreements', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'generate_openai_image', 'generate_gemini_image' ),
 			),
@@ -388,6 +428,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'HTML/CSS best practices', 'wp-mcp-ai' ),
 					__( 'Web accessibility', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Ensure accessibility compliance (WCAG guidelines)', 'wp-mcp-ai' ),
+					__( 'Test across multiple browsers and devices before launch', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'get_rankmath_seo' ),
 			),
 			array(
@@ -402,6 +446,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Interaction design', 'wp-mcp-ai' ),
 					__( 'Usability testing', 'wp-mcp-ai' ),
 					__( 'Design systems', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Validate designs through user testing before final implementation', 'wp-mcp-ai' ),
+					__( 'Consider accessibility requirements for all user groups', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -418,6 +466,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Post-production workflows', 'wp-mcp-ai' ),
 					__( 'Distribution strategies', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Obtain proper releases and permissions from all participants', 'wp-mcp-ai' ),
+					__( 'Respect copyright for music, footage, and other licensed content', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -433,6 +485,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Equipment selection', 'wp-mcp-ai' ),
 					__( 'Photography business practices', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Obtain model releases for commercial use of recognizable individuals', 'wp-mcp-ai' ),
+					__( 'Respect property rights and privacy laws when photographing', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'search_attachments' ),
 			),
 			array(
@@ -447,6 +503,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Social media content', 'wp-mcp-ai' ),
 					__( 'Video and multimedia content', 'wp-mcp-ai' ),
 					__( 'Audience engagement', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Always disclose sponsored content and partnerships per FTC guidelines', 'wp-mcp-ai' ),
+					__( 'Respect copyright and obtain proper licensing for all content elements', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'post_facebook_instagram', 'post_linkedin_update' ),
 			),
@@ -465,6 +525,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Creative vision development', 'wp-mcp-ai' ),
 					__( 'Collaboration with department heads', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Respect copyright and intellectual property rights for all creative works', 'wp-mcp-ai' ),
+					__( 'Ensure proper contracts and releases for cast and crew', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -479,6 +543,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Production scheduling', 'wp-mcp-ai' ),
 					__( 'Crew and talent management', 'wp-mcp-ai' ),
 					__( 'Distribution and marketing', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Obtain proper insurance and bonding for production', 'wp-mcp-ai' ),
+					__( 'Ensure all contracts, rights, and releases are legally binding', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -495,6 +563,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Dialogue writing', 'wp-mcp-ai' ),
 					__( 'Script revision and polish', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Register scripts with Writers Guild or copyright office', 'wp-mcp-ai' ),
+					__( 'Understand option agreements and rights management', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -509,6 +581,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Shot composition', 'wp-mcp-ai' ),
 					__( 'Color grading concepts', 'wp-mcp-ai' ),
 					__( 'Equipment selection', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow safety protocols for lighting and camera rigging', 'wp-mcp-ai' ),
+					__( 'Respect location permits and filming regulations', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -525,6 +601,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Visual effects coordination', 'wp-mcp-ai' ),
 					__( 'Editing software proficiency', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Maintain backups of all footage and project files', 'wp-mcp-ai' ),
+					__( 'Respect music licensing and sound effect usage rights', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -540,6 +620,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Period and location research', 'wp-mcp-ai' ),
 					__( 'Collaboration with art department', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Ensure set construction meets safety codes and regulations', 'wp-mcp-ai' ),
+					__( 'Secure proper permissions for location modifications', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -554,6 +638,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Foley and ADR', 'wp-mcp-ai' ),
 					__( 'Music integration', 'wp-mcp-ai' ),
 					__( 'Audio post-production workflow', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Respect music licensing and sound library terms of use', 'wp-mcp-ai' ),
+					__( 'Follow hearing protection standards during mixing', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -627,6 +715,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Disease control programs', 'wp-mcp-ai' ),
 					__( 'Health diplomacy', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'You do NOT provide medical advice', 'wp-mcp-ai' ),
+					__( 'Health policies vary by country and region', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 
@@ -680,6 +772,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Social media monitoring', 'wp-mcp-ai' ),
 					__( 'Message development', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'In actual emergencies, follow official emergency protocols first', 'wp-mcp-ai' ),
+					__( 'Verify information before disseminating during crisis situations', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email', 'post_facebook_instagram' ),
 			),
 			array(
@@ -694,6 +790,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Mitigation planning', 'wp-mcp-ai' ),
 					__( 'Building codes and standards', 'wp-mcp-ai' ),
 					__( 'Grant programs and funding', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Mitigation plans must comply with local codes and regulations', 'wp-mcp-ai' ),
+					__( 'Consult licensed engineers for structural modifications', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -711,6 +811,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Ocean conservation', 'wp-mcp-ai' ),
 					__( 'Research methodologies', 'wp-mcp-ai' ),
 					__( 'Environmental impact assessment', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow safety protocols when conducting marine research', 'wp-mcp-ai' ),
+					__( 'Respect environmental regulations and protected species laws', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -746,6 +850,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Oceanographic instrumentation', 'wp-mcp-ai' ),
 					__( 'Data analysis and modeling', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Follow safety protocols for ocean research and field work', 'wp-mcp-ai' ),
+					__( 'Ensure proper equipment calibration and data validation', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -760,6 +868,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Species protection programs', 'wp-mcp-ai' ),
 					__( 'Endangered species management', 'wp-mcp-ai' ),
 					__( 'Environmental education', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow wildlife protection laws and obtain required permits', 'wp-mcp-ai' ),
+					__( 'Maintain safe distances from wild animals', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -794,6 +906,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Sustainable practices', 'wp-mcp-ai' ),
 					__( 'Business operations', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Comply with environmental regulations and water quality standards', 'wp-mcp-ai' ),
+					__( 'Follow biosecurity protocols to prevent disease spread', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -808,6 +924,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Climate change mitigation', 'wp-mcp-ai' ),
 					__( 'Sustainability practices', 'wp-mcp-ai' ),
 					__( 'Environmental regulations', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow safety protocols when handling hazardous materials', 'wp-mcp-ai' ),
+					__( 'Ensure compliance with environmental regulations', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -827,6 +947,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Big data technologies', 'wp-mcp-ai' ),
 					__( 'Predictive analytics', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Validate models and ensure data quality before making critical decisions', 'wp-mcp-ai' ),
+					__( 'Consider privacy and ethical implications of data usage', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'google_analytics_report' ),
 			),
 			array(
@@ -842,6 +966,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Version control and collaboration', 'wp-mcp-ai' ),
 					__( 'Testing and debugging', 'wp-mcp-ai' ),
 					__( 'DevOps and deployment', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Always implement security best practices and code reviews', 'wp-mcp-ai' ),
+					__( 'Test thoroughly before deploying to production', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -917,6 +1045,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Optimization techniques', 'wp-mcp-ai' ),
 					__( 'Computational mathematics', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Verify mathematical proofs and assumptions rigorously', 'wp-mcp-ai' ),
+					__( 'Consider numerical stability and precision in computations', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -932,6 +1064,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Particle and nuclear physics', 'wp-mcp-ai' ),
 					__( 'Astrophysics and cosmology', 'wp-mcp-ai' ),
 					__( 'Experimental methods', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow radiation safety protocols when applicable', 'wp-mcp-ai' ),
+					__( 'Validate theoretical predictions with experimental evidence', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -968,6 +1104,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Research methodologies', 'wp-mcp-ai' ),
 					__( 'Biotechnology applications', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Follow biosafety protocols when working with biological materials', 'wp-mcp-ai' ),
+					__( 'Adhere to ethical guidelines for research involving living organisms', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -983,6 +1123,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Computer systems and architecture', 'wp-mcp-ai' ),
 					__( 'Programming paradigms', 'wp-mcp-ai' ),
 					__( 'Complexity analysis', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Consider computational complexity and scalability in algorithm design', 'wp-mcp-ai' ),
+					__( 'Validate theoretical results with empirical testing', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -1019,6 +1163,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Structural analysis', 'wp-mcp-ai' ),
 					__( 'Aviation regulations', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Aerospace systems must comply with strict safety and regulatory standards', 'wp-mcp-ai' ),
+					__( 'Designs require validation through testing and certification', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -1035,6 +1183,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Bayesian statistics', 'wp-mcp-ai' ),
 					__( 'Statistical software (R, SAS, SPSS)', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Verify assumptions before applying statistical methods', 'wp-mcp-ai' ),
+					__( 'Consider sample size and statistical power in study design', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -1050,6 +1202,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Scientific writing and publication', 'wp-mcp-ai' ),
 					__( 'Grant writing and funding', 'wp-mcp-ai' ),
 					__( 'Laboratory management', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Follow ethical guidelines and obtain necessary approvals', 'wp-mcp-ai' ),
+					__( 'Ensure reproducibility and proper documentation of research', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -1128,6 +1284,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Signal detection and evaluation', 'wp-mcp-ai' ),
 					__( 'Safety database management', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Adverse events must be reported according to regulatory timelines', 'wp-mcp-ai' ),
+					__( 'Follow established pharmacovigilance procedures and guidelines', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -1143,6 +1303,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Key opinion leader engagement', 'wp-mcp-ai' ),
 					__( 'Product knowledge and evidence', 'wp-mcp-ai' ),
 					__( 'Healthcare professional relations', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Provide only approved scientific information within regulatory guidelines', 'wp-mcp-ai' ),
+					__( 'You do NOT provide medical advice or treatment recommendations', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post', 'send_group_email' ),
 			),
@@ -1160,6 +1324,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'International regulatory requirements', 'wp-mcp-ai' ),
 					__( 'Post-market surveillance', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Regulatory requirements vary by jurisdiction and product type', 'wp-mcp-ai' ),
+					__( 'Always verify current regulations with applicable authorities', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -1176,6 +1344,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Good Clinical Practice (GCP)', 'wp-mcp-ai' ),
 					__( 'IRB/Ethics committee submissions', 'wp-mcp-ai' ),
 				),
+				'warnings'         => array(
+					__( 'Protect patient safety and rights at all times', 'wp-mcp-ai' ),
+					__( 'Ensure strict compliance with GCP and ethical standards', 'wp-mcp-ai' ),
+				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
 			array(
@@ -1191,6 +1363,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Patient education materials', 'wp-mcp-ai' ),
 					__( 'Medical communication strategies', 'wp-mcp-ai' ),
 					__( 'Plain language summaries', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Ensure accuracy and completeness of all scientific information', 'wp-mcp-ai' ),
+					__( 'Follow regulatory guidelines for promotional and educational materials', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
@@ -1226,6 +1402,10 @@ class WP_MCP_AI_Profession_Seeder {
 					__( 'Auditing and inspection preparation', 'wp-mcp-ai' ),
 					__( 'CAPA and deviation management', 'wp-mcp-ai' ),
 					__( 'Documentation and record keeping', 'wp-mcp-ai' ),
+				),
+				'warnings'         => array(
+					__( 'Quality systems must comply with regulatory GMP requirements', 'wp-mcp-ai' ),
+					__( 'Document all quality-related activities thoroughly', 'wp-mcp-ai' ),
 				),
 				'default_tools'    => array( 'web_search', 'search_content', 'save_post' ),
 			),
