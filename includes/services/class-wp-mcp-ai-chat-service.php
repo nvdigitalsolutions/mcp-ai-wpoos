@@ -105,6 +105,19 @@ class WP_MCP_AI_Chat_Service {
 		$max_iterations = 5,
 		$request = null
 	) {
+		// Log orchestration start
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'Chat orchestration starting',
+			array(
+				'assistant_id'   => $assistant_id,
+				'user_id'        => $user_id,
+				'message_count'  => count( $messages ),
+				'max_iterations' => $max_iterations,
+				'has_tools'      => ! empty( $assistant_config['tools'] ),
+			)
+		);
+
 		// Apply filters to options before processing.
 		$options = apply_filters( 'wp_mcp_ai_chat_options', $options, $assistant_config, null );
 
@@ -138,6 +151,17 @@ class WP_MCP_AI_Chat_Service {
 			return $response;
 		}
 
+		// Log initial response received
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'Initial chat response received',
+			array(
+				'assistant_id'  => $assistant_id,
+				'has_tool_calls' => ! empty( $this->extract_tool_calls_from_response( $response ) ),
+				'response_time' => round( ( $transcript_context['response_completed_at'] - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
+			)
+		);
+
 		// Execute agentic loop if tools are requested.
 		$iteration            = 0;
 		$tool_result_messages = array();
@@ -146,16 +170,27 @@ class WP_MCP_AI_Chat_Service {
 			$tool_calls = $this->extract_tool_calls_from_response( $response );
 
 			if ( empty( $tool_calls ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Agentic loop completed - no more tool calls',
+					array(
+						'iteration'    => $iteration,
+						'total_iterations' => $iteration,
+						'assistant_id' => $assistant_id,
+					)
+				);
 				break; // No more tools, final response ready.
 			}
 
 			WP_MCP_AI_Logger::log_event(
-				'agentic_tool_execution',
-				'Executing tools automatically in chat',
+				'debug',
+				'Agentic loop iteration starting',
 				array(
-					'iteration'    => $iteration,
-					'tool_count'   => count( $tool_calls ),
-					'assistant_id' => $assistant_id,
+					'iteration'      => $iteration,
+					'max_iterations' => $max_iterations,
+					'tool_count'     => count( $tool_calls ),
+					'tool_names'     => array_map( function( $call ) { return isset( $call['function']['name'] ) ? $call['function']['name'] : 'unknown'; }, $tool_calls ),
+					'assistant_id'   => $assistant_id,
 				)
 			);
 
@@ -167,7 +202,21 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			// Execute each tool with iteration context for flow stage validation.
+			$iteration_start_time = microtime( true );
 			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
+			$iteration_duration = microtime( true ) - $iteration_start_time;
+
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'Tool execution completed for iteration',
+				array(
+					'iteration'       => $iteration,
+					'tool_count'      => count( $tool_calls ),
+					'result_count'    => count( $tool_results ),
+					'execution_time'  => round( $iteration_duration * 1000, 2 ) . 'ms',
+					'assistant_id'    => $assistant_id,
+				)
+			);
 
 			// Add tool results to conversation.
 			foreach ( $tool_results as $tool_result ) {
@@ -176,6 +225,17 @@ class WP_MCP_AI_Chat_Service {
 			}
 
 			++$iteration;
+
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'Sending follow-up request with tool results',
+				array(
+					'iteration'       => $iteration - 1,
+					'next_iteration'  => $iteration,
+					'message_count'   => count( $messages ),
+					'assistant_id'    => $assistant_id,
+				)
+			);
 
 			// Send follow-up request with tool results.
 			$response = $client->create_chat_completion( $messages, $options );
@@ -191,6 +251,20 @@ class WP_MCP_AI_Chat_Service {
 				return $response;
 			}
 		}
+
+		// Log orchestration completion
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'Chat orchestration completed',
+			array(
+				'assistant_id'       => $assistant_id,
+				'total_iterations'   => $iteration,
+				'max_iterations'     => $max_iterations,
+				'tool_results_count' => count( $tool_result_messages ),
+				'total_messages'     => count( $messages ),
+				'total_time'         => round( ( microtime( true ) - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
+			)
+		);
 
 		// Add tool results to response for frontend display.
 		if ( ! empty( $tool_result_messages ) ) {
