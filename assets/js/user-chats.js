@@ -569,7 +569,7 @@
         // Validate that the session's assistant matches the target widget's assistant
         const targetState = state.config.targetChatWidget.__wpMcpAiChatState;
         if (targetState) {
-            const targetAssistantId = targetState.originalAssistantId || targetState.config.assistantId;
+            const targetAssistantId = parseInt(targetState.originalAssistantId || targetState.config.assistantId, 10);
             const sessionAssistantId = parseInt(session.assistant_id, 10);
             
             if (targetAssistantId && sessionAssistantId && targetAssistantId !== sessionAssistantId) {
