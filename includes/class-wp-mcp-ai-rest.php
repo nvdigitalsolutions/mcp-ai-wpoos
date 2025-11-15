@@ -5290,7 +5290,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$page         = max( 1, (int) $page );
 			$offset       = ( $page - 1 ) * $per_page;
 
-			$where_clauses = array( 'user_id = %d' );
+			$where_clauses = array( 'cct_author_id = %d' );
 			$where_values  = array( $user_id );
 
 			if ( $assistant_id > 0 ) {
@@ -5406,7 +5406,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				)
 			);
 
-			$where_clauses = array( 'session_key = %s', 'user_id = %d' );
+			$where_clauses = array( 'session_key = %s', 'cct_author_id = %d' );
 			$where_values  = array( $session_key, $user_id );
 
 			if ( $assistant_id > 0 ) {
@@ -5773,7 +5773,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$query = $wpdb->prepare(
 				"SELECT request_payload
              FROM {$table}
-             WHERE session_key = %s AND user_id = %d
+             WHERE session_key = %s AND cct_author_id = %d
              ORDER BY cct_created ASC
              LIMIT 1",
 				$session_key,
