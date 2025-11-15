@@ -646,6 +646,15 @@
 							const presetName = $('.preset-card[data-preset="' + presetId + '"] h4').text();
 							$('.current-preset-name').text(presetName);
 							
+							// Update preset card visual states immediately
+							$('.preset-card').removeClass('active');
+							$('.preset-card .preset-status').remove();
+							$('.preset-card .apply-preset').show();
+							
+							const $activeCard = $('.preset-card[data-preset="' + presetId + '"]');
+							$activeCard.addClass('active');
+							$activeCard.find('.apply-preset').hide().after('<div class="preset-status">Active</div>');
+							
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
 							setTimeout(function() {
 								window.location.reload();

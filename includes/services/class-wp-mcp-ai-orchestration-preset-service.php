@@ -517,4 +517,47 @@ class WP_MCP_AI_Orchestration_Preset_Service {
 
 		return true;
 	}
+
+	/**
+	 * Check if active preset still matches current settings, and update to 'custom' if not.
+	 *
+	 * This should be called after orchestration settings are saved to ensure the
+	 * active preset indicator reflects whether settings still match the preset.
+	 *
+	 * @return bool True if preset was updated to 'custom', false if it still matches.
+	 */
+	public static function maybe_update_to_custom() {
+		$active_preset = self::get_active_preset();
+
+		// If already custom, no need to check.
+		if ( 'custom' === $active_preset ) {
+			return false;
+		}
+
+		// Check if current settings still match the active preset.
+		if ( ! self::matches_preset( $active_preset ) ) {
+			// Settings have diverged, update to custom.
+			WP_MCP_AI_Settings_Registry::update_setting( 'orchestration_preset', 'custom' );
+
+			// Log the automatic change.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+				try {
+					WP_MCP_AI_Logger::log_event(
+						'orchestration_preset_auto_custom',
+						sprintf( 'Preset automatically changed from %s to custom due to manual setting changes', $active_preset ),
+						array(
+							'previous_preset' => $active_preset,
+							'user_id'         => get_current_user_id(),
+						)
+					);
+				} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					// Ignore logging errors.
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
 }

@@ -219,6 +219,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
 					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
 				}
+
+				// Check if settings still match the active preset, update to 'custom' if not.
+				if ( class_exists( 'WP_MCP_AI_Orchestration_Preset_Service' ) ) {
+					WP_MCP_AI_Orchestration_Preset_Service::maybe_update_to_custom();
+				}
 			}
 
 			// Redirect back to the same tab that was being edited.
