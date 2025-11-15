@@ -35,43 +35,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return isset( $settings['ollama_model'] ) ? $settings['ollama_model'] : '';
 		}
 
-		/**
-		 * Apply network interface binding to HTTP requests if configured.
-		 *
-		 * @param resource $handle The cURL handle.
-		 * @param array    $parsed_args The HTTP request arguments.
-		 * @param string   $url The request URL.
-		 * @return resource The modified cURL handle.
-		 */
-		public function apply_network_interface( $handle, $parsed_args, $url ) {
-			// Only apply to requests to our Ollama endpoint.
-			$endpoint_url = $this->get_endpoint_url();
-			if ( empty( $endpoint_url ) || strpos( $url, untrailingslashit( $endpoint_url ) ) !== 0 ) {
-				return $handle;
-			}
-
-			$interface = $this->get_network_interface();
-			if ( ! empty( $interface ) ) {
-				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
-			}
-
-			return $handle;
-		}
-
-		/**
-		 * Register HTTP API filters for network interface binding.
-		 */
-		private function register_http_filters() {
-			add_filter( 'http_api_curl', array( $this, 'apply_network_interface' ), 10, 3 );
-		}
-
-		/**
-		 * Unregister HTTP API filters for network interface binding.
-		 */
-		private function unregister_http_filters() {
-			remove_filter( 'http_api_curl', array( $this, 'apply_network_interface' ), 10 );
-		}
-
 		public function test_connection() {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
@@ -84,9 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
-			$this->register_http_filters();
 			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
-			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Ollama connection failed.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
@@ -115,9 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Local network connections may have higher latency than localhost.
 			$timeout = max( 30, $this->resolve_timeout( array() ) );
 
-			$this->register_http_filters();
 			$response = wp_remote_get( $url, array( 'timeout' => $timeout ) );
-			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Failed to list models.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
@@ -161,7 +120,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/chat';
 			
-			$this->register_http_filters();
 			$response = wp_remote_post(
 				$url,
 				array(
@@ -171,7 +129,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 				)
 			);
-			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error( $response, 'wp_mcp_ai_http_error', __( 'Request failed.', 'wp-mcp-ai' ), __( 'Ollama', 'wp-mcp-ai' ) );
@@ -382,7 +339,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/generate';
 			
-			$this->register_http_filters();
 			$response = wp_remote_post(
 				$url,
 				array(
@@ -392,7 +348,6 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 					'timeout' => max( 120, $this->resolve_timeout( $options ) ),
 				)
 			);
-			$this->unregister_http_filters();
 
 			if ( is_wp_error( $response ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(

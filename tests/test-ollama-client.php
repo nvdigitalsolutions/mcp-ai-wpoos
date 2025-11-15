@@ -450,4 +450,29 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'timeout', $captured_args );
 		$this->assertGreaterThanOrEqual( 120, $captured_args['timeout'] );
 	}
+
+	/**
+	 * Test that network interface setting is retrieved correctly.
+	 */
+	public function test_get_network_interface() {
+		$defaults                             = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_network_interface'] = 'eth0';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$this->assertSame( 'eth0', $client->get_network_interface() );
+	}
+
+	/**
+	 * Test that network interface returns empty string when not configured.
+	 */
+	public function test_get_network_interface_empty() {
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, WP_MCP_AI_Admin_Settings::get_default_settings() );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$this->assertSame( '', $client->get_network_interface() );
+	}
 }
