@@ -696,6 +696,9 @@ class WP_MCP_AI_Shortcode {
 				</div>
 				<div class="wp-mcp-ai-chat__history-status" role="status" aria-live="polite" hidden></div>
 				<ul class="wp-mcp-ai-chat__history-list" role="list"></ul>
+				<button type="button" class="wp-mcp-ai-chat__history-load-more" hidden>
+					<?php esc_html_e( 'Load More', 'wp-mcp-ai' ); ?>
+				</button>
 			</section>
 		</div>
 			<?php

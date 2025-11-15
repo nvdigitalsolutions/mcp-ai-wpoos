@@ -3535,11 +3535,38 @@
 
         // Reset the loaded state to force a fresh fetch
         state.historyLoaded = false;
-        state.historyLoadPromise = loadHistorySessions(state);
+        state.historyCurrentPage = 0;
+        state.historyLoadPromise = loadHistorySessions(state, 1);
         return state.historyLoadPromise;
     }
 
-    function loadHistorySessions(state) {
+    function loadMoreHistorySessions(state) {
+        if (!state || state.historyLoading) {
+            return Promise.resolve();
+        }
+
+        const nextPage = state.historyCurrentPage + 1;
+        state.historyLoadPromise = loadHistorySessions(state, nextPage);
+        return state.historyLoadPromise;
+    }
+
+    function updateLoadMoreButton(state) {
+        if (!state || !state.historyLoadMore) {
+            return;
+        }
+
+        const loadedCount = state.historySessions.length;
+        const totalCount = state.historyTotalSessions;
+        const hasMore = loadedCount < totalCount;
+
+        if (hasMore) {
+            state.historyLoadMore.hidden = false;
+        } else {
+            state.historyLoadMore.hidden = true;
+        }
+    }
+
+    function loadHistorySessions(state, page) {
         const endpoint = getHistoryEndpoint(state);
 
         if (!endpoint) {
@@ -3556,8 +3583,11 @@
         if (!perPage || perPage < 1) {
             perPage = 20;
         }
+        state.historyPerPage = perPage;
 
-        return fetchHistorySessions(state, endpoint, perPage)
+        const currentPage = page || 1;
+
+        return fetchHistorySessions(state, endpoint, perPage, currentPage)
             .then(function (data) {
                 let sessions = Array.isArray(data && data.sessions) ? data.sessions : [];
                 const assistantId = state.config && state.config.assistantId ? parseInt(state.config.assistantId, 10) : 0;
@@ -3568,12 +3598,21 @@
                     });
                 }
 
-                state.historySessions = sessions;
+                // For page 1, replace sessions. For subsequent pages, append.
+                if (currentPage === 1) {
+                    state.historySessions = sessions;
+                } else {
+                    state.historySessions = state.historySessions.concat(sessions);
+                }
+                
+                state.historyCurrentPage = currentPage;
+                state.historyTotalSessions = data && typeof data.total === 'number' ? data.total : 0;
                 state.historyLoaded = true;
 
                 renderHistorySessions(state);
+                updateLoadMoreButton(state);
 
-                if (!sessions.length) {
+                if (!state.historySessions.length) {
                     const message = data && data.message ? data.message : getString('historyEmpty', 'No previous conversations yet.');
                     setHistoryStatus(state, message, false);
                 } else {
@@ -3581,7 +3620,9 @@
                 }
             })
             .catch(function (error) {
-                state.historySessions = [];
+                if (currentPage === 1) {
+                    state.historySessions = [];
+                }
                 renderHistorySessions(state);
 
                 const message = error && error.message ? error.message : getString('historyError', 'Unable to load conversation history.');
@@ -3594,7 +3635,7 @@
             });
     }
 
-    function fetchHistorySessions(state, endpoint, perPage) {
+    function fetchHistorySessions(state, endpoint, perPage, page) {
         let url = endpoint;
         
         // Add user_id parameter
@@ -3613,6 +3654,10 @@
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
         }
 
+        if (page && page > 0) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'page=' + encodeURIComponent(page);
+        }
+
         // Add assistant_id parameter
         let assistantId = null;
         if (state && state.config && typeof state.config.assistantId !== 'undefined') {
@@ -3629,6 +3674,7 @@
                 user_id: userId,
                 assistant_id: assistantId,
                 per_page: perPage,
+                page: page,
                 endpoint: endpoint
             });
         }
@@ -6244,6 +6290,7 @@
             const historyStatusEl = container.querySelector('.wp-mcp-ai-chat__history-status');
             const historyList = container.querySelector('.wp-mcp-ai-chat__history-list');
             const historyRefresh = container.querySelector('.wp-mcp-ai-chat__history-refresh');
+            const historyLoadMore = container.querySelector('.wp-mcp-ai-chat__history-load-more');
 
             if (!form || !textarea || !messagesEl || !statusEl) {
                 return;
@@ -6324,12 +6371,16 @@
                 historyStatus: historyStatusEl,
                 historyList: historyList,
                 historyRefresh: historyRefresh,
+                historyLoadMore: historyLoadMore,
                 transcriptExpanded: false,
                 historyVisible: false,
                 historyLoaded: false,
                 historyLoading: false,
                 historyLoadPromise: null,
                 historySessions: [],
+                historyCurrentPage: 0,
+                historyTotalSessions: 0,
+                historyPerPage: 20,
                 historySessionDetails: Object.create(null),
                 activeHistorySessionKey: '',
                 pendingAttachments: [],
@@ -6395,6 +6446,16 @@
                     }
 
                     refreshHistorySessions(state);
+                });
+            }
+
+            if (historyLoadMore) {
+                historyLoadMore.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    loadMoreHistorySessions(state);
                 });
             }
 
