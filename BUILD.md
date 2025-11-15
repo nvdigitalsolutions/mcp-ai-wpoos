@@ -127,6 +127,28 @@ Auto-fix JavaScript linting issues:
 npm run lint:js:fix
 ```
 
+### Testing
+
+Run JavaScript tests:
+
+```bash
+npm test
+```
+
+Run tests with coverage:
+
+```bash
+npm run test:coverage
+```
+
+Run tests in watch mode (for development):
+
+```bash
+npm run test:watch
+```
+
+See [TESTING.md](TESTING.md) for comprehensive testing documentation.
+
 ### PHP Linting and Testing
 
 #### Lint PHP Code
@@ -153,7 +175,7 @@ Automatically fix code style issues:
 composer run format
 ```
 
-#### Run Tests
+#### Run PHP Tests
 
 Run PHPUnit test suite (requires dev dependencies):
 
