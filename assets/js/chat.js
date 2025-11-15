@@ -3652,10 +3652,9 @@
             state.config.sessionKey = sessionKey;
         }
 
-        const assistantId = parseInt(session.assistant_id, 10);
-        if (!isNaN(assistantId) && assistantId > 0) {
-            state.config.assistantId = assistantId;
-        }
+        // Note: We do NOT change state.config.assistantId here.
+        // The widget's assistant ID should remain fixed to its original configuration.
+        // We only update the session key to track which conversation is loaded.
 
         state.messagesEl.textContent = '';
         state.conversation = [];
@@ -6423,11 +6422,10 @@
             state.config.sessionKey = saved.sessionKey;
         }
 
-        // Restore assistant ID if available
-        // This ensures the conversation context is maintained on page reload
-        if (saved.assistantId && saved.assistantId !== state.config.assistantId) {
-            state.config.assistantId = saved.assistantId;
-        }
+        // Note: We do NOT restore assistantId from localStorage.
+        // localStorage is backup storage only. The widget's assistantId should remain
+        // fixed to its original configuration (state.originalAssistantId).
+        // The saved assistantId is only used for reference/validation.
 
         // Restore conversation state
         state.conversation = saved.conversation;
@@ -6669,7 +6667,7 @@
         });
 
         const payload = {
-            assistant_id: state.config.assistantId,
+            assistant_id: state.originalAssistantId || state.config.assistantId,
             messages: state.conversation,
             save_transcript: state.config.saveTranscript !== false,
         };
