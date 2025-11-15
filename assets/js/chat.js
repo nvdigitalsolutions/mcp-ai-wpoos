@@ -2970,39 +2970,33 @@
                 // Save succeeded
                 setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
                 
+                // Helper to clear status after delay
+                var clearStatusAfterDelay = function() {
+                    setTimeout(function() {
+                        domUpdateBatcher.schedule(function() {
+                            clearStatus(state.container);
+                        });
+                    }, 3000);
+                };
+                
                 // Refresh history list to include the newly saved conversation
                 // This ensures the history panel shows the correct session_key
-                // If history panel is open, wait for refresh to complete before clearing status
                 if (state.historyLoaded) {
                     var refreshPromise = refreshHistorySessions(state);
                     
+                    // If history panel is visible, wait for refresh to complete before clearing status
                     if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
-                        // History is visible, wait for refresh before clearing status
-                        refreshPromise.then(function() {
-                            setTimeout(function() {
-                                domUpdateBatcher.schedule(function() {
-                                    clearStatus(state.container);
-                                });
-                            }, 3000);
-                        }).catch(function(error) {
+                        refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
                             if (window.console && console.error) {
                                 console.error('Error refreshing history after save:', error);
                             }
-                            setTimeout(function() {
-                                domUpdateBatcher.schedule(function() {
-                                    clearStatus(state.container);
-                                });
-                            }, 3000);
+                            clearStatusAfterDelay();
                         });
                         return;
                     }
                 }
                 
-                setTimeout(function() {
-                    domUpdateBatcher.schedule(function() {
-                        clearStatus(state.container);
-                    });
-                }, 3000);
+                clearStatusAfterDelay();
             } else {
                 // Save failed
                 const errorMsg = result.error || 'Failed to save conversation';
