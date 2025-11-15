@@ -2969,11 +2969,34 @@
             if (result.success) {
                 // Save succeeded
                 setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
-                setTimeout(function() {
-                    domUpdateBatcher.schedule(function() {
-                        clearStatus(state.container);
-                    });
-                }, 3000);
+                
+                // Helper to clear status after delay
+                var clearStatusAfterDelay = function() {
+                    setTimeout(function() {
+                        domUpdateBatcher.schedule(function() {
+                            clearStatus(state.container);
+                        });
+                    }, 3000);
+                };
+                
+                // Refresh history list to include the newly saved conversation
+                // This ensures the history panel shows the correct session_key
+                if (state.historyLoaded) {
+                    var refreshPromise = refreshHistorySessions(state);
+                    
+                    // If history panel is visible, wait for refresh to complete before clearing status
+                    if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
+                        refreshPromise.then(clearStatusAfterDelay).catch(function(error) {
+                            if (window.console && console.error) {
+                                console.error('Error refreshing history after save:', error);
+                            }
+                            clearStatusAfterDelay();
+                        });
+                        return;
+                    }
+                }
+                
+                clearStatusAfterDelay();
             } else {
                 // Save failed
                 const errorMsg = result.error || 'Failed to save conversation';
