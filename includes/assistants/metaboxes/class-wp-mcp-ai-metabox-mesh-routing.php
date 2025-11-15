@@ -85,7 +85,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 			? $settings['mesh_peer_sites']
 			: array();
 
-		wp_nonce_field( 'wp_mcp_ai_save_mesh_routing', 'wp_mcp_ai_mesh_routing_nonce' );
+		wp_nonce_field( 'wp_mcp_ai_save_mesh_routing', 'wp_mcp_ai_save_mesh_routing_nonce' );
 
 		?>
 		<div class="wp-mcp-ai-mesh-routing-config">

@@ -1374,7 +1374,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							$credential['id'],
 							'wp_mcp_ai_revoke_credential',
 							'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
-							$this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential['id'] ),
+							$this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_credential_nonce', $credential['id'] ),
 							__( 'Revoke', 'wp-mcp-ai' ),
 							__( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
 						);
@@ -1385,7 +1385,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						$credential['id'],
 						'wp_mcp_ai_delete_credential',
 						'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
-						$this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential['id'] ),
+						$this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_credential_nonce', $credential['id'] ),
 						__( 'Delete', 'wp-mcp-ai' ),
 						__( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
 						'button button-secondary delete'
@@ -1414,7 +1414,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					admin_url( 'admin-post.php' )
 				),
 				'wp_mcp_ai_issue_credential_' . $post->ID,
-				'wp_mcp_ai_issue_nonce'
+				'wp_mcp_ai_issue_credential_nonce'
 			);
 
 			printf(
@@ -3370,7 +3370,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			// Handle mesh routing configuration.
-			if ( isset( $_POST['wp_mcp_ai_mesh_routing_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_mesh_routing_nonce'] ) ), 'wp_mcp_ai_save_mesh_routing' ) ) {
+			if ( isset( $_POST['wp_mcp_ai_save_mesh_routing_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_save_mesh_routing_nonce'] ) ), 'wp_mcp_ai_save_mesh_routing' ) ) {
 				if ( current_user_can( 'manage_options' ) ) {
 					$mesh_config = array();
 
@@ -4039,7 +4039,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				? $settings['mesh_peer_sites']
 				: array();
 
-			wp_nonce_field( 'wp_mcp_ai_save_mesh_routing', 'wp_mcp_ai_mesh_routing_nonce' );
+			wp_nonce_field( 'wp_mcp_ai_save_mesh_routing', 'wp_mcp_ai_save_mesh_routing_nonce' );
 
 			?>
 			<div class="wp-mcp-ai-mesh-routing-config">
