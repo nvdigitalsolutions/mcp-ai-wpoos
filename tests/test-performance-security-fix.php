@@ -14,85 +14,58 @@
 class WP_MCP_AI_Performance_Security_Fix_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that performance tests now have proper user setup.
+	 * Test that all performance test classes have proper user setup methods.
 	 *
-	 * This ensures the Elementor performance test (and others) can
-	 * successfully call AJAX handlers that require authentication.
+	 * Uses data provider for separation of concerns - test logic is separate
+	 * from test data.
+	 *
+	 * @dataProvider performance_test_classes_provider
+	 *
+	 * @param string $file_path  Path to the test file.
+	 * @param string $class_name Name of the test class.
 	 */
-	public function test_elementor_performance_test_has_proper_user_setup() {
-		// Load the Elementor performance test class.
-		require_once WP_MCP_AI_PATH . 'tests/performance/test-elementor-performance.php';
+	public function test_performance_test_has_proper_user_setup( $file_path, $class_name ) {
+		// Load the test class.
+		require_once WP_MCP_AI_PATH . $file_path;
 
-		// Check that the class has setUp method.
+		// Verify setUp method exists.
 		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Elementor_Performance_Test', 'setUp' ),
-			'WP_MCP_AI_Elementor_Performance_Test should have setUp method'
+			method_exists( $class_name, 'setUp' ),
+			"{$class_name} should have setUp method for user authentication"
 		);
 
-		// Check that the class has tearDown method.
+		// Verify tearDown method exists.
 		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Elementor_Performance_Test', 'tearDown' ),
-			'WP_MCP_AI_Elementor_Performance_Test should have tearDown method'
+			method_exists( $class_name, 'tearDown' ),
+			"{$class_name} should have tearDown method to clean up user session"
 		);
 	}
 
 	/**
-	 * Test that speed benchmarks test has proper user setup.
+	 * Data provider for performance test classes.
+	 *
+	 * Separates test data from test logic for better maintainability.
+	 *
+	 * @return array Test data with file paths and class names.
 	 */
-	public function test_speed_benchmarks_test_has_proper_user_setup() {
-		// Load the speed benchmarks test class.
-		require_once WP_MCP_AI_PATH . 'tests/performance/test-speed-benchmarks.php';
-
-		// Check that the class has setUp method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Speed_Benchmarks_Test', 'setUp' ),
-			'WP_MCP_AI_Speed_Benchmarks_Test should have setUp method'
-		);
-
-		// Check that the class has tearDown method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Speed_Benchmarks_Test', 'tearDown' ),
-			'WP_MCP_AI_Speed_Benchmarks_Test should have tearDown method'
-		);
-	}
-
-	/**
-	 * Test that stress suite test has proper user setup.
-	 */
-	public function test_stress_suite_test_has_proper_user_setup() {
-		// Load the stress suite test class.
-		require_once WP_MCP_AI_PATH . 'tests/performance/test-stress-suite.php';
-
-		// Check that the class has setUp method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Stress_Suite_Test', 'setUp' ),
-			'WP_MCP_AI_Stress_Suite_Test should have setUp method'
-		);
-
-		// Check that the class has tearDown method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Stress_Suite_Test', 'tearDown' ),
-			'WP_MCP_AI_Stress_Suite_Test should have tearDown method'
-		);
-	}
-
-	/**
-	 * Test that optimization comparison test has proper user setup.
-	 */
-	public function test_optimization_comparison_test_has_proper_user_setup() {
-		// Load the optimization comparison test class.
-		require_once WP_MCP_AI_PATH . 'tests/performance/test-optimization-comparison.php';
-
-		// Check that the class has setUp method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Optimization_Comparison_Test', 'setUp' ),
-			'WP_MCP_AI_Optimization_Comparison_Test should have setUp method'
-		);
-
-		// Check that the class has tearDown method.
-		$this->assertTrue(
-			method_exists( 'WP_MCP_AI_Optimization_Comparison_Test', 'tearDown' ),
-			'WP_MCP_AI_Optimization_Comparison_Test should have tearDown method'
+	public function performance_test_classes_provider() {
+		return array(
+			'Elementor Performance Test'     => array(
+				'tests/performance/test-elementor-performance.php',
+				'WP_MCP_AI_Elementor_Performance_Test',
+			),
+			'Speed Benchmarks Test'          => array(
+				'tests/performance/test-speed-benchmarks.php',
+				'WP_MCP_AI_Speed_Benchmarks_Test',
+			),
+			'Stress Suite Test'              => array(
+				'tests/performance/test-stress-suite.php',
+				'WP_MCP_AI_Stress_Suite_Test',
+			),
+			'Optimization Comparison Test'   => array(
+				'tests/performance/test-optimization-comparison.php',
+				'WP_MCP_AI_Optimization_Comparison_Test',
+			),
 		);
 	}
 
