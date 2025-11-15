@@ -795,6 +795,16 @@
          * @return {Promise} Promise that resolves with save result
          */
         function attemptSave(attempt) {
+            // Log save attempt
+            if (!silent && window.console && console.log) {
+                console.log('[WP oOS] Saving conversation to CCT:', {
+                    session_key: payload.session_key,
+                    assistant_id: payload.assistant_id,
+                    message_count: payload.messages.length,
+                    attempt: attempt + 1
+                });
+            }
+
             // Create abort controller for timeout
             const controller = new AbortController();
             const timeoutId = setTimeout(function() {
@@ -841,6 +851,12 @@
                                 error.status = response.status;
                                 throw error;
                             }
+
+                            // Log successful save
+                            if (!silent && window.console && console.log) {
+                                console.log('[WP oOS] Conversation saved successfully to CCT');
+                            }
+
                             return { success: true, attempt: attempt + 1 };
                         });
                 })
@@ -2933,6 +2949,14 @@
      * @param {Object} state - Chat state object
      */
     function performConversationClear(state) {
+        // Log clear operation
+        if (window.console && console.log) {
+            console.log('[WP oOS] Clearing conversation:', {
+                session_key: state.config && state.config.sessionKey,
+                message_count: state.conversation ? state.conversation.length : 0
+            });
+        }
+
         // Clear the conversation array
         state.conversation = [];
 
@@ -3306,6 +3330,13 @@
 
         const deleteUrl = endpoint + '/' + encodeURIComponent(sessionKey);
 
+        // Log delete request
+        if (window.console && console.log) {
+            console.log('[WP oOS] Deleting conversation:', {
+                session_key: sessionKey
+            });
+        }
+
         fetch(deleteUrl, {
             method: 'DELETE',
             headers: buildHistoryHeaders(state),
@@ -3332,6 +3363,13 @@
                     });
             })
             .then(function () {
+                // Log successful delete
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Conversation deleted successfully:', {
+                        session_key: sessionKey
+                    });
+                }
+
                 if (item && item.parentNode) {
                     item.parentNode.removeChild(item);
                 }
@@ -3495,6 +3533,15 @@
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
         }
 
+        // Log fetch history sessions request
+        if (window.console && console.log) {
+            console.log('[WP oOS] Loading conversation history:', {
+                user_id: userId,
+                per_page: perPage,
+                endpoint: endpoint
+            });
+        }
+
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
@@ -3527,6 +3574,13 @@
 
         if (!endpoint) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
+        }
+
+        // Log load session request
+        if (window.console && console.log) {
+            console.log('[WP oOS] Loading conversation details:', {
+                session_key: sessionKey
+            });
         }
 
         let url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
