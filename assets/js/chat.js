@@ -9018,6 +9018,11 @@
         const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
         const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
 
+        // Don't start polling if endpoint is not available
+        if (!cronStatusEndpoint) {
+            return;
+        }
+
         // Update cron status display
         function updateCronStatusDisplay(data) {
             if (!data || !data.counts) {
