@@ -18,6 +18,25 @@
 class WP_MCP_AI_Stress_Suite_Test extends WP_UnitTestCase {
 
 	/**
+	 * Set up before each test.
+	 */
+	public function setUp(): void {
+		parent::setUp();
+
+		// Create admin user with manage_options capability for REST API calls.
+		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin_id );
+	}
+
+	/**
+	 * Tear down after each test.
+	 */
+	public function tearDown(): void {
+		wp_set_current_user( 0 );
+		parent::tearDown();
+	}
+
+	/**
 	 * Test concurrent API requests.
 	 *
 	 * Simulates multiple simultaneous API requests to test performance
