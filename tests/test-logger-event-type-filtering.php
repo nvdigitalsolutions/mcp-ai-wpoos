@@ -354,4 +354,68 @@ class Test_Logger_Event_Type_Filtering extends WP_UnitTestCase {
 		$this->assertEmpty( $recent_activity, 'No activity should be logged when base logging is disabled' );
 		$this->assertEmpty( $recent_errors, 'No errors should be stored when base logging is disabled' );
 	}
+
+	/**
+	 * Test that Anthropic events are stored in recent activity when logged.
+	 */
+	public function test_anthropic_events_stored_in_recent_activity() {
+		// Enable both base logging and API logging.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_logging'      => true,
+				'enable_api_logging'  => true,
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		// Log Anthropic events.
+		WP_MCP_AI_Logger::log_event( 'anthropic_request', 'Test Anthropic request', array( 'model' => 'claude-3' ) );
+
+		// Should be stored in recent activity.
+		$recent = get_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION, array() );
+		$this->assertNotEmpty( $recent, 'Anthropic events should be stored in recent activity' );
+
+		// Verify the event is actually in the list.
+		$found = false;
+		foreach ( $recent as $entry ) {
+			if ( isset( $entry['type'] ) && $entry['type'] === 'anthropic_request' ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'Anthropic request should be in recent activity list' );
+	}
+
+	/**
+	 * Test that LM Studio events are stored in recent activity when logged.
+	 */
+	public function test_lm_studio_events_stored_in_recent_activity() {
+		// Enable both base logging and API logging.
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'enable_logging'      => true,
+				'enable_api_logging'  => true,
+			)
+		);
+		WP_MCP_AI_Admin_Settings::reset_settings_cache();
+
+		// Log LM Studio events.
+		WP_MCP_AI_Logger::log_event( 'lm_studio_completion_request', 'Test LM Studio completion' );
+
+		// Should be stored in recent activity.
+		$recent = get_option( WP_MCP_AI_Logger::RECENT_ACTIVITY_OPTION, array() );
+		$this->assertNotEmpty( $recent, 'LM Studio events should be stored in recent activity' );
+
+		// Verify the event is actually in the list.
+		$found = false;
+		foreach ( $recent as $entry ) {
+			if ( isset( $entry['type'] ) && $entry['type'] === 'lm_studio_completion_request' ) {
+				$found = true;
+				break;
+			}
+		}
+		$this->assertTrue( $found, 'LM Studio completion request should be in recent activity list' );
+	}
 }
