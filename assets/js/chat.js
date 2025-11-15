@@ -3524,7 +3524,7 @@
             return state.historyLoadPromise || Promise.resolve();
         }
 
-        state.historyLoadPromise = loadHistorySessions(state);
+        state.historyLoadPromise = loadHistorySessions(state, 1);
         return state.historyLoadPromise;
     }
 
