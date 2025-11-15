@@ -433,6 +433,9 @@ require_once WP_MCP_AI_PATH . 'includes/repositories-init.php';
 // Load profession management system (separates profession data from hardcoded arrays).
 require_once WP_MCP_AI_PATH . 'includes/professions/professions-init.php';
 
+// Load team management system.
+require_once WP_MCP_AI_PATH . 'includes/teams/teams-init.php';
+
 // Service layer already loaded earlier (after container, before model-selector).
 
 // Load federation system components.
@@ -507,6 +510,14 @@ if ( is_admin() ) {
 	// Load test assistant page (submenu of AI Assistants CPT).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php';
 	wp_mcp_ai_container()->get( 'admin.test_assistant' );
+
+	// Load add assistant page (submenu of AI Assistants CPT).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
+	WP_MCP_AI_Add_Assistant_Page::init();
+
+	// Load add team page (submenu of AI Assistants CPT).
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-team-page.php';
+	WP_MCP_AI_Add_Team_Page::init();
 
 	// Load create assistant button and modal.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php';
