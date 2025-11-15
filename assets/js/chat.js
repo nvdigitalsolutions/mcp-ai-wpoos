@@ -18,24 +18,35 @@
 
     // UI utilities service compatibility layer - use external service if available
     const uiUtilsService = window.wpMcpAiChatUIUtils || null;
+
+    // Audio service compatibility layer - use external service if available
+    const audioService = window.wpMcpAiChatAudio || null;
     let objectUrlRegistry = [];
+
+    // Audio-related constants - use from service if available
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
-    const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
-    const SPEECH_ENABLED_CLASS = 'wp-mcp-ai-speech-enabled';
+    const SPEECH_BUTTON_CLASS = audioService && audioService.SPEECH_BUTTON_CLASS || 'wp-mcp-ai-speech-button';
+    const SPEECH_ENABLED_CLASS = audioService && audioService.SPEECH_ENABLED_CLASS || 'wp-mcp-ai-speech-enabled';
     const SPEECH_ERROR_CLASS = 'wp-mcp-ai-speech-button--error';
     const SPEECH_PLAY_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4l9 6-9 6V4z"></path></svg>';
     const SPEECH_STOP_ICON = '<svg class="wp-mcp-ai-speech-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><rect x="6" y="5" width="8" height="10" rx="1"></rect></svg>';
     const SPEECH_SPINNER_ICON = '<span class="wp-mcp-ai-speech-spinner" aria-hidden="true"></span>';
+
+    // Clipboard constants
     const COPY_BUTTON_CLASS = 'wp-mcp-ai-copy-button';
     const COPY_ENABLED_CLASS = 'wp-mcp-ai-copy-enabled';
     const COPY_ERROR_CLASS = 'wp-mcp-ai-copy-button--error';
     const COPY_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 5a2 2 0 012-2h7a2 2 0 012 2v9a2 2 0 01-2 2H8a2 2 0 01-2-2zm2-1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5a1 1 0 00-1-1z"></path><path d="M4 7a2 2 0 012-2v1a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1h1a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path></svg>';
     const COPY_SUCCESS_ICON = '<svg class="wp-mcp-ai-copy-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M8.293 12.293l-2.147-2.146 1.414-1.414L9 10.586l3.44-3.44 1.414 1.415L9 13.414z"></path><path d="M6 3a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2zm0 1h8a1 1 0 011 1v10a1 1 0 01-1 1H6a1 1 0 01-1-1V5a1 1 0 011-1z"></path></svg>';
+
+    // Transcription constants
     const TRANSCRIBE_TOOL_NAME = 'transcribe_openai_audio';
-    const TRANSCRIBE_RECORDING_CLASS = 'wp-mcp-ai-chat__transcribe--recording';
-    const VOICE_CHAT_RECORDING_CLASS = 'wp-mcp-ai-chat__voice-chat--recording';
-    const VOICE_CHAT_PROCESSING_CLASS = 'wp-mcp-ai-chat__voice-chat--processing';
-    const MAX_TRANSCRIBE_BYTES = 26214400;
+    const TRANSCRIBE_RECORDING_CLASS = audioService && audioService.TRANSCRIBE_RECORDING_CLASS || 'wp-mcp-ai-chat__transcribe--recording';
+    const VOICE_CHAT_RECORDING_CLASS = audioService && audioService.VOICE_CHAT_RECORDING_CLASS || 'wp-mcp-ai-chat__voice-chat--recording';
+    const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
+    const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
+
+    // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
@@ -879,6 +890,10 @@
     }
 
     function registerObjectUrl(url) {
+        if (audioService && audioService.registerObjectUrl) {
+            return audioService.registerObjectUrl(url);
+        }
+
         if (!url) {
             return;
         }
@@ -887,6 +902,10 @@
     }
 
     function revokeObjectUrls() {
+        if (audioService && audioService.revokeObjectUrls) {
+            return audioService.revokeObjectUrls();
+        }
+
         if (!objectUrlRegistry.length) {
             return;
         }
@@ -1217,6 +1236,11 @@
     }
 
     function attachSpeechButton(bubble, state, text) {
+        if (audioService && audioService.attachSpeechButton) {
+            return audioService.attachSpeechButton(bubble, state, text, buildJsonHeaders);
+        }
+
+        // Fallback implementation
         if (!bubble || !state || !state.config || !state.config.toolsEndpoint || !state.config.assistantId) {
             return;
         }
@@ -1466,6 +1490,11 @@
     }
 
     function supportsAudioRecording() {
+        if (audioService && audioService.supportsAudioRecording) {
+            return audioService.supportsAudioRecording();
+        }
+
+        // Fallback implementation
         return (
             typeof window !== 'undefined' &&
             window.navigator &&
@@ -1524,6 +1553,11 @@
     }
 
     function updateTranscribeButtonState(state) {
+        if (audioService && audioService.updateTranscribeButtonState) {
+            return audioService.updateTranscribeButtonState(state);
+        }
+
+        // Fallback implementation
         if (!state) {
             return;
         }
@@ -1554,6 +1588,15 @@
     }
 
     function handleTranscribeButtonClick(state) {
+        if (audioService && audioService.handleTranscribeButtonClick) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+            };
+            return audioService.handleTranscribeButtonClick(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || state.transcribing) {
             return;
         }
@@ -1745,6 +1788,19 @@
     }
 
     function handleTranscribeFileSelection(event, state) {
+        if (audioService && audioService.handleTranscribeFileSelection) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+                insertTranscriptionResult: insertTranscriptionResult,
+                formatDuration: formatDuration,
+            };
+            return audioService.handleTranscribeFileSelection(event, state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || !state.canUploadAttachments) {
             return;
         }
@@ -2068,6 +2124,18 @@
      * Voice Chat Functions
      */
     function handleVoiceChatButtonClick(state) {
+        if (audioService && audioService.handleVoiceChatButtonClick) {
+            const helpers = {
+                getString: getString,
+                setStatus: setStatus,
+                uploadAudioForTranscription: uploadAudioForTranscription,
+                requestTranscription: requestTranscription,
+                sendMessage: sendMessage,
+            };
+            return audioService.handleVoiceChatButtonClick(state, helpers);
+        }
+
+        // Fallback implementation
         if (!state || state.voiceChatProcessing) {
             return;
         }
@@ -2221,6 +2289,11 @@
     }
 
     function updateVoiceChatButtonState(state) {
+        if (audioService && audioService.updateVoiceChatButtonState) {
+            return audioService.updateVoiceChatButtonState(state);
+        }
+
+        // Fallback implementation
         if (!state) {
             return;
         }
