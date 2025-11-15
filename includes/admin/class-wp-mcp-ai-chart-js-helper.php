@@ -38,11 +38,39 @@ class WP_MCP_AI_Chart_JS_Helper {
 	}
 
 	/**
+	 * Check if currently in Elementor editor context.
+	 *
+	 * @return bool True if in Elementor editor, false otherwise.
+	 */
+	protected static function is_elementor_editor_context() {
+		// Check if Elementor editor is active via GET parameter.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+		if ( isset( $_GET['action'] ) && 'elementor' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
+			return true;
+		}
+
+		// Check if Elementor Plugin is loaded and editor is active.
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+			if ( $elementor && isset( $elementor->editor ) && $elementor->editor && method_exists( $elementor->editor, 'is_edit_mode' ) ) {
+				return $elementor->editor->is_edit_mode();
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Enqueue Chart.js library on Token Manager page.
 	 *
 	 * @param string $hook Current admin page hook.
 	 */
 	public static function maybe_enqueue_chart_js( $hook ) {
+		// Skip loading in Elementor editor to prevent JavaScript conflicts.
+		if ( self::is_elementor_editor_context() ) {
+			return;
+		}
+
 		// Only load on WP oOS settings pages.
 		if ( false === strpos( $hook, 'wp-mcp-ai' ) ) {
 			return;

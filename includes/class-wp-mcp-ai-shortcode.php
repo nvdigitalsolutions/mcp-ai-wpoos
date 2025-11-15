@@ -50,6 +50,10 @@ class WP_MCP_AI_Shortcode {
 	 * Register assets used by the shortcode.
 	 */
 	public function register_assets() {
+		// Skip script localization in Elementor editor to prevent JavaScript conflicts.
+		// Styles and script registration will proceed, but localization (which can cause conflicts) is skipped.
+		$is_elementor_editor = $this->is_elementor_editor_init();
+
 		$script_relative             = 'assets/js/chat.js';
 		$style_relative              = 'assets/css/chat.css';
 		$cron_status_script_relative = 'assets/js/cron-status-service.js';
@@ -103,6 +107,11 @@ class WP_MCP_AI_Shortcode {
 			$script_version,
 			true
 		);
+
+		// Skip localization in Elementor editor to prevent JavaScript conflicts.
+		if ( $is_elementor_editor ) {
+			return;
+		}
 
 		wp_localize_script(
 			self::SCRIPT_HANDLE,
@@ -253,6 +262,25 @@ class WP_MCP_AI_Shortcode {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Check if currently in Elementor editor context during early initialization.
+	 *
+	 * This method checks for Elementor editor context when Elementor may not be fully loaded yet.
+	 * Use during init or earlier hooks when Elementor\Plugin may not be available.
+	 *
+	 * @return bool True if in Elementor editor mode, false otherwise.
+	 */
+	protected function is_elementor_editor_init() {
+		// Check via GET parameter (Elementor uses 'action=elementor' for editor).
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Elementor handles its own nonce verification.
+		if ( isset( $_GET['action'] ) && 'elementor' === sanitize_text_field( wp_unslash( $_GET['action'] ) ) ) {
+			return true;
+		}
+
+		// Fallback to full check if Elementor is loaded.
+		return $this->is_elementor_editor();
 	}
 
 	/**
