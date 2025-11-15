@@ -82,7 +82,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'API Request/Response Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable logging for AI provider API requests and responses', 'wp-mcp-ai' ),
-					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs API requests to OpenAI, Gemini, Ollama and their responses. Helps debug API connectivity and response issues.', 'wp-mcp-ai' ),
+					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs API requests to OpenAI, Anthropic, Gemini, LM Studio and their responses. Helps debug API connectivity and response issues.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
 				'enable_tool_execution_logging' => array(
