@@ -2,7 +2,7 @@
 
 ## Overview
 
-This refactoring breaks apart the monolithic `chat.js` file (8,617 lines, 166 functions) into smaller, service-oriented modules while maintaining 100% backward compatibility and testability after each commit.
+This refactoring breaks apart the monolithic `chat.js` file (8,761 lines, 166 functions) into smaller, service-oriented modules while maintaining 100% backward compatibility and testability after each commit.
 
 ## Completed Work
 
@@ -58,6 +58,27 @@ This refactoring breaks apart the monolithic `chat.js` file (8,617 lines, 166 fu
 - Blockquotes
 - Links with target="_blank" and XSS protection
 - Bold, italic, strikethrough inline formatting
+
+### Phase 4: UI Utilities Service ✅
+**File**: `assets/js/chat-ui-utilities-service.js` (344 lines)
+
+**Functions Extracted**: 8
+- `domUpdateBatcher` - Batches DOM updates using requestAnimationFrame
+- `scrollBatcher` - Batches scroll operations to prevent reflows
+- `escapeHtml(text)` - XSS-safe HTML escaping
+- `formatBytes(bytes)` - Human-readable byte formatting
+- `formatDuration(value)` - MM:SS or HH:MM:SS formatting
+- `formatElapsedTime(seconds)` - Human-readable time (5s, 1m 30s, 2m)
+- `setStatus(container, message, options)` - Status message display with indicators
+- `clearStatus(container)` - Clear status messages
+
+**Features**:
+- Performance-optimized DOM batching
+- Prevents forced reflows and layout thrashing
+- Status indicators (thinking, processing, streaming, tool)
+- Animated status icons with SVG
+- Time tracking with automatic updates
+- Support for multiple status types
 
 ## Architecture Pattern
 
@@ -139,10 +160,10 @@ Chat.js works with or without services:
 ## Metrics
 
 ### Extraction Progress
-- **Phases Completed**: 3 of 8 planned (37.5%)
-- **Functions Extracted**: 17 functions
-- **Lines Extracted**: ~1,137 lines into services
-- **Service Files Created**: 3 independent modules
+- **Phases Completed**: 4 of 8 planned (50%)
+- **Functions Extracted**: 25 functions
+- **Lines Extracted**: ~1,481 lines into services
+- **Service Files Created**: 4 independent modules
 
 ### Code Quality
 - **Linting**: ✅ All files pass ESLint
@@ -150,9 +171,9 @@ Chat.js works with or without services:
 - **Breaking Changes**: ✅ Zero
 
 ### Remaining Work
-- **Functions Remaining**: ~149 functions
-- **Lines Remaining**: ~7,480 lines in chat.js
-- **Services Planned**: 5 more services to extract
+- **Functions Remaining**: ~141 functions
+- **Lines Remaining**: ~7,280 lines in chat.js
+- **Services Planned**: 4 more services to extract
 
 ## File Structure
 
@@ -162,8 +183,8 @@ assets/js/
 ├── chat-storage-service.js (Phase 1 - localStorage & persistence)
 ├── chat-clipboard-service.js (Phase 2 - copy functionality)
 ├── chat-markdown-service.js (Phase 3 - markdown rendering)
+├── chat-ui-utilities-service.js (Phase 4 - UI utilities & formatting)
 └── [Future services to be created]
-    ├── chat-ui-utilities-service.js (Phase 4)
     ├── chat-message-service.js (Phase 5)
     ├── chat-audio-service.js (Phase 6)
     ├── chat-api-service.js (Phase 7)
@@ -179,6 +200,7 @@ Updated `.eslintrc.json` to include new globals:
     "wpMcpAiChatStorage": "readonly",
     "wpMcpAiChatClipboard": "readonly",
     "wpMcpAiChatMarkdown": "readonly",
+    "wpMcpAiChatUIUtils": "readonly",
     "wpMcpAiChatDomBatcher": "readonly"
 }
 ```
@@ -188,29 +210,33 @@ Updated `.eslintrc.json` to include new globals:
 Services are loaded before chat.js in WordPress:
 
 ```php
-// In plugin enqueue function
-wp_enqueue_script('wp-mcp-ai-chat-storage', 
-    plugins_url('assets/js/chat-storage-service.js'), array(), VERSION);
+// In includes/class-wp-mcp-ai-shortcode.php register_assets() method
+wp_register_script('wp-mcp-ai-chat-storage', 
+    WP_MCP_AI_URL . 'assets/js/chat-storage-service.js', array(), VERSION, true);
     
-wp_enqueue_script('wp-mcp-ai-chat-clipboard', 
-    plugins_url('assets/js/chat-clipboard-service.js'), array(), VERSION);
+wp_register_script('wp-mcp-ai-chat-clipboard', 
+    WP_MCP_AI_URL . 'assets/js/chat-clipboard-service.js', array(), VERSION, true);
     
-wp_enqueue_script('wp-mcp-ai-chat-markdown', 
-    plugins_url('assets/js/chat-markdown-service.js'), array(), VERSION);
+wp_register_script('wp-mcp-ai-chat-markdown', 
+    WP_MCP_AI_URL . 'assets/js/chat-markdown-service.js', array(), VERSION, true);
     
-wp_enqueue_script('wp-mcp-ai-chat', 
-    plugins_url('assets/js/chat.js'), 
-    array('wp-mcp-ai-chat-storage', 'wp-mcp-ai-chat-clipboard', 'wp-mcp-ai-chat-markdown'), 
-    VERSION);
+wp_register_script('wp-mcp-ai-chat-ui-utils', 
+    WP_MCP_AI_URL . 'assets/js/chat-ui-utilities-service.js', array(), VERSION, true);
+    
+wp_register_script('wp-mcp-ai-chat', 
+    WP_MCP_AI_URL . 'assets/js/chat.js', 
+    array(
+        'wp-mcp-ai-cron-status',
+        'wp-mcp-ai-chat-storage',
+        'wp-mcp-ai-chat-clipboard',
+        'wp-mcp-ai-chat-markdown',
+        'wp-mcp-ai-chat-ui-utils',
+    ), 
+    VERSION,
+    true);
 ```
 
 ## Next Steps
-
-### Phase 4: UI Utilities Service
-Extract ~15 formatting and DOM manipulation functions:
-- `formatBytes()`, `formatDuration()`, `formatElapsedTime()`
-- `setStatus()`, `clearStatus()`
-- DOM update batching helpers
 
 ### Phase 5: Message Services
 Extract ~20 message handling functions:
