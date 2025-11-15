@@ -527,6 +527,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-assistant-button.php';
 	WP_MCP_AI_Admin_Create_Assistant_Button::init();
 
+	// Load create team button and modal.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-create-team-button.php';
+	WP_MCP_AI_Admin_Create_Team_Button::init();
+
 	/**
 	 * Add plugin action links in the plugins list.
 	 *
