@@ -2969,6 +2969,13 @@
             if (result.success) {
                 // Save succeeded
                 setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                
+                // Refresh history list to include the newly saved conversation
+                // This ensures the history panel shows the correct session_key
+                if (state.historyLoaded) {
+                    refreshHistorySessions(state);
+                }
+                
                 setTimeout(function() {
                     domUpdateBatcher.schedule(function() {
                         clearStatus(state.container);
