@@ -15,6 +15,9 @@
 
     // Markdown service compatibility layer - use external service if available
     const markdownService = window.wpMcpAiChatMarkdown || null;
+
+    // UI utilities service compatibility layer - use external service if available
+    const uiUtilsService = window.wpMcpAiChatUIUtils || null;
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -239,10 +242,9 @@
 
     /**
      * DOM update batcher to prevent setTimeout violations.
-     * Batches DOM updates using requestAnimationFrame to prevent forced reflows.
-     * Separation of concerns: timing logic separate from DOM manipulation.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
      */
-    const domUpdateBatcher = (function() {
+    const domUpdateBatcher = (uiUtilsService && uiUtilsService.domUpdateBatcher) || (function() {
         let pendingUpdates = [];
         let rafScheduled = false;
 
@@ -303,12 +305,16 @@
 
     /**
      * Format bytes to human-readable string.
-     * Uses storage service if available, otherwise uses internal implementation.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
      * 
      * @param {number} bytes - Number of bytes
      * @return {string} Formatted string (e.g., "1.5 KB", "2.3 MB")
      */
     function formatBytes(bytes) {
+        if (uiUtilsService && uiUtilsService.formatBytes) {
+            return uiUtilsService.formatBytes(bytes);
+        }
+        
         if (storageService && storageService.formatBytes) {
             return storageService.formatBytes(bytes);
         }
@@ -2025,7 +2031,18 @@
         } catch (error) {}
     }
 
+    /**
+     * Format duration in seconds to MM:SS or HH:MM:SS format.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
+     * 
+     * @param {number} value - Duration in seconds
+     * @return {string} Formatted duration (e.g., "1:30", "1:05:30")
+     */
     function formatDuration(value) {
+        if (uiUtilsService && uiUtilsService.formatDuration) {
+            return uiUtilsService.formatDuration(value);
+        }
+
         const seconds = Number(value);
         if (!isFinite(seconds) || seconds < 0) {
             return '';
@@ -7358,7 +7375,19 @@
      * @param {string|Object} message - Status message or options object
      * @param {Object} options - Optional settings (type, showTime, startTime)
      */
+    /**
+     * Set status message in a chat container.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
+     * 
+     * @param {Element} container - Chat container element
+     * @param {string|Object} message - Status message or options object
+     * @param {Object} options - Additional options (if message is string)
+     */
     function setStatus(container, message, options) {
+        if (uiUtilsService && uiUtilsService.setStatus) {
+            return uiUtilsService.setStatus(container, message, options);
+        }
+
         const statusEl = container.querySelector('.wp-mcp-ai-chat__status');
         if (!statusEl) {
             return;
@@ -7474,11 +7503,16 @@
 
     /**
      * Format elapsed time in seconds to human-readable string.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
      * 
      * @param {number} seconds - Elapsed seconds
      * @return {string} Formatted time (e.g., "5s", "1m 30s", "2m")
      */
     function formatElapsedTime(seconds) {
+        if (uiUtilsService && uiUtilsService.formatElapsedTime) {
+            return uiUtilsService.formatElapsedTime(seconds);
+        }
+
         if (seconds < 60) {
             return seconds + 's';
         }
@@ -7493,7 +7527,16 @@
         return minutes + 'm ' + remainingSeconds + 's';
     }
 
+    /**
+     * Clear status message in a chat container.
+     * Uses UI utilities service if available, otherwise uses internal implementation.
+     * 
+     * @param {Element} container - Chat container element
+     */
     function clearStatus(container) {
+        if (uiUtilsService && uiUtilsService.clearStatus) {
+            return uiUtilsService.clearStatus(container);
+        }
         setStatus(container, '');
     }
 
@@ -8071,7 +8114,18 @@
      * @param {string} text - Text to escape
      * @return {string} Escaped text
      */
+    /**
+     * Escape HTML to prevent XSS.
+     * Uses UI utilities service if available, falls back to markdown service, or uses internal implementation.
+     * 
+     * @param {string} text - Text to escape
+     * @return {string} Escaped text
+     */
     function escapeHtml(text) {
+        if (uiUtilsService && uiUtilsService.escapeHtml) {
+            return uiUtilsService.escapeHtml(text);
+        }
+
         if (markdownService && markdownService.escapeHtml) {
             return markdownService.escapeHtml(text);
         }
