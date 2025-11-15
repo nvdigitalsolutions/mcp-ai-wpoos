@@ -566,6 +566,18 @@
             return;
         }
 
+        // Validate that the session's assistant matches the target widget's assistant
+        const targetState = state.config.targetChatWidget.__wpMcpAiChatState;
+        if (targetState) {
+            const targetAssistantId = targetState.originalAssistantId || targetState.config.assistantId;
+            const sessionAssistantId = parseInt(session.assistant_id, 10);
+            
+            if (targetAssistantId && sessionAssistantId && targetAssistantId !== sessionAssistantId) {
+                setStatus(state, getString(state, 'errorWrongAssistant', 'This conversation is from a different assistant and cannot be loaded into this chat.'));
+                return;
+            }
+        }
+
         const sessionKey = session.session_key || '';
         
         // If we already have the full session details with messages, use them directly
@@ -863,6 +875,17 @@
                 }
                 
                 targetChatWidget = closestWidget;
+            }
+        }
+
+        // If we have a target chat widget and no assistantId is configured,
+        // automatically use the target widget's assistantId to filter conversations
+        if (targetChatWidget && assistantId === 0) {
+            const targetState = targetChatWidget.__wpMcpAiChatState;
+            if (targetState && targetState.originalAssistantId) {
+                assistantId = targetState.originalAssistantId;
+            } else if (targetState && targetState.config && targetState.config.assistantId) {
+                assistantId = targetState.config.assistantId;
             }
         }
 

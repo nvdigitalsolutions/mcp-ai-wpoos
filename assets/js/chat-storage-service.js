@@ -230,7 +230,15 @@
 	 * @return {Object} Result object with success status
 	 */
 	function saveConversationToStorage(state, options) {
-		if (!state || !state.config || !state.config.assistantId) {
+		if (!state || !state.config) {
+			return { success: false, skipped: true };
+		}
+
+		// Use originalAssistantId if available (for widgets with fixed assistant)
+		// Fall back to config.assistantId for backwards compatibility
+		const assistantId = state.originalAssistantId || state.config.assistantId;
+
+		if (!assistantId) {
 			return { success: false, skipped: true };
 		}
 
@@ -238,7 +246,6 @@
 			return { success: false, error: 'localStorage not available' };
 		}
 
-		const assistantId = state.config.assistantId;
 		const opts = options || {};
 		const forceImmediate = opts.immediate === true;
 		
@@ -316,7 +323,15 @@
 	 * @return {Object|null} Loaded conversation data or null
 	 */
 	function loadConversationFromStorage(state) {
-		if (!state || !state.config || !state.config.assistantId) {
+		if (!state || !state.config) {
+			return null;
+		}
+
+		// Use originalAssistantId if available (for widgets with fixed assistant)
+		// Fall back to config.assistantId for backwards compatibility
+		const assistantId = state.originalAssistantId || state.config.assistantId;
+
+		if (!assistantId) {
 			return null;
 		}
 
@@ -325,7 +340,7 @@
 		}
 
 		try {
-			const storageKey = getStorageKey(state.config.assistantId);
+			const storageKey = getStorageKey(assistantId);
 			const stored = window.localStorage.getItem(storageKey);
 
 			if (!stored) {
@@ -344,14 +359,14 @@
 				return null;
 			}
 
-			if (data.assistantId !== state.config.assistantId) {
-				return null;
-			}
+			// Note: We no longer validate that data.assistantId matches state.config.assistantId
+			// because state.config.assistantId should never change from the widget's original config.
+			// The storage key is based on originalAssistantId, so we trust the data.
 
 			return {
 				conversation: Array.isArray(data.conversation) ? data.conversation : [],
 				sessionKey: data.sessionKey || '',
-				assistantId: data.assistantId || state.config.assistantId
+				assistantId: data.assistantId || assistantId
 			};
 		} catch (error) {
 			return null;
@@ -364,7 +379,15 @@
 	 * @param {Object} state - Chat state object
 	 */
 	function clearConversationFromStorage(state) {
-		if (!state || !state.config || !state.config.assistantId) {
+		if (!state || !state.config) {
+			return;
+		}
+
+		// Use originalAssistantId if available (for widgets with fixed assistant)
+		// Fall back to config.assistantId for backwards compatibility
+		const assistantId = state.originalAssistantId || state.config.assistantId;
+
+		if (!assistantId) {
 			return;
 		}
 
@@ -373,7 +396,7 @@
 		}
 
 		try {
-			const storageKey = getStorageKey(state.config.assistantId);
+			const storageKey = getStorageKey(assistantId);
 			window.localStorage.removeItem(storageKey);
 		} catch (error) {
 			// Silently fail
