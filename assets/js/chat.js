@@ -3613,10 +3613,21 @@
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'per_page=' + encodeURIComponent(perPage);
         }
 
+        // Add assistant_id parameter
+        let assistantId = null;
+        if (state && state.config && typeof state.config.assistantId !== 'undefined') {
+            assistantId = state.config.assistantId;
+        }
+        
+        if (assistantId !== null) {
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'assistant_id=' + encodeURIComponent(assistantId);
+        }
+
         // Log fetch history sessions request
         if (window.console && console.log) {
             console.log('[WP oOS] Loading conversation history:', {
                 user_id: userId,
+                assistant_id: assistantId,
                 per_page: perPage,
                 endpoint: endpoint
             });
@@ -6668,6 +6679,17 @@
         if (!trimmedMessage && !hasAttachments) {
             setStatus(state.container, getString('emptyMessage', 'Enter a message before sending.'));
             return;
+        }
+
+        // Log send button click
+        if (window.console && console.log) {
+            console.log('[WP oOS] User clicked send:', {
+                message_length: trimmedMessage.length,
+                has_attachments: hasAttachments,
+                attachment_count: pending.length,
+                assistant_id: state.config ? state.config.assistantId : null,
+                conversation_length: state.conversation.length
+            });
         }
 
         state.textarea.value = '';
