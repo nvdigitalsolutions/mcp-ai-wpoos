@@ -2972,8 +2972,30 @@
                 
                 // Refresh history list to include the newly saved conversation
                 // This ensures the history panel shows the correct session_key
+                // If history panel is open, wait for refresh to complete before clearing status
                 if (state.historyLoaded) {
-                    refreshHistorySessions(state);
+                    var refreshPromise = refreshHistorySessions(state);
+                    
+                    if (state.historyVisible && refreshPromise && typeof refreshPromise.then === 'function') {
+                        // History is visible, wait for refresh before clearing status
+                        refreshPromise.then(function() {
+                            setTimeout(function() {
+                                domUpdateBatcher.schedule(function() {
+                                    clearStatus(state.container);
+                                });
+                            }, 3000);
+                        }).catch(function(error) {
+                            if (window.console && console.error) {
+                                console.error('Error refreshing history after save:', error);
+                            }
+                            setTimeout(function() {
+                                domUpdateBatcher.schedule(function() {
+                                    clearStatus(state.container);
+                                });
+                            }, 3000);
+                        });
+                        return;
+                    }
                 }
                 
                 setTimeout(function() {
