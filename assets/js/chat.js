@@ -516,7 +516,23 @@
                     assistantId: assistantId
                 };
                 
+                // Log save attempt
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Saving conversation to localStorage:', {
+                        assistant_id: assistantId,
+                        session_key: state.config.sessionKey || '',
+                        message_count: (state.conversation || []).length,
+                        storage_key: storageKey
+                    });
+                }
+                
                 window.localStorage.setItem(storageKey, JSON.stringify(data));
+                
+                // Log successful save
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Conversation saved successfully to localStorage');
+                }
+                
                 return { success: true };
             } catch (error) {
                 // Check if it's a quota exceeded error
@@ -539,11 +555,22 @@
                                 assistantId: assistantId
                             };
                             
+                            // Log retry attempt
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] Retrying localStorage save after cleanup (cleaned ' + cleaned + ' entries)');
+                            }
+                            
                             window.localStorage.setItem(storageKey, JSON.stringify(data));
+                            
+                            // Log successful retry
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] Conversation saved successfully to localStorage after cleanup');
+                            }
+                            
                             return { success: true, cleaned: cleaned };
                         } catch (retryError) {
                             if (window.console && console.warn) {
-                                console.warn('Failed to save conversation even after cleanup:', retryError);
+                                console.warn('[WP oOS] Failed to save conversation to localStorage even after cleanup:', retryError);
                             }
                             return { success: false, error: 'localStorage quota exceeded', cleaned: cleaned };
                         }
@@ -554,7 +581,7 @@
                 
                 // Other errors - log but don't interrupt user experience
                 if (window.console && console.warn) {
-                    console.warn('Error saving conversation to localStorage:', error);
+                    console.warn('[WP oOS] Error saving conversation to localStorage:', error);
                 }
                 
                 return { success: false, error: error.message || 'localStorage error' };
@@ -672,28 +699,59 @@
 
         try {
             const storageKey = getStorageKey(state.config.assistantId);
+            
+            // Log load attempt
+            if (window.console && console.log) {
+                console.log('[WP oOS] Loading conversation from localStorage:', {
+                    assistant_id: state.config.assistantId,
+                    storage_key: storageKey
+                });
+            }
+            
             const stored = window.localStorage.getItem(storageKey);
 
             if (!stored) {
+                // Log when no data found
+                if (window.console && console.log) {
+                    console.log('[WP oOS] No conversation found in localStorage');
+                }
                 return null;
             }
 
             const data = JSON.parse(stored);
 
             if (!data || typeof data !== 'object') {
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Invalid conversation data in localStorage');
+                }
                 return null;
             }
 
             // Check if data is expired
             const age = Date.now() - (data.timestamp || 0);
             if (age > STORAGE_EXPIRY_MS) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Conversation expired in localStorage (age: ' + Math.floor(age / 1000 / 60) + ' minutes)');
+                }
                 window.localStorage.removeItem(storageKey);
                 return null;
             }
 
             // Verify it's for the same assistant
             if (data.assistantId !== state.config.assistantId) {
+                if (window.console && console.warn) {
+                    console.warn('[WP oOS] Assistant ID mismatch in localStorage data');
+                }
                 return null;
+            }
+
+            // Log successful load
+            if (window.console && console.log) {
+                console.log('[WP oOS] Conversation loaded successfully from localStorage:', {
+                    session_key: data.sessionKey || '',
+                    message_count: Array.isArray(data.conversation) ? data.conversation.length : 0,
+                    age_minutes: Math.floor(age / 1000 / 60)
+                });
             }
 
             return {
@@ -702,6 +760,10 @@
                 assistantId: data.assistantId || state.config.assistantId
             };
         } catch (error) {
+            // Log parse errors
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Error loading conversation from localStorage:', error);
+            }
             // Return null if parsing fails
             return null;
         }
@@ -728,9 +790,27 @@
 
         try {
             const storageKey = getStorageKey(state.config.assistantId);
+            
+            // Log delete attempt
+            if (window.console && console.log) {
+                console.log('[WP oOS] Clearing conversation from localStorage:', {
+                    assistant_id: state.config.assistantId,
+                    session_key: state.config.sessionKey || '',
+                    storage_key: storageKey
+                });
+            }
+            
             window.localStorage.removeItem(storageKey);
+            
+            // Log successful delete
+            if (window.console && console.log) {
+                console.log('[WP oOS] Conversation cleared successfully from localStorage');
+            }
         } catch (error) {
-            // Silently fail
+            // Log error
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] Error clearing conversation from localStorage:', error);
+            }
         }
     }
 
