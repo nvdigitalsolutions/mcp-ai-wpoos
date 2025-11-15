@@ -58,6 +58,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	}
 
 	/**
+	 * Declare script dependencies for this widget.
+	 *
+	 * @return array List of script handles this widget depends on.
+	 */
+	public function get_script_depends() {
+		return array( 'chartjs' );
+	}
+
+	/**
 	 * Register controls for the widget settings.
 	 */
 	protected function register_controls() {
@@ -240,74 +249,94 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	}
 
 	/**
-	 * Enqueue Chart.js and render the chart.
+	 * Render the chart script.
 	 *
 	 * @param array $trends       Trend data.
 	 * @param int   $chart_height Chart height.
 	 */
 	protected function enqueue_chart_script( $trends, $chart_height ) {
-		// In a real implementation, you would enqueue Chart.js from CDN or local file.
+		// Chart.js is loaded via get_script_depends().
 		?>
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 		<script>
 		(function() {
-			var ctx = document.getElementById('wp-mcp-ai-trends-chart');
-			if (!ctx) return;
+			// Wait for Chart to be available (in case of async loading).
+			function initChart() {
+				if (typeof Chart === 'undefined') {
+					// Chart.js not loaded yet, wait a bit.
+					setTimeout(initChart, 100);
+					return;
+				}
 
-			// Sample data - in real implementation, this would come from $trends.
-			var chartData = {
-				labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
-				datasets: [{
-					label: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>',
-					data: [250, 300, 280, 320, 290, 310, 275],
-					borderColor: 'rgb(75, 192, 192)',
-					backgroundColor: 'rgba(75, 192, 192, 0.2)',
-					tension: 0.4
-				}, {
-					label: '<?php echo esc_js( __( 'Memory Usage (MB)', 'wp-mcp-ai' ) ); ?>',
-					data: [64, 68, 66, 72, 65, 70, 63],
-					borderColor: 'rgb(255, 99, 132)',
-					backgroundColor: 'rgba(255, 99, 132, 0.2)',
-					tension: 0.4,
-					yAxisID: 'y1'
-				}]
-			};
+				var ctx = document.getElementById('wp-mcp-ai-trends-chart');
+				if (!ctx) return;
 
-			new Chart(ctx, {
-				type: 'line',
-				data: chartData,
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					interaction: {
-						mode: 'index',
-						intersect: false,
-					},
-					scales: {
-						y: {
-							type: 'linear',
-							display: true,
-							position: 'left',
-							title: {
-								display: true,
-								text: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>'
-							}
+				// Sample data - in real implementation, this would come from $trends.
+				var chartData = {
+					labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+					datasets: [{
+						label: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>',
+						data: [250, 300, 280, 320, 290, 310, 275],
+						borderColor: 'rgb(75, 192, 192)',
+						backgroundColor: 'rgba(75, 192, 192, 0.2)',
+						tension: 0.4
+					}, {
+						label: '<?php echo esc_js( __( 'Memory Usage (MB)', 'wp-mcp-ai' ) ); ?>',
+						data: [64, 68, 66, 72, 65, 70, 63],
+						borderColor: 'rgb(255, 99, 132)',
+						backgroundColor: 'rgba(255, 99, 132, 0.2)',
+						tension: 0.4,
+						yAxisID: 'y1'
+					}]
+				};
+
+				new Chart(ctx, {
+					type: 'line',
+					data: chartData,
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						interaction: {
+							mode: 'index',
+							intersect: false,
 						},
-						y1: {
-							type: 'linear',
-							display: true,
-							position: 'right',
-							title: {
+						scales: {
+							y: {
+								type: 'linear',
 								display: true,
-								text: '<?php echo esc_js( __( 'Memory (MB)', 'wp-mcp-ai' ) ); ?>'
+								position: 'left',
+								title: {
+									display: true,
+									text: '<?php echo esc_js( __( 'Response Time (ms)', 'wp-mcp-ai' ) ); ?>'
+								}
 							},
-							grid: {
-								drawOnChartArea: false,
+							y1: {
+								type: 'linear',
+								display: true,
+								position: 'right',
+								title: {
+									display: true,
+									text: '<?php echo esc_js( __( 'Memory (MB)', 'wp-mcp-ai' ) ); ?>'
+								},
+								grid: {
+									drawOnChartArea: false,
+								}
 							}
 						}
 					}
+				});
+			}
+
+			// Initialize immediately if Chart is available, otherwise wait.
+			if (typeof Chart !== 'undefined') {
+				initChart();
+			} else {
+				// In Elementor editor, wait for DOM ready.
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', initChart);
+				} else {
+					initChart();
 				}
-			});
+			}
 		})();
 		</script>
 		<style>

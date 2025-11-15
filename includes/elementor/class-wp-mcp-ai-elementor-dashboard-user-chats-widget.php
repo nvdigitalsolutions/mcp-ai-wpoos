@@ -72,6 +72,28 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	}
 
 	/**
+	 * Declare script dependencies for this widget.
+	 *
+	 * @return array List of script handles this widget depends on.
+	 */
+	public function get_script_depends() {
+		// Ensure the script is registered before declaring it as a dependency.
+		$this->register_assets_if_needed();
+		return array( self::SCRIPT_HANDLE );
+	}
+
+	/**
+	 * Declare style dependencies for this widget.
+	 *
+	 * @return array List of style handles this widget depends on.
+	 */
+	public function get_style_depends() {
+		// Ensure the style is registered before declaring it as a dependency.
+		$this->register_assets_if_needed();
+		return array( self::STYLE_HANDLE );
+	}
+
+	/**
 	 * Check if currently in Elementor editor mode.
 	 *
 	 * @return bool True if in Elementor editor mode, false otherwise.
@@ -84,6 +106,38 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Register widget assets if not already registered.
+	 *
+	 * This is called by get_script_depends() and get_style_depends()
+	 * to ensure assets are registered before Elementor tries to load them.
+	 */
+	protected function register_assets_if_needed() {
+		if ( self::$assets_registered ) {
+			return;
+		}
+
+		$script_relative = 'assets/js/user-chats.js';
+		$style_relative  = 'assets/css/user-chats.css';
+
+		wp_register_script(
+			self::SCRIPT_HANDLE,
+			WP_MCP_AI_URL . $script_relative,
+			array(),
+			$this->get_asset_version( $script_relative ),
+			true
+		);
+
+		wp_register_style(
+			self::STYLE_HANDLE,
+			WP_MCP_AI_URL . $style_relative,
+			array(),
+			$this->get_asset_version( $style_relative )
+		);
+
+		self::$assets_registered = true;
 	}
 
 	/**
@@ -368,33 +422,10 @@ class WP_MCP_AI_Elementor_Dashboard_User_Chats_Widget extends \Elementor\Widget_
 	 * Ensure the required scripts and styles are loaded.
 	 */
 	protected function enqueue_assets() {
-		// Don't enqueue scripts in Elementor editor mode to prevent JavaScript conflicts.
-		if ( $this->is_elementor_editor() ) {
-			return;
-		}
+		// Register assets if needed.
+		$this->register_assets_if_needed();
 
-		if ( ! self::$assets_registered ) {
-			$script_relative = 'assets/js/user-chats.js';
-			$style_relative  = 'assets/css/user-chats.css';
-
-			wp_register_script(
-				self::SCRIPT_HANDLE,
-				WP_MCP_AI_URL . $script_relative,
-				array(),
-				$this->get_asset_version( $script_relative ),
-				true
-			);
-
-			wp_register_style(
-				self::STYLE_HANDLE,
-				WP_MCP_AI_URL . $style_relative,
-				array(),
-				$this->get_asset_version( $style_relative )
-			);
-
-			self::$assets_registered = true;
-		}
-
+		// Localize script if not already done.
 		if ( ! self::$script_localized ) {
 			$localised_strings = array(
 				'loadingList'                    => __( 'Loading chats…', 'wp-mcp-ai' ),

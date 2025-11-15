@@ -33,6 +33,8 @@ class WP_MCP_AI_Chart_JS_Helper {
 	 */
 	public static function init() {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue_chart_js' ) );
+		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_chart_js' ) );
+		add_action( 'elementor/frontend/after_register_scripts', array( __CLASS__, 'register_chart_js' ) );
 	}
 
 	/**
@@ -57,20 +59,33 @@ class WP_MCP_AI_Chart_JS_Helper {
 	}
 
 	/**
-	 * Enqueue Chart.js library and integration script.
+	 * Register Chart.js library for use by Elementor widgets and frontend.
+	 *
+	 * This makes Chart.js available as a dependency without enqueuing it.
 	 */
-	public static function enqueue_chart_js() {
+	public static function register_chart_js() {
 		$chart_js_path = WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js';
 		$chart_js_url  = WP_MCP_AI_URL . 'assets/js/vendor/chart.min.js';
 
-		// Enqueue Chart.js library.
-		wp_enqueue_script(
+		// Register Chart.js library so widgets can depend on it.
+		wp_register_script(
 			'chartjs',
 			$chart_js_url,
 			array(),
 			file_exists( $chart_js_path ) ? filemtime( $chart_js_path ) : self::CHART_JS_VERSION,
 			true
 		);
+	}
+
+	/**
+	 * Enqueue Chart.js library and integration script.
+	 */
+	public static function enqueue_chart_js() {
+		// Register first (if not already registered).
+		self::register_chart_js();
+
+		// Then enqueue.
+		wp_enqueue_script( 'chartjs' );
 
 		// Enqueue analytics dashboard CSS.
 		$analytics_css_path = WP_MCP_AI_PATH . 'assets/css/analytics-dashboard.css';
