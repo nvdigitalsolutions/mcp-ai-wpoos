@@ -72,6 +72,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_update_chart_period'    => 'handle_update_chart_period',
 				'wp_ajax_wp_mcp_ai_refresh_chart'          => 'handle_refresh_chart',
 				'wp_ajax_wp_mcp_ai_toggle_tool'            => 'handle_toggle_tool',
+				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 			);
 
 			$action         = current_action();
@@ -1408,6 +1409,147 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 					)
 				);
 			}
+		}
+
+		/**
+		 * Handle profession re-seeding AJAX request.
+		 */
+		private function handle_reseed_professions() {
+			check_ajax_referer( 'wp_mcp_ai_reseed_professions', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Get action type: 'update' or 'replace'.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+			$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'update';
+
+			if ( ! in_array( $action, array( 'update', 'replace' ), true ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+					)
+				);
+				return;
+			}
+
+			// Load profession seeder.
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-seeder.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Repository' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/repositories/class-wp-mcp-ai-profession-repository.php';
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Profession_Knowledge_Base_Loader' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-profession-knowledge-base-loader.php';
+			}
+
+			// If replace action, delete all existing professions.
+			if ( 'replace' === $action ) {
+				$existing_professions = get_posts(
+					array(
+						'post_type'      => 'mcp_ai_profession',
+						'posts_per_page' => -1,
+						'post_status'    => 'any',
+						'fields'         => 'ids',
+					)
+				);
+
+				foreach ( $existing_professions as $post_id ) {
+					wp_delete_post( $post_id, true );
+				}
+			}
+
+			// Clear the seeded option to allow re-seeding.
+			delete_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION );
+
+			// Load professions from JSON files.
+			$loader      = new WP_MCP_AI_Profession_Knowledge_Base_Loader();
+			$professions = $loader->load_all();
+
+			if ( is_wp_error( $professions ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Failed to load profession data: %s', 'wp-mcp-ai' ),
+							$professions->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			// Save professions.
+			$repository = new WP_MCP_AI_Profession_Repository();
+			$saved      = 0;
+			$updated    = 0;
+			$errors     = array();
+
+			foreach ( $professions as $profession_data ) {
+				// Check if profession already exists by slug.
+				$existing = null;
+				if ( 'update' === $action && ! empty( $profession_data['slug'] ) ) {
+					$existing = $repository->find_one( $profession_data['slug'] );
+				}
+
+				if ( $existing ) {
+					// Update existing profession.
+					$profession_data['id'] = $existing->ID;
+					$result                = $repository->save( $profession_data );
+					if ( ! is_wp_error( $result ) ) {
+						++$updated;
+					} else {
+						$errors[] = $result->get_error_message();
+					}
+				} else {
+					// Create new profession.
+					$result = $repository->save( $profession_data );
+					if ( ! is_wp_error( $result ) ) {
+						++$saved;
+					} else {
+						$errors[] = $result->get_error_message();
+					}
+				}
+			}
+
+			// Mark as seeded.
+			update_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, true, false );
+
+			// Clear cache.
+			$repository->clear_cache();
+
+			$message = sprintf(
+				/* translators: 1: Number of professions created, 2: Number of professions updated */
+				__( 'Professions reloaded successfully. Created: %1$d, Updated: %2$d', 'wp-mcp-ai' ),
+				$saved,
+				$updated
+			);
+
+			if ( ! empty( $errors ) ) {
+				$message .= ' ' . sprintf(
+					/* translators: %d: Number of errors */
+					__( 'Errors: %d', 'wp-mcp-ai' ),
+					count( $errors )
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => $message,
+					'created' => $saved,
+					'updated' => $updated,
+					'errors'  => count( $errors ),
+				)
+			);
 		}
 	}
 }
