@@ -221,7 +221,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 						data: {
 							action: 'wp_mcp_ai_run_performance_test',
 							test_type: testType,
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_run_test' ) ); ?>'
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_performance' ) ); ?>'
 						},
 						success: function(response) {
 							button.prop('disabled', false);

@@ -381,7 +381,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 							action: 'wp_mcp_ai_get_performance_metrics',
 							component: component,
 							period: period,
-							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_get_metrics' ) ); ?>'
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_performance' ) ); ?>'
 						},
 						success: function(response) {
 							if (response.success && response.data) {
