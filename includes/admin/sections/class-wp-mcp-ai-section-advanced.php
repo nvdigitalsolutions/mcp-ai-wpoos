@@ -106,6 +106,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'icon'   => 'dashicons-admin-tools',
 					'fields' => array( 'enable_extended_logging' ),
 				),
+				'data_management'        => array(
+					'id'     => 'data_management',
+					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-database',
+					'fields' => array(), // No form fields, custom content only.
+				),
 				'system'                 => array(
 					'id'     => 'system',
 					'label'  => __( 'System', 'wp-mcp-ai' ),
@@ -165,6 +171,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			if ( 'performance_monitoring' === $active_subtab ) {
 				echo '</table>'; // Close the form table.
 				$this->render_performance_monitoring();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+			}
+
+			// Render data management if we're on the data_management sub-tab.
+			if ( 'data_management' === $active_subtab ) {
+				echo '</table>'; // Close the form table.
+				$this->render_data_management();
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
 			}
 		}
@@ -379,6 +392,196 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 				<?php
 			}
+		}
+
+		/**
+		 * Render the data management content.
+		 */
+		private function render_data_management() {
+			// Get profession counts.
+			$profession_count = wp_count_posts( 'mcp_ai_profession' );
+			$total_count      = isset( $profession_count->publish ) ? $profession_count->publish : 0;
+			$draft_count      = isset( $profession_count->draft ) ? $profession_count->draft : 0;
+
+			// Check if professions were seeded.
+			$is_seeded       = get_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, false );
+			$seeded_text     = $is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
+			$seeded_class    = $is_seeded ? 'success' : 'warning';
+			?>
+			<div class="wp-mcp-ai-data-management-section" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Profession Data Management', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage the profession templates used when creating new AI assistants. You can reload the latest profession definitions from the plugin\'s knowledge base.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-profession-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'wp-mcp-ai' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li><strong><?php esc_html_e( 'Published Professions:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $total_count ); ?></li>
+						<?php if ( $draft_count > 0 ) : ?>
+							<li><strong><?php esc_html_e( 'Draft Professions:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $draft_count ); ?></li>
+						<?php endif; ?>
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'wp-mcp-ai' ); ?></strong> 
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $seeded_class ); ?>">
+								<?php echo esc_html( $seeded_text ); ?>
+							</span>
+						</li>
+					</ul>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_profession' ) ); ?>">
+							<?php esc_html_e( 'View all professions', 'wp-mcp-ai' ); ?> &rarr;
+						</a>
+					</p>
+				</div>
+
+				<div class="wp-mcp-ai-reseed-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Reload Profession Data', 'wp-mcp-ai' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Choose how to reload profession data from the plugin\'s knowledge base:', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-update-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Update Professions', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Updates existing professions and adds new ones. Your custom professions will be preserved.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-replace-btn">
+								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Replace All Professions', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Deletes all existing professions and recreates them from the knowledge base. Use with caution!', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-reseed-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<style>
+					.wp-mcp-ai-status-badge {
+						display: inline-block;
+						padding: 2px 8px;
+						border-radius: 3px;
+						font-size: 12px;
+						font-weight: bold;
+					}
+					.wp-mcp-ai-status-success {
+						background: #d4edda;
+						color: #155724;
+					}
+					.wp-mcp-ai-status-warning {
+						background: #fff3cd;
+						color: #856404;
+					}
+					.wp-mcp-ai-reseed-actions button .dashicons {
+						vertical-align: middle;
+					}
+					.wp-mcp-ai-reseed-actions button.disabled {
+						opacity: 0.6;
+						cursor: not-allowed;
+					}
+				</style>
+
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performReseed(actionType, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-reseed-message');
+						var originalText = $button.html();
+
+						// Disable both buttons
+						$('#wp-mcp-ai-reseed-update-btn, #wp-mcp-ai-reseed-replace-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_reseed_professions',
+								action_type: actionType,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_reseed_professions' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload stats after a short delay
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-reseed-update-btn, #wp-mcp-ai-reseed-replace-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-reseed-update-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							performReseed('update', '#wp-mcp-ai-reseed-update-btn');
+						}
+					});
+
+					$('#wp-mcp-ai-reseed-replace-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing professions and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							performReseed('replace', '#wp-mcp-ai-reseed-replace-btn');
+						}
+					});
+				});
+				</script>
+
+				<style>
+					@keyframes spin {
+						from { transform: rotate(0deg); }
+						to { transform: rotate(360deg); }
+					}
+					.dashicons.spin {
+						animation: spin 1s linear infinite;
+					}
+				</style>
+			</div>
+			<?php
 		}
 	}
 }
