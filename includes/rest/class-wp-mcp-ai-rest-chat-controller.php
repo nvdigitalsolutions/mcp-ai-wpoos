@@ -576,6 +576,18 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Guest users (authenticated via guest token) can save transcripts with user_id = 0.
 		// The permission check already validated the guest token if present.
 
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcript_save: Saving transcript',
+			array(
+				'session_key'    => $session_key,
+				'assistant_id'   => $assistant_id,
+				'user_id'        => $user_id,
+				'message_count'  => count( $clean_messages ),
+				'source'         => 'chat_client',
+			)
+		);
+
 		// Get assistant configuration for metadata.
 		$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 		$model            = isset( $assistant_config['model'] ) ? sanitize_text_field( $assistant_config['model'] ) : 'unknown-model';
@@ -608,6 +620,17 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				$context
 			);
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'handle_chat_transcript_save: Transcript saved successfully',
+			array(
+				'session_key'   => $session_key,
+				'assistant_id'  => $assistant_id,
+				'user_id'       => $user_id,
+				'message_count' => count( $clean_messages ),
+			)
+		);
 
 		return rest_ensure_response(
 			array(
@@ -729,6 +752,16 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
+		WP_MCP_AI_Logger::log_event(
+			'debug',
+			'handle_chat_transcript_delete: Deleting transcript',
+			array(
+				'session_key' => $session_key,
+				'user_id'     => $user_id,
+				'source'      => 'chat_client',
+			)
+		);
+
 		$repository = $this->main_controller->get_transcript_repository();
 		$table      = $repository->get_table_name();
 
@@ -752,12 +785,31 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$deleted = $repository->delete_transcript( $session_key, $user_id );
 
 		if ( false === $deleted ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'handle_chat_transcript_delete: Failed to delete transcript',
+				array(
+					'session_key' => $session_key,
+					'user_id'     => $user_id,
+				)
+			);
+
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_delete_failed',
 				__( 'Failed to delete the transcript.', 'wp-mcp-ai' ),
 				array( 'status' => 500 )
 			);
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'handle_chat_transcript_delete: Transcript deleted successfully',
+			array(
+				'session_key'  => $session_key,
+				'user_id'      => $user_id,
+				'deleted_rows' => $deleted,
+			)
+		);
 
 		return rest_ensure_response(
 			array(
