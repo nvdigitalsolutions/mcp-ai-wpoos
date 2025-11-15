@@ -102,7 +102,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 						$credential['id'],
 						'wp_mcp_ai_revoke_credential',
 						'wp_mcp_ai_revoke_credential_' . $post->ID . '_' . $credential['id'],
-						$this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_nonce', $credential['id'] ),
+						$this->get_credential_nonce_field_name( 'wp_mcp_ai_revoke_credential_nonce', $credential['id'] ),
 						__( 'Revoke', 'wp-mcp-ai' ),
 						__( 'Revoke this credential? This action cannot be undone.', 'wp-mcp-ai' )
 					);
@@ -113,7 +113,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 					$credential['id'],
 					'wp_mcp_ai_delete_credential',
 					'wp_mcp_ai_delete_credential_' . $post->ID . '_' . $credential['id'],
-					$this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_nonce', $credential['id'] ),
+					$this->get_credential_nonce_field_name( 'wp_mcp_ai_delete_credential_nonce', $credential['id'] ),
 					__( 'Delete', 'wp-mcp-ai' ),
 					__( 'Delete this credential? This action cannot be undone.', 'wp-mcp-ai' ),
 					'button button-secondary delete'
@@ -142,7 +142,7 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 				admin_url( 'admin-post.php' )
 			),
 			'wp_mcp_ai_issue_credential_' . $post->ID,
-			'wp_mcp_ai_issue_nonce'
+			'wp_mcp_ai_issue_credential_nonce'
 		);
 
 		printf(
