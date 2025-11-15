@@ -410,6 +410,10 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-request-context.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-usage-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-token-limits.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-db-optimizer.php';
+
+// Phase 7 Week 5-6: Enhanced token tracking with real-time cost attribution.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-token-tracking-database.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-enhanced-token-tracking.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-tool-recommendations.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-text-chunker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-document-summarizer.php';
@@ -748,6 +752,11 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Initialize database optimizations for token management.
 			if ( class_exists( 'WP_MCP_AI_Token_DB_Optimizer' ) ) {
 				WP_MCP_AI_Token_DB_Optimizer::init();
+			}
+
+			// Phase 7 Week 5-6: Initialize enhanced token tracking with real-time cost attribution.
+			if ( class_exists( 'WP_MCP_AI_Enhanced_Token_Tracking' ) ) {
+				WP_MCP_AI_Enhanced_Token_Tracking::init();
 			}
 
 			if ( class_exists( 'WP_MCP_AI_Elementor_Integration' ) ) {
