@@ -2010,6 +2010,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
+			// Update response completion timestamp after agentic loop.
+			$transcript_context['response_completed_at'] = microtime( true );
+
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );
 
 			$recorded_session_key = null;
@@ -2381,6 +2384,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 			}
+
+			// Update response completion timestamp after agentic loop.
+			$transcript_context['response_completed_at'] = microtime( true );
 
 			// Log and record transcript.
 			WP_MCP_AI_Logger::log_chat_interaction( $assistant_id, $messages, $options, $response, $user_id );

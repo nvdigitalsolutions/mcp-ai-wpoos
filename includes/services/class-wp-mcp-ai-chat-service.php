@@ -192,6 +192,9 @@ class WP_MCP_AI_Chat_Service {
 			}
 		}
 
+		// Update response completion timestamp after agentic loop.
+		$transcript_context['response_completed_at'] = microtime( true );
+
 		// Add tool results to response for frontend display.
 		if ( ! empty( $tool_result_messages ) ) {
 			$response['tool_results'] = $tool_result_messages;
