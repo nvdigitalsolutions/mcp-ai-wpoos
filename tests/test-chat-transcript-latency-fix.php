@@ -1,17 +1,18 @@
 <?php
 /**
- * Tests for WP_MCP_AI_Chat_Service transcript recording
+ * Tests for chat transcript latency fix
  *
- * Verifies that the chat service correctly saves transcripts to CCT
- * using the proper static method call.
+ * Verifies that latency_ms is calculated correctly when agentic tool execution occurs.
+ * This test validates the fix for the issue where response_completed_at was not updated
+ * after the agentic loop, causing inaccurate latency measurements.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test Chat Service Transcript Recording
+ * Test Chat Transcript Latency Fix
  */
-class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
+class Test_Chat_Transcript_Latency_Fix extends WP_UnitTestCase {
 
 	/**
 	 * Administrator user ID for authenticated requests.
@@ -51,7 +52,7 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
 				'post_status' => 'publish',
-				'post_title'  => 'Chat Service Test Assistant',
+				'post_title'  => 'Latency Test Assistant',
 			)
 		);
 
@@ -74,14 +75,12 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that chat service calls transcript recorder with correct parameters
+	 * Test that latency is calculated correctly without tool execution
 	 *
-	 * This test verifies the fix for the issue where:
-	 * 1. Chat service was trying to instantiate WP_MCP_AI_Chat_Transcript_Recorder (which only has static methods)
-	 * 2. Chat service was calling non-existent method record_transcript() instead of static record()
-	 * 3. Parameters didn't match the expected signature
+	 * When there are no tool calls, the latency should be the time between
+	 * request_started_at and response_completed_at (just the first API call).
 	 */
-	public function test_chat_service_saves_transcript_correctly() {
+	public function test_latency_without_tools() {
 		$this->register_transcript_handler();
 
 		// Create mock language model router.
@@ -89,7 +88,7 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		// Mock client that returns a simple response.
+		// Mock client that returns a simple response without tool calls.
 		$mock_client = $this->getMockBuilder( stdClass::class )
 			->addMethods( array( 'create_chat_completion' ) )
 			->getMock();
@@ -105,7 +104,7 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 					'finish_reason' => 'stop',
 					'message'       => array(
 						'role'    => 'assistant',
-						'content' => 'Hello! How can I help you today?',
+						'content' => 'Hello! No tool calls here.',
 					),
 				),
 			),
@@ -116,11 +115,16 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 			),
 		);
 
+		// Simulate a 100ms delay for the API call.
 		$mock_client->expects( $this->once() )
 			->method( 'create_chat_completion' )
-			->willReturn( $response_payload );
+			->willReturnCallback(
+				function () use ( $response_payload ) {
+					usleep( 100000 ); // 100ms delay.
+					return $response_payload;
+				}
+			);
 
-		// Mock router to return our mock client.
 		$mock_router->expects( $this->once() )
 			->method( 'get_client' )
 			->willReturn( $mock_client );
@@ -145,7 +149,7 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 		$messages = array(
 			array(
 				'role'    => 'user',
-				'content' => 'Hello, test message',
+				'content' => 'Hello',
 			),
 		);
 
@@ -161,14 +165,12 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 
 		$transcript_context = array(
 			'save_transcript' => true,
-			'session_key'     => 'test-session-key-123',
+			'session_key'     => 'latency-test-no-tools',
 		);
 
-		// Create a mock WP_REST_Request.
 		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
 		$request->set_param( 'assistant_id', $this->assistant_id );
 		$request->set_param( 'messages', $messages );
-		$request->set_param( 'session_key', 'test-session-key-123' );
 
 		// Process the chat request.
 		$result = $chat_service->process_chat_request(
@@ -183,49 +185,25 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 		);
 
 		// Verify the chat processed successfully.
-		$this->assertIsArray( $result, 'Chat service should return response array' );
-		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertIsArray( $result );
 
 		// Verify transcript was saved.
-		$this->assertNotEmpty( $this->transcript_handler->records, 'Transcript handler should capture a saved record.' );
-
+		$this->assertNotEmpty( $this->transcript_handler->records );
 		$record = $this->transcript_handler->records[0];
 
-		// Verify the record has the correct structure.
-		$this->assertSame( 'test-session-key-123', $record['session_key'], 'Session key should match' );
-		$this->assertSame( $this->admin_id, (int) $record['user_id'], 'User ID should match' );
-		$this->assertSame( (string) $this->assistant_id, $record['assistant_id'], 'Assistant ID should match' );
-		$this->assertSame( 'gpt-4o-mini', $record['assistant_model'], 'Model should match' );
-
-		// Verify timing fields are present.
-		$this->assertArrayHasKey( 'request_started_at', $record, 'Record should have request_started_at' );
-		$this->assertArrayHasKey( 'response_completed_at', $record, 'Record should have response_completed_at' );
-
-		// Verify request payload is saved correctly.
-		$this->assertArrayHasKey( 'request_payload', $record, 'Record should have request_payload' );
-		$request_payload = json_decode( $record['request_payload'], true );
-		$this->assertIsArray( $request_payload, 'Request payload should be valid JSON' );
-		$this->assertArrayHasKey( 'messages', $request_payload, 'Request payload should contain messages' );
-
-		// Verify messages in payload.
-		$this->assertCount( 1, $request_payload['messages'], 'Should have 1 user message in payload' );
-		$this->assertSame( 'user', $request_payload['messages'][0]['role'], 'First message should be user' );
-		$this->assertSame( 'Hello, test message', $request_payload['messages'][0]['content'], 'Message content should match' );
-
-		// Verify response payload is saved.
-		$this->assertArrayHasKey( 'response_payload', $record, 'Record should have response_payload' );
-		$saved_response = json_decode( $record['response_payload'], true );
-		$this->assertIsArray( $saved_response, 'Response payload should be valid JSON' );
-		$this->assertSame( 'chatcmpl-test', $saved_response['id'], 'Response ID should match' );
+		// Verify latency is present and reasonable (around 100ms).
+		$this->assertArrayHasKey( 'latency_ms', $record );
+		$this->assertGreaterThan( 90, $record['latency_ms'], 'Latency should be at least 90ms (100ms API call with some overhead)' );
+		$this->assertLessThan( 200, $record['latency_ms'], 'Latency should be less than 200ms for simple request' );
 	}
 
 	/**
-	 * Test that chat service handles missing request gracefully
+	 * Test that latency is calculated correctly with tool execution
 	 *
-	 * When no WP_REST_Request is provided, the service should log an error
-	 * but not crash.
+	 * When tools are executed in an agentic loop, the latency should include
+	 * the time for all API calls and tool execution, not just the first call.
 	 */
-	public function test_chat_service_handles_missing_request_gracefully() {
+	public function test_latency_with_agentic_tools() {
 		$this->register_transcript_handler();
 
 		// Create mock language model router.
@@ -233,32 +211,77 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		// Mock client.
+		// Mock client that returns a response with tool calls, then a final response.
 		$mock_client = $this->getMockBuilder( stdClass::class )
 			->addMethods( array( 'create_chat_completion' ) )
 			->getMock();
 
-		$response_payload = array(
-			'id'      => 'chatcmpl-test',
-			'model'   => 'gpt-4o-mini',
-			'choices' => array(
+		$first_response = array(
+			'id'       => 'chatcmpl-test-1',
+			'model'    => 'gpt-4o-mini',
+			'provider' => 'openai',
+			'choices'  => array(
 				array(
-					'index'   => 0,
-					'message' => array(
-						'role'    => 'assistant',
-						'content' => 'Response',
+					'index'         => 0,
+					'finish_reason' => 'tool_calls',
+					'message'       => array(
+						'role'       => 'assistant',
+						'content'    => '',
+						'tool_calls' => array(
+							array(
+								'id'       => 'call_test',
+								'type'     => 'function',
+								'function' => array(
+									'name'      => 'get_current_time',
+									'arguments' => '{}',
+								),
+							),
+						),
 					),
 				),
 			),
 		);
 
-		$mock_client->method( 'create_chat_completion' )
-			->willReturn( $response_payload );
+		$final_response = array(
+			'id'       => 'chatcmpl-test-2',
+			'model'    => 'gpt-4o-mini',
+			'provider' => 'openai',
+			'status'   => 'completed',
+			'choices'  => array(
+				array(
+					'index'         => 0,
+					'finish_reason' => 'stop',
+					'message'       => array(
+						'role'    => 'assistant',
+						'content' => 'Based on the tool result, here is the answer.',
+					),
+				),
+			),
+			'usage'    => array(
+				'prompt_tokens'     => 50,
+				'completion_tokens' => 20,
+				'total_tokens'      => 70,
+			),
+		);
 
-		$mock_router->method( 'get_client' )
+		// Mock two API calls: first with tools, second with final response.
+		// Each call takes 100ms, so total should be ~200ms plus tool execution time.
+		$call_count = 0;
+		$mock_client->expects( $this->exactly( 2 ) )
+			->method( 'create_chat_completion' )
+			->willReturnCallback(
+				function () use ( $first_response, $final_response, &$call_count ) {
+					$call_count++;
+					usleep( 100000 ); // 100ms delay.
+					return $call_count === 1 ? $first_response : $final_response;
+				}
+			);
+
+		$mock_router->expects( $this->once() )
+			->method( 'get_client' )
 			->willReturn( $mock_client );
 
-		// Create chat service.
+		// Create chat service with mock dependencies.
 		$mock_rate_limiter         = $this->getMockBuilder( WP_MCP_AI_Rate_Limit_Manager::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -274,31 +297,60 @@ class Test_Chat_Service_Transcript_Recording extends WP_UnitTestCase {
 			$tool_registry
 		);
 
-		// Process chat WITHOUT providing a request object.
-		$result = $chat_service->process_chat_request(
-			$this->assistant_id,
+		// Prepare test data.
+		$messages = array(
 			array(
-				array(
-					'role'    => 'user',
-					'content' => 'Test',
-				),
+				'role'    => 'user',
+				'content' => 'What time is it?',
 			),
-			array( 'model' => 'gpt-4o-mini' ),
-			array( 'model' => 'gpt-4o-mini' ),
-			array(
-				'save_transcript' => true,
-				'session_key'     => 'test',
-			),
-			$this->admin_id,
-			5,
-			null // No request object.
 		);
 
-		// Chat should still succeed.
-		$this->assertIsArray( $result, 'Chat should succeed even without request object' );
+		$options = array(
+			'model'    => 'gpt-4o-mini',
+			'provider' => 'openai',
+		);
 
-		// But transcript should NOT be saved (handler should not have any records).
-		$this->assertEmpty( $this->transcript_handler->records, 'Transcript should not be saved without request object' );
+		$assistant_config = array(
+			'model'    => 'gpt-4o-mini',
+			'provider' => 'openai',
+		);
+
+		$transcript_context = array(
+			'save_transcript' => true,
+			'session_key'     => 'latency-test-with-tools',
+		);
+
+		$request = new WP_REST_Request( 'POST', '/mcp-ai/v1/chat' );
+		$request->set_param( 'assistant_id', $this->assistant_id );
+		$request->set_param( 'messages', $messages );
+
+		// Process the chat request.
+		$result = $chat_service->process_chat_request(
+			$this->assistant_id,
+			$messages,
+			$options,
+			$assistant_config,
+			$transcript_context,
+			$this->admin_id,
+			5,
+			$request
+		);
+
+		// Verify the chat processed successfully.
+		$this->assertIsArray( $result );
+
+		// Verify transcript was saved.
+		$this->assertNotEmpty( $this->transcript_handler->records );
+		$record = $this->transcript_handler->records[0];
+
+		// Verify latency includes the entire agentic loop (both API calls).
+		// Should be at least 200ms (2 x 100ms API calls) plus tool execution overhead.
+		$this->assertArrayHasKey( 'latency_ms', $record );
+		$this->assertGreaterThan( 190, $record['latency_ms'], 'Latency should include both API calls (at least 190ms)' );
+
+		// This is the key assertion - without the fix, latency would only be ~100ms
+		// (just the first API call). With the fix, it should include both calls.
+		$this->assertGreaterThan( 150, $record['latency_ms'], 'Latency must reflect agentic loop completion, not just first API call' );
 	}
 
 	/**

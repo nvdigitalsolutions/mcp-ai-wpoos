@@ -252,6 +252,9 @@ class WP_MCP_AI_Chat_Service {
 			}
 		}
 
+		// Update response completion timestamp after agentic loop.
+		$transcript_context['response_completed_at'] = microtime( true );
+    
 		// Log orchestration completion
 		WP_MCP_AI_Logger::log_event(
 			'debug',
