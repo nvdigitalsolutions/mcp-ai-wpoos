@@ -16,3 +16,4 @@ require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-pr
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-details.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-expertise.php';
 require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-base-knowledge.php';
+require_once WP_MCP_AI_PATH . 'includes/professions/metaboxes/class-wp-mcp-ai-profession-metabox-defaults.php';
