@@ -28,6 +28,7 @@ opcache-reset.php
 /vendor/composer/*.zip~
 /vendor/composer/tmp-*.zip~
 /vendor/composer/installed.php
+/vendor/composer/installed.json
 
 # Minified assets (generated during build)
 *.min.css
