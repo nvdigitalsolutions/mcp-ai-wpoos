@@ -1,0 +1,296 @@
+<?php
+/**
+ * Tools & Admin Controller for REST API
+ *
+ * Handles tools, file downloads, and admin-related endpoints including
+ * tool listing, tool execution, file downloads, and cron status.
+ *
+ * @package WP_MCP_AI
+ * @since 1.0.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Tools & Admin Controller Class
+ *
+ * Manages all tools and admin-related REST API endpoints:
+ * - /tools (GET - list tools, POST - execute tool)
+ * - /files/{file_id}/download (GET - file download)
+ * - /cron-status (GET - cron job status for admin dashboard)
+ */
+class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
+	/**
+	 * Reference to the main REST controller for shared functionality.
+	 *
+	 * @var WP_MCP_AI_REST
+	 */
+	private $main_controller;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param WP_MCP_AI_REST                    $main_controller Main REST controller.
+	 * @param WP_MCP_AI_REST_Authenticator|null $authenticator   Authentication handler (optional, for DI).
+	 * @param WP_MCP_AI_REST_Validator|null     $validator       Request validator (optional, for DI).
+	 */
+	public function __construct( $main_controller = null, $authenticator = null, $validator = null ) {
+		parent::__construct( $authenticator, $validator );
+		$this->main_controller = $main_controller;
+	}
+
+	/**
+	 * Register tools and admin routes.
+	 */
+	public function register_routes() {
+		// /tools - Tool listing and execution.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/tools',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_tools_list' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant to list tools for. Returns all tools if omitted.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'permission_callback' => array( $this, 'permissions_check' ),
+					'callback'            => array( $this, 'handle_tool_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'ID of the assistant context for tool execution.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'tool'         => array(
+							'description'       => __( 'Slug of the tool to execute.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'arguments'    => array(
+							'description' => __( 'Arguments to pass to the tool execution.', 'wp-mcp-ai' ),
+							'type'        => 'object',
+							'required'    => false,
+							'default'     => array(),
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /files/{file_id}/download - File download with permission checks.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/files/(?P<file_id>[^/]+)/download',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'download_file_permissions_check' ),
+					'callback'            => array( $this, 'handle_file_download' ),
+					'args'                => array(
+						'assistant_id'  => array(
+							'description'       => __( 'ID of the assistant context for file access.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'file_id'       => array(
+							'description'       => __( 'ID or identifier of the file to download.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'download_name' => array(
+							'description'       => __( 'Optional custom filename for the download.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_file_name',
+						),
+						'disposition'   => array(
+							'description'       => __( 'Content-Disposition header value (attachment or inline).', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'default'           => 'attachment',
+							'enum'              => array( 'attachment', 'inline' ),
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			),
+			true
+		);
+
+		// /cron-status - Lightweight cron job status for admin dashboard.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_cron_status_request' ),
+					'args'                => array(
+						'limit' => array(
+							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 10,
+							'sanitize_callback' => 'absint',
+							'minimum'           => 1,
+							'maximum'           => 50,
+						),
+					),
+				),
+			),
+			true
+		);
+	}
+
+	/**
+	 * General permission check for authenticated endpoints.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check( $request );
+	}
+
+	/**
+	 * Permission check for file download endpoint.
+	 *
+	 * Handles nonce parameter extraction before delegating to main permission check.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function download_file_permissions_check( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->download_file_permissions_check( $request );
+	}
+
+	/**
+	 * Permission check for cron status endpoint.
+	 *
+	 * Supports mesh keys, bearer tokens, guest tokens, and WordPress nonces.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check_cron_status( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check_cron_status( $request );
+	}
+
+	/**
+	 * Handle GET /tools request - List available tools.
+	 *
+	 * Delegates to main REST controller for now.
+	 * Will be extracted in implementation phase.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_tools_list( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		if ( $this->main_controller ) {
+			return $this->main_controller->handle_tools_list( $request );
+		}
+		return $this->error( 'not_implemented', __( 'Tools list endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+
+	/**
+	 * Handle POST /tools request - Execute a tool.
+	 *
+	 * Delegates to main REST controller for now.
+	 * Will be extracted in implementation phase.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_tool_request( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		if ( $this->main_controller ) {
+			return $this->main_controller->handle_tool_request( $request );
+		}
+		return $this->error( 'not_implemented', __( 'Tool execution endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+
+	/**
+	 * Handle GET /files/{file_id}/download request.
+	 *
+	 * Downloads a file from OpenAI and streams it to the client.
+	 * Delegates to main REST controller for now.
+	 * Will be extracted in implementation phase.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_file_download( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		if ( $this->main_controller ) {
+			return $this->main_controller->handle_file_download( $request );
+		}
+		return $this->error( 'not_implemented', __( 'File download endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+
+	/**
+	 * Handle GET /cron-status request.
+	 *
+	 * Returns lightweight cron job status information for the admin dashboard.
+	 * Delegates to main REST controller for now.
+	 * Will be extracted in implementation phase.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_cron_status_request( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		if ( $this->main_controller ) {
+			return $this->main_controller->handle_cron_status_request( $request );
+		}
+		return $this->error( 'not_implemented', __( 'Cron status endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+}
