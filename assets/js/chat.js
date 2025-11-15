@@ -9012,10 +9012,11 @@
             return;
         }
 
-        // Build cron status endpoint
-        const restUrl = config.messagesEndpoint || '';
-        const cronStatusEndpoint = restUrl.replace(/\/chat(-client)?$/, '/cron-status');
-        const nonce = config.restNonce || '';
+        // Build cron status endpoint using global restUrl to avoid cross-domain issues
+        // (config.messagesEndpoint might point to an external URL)
+        const restUrl = (window.wpMcpAiChat && window.wpMcpAiChat.restUrl) || '';
+        const cronStatusEndpoint = restUrl ? restUrl + '/cron-status' : '';
+        const nonce = config.restNonce || (window.wpMcpAiChat && window.wpMcpAiChat.nonce) || '';
 
         // Update cron status display
         function updateCronStatusDisplay(data) {
