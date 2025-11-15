@@ -20,13 +20,6 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 	 */
 	protected $assistant_id;
 
-	/**
-	 * REST controller instance.
-	 *
-	 * @var WP_MCP_AI_REST
-	 */
-	protected $rest_controller;
-
 	public function setUp(): void {
 		parent::setUp();
 
@@ -47,11 +40,6 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 
 		rest_get_server();
 		do_action( 'init' );
-
-		$mock_client            = $this->getMockBuilder( WP_MCP_AI_Language_Model_Router::class )
-			->disableOriginalConstructor()
-			->getMock();
-		$this->rest_controller = new WP_MCP_AI_REST( WP_MCP_AI_Tool_Registry::get_instance(), $mock_client );
 	}
 
 	public function tearDown(): void {
@@ -76,11 +64,11 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			return;
 		}
 
-		$table = $wpdb->prefix . 'jet_cct_' . WP_MCP_AI_JetEngine_CCT::get_slug();
+		$repository = wp_mcp_ai_get_transcript_repository();
+		$table      = $repository->get_table_name();
 
 		// Skip if table doesn't exist.
-		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-		if ( $table_exists !== $table ) {
+		if ( ! $repository->table_exists() ) {
 			$this->markTestSkipped( 'Transcript table does not exist' );
 			return;
 		}
@@ -165,8 +153,8 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			$wpdb->insert( $table, $session );
 		}
 
-		// Retrieve sessions using the REST controller method.
-		$result = $this->rest_controller->get_transcript_sessions( $this->admin_id, 10, 1, $this->assistant_id );
+		// Retrieve sessions using the repository.
+		$result = $repository->get_sessions( $this->admin_id, 10, 1, $this->assistant_id );
 
 		$this->assertIsArray( $result, 'Result should be an array' );
 		$this->assertArrayHasKey( 'items', $result, 'Result should have items key' );
@@ -208,11 +196,11 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 			return;
 		}
 
-		$table = $wpdb->prefix . 'jet_cct_' . WP_MCP_AI_JetEngine_CCT::get_slug();
+		$repository = wp_mcp_ai_get_transcript_repository();
+		$table      = $repository->get_table_name();
 
 		// Skip if table doesn't exist.
-		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
-		if ( $table_exists !== $table ) {
+		if ( ! $repository->table_exists() ) {
 			$this->markTestSkipped( 'Transcript table does not exist' );
 			return;
 		}
@@ -247,13 +235,13 @@ class WP_MCP_AI_Chat_Transcript_Sorting_Test extends WP_UnitTestCase {
 		}
 
 		// Get page 1 (should have sessions 25-16, most recent first).
-		$page1 = $this->rest_controller->get_transcript_sessions( $this->admin_id, 10, 1, $this->assistant_id );
+		$page1 = $repository->get_sessions( $this->admin_id, 10, 1, $this->assistant_id );
 
 		// Get page 2 (should have sessions 15-6).
-		$page2 = $this->rest_controller->get_transcript_sessions( $this->admin_id, 10, 2, $this->assistant_id );
+		$page2 = $repository->get_sessions( $this->admin_id, 10, 2, $this->assistant_id );
 
 		// Get page 3 (should have sessions 5-1, oldest last).
-		$page3 = $this->rest_controller->get_transcript_sessions( $this->admin_id, 10, 3, $this->assistant_id );
+		$page3 = $repository->get_sessions( $this->admin_id, 10, 3, $this->assistant_id );
 
 		// Verify page 1 has the most recent conversations.
 		$this->assertEquals( 'test_page_session_25', $page1['items'][0]['session_key'], 'Page 1 should start with the most recent session (25)' );

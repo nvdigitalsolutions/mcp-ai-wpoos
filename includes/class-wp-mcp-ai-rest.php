@@ -5266,10 +5266,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Retrieve chat transcript session summaries for a user.
 		 *
-		 * TODO: Refactor - This method should be moved to WP_MCP_AI_Transcript_Repository
-		 * as part of the ongoing separation of concerns refactoring (Phase 4).
-		 * This will align with the repository pattern used for other data access methods.
-		 *
 		 * @param int $user_id      User identifier.
 		 * @param int $per_page     Number of sessions to return.
 		 * @param int $page         Results page.
@@ -5277,70 +5273,22 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return array|WP_Error
 		 */
 		public function get_transcript_sessions( $user_id, $per_page, $page, $assistant_id = 0 ) {
-			global $wpdb;
+			$repository = $this->get_transcript_repository();
+			$result     = $repository->get_sessions( $user_id, $per_page, $page, $assistant_id );
 
-			if ( ! $this->transcript_table_exists() ) {
-				return new WP_Error(
-					'wp_mcp_ai_transcripts_unavailable',
-					__( 'Chat transcripts are not available. Ensure JetEngine Custom Content Types is active and that the /wp-json/jet-cct/ai_chat_transcripts endpoint loads successfully.', 'wp-mcp-ai' ),
-					array( 'status' => 404 )
-				);
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
 
-			$table        = $this->get_transcript_table_name();
-			$user_id      = absint( $user_id );
-			$assistant_id = absint( $assistant_id );
-			$per_page     = max( 1, (int) $per_page );
-			$page         = max( 1, (int) $page );
-			$offset       = ( $page - 1 ) * $per_page;
-
-			$where_clauses = array( 'cct_author_id = %d' );
-			$where_values  = array( $user_id );
-
-			if ( $assistant_id > 0 ) {
-				$where_clauses[] = 'assistant_id = %d';
-				$where_values[]  = $assistant_id;
-			}
-
-			$where_sql = implode( ' AND ', $where_clauses );
-
-			$query_values   = array_merge( $where_values, array( $per_page, $offset ) );
-			$query_template = "SELECT session_key,
-                    MIN(request_started_at) AS started_at,
-                    MAX(response_completed_at) AS completed_at,
-                    MIN(cct_created) AS first_created,
-                    MAX(cct_created) AS last_created,
-                    MAX(assistant_id) AS assistant_id,
-                    MAX(assistant_model) AS assistant_model,
-                    COUNT(*) AS turn_count
-             FROM {$table}
-             WHERE {$where_sql}
-             GROUP BY session_key
-             ORDER BY MAX(cct_created) DESC, session_key ASC
-             LIMIT %d OFFSET %d";
-
-			$query = $wpdb->prepare( $query_template, $query_values );
-
-			$rows = $wpdb->get_results( $query, ARRAY_A );
-
-			if ( ! is_array( $rows ) ) {
-				$rows = array();
-			}
-
-			$total_query_template = "SELECT COUNT(DISTINCT session_key) FROM {$table} WHERE {$where_sql}";
-			$total_query          = $wpdb->prepare( $total_query_template, $where_values );
-
-			$total = (int) $wpdb->get_var( $total_query );
-
+			// Format the raw database rows into session summaries.
 			$sessions = array();
-
-			foreach ( $rows as $row ) {
+			foreach ( $result['items'] as $row ) {
 				$sessions[] = $this->format_transcript_session_summary( $row, $user_id );
 			}
 
 			return array(
 				'items' => $sessions,
-				'total' => $total,
+				'total' => $result['total'],
 			);
 		}
 
