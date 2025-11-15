@@ -6,6 +6,15 @@
     if (!window.wpMcpAiChatInstances) {
         window.wpMcpAiChatInstances = {};
     }
+
+    // Storage service compatibility layer - use external service if available
+    const storageService = window.wpMcpAiChatStorage || null;
+
+    // Clipboard service compatibility layer - use external service if available
+    const clipboardService = window.wpMcpAiChatClipboard || null;
+
+    // Markdown service compatibility layer - use external service if available
+    const markdownService = window.wpMcpAiChatMarkdown || null;
     let objectUrlRegistry = [];
     const SPEECH_TOOL_NAME = 'generate_openai_speech';
     const SPEECH_BUTTON_CLASS = 'wp-mcp-ai-speech-button';
@@ -37,10 +46,14 @@
 
     /**
      * Get localStorage key for a specific assistant.
+     * Uses storage service if available, otherwise uses internal implementation.
      * @param {string} assistantId - The assistant ID.
      * @return {string} The storage key.
      */
     function getStorageKey(assistantId) {
+        if (storageService && storageService.getStorageKey) {
+            return storageService.getStorageKey(assistantId);
+        }
         return STORAGE_KEY_PREFIX + assistantId;
     }
 
@@ -277,20 +290,29 @@
     /**
      * Get localStorage usage statistics (async).
      * Uses caching and requestIdleCallback to avoid blocking the main thread.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Function} callback - Called with quota data
      */
     function getLocalStorageQuota(callback) {
+        if (storageService && storageService.getLocalStorageQuota) {
+            return storageService.getLocalStorageQuota(callback);
+        }
         quotaMonitorCache.getQuota(callback);
     }
 
     /**
      * Format bytes to human-readable string.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {number} bytes - Number of bytes
      * @return {string} Formatted string (e.g., "1.5 KB", "2.3 MB")
      */
     function formatBytes(bytes) {
+        if (storageService && storageService.formatBytes) {
+            return storageService.formatBytes(bytes);
+        }
+
         if (bytes === 0) {
             return '0 Bytes';
         }
@@ -304,12 +326,17 @@
 
     /**
      * Export conversation to various formats.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Object} state - Chat state object
      * @param {string} format - Export format ('json', 'markdown', 'text')
      * @return {Object} Export result with content and filename
      */
     function exportConversation(state, format) {
+        if (storageService && storageService.exportConversation) {
+            return storageService.exportConversation(state, format);
+        }
+
         if (!state || !state.conversation || !Array.isArray(state.conversation)) {
             return { success: false, error: 'No conversation to export' };
         }
@@ -434,12 +461,17 @@
     /**
      * Save conversation to localStorage with quota management.
      * Includes automatic cleanup of old conversations if quota is exceeded.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @param {Object} state - Chat state object
      * @param {Object} options - Optional settings
      * @return {Object} Result object with success status
      */
     function saveConversationToStorage(state, options) {
+        if (storageService && storageService.saveConversationToStorage) {
+            return storageService.saveConversationToStorage(state, options);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return { success: false, skipped: true };
         }
@@ -534,10 +566,15 @@
     /**
      * Clean up old localStorage entries to free up space.
      * Removes entries older than STORAGE_EXPIRY_MS.
+     * Uses storage service if available, otherwise uses internal implementation.
      * 
      * @return {number} Number of entries cleaned up
      */
     function cleanupOldStorageEntries() {
+        if (storageService && storageService.cleanupOldStorageEntries) {
+            return storageService.cleanupOldStorageEntries();
+        }
+
         if (!window.localStorage) {
             return 0;
         }
@@ -596,7 +633,18 @@
         return cleaned;
     }
 
+    /**
+     * Load conversation from localStorage.
+     * Uses storage service if available, otherwise uses internal implementation.
+     * 
+     * @param {Object} state - Chat state object
+     * @return {Object|null} Loaded conversation data or null
+     */
     function loadConversationFromStorage(state) {
+        if (storageService && storageService.loadConversationFromStorage) {
+            return storageService.loadConversationFromStorage(state);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return null;
         }
@@ -642,7 +690,17 @@
         }
     }
 
+    /**
+     * Clear conversation from localStorage.
+     * Uses storage service if available, otherwise uses internal implementation.
+     * 
+     * @param {Object} state - Chat state object
+     */
     function clearConversationFromStorage(state) {
+        if (storageService && storageService.clearConversationFromStorage) {
+            return storageService.clearConversationFromStorage(state);
+        }
+
         if (!state || !state.config || !state.config.assistantId) {
             return;
         }
@@ -1207,7 +1265,18 @@
         bubble.appendChild(button);
     }
 
+    /**
+     * Update copy button visual state.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {HTMLElement} button - The copy button element
+     * @param {string} stateName - State name ('idle', 'copied', 'error')
+     */
     function updateCopyButtonState(button, stateName) {
+        if (clipboardService && clipboardService.updateCopyButtonState) {
+            return clipboardService.updateCopyButtonState(button, stateName);
+        }
+
         if (!button) {
             return;
         }
@@ -1235,7 +1304,18 @@
         button.setAttribute('title', 'Copy response');
     }
 
+    /**
+     * Copy text to clipboard using modern API.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to copy
+     * @return {Promise<boolean>} Promise resolving to success status
+     */
     function copyTextToClipboard(text) {
+        if (clipboardService && clipboardService.copyTextToClipboard) {
+            return clipboardService.copyTextToClipboard(text);
+        }
+
         if (!text) {
             return Promise.resolve(false);
         }
@@ -1289,7 +1369,18 @@
         });
     }
 
+    /**
+     * Attach copy button to a message bubble.
+     * Uses clipboard service if available, otherwise uses internal implementation.
+     * 
+     * @param {HTMLElement} bubble - Message bubble element
+     * @param {string} text - Optional explicit text to copy
+     */
     function attachCopyButton(bubble, text) {
+        if (clipboardService && clipboardService.attachCopyButton) {
+            return clipboardService.attachCopyButton(bubble, text);
+        }
+
         if (!bubble) {
             return;
         }
@@ -7665,7 +7756,18 @@
         return details;
     }
 
+    /**
+     * Render markdown to HTML.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Markdown text
+     * @return {string} HTML output
+     */
     function renderMarkdown(text) {
+        if (markdownService && markdownService.renderMarkdown) {
+            return markdownService.renderMarkdown(text);
+        }
+
         if (!text) {
             return '';
         }
@@ -7889,7 +7991,18 @@
         return html;
     }
 
+    /**
+     * Render inline label with inline code support.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to render
+     * @return {string} Rendered HTML
+     */
     function renderInlineLabel(text) {
+        if (markdownService && markdownService.renderInlineLabel) {
+            return markdownService.renderInlineLabel(text);
+        }
+
         if (!text) {
             return '';
         }
@@ -7917,7 +8030,18 @@
         return processed;
     }
 
+    /**
+     * Sanitize URL to prevent XSS.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} url - URL to sanitize
+     * @return {string} Sanitized URL or '#' if invalid
+     */
     function sanitizeUrl(url) {
+        if (markdownService && markdownService.sanitizeUrl) {
+            return markdownService.sanitizeUrl(url);
+        }
+
         if (!url) {
             return '#';
         }
@@ -7942,7 +8066,18 @@
         return trimmed.replace(/"/g, '%22');
     }
 
+    /**
+     * Escape HTML to prevent XSS.
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to escape
+     * @return {string} Escaped text
+     */
     function escapeHtml(text) {
+        if (markdownService && markdownService.escapeHtml) {
+            return markdownService.escapeHtml(text);
+        }
+
         return String(text).replace(/[&<>"']/g, function (character) {
             switch (character) {
                 case '&':
@@ -7961,7 +8096,18 @@
         });
     }
 
+    /**
+     * Format inline markdown (bold, italic, strikethrough).
+     * Uses markdown service if available, otherwise uses internal implementation.
+     * 
+     * @param {string} text - Text to format
+     * @return {string} Formatted HTML
+     */
     function formatInline(text) {
+        if (markdownService && markdownService.formatInline) {
+            return markdownService.formatInline(text);
+        }
+
         let result = text;
         result = result.replace(/~~(?=\S)(.+?)(?<=\S)~~/g, '<del>$1</del>');
         result = result.replace(/\*\*(?=\S)(.+?)(?<=\S)\*\*/g, '<strong>$1</strong>');
