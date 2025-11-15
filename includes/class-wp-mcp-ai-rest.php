@@ -5266,6 +5266,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		/**
 		 * Retrieve chat transcript session summaries for a user.
 		 *
+		 * TODO: Refactor - This method should be moved to WP_MCP_AI_Transcript_Repository
+		 * as part of the ongoing separation of concerns refactoring (Phase 4).
+		 * This will align with the repository pattern used for other data access methods.
+		 *
 		 * @param int $user_id      User identifier.
 		 * @param int $per_page     Number of sessions to return.
 		 * @param int $page         Results page.
