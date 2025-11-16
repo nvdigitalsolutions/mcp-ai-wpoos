@@ -3033,16 +3033,93 @@
             return;
         }
 
-        // If there are messages, confirm before clearing
+        // If there are messages, save to CCT before clearing to preserve session key
         if (state.conversation && state.conversation.length > 0) {
-            const confirmMessage = getString('confirmClearConversation', 'Clear current conversation and start new? Use the Save button first if you want to keep this conversation.');
+            const confirmMessage = getString('confirmClearConversation', 'Clear current conversation and start new? The current conversation will be saved automatically.');
             if (!confirm(confirmMessage)) {
                 return;
             }
-        }
 
-        // Just clear - user can use Save button if they want to save first
-        performConversationClear(state);
+            // Mark as busy and disable form to prevent edits during save/clear sequence
+            state.busy = true;
+            disableForm(state, true);
+
+            // Show saving status
+            setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
+
+            // Helper function to restore form state
+            function restoreFormState() {
+                state.busy = false;
+                disableForm(state, false);
+            }
+
+            // Save to CCT before clearing to preserve session key
+            saveConversationToCCT(state, { silent: false })
+                .then(function(result) {
+                    if (result && result.success) {
+                        // Save succeeded - show success message briefly
+                        setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
+                        setTimeout(function() {
+                            performConversationClear(state);
+                            restoreFormState();
+                        }, 500);
+                    } else if (result && result.skipped) {
+                        // Save was skipped (e.g., no CCT endpoint configured) - clear anyway
+                        performConversationClear(state);
+                        restoreFormState();
+                    } else {
+                        // Save failed - ask user whether to proceed
+                        const errorMsg = result && result.error ? result.error : 'Unknown error';
+                        clearStatus(state.container);
+                        
+                        const proceedMessage = getString(
+                            'saveFailed',
+                            'Failed to save conversation: ' + errorMsg + '\n\nDo you want to clear the conversation anyway? (It will be lost)'
+                        );
+                        
+                        if (confirm(proceedMessage)) {
+                            // User chose to proceed despite save failure
+                            performConversationClear(state);
+                            restoreFormState();
+                        } else {
+                            // User chose to keep the conversation
+                            setStatus(state.container, getString('conversationKept', 'Conversation kept. Please try again or use the Save button.'));
+                            setTimeout(function() {
+                                domUpdateBatcher.schedule(function() {
+                                    clearStatus(state.container);
+                                });
+                            }, 3000);
+                            restoreFormState();
+                        }
+                    }
+                })
+                .catch(function(error) {
+                    // Unexpected error during save attempt
+                    clearStatus(state.container);
+                    const errorMsg = error && error.message ? error.message : 'Save failed';
+                    
+                    const proceedMessage = getString(
+                        'saveError',
+                        'Error saving conversation: ' + errorMsg + '\n\nDo you want to clear the conversation anyway? (It will be lost)'
+                    );
+                    
+                    if (confirm(proceedMessage)) {
+                        performConversationClear(state);
+                        restoreFormState();
+                    } else {
+                        setStatus(state.container, getString('conversationKept', 'Conversation kept. Please try again or use the Save button.'));
+                        setTimeout(function() {
+                            domUpdateBatcher.schedule(function() {
+                                clearStatus(state.container);
+                            });
+                        }, 3000);
+                        restoreFormState();
+                    }
+                });
+        } else {
+            // No messages - just clear without saving
+            performConversationClear(state);
+        }
     }
 
     /**
