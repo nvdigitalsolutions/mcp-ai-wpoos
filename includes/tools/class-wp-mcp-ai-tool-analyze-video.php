@@ -137,7 +137,8 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$prompt       = $this->build_prompt( $user_prompt, $user_context );
 
 		// Call video-capable vision model and capture metadata.
-		$api_response = $this->call_video_model( $video_url, $prompt, $default_provider );
+		$attachment_id_for_video = ! empty( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null;
+		$api_response            = $this->call_video_model( $video_url, $prompt, $default_provider, $attachment_id_for_video );
 
 		if ( is_wp_error( $api_response ) ) {
 			return $api_response;
@@ -218,15 +219,16 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Call a video-capable vision model.
 	 *
-	 * @param string $video_url URL of the video to analyze.
-	 * @param string $prompt    Analysis prompt.
-	 * @param string $provider  AI provider to use.
+	 * @param string   $video_url     URL of the video to analyze.
+	 * @param string   $prompt        Analysis prompt.
+	 * @param string   $provider      AI provider to use.
+	 * @param int|null $attachment_id WordPress attachment ID if available.
 	 * @return array|WP_Error Response with text, usage, model, and provider.
 	 */
-	protected function call_video_model( $video_url, $prompt, $provider ) {
+	protected function call_video_model( $video_url, $prompt, $provider, $attachment_id = null ) {
 		// Gemini is the primary provider with native video support.
 		if ( 'gemini' === $provider || 'google' === $provider ) {
-			return $this->call_gemini_video( $video_url, $prompt );
+			return $this->call_gemini_video( $video_url, $prompt, $attachment_id );
 		}
 
 		// GPT-4o supports video frames (extract frames and analyze).
@@ -248,40 +250,180 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Call Gemini API with video support.
 	 *
-	 * Note: This is a placeholder implementation. Full video support requires
-	 * uploading video files to Gemini File API first, then referencing them.
-	 * For now, this returns a helpful error message.
+	 * Uploads the video to Gemini File API, waits for processing,
+	 * analyzes it with the given prompt, and cleans up the uploaded file.
 	 *
-	 * @param string $video_url URL of the video.
-	 * @param string $prompt    Analysis prompt.
-	 * @return array|WP_Error
+	 * @param string   $video_url     URL of the video.
+	 * @param string   $prompt        Analysis prompt.
+	 * @param int|null $attachment_id WordPress attachment ID if available.
+	 * @return array|WP_Error Response with text, usage, model, and provider.
 	 */
-	protected function call_gemini_video( $video_url, $prompt ) {
-		// TODO: Implement full Gemini video support via File API.
-		// This requires:
-		// 1. Upload video to Gemini File API
-		// 2. Get file reference
-		// 3. Include fileData in message content
-		// 4. Poll for completion if needed
-		//
-		// For now, return error with instructions.
-		
-		return new WP_Error(
-			'wp_mcp_ai_video_not_fully_implemented',
-			sprintf(
-				/* translators: %s: video URL */
-				__( 'Video analysis for Gemini requires uploading the video file to the Gemini File API first. Direct URL analysis is not yet supported. Video URL: %s', 'wp-mcp-ai' ),
-				$video_url
-			),
+	protected function call_gemini_video( $video_url, $prompt, $attachment_id = null ) {
+		// Ensure required classes are loaded.
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-file-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
+
+		// Get file path from attachment or download from URL.
+		$file_path = null;
+		$mime_type = null;
+		$temp_file = false;
+
+		if ( $attachment_id ) {
+			// Get file from WordPress attachment.
+			$file_path = get_attached_file( $attachment_id );
+			$mime_type = get_post_mime_type( $attachment_id );
+
+			if ( ! $file_path || ! file_exists( $file_path ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_not_found',
+					__( 'Video file not found on server.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+		} else {
+			// Download video from URL to temporary file.
+			$download_result = $this->download_video_to_temp( $video_url );
+			if ( is_wp_error( $download_result ) ) {
+				return $download_result;
+			}
+
+			$file_path = $download_result['file_path'];
+			$mime_type = $download_result['mime_type'];
+			$temp_file = true;
+		}
+
+		// Initialize Gemini File Service.
+		$file_service = new WP_MCP_AI_Gemini_File_Service();
+
+		// Upload video to Gemini File API.
+		$upload_result = $file_service->upload_file( $file_path, $mime_type, basename( $file_path ) );
+
+		// Clean up temp file after upload if needed.
+		if ( $temp_file && $file_path ) {
+			wp_delete_file( $file_path );
+		}
+
+		if ( is_wp_error( $upload_result ) ) {
+			return $upload_result;
+		}
+
+		$file_name = $upload_result['file_name'];
+		$file_uri  = $upload_result['file_uri'];
+
+		// Wait for file processing to complete.
+		$processing_result = $file_service->wait_for_processing( $file_name, 300 );
+
+		if ( is_wp_error( $processing_result ) ) {
+			// Try to clean up file even if processing failed.
+			$file_service->delete_file( $file_name );
+			return $processing_result;
+		}
+
+		// Build message with file reference.
+		$messages = array(
 			array(
-				'status' => 501,
-				'next_steps' => array(
-					__( 'Download the video file', 'wp-mcp-ai' ),
-					__( 'Upload to WordPress media library', 'wp-mcp-ai' ),
-					__( 'Use attachment_id parameter instead of video_url', 'wp-mcp-ai' ),
-					__( 'Alternatively, wait for File API integration to be completed', 'wp-mcp-ai' ),
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type' => 'text',
+						'text' => $prompt,
+					),
+					array(
+						'type'      => 'file',
+						'file_uri'  => $file_uri,
+						'mime_type' => $mime_type,
+					),
 				),
+			),
+		);
+
+		// Call Gemini with video.
+		$client = new WP_MCP_AI_Gemini_Client();
+
+		// Get model from settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$model    = isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.0-flash-exp';
+
+		$response = $client->create_chat_completion(
+			$messages,
+			array(
+				'model' => $model,
 			)
+		);
+
+		// Clean up uploaded file.
+		$file_service->delete_file( $file_name );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		// Add provider metadata.
+		$response['provider'] = 'gemini';
+
+		return $response;
+	}
+
+	/**
+	 * Download video from URL to temporary file.
+	 *
+	 * @param string $video_url Video URL to download.
+	 * @return array|WP_Error Array with file_path and mime_type, or error.
+	 */
+	protected function download_video_to_temp( $video_url ) {
+		// Download file using WordPress HTTP API.
+		$response = wp_remote_get(
+			$video_url,
+			array(
+				'timeout' => 300, // 5 minutes for large videos.
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		if ( $code < 200 || $code >= 300 ) {
+			return new WP_Error(
+				'wp_mcp_ai_download_failed',
+				sprintf(
+					/* translators: %d: HTTP status code */
+					__( 'Failed to download video. HTTP status: %d', 'wp-mcp-ai' ),
+					$code
+				),
+				array( 'status' => $code )
+			);
+		}
+
+		$body      = wp_remote_retrieve_body( $response );
+		$mime_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+		// Validate MIME type.
+		if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_not_video',
+				__( 'Downloaded file is not a video.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		// Create temporary file.
+		$temp_file = wp_tempnam( 'video' );
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$written = file_put_contents( $temp_file, $body );
+
+		if ( false === $written ) {
+			return new WP_Error(
+				'wp_mcp_ai_temp_file_failed',
+				__( 'Failed to write video to temporary file.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		return array(
+			'file_path' => $temp_file,
+			'mime_type' => $mime_type,
 		);
 	}
 
