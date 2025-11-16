@@ -41,7 +41,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'general';
+			// Hide this section as it's now integrated into General Settings as a sub-tab.
+			return '__hidden__';
 		}
 
 		/**
