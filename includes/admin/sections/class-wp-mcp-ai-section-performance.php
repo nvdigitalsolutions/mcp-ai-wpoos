@@ -589,7 +589,7 @@ composer install</pre>
 			} else {
 				wp_send_json_error( $result );
 			}
-		} catch ( Exception $e ) {
+		} catch ( Throwable $e ) {
 			// Log the error for debugging.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 				error_log( 'WP_MCP_AI Performance Test Error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -1166,8 +1166,17 @@ composer install</pre>
 	 * @return array Check result.
 	 */
 	protected function check_api_keys_configured() {
-		$has_openai = ! empty( get_option( 'wp_mcp_ai_openai_api_key' ) );
-		$has_gemini = ! empty( get_option( 'wp_mcp_ai_gemini_api_key' ) );
+		// Get settings from the centralized settings storage.
+		// Following SoC: Delegate settings retrieval to WP_MCP_AI_Admin_Settings.
+		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_openai = ! empty( $settings['openai_api_key'] );
+			$has_gemini = ! empty( $settings['gemini_api_key'] );
+		} else {
+			// Fallback: Check legacy individual options (backward compatibility).
+			$has_openai = ! empty( get_option( 'wp_mcp_ai_openai_api_key' ) );
+			$has_gemini = ! empty( get_option( 'wp_mcp_ai_gemini_api_key' ) );
+		}
 
 		$configured = $has_openai || $has_gemini;
 
