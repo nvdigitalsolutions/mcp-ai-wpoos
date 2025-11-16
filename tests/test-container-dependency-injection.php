@@ -101,6 +101,8 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 		$this->assertTrue( $this->container->has( 'section.authentication' ), 'Authentication section should be registered' );
 		$this->assertTrue( $this->container->has( 'section.tools' ), 'Tools section should be registered' );
 		$this->assertTrue( $this->container->has( 'section.orchestration' ), 'Orchestration section should be registered' );
+		$this->assertTrue( $this->container->has( 'section.integrations' ), 'Integrations section should be registered' );
+		$this->assertTrue( $this->container->has( 'section.plugins_integration' ), 'Plugins integration section should be registered' );
 	}
 
 	/**
