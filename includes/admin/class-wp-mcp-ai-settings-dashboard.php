@@ -165,6 +165,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Array passed to sanitize_settings() method below.
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
+			$active_subtab   = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -234,6 +235,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			if ( ! empty( $active_tab ) ) {
 				$redirect_args['tab'] = $active_tab;
+			}
+
+			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
+			if ( ! empty( $active_subtab ) ) {
+				$redirect_args['subtab'] = $active_subtab;
 			}
 
 			wp_safe_redirect(
