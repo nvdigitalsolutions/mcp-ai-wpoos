@@ -128,17 +128,36 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		$user_context = isset( $arguments['context'] ) ? sanitize_text_field( $arguments['context'] ) : '';
 		$prompt       = $this->build_prompt( $user_context );
 
-		// Call vision model based on provider.
-		$alt_text = $this->call_vision_model( $image_url, $image_content, $prompt, $default_provider );
+		// Call vision model based on provider and capture metadata.
+		$api_response = $this->call_vision_model( $image_url, $image_content, $prompt, $default_provider );
 
-		if ( is_wp_error( $alt_text ) ) {
-			return $alt_text;
+		if ( is_wp_error( $api_response ) ) {
+			return $api_response;
 		}
 
-		return array(
+		// Extract alt text and metadata.
+		$alt_text = is_array( $api_response ) && isset( $api_response['text'] ) ? $api_response['text'] : $api_response;
+		$usage    = is_array( $api_response ) && isset( $api_response['usage'] ) ? $api_response['usage'] : null;
+		$model    = is_array( $api_response ) && isset( $api_response['model'] ) ? $api_response['model'] : '';
+		$provider = is_array( $api_response ) && isset( $api_response['provider'] ) ? $api_response['provider'] : $default_provider;
+
+		$result = array(
 			'alt_text' => $alt_text,
 			'success'  => true,
 		);
+
+		// Include provider/model/usage metadata for accurate cost tracking.
+		if ( $provider ) {
+			$result['provider'] = $provider;
+		}
+		if ( $model ) {
+			$result['model'] = $model;
+		}
+		if ( $usage ) {
+			$result['usage'] = $usage;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -164,7 +183,7 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 	 * @param string $image_content Base64 image content.
 	 * @param string $prompt        Prompt for the model.
 	 * @param string $provider      AI provider to use.
-	 * @return string|WP_Error Alt text or error.
+	 * @return array|WP_Error Response with metadata or error.
 	 */
 	private function call_vision_model( $image_url, $image_content, $prompt, $provider ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -271,7 +290,17 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		return trim( $body['choices'][0]['message']['content'] );
+		// Return text with metadata for cost tracking.
+		return array(
+			'text'     => trim( $body['choices'][0]['message']['content'] ),
+			'provider' => 'openai',
+			'model'    => isset( $body['model'] ) ? $body['model'] : 'gpt-4o-mini',
+			'usage'    => isset( $body['usage'] ) ? array(
+				'prompt_tokens'     => isset( $body['usage']['prompt_tokens'] ) ? (int) $body['usage']['prompt_tokens'] : 0,
+				'completion_tokens' => isset( $body['usage']['completion_tokens'] ) ? (int) $body['usage']['completion_tokens'] : 0,
+				'total_tokens'      => isset( $body['usage']['total_tokens'] ) ? (int) $body['usage']['total_tokens'] : 0,
+			) : null,
+		);
 	}
 
 	/**
@@ -361,7 +390,23 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		return trim( $body['candidates'][0]['content']['parts'][0]['text'] );
+		// Extract usage metadata if available.
+		$usage = null;
+		if ( isset( $body['usageMetadata'] ) && is_array( $body['usageMetadata'] ) ) {
+			$usage = array(
+				'prompt_tokens'     => isset( $body['usageMetadata']['promptTokenCount'] ) ? (int) $body['usageMetadata']['promptTokenCount'] : 0,
+				'completion_tokens' => isset( $body['usageMetadata']['candidatesTokenCount'] ) ? (int) $body['usageMetadata']['candidatesTokenCount'] : 0,
+				'total_tokens'      => isset( $body['usageMetadata']['totalTokenCount'] ) ? (int) $body['usageMetadata']['totalTokenCount'] : 0,
+			);
+		}
+
+		// Return text with metadata for cost tracking.
+		return array(
+			'text'     => trim( $body['candidates'][0]['content']['parts'][0]['text'] ),
+			'provider' => 'gemini',
+			'model'    => $model,
+			'usage'    => $usage,
+		);
 	}
 
 	/**

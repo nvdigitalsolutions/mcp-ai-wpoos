@@ -220,7 +220,13 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'aspect_ratio'      => isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
 			'edit_instruction'  => $prompt,
 			'source_attachment' => isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null,
+			'provider'          => 'gemini', // Track provider for accurate cost attribution.
 		);
+
+		// Include usage metadata if available for accurate cost tracking.
+		if ( isset( $image['usage'] ) && is_array( $image['usage'] ) ) {
+			$result['usage'] = $image['usage'];
+		}
 
 		/**
 		 * Allow third parties to filter the image editing result before it is returned.

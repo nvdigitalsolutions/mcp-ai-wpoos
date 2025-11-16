@@ -125,15 +125,34 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		// Build analysis prompt.
 		$prompt = $this->build_analysis_prompt( $comment_content, $comment_author, $comment_email, $comment_url, $user_ip, $sensitivity );
 
-		// Call AI model.
-		$analysis = $this->call_ai_model( $prompt, $default_provider );
+		// Call AI model and capture usage/provider metadata.
+		$api_response = $this->call_ai_model( $prompt, $default_provider );
 
-		if ( is_wp_error( $analysis ) ) {
-			return $analysis;
+		if ( is_wp_error( $api_response ) ) {
+			return $api_response;
 		}
+
+		// Extract analysis text and metadata.
+		$analysis = is_array( $api_response ) && isset( $api_response['text'] ) ? $api_response['text'] : $api_response;
+		$usage    = is_array( $api_response ) && isset( $api_response['usage'] ) ? $api_response['usage'] : null;
+		$model    = is_array( $api_response ) && isset( $api_response['model'] ) ? $api_response['model'] : '';
+		$provider = is_array( $api_response ) && isset( $api_response['provider'] ) ? $api_response['provider'] : $default_provider;
 
 		// Parse the analysis result.
 		$result = $this->parse_analysis( $analysis, $sensitivity );
+
+		// Include provider/model/usage metadata for accurate cost tracking.
+		if ( ! is_wp_error( $result ) ) {
+			if ( $provider ) {
+				$result['provider'] = $provider;
+			}
+			if ( $model ) {
+				$result['model'] = $model;
+			}
+			if ( $usage ) {
+				$result['usage'] = $usage;
+			}
+		}
 
 		return $result;
 	}
@@ -214,7 +233,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 *
 	 * @param string $prompt   Analysis prompt.
 	 * @param string $provider AI provider to use.
-	 * @return string|WP_Error Analysis result or error.
+	 * @return array|WP_Error Analysis result with metadata or error.
 	 */
 	private function call_ai_model( $prompt, $provider ) {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
@@ -232,7 +251,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 *
 	 * @param string $prompt   Prompt for the model.
 	 * @param array  $settings Plugin settings.
-	 * @return string|WP_Error Analysis result or error.
+	 * @return array|WP_Error Analysis result with metadata or error.
 	 */
 	private function call_openai( $prompt, $settings ) {
 		$api_key = isset( $settings['openai_api_key'] ) ? $settings['openai_api_key'] : '';
@@ -245,8 +264,10 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
+		$model = 'gpt-4o-mini';
+
 		$request_body = array(
-			'model'       => 'gpt-4o-mini',
+			'model'       => $model,
 			'messages'    => array(
 				array(
 					'role'    => 'system',
@@ -300,7 +321,17 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		return trim( $body['choices'][0]['message']['content'] );
+		// Return text with metadata for cost tracking.
+		return array(
+			'text'     => trim( $body['choices'][0]['message']['content'] ),
+			'provider' => 'openai',
+			'model'    => isset( $body['model'] ) ? $body['model'] : $model,
+			'usage'    => isset( $body['usage'] ) ? array(
+				'prompt_tokens'     => isset( $body['usage']['prompt_tokens'] ) ? (int) $body['usage']['prompt_tokens'] : 0,
+				'completion_tokens' => isset( $body['usage']['completion_tokens'] ) ? (int) $body['usage']['completion_tokens'] : 0,
+				'total_tokens'      => isset( $body['usage']['total_tokens'] ) ? (int) $body['usage']['total_tokens'] : 0,
+			) : null,
+		);
 	}
 
 	/**
@@ -308,7 +339,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 *
 	 * @param string $prompt   Prompt for the model.
 	 * @param array  $settings Plugin settings.
-	 * @return string|WP_Error Analysis result or error.
+	 * @return array|WP_Error Analysis result with metadata or error.
 	 */
 	private function call_gemini( $prompt, $settings ) {
 		$api_key = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
@@ -373,7 +404,23 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
-		return trim( $body['candidates'][0]['content']['parts'][0]['text'] );
+		// Extract usage metadata if available.
+		$usage = null;
+		if ( isset( $body['usageMetadata'] ) && is_array( $body['usageMetadata'] ) ) {
+			$usage = array(
+				'prompt_tokens'     => isset( $body['usageMetadata']['promptTokenCount'] ) ? (int) $body['usageMetadata']['promptTokenCount'] : 0,
+				'completion_tokens' => isset( $body['usageMetadata']['candidatesTokenCount'] ) ? (int) $body['usageMetadata']['candidatesTokenCount'] : 0,
+				'total_tokens'      => isset( $body['usageMetadata']['totalTokenCount'] ) ? (int) $body['usageMetadata']['totalTokenCount'] : 0,
+			);
+		}
+
+		// Return text with metadata for cost tracking.
+		return array(
+			'text'     => trim( $body['candidates'][0]['content']['parts'][0]['text'] ),
+			'provider' => 'gemini',
+			'model'    => $model,
+			'usage'    => $usage,
+		);
 	}
 
 	/**

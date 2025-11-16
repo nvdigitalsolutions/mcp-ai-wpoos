@@ -103,17 +103,41 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * Hooked to 'wp_mcp_ai_after_tool_execution'.
 	 *
 	 * @param string $tool_name Tool name/slug.
-	 * @param array  $result    Tool execution result.
 	 * @param array  $arguments Tool arguments.
 	 * @param array  $context   Execution context.
+	 * @param mixed  $result    Tool execution result.
 	 */
-	public static function record_tool_usage( $tool_name, $result, $arguments, $context ) {
-		// Only record if we have token usage data.
-		if ( ! isset( $context['token_usage'] ) || ! is_array( $context['token_usage'] ) ) {
-			return;
+	public static function record_tool_usage( $tool_name, $arguments, $context, $result ) {
+		$token_usage = null;
+		$provider    = '';
+		$model       = '';
+		$source      = ''; // Track where we got provider/model info from.
+
+		// Priority 1: Check if result contains usage/provider/model information.
+		// This handles tools that use Gemini client or other API clients that return this data.
+		if ( is_array( $result ) ) {
+			if ( isset( $result['usage'] ) && is_array( $result['usage'] ) ) {
+				$token_usage = $result['usage'];
+			}
+			if ( isset( $result['provider'] ) && ! empty( $result['provider'] ) ) {
+				$provider = sanitize_text_field( $result['provider'] );
+				$source   = 'result';
+			}
+			if ( isset( $result['model'] ) && ! empty( $result['model'] ) ) {
+				$model  = sanitize_text_field( $result['model'] );
+				$source = 'result';
+			}
 		}
 
-		$token_usage = $context['token_usage'];
+		// Priority 2: Check context for token usage data and provider/model.
+		if ( ! $token_usage && isset( $context['token_usage'] ) && is_array( $context['token_usage'] ) ) {
+			$token_usage = $context['token_usage'];
+		}
+
+		// If no usage data found, we can't track anything.
+		if ( ! $token_usage ) {
+			return;
+		}
 
 		// Extract user ID from context.
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
@@ -121,16 +145,29 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			$user_id = get_current_user_id();
 		}
 
-		// Extract provider and model from context.
-		$provider = isset( $context['provider'] ) ? sanitize_text_field( $context['provider'] ) : '';
-		$model    = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
+		// Priority 3: Extract provider and model from context if not in result.
+		if ( ! $provider && isset( $context['provider'] ) && ! empty( $context['provider'] ) ) {
+			$provider = sanitize_text_field( $context['provider'] );
+			$source   = 'context';
+		}
+		if ( ! $model && isset( $context['model'] ) && ! empty( $context['model'] ) ) {
+			$model  = sanitize_text_field( $context['model'] );
+			$source = 'context';
+		}
 
-		// If not in context, try to determine from settings.
+		// Priority 4: Fall back to default settings as last resort.
 		if ( ! $provider || ! $model ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			if ( is_array( $settings ) ) {
-				$provider = $provider ? $provider : ( isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai' );
-				$model    = $model ? $model : ( isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o-mini' );
+				if ( ! $provider ) {
+					$provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
+				}
+				if ( ! $model ) {
+					$model = isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o-mini';
+				}
+			}
+			if ( ! $source ) {
+				$source = 'settings';
 			}
 		}
 
@@ -156,8 +193,9 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			);
 		}
 
-		// Record is estimated if we had to infer provider/model.
-		$is_estimated = ! isset( $context['provider'] ) || ! isset( $context['model'] );
+		// Record is estimated if we had to infer provider/model from settings.
+		// If we got it from result or context, it's actual data.
+		$is_estimated = ( 'settings' === $source );
 
 		// Record the tool usage.
 		WP_MCP_AI_Token_Tracking_Database::record_usage(
