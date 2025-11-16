@@ -7709,16 +7709,36 @@
                 });
 
                 // Re-render the assistant message if we added attachments.
-                if (assistantDisplay.attachments.length > 0 && hasDisplayContent) {
-                    const lastMessage = state.messagesEl.lastElementChild;
-                    if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
-                        lastMessage.parentNode.removeChild(lastMessage);
+                if (assistantDisplay.attachments.length > 0) {
+                    if (hasDisplayContent) {
+                        // Update existing assistant message with attachments
+                        const lastMessage = state.messagesEl.lastElementChild;
+                        if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
+                            lastMessage.parentNode.removeChild(lastMessage);
+                            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                                speech: {
+                                    state: state,
+                                    text: assistantDisplay.text || '',
+                                },
+                            });
+                        }
+                    } else {
+                        // No text content but we have attachments - show them
                         appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                             speech: {
                                 state: state,
                                 text: assistantDisplay.text || '',
                             },
                         });
+                        // Update conversation with assistant message containing attachments
+                        if (!assistantMessage.content) {
+                            assistantMessage.content = '';
+                        }
+                        // Add to conversation if not already added
+                        if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
+                            state.conversation.push(assistantMessage);
+                        }
+                        hasDisplayContent = true;
                     }
                 }
             }
