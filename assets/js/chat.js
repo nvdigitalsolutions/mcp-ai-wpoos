@@ -3040,8 +3040,18 @@
                 return;
             }
 
+            // Mark as busy and disable form to prevent edits during save/clear sequence
+            state.busy = true;
+            disableForm(state, true);
+
             // Show saving status
             setStatus(state.container, getString('savingConversation', 'Saving current conversation...'));
+
+            // Helper function to restore form state
+            function restoreFormState() {
+                state.busy = false;
+                disableForm(state, false);
+            }
 
             // Save to CCT before clearing to preserve session key
             saveConversationToCCT(state, { silent: false })
@@ -3051,10 +3061,12 @@
                         setStatus(state.container, getString('conversationSaved', 'Conversation saved successfully.'));
                         setTimeout(function() {
                             performConversationClear(state);
+                            restoreFormState();
                         }, 500);
                     } else if (result && result.skipped) {
                         // Save was skipped (e.g., no CCT endpoint configured) - clear anyway
                         performConversationClear(state);
+                        restoreFormState();
                     } else {
                         // Save failed - ask user whether to proceed
                         const errorMsg = result && result.error ? result.error : 'Unknown error';
@@ -3068,6 +3080,7 @@
                         if (confirm(proceedMessage)) {
                             // User chose to proceed despite save failure
                             performConversationClear(state);
+                            restoreFormState();
                         } else {
                             // User chose to keep the conversation
                             setStatus(state.container, getString('conversationKept', 'Conversation kept. Please try again or use the Save button.'));
@@ -3076,6 +3089,7 @@
                                     clearStatus(state.container);
                                 });
                             }, 3000);
+                            restoreFormState();
                         }
                     }
                 })
@@ -3091,6 +3105,7 @@
                     
                     if (confirm(proceedMessage)) {
                         performConversationClear(state);
+                        restoreFormState();
                     } else {
                         setStatus(state.container, getString('conversationKept', 'Conversation kept. Please try again or use the Save button.'));
                         setTimeout(function() {
@@ -3098,6 +3113,7 @@
                                 clearStatus(state.container);
                             });
                         }, 3000);
+                        restoreFormState();
                     }
                 });
         } else {
