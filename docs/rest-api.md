@@ -179,3 +179,232 @@ Tool responses include the assistant ID, the tool slug, and the tool result. Err
 - Verify that the authenticated account retains the capability enforced by `wp_mcp_ai_get_required_chat_capability()` (defaults to `edit_posts`) when testing with WordPress nonces.【F:wp-mcp-ai.php†L21-L67】【F:includes/class-wp-mcp-ai-rest.php†L289-L343】
 - For assistant-issued credentials, ensure the client does not override `assistant_id`; the REST layer rejects scope mismatches with `wp_mcp_ai_assistant_scope_mismatch` errors.【F:includes/class-wp-mcp-ai-rest.php†L1288-L1336】
 - Inspect structured error responses for an `actions` array that explains the remediation steps returned by the REST controller.【F:includes/class-wp-mcp-ai-rest.php†L40-L118】【F:includes/class-wp-mcp-ai-rest.php†L360-L401】
+
+## Cost Tracking Endpoints
+
+The plugin provides REST endpoints for accessing token usage cost data with enhanced tracking that includes actual vs estimated costs and accuracy metrics.
+
+### GET `/users/{id}/cost-breakdown`
+
+Get detailed cost breakdown for a specific user.
+
+**Authentication**: Requires admin permission or users can access their own data.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `id` | integer | Yes | WordPress user ID |
+| `start_date` | string | No | Start date in YYYY-MM-DD format (default: 30 days ago) |
+| `end_date` | string | No | End date in YYYY-MM-DD format (default: today) |
+
+#### Response
+
+```json
+{
+  "user_id": 123,
+  "start_date": "2025-10-17",
+  "end_date": "2025-11-16",
+  "breakdown": {
+    "total_cost": 15.75,
+    "total_tokens": 2500000,
+    "estimated_cost": 3.25,
+    "actual_cost": 12.50,
+    "accuracy_percentage": 79.37,
+    "by_provider": {
+      "openai": {
+        "cost": 12.50,
+        "tokens": 2000000
+      },
+      "gemini": {
+        "cost": 3.25,
+        "tokens": 500000
+      }
+    },
+    "by_model": {
+      "openai|gpt-4o": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "cost": 10.00,
+        "tokens": 1500000
+      },
+      "openai|gpt-4o-mini": {
+        "provider": "openai",
+        "model": "gpt-4o-mini",
+        "cost": 2.50,
+        "tokens": 500000
+      },
+      "gemini|gemini-1.5-flash": {
+        "provider": "gemini",
+        "model": "gemini-1.5-flash",
+        "cost": 3.25,
+        "tokens": 500000
+      }
+    },
+    "by_tool": {
+      "chat": {
+        "cost": 12.00,
+        "tokens": 2000000
+      },
+      "search_content": {
+        "cost": 2.50,
+        "tokens": 350000
+      },
+      "run_crawl4ai_job": {
+        "cost": 1.25,
+        "tokens": 150000
+      }
+    }
+  },
+  "total_cost": 15.75,
+  "formatted": "$15.75"
+}
+```
+
+**Enhanced Fields**:
+- `estimated_cost`: Cost calculated from estimated token splits (when provider/model data unavailable)
+- `actual_cost`: Cost calculated from actual provider/model usage data
+- `accuracy_percentage`: Percentage of costs that are actual vs estimated (higher is better)
+
+### GET `/cost/total`
+
+Get site-wide cost breakdown aggregated across all users.
+
+**Authentication**: Requires admin permission.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `start_date` | string | No | Start date in YYYY-MM-DD format (default: 30 days ago) |
+| `end_date` | string | No | End date in YYYY-MM-DD format (default: today) |
+
+#### Response
+
+```json
+{
+  "start_date": "2025-10-17",
+  "end_date": "2025-11-16",
+  "breakdown": {
+    "total_cost": 125.50,
+    "total_tokens": 15000000,
+    "estimated_cost": 25.10,
+    "actual_cost": 100.40,
+    "accuracy_percentage": 80.01,
+    "by_provider": {
+      "openai": 85.30,
+      "gemini": 30.20,
+      "anthropic": 10.00
+    },
+    "by_model": {
+      "openai|gpt-4o": {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "total_cost": 60.00,
+        "total_tokens": 8000000
+      }
+    },
+    "by_tool": {
+      "chat": 90.00,
+      "search_content": 20.50,
+      "run_crawl4ai_job": 15.00
+    },
+    "by_date": {
+      "2025-11-01": 4.25,
+      "2025-11-02": 3.80,
+      "2025-11-03": 5.10
+    },
+    "by_user": {
+      "123": 45.50,
+      "456": 35.25,
+      "789": 44.75
+    }
+  },
+  "total_cost": 125.50,
+  "formatted": "$125.50"
+}
+```
+
+### GET `/cost/by-provider`
+
+Get cost breakdown by AI provider for chart visualization.
+
+**Authentication**: Requires admin permission.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `days` | integer | No | Number of days to analyze (default: 30) |
+
+#### Response
+
+Returns Chart.js-compatible data structure with provider costs.
+
+### GET `/cost/trend`
+
+Get cost trend over time for chart visualization.
+
+**Authentication**: Requires admin permission.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `days` | integer | No | Number of days to analyze (default: 30) |
+
+#### Response
+
+Returns Chart.js-compatible time series data with daily costs.
+
+### GET `/users/{id}/roi`
+
+Calculate ROI for a user based on cost and productivity metrics.
+
+**Authentication**: Requires admin permission or users can access their own data.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `id` | integer | Yes | WordPress user ID |
+| `time_saved_hours` | number | No | Hours saved by automation (default: 0) |
+| `tasks_automated` | integer | No | Number of tasks automated (default: 0) |
+| `hourly_rate` | number | No | Hourly rate in USD (default: 50.0) |
+| `days` | integer | No | Number of days to analyze (default: 30) |
+
+#### Response
+
+Returns ROI calculation with cost vs value saved.
+
+### GET `/cost/dashboard-summary`
+
+Get cost summary for dashboard widget display.
+
+**Authentication**: Requires admin permission.
+
+#### Parameters
+
+| Name | Type | Required | Description |
+| --- | --- | --- | --- |
+| `days` | integer | No | Number of days to analyze (default: 7) |
+
+#### Response
+
+Returns aggregated cost data optimized for dashboard widgets.
+
+## Cost Tracking Features
+
+**Enhanced Token Tracking** (v1.1.0+):
+- Tracks actual provider and model used for each request
+- Separates input and output tokens for accurate pricing
+- Calculates real-time costs using current provider rates
+- Distinguishes between actual costs (with provider/model data) and estimated costs
+- Provides accuracy percentage to show data quality
+- Stores up to 90 days of detailed usage history (configurable)
+
+**Backward Compatibility**:
+- All cost endpoints work without enhanced tracking
+- Falls back to estimated costs when provider/model data unavailable
+- Accuracy percentage shows 0% when all costs are estimated
+- No breaking changes to existing integrations
