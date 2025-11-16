@@ -63,9 +63,7 @@ spl_autoload_register(
 
 // Load integration admin pages.
 // These need to be loaded eagerly as they register admin menus and hooks.
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-woocommerce-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-elementor.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-plugins.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php';
 
 /**
@@ -121,9 +119,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
 
 		// Initialize integration admin pages.
-		$GLOBALS['wp_mcp_ai_admin_jetengine']   = $container->get( 'admin.jetengine_integration' );
-		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = $container->get( 'admin.woocommerce_integration' );
-		$GLOBALS['wp_mcp_ai_admin_elementor']   = $container->get( 'admin.elementor_integration' );
+		$GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );
 		$GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );
 
 		// Initialize the custom filters applicator.
