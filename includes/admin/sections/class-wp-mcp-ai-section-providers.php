@@ -193,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama_endpoint_url'         => array(
 					'type'        => 'url',
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'URL for your local Ollama installation. Default is http://localhost:11434 for local installations. Ensure Ollama is running before testing the connection.', 'wp-mcp-ai' ),
+					'description' => __( 'URL for your Ollama server. Examples: "http://localhost:11434" for local, "http://192.168.2.100:11434" for network server. This is WHERE your Ollama is running. Ensure Ollama is running before testing the connection.', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:11434',
 					/**
 					 * Filter the default Ollama endpoint URL.
@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama_network_interface'    => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Network Interface (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your Ollama is on a different machine (e.g., 192.168.2.100), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 
@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'lm_studio_endpoint_url'      => array(
 					'type'        => 'url',
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'URL for your local LM Studio installation. Default is http://localhost:1234/v1 for local installations. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
+					'description' => __( 'URL for your LM Studio server. Examples: "http://localhost:1234/v1" for local, "http://192.168.2.222:1234/v1" for network server. This is WHERE your LM Studio is running. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:1234/v1',
 					/**
 					 * Filter the default LM Studio endpoint URL.
@@ -241,7 +241,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'lm_studio_network_interface' => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Network Interface (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 			);

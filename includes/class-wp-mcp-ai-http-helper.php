@@ -264,6 +264,94 @@ class WP_MCP_AI_HTTP_Helper {
 	}
 
 	/**
+	 * Validate network interface configuration.
+	 *
+	 * Checks if the network interface value appears to be misconfigured
+	 * (e.g., user entered the destination IP instead of a local interface).
+	 *
+	 * @param string $interface The network interface value to validate.
+	 * @param string $endpoint_url The endpoint URL being accessed.
+	 * @return bool True if valid, false if likely misconfigured.
+	 */
+	private static function is_valid_network_interface( $interface, $endpoint_url ) {
+		if ( empty( $interface ) ) {
+			return true; // Empty is valid (no binding).
+		}
+
+		// Parse the endpoint URL to get the host.
+		$parsed_url = wp_parse_url( $endpoint_url );
+		if ( empty( $parsed_url['host'] ) ) {
+			return true; // Can't validate without a host.
+		}
+
+		$endpoint_host = $parsed_url['host'];
+
+		// Check if interface is a private IP but endpoint is localhost/127.0.0.1.
+		// This indicates the user wants to reach a server on the private network,
+		// but put the IP in the wrong field.
+		if ( filter_var( $interface, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			if ( self::is_private_ipv4_address( $interface ) ) {
+				// Check if endpoint is localhost or loopback.
+				$is_localhost = in_array(
+					strtolower( $endpoint_host ),
+					array( 'localhost', 'localhost.localdomain', '127.0.0.1', '::1' ),
+					true
+				);
+
+				if ( $is_localhost ) {
+					WP_MCP_AI_Logger::log_error(
+						'Network interface misconfiguration detected.',
+						array(
+							'interface'     => $interface,
+							'endpoint_host' => $endpoint_host,
+							'message'       => sprintf(
+								'You entered a private IP (%s) in the Network Interface field, but your Endpoint URL is set to localhost. It appears you want to connect to an LM Studio/Ollama server at %s. Please UPDATE the Endpoint URL field to "http://%s:PORT" instead, and leave the Network Interface field EMPTY. The Network Interface field is for binding the SOURCE interface on this WordPress server, not for specifying the destination.',
+								$interface,
+								$interface,
+								$interface
+							),
+						)
+					);
+					return false;
+				}
+			}
+		}
+
+		// Check if the interface value matches the endpoint host.
+		// This indicates user confusion: they entered the destination address
+		// instead of the local network interface name.
+		if ( $interface === $endpoint_host ) {
+			WP_MCP_AI_Logger::log_error(
+				'Network interface misconfiguration detected.',
+				array(
+					'interface'     => $interface,
+					'endpoint_host' => $endpoint_host,
+					'message'       => 'The network interface field should contain a local interface name (e.g., "eth0") or local IP address, not the destination server address. Skipping interface binding to prevent connection errors.',
+				)
+			);
+			return false;
+		}
+
+		// If interface looks like an IP address, verify it's not in the endpoint URL.
+		if ( filter_var( $interface, FILTER_VALIDATE_IP ) ) {
+			// Check if this IP appears anywhere in the endpoint URL.
+			if ( strpos( $endpoint_url, $interface ) !== false ) {
+				WP_MCP_AI_Logger::log_error(
+					'Network interface misconfiguration detected.',
+					array(
+						'interface'    => $interface,
+						'endpoint_url' => $endpoint_url,
+						'message'      => 'The network interface IP address matches the destination URL. This field should contain the LOCAL IP address of the WordPress server, not the destination server. Skipping interface binding to prevent connection errors.',
+					)
+				);
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Apply network interface binding to cURL requests for local AI providers.
 	 *
 	 * This filter is applied to the http_api_curl hook to bind HTTP requests
@@ -272,6 +360,14 @@ class WP_MCP_AI_HTTP_Helper {
 	 * Use case: When WordPress is hosted remotely (e.g., Cloudways) and needs
 	 * to route requests through a specific network interface to reach local AI
 	 * providers on private network addresses (e.g., 192.168.2.222).
+	 *
+	 * Important: The network interface field should contain:
+	 * - A local interface name (e.g., "eth0", "wlan0")
+	 * - A local IP address assigned to the WordPress server (not the destination)
+	 *
+	 * Common mistake: Users sometimes enter the destination IP address (where
+	 * LM Studio/Ollama is running) instead of the local interface. This causes
+	 * cURL error 45: "Cannot assign requested address" (errno 99).
 	 *
 	 * @param resource $handle The cURL handle.
 	 * @param array    $parsed_args The HTTP request arguments.
@@ -286,7 +382,11 @@ class WP_MCP_AI_HTTP_Helper {
 			$ollama_endpoint = untrailingslashit( $settings['ollama_endpoint_url'] );
 			if ( strpos( $url, $ollama_endpoint ) === 0 && ! empty( $settings['ollama_network_interface'] ) ) {
 				$interface = sanitize_text_field( $settings['ollama_network_interface'] );
-				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+
+				// Validate the interface configuration before applying.
+				if ( self::is_valid_network_interface( $interface, $ollama_endpoint ) ) {
+					curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+				}
 				return $handle;
 			}
 		}
@@ -296,7 +396,11 @@ class WP_MCP_AI_HTTP_Helper {
 			$lm_studio_endpoint = untrailingslashit( $settings['lm_studio_endpoint_url'] );
 			if ( strpos( $url, $lm_studio_endpoint ) === 0 && ! empty( $settings['lm_studio_network_interface'] ) ) {
 				$interface = sanitize_text_field( $settings['lm_studio_network_interface'] );
-				curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+
+				// Validate the interface configuration before applying.
+				if ( self::is_valid_network_interface( $interface, $lm_studio_endpoint ) ) {
+					curl_setopt( $handle, CURLOPT_INTERFACE, $interface );
+				}
 				return $handle;
 			}
 		}
