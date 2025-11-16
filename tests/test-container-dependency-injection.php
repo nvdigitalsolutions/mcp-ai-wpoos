@@ -101,6 +101,8 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 		$this->assertTrue( $this->container->has( 'section.authentication' ), 'Authentication section should be registered' );
 		$this->assertTrue( $this->container->has( 'section.tools' ), 'Tools section should be registered' );
 		$this->assertTrue( $this->container->has( 'section.orchestration' ), 'Orchestration section should be registered' );
+		$this->assertTrue( $this->container->has( 'section.integrations' ), 'Integrations section should be registered' );
+		$this->assertTrue( $this->container->has( 'section.plugins_integration' ), 'Plugins integration section should be registered' );
 	}
 
 	/**
@@ -169,5 +171,21 @@ class Test_Container_Dependency_Injection extends WP_UnitTestCase {
 		// If dependencies weren't properly injected, this would fail.
 		$reflection = new ReflectionClass( $rest );
 		$this->assertTrue( $reflection->hasMethod( 'register_routes' ), 'REST controller should have required methods' );
+	}
+
+	/**
+	 * Test that section.integrations can be retrieved from the container.
+	 *
+	 * This test specifically validates the fix for the "Service 'section.integrations' not found" error.
+	 */
+	public function test_section_integrations_can_be_retrieved() {
+		$this->assertTrue( $this->container->has( 'section.integrations' ), 'section.integrations should be registered' );
+
+		$section = $this->container->get( 'section.integrations' );
+		$this->assertInstanceOf( WP_MCP_AI_Section_Integrations::class, $section, 'Should return integrations section instance' );
+
+		// Verify the section has expected properties.
+		$this->assertEquals( 'integrations_gmail_crawl4ai', $section->get_id(), 'Section should have correct ID' );
+		$this->assertEquals( 'tools', $section->get_tab(), 'Section should be in tools tab' );
 	}
 }

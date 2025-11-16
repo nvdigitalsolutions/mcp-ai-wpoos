@@ -538,6 +538,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'section.integrations',
+			function () {
+				return new WP_MCP_AI_Section_Integrations();
+			}
+		);
+
+		$this->singleton(
 			'section.plugins_integration',
 			function () {
 				return new WP_MCP_AI_Section_Plugins_Integration();
