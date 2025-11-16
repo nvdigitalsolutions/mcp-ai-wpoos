@@ -467,5 +467,23 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$cost_o1_mini       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'o1-mini', 1000000, 1000000 );
 		$this->assertEquals( $cost_o1_mini, $cost_o1_mini_dated, 'o1-mini-2024-09-12 should match o1-mini' );
 		$this->assertNotEquals( $cost_o1_preview, $cost_o1_mini, 'o1-mini should NOT match o1-preview pricing' );
+
+		// Test GPT-4.1 family variants.
+		$cost_gpt41_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-2025-04', 1000000, 1000000 );
+		$cost_gpt41       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1', 1000000, 1000000 );
+		$this->assertEquals( $cost_gpt41, $cost_gpt41_dated, 'gpt-4.1-2025-04 should match gpt-4.1' );
+
+		// Test GPT-4.1-mini variants (should NOT match gpt-4.1).
+		$cost_gpt41_mini_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-mini-2025-04', 1000000, 1000000 );
+		$cost_gpt41_mini       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-mini', 1000000, 1000000 );
+		$this->assertEquals( $cost_gpt41_mini, $cost_gpt41_mini_dated, 'gpt-4.1-mini-2025-04 should match gpt-4.1-mini' );
+		$this->assertNotEquals( $cost_gpt41, $cost_gpt41_mini, 'gpt-4.1-mini should NOT match gpt-4.1 pricing' );
+
+		// Test GPT-4.1-nano variants (should NOT match gpt-4.1 or gpt-4.1-mini).
+		$cost_gpt41_nano_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-nano-2025-04', 1000000, 1000000 );
+		$cost_gpt41_nano       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4.1-nano', 1000000, 1000000 );
+		$this->assertEquals( $cost_gpt41_nano, $cost_gpt41_nano_dated, 'gpt-4.1-nano-2025-04 should match gpt-4.1-nano' );
+		$this->assertNotEquals( $cost_gpt41, $cost_gpt41_nano, 'gpt-4.1-nano should NOT match gpt-4.1 pricing' );
+		$this->assertNotEquals( $cost_gpt41_mini, $cost_gpt41_nano, 'gpt-4.1-nano should NOT match gpt-4.1-mini pricing' );
 	}
 }

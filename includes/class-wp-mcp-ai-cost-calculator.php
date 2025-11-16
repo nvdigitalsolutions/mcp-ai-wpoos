@@ -32,6 +32,18 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 2.00,
 				'output' => 6.00,
 			),
+			'gpt-4.1'       => array(
+				'input'  => 1.00,
+				'output' => 4.00,
+			),
+			'gpt-4.1-mini'  => array(
+				'input'  => 0.40,
+				'output' => 1.60,
+			),
+			'gpt-4.1-nano'  => array(
+				'input'  => 0.20,
+				'output' => 0.80,
+			),
 			'gpt-4o'        => array(
 				'input'  => 2.50,
 				'output' => 10.00,
@@ -52,6 +64,10 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
+			'o1-2024-12-17' => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
 			'o1-preview'    => array(
 				'input'  => 15.00,
 				'output' => 60.00,
@@ -60,13 +76,25 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
+			'o3-mini'       => array(
+				'input'  => 1.10,
+				'output' => 4.40,
+			),
 		),
 		'gemini'    => array(
 			'gemini-1.5-pro'   => array(
 				'input'  => 1.25,
 				'output' => 5.00,
 			),
+			'gemini-1.5-pro-002' => array(
+				'input'  => 1.25,
+				'output' => 5.00,
+			),
 			'gemini-1.5-flash' => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
+			'gemini-1.5-flash-002' => array(
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
@@ -85,6 +113,10 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'anthropic' => array(
 			'claude-3.5-sonnet' => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3.5-sonnet-v2' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),

@@ -471,6 +471,18 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.002,
 				'output_cost_per_1k' => 0.006,
 			),
+			'gpt-4.1'           => array(
+				'input_cost_per_1k'  => 0.001,
+				'output_cost_per_1k' => 0.004,
+			),
+			'gpt-4.1-mini'      => array(
+				'input_cost_per_1k'  => 0.0004,
+				'output_cost_per_1k' => 0.0016,
+			),
+			'gpt-4.1-nano'      => array(
+				'input_cost_per_1k'  => 0.0002,
+				'output_cost_per_1k' => 0.0008,
+			),
 			'gpt-4o'            => array(
 				'input_cost_per_1k'  => 0.0025,
 				'output_cost_per_1k' => 0.01,
@@ -491,6 +503,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0005,
 				'output_cost_per_1k' => 0.0015,
 			),
+			'o1-2024-12-17'     => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.06,
+			),
 			'o1-preview'        => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.06,
@@ -499,11 +515,23 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.012,
 			),
+			'o3-mini'           => array(
+				'input_cost_per_1k'  => 0.00110,
+				'output_cost_per_1k' => 0.00440,
+			),
 			'gemini-1.5-pro'    => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.005,
 			),
+			'gemini-1.5-pro-002' => array(
+				'input_cost_per_1k'  => 0.00125,
+				'output_cost_per_1k' => 0.005,
+			),
 			'gemini-1.5-flash'  => array(
+				'input_cost_per_1k'  => 0.000075,
+				'output_cost_per_1k' => 0.0003,
+			),
+			'gemini-1.5-flash-002' => array(
 				'input_cost_per_1k'  => 0.000075,
 				'output_cost_per_1k' => 0.0003,
 			),
@@ -516,6 +544,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'output_cost_per_1k' => 0.0003,
 			),
 			'claude-3.5-sonnet' => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-3.5-sonnet-v2' => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
 			),
