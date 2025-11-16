@@ -249,11 +249,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return string
 		 */
 		private function get_active_subtab() {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'core';
 			$subtab_groups = $this->get_subtab_groups();
+			$subtab        = '';
 
-			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+
+			// Default to 'core' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 				$subtab = 'core';
 			}
 
@@ -427,46 +435,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return array Sanitized input.
 		 */
 		public function sanitize( $input ) {
-			$sanitized = array();
-			$fields    = $this->get_fields();
-
-			foreach ( $fields as $key => $field ) {
-				if ( ! isset( $input[ $key ] ) ) {
-					continue;
-				}
-
-				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
-				$value = $input[ $key ];
-
-				switch ( $type ) {
-					case 'text':
-					case 'password':
-						$sanitized[ $key ] = sanitize_text_field( $value );
-						break;
-
-					case 'url':
-						// Keep empty strings, only sanitize non-empty values.
-						$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
-						break;
-
-					case 'number':
-						// Keep empty strings for "use default" functionality.
-						$sanitized[ $key ] = '' === $value ? '' : absint( $value );
-						break;
-
-					case 'select':
-						$sanitized[ $key ] = sanitize_key( $value );
-						break;
-
-					case 'checkbox':
-						$sanitized[ $key ] = ! empty( $value );
-						break;
-
-					default:
-						$sanitized[ $key ] = sanitize_text_field( $value );
-						break;
-				}
-			}
+			// Use parent's subtab-aware sanitization.
+			$sanitized = parent::sanitize( $input );
 
 			// Special handling for default_assistant: convert to integer.
 			if ( isset( $sanitized['default_assistant'] ) ) {

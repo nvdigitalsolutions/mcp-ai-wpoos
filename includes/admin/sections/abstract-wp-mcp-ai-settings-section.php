@@ -82,8 +82,63 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * @return array Sanitized input.
 		 */
 		public function sanitize( $input ) {
+			// Check if this section has subtabs by looking for get_subtab_groups method.
+			if ( method_exists( $this, 'get_subtab_groups' ) ) {
+				return $this->sanitize_with_subtabs( $input );
+			}
+
+			// Default sanitization for sections without subtabs.
+			return $this->sanitize_fields( $input, $this->get_fields() );
+		}
+
+		/**
+		 * Sanitize input for sections with sub-tabs.
+		 *
+		 * Only processes fields from the active sub-tab to prevent clearing
+		 * settings from inactive sub-tabs when saving.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input for active sub-tab only.
+		 */
+		protected function sanitize_with_subtabs( $input ) {
+			$active_subtab = $this->get_active_subtab();
+			$subtab_groups = $this->get_subtab_groups();
+
+			// Get fields that belong to the active sub-tab.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return array();
+			}
+
+			$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+			$all_fields        = $this->get_fields();
+
+			// Filter to only active fields.
+			$active_fields = array();
+			foreach ( $active_field_keys as $field_key ) {
+				if ( isset( $all_fields[ $field_key ] ) ) {
+					$active_fields[ $field_key ] = $all_fields[ $field_key ];
+				}
+			}
+
+			// Check if we're actually processing a form submission for this subtab.
+			// The 'subtab' hidden field is submitted with the form (see render_wrapper).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_subtab = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
+			$is_form_submit   = ( $submitted_subtab === $active_subtab );
+
+			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+		}
+
+		/**
+		 * Sanitize fields based on their type.
+		 *
+		 * @param array $input         Raw input from form.
+		 * @param array $fields        Field definitions to sanitize.
+		 * @param bool  $is_form_submit Whether this is an actual form submission (for checkbox handling).
+		 * @return array Sanitized input.
+		 */
+		protected function sanitize_fields( $input, $fields, $is_form_submit = true ) {
 			$sanitized = array();
-			$fields    = $this->get_fields();
 
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
@@ -93,9 +148,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					continue;
 				}
 
-				// Special handling for checkboxes: if not present in input, set to false.
+				// Special handling for checkboxes.
 				if ( 'checkbox' === $type ) {
-					$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
+					// Only process checkboxes if this is actually the form being submitted.
+					// This prevents checkboxes from other subtabs from being set to false.
+					if ( $is_form_submit ) {
+						// Checkbox is checked if present in input, unchecked otherwise.
+						$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
+					}
+					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
 				}
 

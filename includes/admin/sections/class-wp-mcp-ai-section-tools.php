@@ -398,101 +398,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * @return string
 		 */
 		private function get_active_subtab() {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'tools_manager';
 			$subtab_groups = $this->get_subtab_groups();
+			$subtab        = '';
 
-			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+
+			// Default to 'tools_manager' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 				$subtab = 'tools_manager';
 			}
 
 			return $subtab;
-		}
-
-		/**
-		 * Override sanitize to only process fields from the active sub-tab.
-		 *
-		 * This prevents inactive sub-tab settings from being cleared when saving.
-		 * Only fields from the currently active sub-tab are sanitized and returned.
-		 * Fields from inactive sub-tabs are preserved in the database.
-		 *
-		 * @param array $input Raw input from form.
-		 * @return array Sanitized input for active sub-tab only.
-		 */
-		public function sanitize( $input ) {
-			$active_subtab = $this->get_active_subtab();
-			$subtab_groups = $this->get_subtab_groups();
-
-			// Get fields that belong to the active sub-tab.
-			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
-				return array();
-			}
-
-			$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
-			$all_fields        = $this->get_fields();
-			$sanitized         = array();
-
-			// Only process fields from the active sub-tab.
-			foreach ( $active_field_keys as $field_key ) {
-				if ( ! isset( $all_fields[ $field_key ] ) ) {
-					continue;
-				}
-
-				$field = $all_fields[ $field_key ];
-				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
-
-				// Skip display-only field types.
-				if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
-					continue;
-				}
-
-				// Special handling for checkboxes: if not present in input, set to false.
-				if ( 'checkbox' === $type ) {
-					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
-					continue;
-				}
-
-				// For other field types, skip if not present in input.
-				if ( ! isset( $input[ $field_key ] ) ) {
-					continue;
-				}
-
-				$value = $input[ $field_key ];
-
-				// Sanitize based on field type.
-				switch ( $type ) {
-					case 'text':
-					case 'password':
-					case 'url':
-						$sanitized[ $field_key ] = sanitize_text_field( $value );
-						break;
-
-					case 'textarea':
-						$sanitized[ $field_key ] = sanitize_textarea_field( $value );
-						break;
-
-					case 'email':
-						$sanitized[ $field_key ] = sanitize_email( $value );
-						break;
-
-					case 'number':
-						$sanitized[ $field_key ] = absint( $value );
-						break;
-
-					case 'select':
-						$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
-						if ( in_array( $value, $options, true ) ) {
-							$sanitized[ $field_key ] = $value;
-						}
-						break;
-
-					default:
-						$sanitized[ $field_key ] = sanitize_text_field( $value );
-						break;
-				}
-			}
-
-			return $sanitized;
 		}
 
 		/**
@@ -853,7 +775,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<form method="get" action="" style="display: flex; gap: 10px; align-items: center;">
 						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
 						<input type="hidden" name="tab" value="tools">
-						<input type="hidden" name="subtab" value="tools_manager">
+						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>">
 
 						<label for="tool_search" style="font-weight: 600;">
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
