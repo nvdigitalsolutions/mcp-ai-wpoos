@@ -463,6 +463,26 @@ class WP_MCP_AI_Usage_Tracker {
 
 		// Common model pricing (as of November 2024).
 		$pricing_map = array(
+			'gpt-5'             => array(
+				'input_cost_per_1k'  => 0.01,
+				'output_cost_per_1k' => 0.03,
+			),
+			'gpt-5-mini'        => array(
+				'input_cost_per_1k'  => 0.002,
+				'output_cost_per_1k' => 0.006,
+			),
+			'gpt-4.1'           => array(
+				'input_cost_per_1k'  => 0.001,
+				'output_cost_per_1k' => 0.004,
+			),
+			'gpt-4.1-mini'      => array(
+				'input_cost_per_1k'  => 0.0004,
+				'output_cost_per_1k' => 0.0016,
+			),
+			'gpt-4.1-nano'      => array(
+				'input_cost_per_1k'  => 0.0002,
+				'output_cost_per_1k' => 0.0008,
+			),
 			'gpt-4o'            => array(
 				'input_cost_per_1k'  => 0.0025,
 				'output_cost_per_1k' => 0.01,
@@ -483,6 +503,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0005,
 				'output_cost_per_1k' => 0.0015,
 			),
+			'o1-2024-12-17'     => array(
+				'input_cost_per_1k'  => 0.015,
+				'output_cost_per_1k' => 0.06,
+			),
 			'o1-preview'        => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.06,
@@ -491,7 +515,15 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.012,
 			),
+			'o3-mini'           => array(
+				'input_cost_per_1k'  => 0.00110,
+				'output_cost_per_1k' => 0.00440,
+			),
 			'gemini-1.5-pro'    => array(
+				'input_cost_per_1k'  => 0.00125,
+				'output_cost_per_1k' => 0.005,
+			),
+			'gemini-1.5-pro-002' => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.005,
 			),
@@ -499,11 +531,23 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.000075,
 				'output_cost_per_1k' => 0.0003,
 			),
+			'gemini-1.5-flash-002' => array(
+				'input_cost_per_1k'  => 0.000075,
+				'output_cost_per_1k' => 0.0003,
+			),
 			'gemini-2.0-flash'  => array(
 				'input_cost_per_1k'  => 0.0001,
 				'output_cost_per_1k' => 0.0004,
 			),
+			'gemini-2.5-flash'  => array(
+				'input_cost_per_1k'  => 0.000075,
+				'output_cost_per_1k' => 0.0003,
+			),
 			'claude-3.5-sonnet' => array(
+				'input_cost_per_1k'  => 0.003,
+				'output_cost_per_1k' => 0.015,
+			),
+			'claude-3.5-sonnet-v2' => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
 			),
@@ -522,11 +566,26 @@ class WP_MCP_AI_Usage_Tracker {
 			return $pricing_map[ $model ];
 		}
 
-		// Try prefix match for model families.
+		// Try prefix match for model families, preferring the longest match.
+		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,
+		// even when both "gpt-5" and "gpt-5-mini" exist in the map.
+		$best_match        = null;
+		$best_match_length = 0;
+
 		foreach ( $pricing_map as $model_key => $pricing ) {
 			if ( 0 === strpos( $model, $model_key ) ) {
-				return $pricing;
+				$match_length = strlen( $model_key );
+
+				// Keep the longest matching prefix.
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $pricing;
+					$best_match_length = $match_length;
+				}
 			}
+		}
+
+		if ( $best_match ) {
+			return $best_match;
 		}
 
 		// No pricing data available.

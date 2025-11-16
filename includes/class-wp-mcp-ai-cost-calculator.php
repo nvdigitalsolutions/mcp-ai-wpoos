@@ -24,6 +24,26 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'    => array(
+			'gpt-5'         => array(
+				'input'  => 10.00,
+				'output' => 30.00,
+			),
+			'gpt-5-mini'    => array(
+				'input'  => 2.00,
+				'output' => 6.00,
+			),
+			'gpt-4.1'       => array(
+				'input'  => 1.00,
+				'output' => 4.00,
+			),
+			'gpt-4.1-mini'  => array(
+				'input'  => 0.40,
+				'output' => 1.60,
+			),
+			'gpt-4.1-nano'  => array(
+				'input'  => 0.20,
+				'output' => 0.80,
+			),
 			'gpt-4o'        => array(
 				'input'  => 2.50,
 				'output' => 10.00,
@@ -44,6 +64,10 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
+			'o1-2024-12-17' => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
 			'o1-preview'    => array(
 				'input'  => 15.00,
 				'output' => 60.00,
@@ -52,9 +76,17 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
+			'o3-mini'       => array(
+				'input'  => 1.10,
+				'output' => 4.40,
+			),
 		),
 		'gemini'    => array(
 			'gemini-1.5-pro'   => array(
+				'input'  => 1.25,
+				'output' => 5.00,
+			),
+			'gemini-1.5-pro-002' => array(
 				'input'  => 1.25,
 				'output' => 5.00,
 			),
@@ -62,9 +94,17 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
+			'gemini-1.5-flash-002' => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
 			'gemini-2.0-flash' => array(
 				'input'  => 0.10,
 				'output' => 0.40,
+			),
+			'gemini-2.5-flash' => array(
+				'input'  => 0.075,
+				'output' => 0.30,
 			),
 			'gemini-pro'       => array(
 				'input'  => 0.50,
@@ -73,6 +113,10 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'anthropic' => array(
 			'claude-3.5-sonnet' => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3.5-sonnet-v2' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
@@ -161,11 +205,25 @@ class WP_MCP_AI_Cost_Calculator {
 			return $provider_pricing['default'];
 		}
 
-		// Try to find a close match (e.g., 'gpt-4-1106-preview' should match 'gpt-4-turbo').
+		// Try to find the longest matching prefix (e.g., 'gpt-5-2025-08-07' should match 'gpt-5').
+		// This ensures we get the most specific match when multiple models share a prefix.
+		$best_match        = null;
+		$best_match_length = 0;
+
 		foreach ( $provider_pricing as $known_model => $pricing ) {
-			if ( strpos( $model, $known_model ) === 0 || strpos( $known_model, $model ) === 0 ) {
-				return $pricing;
+			if ( 0 === strpos( $model, $known_model ) ) {
+				$match_length = strlen( $known_model );
+
+				// Keep the longest matching prefix.
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $pricing;
+					$best_match_length = $match_length;
+				}
 			}
+		}
+
+		if ( $best_match ) {
+			return $best_match;
 		}
 
 		// No pricing found.
