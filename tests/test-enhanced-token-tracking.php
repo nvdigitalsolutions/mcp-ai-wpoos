@@ -101,7 +101,6 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create();
 
 		$tool_name = 'test_tool';
-		$result    = array( 'success' => true );
 		$arguments = array();
 		$context   = array(
 			'user_id'     => $user_id,
@@ -112,8 +111,9 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 				'completion_tokens' => 250,
 			),
 		);
+		$result    = array( 'success' => true );
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $result, $arguments, $context );
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
@@ -128,20 +128,64 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test tool usage with provider/model/usage from result (Priority 1).
+	 *
+	 * This tests the new functionality where tools return provider/model/usage
+	 * in their results, which should take priority over context or settings.
+	 */
+	public function test_record_tool_usage_from_result() {
+		$user_id = $this->factory->user->create();
+
+		$tool_name = 'gemini_tool';
+		$arguments = array();
+		$context   = array(
+			'user_id'  => $user_id,
+			// No token_usage in context - should come from result.
+		);
+		$result    = array(
+			'success'  => true,
+			'provider' => 'gemini', // Tool reports it used Gemini.
+			'model'    => 'gemini-1.5-flash',
+			'usage'    => array(
+				'prompt_tokens'     => 800,
+				'completion_tokens' => 400,
+				'total_tokens'      => 1200,
+			),
+		);
+
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
+
+		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
+		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
+
+		$this->assertCount( 1, $records, 'Should have 1 tool usage record' );
+		$this->assertEquals( $tool_name, $records[0]['tool'], 'Tool name should match' );
+		$this->assertEquals( 'gemini', $records[0]['provider'], 'Provider should be from result' );
+		$this->assertEquals( 'gemini-1.5-flash', $records[0]['model'], 'Model should be from result' );
+		$this->assertEquals( 800, $records[0]['input_tokens'], 'Input tokens should match' );
+		$this->assertEquals( 400, $records[0]['output_tokens'], 'Output tokens should match' );
+		$this->assertEquals( 0, $records[0]['is_estimated'], 'Should NOT be estimated (provider/model from result)' );
+	}
+
+	/**
 	 * Test tool usage with inferred provider/model.
 	 */
 	public function test_tool_usage_with_inferred_provider() {
 		$user_id = $this->factory->user->create();
 
-		$context = array(
+		$tool_name = 'inferred_tool';
+		$arguments = array();
+		$context   = array(
 			'user_id'     => $user_id,
 			// No provider/model - should be inferred from settings.
 			'token_usage' => array(
 				'total_tokens' => 1000,
 			),
 		);
+		$result    = array();
 
-		do_action( 'wp_mcp_ai_after_tool_execution', 'inferred_tool', array(), array(), $context );
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
