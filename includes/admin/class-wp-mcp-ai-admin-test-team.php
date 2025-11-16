@@ -4,6 +4,7 @@
  *
  * Provides an interface for administrators to test AI teams directly from the WordPress admin.
  * Allows testing a team by creating temporary assistants for each team member and chatting with them.
+ * Uses base class for better SoC and code reuse.
  *
  * @package WP_MCP_AI
  */
@@ -12,62 +13,76 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load base class.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-page-base.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 	/**
 	 * Test Team admin page handler.
+	 * Extends base class for shared functionality.
 	 */
-	class WP_MCP_AI_Admin_Test_Team {
+	class WP_MCP_AI_Admin_Test_Team extends WP_MCP_AI_Admin_Test_Page_Base {
 
 		/**
-		 * Page hook suffix.
+		 * Get the post type for this test page.
 		 *
-		 * @var string|false
+		 * @return string
 		 */
-		private $page_hook;
-
-		/**
-		 * Constructor.
-		 */
-		public function __construct() {
-			add_action( 'admin_menu', array( $this, 'register_submenu_page' ), 20 );
-			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		protected function get_post_type() {
+			if ( ! defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ) {
+				return 'mcp_ai_team';
+			}
+			return WP_MCP_AI_Team_CPT::POST_TYPE;
 		}
 
 		/**
-		 * Register the submenu page under Teams.
+		 * Get the page slug.
+		 *
+		 * @return string
 		 */
-		public function register_submenu_page() {
-			// Safety check: Ensure the Team CPT class is loaded.
-			if ( ! class_exists( 'WP_MCP_AI_Team_CPT' ) ) {
-				return;
-			}
-
-			$post_type = defined( 'WP_MCP_AI_Team_CPT::POST_TYPE' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
-
-			$this->page_hook = add_submenu_page(
-				'edit.php?post_type=' . $post_type,
-				__( 'Test Team', 'wp-mcp-ai' ),
-				__( 'Test Team', 'wp-mcp-ai' ),
-				'manage_options',
-				'wp-mcp-ai-test-team',
-				array( $this, 'render_page' )
-			);
+		protected function get_page_slug() {
+			return 'wp-mcp-ai-test-team';
 		}
 
 		/**
-		 * Enqueue assets for the test team page.
+		 * Get the page title.
 		 *
-		 * @param string $hook Current admin page hook.
+		 * @return string
 		 */
-		public function enqueue_assets( $hook ) {
-			if ( $hook !== $this->page_hook ) {
-				return;
-			}
+		protected function get_page_title() {
+			return __( 'Test Team', 'wp-mcp-ai' );
+		}
 
-			// Enqueue chat dependencies.
-			$this->enqueue_chat_assets();
+		/**
+		 * Get the menu title.
+		 *
+		 * @return string
+		 */
+		protected function get_menu_title() {
+			return __( 'Test Team', 'wp-mcp-ai' );
+		}
 
-			// Enqueue test team specific assets.
+		/**
+		 * Customize chat strings for team testing.
+		 *
+		 * @return array
+		 */
+		protected function get_chat_strings() {
+			$strings = parent::get_chat_strings();
+			
+			// Customize specific strings for team context.
+			$strings['waiting'] = __( 'Waiting for team member…', 'wp-mcp-ai' );
+			$strings['missingAssistant'] = __( 'Team configuration was not found.', 'wp-mcp-ai' );
+			$strings['notAuthorized'] = __( 'You do not have permission to test this team.', 'wp-mcp-ai' );
+			$strings['roleLabels']['assistant'] = __( 'Team Member', 'wp-mcp-ai' );
+			
+			return $strings;
+		}
+
+		/**
+		 * Enqueue page-specific assets.
+		 */
+		protected function enqueue_page_assets() {
 			$test_script_relative = 'assets/js/admin-test-team.js';
 			$test_style_relative  = 'assets/css/admin-test-team.css';
 
@@ -85,139 +100,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 				$this->get_asset_version( $test_script_relative ),
 				true
 			);
-		}
-
-		/**
-		 * Enqueue chat interface assets.
-		 */
-		private function enqueue_chat_assets() {
-			$script_relative             = 'assets/js/chat.js';
-			$style_relative              = 'assets/css/chat.css';
-			$cron_status_script_relative = 'assets/js/cron-status-service.js';
-			$cron_status_style_relative  = 'assets/css/cron-status.css';
-
-			$script_path             = WP_MCP_AI_URL . $script_relative;
-			$style_path              = WP_MCP_AI_URL . $style_relative;
-			$cron_status_script_path = WP_MCP_AI_URL . $cron_status_script_relative;
-			$cron_status_style_path  = WP_MCP_AI_URL . $cron_status_style_relative;
-
-			$script_version             = $this->get_asset_version( $script_relative );
-			$style_version              = $this->get_asset_version( $style_relative );
-			$cron_status_script_version = $this->get_asset_version( $cron_status_script_relative );
-			$cron_status_style_version  = $this->get_asset_version( $cron_status_style_relative );
-
-			// Enqueue cron status service first.
-			wp_enqueue_script(
-				'wp-mcp-ai-cron-status',
-				$cron_status_script_path,
-				array(),
-				$cron_status_script_version,
-				true
-			);
-
-			wp_enqueue_style(
-				'wp-mcp-ai-cron-status',
-				$cron_status_style_path,
-				array(),
-				$cron_status_style_version
-			);
-
-			wp_enqueue_style(
-				'wp-mcp-ai-chat',
-				$style_path,
-				array( 'wp-mcp-ai-cron-status' ),
-				$style_version
-			);
-
-			wp_enqueue_script(
-				'wp-mcp-ai-chat',
-				$script_path,
-				array( 'wp-mcp-ai-cron-status' ),
-				$script_version,
-				true
-			);
-
-			// Safety check: Ensure REST constants exist.
-			$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
-
-			wp_localize_script(
-				'wp-mcp-ai-chat',
-				'wpMcpAiChat',
-				array(
-					'restUrl'             => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace ) ) ),
-					'uploadEndpoint'      => esc_url_raw( $this->normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
-					'filesEndpoint'       => esc_url_raw( trailingslashit( $this->normalise_rest_url( rest_url( $rest_namespace . '/files' ) ) ) ),
-					'transcriptsEndpoint' => esc_url_raw( $this->normalise_rest_url( rest_url( $rest_namespace . '/chat-transcripts' ) ) ),
-					'historyPerPage'      => 20,
-					'currentUserId'       => get_current_user_id(),
-					'nonce'               => wp_create_nonce( 'wp_rest' ),
-					'strings'             => $this->get_chat_strings(),
-				)
-			);
-		}
-
-		/**
-		 * Normalize REST URL.
-		 *
-		 * @param string $url REST URL to normalize.
-		 * @return string Normalized URL.
-		 */
-		private function normalise_rest_url( $url ) {
-			if ( class_exists( 'WP_MCP_AI_Request_Context' ) && method_exists( 'WP_MCP_AI_Request_Context', 'normalise_rest_url' ) ) {
-				return WP_MCP_AI_Request_Context::normalise_rest_url( $url );
-			}
-			return $url;
-		}
-
-		/**
-		 * Get chat interface strings for localization.
-		 *
-		 * @return array
-		 */
-		private function get_chat_strings() {
-			return array(
-				'placeholder'                   => __( 'Ask something…', 'wp-mcp-ai' ),
-				'send'                          => __( 'Send', 'wp-mcp-ai' ),
-				'bundlingMessages'              => __( 'Preparing to send…', 'wp-mcp-ai' ),
-				'sending'                       => __( 'Sending message…', 'wp-mcp-ai' ),
-				'waiting'                       => __( 'Waiting for team member…', 'wp-mcp-ai' ),
-				'error'                         => __( 'Something went wrong. Please try again.', 'wp-mcp-ai' ),
-				'missingAssistant'              => __( 'Team configuration was not found.', 'wp-mcp-ai' ),
-				'notAuthorized'                 => __( 'You do not have permission to test this team.', 'wp-mcp-ai' ),
-				'toolExecuting'                 => __( 'Running tool: %s', 'wp-mcp-ai' ),
-				'toolSuccess'                   => __( 'Tool response ready.', 'wp-mcp-ai' ),
-				'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
-				'emptyMessage'                  => __( 'Enter a message before sending.', 'wp-mcp-ai' ),
-				'attachFile'                    => __( 'Attach file', 'wp-mcp-ai' ),
-				'newConversation'               => __( 'Start new conversation', 'wp-mcp-ai' ),
-				'roleLabels'                    => array(
-					'assistant' => __( 'Team Member', 'wp-mcp-ai' ),
-					'user'      => __( 'You', 'wp-mcp-ai' ),
-					'system'    => __( 'System', 'wp-mcp-ai' ),
-					'tool'      => __( 'Tool', 'wp-mcp-ai' ),
-				),
-			);
-		}
-
-		/**
-		 * Get asset version based on file modification time.
-		 *
-		 * @param string $relative_path Asset path relative to plugin root.
-		 * @return string
-		 */
-		private function get_asset_version( $relative_path ) {
-			$relative_path = ltrim( $relative_path, '/' );
-			$absolute_path = WP_MCP_AI_PATH . $relative_path;
-
-			if ( file_exists( $absolute_path ) ) {
-				$modified = filemtime( $absolute_path );
-
-				if ( $modified ) {
-					return WP_MCP_AI_VERSION . '.' . $modified;
-				}
-			}
-
-			return WP_MCP_AI_VERSION;
 		}
 
 		/**
