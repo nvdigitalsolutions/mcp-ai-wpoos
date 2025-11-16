@@ -432,6 +432,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$all_fields        = $this->get_fields();
 			$sanitized         = array();
 
+			// Check if we're actually processing a form submission for this subtab.
+			// The 'subtab' hidden field is submitted with the form (see render_wrapper).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_subtab = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
+			$is_form_submit   = ( $submitted_subtab === $active_subtab );
+
 			// Only process fields from the active sub-tab.
 			foreach ( $active_field_keys as $field_key ) {
 				if ( ! isset( $all_fields[ $field_key ] ) ) {
@@ -446,9 +452,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					continue;
 				}
 
-				// Special handling for checkboxes: if not present in input, set to false.
+				// Special handling for checkboxes.
 				if ( 'checkbox' === $type ) {
-					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					// Only process checkboxes if this is actually the form being submitted.
+					// This prevents checkboxes from other subtabs from being set to false.
+					if ( $is_form_submit ) {
+						// Checkbox is checked if present in input, unchecked otherwise.
+						$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					}
+					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
 				}
 
@@ -853,7 +865,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<form method="get" action="" style="display: flex; gap: 10px; align-items: center;">
 						<input type="hidden" name="page" value="<?php echo esc_attr( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>">
 						<input type="hidden" name="tab" value="tools">
-						<input type="hidden" name="subtab" value="tools_manager">
+						<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>">
 
 						<label for="tool_search" style="font-weight: 600;">
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
