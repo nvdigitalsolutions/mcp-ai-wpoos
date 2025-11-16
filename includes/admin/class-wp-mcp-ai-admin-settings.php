@@ -1367,21 +1367,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			);
 
 			add_settings_section(
-				'wp_mcp_ai_google_maps_section',
-				__( 'Google Maps Platform Configuration', 'wp-mcp-ai' ),
-				array( $this, 'render_google_maps_section_description' ),
-				self::PAGE_SLUG
-			);
-
-			add_settings_field(
-				'google_maps_api_key',
-				__( 'Google Maps API Key', 'wp-mcp-ai' ),
-				array( $this, 'render_google_maps_api_key_field' ),
-				self::PAGE_SLUG,
-				'wp_mcp_ai_google_maps_section'
-			);
-
-			add_settings_section(
 				'wp_mcp_ai_ollama_section',
 				__( 'Ollama Configuration (Local AI)', 'wp-mcp-ai' ),
 				array( $this, 'render_ollama_section_description' ),
@@ -2101,10 +2086,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['gemini_api_key'] ) ) {
 				$clean['gemini_api_key'] = trim( sanitize_text_field( $settings['gemini_api_key'] ) );
-			}
-
-			if ( isset( $settings['google_maps_api_key'] ) ) {
-				$clean['google_maps_api_key'] = trim( sanitize_text_field( $settings['google_maps_api_key'] ) );
 			}
 
 			if ( isset( $settings['ollama_endpoint_url'] ) ) {
@@ -3352,26 +3333,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'wp-mcp-ai' ); ?></p>
-			<?php
-		}
-
-		/**
-		 * Render the Google Maps section description.
-		 */
-		public function render_google_maps_section_description() {
-			?>
-		<p><?php esc_html_e( 'Configure Google Maps Platform API for geocoding, places search, and spatial features. Requires a Google Cloud account with Maps Platform enabled.', 'wp-mcp-ai' ); ?></p>
-			<?php
-		}
-
-		/**
-		 * Render the Google Maps API key field.
-		 */
-		public function render_google_maps_api_key_field() {
-			$settings = self::get_settings();
-			?>
-		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_maps_api_key]" value="<?php echo esc_attr( $settings['google_maps_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'wp-mcp-ai' ); ?></p>
 			<?php
 		}
 
