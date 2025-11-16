@@ -42,60 +42,78 @@ class WP_MCP_AI_Cost_Tracking_Service {
 	/**
 	 * Get cost breakdown for all users over a time period.
 	 *
+	 * Business logic layer - orchestrates data access and builds cost breakdown.
+	 *
 	 * @param string $start_date Start date (YYYY-MM-DD).
 	 * @param string $end_date   End date (YYYY-MM-DD).
 	 * @return array Cost breakdown aggregated across all users.
 	 */
 	public static function get_site_cost_breakdown( $start_date, $end_date ) {
+		// Initialize breakdown structure.
 		$site_breakdown = array(
-			'total_cost'  => 0.0,
-			'by_provider' => array(),
-			'by_model'    => array(),
-			'by_tool'     => array(),
-			'by_date'     => array(),
-			'by_user'     => array(),
+			'total_cost'   => 0.0,
+			'total_tokens' => 0,
+			'by_provider'  => array(),
+			'by_model'     => array(),
+			'by_tool'      => array(),
+			'by_date'      => array(),
+			'by_user'      => array(),
 		);
 
-		// Get users who have token usage (with caching).
-		$cache_key = 'wp_mcp_ai_cost_tracking_user_ids';
-		$users     = get_transient( $cache_key );
+		// Convert dates to datetime format for database queries.
+		$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
+		$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
 
-		if ( false === $users ) {
-			$users = get_users(
-				array(
-					'meta_key' => '_wp_mcp_ai_tool_token_usage',
-					'fields'   => 'ID',
-					'number'   => 100, // Limit to 100 users for performance.
-				)
-			);
-			// Cache for 5 minutes.
-			set_transient( $cache_key, $users, 300 );
+		// Use Token Tracking Database for data access (SoC - data layer).
+		if ( ! class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			return $site_breakdown;
 		}
 
-		foreach ( $users as $user_id ) {
-			$user_breakdown = self::get_user_cost_breakdown( $user_id, $start_date, $end_date );
+		// Aggregate by provider.
+		$provider_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_datetime, $end_datetime );
+		foreach ( $provider_data as $row ) {
+			$provider                              = $row['provider'];
+			$cost                                  = floatval( $row['total_cost'] );
+			$tokens                                = intval( $row['total_tokens'] );
+			$site_breakdown['by_provider'][ $provider ] = $cost;
+			$site_breakdown['total_cost']         += $cost;
+			$site_breakdown['total_tokens']       += $tokens;
+		}
 
-			// Aggregate site totals.
-			$site_breakdown['total_cost'] += $user_breakdown['total_cost'];
+		// Aggregate by model.
+		$model_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_model( $start_datetime, $end_datetime );
+		foreach ( $model_data as $row ) {
+			$provider = $row['provider'];
+			$model    = $row['model'];
+			$key      = $provider . '|' . $model;
 
-			// Track per-user costs.
-			$site_breakdown['by_user'][ $user_id ] = $user_breakdown['total_cost'];
+			$site_breakdown['by_model'][ $key ] = array(
+				'provider'     => $provider,
+				'model'        => $model,
+				'total_cost'   => floatval( $row['total_cost'] ),
+				'total_tokens' => intval( $row['total_tokens'] ),
+			);
+		}
 
-			// Aggregate by tool.
-			foreach ( $user_breakdown['by_tool'] as $tool => $cost ) {
-				if ( ! isset( $site_breakdown['by_tool'][ $tool ] ) ) {
-					$site_breakdown['by_tool'][ $tool ] = 0.0;
-				}
-				$site_breakdown['by_tool'][ $tool ] += $cost;
-			}
+		// Aggregate by tool.
+		$tool_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_tool( $start_datetime, $end_datetime );
+		foreach ( $tool_data as $row ) {
+			$tool                             = $row['tool'];
+			$site_breakdown['by_tool'][ $tool ] = floatval( $row['total_cost'] );
+		}
 
-			// Aggregate by date.
-			foreach ( $user_breakdown['by_date'] as $date => $cost ) {
-				if ( ! isset( $site_breakdown['by_date'][ $date ] ) ) {
-					$site_breakdown['by_date'][ $date ] = 0.0;
-				}
-				$site_breakdown['by_date'][ $date ] += $cost;
-			}
+		// Aggregate by date.
+		$date_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_date( $start_datetime, $end_datetime );
+		foreach ( $date_data as $row ) {
+			$date                             = $row['date'];
+			$site_breakdown['by_date'][ $date ] = floatval( $row['total_cost'] );
+		}
+
+		// Aggregate by user.
+		$user_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_user( $start_datetime, $end_datetime );
+		foreach ( $user_data as $row ) {
+			$user_id                             = intval( $row['user_id'] );
+			$site_breakdown['by_user'][ $user_id ] = floatval( $row['total_cost'] );
 		}
 
 		return $site_breakdown;
@@ -122,6 +140,8 @@ class WP_MCP_AI_Cost_Tracking_Service {
 	/**
 	 * Get cost summary for dashboard widget.
 	 *
+	 * Business logic layer - prepares cost data for dashboard presentation.
+	 *
 	 * @param int $days Number of days to analyze (default: 7).
 	 * @return array Cost summary data for widget display.
 	 */
@@ -133,7 +153,10 @@ class WP_MCP_AI_Cost_Tracking_Service {
 
 		return array(
 			'total_cost'   => $breakdown['total_cost'],
+			'total_tokens' => $breakdown['total_tokens'],
 			'by_provider'  => $breakdown['by_provider'],
+			'by_model'     => $breakdown['by_model'],
+			'by_tool'      => $breakdown['by_tool'],
 			'period_start' => $start_date,
 			'period_end'   => $end_date,
 			'top_tools'    => self::get_top_cost_tools( $breakdown['by_tool'], 5 ),

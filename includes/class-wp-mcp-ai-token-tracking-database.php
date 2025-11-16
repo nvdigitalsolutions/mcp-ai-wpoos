@@ -337,6 +337,164 @@ class WP_MCP_AI_Token_Tracking_Database {
 	}
 
 	/**
+	 * Get aggregated usage data by provider.
+	 *
+	 * Data access method - returns raw query results for service layer to process.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Array of provider aggregations.
+	 */
+	public static function get_aggregated_by_provider( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				provider,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+			GROUP BY provider
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Get aggregated usage data by model.
+	 *
+	 * Data access method - returns raw query results for service layer to process.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Array of model aggregations.
+	 */
+	public static function get_aggregated_by_model( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				provider,
+				model,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+			GROUP BY provider, model
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Get aggregated usage data by tool.
+	 *
+	 * Data access method - returns raw query results for service layer to process.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Array of tool aggregations.
+	 */
+	public static function get_aggregated_by_tool( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				tool,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+			GROUP BY tool
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Get aggregated usage data by date.
+	 *
+	 * Data access method - returns raw query results for service layer to process.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Array of date aggregations.
+	 */
+	public static function get_aggregated_by_date( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				DATE(timestamp) as date,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+			GROUP BY DATE(timestamp)
+			ORDER BY DATE(timestamp)
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Get aggregated usage data by user.
+	 *
+	 * Data access method - returns raw query results for service layer to process.
+	 *
+	 * @param string $start_date Start date (Y-m-d H:i:s).
+	 * @param string $end_date   End date (Y-m-d H:i:s).
+	 * @return array Array of user aggregations.
+	 */
+	public static function get_aggregated_by_user( $start_date, $end_date ) {
+		global $wpdb;
+
+		$table_name = self::get_table_name();
+
+		$query = "
+			SELECT 
+				user_id,
+				SUM(cost_usd) as total_cost,
+				SUM(total_tokens) as total_tokens
+			FROM {$table_name}
+			WHERE timestamp >= %s
+			AND timestamp <= %s
+			GROUP BY user_id
+			ORDER BY total_cost DESC
+		";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
 	 * Clean up old usage records (older than retention period).
 	 *
 	 * @param int $days Number of days to retain (default: 90).
