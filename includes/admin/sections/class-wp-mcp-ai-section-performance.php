@@ -1026,29 +1026,25 @@ composer install</pre>
 		$start_time   = microtime( true );
 		$start_memory = memory_get_usage();
 
+		// Following SoC: Wrap each check in error handling to prevent one check from breaking others.
+		// Each check method is responsible for its own logic, this method orchestrates and handles errors.
+		$check_methods = array();
+
 		switch ( $test_type ) {
 			case 'security':
-				$checks[] = $this->check_file_permissions();
-				$checks[] = $this->check_https();
-				$checks[] = $this->check_api_keys_configured();
+				$check_methods = array( 'check_file_permissions', 'check_https', 'check_api_keys_configured' );
 				break;
 
 			case 'speed':
-				$checks[] = $this->check_database_queries();
-				$checks[] = $this->check_cache_status();
-				$checks[] = $this->check_rest_api_response();
+				$check_methods = array( 'check_database_queries', 'check_cache_status', 'check_rest_api_response' );
 				break;
 
 			case 'stress':
-				$checks[] = $this->check_memory_limit();
-				$checks[] = $this->check_max_execution_time();
-				$checks[] = $this->check_concurrent_requests();
+				$check_methods = array( 'check_memory_limit', 'check_max_execution_time', 'check_concurrent_requests' );
 				break;
 
 			case 'optimization':
-				$checks[] = $this->check_object_cache();
-				$checks[] = $this->check_autoload_size();
-				$checks[] = $this->check_transients();
+				$check_methods = array( 'check_object_cache', 'check_autoload_size', 'check_transients' );
 				break;
 
 			default:
@@ -1056,6 +1052,37 @@ composer install</pre>
 					'success' => false,
 					'message' => __( 'Unknown test type', 'wp-mcp-ai' ),
 				);
+		}
+
+		// Execute each check with individual error handling.
+		foreach ( $check_methods as $method ) {
+			try {
+				if ( method_exists( $this, $method ) ) {
+					$checks[] = $this->$method();
+				} else {
+					// Method doesn't exist - add a fail result.
+					$checks[] = array(
+						'name'    => ucwords( str_replace( '_', ' ', str_replace( 'check_', '', $method ) ) ),
+						'status'  => 'fail',
+						'message' => __( 'Check method not available', 'wp-mcp-ai' ),
+					);
+				}
+			} catch ( Throwable $e ) {
+				// If a check throws an error, log it and add a fail result.
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( sprintf( 'WP_MCP_AI Performance Check Error in %s: %s', $method, $e->getMessage() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
+
+				$checks[] = array(
+					'name'    => ucwords( str_replace( '_', ' ', str_replace( 'check_', '', $method ) ) ),
+					'status'  => 'fail',
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Check failed: %s', 'wp-mcp-ai' ),
+						$e->getMessage()
+					),
+				);
+			}
 		}
 
 		$end_time    = microtime( true );
@@ -1131,16 +1158,42 @@ composer install</pre>
 	 * @return array Check result.
 	 */
 	protected function check_file_permissions() {
-		$upload_dir = wp_upload_dir();
-		$writable   = is_writable( $upload_dir['basedir'] );
+		try {
+			$upload_dir = wp_upload_dir();
 
-		return array(
-			'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
-			'status'  => $writable ? 'pass' : 'fail',
-			'message' => $writable
-				? __( 'Upload directory is writable', 'wp-mcp-ai' )
-				: __( 'Upload directory is not writable', 'wp-mcp-ai' ),
-		);
+			// wp_upload_dir() may return an error in the 'error' key.
+			if ( ! empty( $upload_dir['error'] ) ) {
+				return array(
+					'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+					'status'  => 'fail',
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Upload directory error: %s', 'wp-mcp-ai' ),
+						$upload_dir['error']
+					),
+				);
+			}
+
+			$writable = isset( $upload_dir['basedir'] ) && is_writable( $upload_dir['basedir'] );
+
+			return array(
+				'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+				'status'  => $writable ? 'pass' : 'fail',
+				'message' => $writable
+					? __( 'Upload directory is writable', 'wp-mcp-ai' )
+					: __( 'Upload directory is not writable', 'wp-mcp-ai' ),
+			);
+		} catch ( Throwable $e ) {
+			return array(
+				'name'    => __( 'File Permissions', 'wp-mcp-ai' ),
+				'status'  => 'fail',
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Could not check file permissions: %s', 'wp-mcp-ai' ),
+					$e->getMessage()
+				),
+			);
+		}
 	}
 
 	/**
