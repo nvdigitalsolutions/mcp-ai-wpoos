@@ -373,6 +373,268 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		}
 
 		/**
+		 * Edit an image using Gemini's Nano Banana (image editing) endpoint.
+		 *
+		 * @param string $prompt  Natural language prompt describing the desired edits.
+		 * @param array  $options Required: source_image array with 'data' and 'mime_type'. Optional: model, aspect_ratio, mime_type, timeout.
+		 * @return array|WP_Error
+		 */
+		public function edit_image( $prompt, array $options = array() ) {
+			$api_key = $this->get_api_key();
+
+			if ( empty( $api_key ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_api_key',
+					__( 'No Gemini API key has been configured.', 'wp-mcp-ai' ),
+					array(
+						'status'  => 400,
+						'actions' => array(
+							'configure_gemini_api_key' => __( 'Add a Gemini API key in the WP oOS settings.', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			$prompt = sanitize_textarea_field( $prompt );
+
+			if ( '' === $prompt ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_gemini_prompt',
+					__( 'A text prompt must be supplied to edit an image.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Validate source image is provided.
+			if ( empty( $options['source_image'] ) || ! is_array( $options['source_image'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_missing_source_image',
+					__( 'A source image must be provided for image editing.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$source_image = $options['source_image'];
+
+			if ( empty( $source_image['data'] ) || empty( $source_image['mime_type'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_source_image',
+					__( 'Source image must contain data and mime_type.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			$default_model        = isset( $settings['gemini_image_model'] ) && '' !== $settings['gemini_image_model'] ? sanitize_text_field( $settings['gemini_image_model'] ) : 'gemini-2.5-flash-image';
+			$default_mime_type    = isset( $settings['gemini_image_mime_type'] ) && '' !== $settings['gemini_image_mime_type'] ? $this->normalise_image_mime_type( $settings['gemini_image_mime_type'] ) : 'image/png';
+			$default_aspect_ratio = isset( $settings['gemini_image_aspect_ratio'] ) && '' !== $settings['gemini_image_aspect_ratio'] ? $this->normalise_aspect_ratio( $settings['gemini_image_aspect_ratio'] ) : '1:1';
+
+			$model        = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
+			$mime_type    = isset( $options['mime_type'] ) && '' !== $options['mime_type'] ? $this->normalise_image_mime_type( $options['mime_type'] ) : $default_mime_type;
+			$aspect_ratio = isset( $options['aspect_ratio'] ) && '' !== $options['aspect_ratio'] ? $this->normalise_aspect_ratio( $options['aspect_ratio'] ) : $default_aspect_ratio;
+
+			if ( '' === $mime_type ) {
+				$mime_type = 'image/png';
+			}
+
+			if ( '' === $aspect_ratio ) {
+				$aspect_ratio = '1:1';
+			}
+
+			// Prepare source image for Gemini API (base64 encoded).
+			$source_image_base64 = base64_encode( $source_image['data'] );
+			$source_mime_type    = $this->normalise_image_mime_type( $source_image['mime_type'] );
+
+			if ( '' === $source_mime_type ) {
+				$source_mime_type = 'image/png';
+			}
+
+			// Build the payload with both text prompt and source image.
+			$payload = array(
+				'contents' => array(
+					array(
+						'role'  => 'user',
+						'parts' => array(
+							array(
+								'text' => $prompt,
+							),
+							array(
+								'inlineData' => array(
+									'mimeType' => $source_mime_type,
+									'data'     => $source_image_base64,
+								),
+							),
+						),
+					),
+				),
+			);
+
+			$generation_config = array(
+				'responseModalities' => array( 'IMAGE' ),
+			);
+
+			$image_config = array();
+
+			if ( '' !== $aspect_ratio ) {
+				$image_config['aspectRatio'] = $aspect_ratio;
+			}
+
+			if ( ! empty( $image_config ) ) {
+				$generation_config['imageConfig'] = $image_config;
+			}
+
+			if ( array_key_exists( 'temperature', $options ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+				$generation_config['temperature'] = (float) $options['temperature'];
+			}
+
+			if ( ! empty( $generation_config ) ) {
+				$payload['generationConfig'] = $generation_config;
+			}
+
+			/**
+			 * Allow third parties to filter the Gemini image editing payload prior to dispatch.
+			 *
+			 * @param array  $payload Prepared request payload.
+			 * @param array  $options Original method options.
+			 * @param string $prompt  Prompt text supplied by the caller.
+			 */
+			$payload = apply_filters( 'wp_mcp_ai_gemini_edit_image_payload', $payload, $options, $prompt );
+
+			$encoded_payload = wp_json_encode( $payload );
+
+			if ( false === $encoded_payload ) {
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the Gemini request payload.', 'wp-mcp-ai' ) );
+			}
+
+			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
+			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+
+			$request_args = array(
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'timeout' => $this->resolve_timeout( $options ),
+				'body'    => $encoded_payload,
+			);
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_edit_image_request',
+				'Sending image editing request to Gemini.',
+				array(
+					'model'        => $model,
+					'mime_type'    => $mime_type,
+					'aspect_ratio' => $aspect_ratio,
+				)
+			);
+
+			$response = wp_remote_post( $url, $request_args );
+
+			if ( is_wp_error( $response ) ) {
+				WP_MCP_AI_Logger::log_error( 'Gemini image editing request failed.', array( 'error' => $response->get_error_message() ) );
+
+				return WP_MCP_AI_HTTP::prepare_transport_error(
+					$response,
+					'wp_mcp_ai_http_error',
+					__( 'The Gemini API request failed to complete.', 'wp-mcp-ai' ),
+					__( 'Gemini', 'wp-mcp-ai' )
+				);
+			}
+
+			$code     = wp_remote_retrieve_response_code( $response );
+			$body     = wp_remote_retrieve_body( $response );
+			$decoded  = json_decode( $body, true );
+			$json_err = json_last_error();
+
+			if ( JSON_ERROR_NONE !== $json_err ) {
+				WP_MCP_AI_Logger::log_error( 'Failed to decode Gemini image editing response.', array( 'body' => $body ) );
+
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Gemini API returned malformed JSON.', 'wp-mcp-ai' ) );
+			}
+
+			if ( $code < 200 || $code >= 300 ) {
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Gemini.', 'wp-mcp-ai' );
+
+				WP_MCP_AI_Logger::log_error(
+					'Gemini returned an error response for image editing.',
+					array(
+						'code' => $code,
+						'body' => $decoded,
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_api_error',
+					$error_message,
+					array(
+						'status' => $code,
+						'body'   => $decoded,
+					)
+				);
+			}
+
+			$image_payload = $this->extract_image_payload_from_response( $decoded, $options );
+
+			if ( is_wp_error( $image_payload ) ) {
+				return $image_payload;
+			}
+
+			$result = array(
+				'image'          => $image_payload['data'],
+				'mime_type'      => $image_payload['mime_type'],
+				'format'         => $image_payload['format'],
+				'model'          => $model,
+				'prompt'         => $prompt,
+				'aspect_ratio'   => $aspect_ratio,
+				'created'        => time(),
+				'revised_prompt' => $image_payload['revised_prompt'],
+			);
+
+			// Extract usage metadata from the response for token tracking.
+			if ( isset( $decoded['usageMetadata'] ) && is_array( $decoded['usageMetadata'] ) ) {
+				$usage = array();
+
+				if ( isset( $decoded['usageMetadata']['promptTokenCount'] ) ) {
+					$usage['prompt_tokens'] = (int) $decoded['usageMetadata']['promptTokenCount'];
+				}
+
+				if ( isset( $decoded['usageMetadata']['candidatesTokenCount'] ) ) {
+					$usage['completion_tokens'] = (int) $decoded['usageMetadata']['candidatesTokenCount'];
+				}
+
+				if ( isset( $decoded['usageMetadata']['totalTokenCount'] ) ) {
+					$usage['total_tokens'] = (int) $decoded['usageMetadata']['totalTokenCount'];
+				}
+
+				if ( ! empty( $usage ) ) {
+					$result['usage'] = $usage;
+				}
+			}
+
+			/**
+			 * Allow third parties to filter the Gemini image editing result payload.
+			 *
+			 * @param array $result        Normalised image editing response payload.
+			 * @param array $decoded       Raw decoded API response.
+			 * @param array $options       Original method options.
+			 */
+			$result = apply_filters( 'wp_mcp_ai_gemini_edit_image_result', $result, $decoded, $options );
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_edit_image_response',
+				'Gemini image editing completed.',
+				array(
+					'model'        => $model,
+					'mime_type'    => $result['mime_type'],
+					'aspect_ratio' => $aspect_ratio,
+					'format'       => $result['format'],
+				)
+			);
+
+			return $result;
+		}
+
+		/**
 		 * List available Gemini models dynamically.
 		 *
 		 * @param array $options Optional parameters (page_size, page_token).
