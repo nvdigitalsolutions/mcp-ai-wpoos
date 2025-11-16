@@ -769,6 +769,149 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				});
 				</script>
 			</div>
+
+			<!-- GEMINI COST TRACKING MIGRATION SECTION -->
+			<div class="wp-mcp-ai-gemini-migration-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Gemini Cost Tracking Migration', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Fix historical cost tracking data where Gemini tools were incorrectly attributed to OpenAI provider. This migration will identify Gemini-specific tools (like generate_gemini_image, edit_gemini_image, etc.) and update their provider attribution and recalculate costs using correct Gemini pricing.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-migration-info" style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'What This Does', 'wp-mcp-ai' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li><?php esc_html_e( 'Identifies token tracking records for Gemini tools that were incorrectly attributed to OpenAI', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Updates provider from OpenAI to Gemini', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Recalculates costs using correct Gemini pricing (which is typically lower than OpenAI)', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Updates the "is_estimated" flag to mark the data as actual, not estimated', 'wp-mcp-ai' ); ?></li>
+					</ul>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<strong><?php esc_html_e( 'Affected Tools:', 'wp-mcp-ai' ); ?></strong>
+						generate_gemini_image, edit_gemini_image, analyze_comment_content, generate_image_alt_text, generate_image_caption
+					</p>
+				</div>
+
+				<div class="wp-mcp-ai-migration-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Run Migration', 'wp-mcp-ai' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Preview the changes first to see what records would be updated, then run the migration to apply the fixes.', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-migrate-gemini-preview-btn">
+								<span class="dashicons dashicons-visibility" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Preview Changes', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'See what records would be updated without making any changes.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-primary" id="wp-mcp-ai-migrate-gemini-run-btn">
+								<span class="dashicons dashicons-database-import" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Run Migration', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Apply the fixes to your cost tracking data.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-migrate-gemini-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performGeminiMigration(actionType, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-migrate-gemini-message');
+						var originalText = $button.html();
+
+						// Disable both buttons
+						$('#wp-mcp-ai-migrate-gemini-preview-btn, #wp-mcp-ai-migrate-gemini-run-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning notice-info');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_migrate_gemini_costs',
+								action_type: actionType,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_migrate_gemini_costs' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									var noticeClass = 'notice-success';
+									if (response.data.dry_run && response.data.records_updated > 0) {
+										noticeClass = 'notice-info';
+									} else if (response.data.records_updated === 0) {
+										noticeClass = 'notice-warning';
+									}
+
+									$message
+										.removeClass('notice-error notice-success notice-warning notice-info')
+										.addClass(noticeClass)
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// If actual migration was successful, offer to reload
+									if (!response.data.dry_run && response.data.records_updated > 0) {
+										setTimeout(function() {
+											if (confirm(<?php echo wp_json_encode( __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'wp-mcp-ai' ) ); ?>)) {
+												location.reload();
+											}
+										}, 1500);
+									}
+								} else {
+									$message
+										.removeClass('notice-success notice-warning notice-info')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning notice-info')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-migrate-gemini-preview-btn, #wp-mcp-ai-migrate-gemini-run-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-migrate-gemini-preview-btn').on('click', function(e) {
+						e.preventDefault();
+						performGeminiMigration('preview', '#wp-mcp-ai-migrate-gemini-preview-btn');
+					});
+
+					$('#wp-mcp-ai-migrate-gemini-run-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							performGeminiMigration('migrate', '#wp-mcp-ai-migrate-gemini-run-btn');
+						}
+					});
+				});
+				</script>
+			</div>
 			<?php
 		}
 	}

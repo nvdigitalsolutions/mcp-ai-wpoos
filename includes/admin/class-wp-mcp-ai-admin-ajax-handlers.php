@@ -74,6 +74,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_toggle_tool'            => 'handle_toggle_tool',
 				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
+				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 			);
 
 			$action         = current_action();
@@ -1692,6 +1693,91 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'created' => $saved,
 				'updated' => $updated,
 				'errors'  => count( $errors ),
+			)
+		);
+	}
+
+	/**
+	 * Handle Gemini cost tracking migration AJAX request.
+	 *
+	 * Migrates historical token tracking records where Gemini tools were
+	 * incorrectly attributed to OpenAI provider, fixing provider attribution
+	 * and recalculating costs with correct Gemini pricing.
+	 *
+	 * @since 1.1.0
+	 */
+	private function handle_migrate_gemini_costs() {
+		check_ajax_referer( 'wp_mcp_ai_migrate_gemini_costs', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		// Get action type: 'preview' or 'migrate'.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below with sanitize_key.
+		$action = isset( $_POST['action_type'] ) ? sanitize_key( wp_unslash( $_POST['action_type'] ) ) : 'preview';
+
+		if ( ! in_array( $action, array( 'preview', 'migrate' ), true ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Invalid action type.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		// Load enhanced token tracking class.
+		if ( ! class_exists( 'WP_MCP_AI_Enhanced_Token_Tracking' ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Enhanced token tracking is not available.', 'wp-mcp-ai' ),
+				)
+			);
+			return;
+		}
+
+		// Determine if this is a dry run (preview).
+		$dry_run = ( 'preview' === $action );
+		$limit   = 1000; // Process up to 1000 records at a time.
+
+		// Run the migration.
+		$results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( $dry_run, $limit );
+
+		// Build response message.
+		if ( $dry_run ) {
+			if ( 0 === $results['total_checked'] ) {
+				$message = __( 'No Gemini tool records found that need migration. All cost tracking data is already correct.', 'wp-mcp-ai' );
+			} else {
+				$message = sprintf(
+					/* translators: 1: Number of records that would be updated, 2: Number of records checked */
+					__( 'Preview: Found %1$d records (out of %2$d checked) that would be migrated from OpenAI to Gemini attribution with corrected costs.', 'wp-mcp-ai' ),
+					$results['records_updated'],
+					$results['total_checked']
+				);
+			}
+		} else {
+			if ( 0 === $results['records_updated'] ) {
+				$message = __( 'No records were updated. All cost tracking data is already correct.', 'wp-mcp-ai' );
+			} else {
+				$message = sprintf(
+					/* translators: %d: Number of records updated */
+					__( 'Migration complete! Successfully updated %d records with corrected Gemini provider attribution and costs.', 'wp-mcp-ai' ),
+					$results['records_updated']
+				);
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'message'         => $message,
+				'dry_run'         => $dry_run,
+				'total_checked'   => $results['total_checked'],
+				'records_updated' => $results['records_updated'],
 			)
 		);
 	}
