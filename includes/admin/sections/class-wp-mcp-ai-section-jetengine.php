@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'plugins';
+			return 'tools';
 		}
 
 		/**
