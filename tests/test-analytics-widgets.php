@@ -198,4 +198,63 @@ class Test_Analytics_Widgets extends WP_UnitTestCase {
 		// Check for the stable trend message.
 		$this->assertStringContainsString( 'Usage is stable. No action required.', $output, 'Should show stable usage message' );
 	}
+
+	/**
+	 * Test that usage forecast widget hides forecast value when no data is available.
+	 */
+	public function test_usage_forecast_widget_hides_zero_when_no_data() {
+		ob_start();
+
+		// Data with no forecast (default values).
+		$data = array(
+			'projected_usage' => 0,
+			'projected_date'  => gmdate( 'Y-m-d', strtotime( '+7 days' ) ),
+			'confidence'      => 0,
+			'trend'           => 'stable',
+		);
+
+		include WP_MCP_AI_PATH . 'includes/admin/widgets/usage-forecast.php';
+
+		$output = ob_get_clean();
+
+		// Should NOT show the forecast summary section with "0".
+		$this->assertStringNotContainsString( 'wp-mcp-ai-forecast-summary', $output, 'Should not show forecast summary when no data' );
+		$this->assertStringNotContainsString( 'wp-mcp-ai-forecast-amount', $output, 'Should not show forecast amount when no data' );
+
+		// Should still show trend indicator and implementation notice.
+		$this->assertStringContainsString( 'Usage is stable. No action required.', $output, 'Should show stable usage message' );
+		$this->assertStringContainsString( 'Advanced forecasting is currently being implemented', $output, 'Should show implementation notice' );
+		$this->assertStringContainsString( 'wp-mcp-ai-forecast-trend', $output, 'Should show trend indicator section' );
+	}
+
+	/**
+	 * Test that usage forecast widget shows forecast value when data is available.
+	 */
+	public function test_usage_forecast_widget_shows_value_with_data() {
+		ob_start();
+
+		// Data with forecast.
+		$data = array(
+			'projected_usage' => 5000,
+			'projected_date'  => gmdate( 'Y-m-d', strtotime( '+7 days' ) ),
+			'confidence'      => 85,
+			'trend'           => 'increasing',
+		);
+
+		include WP_MCP_AI_PATH . 'includes/admin/widgets/usage-forecast.php';
+
+		$output = ob_get_clean();
+
+		// Should show the forecast summary section with value.
+		$this->assertStringContainsString( 'wp-mcp-ai-forecast-summary', $output, 'Should show forecast summary when data available' );
+		$this->assertStringContainsString( 'wp-mcp-ai-forecast-amount', $output, 'Should show forecast amount when data available' );
+		$this->assertStringContainsString( '5,000', $output, 'Should display formatted projected usage' );
+		$this->assertStringContainsString( 'Confidence: 85%', $output, 'Should show confidence percentage' );
+
+		// Should show appropriate trend message.
+		$this->assertStringContainsString( 'Usage is trending upward', $output, 'Should show increasing trend message' );
+
+		// Should NOT show implementation notice when data is available.
+		$this->assertStringNotContainsString( 'Advanced forecasting is currently being implemented', $output, 'Should not show implementation notice when data is available' );
+	}
 }
