@@ -3813,13 +3813,6 @@
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        // Log load session request
-        if (window.console && console.log) {
-            console.log('[WP oOS] Loading conversation details:', {
-                session_key: sessionKey
-            });
-        }
-
         // Construct URL with session_key in path (not as query param)
         let url = endpoint;
         if (!url.endsWith('/')) {
@@ -3849,17 +3842,48 @@
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'assistant_id=' + encodeURIComponent(assistantId);
         }
 
+        // Log load session request with full details
+        if (window.console && console.log) {
+            console.log('[WP oOS] Loading conversation details:', {
+                session_key: sessionKey,
+                url: url,
+                user_id: userId,
+                assistant_id: assistantId
+            });
+        }
+
         return fetch(url, {
             method: 'GET',
             headers: buildHistoryHeaders(state),
             credentials: 'same-origin',
         }).then(function (response) {
+            // Log response status for debugging
+            if (window.console && console.log) {
+                console.log('[WP oOS] Conversation details response:', {
+                    status: response.status,
+                    ok: response.ok,
+                    session_key: sessionKey
+                });
+            }
+
             return response
                 .json()
-                .catch(function () {
+                .catch(function (jsonError) {
+                    if (window.console && console.error) {
+                        console.error('[WP oOS] Failed to parse conversation details JSON:', jsonError);
+                    }
                     return null;
                 })
                 .then(function (data) {
+                    // Log parsed data for debugging
+                    if (window.console && console.log) {
+                        console.log('[WP oOS] Conversation details data:', {
+                            has_session: !!(data && data.session),
+                            has_message: !!(data && data.message),
+                            session_key: sessionKey
+                        });
+                    }
+
                     if (!response.ok) {
                         const message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
                         const error = new Error(message);
@@ -3868,6 +3892,13 @@
                     }
 
                     if (data && data.session) {
+                        // Log successful retrieval
+                        if (window.console && console.log) {
+                            console.log('[WP oOS] Conversation details loaded successfully:', {
+                                session_key: sessionKey,
+                                message_count: data.session.messages ? data.session.messages.length : 0
+                            });
+                        }
                         return data.session;
                     }
 
@@ -3880,7 +3911,7 @@
         }).catch(function (error) {
             // Log error for debugging (handles both network-level and application-level errors)
             if (window.console && console.error) {
-                console.error('Error fetching history session details:', error);
+                console.error('[WP oOS] Error fetching conversation details:', error);
             }
             // Re-throw the error to propagate it to the caller
             // Errors from the response handler above already have user-friendly messages
@@ -3925,10 +3956,16 @@
 
     function loadHistorySessionIntoChat(state, session, activeItem) {
         if (!state || !state.messagesEl) {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Cannot load history session: missing state or messagesEl');
+            }
             return;
         }
 
         if (!session || typeof session !== 'object') {
+            if (window.console && console.error) {
+                console.error('[WP oOS] Cannot load history session: invalid session data', session);
+            }
             setActiveHistorySession(state, '', activeItem);
             setStatus(state.container, getString('historySessionError', 'Unable to load this conversation. Please try again.'));
             return;
@@ -3942,6 +3979,15 @@
         }
 
         const sessionKey = session.session_key ? String(session.session_key) : '';
+        
+        if (window.console && console.log) {
+            console.log('[WP oOS] Loading conversation into chat:', {
+                session_key: sessionKey,
+                message_count: session.messages ? session.messages.length : 0,
+                assistant_id: session.assistant_id
+            });
+        }
+        
         setActiveHistorySession(state, sessionKey, activeItem);
 
         if (sessionKey) {
@@ -4018,6 +4064,13 @@
         // Save the loaded conversation to localStorage
         saveConversationToStorage(state);
 
+        if (window.console && console.log) {
+            console.log('[WP oOS] Conversation loaded successfully into chat:', {
+                session_key: sessionKey,
+                loaded_message_count: state.conversation.length
+            });
+        }
+
         setTranscriptExpanded(state, true);
         setStatus(state.container, '');
     }
@@ -4041,6 +4094,13 @@
 
         fetchHistorySessionDetails(state, sessionKey)
             .then(function (data) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Successfully fetched conversation details, loading into chat:', {
+                        session_key: sessionKey,
+                        has_data: !!data
+                    });
+                }
+
                 if (sessionKey) {
                     state.historySessionDetails[sessionKey] = data;
                 }
@@ -4048,6 +4108,12 @@
                 loadHistorySessionIntoChat(state, data, item);
             })
             .catch(function (error) {
+                if (window.console && console.error) {
+                    console.error('[WP oOS] Failed to load conversation details:', {
+                        session_key: sessionKey,
+                        error: error.message || error
+                    });
+                }
                 const message = error && error.message ? error.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
                 appendMessage(state.messagesEl, 'system', { text: message });
                 // Clear status after showing error message in chat
