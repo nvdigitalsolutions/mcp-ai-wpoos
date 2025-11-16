@@ -106,7 +106,6 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 	 * - 'requires-model': Tool requires AI model specification
 	 * - 'requires-vision-model': Tool requires vision-capable AI model
 	 * - 'requires-multimodal-model': Tool requires multimodal AI model
-	 * - 'requires-video-model': Tool requires video-capable AI model
 	 *
 	 * Standard flags (Operational Characteristics):
 	 * - 'read-only': Tool only reads data, does not modify state
