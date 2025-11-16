@@ -930,24 +930,54 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			<!-- Top Models -->
 			<h4><?php esc_html_e( 'Top Models by Usage', 'wp-mcp-ai' ); ?></h4>
-			<table class="wp-list-table widefat fixed striped">
+			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
+				<?php esc_html_e( 'Top 10 AI models sorted by total token usage. Models with the same name from different providers are tracked separately.', 'wp-mcp-ai' ); ?>
+				<?php if ( ! empty( $site_stats['top_models'] ) ) : ?>
+					<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 8px;"><?php esc_html_e( 'PROVIDER', 'wp-mcp-ai' ); ?></span>
+					<span style="font-size: 11px; margin-left: 5px;"><?php esc_html_e( 'badges indicate models used across multiple providers', 'wp-mcp-ai' ); ?></span>
+				<?php endif; ?>
+			</p>
+			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-models-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 35%;"><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 12%;"><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 13%;"><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php
 					if ( ! empty( $site_stats['top_models'] ) ) :
+						$model_name_counts = array();
+						// First pass: count how many times each model name appears.
+						foreach ( $site_stats['top_models'] as $model_data ) {
+							$model_name = $model_data['model'];
+							if ( ! isset( $model_name_counts[ $model_name ] ) ) {
+								$model_name_counts[ $model_name ] = 0;
+							}
+							$model_name_counts[ $model_name ]++;
+						}
+
 						foreach ( $site_stats['top_models'] as $model_data ) :
+							$model_name      = $model_data['model'];
+							$provider_name   = $this->get_provider_display_name( $model_data['provider'] );
+							$is_mixed        = isset( $model_name_counts[ $model_name ] ) && $model_name_counts[ $model_name ] > 1;
+							$provider_badge  = $is_mixed ? '<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 5px;">' . esc_html( $provider_name ) . '</span>' : '';
 							?>
 							<tr>
-								<td><code><?php echo esc_html( $model_data['model'] ); ?></code></td>
-								<td><?php echo esc_html( $this->get_provider_display_name( $model_data['provider'] ) ); ?></td>
+								<td>
+									<code><?php echo esc_html( $model_name ); ?></code>
+									<?php
+									if ( $is_mixed ) {
+										echo $provider_badge; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+									}
+									?>
+								</td>
+								<td>
+									<strong><?php echo esc_html( $provider_name ); ?></strong>
+								</td>
 								<td><?php echo number_format_i18n( $model_data['requests'] ); ?></td>
 								<td><?php echo number_format_i18n( $model_data['total_tokens'] ); ?></td>
 								<td>
