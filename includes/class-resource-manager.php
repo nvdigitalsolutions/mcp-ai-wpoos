@@ -382,5 +382,48 @@ if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
 
 			return true;
 		}
+
+		/**
+		 * Ensure adequate PHP execution time for a long-running operation.
+		 *
+		 * This method prevents "Maximum execution time exceeded" errors when performing
+		 * operations that may take longer than the default PHP execution time limit.
+		 *
+		 * Common use case: AJAX handlers that make HTTP requests with long timeouts
+		 * (60-120 seconds) to local AI providers. Without this, PHP kills the request
+		 * after ~30 seconds even though the HTTP timeout hasn't been reached.
+		 *
+		 * @param int $required_time Minimum execution time required in seconds.
+		 * @return bool True if execution time was adjusted, false otherwise.
+		 */
+		public function ensure_execution_time( $required_time ) {
+			$required_time      = absint( $required_time );
+			$current_time_limit = ini_get( 'max_execution_time' );
+
+			// If max_execution_time is 0, it's unlimited - no need to adjust.
+			if ( 0 === intval( $current_time_limit ) ) {
+				return false;
+			}
+
+			// If current limit is already sufficient, no need to adjust.
+			if ( $current_time_limit >= $required_time ) {
+				return false;
+			}
+
+			// Attempt to increase the execution time limit.
+			// Some hosts disable set_time_limit() for security, so we use @ to suppress warnings.
+			$result = @set_time_limit( $required_time ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+			/**
+			 * Fires after attempting to adjust PHP execution time.
+			 *
+			 * @param int  $required_time      The requested execution time in seconds.
+			 * @param int  $current_time_limit The previous execution time limit.
+			 * @param bool $result             Whether set_time_limit succeeded.
+			 */
+			do_action( 'wp_mcp_ai_execution_time_adjusted', $required_time, $current_time_limit, $result );
+
+			return $result;
+		}
 	}
 }
