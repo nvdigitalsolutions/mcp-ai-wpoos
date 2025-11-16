@@ -58,14 +58,15 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 		$this->assertIsArray( $schema );
 		$this->assertEquals( 'object', $schema['type'] );
 		$this->assertArrayHasKey( 'url', $schema['properties'] );
+		$this->assertArrayHasKey( 'html_file', $schema['properties'] );
 		$this->assertArrayHasKey( 'title_selector', $schema['properties'] );
 		$this->assertArrayHasKey( 'subtitle_selector', $schema['properties'] );
 		$this->assertArrayHasKey( 'description_selector', $schema['properties'] );
 		$this->assertArrayHasKey( 'images_selector', $schema['properties'] );
 		$this->assertArrayHasKey( 'download_images', $schema['properties'] );
 
-		// Check required fields.
-		$this->assertContains( 'url', $schema['required'] );
+		// Check that either url or html_file can be provided (not both required).
+		$this->assertIsArray( $schema['required'] );
 	}
 
 	/**
@@ -117,7 +118,7 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 		$result = $this->tool->execute( $arguments, $context );
 
 		$this->assertWPError( $result );
-		$this->assertEquals( 'wp_mcp_ai_missing_url', $result->get_error_code() );
+		$this->assertEquals( 'wp_mcp_ai_missing_input', $result->get_error_code() );
 	}
 
 	/**
@@ -252,5 +253,169 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 		$this->assertContains( 'https://example.com/lazy1.jpg', $result['image_urls'] );
 		$this->assertContains( 'https://example.com/lazy2.jpg', $result['image_urls'] );
 		$this->assertContains( 'https://example.com/responsive.jpg', $result['image_urls'] );
+	}
+
+	/**
+	 * Test reading HTML from file.
+	 */
+	public function test_read_html_file() {
+		// Create a temporary HTML file in WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$temp_file  = $upload_dir['basedir'] . '/test_product_' . uniqid() . '.html';
+		$html       = '<!DOCTYPE html>
+<html>
+<body>
+	<div class="swa-product-information__title swa-label-sans--default-strong">Test Product</div>
+	<div id="splide01-slide01">
+		<img src="https://example.com/test.jpg" alt="Test">
+	</div>
+</body>
+</html>';
+		file_put_contents( $temp_file, $html );
+
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'read_html_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->tool, $temp_file );
+
+		// Clean up.
+		unlink( $temp_file );
+
+		$this->assertIsString( $result );
+		$this->assertStringContainsString( 'Test Product', $result );
+	}
+
+	/**
+	 * Test reading non-existent HTML file.
+	 */
+	public function test_read_nonexistent_html_file() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'read_html_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->tool, '/nonexistent/file.html' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_file_not_found', $result->get_error_code() );
+	}
+
+	/**
+	 * Test reading invalid file type.
+	 */
+	public function test_read_invalid_file_type() {
+		// Create a temporary non-HTML file in WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$temp_file  = $upload_dir['basedir'] . '/test_product_' . uniqid() . '.txt';
+		file_put_contents( $temp_file, 'Not HTML' );
+
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'read_html_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->tool, $temp_file );
+
+		// Clean up.
+		unlink( $temp_file );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_invalid_file_type', $result->get_error_code() );
+	}
+
+	/**
+	 * Test reading file from unsafe directory.
+	 */
+	public function test_read_file_from_unsafe_directory() {
+		// Try to read a file from /tmp which is not in safe directories.
+		$temp_file = tempnam( sys_get_temp_dir(), 'test_product_' ) . '.html';
+		file_put_contents( $temp_file, '<html><body>Test</body></html>' );
+
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'read_html_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->tool, $temp_file );
+
+		// Clean up.
+		unlink( $temp_file );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_unsafe_file_path', $result->get_error_code() );
+	}
+
+	/**
+	 * Test high-resolution URL selection.
+	 */
+	public function test_select_highest_resolution_url() {
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'select_highest_resolution_url' );
+		$method->setAccessible( true );
+
+		// Test with 1000x1000 URL preferred.
+		$urls = array(
+			'https://example.com/image-100x100.jpg',
+			'https://example.com/image-1000x1000.jpg',
+			'https://example.com/image-500x500.jpg',
+		);
+
+		$result = $method->invoke( $this->tool, $urls );
+		$this->assertStringContainsString( '1000x1000', $result );
+
+		// Test with larger resolution.
+		$urls = array(
+			'https://example.com/image-800x800.jpg',
+			'https://example.com/image-1200x1200.jpg',
+			'https://example.com/image-400x400.jpg',
+		);
+
+		$result = $method->invoke( $this->tool, $urls );
+		$this->assertStringContainsString( '1200x1200', $result );
+
+		// Test with single URL.
+		$urls   = array( 'https://example.com/single.jpg' );
+		$result = $method->invoke( $this->tool, $urls );
+		$this->assertEquals( 'https://example.com/single.jpg', $result );
+
+		// Test with empty array.
+		$urls   = array();
+		$result = $method->invoke( $this->tool, $urls );
+		$this->assertEquals( '', $result );
+	}
+
+	/**
+	 * Test image extraction with multiple resolutions.
+	 */
+	public function test_extract_images_with_multiple_resolutions() {
+		$html = '<!DOCTYPE html>
+<html>
+<body>
+	<div id="splide01-slide01">
+		<img src="https://example.com/thumb-200x200.jpg"
+		     data-src="https://example.com/medium-500x500.jpg"
+		     data-splide-lazy="https://example.com/large-1000x1000.jpg"
+		     alt="Product">
+	</div>
+</body>
+</html>';
+
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'parse_product_data' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke(
+			$this->tool,
+			$html,
+			'.not-exists',
+			'.not-exists',
+			'.not-exists',
+			'splide-slides'
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertIsArray( $result['image_urls'] );
+		$this->assertCount( 1, $result['image_urls'] );
+
+		// Should select the highest resolution (1000x1000).
+		$this->assertStringContainsString( '1000x1000', $result['image_urls'][0] );
 	}
 }
