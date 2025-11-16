@@ -485,4 +485,155 @@ class WP_MCP_AI_HTTP_Helper_Tests extends WP_UnitTestCase {
 
 		curl_close( $handle );
 	}
+
+	/**
+	 * Test that SSL bypass can be disabled via settings.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_handle_loopback_requests_respects_ssl_bypass_disabled() {
+		// Disable SSL bypass.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_loopback_ssl_bypass'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+		);
+		$url  = 'http://localhost:11434/api/tags';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		// SSL settings should NOT be modified when bypass is disabled.
+		$this->assertTrue( $modified['sslverify'], 'SSL verify should remain true when bypass is disabled' );
+		$this->assertTrue( $modified['reject_unsafe_urls'], 'Reject unsafe URLs should remain true when bypass is disabled' );
+
+		// But timeout should still be set (timeout is always applied).
+		$this->assertEquals( 30, $modified['timeout'], 'Timeout should still be set' );
+
+		// Reset settings.
+		$settings['enable_loopback_ssl_bypass'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
+
+	/**
+	 * Test that SSL bypass is enabled by default.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_handle_loopback_requests_ssl_bypass_enabled_by_default() {
+		// Clear the setting to test default behavior.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		unset( $settings['enable_loopback_ssl_bypass'] );
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$args = array(
+			'sslverify'          => true,
+			'reject_unsafe_urls' => true,
+		);
+		$url  = 'http://192.168.2.222:11434/api/tags';
+
+		$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+		// SSL settings should be modified by default.
+		$this->assertFalse( $modified['sslverify'], 'SSL verify should be disabled by default' );
+		$this->assertFalse( $modified['reject_unsafe_urls'], 'Reject unsafe URLs should be disabled by default' );
+
+		// Restore settings.
+		$settings['enable_loopback_ssl_bypass'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
+
+	/**
+	 * Test that SSL bypass works for all private IP ranges when enabled.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_handle_loopback_requests_ssl_bypass_all_private_ranges() {
+		// Ensure SSL bypass is enabled.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_loopback_ssl_bypass'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		$test_cases = array(
+			'10.0.0.50:11434'     => 'http://10.0.0.50:11434/api/tags',
+			'172.16.0.10:11434'   => 'http://172.16.0.10:11434/api/tags',
+			'192.168.1.100:11434' => 'http://192.168.1.100:11434/api/tags',
+			'localhost:11434'     => 'http://localhost:11434/api/tags',
+			'127.0.0.1:11434'     => 'http://127.0.0.1:11434/api/tags',
+		);
+
+		foreach ( $test_cases as $description => $url ) {
+			$args = array(
+				'sslverify'          => true,
+				'reject_unsafe_urls' => true,
+			);
+
+			$modified = WP_MCP_AI_HTTP_Helper::handle_loopback_requests( $args, $url );
+
+			$this->assertFalse( $modified['sslverify'], "SSL verify should be disabled for: $description" );
+			$this->assertFalse( $modified['reject_unsafe_urls'], "Reject unsafe URLs should be disabled for: $description" );
+		}
+	}
+
+	/**
+	 * Test that private network requests can be disabled via settings.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_allow_private_network_requests_respects_disabled_setting() {
+		// Disable private network requests.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_loopback_private_network_requests'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Should NOT allow private network addresses when disabled.
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, 'localhost', 'http://localhost:11434' ), 'Should not allow localhost when disabled' );
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '192.168.2.222', 'http://192.168.2.222:1234' ), 'Should not allow 192.168.x.x when disabled' );
+		$this->assertFalse( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '10.0.0.50', 'http://10.0.0.50:1234' ), 'Should not allow 10.x.x.x when disabled' );
+
+		// Reset settings.
+		$settings['enable_loopback_private_network_requests'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
+
+	/**
+	 * Test that private network requests are enabled by default.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_allow_private_network_requests_enabled_by_default() {
+		// Clear the setting to test default behavior.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		unset( $settings['enable_loopback_private_network_requests'] );
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Should allow private network addresses by default.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, 'localhost', 'http://localhost:11434' ), 'Should allow localhost by default' );
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( false, '192.168.2.222', 'http://192.168.2.222:1234' ), 'Should allow 192.168.x.x by default' );
+
+		// Restore settings.
+		$settings['enable_loopback_private_network_requests'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
+
+	/**
+	 * Test that disabling private network requests does not affect already-external hosts.
+	 *
+	 * @group loopback-settings
+	 */
+	public function test_allow_private_network_requests_preserves_external_when_disabled() {
+		// Disable private network requests.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['enable_loopback_private_network_requests'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Should still preserve already-external hosts.
+		$this->assertTrue( WP_MCP_AI_HTTP_Helper::allow_private_network_requests( true, 'example.com', 'https://example.com' ), 'Should preserve external hosts' );
+
+		// Reset settings.
+		$settings['enable_loopback_private_network_requests'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
 }

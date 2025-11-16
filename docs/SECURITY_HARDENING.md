@@ -368,3 +368,148 @@ The WP oOS plugin follows WordPress security best practices and has been thoroug
 ## Support
 
 For security concerns or to report vulnerabilities, please see `SECURITY.md` in the root of the repository.
+
+## Loopback and Private Network Security Settings
+
+### Overview
+
+The plugin provides configurable security settings for handling HTTP requests to localhost and private network addresses. These settings control how the plugin interacts with local AI services like Ollama and LM Studio.
+
+### Settings Location
+
+**Settings → WP oOS → Security**
+
+### Available Settings
+
+#### 1. Enable Loopback/Private Network SSL Bypass
+
+- **Setting Key:** `enable_loopback_ssl_bypass`
+- **Default:** `true` (enabled for backward compatibility)
+- **Description:** Automatically disables SSL verification for requests to:
+  - Localhost addresses (127.x.x.x, ::1, localhost)
+  - Private IPv4 addresses (10.x.x.x, 172.16-31.x.x, 192.168.x.x)
+  - Private IPv6 addresses (fc00::/7)
+
+**When Enabled:**
+- SSL verification is automatically disabled for local/private addresses
+- Allows HTTP connections without SSL certificate errors
+- Required for most local AI services that don't have valid SSL certificates
+
+**When Disabled:**
+- SSL verification remains enabled for all addresses
+- Useful if you have proper SSL certificates configured for local services
+- Provides stricter security for environments where local services have valid certificates
+
+**Security Implications:**
+- Disabling SSL verification reduces security for those specific connections
+- Only affects requests to detected loopback/private addresses
+- Public API requests (OpenAI, Anthropic, etc.) are never affected
+
+#### 2. Allow Private Network Requests
+
+- **Setting Key:** `enable_loopback_private_network_requests`
+- **Default:** `true` (enabled for backward compatibility)
+- **Description:** Allows WordPress to make HTTP requests to private network addresses
+
+**When Enabled:**
+- WordPress allows connections to local AI services on private networks
+- Required for services like:
+  - LM Studio on private network: 192.168.2.222:1234
+  - Ollama on LAN: 10.0.0.50:11434
+  - Crawl4AI on local network: 172.16.0.10:8000
+
+**When Disabled:**
+- WordPress blocks all requests to private network addresses (default WordPress behavior)
+- Local AI services on private networks will not be accessible
+- Only use this if you don't need access to local AI services
+
+**Security Implications:**
+- WordPress blocks private network requests by default for security (SSRF prevention)
+- Enabling this allows the plugin to connect to local services
+- Only the plugin's requests are affected, not general WordPress HTTP requests
+
+### Use Cases
+
+#### Development/Local AI Services (Default)
+```
+✅ Enable Loopback/Private Network SSL Bypass
+✅ Allow Private Network Requests
+```
+- Recommended for most users
+- Allows connection to local AI services without SSL issues
+- Required for Ollama, LM Studio, and other local AI providers
+
+#### Strict Security with Proper SSL Certificates
+```
+❌ Enable Loopback/Private Network SSL Bypass
+✅ Allow Private Network Requests
+```
+- Use if local services have valid SSL certificates
+- Maintains SSL verification while allowing private network access
+- More secure but requires SSL certificate setup
+
+#### No Local AI Services
+```
+❌ Enable Loopback/Private Network SSL Bypass
+❌ Allow Private Network Requests
+```
+- Maximum security when local AI services are not needed
+- Blocks all private network requests
+- Only use cloud AI providers (OpenAI, Anthropic, etc.)
+
+### Code Implementation
+
+The settings are checked in `WP_MCP_AI_HTTP_Helper` class:
+
+**SSL Bypass Check:**
+```php
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$ssl_bypass_enabled = isset( $settings['enable_loopback_ssl_bypass'] ) ? (bool) $settings['enable_loopback_ssl_bypass'] : true;
+
+if ( $ssl_bypass_enabled ) {
+    $args['sslverify'] = false;
+    $args['reject_unsafe_urls'] = false;
+}
+```
+
+**Private Network Request Check:**
+```php
+$settings = WP_MCP_AI_Admin_Settings::get_settings();
+$private_network_enabled = isset( $settings['enable_loopback_private_network_requests'] ) ? (bool) $settings['enable_loopback_private_network_requests'] : true;
+
+if ( $private_network_enabled && self::is_loopback_address( $host ) ) {
+    return true; // Allow the request
+}
+```
+
+### Testing
+
+Test coverage for these settings is in `tests/test-http-helper.php`:
+
+- `test_handle_loopback_requests_respects_ssl_bypass_disabled()` - Verifies SSL bypass can be disabled
+- `test_handle_loopback_requests_ssl_bypass_enabled_by_default()` - Verifies default behavior
+- `test_handle_loopback_requests_ssl_bypass_all_private_ranges()` - Tests all IP ranges
+- `test_allow_private_network_requests_respects_disabled_setting()` - Verifies request blocking
+- `test_allow_private_network_requests_enabled_by_default()` - Verifies default behavior
+- `test_allow_private_network_requests_preserves_external_when_disabled()` - Tests external hosts
+
+### Backward Compatibility
+
+Both settings default to `true` to maintain backward compatibility with existing installations. This ensures that existing local AI service configurations continue to work without changes.
+
+### Security Best Practices
+
+1. **For Production Sites:**
+   - If using local AI services, keep both settings enabled
+   - Ensure local services are on isolated networks
+   - Consider using SSL certificates for local services
+
+2. **For Development:**
+   - Default settings (both enabled) work well
+   - No SSL certificate setup required
+
+3. **For Cloud-Only Deployments:**
+   - Disable both settings for maximum security
+   - Only use cloud AI providers
+   - Prevents any local network access
+

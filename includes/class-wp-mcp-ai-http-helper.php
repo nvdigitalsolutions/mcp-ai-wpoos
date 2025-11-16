@@ -70,12 +70,18 @@ class WP_MCP_AI_HTTP_Helper {
 
 		// Check if this is a loopback or private network address.
 		if ( ! empty( $parsed_url['host'] ) && self::is_loopback_address( $parsed_url['host'] ) ) {
-			// Disable SSL verification for local/private addresses to prevent certificate mismatch errors.
-			$args['sslverify'] = false;
+			// Get settings to check if SSL bypass is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$ssl_bypass_enabled = isset( $settings['enable_loopback_ssl_bypass'] ) ? (bool) $settings['enable_loopback_ssl_bypass'] : true;
 
-			// Allow HTTP (non-SSL) requests to local/private addresses.
-			// Some WordPress setups or plugins enforce HTTPS globally, which breaks local requests.
-			$args['reject_unsafe_urls'] = false;
+			if ( $ssl_bypass_enabled ) {
+				// Disable SSL verification for local/private addresses to prevent certificate mismatch errors.
+				$args['sslverify'] = false;
+
+				// Allow HTTP (non-SSL) requests to local/private addresses.
+				// Some WordPress setups or plugins enforce HTTPS globally, which breaks local requests.
+				$args['reject_unsafe_urls'] = false;
+			}
 
 			// Ensure adequate timeout for private network connections.
 			// Private IPs (especially through proxies like Cloudflare) may have higher latency.
@@ -254,6 +260,14 @@ class WP_MCP_AI_HTTP_Helper {
 	public static function allow_private_network_requests( $is_external, $host, $url ) {
 		// If WordPress already considers it external, keep that.
 		if ( $is_external ) {
+			return $is_external;
+		}
+
+		// Get settings to check if private network requests are enabled.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$private_network_enabled = isset( $settings['enable_loopback_private_network_requests'] ) ? (bool) $settings['enable_loopback_private_network_requests'] : true;
+
+		if ( ! $private_network_enabled ) {
 			return $is_external;
 		}
 
