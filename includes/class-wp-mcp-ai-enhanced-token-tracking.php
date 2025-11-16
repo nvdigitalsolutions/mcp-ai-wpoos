@@ -406,12 +406,13 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		global $wpdb;
 
 		$results = array(
-			'total_checked'        => 0,
-			'records_updated'      => 0,
-			'dry_run'              => $dry_run,
-			'updates'              => array(),
-			'total_gemini_records' => 0,
-			'correctly_attributed' => 0,
+			'total_checked'           => 0,
+			'records_updated'         => 0,
+			'dry_run'                 => $dry_run,
+			'updates'                 => array(),
+			'total_gemini_records'    => 0,
+			'correctly_attributed'    => 0,
+			'total_needing_migration' => 0,
 		);
 
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
@@ -453,7 +454,24 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$total_gemini_records = $wpdb->get_var( $count_prepared_query );
 		$results['total_gemini_records'] = intval( $total_gemini_records );
 
-		// Find records that likely have provider misattributions.
+		// Count misattributed records (all records that need migration, not just the limited batch).
+		$misattributed_count_query = "
+			SELECT COUNT(*) as total
+			FROM {$table_name}
+			WHERE tool IN ({$placeholders})
+			AND provider != 'gemini'
+		";
+
+		$misattributed_count_prepared = $wpdb->prepare( $misattributed_count_query, $gemini_tools ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$total_misattributed = $wpdb->get_var( $misattributed_count_prepared );
+		$total_misattributed = intval( $total_misattributed );
+
+		// Calculate correctly attributed records.
+		$results['correctly_attributed'] = $results['total_gemini_records'] - $total_misattributed;
+
+		// Find records that likely have provider misattributions (limited batch for processing).
 		// We look for Gemini tools that are NOT already marked with gemini provider.
 		$query = "
 			SELECT id, user_id, tool, provider, model, input_tokens, output_tokens, cost_usd, is_estimated
@@ -471,7 +489,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
 		$results['total_checked'] = count( $records );
-		$results['correctly_attributed'] = $results['total_gemini_records'] - $results['total_checked'];
+		$results['total_needing_migration'] = $total_misattributed;
 
 		foreach ( $records as $record ) {
 			$record_id     = intval( $record['id'] );
