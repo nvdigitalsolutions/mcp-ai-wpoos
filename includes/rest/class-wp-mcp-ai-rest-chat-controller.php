@@ -451,8 +451,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					)
 				);
 
-				// Handle gracefully for missing transcripts or unavailable transcript storage
-				if ( in_array( $session->get_error_code(), array( 'wp_mcp_ai_transcripts_unavailable', 'wp_mcp_ai_transcript_missing' ), true ) ) {
+				// Handle gracefully for unavailable transcript storage (JetEngine not active)
+				if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
 					return rest_ensure_response(
 						array(
 							'session' => null,
@@ -461,6 +461,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					);
 				}
 
+				// Return error directly for missing transcripts (will be 404)
 				return $session;
 			}
 
@@ -733,8 +734,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				)
 			);
 
-			// Handle gracefully for missing transcripts or unavailable transcript storage
-			if ( in_array( $session->get_error_code(), array( 'wp_mcp_ai_transcripts_unavailable', 'wp_mcp_ai_transcript_missing' ), true ) ) {
+			// Handle gracefully for unavailable transcript storage (JetEngine not active)
+			if ( 'wp_mcp_ai_transcripts_unavailable' === $session->get_error_code() ) {
 				return rest_ensure_response(
 					array(
 						'session' => null,
@@ -743,6 +744,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				);
 			}
 
+			// Return error directly for missing transcripts (will be 404)
 			return $session;
 		}
 
