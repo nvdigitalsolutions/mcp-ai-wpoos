@@ -379,6 +379,7 @@ class WP_MCP_AI_Chat_Service {
 				$results[] = array(
 					'role'         => 'tool',
 					'tool_call_id' => $tool_id,
+					'name'         => $tool_name,
 					'content'      => wp_json_encode(
 						array(
 							'error' => 'Invalid tool arguments JSON',
@@ -408,6 +409,7 @@ class WP_MCP_AI_Chat_Service {
 			$results[] = array(
 				'role'         => 'tool',
 				'tool_call_id' => $tool_id,
+				'name'         => $tool_name,
 				'content'      => $result_content,
 			);
 		}
