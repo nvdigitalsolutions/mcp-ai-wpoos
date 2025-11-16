@@ -43,7 +43,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_WooCommerce_Integration' ) ) {
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'orchestration';
+			return 'plugins';
 		}
 
 		/**

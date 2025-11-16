@@ -381,6 +381,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 				'quickbooks'       => ! empty( $settings['quickbooks_api_key'] ),
 				'google_analytics' => ! empty( $settings['google_analytics_property_id'] ),
 				'gmail'            => ! empty( $settings['gmail_refresh_token'] ),
+				'rest_list'        => ! empty( $settings['rest_enable_assistant_list'] ),
+				'rest_create'      => ! empty( $settings['rest_enable_assistant_create'] ),
+				'rest_delete'      => ! empty( $settings['rest_enable_assistant_delete'] ),
 			);
 			$configured_count = count( array_filter( $connectors ) );
 			$total_count      = count( $connectors );

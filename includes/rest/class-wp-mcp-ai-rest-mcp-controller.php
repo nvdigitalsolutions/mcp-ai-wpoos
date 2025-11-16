@@ -148,7 +148,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistants_index' ),
 					'args'                => array(
 						'search'  => array(
@@ -170,7 +170,62 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'permission_callback' => array( $this, 'permissions_check_assistant_create' ),
-					'callback'            => array( $this, 'handle_assistants_index' ),
+					'callback'            => array( $this, 'handle_assistant_create' ),
+					'args'                => array(
+						'title'         => array(
+							'description'       => __( 'The title for the assistant.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'description'   => array(
+							'description'       => __( 'The description for the assistant.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'wp_kses_post',
+						),
+						'provider'      => array(
+							'description'       => __( 'AI provider (openai, gemini, ollama).', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'enum'              => array( 'openai', 'gemini', 'ollama' ),
+							'sanitize_callback' => 'sanitize_key',
+						),
+						'model'         => array(
+							'description'       => __( 'Model identifier (e.g., gpt-4, gemini-pro).', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'sanitize_text_field',
+						),
+						'temperature'   => array(
+							'description' => __( 'Temperature setting (0.0 to 2.0).', 'wp-mcp-ai' ),
+							'type'        => 'number',
+							'required'    => false,
+							'minimum'     => 0.0,
+							'maximum'     => 2.0,
+						),
+						'system_prompt' => array(
+							'description'       => __( 'System prompt for the assistant.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'sanitize_callback' => 'wp_kses_post',
+						),
+						'tools'         => array(
+							'description' => __( 'Array of tool slugs to enable for this assistant.', 'wp-mcp-ai' ),
+							'type'        => 'array',
+							'required'    => false,
+							'items'       => array(
+								'type' => 'string',
+							),
+						),
+						'status'        => array(
+							'description'       => __( 'Post status (publish, draft, private).', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => false,
+							'enum'              => array( 'publish', 'draft', 'private' ),
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
 				),
 			),
 			true
@@ -217,6 +272,26 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Delegate to main controller.
 		return $this->main_controller->permissions_check( $request );
+	}
+
+	/**
+	 * Permission check for listing assistants.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check_assistant_list( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check_assistant_list( $request );
 	}
 
 	/**
@@ -288,6 +363,17 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 	public function handle_assistant_delete( WP_REST_Request $request ) {
 		// Delegate to main controller.
 		return $this->main_controller->handle_assistant_delete( $request );
+	}
+
+	/**
+	 * Handle assistant creation.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_assistant_create( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		return $this->main_controller->handle_assistant_create( $request );
 	}
 
 	/**

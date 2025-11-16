@@ -460,23 +460,9 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'admin.jetengine_integration',
+			'admin.plugins_integration',
 			function () {
-				return new WP_MCP_AI_Admin_JetEngine_Integration();
-			}
-		);
-
-		$this->singleton(
-			'admin.woocommerce_integration',
-			function () {
-				return new WP_MCP_AI_Admin_WooCommerce_Integration();
-			}
-		);
-
-		$this->singleton(
-			'admin.elementor_integration',
-			function () {
-				return new WP_MCP_AI_Admin_Elementor_Integration();
+				return new WP_MCP_AI_Admin_Plugins_Integration();
 			}
 		);
 

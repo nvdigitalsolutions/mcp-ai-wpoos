@@ -151,6 +151,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// REST API Capabilities.
+				'rest_enable_assistant_list'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable REST Assistant Listing', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Allow listing assistants via REST API (GET /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, authenticated API clients can retrieve the list of available assistants. Enabled by default. Disable for enhanced security if you don\'t need remote assistant discovery.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
 				'rest_enable_assistant_create'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
@@ -216,7 +223,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'id'     => 'rest_api',
 					'label'  => __( 'REST API Capabilities', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-rest-api',
-					'fields' => array( 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
+					'fields' => array( 'rest_enable_assistant_list', 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
 				),
 			);
 		}
@@ -269,6 +276,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 			$all_fields        = $this->get_fields();
 			$sanitized         = array();
 
+			// Check if we're actually processing a form submission for this subtab.
+			// The 'subtab' hidden field is submitted with the form (see render_wrapper).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_subtab = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
+			$is_form_submit   = ( $submitted_subtab === $active_subtab );
+
 			// Only process fields from the active sub-tab.
 			foreach ( $active_field_keys as $field_key ) {
 				if ( ! isset( $all_fields[ $field_key ] ) ) {
@@ -283,9 +296,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					continue;
 				}
 
-				// Special handling for checkboxes: if not present in input, set to false.
+				// Special handling for checkboxes.
 				if ( 'checkbox' === $type ) {
-					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					// Only process checkboxes if this is actually the form being submitted.
+					// This prevents checkboxes from other subtabs from being set to false.
+					if ( $is_form_submit ) {
+						// Checkbox is checked if present in input, unchecked otherwise.
+						$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					}
+					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
 				}
 

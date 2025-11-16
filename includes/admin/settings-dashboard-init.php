@@ -63,9 +63,7 @@ spl_autoload_register(
 
 // Load integration admin pages.
 // These need to be loaded eagerly as they register admin menus and hooks.
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-woocommerce-integration.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-elementor.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-plugins.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php';
 
 /**
@@ -96,11 +94,14 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
-		// Gmail & Crawl4AI Integration has its own dedicated page (wp-mcp-ai-gmail-crawl4ai) and should not appear in settings tabs.
+		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) has its own dedicated page (wp-mcp-ai-gmail-crawl4ai).
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.service_connectors' ) );
+		// Legacy integrations section also has its own page and should not appear in settings tabs.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
+		// Plugin integrations (JetEngine, WooCommerce, Elementor) have their own dedicated admin pages.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		// Performance section is registered to initialize hooks but hidden from main navigation.
@@ -118,9 +119,7 @@ function wp_mcp_ai_init_settings_dashboard() {
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
 
 		// Initialize integration admin pages.
-		$GLOBALS['wp_mcp_ai_admin_jetengine']   = $container->get( 'admin.jetengine_integration' );
-		$GLOBALS['wp_mcp_ai_admin_woocommerce'] = $container->get( 'admin.woocommerce_integration' );
-		$GLOBALS['wp_mcp_ai_admin_elementor']   = $container->get( 'admin.elementor_integration' );
+		$GLOBALS['wp_mcp_ai_admin_plugins']     = $container->get( 'admin.plugins_integration' );
 		$GLOBALS['wp_mcp_ai_admin_gmail_crawl'] = $container->get( 'admin.gmail_crawl_integration' );
 
 		// Initialize the custom filters applicator.

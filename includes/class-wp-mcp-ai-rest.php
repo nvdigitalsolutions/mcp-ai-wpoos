@@ -1356,6 +1356,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Permission check for listing assistants via REST API.
+		 *
+		 * Checks both standard permissions AND the rest_enable_assistant_list setting.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_list( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			// Then check if REST assistant listing is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( empty( $settings['rest_enable_assistant_list'] ) ) {
+				return new WP_Error(
+					'rest_assistant_list_disabled',
+					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication → REST API Capabilities.', 'wp-mcp-ai' ),
+					array(
+						'status' => 403,
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
 		 * Permission check for creating assistants via REST API.
 		 *
 		 * Checks both standard permissions AND the rest_enable_assistant_create setting.
@@ -1482,6 +1514,133 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					),
 				)
 			);
+
+			return $response;
+		}
+
+		/**
+		 * Handle assistant creation via REST API.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_assistant_create( WP_REST_Request $request ) {
+			// Extract and validate parameters from request body.
+			$title         = $request->get_param( 'title' );
+			$description   = $request->get_param( 'description' );
+			$provider      = $request->get_param( 'provider' );
+			$model         = $request->get_param( 'model' );
+			$temperature   = $request->get_param( 'temperature' );
+			$system_prompt = $request->get_param( 'system_prompt' );
+			$tools         = $request->get_param( 'tools' );
+			$status        = $request->get_param( 'status' );
+
+			// Title is required.
+			if ( empty( $title ) ) {
+				return new WP_Error(
+					'rest_missing_title',
+					__( 'Title is required to create an assistant.', 'wp-mcp-ai' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Sanitize title.
+			$title = sanitize_text_field( $title );
+
+			// Prepare post data.
+			$post_data = array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_title'  => $title,
+				'post_status' => 'publish', // Default status.
+			);
+
+			// Add description if provided.
+			if ( ! empty( $description ) ) {
+				$post_data['post_content'] = wp_kses_post( $description );
+			}
+
+			// Validate and set status if provided.
+			if ( ! empty( $status ) ) {
+				$allowed_statuses = array( 'publish', 'draft', 'private' );
+				$status           = sanitize_key( $status );
+				if ( in_array( $status, $allowed_statuses, true ) ) {
+					$post_data['post_status'] = $status;
+				}
+			}
+
+			// Create the assistant post.
+			$assistant_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $assistant_id ) ) {
+				return new WP_Error(
+					'rest_cannot_create',
+					__( 'Could not create the assistant.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// Save metadata.
+			if ( ! empty( $provider ) ) {
+				$provider = sanitize_key( $provider );
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, $provider );
+			}
+
+			if ( ! empty( $model ) ) {
+				$model = sanitize_text_field( $model );
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_MODEL, $model );
+			}
+
+			if ( isset( $temperature ) && is_numeric( $temperature ) ) {
+				$temperature = floatval( $temperature );
+				// Clamp temperature between 0 and 2 (OpenAI/Gemini range).
+				$temperature = max( 0.0, min( 2.0, $temperature ) );
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TEMPERATURE, $temperature );
+			}
+
+			if ( ! empty( $system_prompt ) ) {
+				$system_prompt = wp_kses_post( $system_prompt );
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, $system_prompt );
+			}
+
+			if ( ! empty( $tools ) && is_array( $tools ) ) {
+				// Validate that tools are valid slugs.
+				$valid_tools = array();
+				foreach ( $tools as $tool_slug ) {
+					$tool_slug = sanitize_key( $tool_slug );
+					if ( ! empty( $tool_slug ) ) {
+						// Optionally verify tool exists in registry.
+						if ( $this->registry && $this->registry->get_tool( $tool_slug ) ) {
+							$valid_tools[] = $tool_slug;
+						} else {
+							// Include the tool anyway - it might be available later.
+							$valid_tools[] = $tool_slug;
+						}
+					}
+				}
+				update_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, array_unique( $valid_tools ) );
+			}
+
+			/**
+			 * Fires after an assistant is created via REST API.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param int             $assistant_id Created assistant post ID.
+			 * @param WP_REST_Request $request      Request object.
+			 */
+			do_action( 'wp_mcp_ai_rest_assistant_created', $assistant_id, $request );
+
+			// Get the created post.
+			$assistant_post = get_post( $assistant_id );
+
+			// Build response using the same format as the directory endpoint.
+			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
+			$default_assistant = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+
+			$response_data = $this->summarize_assistant_for_directory( $assistant_post, $default_assistant, $settings, $request );
+
+			$response = new WP_REST_Response( $response_data, 201 );
+			$response->header( 'Location', rest_url( self::REST_NAMESPACE . '/assistants/' . $assistant_id ) );
 
 			return $response;
 		}
