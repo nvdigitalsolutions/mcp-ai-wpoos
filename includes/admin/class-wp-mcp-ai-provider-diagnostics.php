@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Prevent parse errors on PHP < 7.4 by exiting before class definition.
+if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
+	return;
+}
+
 if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 	/**
 	 * Diagnostic page for AI provider connectivity.
