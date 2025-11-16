@@ -610,8 +610,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		);
 
 		// Use the transcript recorder to save.
+		$recorded_session_key = null;
 		if ( class_exists( 'WP_MCP_AI_Chat_Transcript_Recorder' ) ) {
-			WP_MCP_AI_Chat_Transcript_Recorder::record(
+			$recorded_session_key = WP_MCP_AI_Chat_Transcript_Recorder::record(
 				$assistant_id,
 				$clean_messages,
 				array( 'model' => $model ),
@@ -619,6 +620,27 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				$request,
 				$user_id,
 				$context
+			);
+		}
+
+		// Check if recording failed.
+		if ( null === $recorded_session_key ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'handle_chat_transcript_save: Failed to save transcript',
+				array(
+					'session_key'   => $session_key,
+					'assistant_id'  => $assistant_id,
+					'user_id'       => $user_id,
+					'message_count' => count( $clean_messages ),
+					'reason'        => 'Recorder returned null',
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_transcript_save_failed',
+				__( 'Failed to save transcript. Please ensure JetEngine Custom Content Types is active and properly configured.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
 			);
 		}
 
@@ -636,7 +658,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		return rest_ensure_response(
 			array(
 				'success'     => true,
-				'session_key' => $session_key,
+				'session_key' => $recorded_session_key,
 				'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
 			)
 		);
