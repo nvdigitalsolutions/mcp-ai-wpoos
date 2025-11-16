@@ -373,6 +373,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'rest.teams_controller',
+			function () {
+				return new WP_MCP_AI_REST_Teams_Controller();
+			}
+		);
+
+		$this->singleton(
 			'shortcodes',
 			function () {
 				return new WP_MCP_AI_Shortcodes();
@@ -398,6 +405,20 @@ class WP_MCP_AI_Container {
 			'admin.test_assistant',
 			function () {
 				return new WP_MCP_AI_Admin_Test_Assistant();
+			}
+		);
+
+		$this->singleton(
+			'admin.test_profession',
+			function () {
+				return new WP_MCP_AI_Admin_Test_Profession();
+			}
+		);
+
+		$this->singleton(
+			'admin.test_team',
+			function () {
+				return new WP_MCP_AI_Admin_Test_Team();
 			}
 		);
 
