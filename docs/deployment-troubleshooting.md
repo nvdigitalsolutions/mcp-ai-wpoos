@@ -87,6 +87,113 @@ The plugin includes automatic detection and graceful degradation:
 - The plugin will attempt to load production dependencies only (degraded mode)
 - Full functionality is restored once dependencies are properly reinstalled
 
+## Performance Tests Failing (exec() Disabled)
+
+### Problem
+Performance tests fail with error: `Call to undefined function exec()` when trying to run tests from the WordPress admin interface (Performance Monitoring section).
+
+### Root Cause
+This error occurs when:
+1. The `exec()` PHP function is disabled in your hosting environment's `php.ini` configuration
+2. The Performance Monitoring section tries to run PHPUnit tests via shell commands
+3. Many shared hosting providers disable `exec()` for security reasons
+
+### Solution
+
+**Option 1: Use Lightweight Checks (Recommended for Production)**
+
+The plugin automatically falls back to lightweight performance checks when `exec()` is unavailable:
+1. Navigate to **Settings → WP oOS → Performance Monitoring**
+2. When you run tests, the plugin will detect that `exec()` is disabled
+3. It will automatically use built-in lightweight checks instead
+4. These checks cover:
+   - Security: File permissions, HTTPS, API key configuration
+   - Speed: Database queries, cache status, REST API response time
+   - Stress: Memory limits, execution time, concurrent requests
+   - Optimization: Object cache, autoload size, transients
+
+**Option 2: Run Tests via CLI**
+
+If you have command-line access (SSH):
+
+```bash
+cd /path/to/wp-content/plugins/wp-mcp-ai
+./bin/run-performance-tests.sh --suite=stress
+./bin/run-performance-tests.sh --suite=security
+./bin/run-performance-tests.sh --suite=speed
+./bin/run-performance-tests.sh --suite=optimization
+```
+
+**Option 3: Enable exec() (Advanced/Managed Hosting Only)**
+
+⚠️ **Warning:** Only do this if you have full control over your server and understand the security implications.
+
+Contact your hosting provider or (if you manage your own server) edit `php.ini`:
+
+```ini
+; Find this line in php.ini
+disable_functions = exec,passthru,shell_exec,system,proc_open,popen
+
+; Remove 'exec' from the list
+disable_functions = passthru,shell_exec,system,proc_open,popen
+```
+
+Restart PHP-FPM or Apache after changes.
+
+### Verification
+
+Check if `exec()` is available:
+
+```php
+<?php
+// Create a test file: check-exec.php
+if (function_exists('exec')) {
+    echo 'exec() is ENABLED' . PHP_EOL;
+} else {
+    echo 'exec() is DISABLED - will use lightweight checks' . PHP_EOL;
+}
+
+// Check what functions are disabled
+$disabled = ini_get('disable_functions');
+echo 'Disabled functions: ' . ($disabled ?: 'none') . PHP_EOL;
+```
+
+Run it:
+```bash
+php check-exec.php
+```
+
+### Plugin Behavior
+
+The plugin includes automatic detection and graceful handling:
+- **When exec() is disabled:**
+  - Performance test UI shows clear error message
+  - Directs users to lightweight checks (already available in the UI)
+  - Provides CLI command alternative
+  - No fatal errors or plugin breakage
+
+- **When exec() is enabled:**
+  - Full PHPUnit test suite can be run from admin interface
+  - Detailed test output and metrics
+  - Command-line tools integration
+
+### Best Practices
+
+1. **For Production Sites:**
+   - Leave `exec()` disabled for better security
+   - Use the built-in lightweight checks (no `exec()` required)
+   - Schedule CLI tests via cron if needed
+
+2. **For Development/Staging:**
+   - Enable `exec()` if needed for full test suite
+   - Run comprehensive PHPUnit tests
+   - Use CLI for automated testing
+
+3. **For Managed Hosting (Cloudways, WP Engine, etc.):**
+   - `exec()` is typically disabled and cannot be enabled
+   - Use lightweight checks exclusively
+   - This is the expected and supported configuration
+
 ## REST API Context Parameter Issues
 
 ### Problem
