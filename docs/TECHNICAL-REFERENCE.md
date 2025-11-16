@@ -1540,10 +1540,10 @@ $config = array(
 **LM Studio:**
 ```php
 $config = array(
-    'base_url' => 'http://localhost:1234/v1',
+    'base_url' => 'http://localhost:1234',  // Base URL without /v1
     'endpoints' => array(
-        'chat' => '/chat/completions',
-        'models' => '/models',
+        'chat' => '/v1/chat/completions',
+        'models' => '/v1/models',
     ),
 );
 ```

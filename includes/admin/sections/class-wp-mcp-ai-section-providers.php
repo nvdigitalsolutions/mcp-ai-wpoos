@@ -221,16 +221,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'lm_studio_endpoint_url'      => array(
 					'type'        => 'url',
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'URL for your LM Studio server. Examples: "http://localhost:1234/v1" for local, "http://192.168.2.222:1234/v1" for network server. This is WHERE your LM Studio is running. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
-					'placeholder' => 'http://localhost:1234/v1',
+					'description' => __( 'URL for your LM Studio server. Examples: "http://localhost:1234" for local, "http://192.168.2.222:1234" for network server. This is WHERE your LM Studio is running. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
+					'placeholder' => 'http://localhost:1234',
 					/**
 					 * Filter the default LM Studio endpoint URL.
 					 *
 					 * @since 1.0.0
 					 *
-					 * @param string $url Default URL. Default 'http://localhost:1234/v1'.
+					 * @param string $url Default URL. Default 'http://localhost:1234'.
 					 */
-					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234/v1' ),
+					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234' ),
 				),
 				'lm_studio_model'             => array(
 					'type'        => 'text',

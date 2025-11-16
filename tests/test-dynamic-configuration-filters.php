@@ -277,17 +277,17 @@ class WP_MCP_AI_Dynamic_Configuration_Filters_Test extends WP_UnitTestCase {
 	 * Test LM Studio endpoint URL filter.
 	 */
 	public function test_lm_studio_endpoint_url_filter() {
-		$default_url = 'http://localhost:1234/v1';
+		$default_url = 'http://localhost:1234';
 
 		add_filter(
 			'wp_mcp_ai_default_lm_studio_endpoint_url',
 			function () {
-				return 'http://custom-lm-studio:1234/v1';
+				return 'http://custom-lm-studio:1234';
 			}
 		);
 
 		$filtered_value = apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', $default_url );
-		$this->assertEquals( 'http://custom-lm-studio:1234/v1', $filtered_value );
+		$this->assertEquals( 'http://custom-lm-studio:1234', $filtered_value );
 
 		remove_all_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url' );
 	}

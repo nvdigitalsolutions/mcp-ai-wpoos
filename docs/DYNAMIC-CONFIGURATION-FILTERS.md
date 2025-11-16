@@ -507,7 +507,7 @@ add_filter( 'wp_mcp_ai_default_ollama_endpoint_url', function( $url ) {
 
 Filter the default LM Studio endpoint URL.
 
-**Default:** `http://localhost:1234/v1`  
+**Default:** `http://localhost:1234`  
 **Since:** 1.0.0  
 **Admin UI:** Yes (Custom AI Settings tab)
 

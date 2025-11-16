@@ -263,7 +263,7 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		// Recreate applicator to pick up new setting.
 		$this->applicator = new WP_MCP_AI_Custom_Filters_Applicator();
 
-		$default = 'http://localhost:1234/v1';
+		$default = 'http://localhost:1234';
 		$result  = apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', $default );
 		$this->assertEquals( 'http://custom-lm-studio:1234/v1', $result );
 	}

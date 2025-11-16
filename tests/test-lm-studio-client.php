@@ -584,4 +584,215 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	/**
+	 * Test that URLs are constructed correctly without double /v1.
+	 * This tests the fix for the issue where endpoint URLs included /v1,
+	 * causing URLs like http://192.168.2.222:1234/v1/v1/models.
+	 */
+	public function test_url_construction_without_double_v1() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		$captured_url = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					$captured_url = $url;
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->test_connection();
+
+		// Verify URL is http://localhost:1234/v1/models, NOT /v1/v1/models.
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertEquals( 'http://localhost:1234/v1/models', $captured_url );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should not contain double /v1' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that network endpoint URLs are constructed correctly.
+	 */
+	public function test_network_endpoint_url_construction() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://192.168.2.222:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_url = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, '192.168.2.222:1234' ) !== false ) {
+					$captured_url = $url;
+					if ( strpos( $url, '/v1/chat/completions' ) !== false ) {
+						return array(
+							'response' => array( 'code' => 200 ),
+							'body'     => wp_json_encode(
+								array(
+									'id'      => 'chatcmpl-123',
+									'object'  => 'chat.completion',
+									'created' => time(),
+									'model'   => 'test-model',
+									'choices' => array(
+										array(
+											'index'         => 0,
+											'message'       => array(
+												'role'    => 'assistant',
+												'content' => 'Test response',
+											),
+											'finish_reason' => 'stop',
+										),
+									),
+								)
+							),
+						);
+					}
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test',
+			),
+		);
+
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify URL is http://192.168.2.222:1234/v1/chat/completions, NOT /v1/v1/chat/completions.
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertEquals( 'http://192.168.2.222:1234/v1/chat/completions', $captured_url );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should not contain double /v1' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that list_models constructs correct URL.
+	 */
+	public function test_list_models_url_construction() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		$captured_url = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					$captured_url = $url;
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->list_models();
+
+		// Verify URL is http://localhost:1234/v1/models, NOT /v1/v1/models.
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertEquals( 'http://localhost:1234/v1/models', $captured_url );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should not contain double /v1' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that create_completion constructs correct URL.
+	 */
+	public function test_create_completion_url_construction() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_url = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/completions' ) !== false ) {
+					$captured_url = $url;
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'cmpl-123',
+								'object'  => 'text_completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'text'          => ' Paris',
+										'index'         => 0,
+										'logprobs'      => null,
+										'finish_reason' => 'stop',
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->create_completion( 'The capital of France is' );
+
+		// Verify URL is http://localhost:1234/v1/completions, NOT /v1/v1/completions.
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertEquals( 'http://localhost:1234/v1/completions', $captured_url );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should not contain double /v1' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }
