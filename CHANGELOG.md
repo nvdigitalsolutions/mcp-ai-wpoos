@@ -7,6 +7,14 @@
 
 ## [Unreleased]
 ### Fixed
+- **LM Studio Endpoint URL Configuration**: Fixed duplicate `/v1` path issue in API requests (November 16, 2025)
+  - Changed endpoint URL format from `http://localhost:1234/v1` to `http://localhost:1234`
+  - Code now correctly appends `/v1/models`, `/v1/chat/completions`, etc. to base URL
+  - Matches Ollama configuration pattern for consistency
+  - **BREAKING CHANGE for existing users**: If you have LM Studio configured, update your endpoint URL in Settings → WP oOS → Providers:
+    - Old format: `http://192.168.2.222:1234/v1` ❌
+    - New format: `http://192.168.2.222:1234` ✅
+  - Updated documentation, settings defaults, and all test files
 - **Code Quality Improvements**: Comprehensive code review and documentation update (November 16, 2025)
   - Performed complete code review confirming 95/100 code quality score (Excellent)
   - Verified security: No critical vulnerabilities identified, excellent input sanitization and output escaping
