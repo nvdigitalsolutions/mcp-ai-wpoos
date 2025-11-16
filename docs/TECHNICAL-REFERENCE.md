@@ -1140,8 +1140,11 @@ curl "https://generativelanguage.googleapis.com/v1beta/models?key=YOUR_API_KEY"
 
 **LM Studio/Ollama:**
 ```bash
-# Test local endpoint
+# Test LM Studio endpoint (full URL including /v1 path)
 curl http://localhost:1234/v1/models
+
+# Test Ollama endpoint
+curl http://localhost:11434/api/tags
 ```
 
 ### Diagnostic Pages
@@ -1540,10 +1543,10 @@ $config = array(
 **LM Studio:**
 ```php
 $config = array(
-    'base_url' => 'http://localhost:1234/v1',
+    'base_url' => 'http://localhost:1234',
     'endpoints' => array(
-        'chat' => '/chat/completions',
-        'models' => '/models',
+        'chat' => '/v1/chat/completions',
+        'models' => '/v1/models',
     ),
 );
 ```
