@@ -511,6 +511,10 @@ class WP_MCP_AI_Usage_Tracker {
 				'input_cost_per_1k'  => 0.0001,
 				'output_cost_per_1k' => 0.0004,
 			),
+			'gemini-2.5-flash'  => array(
+				'input_cost_per_1k'  => 0.000075,
+				'output_cost_per_1k' => 0.0003,
+			),
 			'claude-3.5-sonnet' => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,

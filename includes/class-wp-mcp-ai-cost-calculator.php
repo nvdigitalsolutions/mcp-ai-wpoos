@@ -74,6 +74,10 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.10,
 				'output' => 0.40,
 			),
+			'gemini-2.5-flash' => array(
+				'input'  => 0.075,
+				'output' => 0.30,
+			),
 			'gemini-pro'       => array(
 				'input'  => 0.50,
 				'output' => 1.50,

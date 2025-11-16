@@ -447,6 +447,11 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		$cost_gemini_flash       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash', 1000000, 1000000 );
 		$this->assertEquals( $cost_gemini_flash, $cost_gemini_flash_dated, 'gemini-1.5-flash-2024-05 should match gemini-1.5-flash' );
 
+		// Test Gemini 2.5 flash variants.
+		$cost_gemini_25_flash_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-flash-2024-12', 1000000, 1000000 );
+		$cost_gemini_25_flash       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-2.5-flash', 1000000, 1000000 );
+		$this->assertEquals( $cost_gemini_25_flash, $cost_gemini_25_flash_dated, 'gemini-2.5-flash-2024-12 should match gemini-2.5-flash' );
+
 		// Test Claude variants.
 		$cost_claude_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-3.5-sonnet-20241022', 1000000, 1000000 );
 		$cost_claude       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-3.5-sonnet', 1000000, 1000000 );
