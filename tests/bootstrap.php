@@ -34,14 +34,20 @@ if ( ! $wordpress_path ) {
 		$startup_output = array();
 		$startup_result = 0;
 
-		exec( escapeshellcmd( $startup_script ) . ' 2>&1', $startup_output, $startup_result );
+		// Check if exec() is available before attempting to run the script.
+		if ( function_exists( 'exec' ) ) {
+			exec( escapeshellcmd( $startup_script ) . ' 2>&1', $startup_output, $startup_result );
 
-		if ( ! empty( $startup_output ) ) {
-			fwrite( STDERR, implode( "\n", $startup_output ) . "\n" );
-		}
+			if ( ! empty( $startup_output ) ) {
+				fwrite( STDERR, implode( "\n", $startup_output ) . "\n" );
+			}
 
-		if ( 0 !== $startup_result ) {
-			fwrite( STDERR, "codex-startup.sh exited with a non-zero status ({$startup_result}).\n" );
+			if ( 0 !== $startup_result ) {
+				fwrite( STDERR, "codex-startup.sh exited with a non-zero status ({$startup_result}).\n" );
+			}
+		} else {
+			fwrite( STDERR, "Warning: exec() function is disabled. Cannot run automatic WordPress setup.\n" );
+			fwrite( STDERR, "Please set WP_CORE_DIR environment variable or manually run: {$startup_script}\n" );
 		}
 	}
 

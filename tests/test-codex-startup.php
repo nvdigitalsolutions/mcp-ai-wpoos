@@ -8,6 +8,11 @@ class Test_Codex_Startup extends WP_UnitTestCase {
 		 * Ensure the startup script installs Composer dependencies when missing.
 		 */
 	public function test_composer_dependencies_installed_on_startup() {
+		// Skip test if exec() is not available.
+		if ( ! function_exists( 'exec' ) ) {
+			$this->markTestSkipped( 'exec() function is disabled. Cannot test shell script execution.' );
+		}
+
 			$root_dir = trailingslashit( sys_get_temp_dir() ) . 'wp-mcp-ai-startup-' . wp_generate_uuid4();
 			$bin_dir  = $root_dir . '/bin';
 

@@ -614,6 +614,16 @@ composer install</pre>
 	 * @return array Test results with success status and message.
 	 */
 	protected function run_performance_test_programmatically( $test_type ) {
+		// Check if exec() function is available.
+		if ( ! function_exists( 'exec' ) ) {
+			return array(
+				'success'     => false,
+				'message'     => __( 'Shell execution is disabled on this server.', 'wp-mcp-ai' ),
+				'details'     => __( 'The exec() function is disabled in your PHP configuration. Performance tests requiring PHPUnit cannot run from the admin interface. You can still use the lightweight checks below, or run tests via CLI if you have command-line access.', 'wp-mcp-ai' ),
+				'cli_command' => './bin/run-performance-tests.sh --suite=' . $test_type,
+			);
+		}
+
 		// Check if PHPUnit is available.
 		$phpunit_bin = WP_MCP_AI_PATH . 'vendor/bin/phpunit';
 		$has_phpunit = file_exists( $phpunit_bin );
@@ -736,6 +746,11 @@ composer install</pre>
 	 * @return bool True if command exists.
 	 */
 	protected function command_exists( $command ) {
+		// Check if exec() function is available.
+		if ( ! function_exists( 'exec' ) ) {
+			return false;
+		}
+
 		$return_var = 0;
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( 'command -v ' . escapeshellarg( $command ) . ' 2>/dev/null', $output, $return_var );
