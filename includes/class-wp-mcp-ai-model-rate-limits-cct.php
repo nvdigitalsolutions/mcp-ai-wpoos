@@ -69,9 +69,10 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	 * Get model rate limit by model name.
 	 *
 	 * @param string $model Model identifier.
+	 * @param bool   $auto_create Whether to auto-create a variant entry if not found. Default true.
 	 * @return array|null Model rate limit data or null if not found.
 	 */
-	public static function get_model_limits( $model ) {
+	public static function get_model_limits( $model, $auto_create = true ) {
 		$handler = self::get_item_handler();
 
 		if ( ! $handler ) {
@@ -97,12 +98,17 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			return reset( $items );
 		}
 
-		// Try prefix match for model families (e.g., gpt-4o-mini matches gpt-4o).
+		// Try prefix match for model families, preferring the longest match.
+		// This ensures "gpt-5-2025-08-07" matches "gpt-5" correctly,
+		// even when both "gpt-5" and "gpt-5-nano" exist in the database.
 		$all_items = $factory->db->query( array() );
 
 		if ( empty( $all_items ) || ! is_array( $all_items ) ) {
 			return null;
 		}
+
+		$best_match        = null;
+		$best_match_length = 0;
 
 		foreach ( $all_items as $item ) {
 			if ( ! isset( $item['model_name'] ) ) {
@@ -111,9 +117,98 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 
 			$stored_model = sanitize_text_field( $item['model_name'] );
 
+			// Check if the input model starts with this stored model name.
 			if ( 0 === strpos( $model, $stored_model ) ) {
-				return $item;
+				$match_length = strlen( $stored_model );
+
+				// Keep the longest matching prefix.
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $item;
+					$best_match_length = $match_length;
+				}
 			}
+		}
+
+		// If we found a base model match and auto-create is enabled, create a variant entry.
+		if ( $best_match && $auto_create && $model !== $best_match['model_name'] ) {
+			$variant_data = self::create_model_variant( $model, $best_match );
+			if ( $variant_data ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_variant_auto_created',
+					sprintf( 'Auto-created model variant entry for %s based on %s', $model, $best_match['model_name'] ),
+					array(
+						'model'      => $model,
+						'base_model' => $best_match['model_name'],
+					)
+				);
+				return $variant_data;
+			}
+		}
+
+		return $best_match;
+	}
+
+	/**
+	 * Create a new model variant entry based on a base model.
+	 *
+	 * @param string $variant_name The variant model name (e.g., gpt-5-2025-08-07).
+	 * @param array  $base_model   The base model data to copy from.
+	 * @return array|null The created variant data or null on failure.
+	 */
+	protected static function create_model_variant( $variant_name, $base_model ) {
+		$handler = self::get_item_handler();
+
+		if ( ! $handler ) {
+			return null;
+		}
+
+		// Create a new entry based on the base model.
+		$variant_data = $base_model;
+
+		// Update the model name.
+		$variant_data['model_name'] = sanitize_text_field( $variant_name );
+
+		// Add a note indicating this is an auto-created variant.
+		$base_note = isset( $variant_data['notes'] ) ? $variant_data['notes'] : '';
+		$variant_data['notes'] = sprintf(
+			'Auto-created variant of %s. %s',
+			$base_model['model_name'],
+			$base_note
+		);
+
+		// Remove the _ID field to create a new entry.
+		unset( $variant_data['_ID'] );
+		unset( $variant_data['cct_created'] );
+		unset( $variant_data['cct_modified'] );
+		unset( $variant_data['cct_author_id'] );
+
+		try {
+			$new_id = $handler->update_item( $variant_data );
+
+			if ( $new_id ) {
+				// Retrieve the newly created item.
+				$factory = $handler->get_factory();
+				if ( $factory && ! empty( $factory->db ) ) {
+					$items = $factory->db->query(
+						array(
+							'_ID' => $new_id,
+						)
+					);
+
+					if ( ! empty( $items ) && is_array( $items ) ) {
+						return reset( $items );
+					}
+				}
+			}
+		} catch ( Exception $e ) {
+			WP_MCP_AI_Logger::log_error(
+				'Error creating model variant',
+				array(
+					'variant'    => $variant_name,
+					'base_model' => $base_model['model_name'],
+					'error'      => $e->getMessage(),
+				)
+			);
 		}
 
 		return null;

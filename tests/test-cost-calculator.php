@@ -365,4 +365,102 @@ class Test_Cost_Calculator extends WP_UnitTestCase {
 		// Should use gpt-4-turbo pricing: input $10/1M, output $30/1M = $40 total.
 		$this->assertGreaterThan( 0, $cost, 'Should find pricing for versioned model' );
 	}
+
+	/**
+	 * Test GPT-5 variant matching with version suffix.
+	 */
+	public function test_gpt5_variant_matching() {
+		// Test that gpt-5-2025-08-07 matches gpt-5 pricing (not gpt-5-mini or gpt-5-nano).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-2025-08-07', 1000000, 500000 );
+
+		// Should use gpt-5 pricing: input $10/1M, output $30/1M.
+		// Expected: (1M / 1M) * 10 + (500K / 1M) * 30 = 10 + 15 = $25.00.
+		$this->assertEquals( 25.00, $cost, 'gpt-5-2025-08-07 should match gpt-5 pricing' );
+	}
+
+	/**
+	 * Test GPT-5-mini is distinct from GPT-5.
+	 */
+	public function test_gpt5_mini_distinct_from_gpt5() {
+		// Test that gpt-5-mini has its own pricing, not gpt-5.
+		$cost_gpt5      = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5', 1000000, 1000000 );
+		$cost_gpt5_mini = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-mini', 1000000, 1000000 );
+
+		// gpt-5: input $10/1M, output $30/1M = $40 total.
+		$this->assertEquals( 40.00, $cost_gpt5, 'gpt-5 cost calculation incorrect' );
+
+		// gpt-5-mini: input $2/1M, output $6/1M = $8 total.
+		$this->assertEquals( 8.00, $cost_gpt5_mini, 'gpt-5-mini cost calculation incorrect' );
+
+		// They should be different.
+		$this->assertNotEquals( $cost_gpt5, $cost_gpt5_mini, 'gpt-5 and gpt-5-mini should have different costs' );
+	}
+
+	/**
+	 * Test GPT-5-mini variant with version suffix.
+	 */
+	public function test_gpt5_mini_variant_matching() {
+		// Test that gpt-5-mini-2025-08-07 matches gpt-5-mini pricing (not gpt-5).
+		$cost = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-5-mini-2025-08-07', 1000000, 1000000 );
+
+		// Should use gpt-5-mini pricing: input $2/1M, output $6/1M = $8 total.
+		$this->assertEquals( 8.00, $cost, 'gpt-5-mini-2025-08-07 should match gpt-5-mini pricing' );
+	}
+
+	/**
+	 * Test longest prefix matching ensures correct model selection.
+	 */
+	public function test_longest_prefix_matching() {
+		// When we have gpt-5, gpt-5-mini, and gpt-5-nano in the system,
+		// gpt-5-2025-08-07 should match gpt-5 (not just any prefix).
+		
+		// Get pricing for different variants to ensure longest match wins.
+		$pricing_gpt5           = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-5' );
+		$pricing_gpt5_mini      = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-5-mini' );
+		$pricing_gpt5_versioned = WP_MCP_AI_Cost_Calculator::get_model_pricing( 'openai', 'gpt-5-2025-08-07' );
+
+		// Verify gpt-5 and gpt-5-mini have different pricing.
+		$this->assertNotEquals( $pricing_gpt5['input'], $pricing_gpt5_mini['input'], 'gpt-5 and gpt-5-mini should have different input costs' );
+
+		// Verify gpt-5-2025-08-07 matches gpt-5 pricing (longest prefix).
+		$this->assertEquals( $pricing_gpt5['input'], $pricing_gpt5_versioned['input'], 'gpt-5-2025-08-07 should match gpt-5 input cost' );
+		$this->assertEquals( $pricing_gpt5['output'], $pricing_gpt5_versioned['output'], 'gpt-5-2025-08-07 should match gpt-5 output cost' );
+	}
+
+	/**
+	 * Test longest prefix matching works for all model families.
+	 */
+	public function test_longest_prefix_matching_all_models() {
+		// Test GPT-4o variants.
+		$cost_gpt4o_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4o-2024-11-20', 1000000, 1000000 );
+		$cost_gpt4o       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4o', 1000000, 1000000 );
+		$this->assertEquals( $cost_gpt4o, $cost_gpt4o_dated, 'gpt-4o-2024-11-20 should match gpt-4o' );
+
+		// Test GPT-4o-mini variants (should NOT match gpt-4o).
+		$cost_gpt4o_mini_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4o-mini-2024-11-20', 1000000, 1000000 );
+		$cost_gpt4o_mini       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'gpt-4o-mini', 1000000, 1000000 );
+		$this->assertEquals( $cost_gpt4o_mini, $cost_gpt4o_mini_dated, 'gpt-4o-mini-2024-11-20 should match gpt-4o-mini' );
+		$this->assertNotEquals( $cost_gpt4o, $cost_gpt4o_mini, 'gpt-4o-mini should NOT match gpt-4o pricing' );
+
+		// Test Gemini variants.
+		$cost_gemini_flash_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash-2024-05', 1000000, 1000000 );
+		$cost_gemini_flash       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'gemini', 'gemini-1.5-flash', 1000000, 1000000 );
+		$this->assertEquals( $cost_gemini_flash, $cost_gemini_flash_dated, 'gemini-1.5-flash-2024-05 should match gemini-1.5-flash' );
+
+		// Test Claude variants.
+		$cost_claude_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-3.5-sonnet-20241022', 1000000, 1000000 );
+		$cost_claude       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'anthropic', 'claude-3.5-sonnet', 1000000, 1000000 );
+		$this->assertEquals( $cost_claude, $cost_claude_dated, 'claude-3.5-sonnet-20241022 should match claude-3.5-sonnet' );
+
+		// Test O1 variants.
+		$cost_o1_preview_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'o1-preview-2024-09-12', 1000000, 1000000 );
+		$cost_o1_preview       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'o1-preview', 1000000, 1000000 );
+		$this->assertEquals( $cost_o1_preview, $cost_o1_preview_dated, 'o1-preview-2024-09-12 should match o1-preview' );
+
+		// Test O1-mini variants (should NOT match o1-preview).
+		$cost_o1_mini_dated = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'o1-mini-2024-09-12', 1000000, 1000000 );
+		$cost_o1_mini       = WP_MCP_AI_Cost_Calculator::calculate_cost( 'openai', 'o1-mini', 1000000, 1000000 );
+		$this->assertEquals( $cost_o1_mini, $cost_o1_mini_dated, 'o1-mini-2024-09-12 should match o1-mini' );
+		$this->assertNotEquals( $cost_o1_preview, $cost_o1_mini, 'o1-mini should NOT match o1-preview pricing' );
+	}
 }

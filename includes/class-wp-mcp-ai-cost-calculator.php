@@ -24,6 +24,14 @@ class WP_MCP_AI_Cost_Calculator {
 	 */
 	const PRICING = array(
 		'openai'    => array(
+			'gpt-5'         => array(
+				'input'  => 10.00,
+				'output' => 30.00,
+			),
+			'gpt-5-mini'    => array(
+				'input'  => 2.00,
+				'output' => 6.00,
+			),
 			'gpt-4o'        => array(
 				'input'  => 2.50,
 				'output' => 10.00,
@@ -161,11 +169,25 @@ class WP_MCP_AI_Cost_Calculator {
 			return $provider_pricing['default'];
 		}
 
-		// Try to find a close match (e.g., 'gpt-4-1106-preview' should match 'gpt-4-turbo').
+		// Try to find the longest matching prefix (e.g., 'gpt-5-2025-08-07' should match 'gpt-5').
+		// This ensures we get the most specific match when multiple models share a prefix.
+		$best_match        = null;
+		$best_match_length = 0;
+
 		foreach ( $provider_pricing as $known_model => $pricing ) {
-			if ( strpos( $model, $known_model ) === 0 || strpos( $known_model, $model ) === 0 ) {
-				return $pricing;
+			if ( 0 === strpos( $model, $known_model ) ) {
+				$match_length = strlen( $known_model );
+
+				// Keep the longest matching prefix.
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $pricing;
+					$best_match_length = $match_length;
+				}
 			}
+		}
+
+		if ( $best_match ) {
+			return $best_match;
 		}
 
 		// No pricing found.

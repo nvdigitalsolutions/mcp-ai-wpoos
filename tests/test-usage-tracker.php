@@ -381,4 +381,73 @@ class WP_MCP_AI_Usage_Tracker_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 0.0, $cost );
 	}
+
+	/**
+	 * Test cost calculation for GPT-5 variant with version suffix.
+	 */
+	public function test_calculate_cost_gpt5_variant() {
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-5-2025-08-07', 1000000, 500000 );
+
+		// gpt-5 pricing: input $0.01/1K, output $0.03/1K.
+		// Expected: (1M / 1000) * 0.01 + (500K / 1000) * 0.03 = 10 + 15 = $25.00.
+		$this->assertEquals( 25.00, $cost, 'gpt-5-2025-08-07 should match gpt-5 pricing' );
+	}
+
+	/**
+	 * Test cost calculation for GPT-5-mini variant with version suffix.
+	 */
+	public function test_calculate_cost_gpt5_mini_variant() {
+		$cost = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-5-mini-2025-08-07', 1000000, 1000000 );
+
+		// gpt-5-mini pricing: input $0.002/1K, output $0.006/1K.
+		// Expected: (1M / 1000) * 0.002 + (1M / 1000) * 0.006 = 2 + 6 = $8.00.
+		$this->assertEquals( 8.00, $cost, 'gpt-5-mini-2025-08-07 should match gpt-5-mini pricing' );
+	}
+
+	/**
+	 * Test that GPT-5 and GPT-5-mini have different costs (longest prefix matching).
+	 */
+	public function test_gpt5_mini_distinct_from_gpt5_in_usage_tracker() {
+		$cost_gpt5      = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-5', 1000000, 1000000 );
+		$cost_gpt5_mini = WP_MCP_AI_Usage_Tracker::calculate_cost( 'openai', 'gpt-5-mini', 1000000, 1000000 );
+
+		// gpt-5: input $0.01/1K, output $0.03/1K = $40 total.
+		$this->assertEquals( 40.00, $cost_gpt5, 'gpt-5 cost calculation incorrect' );
+
+		// gpt-5-mini: input $0.002/1K, output $0.006/1K = $8 total.
+		$this->assertEquals( 8.00, $cost_gpt5_mini, 'gpt-5-mini cost calculation incorrect' );
+
+		// They should be different.
+		$this->assertNotEquals( $cost_gpt5, $cost_gpt5_mini, 'gpt-5 and gpt-5-mini should have different costs' );
+	}
+
+	/**
+	 * Test user total cost with GPT-5 variant usage.
+	 */
+	public function test_calculate_user_total_cost_with_gpt5_variant() {
+		$user_id = self::factory()->user->create();
+
+		// Simulate usage with gpt-5-2025-08-07.
+		$totals = array(
+			'openai' => array(
+				'gpt-5-2025-08-07' => array(
+					'requests'          => 248,
+					'prompt_tokens'     => 5688474,
+					'completion_tokens' => 249446,
+					'total_tokens'      => 6196026,
+					'cached_tokens'     => 0,
+				),
+			),
+		);
+
+		update_user_meta( $user_id, WP_MCP_AI_Usage_Tracker::USER_META_KEY, $totals );
+
+		$total_cost = WP_MCP_AI_Usage_Tracker::calculate_user_total_cost( $user_id );
+
+		// Expected cost for gpt-5:
+		// Input: 5,688,474 tokens / 1000 * $0.01 = $56.88474.
+		// Output: 249,446 tokens / 1000 * $0.03 = $7.48338.
+		// Total: $64.36812.
+		$this->assertEqualsWithDelta( 64.36812, $total_cost, 0.00001, 'gpt-5 variant cost calculation should work' );
+	}
 }
