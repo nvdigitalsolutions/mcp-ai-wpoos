@@ -808,6 +808,12 @@
     color: var(--wp-mcp-ai-color-status-streaming-text, #065f46);
 }
 
+.wp-mcp-ai-chat__status--tool {
+    background: var(--wp-mcp-ai-color-status-tool-bg, #faf5ff);
+    border-left-color: var(--wp-mcp-ai-color-status-tool-border, #a855f7);
+    color: var(--wp-mcp-ai-color-status-tool-text, #581c87);
+}
+
 .wp-mcp-ai-chat__label {
     display: block;
     font-weight: 600;
