@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'External Tools Integration', 'wp-mcp-ai' );
+			return __( 'External Tools', 'wp-mcp-ai' );
 		}
 
 		/**

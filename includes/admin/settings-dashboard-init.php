@@ -39,9 +39,7 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Tools'                    => 'includes/admin/sections/class-wp-mcp-ai-section-tools.php',
 			'WP_MCP_AI_Section_Orchestration'            => 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php',
 			'WP_MCP_AI_Section_Integrations'             => 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php',
-			'WP_MCP_AI_Section_JetEngine_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-jetengine.php',
-			'WP_MCP_AI_Section_WooCommerce_Integration'  => 'includes/admin/sections/class-wp-mcp-ai-section-woocommerce.php',
-			'WP_MCP_AI_Section_Elementor_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php',
+			'WP_MCP_AI_Section_Plugins_Integration'      => 'includes/admin/sections/class-wp-mcp-ai-section-plugins-integration.php',
 			'WP_MCP_AI_Section_Token_Manager'            => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
 			'WP_MCP_AI_Section_Security'                 => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
 			'WP_MCP_AI_Section_Performance'              => 'includes/admin/sections/class-wp-mcp-ai-section-performance.php',
@@ -96,12 +94,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
-		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now managed via the integrations section.
+		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) are now consolidated in integrations section.
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
-		// Plugin integrations (JetEngine, WooCommerce, Elementor) are now managed via sections in the main dashboard.
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
+		// Plugin integrations (JetEngine, WooCommerce, Elementor) are now consolidated in a single section.
+		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.plugins_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		// Performance section is registered to initialize hooks but hidden from main navigation.
