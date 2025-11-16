@@ -190,8 +190,18 @@ class WP_MCP_AI_Team_Repository {
 
 	/**
 	 * Clear cache for teams.
+	 *
+	 * @param int $post_id Optional post ID to clear specific cache.
 	 */
-	public function clear_cache() {
-		wp_cache_delete_group( self::CACHE_GROUP );
+	public function clear_cache( $post_id = null ) {
+		if ( $post_id ) {
+			$post = get_post( $post_id );
+			if ( $post && isset( $post->post_name ) ) {
+				wp_cache_delete( 'team_' . $post->post_name, self::CACHE_GROUP );
+			}
+		}
+
+		// Clear all teams cache.
+		wp_cache_delete( 'all_teams_' . md5( wp_json_encode( array() ) ), self::CACHE_GROUP );
 	}
 }
