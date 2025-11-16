@@ -538,23 +538,9 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'section.jetengine_integration',
+			'section.plugins_integration',
 			function () {
-				return new WP_MCP_AI_Section_JetEngine_Integration();
-			}
-		);
-
-		$this->singleton(
-			'section.woocommerce_integration',
-			function () {
-				return new WP_MCP_AI_Section_WooCommerce_Integration();
-			}
-		);
-
-		$this->singleton(
-			'section.elementor_integration',
-			function () {
-				return new WP_MCP_AI_Section_Elementor_Integration();
+				return new WP_MCP_AI_Section_Plugins_Integration();
 			}
 		);
 
