@@ -187,7 +187,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 		 *
 		 * @return array
 		 */
-		private function get_subtab_groups() {
+		protected function get_subtab_groups() {
 			return array(
 				'auth0'          => array(
 					'id'     => 'auth0',
@@ -233,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 		 *
 		 * @return string
 		 */
-		private function get_active_subtab() {
+		protected function get_active_subtab() {
 			$subtab        = '';
 			$subtab_groups = $this->get_subtab_groups();
 

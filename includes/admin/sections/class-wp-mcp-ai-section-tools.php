@@ -323,7 +323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 *
 		 * @return array
 		 */
-		private function get_subtab_groups() {
+		protected function get_subtab_groups() {
 			return array(
 				'tools_manager'  => array(
 					'id'     => 'tools_manager',
@@ -397,7 +397,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 *
 		 * @return string
 		 */
-		private function get_active_subtab() {
+		protected function get_active_subtab() {
 			$subtab_groups = $this->get_subtab_groups();
 			$subtab        = '';
 

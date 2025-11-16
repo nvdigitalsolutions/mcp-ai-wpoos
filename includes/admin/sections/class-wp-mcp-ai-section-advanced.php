@@ -114,7 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 *
 		 * @return array
 		 */
-		private function get_subtab_groups() {
+		protected function get_subtab_groups() {
 			return array(
 				'performance_monitoring' => array(
 					'id'     => 'performance_monitoring',
@@ -160,7 +160,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 *
 		 * @return string
 		 */
-		private function get_active_subtab() {
+		protected function get_active_subtab() {
 			$subtab_groups = $this->get_subtab_groups();
 			$subtab        = '';
 
