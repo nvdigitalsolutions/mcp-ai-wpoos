@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Service_Connectors' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Service Connectors', 'wp-mcp-ai' );
+			return __( 'External Tools', 'wp-mcp-ai' );
 		}
 
 		/**
@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Service_Connectors' ) ) {
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'integrations';
+			return 'external_tools';
 		}
 
 		/**
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Service_Connectors' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure third-party service integrations including search APIs, email services, cloud platforms, and analytics.', 'wp-mcp-ai' );
+			return __( 'Configure third-party service integrations including search APIs, email services, cloud platforms, web crawlers, and analytics.', 'wp-mcp-ai' );
 		}
 
 		/**
