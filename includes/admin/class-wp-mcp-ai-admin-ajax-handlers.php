@@ -666,9 +666,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get limits, multipliers, and model preferences from request.
-			$limits            = isset( $_POST['limits'] ) ? (array) $_POST['limits'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$multipliers       = isset( $_POST['multipliers'] ) ? (array) $_POST['multipliers'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$model_preferences = isset( $_POST['model_preferences'] ) ? (array) $_POST['model_preferences'] : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$limits            = isset( $_POST['limits'] ) ? (array) wp_unslash( $_POST['limits'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$multipliers       = isset( $_POST['multipliers'] ) ? (array) wp_unslash( $_POST['multipliers'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$model_preferences = isset( $_POST['model_preferences'] ) ? (array) wp_unslash( $_POST['model_preferences'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			if ( empty( $limits ) && empty( $multipliers ) && empty( $model_preferences ) ) {
 				wp_send_json_error( array( 'message' => __( 'No limits, multipliers, or model preferences provided.', 'wp-mcp-ai' ) ) );

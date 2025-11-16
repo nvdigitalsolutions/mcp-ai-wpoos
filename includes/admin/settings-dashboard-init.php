@@ -45,8 +45,8 @@ require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-c
 require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php';
 
 // Load integration admin pages.
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-woocommerce.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine-integration.php';
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-woocommerce-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-elementor.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-gmail-crawl.php';
 
@@ -86,10 +86,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		// Performance section is registered to initialize hooks but hidden from main navigation.
-		// It's embedded as a sub-tab within Advanced Settings (tab = '__hidden__').
+		// It's embedded as a sub-tab within Advanced Settings (tab = '__hidden__')..
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.performance' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.advanced' ) );
-		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section.
+		// Media, Comments, and Site Creator sections are now integrated as sub-tabs within the Tools section..
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.media' ) );
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.comments' ) );
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.site_creator' ) );
