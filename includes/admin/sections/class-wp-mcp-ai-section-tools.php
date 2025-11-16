@@ -57,6 +57,149 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		public function get_fields() {
 			return array(
+				// External Tools fields.
+				'gmail_client_id'                      => array(
+					'type'         => 'text',
+					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+				),
+				'gmail_client_secret'                  => array(
+					'type'         => 'password',
+					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'crawl4ai_base_url'                    => array(
+					'type'         => 'url',
+					'label'        => __( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
+					'description'  => __( 'Base URL for Crawl4AI service (if using external crawler).', 'wp-mcp-ai' ),
+					'placeholder'  => 'http://localhost:8000',
+					'autocomplete' => 'url',
+				),
+				'crawl4ai_api_key'                     => array(
+					'type'         => 'password',
+					'label'        => __( 'Crawl4AI API Key', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for Crawl4AI service (if required).', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'brave_search_api_key'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'Brave Search API Key', 'wp-mcp-ai' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Brave Search API */
+						__( 'API key for Brave Search integration. Get your API key from %s.', 'wp-mcp-ai' ),
+						'<a href="https://brave.com/search/api/" target="_blank">Brave Search API</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'cloudflare_api_token'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'Cloudflare API Token', 'wp-mcp-ai' ),
+					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'cloudflare_zone_id'                   => array(
+					'type'        => 'text',
+					'label'       => __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
+					'description' => __( 'Your Cloudflare zone ID for cache management.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+				'cloudways_api_key'                    => array(
+					'type'         => 'password',
+					'label'        => __( 'Cloudways API Key', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for Cloudways hosting integration.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'cloudways_email'                      => array(
+					'type'        => 'email',
+					'label'       => __( 'Cloudways Account Email', 'wp-mcp-ai' ),
+					'description' => __( 'Email address associated with your Cloudways account.', 'wp-mcp-ai' ),
+					'placeholder' => 'you@example.com',
+				),
+				'mailjet_api_key'                      => array(
+					'type'         => 'password',
+					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'mailjet_api_secret'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'Mailjet API Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'quickbooks_api_key'                   => array(
+					'type'         => 'password',
+					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
+					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'quickbooks_client_id'                 => array(
+					'type'        => 'text',
+					'label'       => __( 'QuickBooks Client ID', 'wp-mcp-ai' ),
+					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'placeholder' => '',
+				),
+				'quickbooks_client_secret'             => array(
+					'type'         => 'password',
+					'label'        => __( 'QuickBooks Client Secret', 'wp-mcp-ai' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+				),
+				'google_analytics_property_id'         => array(
+					'type'        => 'text',
+					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
+					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ),
+					'placeholder' => '123456789',
+				),
+				'google_analytics_credentials'         => array(
+					'type'        => 'textarea',
+					'label'       => __( 'Google Analytics Service Account JSON', 'wp-mcp-ai' ),
+					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ),
+					'placeholder' => '{"type": "service_account", ...}',
+				),
+
+				// Plugins Integration fields.
+				'enable_jetengine_cct'                 => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'wp-mcp-ai' ),
+					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+				'enable_jetengine_tools'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable JetEngine AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+				'enable_woocommerce_tools'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'wp-mcp-ai' ),
+					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+				'enable_elementor_widgets'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Elementor AI Widgets', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable Elementor AI widgets', 'wp-mcp-ai' ),
+					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
+
 				// Features fields.
 				'enable_mesh_computing'                => array(
 					'type'           => 'checkbox',
@@ -182,31 +325,65 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
-				'tools_manager' => array(
+				'tools_manager'  => array(
 					'id'     => 'tools_manager',
 					'label'  => __( 'Tools Manager', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
-				'features'      => array(
+				'external_tools' => array(
+					'id'     => 'external_tools',
+					'label'  => __( 'External Tools', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-site-alt3',
+					'fields' => array(
+						'gmail_client_id',
+						'gmail_client_secret',
+						'crawl4ai_base_url',
+						'crawl4ai_api_key',
+						'brave_search_api_key',
+						'cloudflare_api_token',
+						'cloudflare_zone_id',
+						'cloudways_api_key',
+						'cloudways_email',
+						'mailjet_api_key',
+						'mailjet_api_secret',
+						'quickbooks_api_key',
+						'quickbooks_client_id',
+						'quickbooks_client_secret',
+						'google_analytics_property_id',
+						'google_analytics_credentials',
+					),
+				),
+				'plugins'        => array(
+					'id'     => 'plugins',
+					'label'  => __( 'Plugins', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-plugins',
+					'fields' => array(
+						'enable_jetengine_cct',
+						'enable_jetengine_tools',
+						'enable_woocommerce_tools',
+						'enable_elementor_widgets',
+					),
+				),
+				'features'       => array(
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
 					'fields' => array( 'enable_mesh_computing', 'enable_federation' ),
 				),
-				'media'         => array(
+				'media'          => array(
 					'id'     => 'media',
 					'label'  => __( 'AI Media Library', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'enable_ai_media_library', 'ai_media_generate_alt_text', 'ai_media_generate_caption', 'ai_media_overwrite_existing' ),
 				),
-				'comments'      => array(
+				'comments'       => array(
 					'id'     => 'comments',
 					'label'  => __( 'AI Comments', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
 				),
-				'site_creator'  => array(
+				'site_creator'   => array(
 					'id'     => 'site_creator',
 					'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-site',
@@ -357,6 +534,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function render_subtab_footer( $subtab ) {
 			switch ( $subtab ) {
+				case 'external_tools':
+					$this->render_external_tools_footer();
+					break;
+				case 'plugins':
+					$this->render_plugins_footer();
+					break;
 				case 'media':
 					$this->render_media_footer();
 					break;
@@ -367,6 +550,96 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$this->render_site_creator_footer();
 					break;
 			}
+		}
+
+		/**
+		 * Render External Tools footer content.
+		 */
+		private function render_external_tools_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'About External Tools:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms like Gmail, Brave Search, Cloudflare, Cloudways, Mailjet, QuickBooks, and Google Analytics.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'API credentials are stored securely in your WordPress database. Only users with manage_options capability can view or modify these settings. Never share API keys publicly or commit them to version control.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Plugins Integration footer content.
+		 */
+		private function render_plugins_footer() {
+			$jetengine_active   = class_exists( 'Jet_Engine' );
+			$woocommerce_active = class_exists( 'WooCommerce' );
+			$elementor_active   = did_action( 'elementor/loaded' );
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Plugin Integration Status:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li>
+							<strong><?php esc_html_e( 'JetEngine:', 'wp-mcp-ai' ); ?></strong>
+							<?php if ( $jetengine_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'WooCommerce:', 'wp-mcp-ai' ); ?></strong>
+							<?php if ( $woocommerce_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Elementor:', 'wp-mcp-ai' ); ?></strong>
+							<?php if ( $elementor_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+							<?php endif; ?>
+						</li>
+					</ul>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Tools and features for inactive plugins will be automatically disabled. Install and activate the corresponding plugins to enable their AI integrations.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+				</td>
+			</tr>
+			<?php
 		}
 
 		/**

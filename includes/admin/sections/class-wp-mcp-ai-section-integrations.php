@@ -35,13 +35,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Get tab ID.
 		 *
-		 * Note: This section has its own dedicated admin page at wp-mcp-ai-gmail-crawl4ai
-		 * and should not appear in the main settings tabs.
+		 * Note: This section is now integrated as a subtab within the Tools section.
+		 * Return an empty string to prevent it from appearing as a standalone section.
 		 *
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'tools';
+			return '';
 		}
 
 		/**
