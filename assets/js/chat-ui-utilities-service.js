@@ -282,10 +282,7 @@
 		} else if (type === 'tool') {
 			statusClass += ' wp-mcp-ai-chat__status--tool';
 			indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
-				'<svg class="wp-mcp-ai-chat__status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
-				'<path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm0 12a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM3 10a1 1 0 011-1h1a1 1 0 110 2H4a1 1 0 01-1-1zm12 0a1 1 0 011-1h1a1 1 0 110 2h-1a1 1 0 01-1-1zM7.05 4.636a1 1 0 010 1.414L6.343 6.757a1 1 0 11-1.414-1.414L5.636 4.636a1 1 0 011.414 0zm8.485 8.485a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zm-9.9 0a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zm8.486-8.486a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414z"/>' +
-				'<animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="2s" repeatCount="indefinite"/>' +
-				'</svg>' +
+				'<span class="wp-mcp-ai-chat__status-spinner"></span>' +
 				'</span>';
 		}
 		
