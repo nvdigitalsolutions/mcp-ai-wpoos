@@ -443,6 +443,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_auth0_token'            => 'external-tools',
 				'purge_cloudflare_cache'          => 'external-tools',
 				'purge_varnish_cache'             => 'external-tools',
+				'geocode_address'                 => 'external-tools',
+				'search_places'                   => 'external-tools',
 			);
 
 			/**
@@ -778,6 +780,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Profession'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
 				'WP_MCP_AI_Tool_Save_Profession'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-profession.php',
 				'WP_MCP_AI_Tool_Profession_Stats'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-profession-stats.php',
+				// Google Maps Platform tools.
+				'WP_MCP_AI_Tool_Geocode_Address'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
+				'WP_MCP_AI_Tool_Search_Places'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
+				// Gemini image editing tool.
+				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
