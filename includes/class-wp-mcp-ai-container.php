@@ -552,13 +552,6 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
-			'section.service_connectors',
-			function () {
-				return new WP_MCP_AI_Section_Service_Connectors();
-			}
-		);
-
-		$this->singleton(
 			'section.jetengine_integration',
 			function () {
 				return new WP_MCP_AI_Section_JetEngine_Integration();

@@ -39,7 +39,6 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Tools'                    => 'includes/admin/sections/class-wp-mcp-ai-section-tools.php',
 			'WP_MCP_AI_Section_Orchestration'            => 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php',
 			'WP_MCP_AI_Section_Integrations'             => 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php',
-			'WP_MCP_AI_Section_Service_Connectors'       => 'includes/admin/sections/class-wp-mcp-ai-section-service-connectors.php',
 			'WP_MCP_AI_Section_JetEngine_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-jetengine.php',
 			'WP_MCP_AI_Section_WooCommerce_Integration'  => 'includes/admin/sections/class-wp-mcp-ai-section-woocommerce.php',
 			'WP_MCP_AI_Section_Elementor_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php',
@@ -97,9 +96,9 @@ function wp_mcp_ai_init_settings_dashboard() {
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.authentication' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.tools' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.orchestration' ) );
-		// Service Connectors section - third-party API integrations.
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.service_connectors' ) );
-		// Gmail & Crawl4AI Integration has its own dedicated page (wp-mcp-ai-gmail-crawl4ai) and should not appear in settings tabs.
+		// External Tools (Gmail, Crawl4AI, Brave, Cloudflare, etc.) has its own dedicated page (wp-mcp-ai-gmail-crawl4ai).
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.service_connectors' ) );
+		// Legacy integrations section also has its own page and should not appear in settings tabs.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
