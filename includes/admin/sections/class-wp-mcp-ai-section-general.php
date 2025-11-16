@@ -77,35 +77,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			$assistant_options = $this->get_assistant_options();
 
 			return array(
-				'default_provider'     => array(
+				'default_provider'                      => array(
 					'type'        => 'select',
 					'label'       => __( 'Default AI Provider', 'wp-mcp-ai' ),
 					'description' => __( 'The primary AI provider used when no specific provider is specified. This affects new conversations and REST API requests. Make sure the selected provider is properly configured in the Providers tab.', 'wp-mcp-ai' ),
 					'options'     => $provider_options,
 					'default'     => 'openai',
 				),
-				'default_assistant'    => array(
+				'default_assistant'                     => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Assistant', 'wp-mcp-ai' ),
 					'description' => __( 'The assistant used by default when one is not explicitly specified in REST API interactions. Leave as "None" to require explicit assistant selection.', 'wp-mcp-ai' ),
 					'options'     => $assistant_options,
 					'default'     => 0,
 				),
-				'enable_logging'       => array(
+				'enable_logging'                        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable basic error and activity logging', 'wp-mcp-ai' ),
 					'description'    => __( 'Records errors, warnings, and key activity (tool executions, API requests) to help troubleshoot issues. View logs in the Advanced tab.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'delete_on_uninstall'  => array(
+				'delete_on_uninstall'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Delete Data on Uninstall', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Remove all plugin data when uninstalling', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, all settings and data will be deleted when the plugin is uninstalled.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'max_history_messages' => array(
+				'max_history_messages'                  => array(
 					'type'        => 'number',
 					'label'       => __( 'Max History Messages', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum number of previous messages to include in chat context. Higher values provide more context but increase token usage.', 'wp-mcp-ai' ),
@@ -114,7 +114,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'min'         => 1,
 					'max'         => 100,
 				),
-				'request_timeout'      => array(
+				'request_timeout'                       => array(
 					'type'        => 'number',
 					'label'       => __( 'Request Timeout (seconds)', 'wp-mcp-ai' ),
 					'description' => __( 'How long to wait for AI provider responses before timing out. Increase for complex requests or slower providers.', 'wp-mcp-ai' ),
@@ -122,6 +122,77 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'placeholder' => '60',
 					'min'         => 10,
 					'max'         => 600,
+				),
+				// Custom Filters fields.
+				'filter_default_light_model'            => array(
+					'type'        => 'text',
+					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'gpt-4o-mini',
+				),
+				'filter_default_advanced_model'         => array(
+					'type'        => 'text',
+					'label'       => __( 'Default Advanced Model', 'wp-mcp-ai' ),
+					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4o', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'gpt-4o',
+				),
+				'filter_max_agentic_iterations'         => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Agentic Iterations', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => '5',
+				),
+				'filter_resource_max_tokens'            => array(
+					'type'        => 'number',
+					'label'       => __( 'Resource Max Tokens', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'Auto',
+				),
+				'filter_resource_request_timeout'       => array(
+					'type'        => 'number',
+					'label'       => __( 'Resource Request Timeout (seconds)', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'Auto',
+				),
+				'filter_max_retries'                    => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Retries', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => '3',
+				),
+				'filter_max_retry_delay'                => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Retry Delay (seconds)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => '60',
+				),
+				'filter_max_attachment_bytes'           => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Attachment Size (bytes)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => '10485760',
+				),
+				'filter_default_ollama_endpoint_url'    => array(
+					'type'        => 'url',
+					'label'       => __( 'Default Ollama Endpoint URL', 'wp-mcp-ai' ),
+					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'http://localhost:11434',
+				),
+				'filter_default_lm_studio_endpoint_url' => array(
+					'type'        => 'url',
+					'label'       => __( 'Default LM Studio Endpoint URL', 'wp-mcp-ai' ),
+					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234/v1', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => 'http://localhost:1234/v1',
 				),
 			);
 		}
@@ -133,23 +204,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
-				'core'     => array(
+				'core'           => array(
 					'id'     => 'core',
 					'label'  => __( 'Core Settings', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'default_provider', 'default_assistant' ),
 				),
-				'behavior' => array(
+				'behavior'       => array(
 					'id'     => 'behavior',
 					'label'  => __( 'Behavior & Limits', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'max_history_messages', 'request_timeout' ),
 				),
-				'data'     => array(
+				'data'           => array(
 					'id'     => 'data',
 					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-database',
 					'fields' => array( 'enable_logging', 'delete_on_uninstall' ),
+				),
+				'custom_filters' => array(
+					'id'          => 'custom_filters',
+					'label'       => __( 'Custom AI Settings (Filters)', 'wp-mcp-ai' ),
+					'icon'        => 'dashicons-filter',
+					'description' => __( 'Configure advanced AI behavior settings through a user-friendly interface. These settings override WordPress filter defaults and allow you to customize AI operations without writing code. <strong>Leave fields empty to use system defaults.</strong>', 'wp-mcp-ai' ),
+					'fields'      => array(
+						'filter_default_light_model',
+						'filter_default_advanced_model',
+						'filter_max_agentic_iterations',
+						'filter_resource_max_tokens',
+						'filter_resource_request_timeout',
+						'filter_max_retries',
+						'filter_max_retry_delay',
+						'filter_max_attachment_bytes',
+						'filter_default_ollama_endpoint_url',
+						'filter_default_lm_studio_endpoint_url',
+					),
 				),
 			);
 		}
@@ -216,10 +305,64 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 			$active_group = $subtab_groups[ $active_subtab ];
 
-			// Render fields for the active sub-tab.
-			foreach ( $active_group['fields'] as $key ) {
-				if ( isset( $fields[ $key ] ) ) {
-					$this->render_field( $key, $fields[ $key ] );
+			// Special handling for custom_filters subtab with grouped fields.
+			if ( 'custom_filters' === $active_subtab ) {
+				$this->render_custom_filters_fields( $fields, $active_group );
+			} else {
+				// Render fields for other sub-tabs normally.
+				foreach ( $active_group['fields'] as $key ) {
+					if ( isset( $fields[ $key ] ) ) {
+						$this->render_field( $key, $fields[ $key ] );
+					}
+				}
+			}
+		}
+
+		/**
+		 * Render custom filters fields with grouping.
+		 *
+		 * @param array $fields All available fields.
+		 * @param array $active_group Active subtab group configuration.
+		 */
+		private function render_custom_filters_fields( $fields, $active_group ) {
+			// Organize fields into logical groups for better UX.
+			$groups = array(
+				'model_selection'     => array(
+					'title'  => __( 'AI Model Selection', 'wp-mcp-ai' ),
+					'fields' => array( 'filter_default_light_model', 'filter_default_advanced_model' ),
+				),
+				'resource_management' => array(
+					'title'  => __( 'Resource Management', 'wp-mcp-ai' ),
+					'fields' => array( 'filter_max_agentic_iterations', 'filter_resource_max_tokens', 'filter_resource_request_timeout' ),
+				),
+				'retry_handling'      => array(
+					'title'  => __( 'Retry & Error Handling', 'wp-mcp-ai' ),
+					'fields' => array( 'filter_max_retries', 'filter_max_retry_delay' ),
+				),
+				'file_limits'         => array(
+					'title'  => __( 'File & Attachment Limits', 'wp-mcp-ai' ),
+					'fields' => array( 'filter_max_attachment_bytes' ),
+				),
+				'endpoint_urls'       => array(
+					'title'  => __( 'Local AI Endpoint URLs', 'wp-mcp-ai' ),
+					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url' ),
+				),
+			);
+
+			foreach ( $groups as $group_id => $group ) {
+				?>
+				<tr class="filter-group-header">
+					<td colspan="2">
+						<h3 class="filter-group-title">
+							<?php echo esc_html( $group['title'] ); ?>
+						</h3>
+					</td>
+				</tr>
+				<?php
+				foreach ( $group['fields'] as $field_key ) {
+					if ( isset( $fields[ $field_key ] ) ) {
+						$this->render_field( $field_key, $fields[ $field_key ] );
+					}
 				}
 			}
 		}
@@ -231,6 +374,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			$description   = $this->get_description();
 			$subtab_groups = $this->get_subtab_groups();
 			$active_subtab = $this->get_active_subtab();
+			$active_group  = isset( $subtab_groups[ $active_subtab ] ) ? $subtab_groups[ $active_subtab ] : null;
 			?>
 		<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 			<h2><?php echo esc_html( $this->get_title() ); ?></h2>
@@ -265,6 +409,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
 
 				<div class="wp-mcp-ai-subtab-content">
+					<?php if ( $active_group && isset( $active_group['description'] ) ) : ?>
+						<p class="subtab-description"><?php echo wp_kses_post( $active_group['description'] ); ?></p>
+					<?php endif; ?>
 					<table class="form-table" role="presentation">
 						<?php $this->render(); ?>
 					</table>
@@ -280,8 +427,46 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return array Sanitized input.
 		 */
 		public function sanitize( $input ) {
-			// Call parent sanitization first.
-			$sanitized = parent::sanitize( $input );
+			$sanitized = array();
+			$fields    = $this->get_fields();
+
+			foreach ( $fields as $key => $field ) {
+				if ( ! isset( $input[ $key ] ) ) {
+					continue;
+				}
+
+				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
+				$value = $input[ $key ];
+
+				switch ( $type ) {
+					case 'text':
+					case 'password':
+						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+
+					case 'url':
+						// Keep empty strings, only sanitize non-empty values.
+						$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
+						break;
+
+					case 'number':
+						// Keep empty strings for "use default" functionality.
+						$sanitized[ $key ] = '' === $value ? '' : absint( $value );
+						break;
+
+					case 'select':
+						$sanitized[ $key ] = sanitize_key( $value );
+						break;
+
+					case 'checkbox':
+						$sanitized[ $key ] = ! empty( $value );
+						break;
+
+					default:
+						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+				}
+			}
 
 			// Special handling for default_assistant: convert to integer.
 			if ( isset( $sanitized['default_assistant'] ) ) {
@@ -342,6 +527,99 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 				if ( is_wp_error( $result ) ) {
 					$errors[] = $result->get_error_message();
+				}
+			}
+
+			// Validate filter_max_agentic_iterations.
+			if ( isset( $input['filter_max_agentic_iterations'] ) && '' !== $input['filter_max_agentic_iterations'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_max_agentic_iterations'],
+					1,
+					50
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Agentic Iterations: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate filter_resource_max_tokens.
+			if ( isset( $input['filter_resource_max_tokens'] ) && '' !== $input['filter_resource_max_tokens'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_resource_max_tokens'],
+					100,
+					128000
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Resource Max Tokens: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate filter_resource_request_timeout.
+			if ( isset( $input['filter_resource_request_timeout'] ) && '' !== $input['filter_resource_request_timeout'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_resource_request_timeout'],
+					10,
+					600
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Resource Request Timeout: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate filter_max_retries.
+			if ( isset( $input['filter_max_retries'] ) && '' !== $input['filter_max_retries'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_max_retries'],
+					0,
+					10
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Retries: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate filter_max_retry_delay.
+			if ( isset( $input['filter_max_retry_delay'] ) && '' !== $input['filter_max_retry_delay'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_max_retry_delay'],
+					1,
+					300
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Retry Delay: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate filter_max_attachment_bytes.
+			if ( isset( $input['filter_max_attachment_bytes'] ) && '' !== $input['filter_max_attachment_bytes'] ) {
+				$result = WP_MCP_AI_Settings_Validator::validate_number(
+					$input['filter_max_attachment_bytes'],
+					1024,
+					104857600 // 100MB max.
+				);
+
+				if ( is_wp_error( $result ) ) {
+					$errors[] = __( 'Max Attachment Size: ', 'wp-mcp-ai' ) . $result->get_error_message();
+				}
+			}
+
+			// Validate URLs.
+			if ( isset( $input['filter_default_ollama_endpoint_url'] ) && '' !== $input['filter_default_ollama_endpoint_url'] ) {
+				$url = filter_var( $input['filter_default_ollama_endpoint_url'], FILTER_VALIDATE_URL );
+				if ( false === $url ) {
+					$errors[] = __( 'Default Ollama Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
+				}
+			}
+
+			if ( isset( $input['filter_default_lm_studio_endpoint_url'] ) && '' !== $input['filter_default_lm_studio_endpoint_url'] ) {
+				$url = filter_var( $input['filter_default_lm_studio_endpoint_url'], FILTER_VALIDATE_URL );
+				if ( false === $url ) {
+					$errors[] = __( 'Default LM Studio Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
 				}
 			}
 
