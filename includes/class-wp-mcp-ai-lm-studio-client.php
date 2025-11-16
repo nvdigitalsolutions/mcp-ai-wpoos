@@ -464,7 +464,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );
 			}
 
-			return max( 5, $timeout );
+			$timeout = max( 5, $timeout );
+
+		// Ensure PHP execution time is sufficient for the timeout.
+		$resource_mgr->ensure_execution_time( $timeout + 10 );
+
+		return $timeout;
 		}
 
 		/**
