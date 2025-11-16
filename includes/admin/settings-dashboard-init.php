@@ -100,9 +100,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.service_connectors' ) );
 		// Legacy integrations section also has its own page and should not appear in settings tabs.
 		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.integrations' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
-		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
+		// Plugin integrations (JetEngine, WooCommerce, Elementor) have their own dedicated admin pages.
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.jetengine_integration' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.woocommerce_integration' ) );
+		// WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.elementor_integration' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.token_manager' ) );
 		WP_MCP_AI_Settings_Registry::register_section( $container->get( 'section.security' ) );
 		// Performance section is registered to initialize hooks but hidden from main navigation.
