@@ -124,7 +124,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// The 'subtab' hidden field is submitted with the form (see render_wrapper).
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
 			$submitted_subtab = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
-			$is_form_submit   = ( $submitted_subtab === $active_subtab );
+			
+			// Only consider this a form submit if the submitted subtab matches the active subtab
+			// AND the submitted subtab actually exists in this section's subtab groups.
+			// This prevents cross-tab checkbox clearing when $_POST['subtab'] from a different
+			// section leaks into this section's sanitization.
+			$is_form_submit   = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
 			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
 		}
