@@ -202,7 +202,13 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			'prompt'         => $prompt,
 			'revised_prompt' => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'        => isset( $image['created'] ) ? $image['created'] : time(),
+			'provider'       => 'gemini', // Track provider for accurate cost attribution.
 		);
+
+		// Include usage metadata if available for accurate cost tracking.
+		if ( isset( $image['usage'] ) && is_array( $image['usage'] ) ) {
+			$result['usage'] = $image['usage'];
+		}
 
 		$inline_content = $this->build_inline_content_payload( $storage );
 

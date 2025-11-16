@@ -101,7 +101,6 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$user_id = $this->factory->user->create();
 
 		$tool_name = 'test_tool';
-		$result    = array( 'success' => true );
 		$arguments = array();
 		$context   = array(
 			'user_id'     => $user_id,
@@ -112,8 +111,9 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 				'completion_tokens' => 250,
 			),
 		);
+		$result    = array( 'success' => true );
 
-		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $result, $arguments, $context );
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
@@ -128,20 +128,64 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test tool usage with provider/model/usage from result (Priority 1).
+	 *
+	 * This tests the new functionality where tools return provider/model/usage
+	 * in their results, which should take priority over context or settings.
+	 */
+	public function test_record_tool_usage_from_result() {
+		$user_id = $this->factory->user->create();
+
+		$tool_name = 'gemini_tool';
+		$arguments = array();
+		$context   = array(
+			'user_id'  => $user_id,
+			// No token_usage in context - should come from result.
+		);
+		$result    = array(
+			'success'  => true,
+			'provider' => 'gemini', // Tool reports it used Gemini.
+			'model'    => 'gemini-1.5-flash',
+			'usage'    => array(
+				'prompt_tokens'     => 800,
+				'completion_tokens' => 400,
+				'total_tokens'      => 1200,
+			),
+		);
+
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
+
+		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
+		$end_date   = gmdate( 'Y-m-d H:i:s' );
+		$records    = WP_MCP_AI_Token_Tracking_Database::get_user_usage( $user_id, $start_date, $end_date );
+
+		$this->assertCount( 1, $records, 'Should have 1 tool usage record' );
+		$this->assertEquals( $tool_name, $records[0]['tool'], 'Tool name should match' );
+		$this->assertEquals( 'gemini', $records[0]['provider'], 'Provider should be from result' );
+		$this->assertEquals( 'gemini-1.5-flash', $records[0]['model'], 'Model should be from result' );
+		$this->assertEquals( 800, $records[0]['input_tokens'], 'Input tokens should match' );
+		$this->assertEquals( 400, $records[0]['output_tokens'], 'Output tokens should match' );
+		$this->assertEquals( 0, $records[0]['is_estimated'], 'Should NOT be estimated (provider/model from result)' );
+	}
+
+	/**
 	 * Test tool usage with inferred provider/model.
 	 */
 	public function test_tool_usage_with_inferred_provider() {
 		$user_id = $this->factory->user->create();
 
-		$context = array(
+		$tool_name = 'inferred_tool';
+		$arguments = array();
+		$context   = array(
 			'user_id'     => $user_id,
 			// No provider/model - should be inferred from settings.
 			'token_usage' => array(
 				'total_tokens' => 1000,
 			),
 		);
+		$result    = array();
 
-		do_action( 'wp_mcp_ai_after_tool_execution', 'inferred_tool', array(), array(), $context );
+		do_action( 'wp_mcp_ai_after_tool_execution', $tool_name, $arguments, $context, $result );
 
 		$start_date = gmdate( 'Y-m-d H:i:s', strtotime( '-1 minute' ) );
 		$end_date   = gmdate( 'Y-m-d H:i:s' );
@@ -313,5 +357,119 @@ class Test_Enhanced_Token_Tracking extends WP_UnitTestCase {
 		$this->assertEquals( 0, $stats['summary']['total_tokens'], 'Total tokens should be 0' );
 		$this->assertEmpty( $stats['by_provider'], 'By provider should be empty' );
 		$this->assertEmpty( $stats['by_tool'], 'By tool should be empty' );
+	}
+
+	/**
+	 * Test provider migration for historical misattributions.
+	 */
+	public function test_migrate_provider_misattributions() {
+		$user_id = $this->factory->user->create();
+
+		// Create records with incorrect provider attribution.
+		// Gemini tools that were incorrectly tracked as OpenAI.
+		WP_MCP_AI_Token_Tracking_Database::record_usage(
+			$user_id,
+			'generate_gemini_image',
+			'openai', // WRONG - should be gemini.
+			'gpt-4o-mini',
+			1000,
+			500,
+			null, // Let it calculate with wrong provider.
+			true
+		);
+
+		WP_MCP_AI_Token_Tracking_Database::record_usage(
+			$user_id,
+			'edit_gemini_image',
+			'openai', // WRONG - should be gemini.
+			'gpt-4o',
+			2000,
+			1000,
+			null,
+			true
+		);
+
+		WP_MCP_AI_Token_Tracking_Database::record_usage(
+			$user_id,
+			'analyze_comment_content',
+			'openai', // WRONG - could be gemini.
+			'gpt-4o-mini',
+			500,
+			250,
+			null,
+			true
+		);
+
+		// Also create a correctly attributed record.
+		WP_MCP_AI_Token_Tracking_Database::record_usage(
+			$user_id,
+			'some_other_tool',
+			'openai',
+			'gpt-4o-mini',
+			100,
+			50,
+			null,
+			false
+		);
+
+		// Run dry run migration.
+		$dry_results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( true, 100 );
+
+		$this->assertTrue( $dry_results['dry_run'], 'Should be a dry run' );
+		$this->assertEquals( 3, $dry_results['total_checked'], 'Should check 3 Gemini tool records' );
+		$this->assertEquals( 3, $dry_results['records_updated'], 'Should plan to update 3 records' );
+		$this->assertCount( 3, $dry_results['updates'], 'Should have 3 update details' );
+
+		// Verify updates are planned correctly.
+		foreach ( $dry_results['updates'] as $update ) {
+			$this->assertEquals( 'openai', $update['old_provider'], 'Old provider should be OpenAI' );
+			$this->assertEquals( 'gemini', $update['new_provider'], 'New provider should be Gemini' );
+			$this->assertNotEquals( $update['old_cost'], $update['new_cost'], 'Cost should be recalculated' );
+		}
+
+		// Run actual migration.
+		$results = WP_MCP_AI_Enhanced_Token_Tracking::migrate_provider_misattributions( false, 100 );
+
+		$this->assertFalse( $results['dry_run'], 'Should not be a dry run' );
+		$this->assertEquals( 3, $results['records_updated'], 'Should have updated 3 records' );
+
+		// Verify database was updated.
+		global $wpdb;
+		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$gemini_records = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT tool, provider, model, is_estimated FROM {$table_name} WHERE provider = %s ORDER BY tool",
+				'gemini'
+			),
+			ARRAY_A
+		);
+
+		$this->assertCount( 3, $gemini_records, 'Should have 3 Gemini records after migration' );
+
+		// Verify specific tools were updated.
+		$tools_updated = array_column( $gemini_records, 'tool' );
+		$this->assertContains( 'generate_gemini_image', $tools_updated );
+		$this->assertContains( 'edit_gemini_image', $tools_updated );
+		$this->assertContains( 'analyze_comment_content', $tools_updated );
+
+		// Verify is_estimated was updated to 0 (actual).
+		foreach ( $gemini_records as $record ) {
+			$this->assertEquals( 0, $record['is_estimated'], 'Migrated records should not be marked as estimated' );
+		}
+
+		// Verify OpenAI record was not touched.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$openai_records = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT tool FROM {$table_name} WHERE provider = %s",
+				'openai'
+			),
+			ARRAY_A
+		);
+
+		$this->assertCount( 1, $openai_records, 'Should still have 1 OpenAI record' );
+		$this->assertEquals( 'some_other_tool', $openai_records[0]['tool'], 'Correct tool should remain as OpenAI' );
 	}
 }

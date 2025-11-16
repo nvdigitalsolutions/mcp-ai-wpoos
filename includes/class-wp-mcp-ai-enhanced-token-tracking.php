@@ -103,17 +103,41 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * Hooked to 'wp_mcp_ai_after_tool_execution'.
 	 *
 	 * @param string $tool_name Tool name/slug.
-	 * @param array  $result    Tool execution result.
 	 * @param array  $arguments Tool arguments.
 	 * @param array  $context   Execution context.
+	 * @param mixed  $result    Tool execution result.
 	 */
-	public static function record_tool_usage( $tool_name, $result, $arguments, $context ) {
-		// Only record if we have token usage data.
-		if ( ! isset( $context['token_usage'] ) || ! is_array( $context['token_usage'] ) ) {
-			return;
+	public static function record_tool_usage( $tool_name, $arguments, $context, $result ) {
+		$token_usage = null;
+		$provider    = '';
+		$model       = '';
+		$source      = ''; // Track where we got provider/model info from.
+
+		// Priority 1: Check if result contains usage/provider/model information.
+		// This handles tools that use Gemini client or other API clients that return this data.
+		if ( is_array( $result ) ) {
+			if ( isset( $result['usage'] ) && is_array( $result['usage'] ) ) {
+				$token_usage = $result['usage'];
+			}
+			if ( isset( $result['provider'] ) && ! empty( $result['provider'] ) ) {
+				$provider = sanitize_text_field( $result['provider'] );
+				$source   = 'result';
+			}
+			if ( isset( $result['model'] ) && ! empty( $result['model'] ) ) {
+				$model  = sanitize_text_field( $result['model'] );
+				$source = 'result';
+			}
 		}
 
-		$token_usage = $context['token_usage'];
+		// Priority 2: Check context for token usage data and provider/model.
+		if ( ! $token_usage && isset( $context['token_usage'] ) && is_array( $context['token_usage'] ) ) {
+			$token_usage = $context['token_usage'];
+		}
+
+		// If no usage data found, we can't track anything.
+		if ( ! $token_usage ) {
+			return;
+		}
 
 		// Extract user ID from context.
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
@@ -121,16 +145,29 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			$user_id = get_current_user_id();
 		}
 
-		// Extract provider and model from context.
-		$provider = isset( $context['provider'] ) ? sanitize_text_field( $context['provider'] ) : '';
-		$model    = isset( $context['model'] ) ? sanitize_text_field( $context['model'] ) : '';
+		// Priority 3: Extract provider and model from context if not in result.
+		if ( ! $provider && isset( $context['provider'] ) && ! empty( $context['provider'] ) ) {
+			$provider = sanitize_text_field( $context['provider'] );
+			$source   = 'context';
+		}
+		if ( ! $model && isset( $context['model'] ) && ! empty( $context['model'] ) ) {
+			$model  = sanitize_text_field( $context['model'] );
+			$source = 'context';
+		}
 
-		// If not in context, try to determine from settings.
+		// Priority 4: Fall back to default settings as last resort.
 		if ( ! $provider || ! $model ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			if ( is_array( $settings ) ) {
-				$provider = $provider ? $provider : ( isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai' );
-				$model    = $model ? $model : ( isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o-mini' );
+				if ( ! $provider ) {
+					$provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
+				}
+				if ( ! $model ) {
+					$model = isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o-mini';
+				}
+			}
+			if ( ! $source ) {
+				$source = 'settings';
 			}
 		}
 
@@ -156,8 +193,9 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			);
 		}
 
-		// Record is estimated if we had to infer provider/model.
-		$is_estimated = ! isset( $context['provider'] ) || ! isset( $context['model'] );
+		// Record is estimated if we had to infer provider/model from settings.
+		// If we got it from result or context, it's actual data.
+		$is_estimated = ( 'settings' === $source );
 
 		// Record the tool usage.
 		WP_MCP_AI_Token_Tracking_Database::record_usage(
@@ -352,5 +390,161 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Migrate historical token tracking records to correct provider/model misattributions.
+	 *
+	 * Identifies records where tools that use specific providers (like Gemini)
+	 * were incorrectly tracked with the default provider, and corrects them.
+	 *
+	 * @param bool $dry_run If true, only reports what would be changed without making updates.
+	 * @param int  $limit   Maximum number of records to process in one batch (default: 1000).
+	 * @return array Migration results with counts and details.
+	 */
+	public static function migrate_provider_misattributions( $dry_run = true, $limit = 1000 ) {
+		global $wpdb;
+
+		$results = array(
+			'total_checked'   => 0,
+			'records_updated' => 0,
+			'dry_run'         => $dry_run,
+			'updates'         => array(),
+		);
+
+		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
+
+		// Define tool patterns that indicate specific providers.
+		$provider_patterns = array(
+			'gemini' => array(
+				'tools'  => array(
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'analyze_comment_content', // Can use Gemini.
+					'generate_image_alt_text', // Can use Gemini.
+					'generate_image_caption',  // Can use Gemini.
+				),
+				'models' => array(
+					'gemini-1.5-pro',
+					'gemini-1.5-flash',
+					'gemini-2.0-flash',
+					'gemini-pro',
+					'gemini-2.5-flash-image',
+				),
+			),
+		);
+
+		// Find records that likely have provider misattributions.
+		// We look for Gemini tools that are NOT already marked with gemini provider.
+		$gemini_tools = $provider_patterns['gemini']['tools'];
+		$placeholders = implode( ', ', array_fill( 0, count( $gemini_tools ), '%s' ) );
+
+		$query = "
+			SELECT id, user_id, tool, provider, model, input_tokens, output_tokens, cost_usd, is_estimated
+			FROM {$table_name}
+			WHERE tool IN ({$placeholders})
+			AND provider != 'gemini'
+			ORDER BY id ASC
+			LIMIT %d
+		";
+
+		$prepare_args   = array_merge( $gemini_tools, array( $limit ) );
+		$prepared_query = $wpdb->prepare( $query, $prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
+
+		$results['total_checked'] = count( $records );
+
+		foreach ( $records as $record ) {
+			$record_id     = intval( $record['id'] );
+			$tool          = $record['tool'];
+			$old_provider  = $record['provider'];
+			$old_model     = $record['model'];
+			$input_tokens  = intval( $record['input_tokens'] );
+			$output_tokens = intval( $record['output_tokens'] );
+
+			// Determine the correct provider and model.
+			$new_provider = 'gemini';
+			$new_model    = self::infer_gemini_model_from_tool( $tool, $old_model );
+
+			// Recalculate cost with correct provider/model.
+			$new_cost = 0.0;
+			if ( class_exists( 'WP_MCP_AI_Cost_Calculator' ) ) {
+				$new_cost = WP_MCP_AI_Cost_Calculator::calculate_cost(
+					$new_provider,
+					$new_model,
+					$input_tokens,
+					$output_tokens
+				);
+			}
+
+			// Track the change.
+			$results['updates'][] = array(
+				'id'           => $record_id,
+				'tool'         => $tool,
+				'old_provider' => $old_provider,
+				'new_provider' => $new_provider,
+				'old_model'    => $old_model,
+				'new_model'    => $new_model,
+				'old_cost'     => floatval( $record['cost_usd'] ),
+				'new_cost'     => $new_cost,
+			);
+
+			// Apply update if not dry run.
+			if ( ! $dry_run ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$updated = $wpdb->update(
+					$table_name,
+					array(
+						'provider'     => $new_provider,
+						'model'        => $new_model,
+						'cost_usd'     => $new_cost,
+						'is_estimated' => 0, // Now it's actual, not estimated.
+					),
+					array( 'id' => $record_id ),
+					array( '%s', '%s', '%f', '%d' ),
+					array( '%d' )
+				);
+
+				if ( false !== $updated ) {
+					++$results['records_updated'];
+				}
+			}
+		}
+
+		// If dry run, records_updated should equal updates found.
+		if ( $dry_run ) {
+			$results['records_updated'] = count( $results['updates'] );
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Infer the correct Gemini model based on tool name and old model.
+	 *
+	 * @param string $tool      Tool name.
+	 * @param string $old_model Previous model name (might be OpenAI model).
+	 * @return string Inferred Gemini model.
+	 */
+	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
+		// Image-related tools use image models.
+		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
+			return 'gemini-2.5-flash-image';
+		}
+
+		// Vision tools (alt-text, caption) likely use flash.
+		if ( in_array( $tool, array( 'generate_image_alt_text', 'generate_image_caption' ), true ) ) {
+			return 'gemini-1.5-flash';
+		}
+
+		// Comment analysis likely uses flash for speed.
+		if ( 'analyze_comment_content' === $tool ) {
+			return 'gemini-1.5-flash';
+		}
+
+		// Default to flash if unknown.
+		return 'gemini-1.5-flash';
 	}
 }
