@@ -299,11 +299,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return string
 		 */
 		private function get_active_subtab() {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab          = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'priority';
 			$provider_groups = $this->get_provider_groups();
+			$subtab          = '';
 
-			if ( ! isset( $provider_groups[ $subtab ] ) ) {
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
+
+			// Default to 'priority' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $provider_groups[ $subtab ] ) ) {
 				$subtab = 'priority';
 			}
 
@@ -346,6 +355,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 </a>
 		<?php endforeach; ?>
 </nav>
+
+				<!-- Hidden field to preserve subtab during form submission -->
+				<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
 
 <div class="wp-mcp-ai-subtab-content">
 <table class="form-table" role="presentation">
