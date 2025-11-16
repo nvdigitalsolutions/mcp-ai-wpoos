@@ -121,7 +121,7 @@ $response = $client->test_connection();
 
 ```php
 $settings = WP_MCP_AI_Admin_Settings::get_settings();
-$settings['lm_studio_endpoint_url'] = 'http://10.0.0.50:1234/v1';
+$settings['lm_studio_endpoint_url'] = 'http://10.0.0.50:1234';
 $settings['lm_studio_model'] = 'local-model';
 $settings['lm_studio_network_interface'] = '192.168.1.100'; // Bind to specific IP
 
