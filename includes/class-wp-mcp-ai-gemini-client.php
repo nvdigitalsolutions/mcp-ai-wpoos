@@ -1293,8 +1293,17 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					}
 				}
 
+				// Add text segments as text parts.
 				foreach ( $text_segments as $segment_text ) {
 					$parts[] = array( 'text' => $segment_text );
+				}
+
+				// Add file parts (e.g., videos uploaded to Gemini File API).
+				if ( 'user' === $role || 'assistant' === $role ) {
+					$file_parts = $this->extract_file_parts( $content );
+					foreach ( $file_parts as $file_part ) {
+						$parts[] = $file_part;
+					}
 				}
 
 				if ( empty( $parts ) ) {
@@ -1493,6 +1502,87 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			return $fragments;
+		}
+
+		/**
+		 * Extract file parts from message content.
+		 *
+		 * Extracts file data (e.g., video files uploaded to Gemini File API)
+		 * from message content segments and formats them for Gemini API.
+		 *
+		 * @param mixed $content Message content (string or array of segments).
+		 * @return array Array of file parts suitable for Gemini API.
+		 */
+		protected function extract_file_parts( $content ) {
+			if ( is_string( $content ) || is_numeric( $content ) ) {
+				return array();
+			}
+
+			if ( ! is_array( $content ) ) {
+				return array();
+			}
+
+			$file_parts = array();
+
+			foreach ( $content as $segment ) {
+				if ( ! is_array( $segment ) ) {
+					continue;
+				}
+
+				$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
+
+				// Handle file segments.
+				if ( 'file' === $type || 'input_file' === $type ) {
+					$file_part = $this->format_file_part( $segment );
+					if ( null !== $file_part ) {
+						$file_parts[] = $file_part;
+					}
+				}
+			}
+
+			return $file_parts;
+		}
+
+		/**
+		 * Format a file segment as a Gemini fileData part.
+		 *
+		 * @param array $segment File segment with fileUri and mimeType.
+		 * @return array|null Gemini fileData part or null if invalid.
+		 */
+		protected function format_file_part( $segment ) {
+			// Extract file URI (could be 'file_uri', 'fileUri', or 'uri').
+			$file_uri = '';
+			if ( isset( $segment['file_uri'] ) && '' !== $segment['file_uri'] ) {
+				$file_uri = esc_url_raw( $segment['file_uri'] );
+			} elseif ( isset( $segment['fileUri'] ) && '' !== $segment['fileUri'] ) {
+				$file_uri = esc_url_raw( $segment['fileUri'] );
+			} elseif ( isset( $segment['uri'] ) && '' !== $segment['uri'] ) {
+				$file_uri = esc_url_raw( $segment['uri'] );
+			}
+
+			if ( empty( $file_uri ) ) {
+				return null;
+			}
+
+			// Extract MIME type (could be 'mime_type' or 'mimeType').
+			$mime_type = '';
+			if ( isset( $segment['mime_type'] ) && '' !== $segment['mime_type'] ) {
+				$mime_type = sanitize_mime_type( $segment['mime_type'] );
+			} elseif ( isset( $segment['mimeType'] ) && '' !== $segment['mimeType'] ) {
+				$mime_type = sanitize_mime_type( $segment['mimeType'] );
+			}
+
+			if ( empty( $mime_type ) ) {
+				return null;
+			}
+
+			// Build fileData part for Gemini API.
+			return array(
+				'fileData' => array(
+					'fileUri'  => $file_uri,
+					'mimeType' => $mime_type,
+				),
+			);
 		}
 
 		/**
