@@ -1,6 +1,6 @@
 # Video Analysis Implementation Roadmap
 
-## Current Status: Phase 2 Complete (Gemini File API Integration)
+## Current Status: Phase 2.1 Complete (File Management & Caching)
 
 ### What's Implemented ✅
 
@@ -40,42 +40,54 @@
   - [x] All tests passing
   - [x] All code passes WPCS linting
 
+**Phase 2.1: File Management & Caching** ✅ **COMPLETE**
+- [x] Create `WP_MCP_AI_Video_File_Manager` service
+  - [x] Track uploaded files in WordPress options/transients
+  - [x] Store comprehensive metadata (file_name, file_uri, video_hash, timestamps, expiry)
+  - [x] MD5 hash generation for video content identification
+  - [x] Cache lookup before upload (avoid re-uploading same videos)
+  - [x] Extend file TTL when cache hit occurs (24-hour default cache)
+
+- [x] Automated cleanup system
+  - [x] Cron job for old file cleanup (twice daily)
+  - [x] Delete files older than 48 hours from Gemini API
+  - [x] Graceful error handling for deletion failures
+  - [x] Cleanup on plugin deactivation
+
+- [x] Tool integration
+  - [x] Integrate caching into `analyze_video` tool
+  - [x] Integrate caching into `generate_video_caption` tool
+  - [x] Preserve cached files for reuse (not deleted immediately)
+  - [x] Comprehensive logging of cache hits and cleanups
+
+- [x] Testing
+  - [x] Unit tests for Video File Manager (19 tests)
+  - [x] Test caching logic
+  - [x] Test cleanup functionality
+  - [x] Test expiry handling
+
 **Current Behavior:**
 - ✅ Video analysis is fully functional via Gemini
 - ✅ Automatic file upload to Gemini File API
 - ✅ Polling for processing completion
-- ✅ File cleanup after analysis
+- ✅ Intelligent caching (avoid re-uploads for same video)
+- ✅ Automatic cleanup of expired files
 - ✅ Support for WordPress attachments
 - ✅ Support for remote video URLs
 - ✅ Comprehensive error handling
+- ✅ Production-ready file lifecycle management
 
 ### Implementation Status
 
-**Completed Tasks:** 16/16 from Phase 2
-**Lines of Code Added:** ~1,500
-**Test Coverage:** 33 new unit tests
-**Services Added:** 1 (Gemini File Service)
+**Completed Tasks:** 16/16 from Phase 2 + 13/13 from Phase 2.1
+**Lines of Code Added:** ~2,360
+**Test Coverage:** 52 new unit tests (33 from Phase 2 + 19 from Phase 2.1)
+**Services Added:** 2 (Gemini File Service + Video File Manager)
 **Client Enhancements:** 2 new methods
 **Tools Updated:** 2 (analyze_video, generate_video_caption)
+**Cron Jobs Added:** 1 (twice-daily cleanup)
 
 ### What's Not Yet Implemented ⚠️
-
-**Phase 2.1: File Management (Optional Enhancement)** (1 week)
-
-Additional file management features for production use:
-
-**Implementation Tasks:**
-
-- [ ] Add file management
-  - [ ] Track uploaded files in post meta or transients
-  - [ ] Cleanup old files (cron job)
-  - [ ] Handle upload failures gracefully
-  - [ ] Add caching to avoid re-uploading same videos
-
-**Estimated Effort:** 1 week
-**Priority:** Medium (optional optimization)
-
----
 
 ### Phase 3: OpenAI Video Support via Frame Extraction (Future)
 
@@ -296,17 +308,20 @@ This approach:
 ## Current Limitations
 
 **RESOLVED:** ~~Video analysis for Gemini requires uploading the video file to the Gemini File API first.~~
+**RESOLVED:** ~~No file caching (same video re-uploaded each time).~~
+**RESOLVED:** ~~No upload tracking for lifecycle management.~~
 
 **Now Implemented:** ✅
 - ✅ Full video analysis support via Gemini File API
 - ✅ Support for both WordPress attachments and remote URLs
 - ✅ Automatic upload, processing, and cleanup
+- ✅ Intelligent caching (cache hits for same video)
+- ✅ Automatic cleanup of expired files (cron job)
+- ✅ Production-ready file lifecycle management
 - ✅ Comprehensive error messages
 
 **Remaining Limitations:**
 - OpenAI video support not yet implemented (requires frame extraction - Phase 3)
-- No file caching (same video re-uploaded each time - Phase 2.1 optional)
-- No upload tracking for lifecycle management (Phase 2.1 optional)
 
 ---
 
@@ -320,5 +335,5 @@ This approach:
 ---
 
 **Last Updated:** 2025-11-16
-**Status:** Phase 2 Complete ✅
-**Next Phase:** Phase 2.1 (Optional File Management) or Phase 3 (OpenAI Frame Extraction)
+**Status:** Phase 2.1 Complete ✅
+**Next Phase:** Phase 3 (OpenAI Frame Extraction) or Phase 4 (Enhanced Features)
