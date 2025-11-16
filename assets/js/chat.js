@@ -3902,7 +3902,9 @@
                         return data.session;
                     }
 
-                    if (data && data.message) {
+                    // Handle graceful degradation when transcript storage is unavailable
+                    // (e.g., JetEngine not active) - session will be null with a message
+                    if (data && data.session === null && data.message) {
                         throw new Error(data.message);
                     }
 
