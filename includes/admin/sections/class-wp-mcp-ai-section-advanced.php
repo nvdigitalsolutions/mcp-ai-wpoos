@@ -615,6 +615,160 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					}
 				</style>
 			</div>
+
+			<!-- TEAM DATA MANAGEMENT SECTION -->
+			<?php
+			// Get team counts for the section.
+			$team_count       = wp_count_posts( 'mcp_ai_team' );
+			$team_total_count = isset( $team_count->publish ) ? $team_count->publish : 0;
+			$team_draft_count = isset( $team_count->draft ) ? $team_count->draft : 0;
+
+			// Check if teams were seeded.
+			if ( ! class_exists( 'WP_MCP_AI_Team_Seeder' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-seeder.php';
+			}
+			$team_is_seeded    = get_option( WP_MCP_AI_Team_Seeder::SEEDED_OPTION, false );
+			$team_seeded_text  = $team_is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
+			$team_seeded_class = $team_is_seeded ? 'success' : 'warning';
+			?>
+			<div class="wp-mcp-ai-team-data-management-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Team Data Management', 'wp-mcp-ai' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage the team templates that group multiple professionals together. You can reload the latest team definitions from the plugin\'s knowledge base.', 'wp-mcp-ai' ); ?>
+				</p>
+
+				<div class="wp-mcp-ai-team-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'wp-mcp-ai' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li><strong><?php esc_html_e( 'Published Teams:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $team_total_count ); ?></li>
+						<?php if ( $team_draft_count > 0 ) : ?>
+							<li><strong><?php esc_html_e( 'Draft Teams:', 'wp-mcp-ai' ); ?></strong> <?php echo absint( $team_draft_count ); ?></li>
+						<?php endif; ?>
+						<li><strong><?php esc_html_e( 'Initially Seeded:', 'wp-mcp-ai' ); ?></strong> 
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $team_seeded_class ); ?>">
+								<?php echo esc_html( $team_seeded_text ); ?>
+							</span>
+						</li>
+					</ul>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_team' ) ); ?>">
+							<?php esc_html_e( 'View all teams', 'wp-mcp-ai' ); ?> &rarr;
+						</a>
+					</p>
+				</div>
+
+				<div class="wp-mcp-ai-reseed-team-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Reload Team Data', 'wp-mcp-ai' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Choose how to reload team data from the plugin\'s knowledge base:', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-teams-update-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Update Teams', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Updates existing teams and adds new ones. Your custom teams will be preserved.', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-reseed-teams-replace-btn">
+								<span class="dashicons dashicons-backup" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Replace All Teams', 'wp-mcp-ai' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Deletes all existing teams and recreates them from the knowledge base. Use with caution!', 'wp-mcp-ai' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-reseed-teams-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performTeamReseed(actionType, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-reseed-teams-message');
+						var originalText = $button.html();
+
+						// Disable both buttons
+						$('#wp-mcp-ai-reseed-teams-update-btn, #wp-mcp-ai-reseed-teams-replace-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Processing...', 'wp-mcp-ai' ) ); ?>');
+
+						// Hide any previous messages
+						$message.hide().removeClass('notice-success notice-error notice-warning');
+
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_reseed_teams',
+								action_type: actionType,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_reseed_teams' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload stats after a short delay
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'wp-mcp-ai' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'wp-mcp-ai' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text
+								$('#wp-mcp-ai-reseed-teams-update-btn, #wp-mcp-ai-reseed-teams-replace-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-reseed-teams-update-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							performTeamReseed('update', '#wp-mcp-ai-reseed-teams-update-btn');
+						}
+					});
+
+					$('#wp-mcp-ai-reseed-teams-replace-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing teams and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'wp-mcp-ai' ) ); ?>)) {
+							performTeamReseed('replace', '#wp-mcp-ai-reseed-teams-replace-btn');
+						}
+					});
+				});
+				</script>
+			</div>
 			<?php
 		}
 	}
