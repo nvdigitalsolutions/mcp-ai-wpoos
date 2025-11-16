@@ -22,7 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-s
 // Initialize profession system.
 add_action(
 	'init',
-	function() {
+	function () {
 		// Initialize CPT.
 		new WP_MCP_AI_Profession_CPT();
 
@@ -35,7 +35,7 @@ add_action(
 // Clear profession cache when professions are saved/deleted.
 add_action(
 	'save_post_' . WP_MCP_AI_Profession_CPT::POST_TYPE,
-	function( $post_id ) {
+	function ( $post_id ) {
 		$repository = new WP_MCP_AI_Profession_Repository();
 		$repository->clear_cache( $post_id );
 	},
@@ -45,7 +45,7 @@ add_action(
 
 add_action(
 	'delete_post',
-	function( $post_id ) {
+	function ( $post_id ) {
 		$post = get_post( $post_id );
 		if ( $post && WP_MCP_AI_Profession_CPT::POST_TYPE === $post->post_type ) {
 			$repository = new WP_MCP_AI_Profession_Repository();

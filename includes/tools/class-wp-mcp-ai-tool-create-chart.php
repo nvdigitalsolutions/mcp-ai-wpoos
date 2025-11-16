@@ -53,12 +53,12 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'type'        => array(
+				'type'               => array(
 					'type'        => 'string',
 					'description' => __( 'Chart type: bar, line, pie, doughnut, radar, polarArea, scatter, bubble.', 'wp-mcp-ai' ),
 					'enum'        => array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' ),
 				),
-				'data'        => array(
+				'data'               => array(
 					'type'        => 'object',
 					'description' => __( 'Chart data object with labels and datasets.', 'wp-mcp-ai' ),
 					'properties'  => array(
@@ -103,22 +103,22 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 						),
 					),
 				),
-				'options'     => array(
+				'options'            => array(
 					'type'        => 'object',
 					'description' => __( 'Chart.js options object for customizing the chart appearance and behavior.', 'wp-mcp-ai' ),
 				),
-				'title'       => array(
+				'title'              => array(
 					'type'        => 'string',
 					'description' => __( 'Chart title (optional).', 'wp-mcp-ai' ),
 				),
-				'width'       => array(
+				'width'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Chart canvas width in pixels (default: 800).', 'wp-mcp-ai' ),
 					'default'     => 800,
 					'minimum'     => 100,
 					'maximum'     => 2000,
 				),
-				'height'      => array(
+				'height'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Chart canvas height in pixels (default: 400).', 'wp-mcp-ai' ),
 					'default'     => 400,
@@ -130,7 +130,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					'description' => __( 'Whether to save the chart as an HTML file attachment (default: false).', 'wp-mcp-ai' ),
 					'default'     => false,
 				),
-				'file_name'   => array(
+				'file_name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved HTML attachment.', 'wp-mcp-ai' ),
 				),
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Validate chart type.
-		$chart_type = isset( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : '';
+		$chart_type  = isset( $arguments['type'] ) ? sanitize_text_field( $arguments['type'] ) : '';
 		$valid_types = array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' );
 
 		if ( ! in_array( $chart_type, $valid_types, true ) ) {
@@ -268,14 +268,14 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 
 			return array(
-				'chart_type'      => $chart_type,
-				'attachment_id'   => $storage['attachment_id'],
-				'url'             => $storage['url'],
-				'file_path'       => $storage['file'],
-				'file_name'       => $storage['file_name'],
-				'html'            => $html,
-				'chart_config'    => $chart_config,
-				'saved_as_file'   => true,
+				'chart_type'    => $chart_type,
+				'attachment_id' => $storage['attachment_id'],
+				'url'           => $storage['url'],
+				'file_path'     => $storage['file'],
+				'file_name'     => $storage['file_name'],
+				'html'          => $html,
+				'chart_config'  => $chart_config,
+				'saved_as_file' => true,
 			);
 		}
 
@@ -349,9 +349,17 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 			// Allow other Chart.js dataset properties (tension, fill, etc.).
 			$allowed_properties = array(
-				'tension', 'fill', 'pointRadius', 'pointHoverRadius',
-				'pointBackgroundColor', 'pointBorderColor', 'pointBorderWidth',
-				'lineTension', 'stepped', 'showLine', 'spanGaps',
+				'tension',
+				'fill',
+				'pointRadius',
+				'pointHoverRadius',
+				'pointBackgroundColor',
+				'pointBorderColor',
+				'pointBorderWidth',
+				'lineTension',
+				'stepped',
+				'showLine',
+				'spanGaps',
 			);
 
 			foreach ( $allowed_properties as $prop ) {
@@ -418,9 +426,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * @return string Complete HTML document.
 	 */
 	protected function generate_chart_html( array $config, $width, $height ) {
-		$chart_id     = 'chart-' . wp_generate_password( 8, false );
-		$config_json  = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url  = esc_url( self::CHARTJS_CDN_URL );
+		$chart_id    = 'chart-' . wp_generate_password( 8, false );
+		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
 
 		$html = <<<HTML
 <!DOCTYPE html>
@@ -632,18 +640,18 @@ HTML;
 	public function get_tool_rules() {
 		return array(
 			'parameter_constraints' => array(
-				'required_fields'  => array( 'type', 'data' ),
-				'optional_fields'  => array( 'options', 'title', 'width', 'height', 'save_as_attachment', 'file_name' ),
-				'max_datasets'     => 10,  // Maximum datasets per chart.
-				'max_data_points'  => 1000, // Maximum data points per dataset.
+				'required_fields' => array( 'type', 'data' ),
+				'optional_fields' => array( 'options', 'title', 'width', 'height', 'save_as_attachment', 'file_name' ),
+				'max_datasets'    => 10,  // Maximum datasets per chart.
+				'max_data_points' => 1000, // Maximum data points per dataset.
 			),
 			'timeout_constraints'   => array(
 				'recommended_timeout' => 30,  // Chart generation is fast.
 				'max_execution_time'  => 60,  // Maximum time for file operations.
 			),
 			'response_constraints'  => array(
-				'max_size'           => 2097152, // 2MB max HTML size.
-				'supports_streaming' => false,
+				'max_size'            => 2097152, // 2MB max HTML size.
+				'supports_streaming'  => false,
 				'supports_pagination' => false,
 			),
 			'dependencies'          => array(

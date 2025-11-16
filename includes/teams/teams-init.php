@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/teams/class-wp-mcp-ai-team-cpt.php';
 // Initialize team system.
 add_action(
 	'init',
-	function() {
+	function () {
 		// Initialize CPT.
 		new WP_MCP_AI_Team_CPT();
 	},

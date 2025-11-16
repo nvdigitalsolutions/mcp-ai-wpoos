@@ -532,9 +532,9 @@ class WP_MCP_AI_Profession_CPT {
 							<div id="profession-default-tools-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
 								<?php foreach ( $available_tools as $tool ) : ?>
 									<?php
-									$tool_slug = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
-									$tool_name = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
-									$tool_desc = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
+									$tool_slug  = method_exists( $tool, 'get_slug' ) ? $tool->get_slug() : '';
+									$tool_name  = method_exists( $tool, 'get_name' ) ? $tool->get_name() : $tool_slug;
+									$tool_desc  = method_exists( $tool, 'get_description' ) ? $tool->get_description() : '';
 									$is_checked = in_array( $tool_slug, $default_tools, true );
 									?>
 									<div style="margin-bottom: 8px;">
@@ -651,16 +651,16 @@ class WP_MCP_AI_Profession_CPT {
 	 */
 	public function add_admin_columns( $columns ) {
 		$new_columns = array();
-		
+
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
-			
+
 			if ( 'title' === $key ) {
-				$new_columns['category'] = __( 'Category', 'wp-mcp-ai' );
+				$new_columns['category']        = __( 'Category', 'wp-mcp-ai' );
 				$new_columns['expertise_count'] = __( 'Expertise Areas', 'wp-mcp-ai' );
 			}
 		}
-		
+
 		return $new_columns;
 	}
 

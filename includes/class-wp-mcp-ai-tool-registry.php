@@ -232,11 +232,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 				/**
-		 * Check if a tool is registered.
-		 *
-		 * @param string $slug Tool slug.
-		 * @return bool Whether the tool is registered.
-		 */
+				 * Check if a tool is registered.
+				 *
+				 * @param string $slug Tool slug.
+				 * @return bool Whether the tool is registered.
+				 */
 		public function is_tool_registered( $slug ) {
 			$slug = sanitize_key( $slug );
 			return isset( $this->tools[ $slug ] );
@@ -475,11 +475,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 																		/**
-		 * Determine the current flow stage from execution context.
-		 *
-		 * @param array $context Execution context.
-		 * @return string Current flow stage: 'start', 'middle', 'end', or 'anytime'.
-		 */
+																		 * Determine the current flow stage from execution context.
+																		 *
+																		 * @param array $context Execution context.
+																		 * @return string Current flow stage: 'start', 'middle', 'end', or 'anytime'.
+																		 */
 		protected function determine_flow_stage( $context ) {
 			// Check for explicit flow_stage in context.
 			if ( ! empty( $context['flow_stage'] ) ) {

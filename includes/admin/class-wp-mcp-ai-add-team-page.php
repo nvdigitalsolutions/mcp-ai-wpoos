@@ -288,14 +288,14 @@ class WP_MCP_AI_Add_Team_Page {
 			}
 
 			// Get profession data.
-			$profession_meta      = get_post_meta( $profession_id );
-			$role_description     = isset( $profession_meta['_wp_mcp_ai_profession_role_description'][0] ) ? $profession_meta['_wp_mcp_ai_profession_role_description'][0] : '';
-			$default_tools        = isset( $profession_meta['_wp_mcp_ai_profession_default_tools'][0] ) ? maybe_unserialize( $profession_meta['_wp_mcp_ai_profession_default_tools'][0] ) : array();
-			$knowledge_base       = isset( $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] ) ? $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] : '';
-			$memory_files         = isset( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) ? maybe_unserialize( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) : array();
-			$prof_provider        = isset( $profession_meta['_wp_mcp_ai_profession_default_provider'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_provider'][0] : 'openai';
-			$prof_model           = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-4';
-			$prof_temp            = isset( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) ? floatval( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) : 0.7;
+			$profession_meta  = get_post_meta( $profession_id );
+			$role_description = isset( $profession_meta['_wp_mcp_ai_profession_role_description'][0] ) ? $profession_meta['_wp_mcp_ai_profession_role_description'][0] : '';
+			$default_tools    = isset( $profession_meta['_wp_mcp_ai_profession_default_tools'][0] ) ? maybe_unserialize( $profession_meta['_wp_mcp_ai_profession_default_tools'][0] ) : array();
+			$knowledge_base   = isset( $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] ) ? $profession_meta['_wp_mcp_ai_profession_knowledge_base'][0] : '';
+			$memory_files     = isset( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) ? maybe_unserialize( $profession_meta['_wp_mcp_ai_profession_memory_files'][0] ) : array();
+			$prof_provider    = isset( $profession_meta['_wp_mcp_ai_profession_default_provider'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_provider'][0] : 'openai';
+			$prof_model       = isset( $profession_meta['_wp_mcp_ai_profession_default_model'][0] ) ? $profession_meta['_wp_mcp_ai_profession_default_model'][0] : 'gpt-4';
+			$prof_temp        = isset( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) ? floatval( $profession_meta['_wp_mcp_ai_profession_default_temperature'][0] ) : 0.7;
 
 			// Team defaults override profession defaults.
 			$final_provider    = ! empty( $default_provider ) ? $default_provider : $prof_provider;

@@ -65,19 +65,19 @@ class WP_MCP_AI_Team_CPT {
 	 */
 	public function register_post_type() {
 		$labels = array(
-			'name'                  => _x( 'Teams', 'Post type general name', 'wp-mcp-ai' ),
-			'singular_name'         => _x( 'Team', 'Post type singular name', 'wp-mcp-ai' ),
-			'menu_name'             => _x( 'Teams', 'Admin Menu text', 'wp-mcp-ai' ),
-			'name_admin_bar'        => _x( 'Team', 'Add New on Toolbar', 'wp-mcp-ai' ),
-			'add_new'               => __( 'Add New', 'wp-mcp-ai' ),
-			'add_new_item'          => __( 'Add New Team', 'wp-mcp-ai' ),
-			'new_item'              => __( 'New Team', 'wp-mcp-ai' ),
-			'edit_item'             => __( 'Edit Team', 'wp-mcp-ai' ),
-			'view_item'             => __( 'View Team', 'wp-mcp-ai' ),
-			'all_items'             => __( 'Teams', 'wp-mcp-ai' ),
-			'search_items'          => __( 'Search Teams', 'wp-mcp-ai' ),
-			'not_found'             => __( 'No teams found.', 'wp-mcp-ai' ),
-			'not_found_in_trash'    => __( 'No teams found in Trash.', 'wp-mcp-ai' ),
+			'name'               => _x( 'Teams', 'Post type general name', 'wp-mcp-ai' ),
+			'singular_name'      => _x( 'Team', 'Post type singular name', 'wp-mcp-ai' ),
+			'menu_name'          => _x( 'Teams', 'Admin Menu text', 'wp-mcp-ai' ),
+			'name_admin_bar'     => _x( 'Team', 'Add New on Toolbar', 'wp-mcp-ai' ),
+			'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
+			'add_new_item'       => __( 'Add New Team', 'wp-mcp-ai' ),
+			'new_item'           => __( 'New Team', 'wp-mcp-ai' ),
+			'edit_item'          => __( 'Edit Team', 'wp-mcp-ai' ),
+			'view_item'          => __( 'View Team', 'wp-mcp-ai' ),
+			'all_items'          => __( 'Teams', 'wp-mcp-ai' ),
+			'search_items'       => __( 'Search Teams', 'wp-mcp-ai' ),
+			'not_found'          => __( 'No teams found.', 'wp-mcp-ai' ),
+			'not_found_in_trash' => __( 'No teams found in Trash.', 'wp-mcp-ai' ),
 		);
 
 		$args = array(
@@ -482,11 +482,11 @@ class WP_MCP_AI_Team_CPT {
 			$provider = get_post_meta( $post_id, self::META_DEFAULT_PROVIDER, true );
 			if ( $provider ) {
 				$provider_labels = array(
-					'openai'     => 'OpenAI',
-					'gemini'     => 'Gemini',
-					'anthropic'  => 'Claude',
-					'ollama'     => 'Ollama',
-					'lm_studio'  => 'LM Studio',
+					'openai'    => 'OpenAI',
+					'gemini'    => 'Gemini',
+					'anthropic' => 'Claude',
+					'ollama'    => 'Ollama',
+					'lm_studio' => 'LM Studio',
 				);
 				echo esc_html( isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : $provider );
 			} else {

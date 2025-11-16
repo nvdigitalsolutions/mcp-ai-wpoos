@@ -485,7 +485,7 @@ if ( ! is_admin() ) {
 	// Load required dependencies for Performance section.
 	require_once WP_MCP_AI_PATH . 'includes/admin/sections/abstract-wp-mcp-ai-settings-section.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-	
+
 	// Instantiate Performance section to register AJAX handlers.
 	// The constructor checks is_admin() and only registers admin-specific hooks when in admin context.
 	$container = wp_mcp_ai_container();

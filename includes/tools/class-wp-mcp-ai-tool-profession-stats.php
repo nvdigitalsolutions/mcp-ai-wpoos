@@ -72,7 +72,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		$category_counts = $profession_service->get_category_counts();
 
 		// Calculate category percentages.
-		$total = count( $all_professions );
+		$total                = count( $all_professions );
 		$category_percentages = array();
 
 		foreach ( $category_counts as $category => $count ) {
@@ -91,9 +91,9 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		return array(
-			'success'       => true,
-			'total'         => $total,
-			'by_category'   => array(
+			'success'        => true,
+			'total'          => $total,
+			'by_category'    => array(
 				'counts'      => $category_counts,
 				'percentages' => $category_percentages,
 				'labels'      => $category_labels,
@@ -125,7 +125,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 				'count'    => $count,
 			);
 
-			$i++;
+			++$i;
 		}
 
 		return $top;

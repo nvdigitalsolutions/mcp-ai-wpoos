@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			return array(
 				// Provider Priority List.
-				'provider_priority_list' => array(
+				'provider_priority_list'      => array(
 					'type'        => 'custom',
 					'label'       => __( 'Provider Priority Order', 'wp-mcp-ai' ),
 					'description' => __( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable.', 'wp-mcp-ai' ),
@@ -99,7 +99,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// OpenAI Settings.
-				'openai_api_key'         => array(
+				'openai_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'OpenAI API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -110,14 +110,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'sk-...',
 					'autocomplete' => 'new-password',
 				),
-				'default_model'          => array(
+				'default_model'               => array(
 					'type'        => 'select',
 					'label'       => __( 'Default OpenAI Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for OpenAI requests. This model will be used unless overridden by an assistant or specific API call. Consider cost, speed, and capability trade-offs.', 'wp-mcp-ai' ),
 					'options'     => $model_choices,
 					'default'     => 'gpt-4o',
 				),
-				'openai_embedding_model' => array(
+				'openai_embedding_model'      => array(
 					'type'        => 'select',
 					'label'       => __( 'OpenAI Embedding Model', 'wp-mcp-ai' ),
 					'description' => __( 'Model to use for generating text embeddings. text-embedding-3-small offers the best balance of performance and cost. text-embedding-3-large provides higher accuracy for complex tasks.', 'wp-mcp-ai' ),
@@ -128,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					),
 					'default'     => 'text-embedding-3-small',
 				),
-				'openai_organization_id' => array(
+				'openai_organization_id'      => array(
 					'type'         => 'text',
 					'label'        => __( 'OpenAI Organization ID (Optional)', 'wp-mcp-ai' ),
 					'description'  => __( 'Your OpenAI organization ID if you belong to multiple organizations. This is optional for most users. Find it in your OpenAI account settings if needed.', 'wp-mcp-ai' ),
@@ -137,7 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Anthropic Settings.
-				'anthropic_api_key'      => array(
+				'anthropic_api_key'           => array(
 					'type'         => 'password',
 					'label'        => __( 'Anthropic API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -148,7 +148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'sk-ant-...',
 					'autocomplete' => 'new-password',
 				),
-				'anthropic_model'        => array(
+				'anthropic_model'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Anthropic Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'wp-mcp-ai' ),
@@ -163,7 +163,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Google Gemini Settings.
-				'gemini_api_key'         => array(
+				'gemini_api_key'              => array(
 					'type'         => 'password',
 					'label'        => __( 'Gemini API Key', 'wp-mcp-ai' ),
 					'description'  => sprintf(
@@ -174,7 +174,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder'  => 'AIza...',
 					'autocomplete' => 'new-password',
 				),
-				'default_gemini_model'   => array(
+				'default_gemini_model'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
 					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Flash is the latest production model. Gemini 2.0 Flash (Experimental) offers cutting-edge capabilities, while Gemini 1.5 Pro provides stable, proven performance. Gemini 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
@@ -190,7 +190,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Ollama Settings.
-				'ollama_endpoint_url'    => array(
+				'ollama_endpoint_url'         => array(
 					'type'        => 'url',
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for your local Ollama installation. Default is http://localhost:11434 for local installations. Ensure Ollama is running before testing the connection.', 'wp-mcp-ai' ),
@@ -204,13 +204,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_ollama_endpoint_url', 'http://localhost:11434' ),
 				),
-				'ollama_model'           => array(
+				'ollama_model'                => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model name to use with Ollama. Must match exactly a model you have pulled (e.g., llama3, mistral, codellama). Use \"ollama list\" in terminal to see available models.', 'wp-mcp-ai' ),
 					'placeholder' => 'llama3',
 				),
-				'ollama_network_interface' => array(
+				'ollama_network_interface'    => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Network Interface (Optional)', 'wp-mcp-ai' ),
 					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
@@ -218,7 +218,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// LM Studio Settings.
-				'lm_studio_endpoint_url' => array(
+				'lm_studio_endpoint_url'      => array(
 					'type'        => 'url',
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
 					'description' => __( 'URL for your local LM Studio installation. Default is http://localhost:1234/v1 for local installations. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
@@ -232,7 +232,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					 */
 					'default'     => apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', 'http://localhost:1234/v1' ),
 				),
-				'lm_studio_model'        => array(
+				'lm_studio_model'             => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Model', 'wp-mcp-ai' ),
 					'description' => __( 'The model identifier for your loaded LM Studio model. This is typically shown in the LM Studio interface. Some installations accept \"local-model\" as a generic identifier.', 'wp-mcp-ai' ),

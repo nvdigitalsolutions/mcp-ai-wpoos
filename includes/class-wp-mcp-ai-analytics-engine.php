@@ -79,7 +79,7 @@ class WP_MCP_AI_Analytics_Engine {
 			$denominator += pow( $x_values[ $i ] - $mean_x, 2 );
 		}
 
-		$slope = ( $denominator != 0 ) ? ( $numerator / $denominator ) : 0;
+		$slope     = ( $denominator != 0 ) ? ( $numerator / $denominator ) : 0;
 		$intercept = $mean_y - ( $slope * $mean_x );
 
 		// Calculate R-squared.
@@ -236,12 +236,12 @@ class WP_MCP_AI_Analytics_Engine {
 				// Extract hour from 'Y-m-d-H' format.
 				$hour_parts = explode( '-', $hour_key );
 				if ( count( $hour_parts ) === 4 ) {
-					$hour                     = (int) $hour_parts[3];
+					$hour                    = (int) $hour_parts[3];
 					$hourly_totals[ $hour ] += $tokens;
 
 					// Calculate day of week.
-					$date_str = $hour_parts[0] . '-' . $hour_parts[1] . '-' . $hour_parts[2];
-					$day_of_week = (int) gmdate( 'w', strtotime( $date_str ) );
+					$date_str                      = $hour_parts[0] . '-' . $hour_parts[1] . '-' . $hour_parts[2];
+					$day_of_week                   = (int) gmdate( 'w', strtotime( $date_str ) );
 					$daily_totals[ $day_of_week ] += $tokens;
 				}
 			}
@@ -327,11 +327,11 @@ class WP_MCP_AI_Analytics_Engine {
 		$difference_pct = ( $avg_usage != 0 ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
 
 		return array(
-			'user1_stats'     => $user_1_stats,
-			'user2_stats'     => $user_2_stats,
-			'usage_ratio'     => round( $usage_ratio, 2 ),
-			'higher_user'     => $higher_user,
-			'difference_pct'  => round( $difference_pct, 2 ),
+			'user1_stats'    => $user_1_stats,
+			'user2_stats'    => $user_2_stats,
+			'usage_ratio'    => round( $usage_ratio, 2 ),
+			'higher_user'    => $higher_user,
+			'difference_pct' => round( $difference_pct, 2 ),
 		);
 	}
 
@@ -372,12 +372,12 @@ class WP_MCP_AI_Analytics_Engine {
 			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
 
 			if ( isset( $usage[ $tool_slug_1 ]['daily'] ) ) {
-				$tool_1_data = self::filter_by_date( $usage[ $tool_slug_1 ]['daily'], $cutoff_date );
+				$tool_1_data   = self::filter_by_date( $usage[ $tool_slug_1 ]['daily'], $cutoff_date );
 				$tool_1_totals = array_merge( $tool_1_totals, array_values( $tool_1_data ) );
 			}
 
 			if ( isset( $usage[ $tool_slug_2 ]['daily'] ) ) {
-				$tool_2_data = self::filter_by_date( $usage[ $tool_slug_2 ]['daily'], $cutoff_date );
+				$tool_2_data   = self::filter_by_date( $usage[ $tool_slug_2 ]['daily'], $cutoff_date );
 				$tool_2_totals = array_merge( $tool_2_totals, array_values( $tool_2_data ) );
 			}
 		}
@@ -388,8 +388,8 @@ class WP_MCP_AI_Analytics_Engine {
 		$total_1 = array_sum( $tool_1_totals );
 		$total_2 = array_sum( $tool_2_totals );
 
-		$usage_ratio   = ( $total_2 != 0 ) ? ( $total_1 / $total_2 ) : 0;
-		$popular_tool  = ( $total_1 > $total_2 ) ? $tool_slug_1 : $tool_slug_2;
+		$usage_ratio  = ( $total_2 != 0 ) ? ( $total_1 / $total_2 ) : 0;
+		$popular_tool = ( $total_1 > $total_2 ) ? $tool_slug_1 : $tool_slug_2;
 
 		$avg_usage      = ( $total_1 + $total_2 ) / 2;
 		$difference_pct = ( $avg_usage != 0 ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
@@ -635,7 +635,7 @@ class WP_MCP_AI_Analytics_Engine {
 		$users_data = array();
 
 		foreach ( $transcripts as $transcript ) {
-			$results['transcripts_processed']++;
+			++$results['transcripts_processed'];
 
 			$transcript_user_id = absint( $transcript->cct_author_id );
 			if ( ! $transcript_user_id ) {
@@ -696,7 +696,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 			// Aggregate data.
 			$users_data[ $transcript_user_id ][ $tool_slug ]['total_tokens'] += $total_tokens;
-			$users_data[ $transcript_user_id ][ $tool_slug ]['requests']++;
+			++$users_data[ $transcript_user_id ][ $tool_slug ]['requests'];
 
 			// Track first/last usage.
 			$current_timestamp = gmdate( 'Y-m-d H:i:s', $timestamp );
@@ -756,7 +756,7 @@ class WP_MCP_AI_Analytics_Engine {
 			}
 
 			update_user_meta( $uid, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $tools_data );
-			$results['users_updated']++;
+			++$results['users_updated'];
 		}
 
 		return $results;

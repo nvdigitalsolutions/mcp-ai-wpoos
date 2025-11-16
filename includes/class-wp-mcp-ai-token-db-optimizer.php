@@ -176,14 +176,14 @@ class WP_MCP_AI_Token_DB_Optimizer {
 		);
 
 		return array(
-			'schema_version'          => get_option( self::SCHEMA_VERSION_OPTION, 0 ),
-			'optimizations_active'    => get_option( self::SCHEMA_VERSION_OPTION, 0 ) >= self::CURRENT_SCHEMA_VERSION,
-			'tier_index_exists'       => in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ),
-			'usage_index_exists'      => in_array( 'idx_wp_mcp_ai_usage', $indexes, true ),
-			'tier_records'            => absint( $tier_count ),
-			'usage_records'           => absint( $usage_count ),
-			'total_indexes'           => count( $indexes ),
-			'wp_mcp_ai_indexes'       => count(
+			'schema_version'       => get_option( self::SCHEMA_VERSION_OPTION, 0 ),
+			'optimizations_active' => get_option( self::SCHEMA_VERSION_OPTION, 0 ) >= self::CURRENT_SCHEMA_VERSION,
+			'tier_index_exists'    => in_array( 'idx_wp_mcp_ai_token_tier', $indexes, true ),
+			'usage_index_exists'   => in_array( 'idx_wp_mcp_ai_usage', $indexes, true ),
+			'tier_records'         => absint( $tier_count ),
+			'usage_records'        => absint( $usage_count ),
+			'total_indexes'        => count( $indexes ),
+			'wp_mcp_ai_indexes'    => count(
 				array_filter(
 					$indexes,
 					function ( $index ) {

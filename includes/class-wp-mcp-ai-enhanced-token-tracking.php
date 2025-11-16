@@ -178,8 +178,8 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * Removes records older than the retention period (default: 90 days).
 	 */
 	public static function cleanup_old_records() {
-		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-		$retention_days  = isset( $settings['token_tracking_retention_days'] ) ? absint( $settings['token_tracking_retention_days'] ) : 90;
+		$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+		$retention_days = isset( $settings['token_tracking_retention_days'] ) ? absint( $settings['token_tracking_retention_days'] ) : 90;
 
 		$deleted = WP_MCP_AI_Token_Tracking_Database::cleanup_old_records( $retention_days );
 
@@ -238,7 +238,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			}
 			$by_provider[ $provider ]['total_tokens'] += intval( $record['total_tokens'] );
 			$by_provider[ $provider ]['total_cost']   += floatval( $record['cost_usd'] );
-			$by_provider[ $provider ]['records']++;
+			++$by_provider[ $provider ]['records'];
 
 			// By tool.
 			if ( ! isset( $by_tool[ $tool ] ) ) {
@@ -250,13 +250,13 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			}
 			$by_tool[ $tool ]['total_tokens'] += intval( $record['total_tokens'] );
 			$by_tool[ $tool ]['total_cost']   += floatval( $record['cost_usd'] );
-			$by_tool[ $tool ]['records']++;
+			++$by_tool[ $tool ]['records'];
 		}
 
 		return array(
-			'summary'     => $cost_summary,
-			'by_provider' => $by_provider,
-			'by_tool'     => $by_tool,
+			'summary'       => $cost_summary,
+			'by_provider'   => $by_provider,
+			'by_tool'       => $by_tool,
 			'total_records' => count( $usage_records ),
 		);
 	}
@@ -302,7 +302,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 				continue;
 			}
 
-			$results['users_processed']++;
+			++$results['users_processed'];
 
 			// Process each provider/model combination.
 			foreach ( $usage as $provider => $models ) {
@@ -342,10 +342,10 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 					);
 
 					if ( $record_id ) {
-						$results['records_created']++;
-						$results['records_estimated']++;
+						++$results['records_created'];
+						++$results['records_estimated'];
 					} else {
-						$results['errors']++;
+						++$results['errors'];
 					}
 				}
 			}

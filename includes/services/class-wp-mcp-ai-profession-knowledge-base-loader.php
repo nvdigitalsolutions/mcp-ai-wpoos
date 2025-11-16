@@ -146,15 +146,15 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 			'description'      => isset( $profession['description'] ) ? wp_kses_post( $profession['description'] ) : '',
 			'category'         => sanitize_key( $profession['category'] ),
 			'role_description' => isset( $profession['role_description'] ) ? wp_kses_post( $profession['role_description'] ) : '',
-			'expertise'        => isset( $profession['expertise'] ) && is_array( $profession['expertise'] ) 
-				? array_map( 'sanitize_text_field', $profession['expertise'] ) 
+			'expertise'        => isset( $profession['expertise'] ) && is_array( $profession['expertise'] )
+				? array_map( 'sanitize_text_field', $profession['expertise'] )
 				: array(),
-			'warnings'         => isset( $profession['warnings'] ) && is_array( $profession['warnings'] ) 
-				? array_map( 'sanitize_text_field', $profession['warnings'] ) 
+			'warnings'         => isset( $profession['warnings'] ) && is_array( $profession['warnings'] )
+				? array_map( 'sanitize_text_field', $profession['warnings'] )
 				: array(),
 			'knowledge_base'   => isset( $profession['knowledge_base'] ) ? wp_kses_post( $profession['knowledge_base'] ) : '',
-			'default_tools'    => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] ) 
-				? array_map( 'sanitize_key', $profession['default_tools'] ) 
+			'default_tools'    => isset( $profession['default_tools'] ) && is_array( $profession['default_tools'] )
+				? array_map( 'sanitize_key', $profession['default_tools'] )
 				: array(),
 		);
 
@@ -194,11 +194,11 @@ class WP_MCP_AI_Profession_Knowledge_Base_Loader {
 	 * @return array Array of category slugs.
 	 */
 	public function get_categories() {
-		$files = $this->get_json_files();
+		$files      = $this->get_json_files();
 		$categories = array();
 
 		foreach ( $files as $file ) {
-			$basename = basename( $file, '.json' );
+			$basename     = basename( $file, '.json' );
 			$categories[] = $basename;
 		}
 

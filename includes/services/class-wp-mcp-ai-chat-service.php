@@ -156,9 +156,9 @@ class WP_MCP_AI_Chat_Service {
 			'debug',
 			'Initial chat response received',
 			array(
-				'assistant_id'  => $assistant_id,
+				'assistant_id'   => $assistant_id,
 				'has_tool_calls' => ! empty( $this->extract_tool_calls_from_response( $response ) ),
-				'response_time' => round( ( $transcript_context['response_completed_at'] - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
+				'response_time'  => round( ( $transcript_context['response_completed_at'] - $transcript_context['request_started_at'] ) * 1000, 2 ) . 'ms',
 			)
 		);
 
@@ -188,7 +188,7 @@ class WP_MCP_AI_Chat_Service {
 
 			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
 				$tool_names = array_map(
-					function( $call ) {
+					function ( $call ) {
 						return isset( $call['function']['name'] ) ? $call['function']['name'] : 'unknown';
 					},
 					$tool_calls
@@ -227,8 +227,8 @@ class WP_MCP_AI_Chat_Service {
 
 			// Execute each tool with iteration context for flow stage validation.
 			$iteration_start_time = microtime( true );
-			$tool_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
-			$iteration_duration = microtime( true ) - $iteration_start_time;
+			$tool_results         = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
+			$iteration_duration   = microtime( true ) - $iteration_start_time;
 
 			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
 				WP_MCP_AI_Logger::log_event(
@@ -301,7 +301,7 @@ class WP_MCP_AI_Chat_Service {
 
 		// Update response completion timestamp after agentic loop.
 		$transcript_context['response_completed_at'] = microtime( true );
-    
+
 		// Log orchestration completion
 		WP_MCP_AI_Logger::log_event(
 			'debug',

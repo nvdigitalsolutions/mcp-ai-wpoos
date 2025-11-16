@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/chat';
-			
+
 			$response = wp_remote_post(
 				$url,
 				array(
@@ -240,7 +240,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for local AI providers since these are external
 			// HTTP requests that don't consume PHP execution time while waiting.
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
+			$timeout = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			if ( isset( $options['timeout'] ) && $options['timeout'] ) {
 				$timeout = max( 5, absint( $options['timeout'] ) );
 			}
@@ -338,7 +338,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			$url = untrailingslashit( $endpoint_url ) . '/api/generate';
-			
+
 			$response = wp_remote_post(
 				$url,
 				array(

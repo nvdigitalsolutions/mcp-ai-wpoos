@@ -51,7 +51,7 @@ if ( $has_analytics ) {
 					<strong><?php esc_html_e( 'Peak Hours:', 'wp-mcp-ai' ); ?></strong>
 					<?php
 					$peak_hours_formatted = array_map(
-						function( $hour ) {
+						function ( $hour ) {
 							return sprintf( '%02d:00', $hour );
 						},
 						$pattern_data['peak_hours']

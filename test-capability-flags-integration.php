@@ -101,7 +101,7 @@ class Mock_Tool_With_Flags implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_C
 }
 
 // Register the mock tool.
-$mock_tool = new Mock_Tool_With_Flags();
+$mock_tool  = new Mock_Tool_With_Flags();
 $registered = $registry->register_tool( $mock_tool );
 
 if ( ! $registered ) {
@@ -117,7 +117,7 @@ if ( ! is_array( $flags ) ) {
 	exit( 1 );
 }
 if ( count( $flags ) !== 3 ) {
-	echo "   ✗ Expected 3 flags, got " . count( $flags ) . "\n";
+	echo '   ✗ Expected 3 flags, got ' . count( $flags ) . "\n";
 	exit( 1 );
 }
 if ( ! in_array( 'read-only', $flags, true ) ) {

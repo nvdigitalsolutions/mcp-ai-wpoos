@@ -73,8 +73,8 @@ class WP_MCP_AI_Profession_Metabox_Base_Knowledge extends WP_MCP_AI_Profession_M
 		wp_enqueue_script( 'jquery' );
 
 		// Get existing values.
-		$memory_files        = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
-		$vector_store_id     = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_VECTOR_STORE_ID, true );
+		$memory_files         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_MEMORY_FILES, true );
+		$vector_store_id      = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_VECTOR_STORE_ID, true );
 		$supported_mime_types = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_SUPPORTED_MIME_TYPES, true );
 
 		// Ensure proper types.
