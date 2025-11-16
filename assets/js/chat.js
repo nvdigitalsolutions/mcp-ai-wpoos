@@ -71,6 +71,23 @@
         return STORAGE_KEY_PREFIX + assistantId;
     }
 
+    /**
+     * Sanitize a session key to remove whitespace and invalid characters.
+     * Uses storage service if available, otherwise uses internal implementation.
+     * @param {string} sessionKey - The session key to sanitize.
+     * @return {string} The sanitized session key.
+     */
+    function sanitizeSessionKey(sessionKey) {
+        if (storageService && storageService.sanitizeSessionKey) {
+            return storageService.sanitizeSessionKey(sessionKey);
+        }
+        // Fallback implementation
+        if (!sessionKey || typeof sessionKey !== 'string') {
+            return '';
+        }
+        return sessionKey.replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+
     // Debounced storage saves to reduce write frequency
     const storageSaveTimers = {};
     const STORAGE_SAVE_DEBOUNCE_MS = 300;
@@ -3980,7 +3997,7 @@
             saveConversationToCCT(state);
         }
 
-        const sessionKey = session.session_key ? String(session.session_key) : '';
+        const sessionKey = sanitizeSessionKey(session.session_key ? String(session.session_key) : '');
         
         if (window.console && console.log) {
             console.log('[WP oOS] Loading conversation into chat:', {
@@ -7544,7 +7561,7 @@
     function handleChatResponse(state, data) {
         // Capture and save the session key if provided by the server
         if (data && data.sessionKey && state.config) {
-            state.config.sessionKey = data.sessionKey;
+            state.config.sessionKey = sanitizeSessionKey(data.sessionKey);
         }
 
         const chatData = data && data.data ? data.data : null;
