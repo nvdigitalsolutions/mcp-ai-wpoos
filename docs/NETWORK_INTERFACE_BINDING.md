@@ -141,6 +141,30 @@ $response = $client->create_chat_completion( $messages );
 - ✅ No credentials or sensitive data in interface configuration
 - ✅ WordPress capability checks still apply to all API requests
 
+### Loopback and Private Network Security Settings
+
+When using network interface binding with private network addresses, you should also configure the security settings:
+
+**Settings → WP oOS → Security**
+
+1. **Enable Loopback/Private Network SSL Bypass** (Default: Enabled)
+   - Automatically disables SSL verification for localhost and private network addresses
+   - Required for most local AI services without SSL certificates
+   - If your local services have valid SSL certificates, you can disable this
+
+2. **Allow Private Network Requests** (Default: Enabled)
+   - Allows WordPress to make HTTP requests to private network addresses
+   - Required for connecting to local AI services on your network
+   - WordPress blocks private network requests by default for security
+
+**Recommended Configuration for Local AI Services:**
+```
+✅ Enable Loopback/Private Network SSL Bypass
+✅ Allow Private Network Requests
+```
+
+See `docs/SECURITY_HARDENING.md` for more details on these security settings.
+
 ## Limitations
 
 1. **cURL Only**: Only works when WordPress uses cURL transport (default for most systems)
