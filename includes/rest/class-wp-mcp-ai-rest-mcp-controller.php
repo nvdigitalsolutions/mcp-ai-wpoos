@@ -148,7 +148,7 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'permission_callback' => array( $this, 'permissions_check' ),
+					'permission_callback' => array( $this, 'permissions_check_assistant_list' ),
 					'callback'            => array( $this, 'handle_assistants_index' ),
 					'args'                => array(
 						'search'  => array(
@@ -272,6 +272,26 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Delegate to main controller.
 		return $this->main_controller->permissions_check( $request );
+	}
+
+	/**
+	 * Permission check for listing assistants.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check_assistant_list( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check_assistant_list( $request );
 	}
 
 	/**

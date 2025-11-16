@@ -326,6 +326,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'chat_colors'                          => self::get_default_chat_colors(),
 				'allowed_image_mimes'                  => array(),
 				'allowed_file_mimes'                   => array(),
+				'rest_enable_assistant_list'           => true,
 				'rest_enable_assistant_create'         => false,
 				'rest_enable_assistant_delete'         => false,
 				'sse_enable_post_method'               => false,

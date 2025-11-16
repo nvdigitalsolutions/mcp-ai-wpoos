@@ -1356,6 +1356,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Permission check for listing assistants via REST API.
+		 *
+		 * Checks both standard permissions AND the rest_enable_assistant_list setting.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_list( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			// Then check if REST assistant listing is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( empty( $settings['rest_enable_assistant_list'] ) ) {
+				return new WP_Error(
+					'rest_assistant_list_disabled',
+					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication → REST API Capabilities.', 'wp-mcp-ai' ),
+					array(
+						'status' => 403,
+					)
+				);
+			}
+
+			return true;
+		}
+
+		/**
 		 * Permission check for creating assistants via REST API.
 		 *
 		 * Checks both standard permissions AND the rest_enable_assistant_create setting.

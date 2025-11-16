@@ -151,6 +151,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 
 				// REST API Capabilities.
+				'rest_enable_assistant_list'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable REST Assistant Listing', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Allow listing assistants via REST API (GET /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, authenticated API clients can retrieve the list of available assistants. Enabled by default. Disable for enhanced security if you don\'t need remote assistant discovery.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
 				'rest_enable_assistant_create'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
@@ -216,7 +223,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'id'     => 'rest_api',
 					'label'  => __( 'REST API Capabilities', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-rest-api',
-					'fields' => array( 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
+					'fields' => array( 'rest_enable_assistant_list', 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
 				),
 			);
 		}
