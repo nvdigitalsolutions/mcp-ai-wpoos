@@ -774,20 +774,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			<div class="wp-mcp-ai-gemini-migration-section" style="margin-top: 50px;">
 				<h3><?php esc_html_e( 'Gemini Cost Tracking Migration', 'wp-mcp-ai' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Fix historical cost tracking data where Gemini tools were incorrectly attributed to OpenAI provider. This migration will identify Gemini-specific tools (like generate_gemini_image, edit_gemini_image, etc.) and update their provider attribution and recalculate costs using correct Gemini pricing.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Fix historical cost tracking data where Gemini-specific tools were incorrectly attributed to OpenAI provider. This migration will identify tools that explicitly use Gemini API (tools with "gemini" in their name) and update their provider attribution and recalculate costs using correct Gemini pricing.', 'wp-mcp-ai' ); ?>
 				</p>
 
 				<div class="wp-mcp-ai-migration-info" style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 3px solid #0073aa; border-radius: 3px;">
 					<h4 style="margin-top: 0;"><?php esc_html_e( 'What This Does', 'wp-mcp-ai' ); ?></h4>
 					<ul style="margin: 10px 0; padding-left: 20px;">
-						<li><?php esc_html_e( 'Identifies token tracking records for Gemini tools that were incorrectly attributed to OpenAI', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Updates provider from OpenAI to Gemini', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Identifies token tracking records for Gemini-specific tools that were incorrectly attributed to OpenAI', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Updates provider from OpenAI (or other providers) to Gemini', 'wp-mcp-ai' ); ?></li>
 						<li><?php esc_html_e( 'Recalculates costs using correct Gemini pricing (which is typically lower than OpenAI)', 'wp-mcp-ai' ); ?></li>
 						<li><?php esc_html_e( 'Updates the "is_estimated" flag to mark the data as actual, not estimated', 'wp-mcp-ai' ); ?></li>
 					</ul>
 					<p class="description" style="margin: 10px 0 0 0;">
 						<strong><?php esc_html_e( 'Affected Tools:', 'wp-mcp-ai' ); ?></strong>
-						generate_gemini_image, edit_gemini_image, analyze_comment_content, generate_image_alt_text, generate_image_caption
+						generate_gemini_image, edit_gemini_image
+					</p>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<?php esc_html_e( 'Note: Tools that can use either OpenAI or Gemini based on your settings (like analyze_comment_content) are not migrated, as they may legitimately use OpenAI.', 'wp-mcp-ai' ); ?>
 					</p>
 				</div>
 

@@ -406,23 +406,25 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		global $wpdb;
 
 		$results = array(
-			'total_checked'   => 0,
-			'records_updated' => 0,
-			'dry_run'         => $dry_run,
-			'updates'         => array(),
+			'total_checked'        => 0,
+			'records_updated'      => 0,
+			'dry_run'              => $dry_run,
+			'updates'              => array(),
+			'total_gemini_records' => 0,
+			'correctly_attributed' => 0,
 		);
 
 		$table_name = WP_MCP_AI_Token_Tracking_Database::get_table_name();
 
 		// Define tool patterns that indicate specific providers.
+		// IMPORTANT: Only include tools that EXPLICITLY use Gemini (have "gemini" in tool name).
+		// Tools like analyze_comment_content can use either OpenAI or Gemini based on settings,
+		// so we should NOT migrate them as they might legitimately use OpenAI.
 		$provider_patterns = array(
 			'gemini' => array(
 				'tools'  => array(
-					'generate_gemini_image',
-					'edit_gemini_image',
-					'analyze_comment_content', // Can use Gemini.
-					'generate_image_alt_text', // Can use Gemini.
-					'generate_image_caption',  // Can use Gemini.
+					'generate_gemini_image', // Gemini-only tool.
+					'edit_gemini_image',     // Gemini-only tool.
 				),
 				'models' => array(
 					'gemini-1.5-pro',
@@ -434,11 +436,25 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			),
 		);
 
-		// Find records that likely have provider misattributions.
-		// We look for Gemini tools that are NOT already marked with gemini provider.
 		$gemini_tools = $provider_patterns['gemini']['tools'];
 		$placeholders = implode( ', ', array_fill( 0, count( $gemini_tools ), '%s' ) );
 
+		// First, get total count of ALL Gemini tool records to provide context.
+		$count_query = "
+			SELECT COUNT(*) as total
+			FROM {$table_name}
+			WHERE tool IN ({$placeholders})
+		";
+
+		$count_prepare_args = $gemini_tools;
+		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+		$total_gemini_records = $wpdb->get_var( $count_prepared_query );
+		$results['total_gemini_records'] = intval( $total_gemini_records );
+
+		// Find records that likely have provider misattributions.
+		// We look for Gemini tools that are NOT already marked with gemini provider.
 		$query = "
 			SELECT id, user_id, tool, provider, model, input_tokens, output_tokens, cost_usd, is_estimated
 			FROM {$table_name}
@@ -455,6 +471,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
 		$results['total_checked'] = count( $records );
+		$results['correctly_attributed'] = $results['total_gemini_records'] - $results['total_checked'];
 
 		foreach ( $records as $record ) {
 			$record_id     = intval( $record['id'] );
@@ -529,22 +546,12 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * @return string Inferred Gemini model.
 	 */
 	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
-		// Image-related tools use image models.
+		// Image-related Gemini tools use the Gemini image model.
 		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
 			return 'gemini-2.5-flash-image';
 		}
 
-		// Vision tools (alt-text, caption) likely use flash.
-		if ( in_array( $tool, array( 'generate_image_alt_text', 'generate_image_caption' ), true ) ) {
-			return 'gemini-1.5-flash';
-		}
-
-		// Comment analysis likely uses flash for speed.
-		if ( 'analyze_comment_content' === $tool ) {
-			return 'gemini-1.5-flash';
-		}
-
-		// Default to flash if unknown.
+		// Default to flash if the tool is unknown but assumed to be Gemini.
 		return 'gemini-1.5-flash';
 	}
 }

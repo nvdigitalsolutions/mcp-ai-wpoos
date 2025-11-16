@@ -1750,34 +1750,55 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 		// Build response message.
 		if ( $dry_run ) {
-			if ( 0 === $results['total_checked'] ) {
-				$message = __( 'No Gemini tool records found that need migration. All cost tracking data is already correct.', 'wp-mcp-ai' );
-			} else {
+			if ( 0 === $results['total_gemini_records'] ) {
+				// No Gemini tool records exist at all.
+				$message = __( 'No Gemini tool usage records found in the database. This is expected if you haven\'t used any Gemini tools yet.', 'wp-mcp-ai' );
+			} elseif ( 0 === $results['total_checked'] ) {
+				// All Gemini records are correctly attributed.
 				$message = sprintf(
-					/* translators: 1: Number of records that would be updated, 2: Number of records checked */
-					__( 'Preview: Found %1$d records (out of %2$d checked) that would be migrated from OpenAI to Gemini attribution with corrected costs.', 'wp-mcp-ai' ),
+					/* translators: %d: Number of correctly attributed Gemini records */
+					__( 'Found %d Gemini tool records, all correctly attributed to Gemini provider. No migration needed.', 'wp-mcp-ai' ),
+					$results['correctly_attributed']
+				);
+			} else {
+				// Some records need migration.
+				$message = sprintf(
+					/* translators: 1: Number of records that would be updated, 2: Total Gemini records, 3: Already correct records */
+					__( 'Preview: Found %1$d records that need migration (out of %2$d total Gemini tool records). %3$d records are already correctly attributed to Gemini.', 'wp-mcp-ai' ),
 					$results['records_updated'],
-					$results['total_checked']
+					$results['total_gemini_records'],
+					$results['correctly_attributed']
 				);
 			}
 		} else {
 			if ( 0 === $results['records_updated'] ) {
-				$message = __( 'No records were updated. All cost tracking data is already correct.', 'wp-mcp-ai' );
+				if ( 0 === $results['total_gemini_records'] ) {
+					$message = __( 'No Gemini tool usage records found in the database.', 'wp-mcp-ai' );
+				} else {
+					$message = sprintf(
+						/* translators: %d: Number of correctly attributed records */
+						__( 'No records were updated. All %d Gemini tool records are already correctly attributed.', 'wp-mcp-ai' ),
+						$results['correctly_attributed']
+					);
+				}
 			} else {
 				$message = sprintf(
-					/* translators: %d: Number of records updated */
-					__( 'Migration complete! Successfully updated %d records with corrected Gemini provider attribution and costs.', 'wp-mcp-ai' ),
-					$results['records_updated']
+					/* translators: 1: Number of records updated, 2: Total Gemini records */
+					__( 'Migration complete! Successfully updated %1$d records with corrected Gemini provider attribution and costs. Total Gemini tool records: %2$d', 'wp-mcp-ai' ),
+					$results['records_updated'],
+					$results['total_gemini_records']
 				);
 			}
 		}
 
 		wp_send_json_success(
 			array(
-				'message'         => $message,
-				'dry_run'         => $dry_run,
-				'total_checked'   => $results['total_checked'],
-				'records_updated' => $results['records_updated'],
+				'message'              => $message,
+				'dry_run'              => $dry_run,
+				'total_checked'        => $results['total_checked'],
+				'records_updated'      => $results['records_updated'],
+				'total_gemini_records' => $results['total_gemini_records'],
+				'correctly_attributed' => $results['correctly_attributed'],
 			)
 		);
 	}
