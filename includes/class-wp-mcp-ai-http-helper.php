@@ -286,6 +286,37 @@ class WP_MCP_AI_HTTP_Helper {
 
 		$endpoint_host = $parsed_url['host'];
 
+		// Check if interface is a private IP but endpoint is localhost/127.0.0.1.
+		// This indicates the user wants to reach a server on the private network,
+		// but put the IP in the wrong field.
+		if ( filter_var( $interface, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			if ( self::is_private_ipv4_address( $interface ) ) {
+				// Check if endpoint is localhost or loopback.
+				$is_localhost = in_array(
+					strtolower( $endpoint_host ),
+					array( 'localhost', 'localhost.localdomain', '127.0.0.1', '::1' ),
+					true
+				);
+
+				if ( $is_localhost ) {
+					WP_MCP_AI_Logger::log_error(
+						'Network interface misconfiguration detected.',
+						array(
+							'interface'     => $interface,
+							'endpoint_host' => $endpoint_host,
+							'message'       => sprintf(
+								'You entered a private IP (%s) in the Network Interface field, but your Endpoint URL is set to localhost. It appears you want to connect to an LM Studio/Ollama server at %s. Please UPDATE the Endpoint URL field to "http://%s:PORT" instead, and leave the Network Interface field EMPTY. The Network Interface field is for binding the SOURCE interface on this WordPress server, not for specifying the destination.',
+								$interface,
+								$interface,
+								$interface
+							),
+						)
+					);
+					return false;
+				}
+			}
+		}
+
 		// Check if the interface value matches the endpoint host.
 		// This indicates user confusion: they entered the destination address
 		// instead of the local network interface name.
