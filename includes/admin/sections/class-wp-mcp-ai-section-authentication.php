@@ -176,68 +176,337 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 		}
 
 		/**
+		 * Get sub-tab groups configuration.
+		 *
+		 * @return array
+		 */
+		private function get_subtab_groups() {
+			return array(
+				'auth0'          => array(
+					'id'     => 'auth0',
+					'label'  => __( 'Auth0 Configuration', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-lock',
+					'fields' => array( 'auth0_domain', 'auth0_audience', 'auth0_required_scope' ),
+				),
+				'auth0_github'   => array(
+					'id'     => 'auth0_github',
+					'label'  => __( 'GitHub Bridge', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-users',
+					'fields' => array( 'enable_auth0_github_bridge', 'auth0_management_client_id', 'auth0_management_client_secret' ),
+				),
+				'wpcom_gravatar' => array(
+					'id'     => 'wpcom_gravatar',
+					'label'  => __( 'WordPress.com/Gravatar', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-wordpress',
+					'fields' => array( 'enable_wpcom_gravatar_bridge', 'wpcom_gravatar_userinfo_endpoint' ),
+				),
+				'jwt'            => array(
+					'id'     => 'jwt',
+					'label'  => __( 'Simple JWT Login', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-admin-network',
+					'fields' => array( 'enable_simple_jwt_login' ),
+				),
+				'guest'          => array(
+					'id'     => 'guest',
+					'label'  => __( 'Guest Access', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-groups',
+					'fields' => array( 'guest_token_lifetime' ),
+				),
+				'rest_api'       => array(
+					'id'     => 'rest_api',
+					'label'  => __( 'REST API Capabilities', 'wp-mcp-ai' ),
+					'icon'   => 'dashicons-rest-api',
+					'fields' => array( 'rest_enable_assistant_create', 'rest_enable_assistant_delete', 'sse_enable_post_method' ),
+				),
+			);
+		}
+
+		/**
+		 * Get active sub-tab.
+		 *
+		 * @return string
+		 */
+		private function get_active_subtab() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
+			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'auth0';
+			$subtab_groups = $this->get_subtab_groups();
+
+			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
+				$subtab = 'auth0';
+			}
+
+			return $subtab;
+		}
+
+		/**
+		 * Override sanitize to only process fields from the active sub-tab.
+		 *
+		 * This prevents inactive sub-tab settings from being cleared when saving.
+		 * Only fields from the currently active sub-tab are sanitized and returned.
+		 * Fields from inactive sub-tabs are preserved in the database.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input for active sub-tab only.
+		 */
+		public function sanitize( $input ) {
+			$active_subtab = $this->get_active_subtab();
+			$subtab_groups = $this->get_subtab_groups();
+
+			// Get fields that belong to the active sub-tab.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return array();
+			}
+
+			$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+			$all_fields        = $this->get_fields();
+			$sanitized         = array();
+
+			// Only process fields from the active sub-tab.
+			foreach ( $active_field_keys as $field_key ) {
+				if ( ! isset( $all_fields[ $field_key ] ) ) {
+					continue;
+				}
+
+				$field = $all_fields[ $field_key ];
+				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
+
+				// Skip display-only field types.
+				if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
+					continue;
+				}
+
+				// Special handling for checkboxes: if not present in input, set to false.
+				if ( 'checkbox' === $type ) {
+					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					continue;
+				}
+
+				// For other field types, skip if not present in input.
+				if ( ! isset( $input[ $field_key ] ) ) {
+					continue;
+				}
+
+				$value = $input[ $field_key ];
+
+				// Sanitize based on field type.
+				switch ( $type ) {
+					case 'text':
+					case 'password':
+					case 'url':
+						$sanitized[ $field_key ] = sanitize_text_field( $value );
+						break;
+
+					case 'textarea':
+						$sanitized[ $field_key ] = sanitize_textarea_field( $value );
+						break;
+
+					case 'email':
+						$sanitized[ $field_key ] = sanitize_email( $value );
+						break;
+
+					case 'number':
+						$sanitized[ $field_key ] = absint( $value );
+						break;
+
+					case 'select':
+						$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
+						if ( in_array( $value, $options, true ) ) {
+							$sanitized[ $field_key ] = $value;
+						}
+						break;
+
+					default:
+						$sanitized[ $field_key ] = sanitize_text_field( $value );
+						break;
+				}
+			}
+
+			return $sanitized;
+		}
+
+		/**
 		 * Render section fields.
 		 */
 		public function render() {
-			$fields = $this->get_fields();
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
 
-			// Group fields by authentication method.
-			$groups = array(
-				'Auth0 Configuration'           => array(
-					'auth0_domain',
-					'auth0_audience',
-					'auth0_required_scope',
-				),
-				'Auth0 GitHub Bridge'           => array(
-					'enable_auth0_github_bridge',
-					'auth0_management_client_id',
-					'auth0_management_client_secret',
-				),
-				'WordPress.com/Gravatar Bridge' => array(
-					'enable_wpcom_gravatar_bridge',
-					'wpcom_gravatar_userinfo_endpoint',
-				),
-				'Simple JWT Login'              => array(
-					'enable_simple_jwt_login',
-				),
-				'Guest Access'                  => array(
-					'guest_token_lifetime',
-				),
-				'REST API Capabilities'         => array(
-					'rest_enable_assistant_create',
-					'rest_enable_assistant_delete',
-					'sse_enable_post_method',
-				),
-			);
+			// Get the active group.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return;
+			}
 
-			foreach ( $groups as $group_name => $field_keys ) {
-				echo '<tr><th colspan="2"><h3 style="margin: 20px 0 10px 0;">' . esc_html( $group_name ) . '</h3></th></tr>';
+			$active_group = $subtab_groups[ $active_subtab ];
 
-				foreach ( $field_keys as $key ) {
-					if ( isset( $fields[ $key ] ) ) {
-						$this->render_field( $key, $fields[ $key ] );
-					}
-				}
-
-				// Add button to Auth0 Setup Wizard after Auth0 Configuration fields.
-				if ( 'Auth0 Configuration' === $group_name ) {
-					?>
-					<tr>
-						<th scope="row"></th>
-						<td>
-							<p style="margin-top: 15px; margin-bottom: 0;">
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-auth0-setup' ) ); ?>" class="button button-secondary">
-									<?php esc_html_e( 'Open Auth0 Setup Wizard', 'wp-mcp-ai' ); ?>
-								</a>
-							</p>
-							<p class="description" style="margin-top: 8px;">
-								<?php esc_html_e( 'Use the 1-click setup wizard to automatically configure Auth0 from a bearer token.', 'wp-mcp-ai' ); ?>
-							</p>
-						</td>
-					</tr>
-					<?php
+			// Render fields for the active sub-tab.
+			foreach ( $active_group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
 				}
 			}
+
+			// Render additional content based on active sub-tab.
+			$this->render_subtab_footer( $active_subtab );
+		}
+
+		/**
+		 * Render footer content for specific sub-tabs.
+		 *
+		 * @param string $subtab Active sub-tab ID.
+		 */
+		private function render_subtab_footer( $subtab ) {
+			switch ( $subtab ) {
+				case 'auth0':
+					$this->render_auth0_footer();
+					break;
+				case 'auth0_github':
+					$this->render_auth0_github_footer();
+					break;
+				case 'guest':
+					$this->render_guest_footer();
+					break;
+				case 'rest_api':
+					$this->render_rest_api_footer();
+					break;
+			}
+		}
+
+		/**
+		 * Render Auth0 Configuration footer content.
+		 */
+		private function render_auth0_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p style="margin-top: 15px; margin-bottom: 0;">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-auth0-setup' ) ); ?>" class="button button-secondary">
+							<?php esc_html_e( 'Open Auth0 Setup Wizard', 'wp-mcp-ai' ); ?>
+						</a>
+					</p>
+					<p class="description" style="margin-top: 8px;">
+						<?php esc_html_e( 'Use the 1-click setup wizard to automatically configure Auth0 from a bearer token.', 'wp-mcp-ai' ); ?>
+					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Auth0 GitHub Bridge footer content.
+		 */
+		private function render_auth0_github_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'How it works:', 'wp-mcp-ai' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><?php esc_html_e( 'Maps Auth0 GitHub identities to WordPress users for REST API requests', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Enables proper user attribution and assistant scoping for GitHub-authenticated users', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'Requires Auth0 Management API credentials with read:users permission', 'wp-mcp-ai' ); ?></li>
+					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Guest Access footer content.
+		 */
+		private function render_guest_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'Guest tokens allow unauthenticated users to interact with public chat interfaces. Tokens expire after the configured lifetime and are stored in browser localStorage.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render REST API Capabilities footer content.
+		 */
+		private function render_rest_api_footer() {
+			?>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<p class="description">
+						<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'These settings control which REST API operations are allowed. Enabling assistant creation/deletion allows authenticated API clients to manage assistants remotely. Use with caution in production environments.',
+								'wp-mcp-ai'
+							)
+						);
+						?>
+					</p>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Override render_wrapper to include sub-tab navigation.
+		 */
+		public function render_wrapper() {
+			$description   = $this->get_description();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+				<?php if ( $description ) : ?>
+					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+
+				<div class="wp-mcp-ai-provider-subtabs">
+					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Authentication settings sub-tabs', 'wp-mcp-ai' ); ?>">
+						<?php foreach ( $subtab_groups as $group ) : ?>
+							<?php
+							$subtab_url = add_query_arg(
+								array(
+									'page'   => 'wp-mcp-ai-dashboard',
+									'tab'    => 'authentication',
+									'subtab' => $group['id'],
+								),
+								admin_url( 'admin.php' )
+							);
+							$is_active  = ( $group['id'] === $active_subtab );
+							?>
+							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+								class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
+								<?php echo esc_html( $group['label'] ); ?>
+							</a>
+						<?php endforeach; ?>
+					</nav>
+
+					<div class="wp-mcp-ai-subtab-content">
+						<table class="form-table" role="presentation">
+							<?php $this->render(); ?>
+						</table>
+					</div>
+				</div>
+			</div>
+			<?php
 		}
 
 		/**
