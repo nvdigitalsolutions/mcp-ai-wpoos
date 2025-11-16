@@ -568,25 +568,42 @@ composer install</pre>
 	 * AJAX handler for running performance tests.
 	 */
 	public function ajax_run_test() {
-		check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
+		try {
+			check_ajax_referer( 'wp_mcp_ai_performance', 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
-		}
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+			}
 
-		$test_type = isset( $_POST['test_type'] ) ? sanitize_key( $_POST['test_type'] ) : '';
+			$test_type = isset( $_POST['test_type'] ) ? sanitize_key( $_POST['test_type'] ) : '';
 
-		if ( empty( $test_type ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'wp-mcp-ai' ) ) );
-		}
+			if ( empty( $test_type ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid test type.', 'wp-mcp-ai' ) ) );
+			}
 
-		// Try to run the test programmatically.
-		$result = $this->run_performance_test_programmatically( $test_type );
+			// Try to run the test programmatically.
+			$result = $this->run_performance_test_programmatically( $test_type );
 
-		if ( $result['success'] ) {
-			wp_send_json_success( $result );
-		} else {
-			wp_send_json_error( $result );
+			if ( $result['success'] ) {
+				wp_send_json_success( $result );
+			} else {
+				wp_send_json_error( $result );
+			}
+		} catch ( Exception $e ) {
+			// Log the error for debugging.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'WP_MCP_AI Performance Test Error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Test execution failed: %s', 'wp-mcp-ai' ),
+						$e->getMessage()
+					),
+				)
+			);
 		}
 	}
 
@@ -781,9 +798,25 @@ composer install</pre>
 
 		$component = isset( $_POST['component'] ) ? sanitize_key( $_POST['component'] ) : 'rest_api';
 
-		$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, '-7 days' );
+		try {
+			$trends = WP_MCP_AI_Performance_Monitor_CCT::get_performance_trends( $component, '-7 days' );
+			wp_send_json_success( $trends );
+		} catch ( Exception $e ) {
+			// Log the error for debugging.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'WP_MCP_AI Performance Metrics Error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
 
-		wp_send_json_success( $trends );
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to get performance metrics: %s', 'wp-mcp-ai' ),
+						$e->getMessage()
+					),
+				)
+			);
+		}
 	}
 
 	/**
@@ -794,6 +827,11 @@ composer install</pre>
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
+		}
+
+		// Load Performance Reporter if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Performance_Reporter' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 		}
 
 		$format = isset( $_POST['format'] ) ? sanitize_key( $_POST['format'] ) : 'json';
