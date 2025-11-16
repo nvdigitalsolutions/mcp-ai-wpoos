@@ -3035,7 +3035,7 @@
 
         // If there are messages, save to CCT before clearing to preserve session key
         if (state.conversation && state.conversation.length > 0) {
-            const confirmMessage = getString('confirmClearConversation', 'Clear current conversation and start new? The current conversation will be saved automatically.');
+            const confirmMessage = getString('confirmClearConversation', 'Start a new conversation? Your current conversation will be saved automatically.');
             if (!confirm(confirmMessage)) {
                 return;
             }
