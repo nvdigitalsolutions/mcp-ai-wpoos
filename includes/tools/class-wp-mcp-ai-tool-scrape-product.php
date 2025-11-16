@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Scrapes product information (title, subtitle, description, images) from a product URL and downloads images to WordPress media library.', 'wp-mcp-ai' );
+		return __( 'Scrapes product information (title, subtitle, description, images) from a product URL or saved HTML file and downloads highest resolution images to WordPress media library.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -43,8 +43,12 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'url'                  => array(
 					'type'        => 'string',
-					'description' => __( 'The product page URL to scrape.', 'wp-mcp-ai' ),
+					'description' => __( 'The product page URL to scrape. Either url or html_file is required.', 'wp-mcp-ai' ),
 					'format'      => 'uri',
+				),
+				'html_file'            => array(
+					'type'        => 'string',
+					'description' => __( 'Path to a saved HTML file to parse instead of fetching from URL. Either url or html_file is required.', 'wp-mcp-ai' ),
 				),
 				'title_selector'       => array(
 					'type'        => 'string',
@@ -72,7 +76,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'default'     => true,
 				),
 			),
-			'required'             => array( 'url' ),
+			'required'             => array(),
 			'additionalProperties' => false,
 		);
 	}
@@ -95,16 +99,12 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
 		}
 
-		$url = isset( $arguments['url'] ) ? esc_url_raw( trim( $arguments['url'] ) ) : '';
+		$url       = isset( $arguments['url'] ) ? esc_url_raw( trim( $arguments['url'] ) ) : '';
+		$html_file = isset( $arguments['html_file'] ) ? sanitize_text_field( trim( $arguments['html_file'] ) ) : '';
 
-		if ( empty( $url ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_url', __( 'A product URL is required.', 'wp-mcp-ai' ) );
-		}
-
-		// Validate URL scheme.
-		$parts = wp_parse_url( $url );
-		if ( false === $parts || empty( $parts['scheme'] ) || ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only HTTP and HTTPS URLs are supported.', 'wp-mcp-ai' ) );
+		// Validate that at least one input method is provided.
+		if ( empty( $url ) && empty( $html_file ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Either a product URL or HTML file path is required.', 'wp-mcp-ai' ) );
 		}
 
 		// Get selectors with defaults.
@@ -114,8 +114,17 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$images_selector      = isset( $arguments['images_selector'] ) ? sanitize_text_field( $arguments['images_selector'] ) : 'splide-slides';
 		$download_images      = isset( $arguments['download_images'] ) ? (bool) $arguments['download_images'] : true;
 
-		// Fetch the HTML content.
-		$html = $this->fetch_url_content( $url );
+		// Get HTML content from either URL or file.
+		if ( ! empty( $html_file ) ) {
+			$html = $this->read_html_file( $html_file );
+		} else {
+			// Validate URL scheme.
+			$parts = wp_parse_url( $url );
+			if ( false === $parts || empty( $parts['scheme'] ) || ! in_array( strtolower( $parts['scheme'] ), array( 'http', 'https' ), true ) ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_url', __( 'Invalid URL provided. Only HTTP and HTTPS URLs are supported.', 'wp-mcp-ai' ) );
+			}
+			$html = $this->fetch_url_content( $url );
+		}
 
 		if ( is_wp_error( $html ) ) {
 			return $html;
@@ -193,6 +202,47 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		if ( empty( $html ) ) {
 			return new WP_Error( 'wp_mcp_ai_empty_response', __( 'The product page returned an empty response.', 'wp-mcp-ai' ) );
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Read HTML content from a local file.
+	 *
+	 * @param string $file_path Path to HTML file.
+	 * @return string|WP_Error HTML content or error.
+	 */
+	protected function read_html_file( $file_path ) {
+		// Security: Validate file path to prevent directory traversal.
+		$file_path = realpath( $file_path );
+
+		if ( false === $file_path ) {
+			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'The specified HTML file does not exist.', 'wp-mcp-ai' ) );
+		}
+
+		// Security: Ensure file is readable and within allowed paths.
+		if ( ! is_readable( $file_path ) ) {
+			return new WP_Error( 'wp_mcp_ai_file_not_readable', __( 'The specified HTML file is not readable.', 'wp-mcp-ai' ) );
+		}
+
+		// Security: Validate file extension.
+		$allowed_extensions = array( 'html', 'htm' );
+		$file_extension     = strtolower( pathinfo( $file_path, PATHINFO_EXTENSION ) );
+
+		if ( ! in_array( $file_extension, $allowed_extensions, true ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_file_type', __( 'Only HTML files (.html, .htm) are allowed.', 'wp-mcp-ai' ) );
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for local file reading.
+		$html = file_get_contents( $file_path );
+
+		if ( false === $html ) {
+			return new WP_Error( 'wp_mcp_ai_file_read_failed', __( 'Failed to read the HTML file.', 'wp-mcp-ai' ) );
+		}
+
+		if ( empty( $html ) ) {
+			return new WP_Error( 'wp_mcp_ai_empty_file', __( 'The HTML file is empty.', 'wp-mcp-ai' ) );
 		}
 
 		return $html;
@@ -295,7 +345,7 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 *
 	 * @param DOMXPath $xpath    XPath object.
 	 * @param string   $selector CSS selector or pattern for images container.
-	 * @return array Array of image URLs.
+	 * @return array Array of image URLs (highest resolution preferred).
 	 */
 	protected function extract_image_urls( $xpath, $selector ) {
 		// Handle special pattern for all splide slides.
@@ -319,40 +369,121 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			$images = $container->getElementsByTagName( 'img' );
 
 			foreach ( $images as $img ) {
+				$candidate_urls = array();
+
+				// Collect all possible image URLs from various attributes.
 				$src = $img->getAttribute( 'src' );
-
-				// Also check data-src for lazy-loaded images.
-				if ( empty( $src ) ) {
-					$src = $img->getAttribute( 'data-src' );
+				if ( ! empty( $src ) ) {
+					$candidate_urls[] = $src;
 				}
 
-				// Also check data-splide-lazy for Splide.js lazy-loaded images.
-				if ( empty( $src ) ) {
-					$src = $img->getAttribute( 'data-splide-lazy' );
+				// Check data-src for lazy-loaded images.
+				$data_src = $img->getAttribute( 'data-src' );
+				if ( ! empty( $data_src ) ) {
+					$candidate_urls[] = $data_src;
 				}
 
-				// Also check srcset for responsive images.
-				if ( empty( $src ) ) {
-					$srcset = $img->getAttribute( 'srcset' );
-					if ( ! empty( $srcset ) ) {
-						// Extract the first URL from srcset.
-						$srcset_parts = explode( ',', $srcset );
-						if ( ! empty( $srcset_parts[0] ) ) {
-							$src = trim( explode( ' ', trim( $srcset_parts[0] ) )[0] );
+				// Check data-splide-lazy for Splide.js lazy-loaded images.
+				$data_splide = $img->getAttribute( 'data-splide-lazy' );
+				if ( ! empty( $data_splide ) ) {
+					$candidate_urls[] = $data_splide;
+				}
+
+				// Check srcset for responsive images.
+				$srcset = $img->getAttribute( 'srcset' );
+				if ( ! empty( $srcset ) ) {
+					// Parse all URLs from srcset.
+					$srcset_parts = explode( ',', $srcset );
+					foreach ( $srcset_parts as $srcset_entry ) {
+						$entry_parts = preg_split( '/\s+/', trim( $srcset_entry ) );
+						if ( ! empty( $entry_parts[0] ) ) {
+							$candidate_urls[] = $entry_parts[0];
 						}
 					}
 				}
 
-				if ( ! empty( $src ) ) {
-					$src = esc_url_raw( $src );
-					if ( ! empty( $src ) && ! in_array( $src, $image_urls, true ) ) {
-						$image_urls[] = $src;
+				// Select the highest resolution URL from candidates.
+				$selected_url = $this->select_highest_resolution_url( $candidate_urls );
+
+				if ( ! empty( $selected_url ) ) {
+					$selected_url = esc_url_raw( $selected_url );
+					if ( ! empty( $selected_url ) && ! in_array( $selected_url, $image_urls, true ) ) {
+						$image_urls[] = $selected_url;
 					}
 				}
 			}
 		}
 
 		return $image_urls;
+	}
+
+	/**
+	 * Select the highest resolution URL from a list of candidate URLs.
+	 *
+	 * Prioritizes URLs containing resolution patterns like "1000x1000".
+	 *
+	 * @param array $urls Array of candidate URLs.
+	 * @return string Best URL or empty string.
+	 */
+	protected function select_highest_resolution_url( $urls ) {
+		if ( empty( $urls ) ) {
+			return '';
+		}
+
+		// Remove empty URLs and normalize.
+		$urls = array_filter( array_map( 'trim', $urls ) );
+
+		if ( empty( $urls ) ) {
+			return '';
+		}
+
+		// If only one URL, return it.
+		if ( 1 === count( $urls ) ) {
+			return reset( $urls );
+		}
+
+		// Score each URL based on resolution indicators.
+		$scored_urls = array();
+
+		foreach ( $urls as $url ) {
+			$score = 0;
+
+			// Extract resolution from URL patterns like "1000x1000", "800x800", etc.
+			if ( preg_match( '/(\d+)x(\d+)/i', $url, $matches ) ) {
+				$width  = intval( $matches[1] );
+				$height = intval( $matches[2] );
+				// Score based on total pixel count.
+				$score = $width * $height;
+
+				// Bonus for square images (width == height).
+				if ( $width === $height ) {
+					$score += 10000;
+				}
+			}
+
+			// Prefer URLs with "1000x1000" explicitly.
+			if ( stripos( $url, '1000x1000' ) !== false ) {
+				$score += 1000000; // High priority.
+			}
+
+			// Prefer larger dimension indicators in general.
+			if ( stripos( $url, 'large' ) !== false || stripos( $url, 'xl' ) !== false ) {
+				$score += 50000;
+			}
+
+			// Penalize thumbnails.
+			if ( stripos( $url, 'thumb' ) !== false || stripos( $url, 'small' ) !== false ) {
+				$score -= 100000;
+			}
+
+			$scored_urls[ $url ] = $score;
+		}
+
+		// Sort by score (highest first).
+		arsort( $scored_urls );
+
+		// Return the URL with the highest score.
+		return key( $scored_urls );
 	}
 
 	/**
