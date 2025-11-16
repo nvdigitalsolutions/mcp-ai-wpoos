@@ -193,7 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama_endpoint_url'         => array(
 					'type'        => 'url',
 					'label'       => __( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'URL for your Ollama server. Examples: "http://localhost:11434" for local, "http://192.168.2.100:11434" for network server. This is WHERE your Ollama is running. Ensure Ollama is running before testing the connection.', 'wp-mcp-ai' ),
+					'description' => __( 'URL where your Ollama server is running. Examples: "http://localhost:11434" (same machine), "http://192.168.2.222:11434" (private network). For remote WordPress (e.g., Cloudways) connecting to private LAN Ollama: ensure network routing/VPN is configured, then enter the private IP. The plugin handles SSL verification and connection timeouts automatically.', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:11434',
 					/**
 					 * Filter the default Ollama endpoint URL.
@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'lm_studio_endpoint_url'      => array(
 					'type'        => 'url',
 					'label'       => __( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'URL for your LM Studio server. Examples: "http://localhost:1234/v1" for local, "http://192.168.2.222:1234/v1" for network server. This is WHERE your LM Studio is running. Ensure LM Studio is running with a loaded model and local server enabled before testing.', 'wp-mcp-ai' ),
+					'description' => __( 'URL where your LM Studio server is running. Examples: "http://localhost:1234/v1" (same machine), "http://192.168.2.222:1234/v1" (private network). For remote WordPress (e.g., Cloudways) connecting to private LAN LM Studio: ensure network routing/VPN is configured, then enter the private IP. The plugin handles SSL verification and connection timeouts automatically.', 'wp-mcp-ai' ),
 					'placeholder' => 'http://localhost:1234/v1',
 					/**
 					 * Filter the default LM Studio endpoint URL.

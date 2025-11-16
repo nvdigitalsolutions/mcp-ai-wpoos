@@ -132,6 +132,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout      = max( 30, $timeout );
 
+		// Ensure PHP execution time is sufficient for the HTTP request timeout.
+		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+		$resource_mgr->ensure_execution_time( $timeout + 10 );
+
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
@@ -185,6 +189,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// since these don't consume PHP execution time while waiting.
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout      = max( 30, $timeout );
+
+		// Ensure PHP execution time is sufficient for the HTTP request timeout.
+		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+		$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'api/tags';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
@@ -240,6 +248,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout      = max( 30, $timeout );
 
+		// Ensure PHP execution time is sufficient for the HTTP request timeout.
+		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+		$resource_mgr->ensure_execution_time( $timeout + 10 );
+
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
 
@@ -293,6 +305,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// since these don't consume PHP execution time while waiting.
 			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout( true );
 			$timeout      = max( 30, $timeout );
+
+		// Ensure PHP execution time is sufficient for the HTTP request timeout.
+		// Add 10 second buffer to prevent "Maximum execution time exceeded" errors.
+		$resource_mgr->ensure_execution_time( $timeout + 10 );
 
 			$api_url  = trailingslashit( $endpoint_url ) . 'v1/models';
 			$response = wp_remote_get( $api_url, array( 'timeout' => $timeout ) );
