@@ -441,4 +441,86 @@ class Test_Analytics_Engine extends WP_UnitTestCase {
 		// Should have an error message.
 		$this->assertNotEmpty( $result['errors'] );
 	}
+
+	/**
+	 * Test get_site_wide_trends method.
+	 *
+	 * This test verifies that site-wide trends can be calculated by aggregating
+	 * usage data from multiple users.
+	 */
+	public function test_get_site_wide_trends() {
+		// Create usage data for multiple users.
+		foreach ( $this->test_users as $index => $user_id ) {
+			$base_tokens = ( $index + 1 ) * 100;
+			$usage       = array(
+				'test_tool' => array(
+					'total_tokens' => $base_tokens * 5,
+					'requests'     => 5,
+					'daily'        => array(
+						'2025-01-01' => $base_tokens,
+						'2025-01-02' => $base_tokens + 20,
+						'2025-01-03' => $base_tokens + 40,
+						'2025-01-04' => $base_tokens + 60,
+						'2025-01-05' => $base_tokens + 80,
+					),
+				),
+			);
+
+			update_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY, $usage );
+		}
+
+		// Test with user_id = 0 to get site-wide trends.
+		$trends = WP_MCP_AI_Analytics_Engine::get_user_trends( 0, 30 );
+
+		$this->assertIsArray( $trends );
+		$this->assertArrayHasKey( 'daily_usage', $trends );
+		$this->assertArrayHasKey( 'trend', $trends );
+		$this->assertArrayHasKey( 'statistics', $trends );
+		$this->assertArrayHasKey( 'patterns', $trends );
+		$this->assertArrayHasKey( 'projected_7d', $trends );
+		$this->assertArrayHasKey( 'projected_30d', $trends );
+
+		// Should have aggregated data from both users.
+		$this->assertNotEmpty( $trends['daily_usage'] );
+
+		// Should detect increasing trend (both users have increasing usage).
+		$this->assertEquals( 'increasing', $trends['trend']['direction'] );
+
+		// Projections should be positive.
+		$this->assertGreaterThan( 0, $trends['projected_7d'] );
+		$this->assertGreaterThan( 0, $trends['projected_30d'] );
+
+		// Statistics should reflect aggregated data.
+		$this->assertGreaterThan( 0, $trends['statistics']['mean'] );
+		$this->assertEquals( 5, $trends['statistics']['count'] ); // 5 days of data.
+	}
+
+	/**
+	 * Test get_site_wide_trends with no data.
+	 *
+	 * This test ensures the method handles empty site-wide data gracefully.
+	 */
+	public function test_get_site_wide_trends_empty() {
+		// Ensure no users have usage data.
+		foreach ( $this->test_users as $user_id ) {
+			delete_user_meta( $user_id, WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY );
+		}
+
+		// Test with user_id = 0 to get site-wide trends.
+		$trends = WP_MCP_AI_Analytics_Engine::get_user_trends( 0, 30 );
+
+		$this->assertIsArray( $trends );
+		$this->assertArrayHasKey( 'daily_usage', $trends );
+		$this->assertArrayHasKey( 'trend', $trends );
+
+		// With no data, daily_usage should be empty.
+		$this->assertEmpty( $trends['daily_usage'] );
+
+		// Should return stable trend with no data.
+		$this->assertEquals( 'stable', $trends['trend']['direction'] );
+
+		// Projections should be 0 with no data.
+		$this->assertEquals( 0, $trends['projected_7d'] );
+		$this->assertEquals( 0, $trends['projected_30d'] );
+	}
 }

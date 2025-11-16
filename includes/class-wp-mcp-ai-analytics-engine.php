@@ -404,9 +404,9 @@ class WP_MCP_AI_Analytics_Engine {
 	}
 
 	/**
-	 * Get usage trends for a user.
+	 * Get usage trends for a user or site-wide.
 	 *
-	 * @param int $user_id User ID.
+	 * @param int $user_id User ID. Use 0 for site-wide trends.
 	 * @param int $days    Number of days to analyze (default: 30).
 	 * @return array {
 	 *     Trend analysis results.
@@ -420,6 +420,13 @@ class WP_MCP_AI_Analytics_Engine {
 	 * }
 	 */
 	public static function get_user_trends( $user_id, $days = 30 ) {
+		$user_id = absint( $user_id );
+
+		// For site-wide analytics (user_id = 0), use site-wide trends.
+		if ( 0 === $user_id ) {
+			return self::get_site_wide_trends( $days );
+		}
+
 		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
 		$usage       = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
 
@@ -456,6 +463,87 @@ class WP_MCP_AI_Analytics_Engine {
 			'trend'         => $trend,
 			'statistics'    => $statistics,
 			'patterns'      => $patterns,
+			'projected_7d'  => $projected_7d,
+			'projected_30d' => $projected_30d,
+		);
+	}
+
+	/**
+	 * Get site-wide usage trends aggregated from all users.
+	 *
+	 * @param int $days Number of days to analyze (default: 30).
+	 * @return array {
+	 *     Trend analysis results.
+	 *
+	 *     @type array  $daily_usage    Daily usage data points.
+	 *     @type array  $trend          Linear regression results.
+	 *     @type array  $statistics     Statistical metrics.
+	 *     @type array  $patterns       Usage patterns (empty for site-wide).
+	 *     @type int    $projected_7d   Projected usage in 7 days.
+	 *     @type int    $projected_30d  Projected usage in 30 days.
+	 * }
+	 */
+	public static function get_site_wide_trends( $days = 30 ) {
+		global $wpdb;
+
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
+
+		// Get all users with tool usage data.
+		$meta_key = WP_MCP_AI_Tool_Token_Limits::USAGE_META_KEY;
+		$user_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s",
+				$meta_key
+			)
+		);
+
+		$daily_totals = array();
+
+		// Aggregate usage from all users.
+		foreach ( $user_ids as $user_id ) {
+			$usage = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+			$user_daily_totals = self::extract_daily_totals( $usage, $cutoff_date );
+
+			foreach ( $user_daily_totals as $date => $tokens ) {
+				if ( ! isset( $daily_totals[ $date ] ) ) {
+					$daily_totals[ $date ] = 0;
+				}
+				$daily_totals[ $date ] += $tokens;
+			}
+		}
+
+		ksort( $daily_totals );
+
+		// Convert to timestamp => value pairs for regression.
+		$data_points = array();
+		foreach ( $daily_totals as $date => $tokens ) {
+			$data_points[ strtotime( $date ) ] = $tokens;
+		}
+
+		$trend      = self::calculate_trend( $data_points );
+		$statistics = self::calculate_statistics( array_values( $daily_totals ) );
+
+		// Project future usage.
+		$projected_7d  = 0;
+		$projected_30d = 0;
+
+		// Only calculate projections if we have data points.
+		if ( ! empty( $data_points ) ) {
+			$current_time   = time();
+			$days_from_base = ( $current_time - min( array_keys( $data_points ) ) ) / DAY_IN_SECONDS;
+
+			$projected_7d  = (int) ( $trend['slope'] * ( $days_from_base + 7 ) + $trend['intercept'] );
+			$projected_30d = (int) ( $trend['slope'] * ( $days_from_base + 30 ) + $trend['intercept'] );
+
+			$projected_7d  = max( 0, $projected_7d );
+			$projected_30d = max( 0, $projected_30d );
+		}
+
+		return array(
+			'daily_usage'   => $daily_totals,
+			'trend'         => $trend,
+			'statistics'    => $statistics,
+			'patterns'      => array(), // Patterns not applicable for site-wide.
 			'projected_7d'  => $projected_7d,
 			'projected_30d' => $projected_30d,
 		);
