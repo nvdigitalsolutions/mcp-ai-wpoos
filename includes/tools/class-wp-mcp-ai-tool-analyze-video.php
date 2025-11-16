@@ -248,74 +248,40 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	/**
 	 * Call Gemini API with video support.
 	 *
+	 * Note: This is a placeholder implementation. Full video support requires
+	 * uploading video files to Gemini File API first, then referencing them.
+	 * For now, this returns a helpful error message.
+	 *
 	 * @param string $video_url URL of the video.
 	 * @param string $prompt    Analysis prompt.
 	 * @return array|WP_Error
 	 */
 	protected function call_gemini_video( $video_url, $prompt ) {
-		if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
-		}
-
-		$client = new WP_MCP_AI_Gemini_Client();
-
-		// Build messages with video attachment.
-		$messages = array(
-			array(
-				'role'    => 'user',
-				'content' => array(
-					array(
-						'type' => 'text',
-						'text' => $prompt,
-					),
-					array(
-						'type'      => 'video_url',
-						'video_url' => array(
-							'url' => $video_url,
-						),
-					),
-				),
+		// TODO: Implement full Gemini video support via File API.
+		// This requires:
+		// 1. Upload video to Gemini File API
+		// 2. Get file reference
+		// 3. Include fileData in message content
+		// 4. Poll for completion if needed
+		//
+		// For now, return error with instructions.
+		
+		return new WP_Error(
+			'wp_mcp_ai_video_not_fully_implemented',
+			sprintf(
+				/* translators: %s: video URL */
+				__( 'Video analysis for Gemini requires uploading the video file to the Gemini File API first. Direct URL analysis is not yet supported. Video URL: %s', 'wp-mcp-ai' ),
+				$video_url
 			),
-		);
-
-		// Use Gemini 2.0 Flash or later for video support.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$model    = isset( $settings['default_gemini_model'] ) ? $settings['default_gemini_model'] : 'gemini-2.0-flash-exp';
-
-		// Ensure we're using a video-capable model.
-		if ( ! $this->is_video_capable_gemini_model( $model ) ) {
-			$model = 'gemini-2.0-flash-exp';
-		}
-
-		$options = array(
-			'model' => $model,
-		);
-
-		$response = $client->create_chat_completion( $messages, $options );
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		// Extract response text and usage.
-		$text  = '';
-		$usage = array();
-
-		if ( isset( $response['choices'][0]['message']['content'] ) ) {
-			$text = $response['choices'][0]['message']['content'];
-		} elseif ( isset( $response['text'] ) ) {
-			$text = $response['text'];
-		}
-
-		if ( isset( $response['usage'] ) ) {
-			$usage = $response['usage'];
-		}
-
-		return array(
-			'text'     => $text,
-			'usage'    => $usage,
-			'model'    => $model,
-			'provider' => 'gemini',
+			array(
+				'status' => 501,
+				'next_steps' => array(
+					__( 'Download the video file', 'wp-mcp-ai' ),
+					__( 'Upload to WordPress media library', 'wp-mcp-ai' ),
+					__( 'Use attachment_id parameter instead of video_url', 'wp-mcp-ai' ),
+					__( 'Alternatively, wait for File API integration to be completed', 'wp-mcp-ai' ),
+				),
+			)
 		);
 	}
 

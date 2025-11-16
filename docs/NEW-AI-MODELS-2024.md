@@ -213,11 +213,29 @@ For issues or questions about new models:
 
 ### Overview
 
-WP oOS now supports AI models with native video understanding capabilities. This enables analyzing video content, generating captions, and extracting information from video files directly.
+WP oOS includes **foundational support** for AI models with video understanding capabilities. The tool infrastructure is in place, with full implementation planned for a future release.
 
-### Supported Models
+**Current Status:** Phase 1 Complete (Foundation & Architecture)
+**Next Phase:** Gemini File API Integration (2-3 weeks)
+**Full Documentation:** See `VIDEO_ANALYSIS_ROADMAP.md` for complete implementation plan
 
-**Video-capable models:**
+### Current Implementation
+
+**What's Available:**
+- ✅ Video analysis tool registered (`analyze_video`)
+- ✅ Video caption tool registered (`generate_video_caption`)
+- ✅ Parameter validation and permissions
+- ✅ Tool discovery via MCP protocol
+- ✅ Comprehensive documentation
+
+**Current Limitation:**
+Video analysis tools return a helpful error message explaining that full implementation requires Gemini File API integration, which is planned for the next phase.
+
+### Planned Features (Next Phase)
+
+When fully implemented, the tools will support:
+
+**Supported Models:**
 - `gemini-2.0-flash-exp` - Gemini's latest experimental model with full video support
 - `gemini-2.5-flash` - Production-ready Gemini model with video capabilities
 - `gemini-exp-1206` - December 2024 experimental release with video features
@@ -226,14 +244,14 @@ WP oOS now supports AI models with native video understanding capabilities. This
 - MP4 (video/mp4)
 - QuickTime (video/quicktime)
 
-### Video Analysis Tools
+### Planned Video Analysis Tools
 
 #### 1. Analyze Video (`analyze_video`)
 
-Analyzes video content to extract detailed information:
+Will analyze video content to extract detailed information:
 
 ```php
-// Via REST API
+// Planned API usage
 POST /wp-json/mcp-ai/v1/tools
 {
   "tool": "analyze_video",
@@ -243,21 +261,9 @@ POST /wp-json/mcp-ai/v1/tools
     "context": "Product demonstration video"  // Optional context
   }
 }
-
-// Returns
-{
-  "analysis": "The video shows...",
-  "success": true,
-  "provider": "gemini",
-  "model": "gemini-2.0-flash-exp",
-  "usage": {
-    "input_tokens": 1250,
-    "output_tokens": 180
-  }
-}
 ```
 
-**Features:**
+**Planned Features:**
 - Comprehensive video analysis including subjects, actions, setting, and mood
 - Custom prompts for specific analysis tasks
 - Context-aware analysis
@@ -265,10 +271,10 @@ POST /wp-json/mcp-ai/v1/tools
 
 #### 2. Generate Video Caption (`generate_video_caption`)
 
-Creates concise, descriptive captions for videos:
+Will create concise, descriptive captions for videos:
 
 ```php
-// Via REST API
+// Planned API usage
 POST /wp-json/mcp-ai/v1/tools
 {
   "tool": "generate_video_caption",
@@ -278,23 +284,57 @@ POST /wp-json/mcp-ai/v1/tools
     "context": "Tutorial video"  // Optional context
   }
 }
-
-// Returns
-{
-  "caption": "A step-by-step tutorial demonstrating...",
-  "success": true,
-  "provider": "gemini",
-  "model": "gemini-2.0-flash-exp"
-}
 ```
 
-**Features:**
+**Planned Features:**
 - Configurable caption length (50-500 characters)
 - Context-aware caption generation
 - Automatic truncation to specified length
 - Ideal for video thumbnails and accessibility
 
-### Usage Requirements
+### Implementation Approach (SoC-Compliant)
+
+The full implementation will follow Separation of Concerns principles:
+
+**Service Layer Architecture:**
+```
+WP_MCP_AI_Tool_Analyze_Video (Presentation)
+           ↓
+WP_MCP_AI_Video_Analysis_Service (Business Logic)
+           ↓
+WP_MCP_AI_Gemini_File_Service (File Management)
+           ↓
+WP_MCP_AI_Gemini_Client (External API)
+```
+
+**New Services (Planned):**
+1. `WP_MCP_AI_Gemini_File_Service` - Handles Gemini File API uploads/cleanup
+2. `WP_MCP_AI_Video_Analysis_Service` - Orchestrates video analysis workflow
+3. `WP_MCP_AI_Video_Frame_Extractor_Service` - Frame extraction for OpenAI (future)
+
+This architecture:
+- ✅ Separates presentation from business logic
+- ✅ Makes tools testable with mock services
+- ✅ Enables service reuse across multiple tools
+- ✅ Follows established patterns from Phases 1-3 refactoring
+
+### Current Workaround
+
+Users can prepare for video analysis by:
+
+1. Adding videos to WordPress media library
+2. Using the `attachment_id` parameter (preferred over `video_url`)
+3. Ensuring Gemini API key is configured
+4. Monitoring the roadmap for full implementation
+
+### Timeline
+
+- **Phase 1 (Complete):** Tool foundation and architecture
+- **Phase 2 (Next - 2-3 weeks):** Gemini File API integration
+- **Phase 3 (Future):** OpenAI frame extraction support
+- **Phase 4 (Future):** Enhanced features (timestamps, scenes, audio)
+
+### Usage Requirements (When Implemented)
 
 **API Keys:**
 - Google Gemini API key required (video analysis uses Gemini models)
@@ -305,114 +345,38 @@ POST /wp-json/mcp-ai/v1/tools
 - Standard WordPress media permissions apply
 
 **Model Selection:**
-- Video tools automatically use Gemini 2.0+ models
+- Video tools will automatically use Gemini 2.0+ models
 - Falls back to latest video-capable model if default is not compatible
-- OpenAI GPT-4o support planned for future release (via frame extraction)
+
+### Technical Details
+
+**Gemini File API Process:**
+1. Upload video file to Gemini File API
+2. Poll for processing completion
+3. Reference file in generation request
+4. Automatic cleanup after analysis
+
+**SoC-Compliant Architecture:**
+- Services handle business logic (file uploads, processing)
+- Clients handle API communication
+- Tools orchestrate the workflow
+- Repositories manage data storage
+
+For complete technical details, see `VIDEO_ANALYSIS_ROADMAP.md`
 
 ### Cost Considerations
 
-Video analysis is more expensive than image analysis due to:
+Video analysis will be more expensive than image analysis due to:
 - Larger input size (video frames vs single image)
 - Longer processing time
 - Higher token consumption
 
-**Optimization tips:**
-1. Use `gemini-2.5-flash` for production (more cost-effective than experimental models)
+**Planned Optimization tips:**
+1. Use `gemini-2.5-flash` for production (more cost-effective)
 2. Keep videos under 60 seconds when possible
 3. Use specific prompts to reduce output tokens
 4. Monitor token usage in admin dashboard
 5. Set appropriate caption length limits
-
-### Integration Examples
-
-#### WordPress Block Editor
-
-```javascript
-// Register video analysis block
-wp.blocks.registerBlockType('wp-mcp-ai/video-analyzer', {
-  // ... block configuration
-  edit: function(props) {
-    // Add button to analyze selected video
-    return (
-      <Button onClick={() => {
-        fetch('/wp-json/mcp-ai/v1/tools', {
-          method: 'POST',
-          body: JSON.stringify({
-            tool: 'analyze_video',
-            arguments: {
-              attachment_id: props.attributes.videoId
-            }
-          })
-        }).then(response => response.json())
-          .then(data => {
-            // Use analysis results
-            props.setAttributes({ analysis: data.analysis });
-          });
-      }}>
-        Analyze Video
-      </Button>
-    );
-  }
-});
-```
-
-#### Elementor Widget
-
-```php
-// Add video analysis to Elementor video widget
-add_action('elementor/widget/video/skins_init', function($widget) {
-  $widget->add_control('analyze_video', [
-    'label' => __('Analyze Video Content', 'wp-mcp-ai'),
-    'type' => \Elementor\Controls_Manager::SWITCHER,
-  ]);
-  
-  if ($widget->get_settings('analyze_video') === 'yes') {
-    $video_url = $widget->get_settings('video_url');
-    $analysis = wp_mcp_ai_analyze_video($video_url);
-    // Display analysis in widget
-  }
-});
-```
-
-### Troubleshooting
-
-**"Video analysis not supported" Error**
-
-**Cause:** Using a model that doesn't support video (e.g., Gemini 1.5 Pro, GPT-4o).
-
-**Solution:** 
-1. Go to Settings → WP oOS → AI Provider Configuration
-2. Select Gemini as default provider
-3. Choose `gemini-2.0-flash-exp` or `gemini-2.5-flash` as default model
-4. Ensure Gemini API key is configured
-
-**"Invalid video file" Error**
-
-**Cause:** Video format not supported or file is corrupted.
-
-**Solution:**
-- Ensure video is in MP4 or QuickTime format
-- Verify file is not corrupted by playing in media player
-- Re-upload video if necessary
-- Check file size (larger videos may timeout)
-
-**Slow Processing**
-
-**Expected:** Video analysis takes longer than image analysis (10-60 seconds typical).
-
-**Optimization:**
-- Use shorter videos (< 60 seconds recommended)
-- Use `gemini-2.5-flash` for faster processing
-- Implement caching for repeated analyses
-- Consider background processing for long videos
-
-**High Token Usage**
-
-**Solution:**
-- Use specific, focused prompts to reduce output
-- Set lower `max_length` for captions
-- Cache results to avoid re-analyzing same videos
-- Monitor usage in Token Manager dashboard
 
 ## References
 
