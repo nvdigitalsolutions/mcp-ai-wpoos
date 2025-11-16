@@ -25,9 +25,17 @@ $successes = array();
  * @param string $root_dir   Root directory to scan.
  * @param array  &$errors    Array to collect errors.
  * @param array  &$successes Array to collect successes.
+ * @param array  &$warnings  Array to collect warnings.
  */
-function check_php_syntax( $root_dir, &$errors, &$successes ) {
+function check_php_syntax( $root_dir, &$errors, &$successes, &$warnings ) {
 	echo "1. Checking PHP Syntax...\n";
+
+	// Check if exec() is available for syntax checking.
+	if ( ! function_exists( 'exec' ) ) {
+		$warnings[] = '⚠ exec() function is disabled - skipping syntax checks';
+		echo "\n";
+		return;
+	}
 
 	$iterator = new RecursiveIteratorIterator(
 		new RecursiveDirectoryIterator( $root_dir )
@@ -285,10 +293,14 @@ function check_test_infrastructure( $root_dir, &$errors, &$successes ) {
 
 	if ( file_exists( $phpunit_bin ) ) {
 		// Check PHPUnit version.
-		exec( escapeshellarg( $phpunit_bin ) . ' --version 2>&1', $version_output );
-		if ( ! empty( $version_output ) ) {
-			$version     = trim( $version_output[0] );
-			$successes[] = "✓ PHPUnit executable is available: {$version}";
+		if ( function_exists( 'exec' ) ) {
+			exec( escapeshellarg( $phpunit_bin ) . ' --version 2>&1', $version_output );
+			if ( ! empty( $version_output ) ) {
+				$version     = trim( $version_output[0] );
+				$successes[] = "✓ PHPUnit executable is available: {$version}";
+			}
+		} else {
+			$successes[] = '✓ PHPUnit executable is available (version check skipped - exec() disabled)';
 		}
 	} else {
 		$errors[] = '✗ PHPUnit executable not found in vendor/bin';
@@ -298,7 +310,7 @@ function check_test_infrastructure( $root_dir, &$errors, &$successes ) {
 }
 
 // Run all checks.
-check_php_syntax( $root_dir, $errors, $successes );
+check_php_syntax( $root_dir, $errors, $successes, $warnings );
 check_composer_dependencies( $root_dir, $errors, $successes );
 check_plugin_structure( $root_dir, $errors, $successes, $warnings );
 check_include_files( $root_dir, $errors, $successes );
