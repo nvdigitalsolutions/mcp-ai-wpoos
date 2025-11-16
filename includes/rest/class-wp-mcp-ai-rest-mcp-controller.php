@@ -175,6 +175,28 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+
+		// /assistants/{id} - Individual assistant operations.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/assistants/(?P<id>\d+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'permission_callback' => array( $this, 'permissions_check_assistant_delete' ),
+					'callback'            => array( $this, 'handle_assistant_delete' ),
+					'args'                => array(
+						'id' => array(
+							'description'       => __( 'Unique identifier for the assistant.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => true,
+							'sanitize_callback' => 'absint',
+						),
+					),
+				),
+			),
+			true
+		);
 	}
 
 	/**
@@ -235,6 +257,37 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Delegate to main controller for now.
 		return $this->main_controller->permissions_check_assistant_create( $request );
+	}
+
+	/**
+	 * Permission check for assistant deletion.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return bool|WP_Error
+	 */
+	public function permissions_check_assistant_delete( WP_REST_Request $request ) {
+		// Validate main controller is available.
+		if ( null === $this->main_controller ) {
+			return new WP_Error(
+				'wp_mcp_ai_controller_not_initialized',
+				__( 'REST controller not properly initialized.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Delegate to main controller.
+		return $this->main_controller->permissions_check_assistant_delete( $request );
+	}
+
+	/**
+	 * Handle assistant deletion.
+	 *
+	 * @param WP_REST_Request $request REST request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_assistant_delete( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		return $this->main_controller->handle_assistant_delete( $request );
 	}
 
 	/**

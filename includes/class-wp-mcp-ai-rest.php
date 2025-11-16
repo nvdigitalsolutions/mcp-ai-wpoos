@@ -1388,6 +1388,105 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Permission check for deleting assistants via REST API.
+		 *
+		 * Checks both standard permissions AND the rest_enable_assistant_delete setting.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return bool|WP_Error
+		 */
+		public function permissions_check_assistant_delete( WP_REST_Request $request ) {
+			// First check standard permissions.
+			$base_check = $this->permissions_check( $request );
+
+			if ( is_wp_error( $base_check ) || ! $base_check ) {
+				return $base_check;
+			}
+
+			// Then check if REST assistant deletion is enabled.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			if ( empty( $settings['rest_enable_assistant_delete'] ) ) {
+				return new WP_Error(
+					'rest_assistant_delete_disabled',
+					__( 'Deleting assistants via REST API is currently disabled. Enable it in Settings → WP oOS → Authentication.', 'wp-mcp-ai' ),
+					array(
+						'status' => 403,
+					)
+				);
+			}
+
+			// Verify the user has permission to delete posts.
+			$assistant_id = $request->get_param( 'id' );
+			if ( ! current_user_can( 'delete_post', $assistant_id ) ) {
+				return new WP_Error(
+					'rest_cannot_delete',
+					__( 'Sorry, you are not allowed to delete this assistant.', 'wp-mcp-ai' ),
+					array( 'status' => rest_authorization_required_code() )
+				);
+			}
+
+			return true;
+		}
+
+		/**
+		 * Handle assistant deletion via REST API.
+		 *
+		 * @param WP_REST_Request $request REST request.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public function handle_assistant_delete( WP_REST_Request $request ) {
+			$assistant_id = $request->get_param( 'id' );
+
+			// Validate the assistant exists and is the correct post type.
+			$assistant_post = get_post( $assistant_id );
+
+			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
+				return new WP_Error(
+					'rest_assistant_invalid_id',
+					__( 'Invalid assistant ID.', 'wp-mcp-ai' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Attempt to delete the assistant.
+			// Using wp_delete_post() instead of wp_trash_post() for permanent deletion.
+			// The force_delete parameter (2nd arg) ensures permanent deletion.
+			$deleted = wp_delete_post( $assistant_id, true );
+
+			if ( ! $deleted || is_wp_error( $deleted ) ) {
+				return new WP_Error(
+					'rest_cannot_delete',
+					__( 'The assistant cannot be deleted.', 'wp-mcp-ai' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			/**
+			 * Fires after an assistant is deleted via REST API.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param WP_Post         $assistant_post Deleted assistant post object.
+			 * @param WP_REST_Request $request        Request object.
+			 */
+			do_action( 'wp_mcp_ai_rest_assistant_deleted', $assistant_post, $request );
+
+			$response = new WP_REST_Response();
+			$response->set_data(
+				array(
+					'deleted'  => true,
+					'previous' => array(
+						'id'    => $assistant_post->ID,
+						'title' => $assistant_post->post_title,
+					),
+				)
+			);
+
+			return $response;
+		}
+
+		/**
 		 * Permission check for MCP endpoint - requires bearer token or mesh API key only.
 		 *
 		 * Enforces bearer-only authentication for remote MCP access.
