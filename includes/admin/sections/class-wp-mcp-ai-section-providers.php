@@ -213,7 +213,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama_network_interface'    => array(
 					'type'        => 'text',
 					'label'       => __( 'Ollama Network Interface (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'description' => __( 'Bind HTTP requests to a specific LOCAL network interface on this WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave empty to use default routing. WARNING: Do NOT enter the Ollama server IP here - that goes in the Endpoint URL field above.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 
@@ -241,7 +241,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'lm_studio_network_interface' => array(
 					'type'        => 'text',
 					'label'       => __( 'LM Studio Network Interface (Optional)', 'wp-mcp-ai' ),
-					'description' => __( 'Bind HTTP requests to a specific network interface. Leave empty to use default routing. Examples: "eth0", "wlan0", "192.168.1.100". Useful when WordPress server needs to route requests through a specific interface to reach local AI providers.', 'wp-mcp-ai' ),
+					'description' => __( 'Bind HTTP requests to a specific LOCAL network interface on this WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave empty to use default routing. WARNING: Do NOT enter the LM Studio server IP here - that goes in the Endpoint URL field above.', 'wp-mcp-ai' ),
 					'placeholder' => '',
 				),
 			);
