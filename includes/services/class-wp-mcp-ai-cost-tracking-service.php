@@ -24,40 +24,127 @@ class WP_MCP_AI_Cost_Tracking_Service {
 	/**
 	 * Get cost breakdown for a user over a time period.
 	 *
-	 * Integrates token usage data with cost calculation.
+	 * Integrates token usage data with cost calculation using enhanced tracking database.
+	 * Following SoC: Service orchestrates data access, doesn't perform calculations.
 	 *
 	 * @param int    $user_id    User ID.
 	 * @param string $start_date Start date (YYYY-MM-DD).
 	 * @param string $end_date   End date (YYYY-MM-DD).
-	 * @return array Cost breakdown with totals by provider, model, and tool.
+	 * @return array Cost breakdown with totals by provider, model, tool, and accuracy metrics.
 	 */
 	public static function get_user_cost_breakdown( $user_id, $start_date, $end_date ) {
-		// Data access - get usage from token tracking system.
-		$usage_data = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+		// Convert dates to datetime format for database queries.
+		$start_datetime = gmdate( 'Y-m-d 00:00:00', strtotime( $start_date ) );
+		$end_datetime   = gmdate( 'Y-m-d 23:59:59', strtotime( $end_date ) );
 
-		// Delegate calculation to Cost Calculator (separation of concerns).
-		return WP_MCP_AI_Cost_Calculator::calculate_cost_breakdown( $usage_data, $start_date, $end_date );
+		// Data access - use enhanced tracking database (SoC - data layer).
+		if ( ! class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+			// Fallback to legacy method if enhanced tracking not available.
+			$usage_data = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $user_id );
+			return WP_MCP_AI_Cost_Calculator::calculate_cost_breakdown( $usage_data, $start_date, $end_date );
+		}
+
+		// Get cost summary with actual vs estimated breakdown.
+		$cost_summary = WP_MCP_AI_Token_Tracking_Database::get_user_cost_summary(
+			$user_id,
+			$start_datetime,
+			$end_datetime
+		);
+
+		// Get detailed usage data for provider/model/tool breakdown.
+		$usage_records = WP_MCP_AI_Token_Tracking_Database::get_user_usage(
+			$user_id,
+			$start_datetime,
+			$end_datetime
+		);
+
+		// Aggregate usage by provider, model, and tool (orchestration, not calculation).
+		$by_provider = array();
+		$by_model    = array();
+		$by_tool     = array();
+
+		foreach ( $usage_records as $record ) {
+			$provider = $record['provider'];
+			$model    = $record['model'];
+			$tool     = $record['tool'];
+			$cost     = floatval( $record['cost_usd'] );
+			$tokens   = intval( $record['total_tokens'] );
+
+			// Aggregate by provider.
+			if ( ! isset( $by_provider[ $provider ] ) ) {
+				$by_provider[ $provider ] = array(
+					'cost'   => 0.0,
+					'tokens' => 0,
+				);
+			}
+			$by_provider[ $provider ]['cost']   += $cost;
+			$by_provider[ $provider ]['tokens'] += $tokens;
+
+			// Aggregate by model.
+			$model_key = $provider . '|' . $model;
+			if ( ! isset( $by_model[ $model_key ] ) ) {
+				$by_model[ $model_key ] = array(
+					'provider' => $provider,
+					'model'    => $model,
+					'cost'     => 0.0,
+					'tokens'   => 0,
+				);
+			}
+			$by_model[ $model_key ]['cost']   += $cost;
+			$by_model[ $model_key ]['tokens'] += $tokens;
+
+			// Aggregate by tool.
+			if ( ! isset( $by_tool[ $tool ] ) ) {
+				$by_tool[ $tool ] = array(
+					'cost'   => 0.0,
+					'tokens' => 0,
+				);
+			}
+			$by_tool[ $tool ]['cost']   += $cost;
+			$by_tool[ $tool ]['tokens'] += $tokens;
+		}
+
+		// Calculate accuracy percentage (SoC - simple math, not complex calculation).
+		$accuracy_percentage = 0.0;
+		if ( $cost_summary['total_cost'] > 0 ) {
+			$accuracy_percentage = ( $cost_summary['actual_cost'] / $cost_summary['total_cost'] ) * 100;
+		}
+
+		return array(
+			'total_cost'          => $cost_summary['total_cost'],
+			'total_tokens'        => $cost_summary['total_tokens'],
+			'estimated_cost'      => $cost_summary['estimated_cost'],
+			'actual_cost'         => $cost_summary['actual_cost'],
+			'accuracy_percentage' => round( $accuracy_percentage, 2 ),
+			'by_provider'         => $by_provider,
+			'by_model'            => $by_model,
+			'by_tool'             => $by_tool,
+		);
 	}
 
 	/**
 	 * Get cost breakdown for all users over a time period.
 	 *
 	 * Business logic layer - orchestrates data access and builds cost breakdown.
+	 * Following SoC: Service orchestrates, database provides data, no calculations here.
 	 *
 	 * @param string $start_date Start date (YYYY-MM-DD).
 	 * @param string $end_date   End date (YYYY-MM-DD).
-	 * @return array Cost breakdown aggregated across all users.
+	 * @return array Cost breakdown aggregated across all users with accuracy metrics.
 	 */
 	public static function get_site_cost_breakdown( $start_date, $end_date ) {
-		// Initialize breakdown structure.
+		// Initialize breakdown structure with accuracy metrics.
 		$site_breakdown = array(
-			'total_cost'   => 0.0,
-			'total_tokens' => 0,
-			'by_provider'  => array(),
-			'by_model'     => array(),
-			'by_tool'      => array(),
-			'by_date'      => array(),
-			'by_user'      => array(),
+			'total_cost'          => 0.0,
+			'total_tokens'        => 0,
+			'estimated_cost'      => 0.0,
+			'actual_cost'         => 0.0,
+			'accuracy_percentage' => 0.0,
+			'by_provider'         => array(),
+			'by_model'            => array(),
+			'by_tool'             => array(),
+			'by_date'             => array(),
+			'by_user'             => array(),
 		);
 
 		// Convert dates to datetime format for database queries.
@@ -69,15 +156,31 @@ class WP_MCP_AI_Cost_Tracking_Service {
 			return $site_breakdown;
 		}
 
+		// Get site-wide cost summary with estimated vs actual breakdown.
+		$cost_summary = WP_MCP_AI_Token_Tracking_Database::get_site_cost_summary(
+			$start_datetime,
+			$end_datetime
+		);
+
+		$site_breakdown['total_cost']     = $cost_summary['total_cost'];
+		$site_breakdown['total_tokens']   = $cost_summary['total_tokens'];
+		$site_breakdown['estimated_cost'] = $cost_summary['estimated_cost'];
+		$site_breakdown['actual_cost']    = $cost_summary['actual_cost'];
+
+		// Calculate accuracy percentage (SoC - simple math, not complex calculation).
+		if ( $cost_summary['total_cost'] > 0 ) {
+			$site_breakdown['accuracy_percentage'] = round(
+				( $cost_summary['actual_cost'] / $cost_summary['total_cost'] ) * 100,
+				2
+			);
+		}
+
 		// Aggregate by provider.
 		$provider_data = WP_MCP_AI_Token_Tracking_Database::get_aggregated_by_provider( $start_datetime, $end_datetime );
 		foreach ( $provider_data as $row ) {
 			$provider                              = $row['provider'];
 			$cost                                  = floatval( $row['total_cost'] );
-			$tokens                                = intval( $row['total_tokens'] );
 			$site_breakdown['by_provider'][ $provider ] = $cost;
-			$site_breakdown['total_cost']         += $cost;
-			$site_breakdown['total_tokens']       += $tokens;
 		}
 
 		// Aggregate by model.
