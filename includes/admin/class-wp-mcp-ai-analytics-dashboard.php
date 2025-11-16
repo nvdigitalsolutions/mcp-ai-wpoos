@@ -268,19 +268,38 @@ class WP_MCP_AI_Analytics_Dashboard {
 	/**
 	 * Get cost breakdown data.
 	 *
+	 * Presentation layer - delegates to Cost Tracking Service (SoC).
+	 *
 	 * @return array Cost data.
 	 */
 	private static function get_cost_breakdown_data() {
-		// Placeholder for cost calculation.
-		// This will be implemented in Phase 7, Week 3-4.
-		return array(
-			'total_cost'   => 0.0,
-			'by_provider'  => array(),
-			'by_model'     => array(),
-			'by_user'      => array(),
-			'period_start' => gmdate( 'Y-m-d', strtotime( '-7 days' ) ),
-			'period_end'   => gmdate( 'Y-m-d' ),
-		);
+		// Try to get from cache.
+		$data = WP_MCP_AI_Cache_Helper::get( 'dashboard_cost_breakdown' );
+
+		if ( false !== $data && is_array( $data ) ) {
+			return $data;
+		}
+
+		// Delegate to Cost Tracking Service (separation of concerns).
+		if ( ! class_exists( 'WP_MCP_AI_Cost_Tracking_Service' ) ) {
+			// Fallback if service not available.
+			return array(
+				'total_cost'   => 0.0,
+				'total_tokens' => 0,
+				'by_provider'  => array(),
+				'by_model'     => array(),
+				'by_tool'      => array(),
+				'period_start' => gmdate( 'Y-m-d', strtotime( '-7 days' ) ),
+				'period_end'   => gmdate( 'Y-m-d' ),
+			);
+		}
+
+		$data = WP_MCP_AI_Cost_Tracking_Service::get_dashboard_cost_summary( 7 );
+
+		// Cache for 5 minutes using Cache Helper.
+		WP_MCP_AI_Cache_Helper::set( 'dashboard_cost_breakdown', $data, WP_MCP_AI_Cache_Helper::ANALYTICS_EXPIRATION );
+
+		return $data;
 	}
 
 	/**
