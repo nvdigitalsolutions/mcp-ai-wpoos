@@ -1,12 +1,67 @@
-# Performance Improvements - Browser Console Violations Fix
+# Performance Improvements
 
 ## Overview
 
-This document explains the performance optimizations made to eliminate browser console violations in the WP oOS chat interface.
+This document explains the performance optimizations made to the WP oOS plugin, including both frontend (browser) and backend (PHP/WordPress) improvements.
 
 ## Issues Fixed
 
-### 1. Forced Reflow Violation
+### 1. Admin Settings Lazy Loading (Backend Performance)
+**Symptom:** Slow admin page loads, especially on non-settings pages
+
+**Root Cause:**
+- All 16 settings section files (~9,226 lines of PHP) were eagerly loaded on every admin page
+- Files loaded with `require_once` in `includes/admin/settings-dashboard-init.php` (lines 28-45)
+- Largest files:
+  - `class-wp-mcp-ai-section-performance.php` (1,478 lines)
+  - `class-wp-mcp-ai-section-token-manager.php` (1,263 lines)
+  - `class-wp-mcp-ai-section-tools.php` (880 lines)
+- Container already had lazy loading capability, but files had to be loaded before classes could be instantiated
+
+**Impact:**
+- ~9KB+ of PHP parsed on every admin page load
+- Slow page loads on Posts, Pages, Dashboard, etc.
+- PHP parser overhead even when settings weren't accessed
+- Unnecessary memory usage
+
+**Solution:**
+- Implemented `spl_autoload_register()` for settings sections
+- Section files now load only when classes are instantiated
+- Removed 16 eager `require_once` statements
+- Kept integration admin pages loading eagerly (needed for early hook registration)
+- See `includes/admin/settings-dashboard-init.php` lines 27-62
+
+**Performance Improvement:**
+- **Before:** ~9,226 lines of PHP parsed on every admin page
+- **After:** ~1,300 lines (base classes + integrations) on non-settings pages
+- **Savings:** ~8,000 lines not parsed unnecessarily
+- **Estimated:** 50-80% faster admin loads outside settings pages
+
+**Implementation Details:**
+```php
+// Autoloader maps class names to file paths
+spl_autoload_register(
+    function ( $class_name ) {
+        $section_files = array(
+            'WP_MCP_AI_Section_Overview' => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
+            // ... 15 more sections
+        );
+        if ( isset( $section_files[ $class_name ] ) ) {
+            require_once WP_MCP_AI_PATH . $section_files[ $class_name ];
+        }
+    }
+);
+```
+
+**Tests Added:**
+- `tests/test-settings-lazy-loading.php` verifies:
+  - Section classes can be autoloaded
+  - Container can instantiate sections
+  - Settings registry can access sections
+  - Integration pages are loaded
+  - Base classes are available
+
+### 2. Forced Reflow Violation (Frontend Performance)
 **Symptom:** `[Violation] Forced reflow while executing JavaScript`
 
 **Root Cause:**
@@ -27,7 +82,7 @@ This document explains the performance optimizations made to eliminate browser c
 - Separates layout reads from writes to prevent forced reflows
 - See `assets/js/chat.js` lines 54-110
 
-### 2. requestIdleCallback Performance Violation
+### 3. requestIdleCallback Performance Violation (Frontend Performance)
 **Symptom:** `[Violation] 'requestIdleCallback' handler took 61-74ms`
 
 **Root Cause:**
