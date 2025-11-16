@@ -253,6 +253,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<?php endforeach; ?>
 					</nav>
 
+					<!-- Hidden field to preserve subtab during form submission -->
+					<input type="hidden" name="subtab" value="<?php echo esc_attr( $active_subtab ); ?>" />
+
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">
 							<?php $this->render(); ?>
