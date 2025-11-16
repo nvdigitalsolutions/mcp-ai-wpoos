@@ -221,7 +221,13 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			return new WP_Error( 'wp_mcp_ai_file_not_found', __( 'The specified HTML file does not exist.', 'wp-mcp-ai' ) );
 		}
 
-		// Security: Ensure file is readable and within allowed paths.
+		// Security: Restrict file access to safe directories.
+		$allowed_in_safe_directory = $this->is_path_in_safe_directory( $file_path );
+		if ( is_wp_error( $allowed_in_safe_directory ) ) {
+			return $allowed_in_safe_directory;
+		}
+
+		// Security: Ensure file is readable.
 		if ( ! is_readable( $file_path ) ) {
 			return new WP_Error( 'wp_mcp_ai_file_not_readable', __( 'The specified HTML file is not readable.', 'wp-mcp-ai' ) );
 		}
@@ -246,6 +252,47 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		return $html;
+	}
+
+	/**
+	 * Check if a file path is within safe directories.
+	 *
+	 * @param string $file_path Resolved absolute file path.
+	 * @return true|WP_Error True if path is safe, WP_Error otherwise.
+	 */
+	protected function is_path_in_safe_directory( $file_path ) {
+		// Normalize the file path for comparison.
+		$normalized_path = wp_normalize_path( $file_path );
+
+		// Define safe base directories.
+		$safe_directories = array();
+
+		// Allow WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		if ( ! empty( $upload_dir['basedir'] ) ) {
+			$safe_directories[] = wp_normalize_path( $upload_dir['basedir'] );
+		}
+
+		// Allow WordPress content directory.
+		if ( defined( 'WP_CONTENT_DIR' ) ) {
+			$safe_directories[] = wp_normalize_path( WP_CONTENT_DIR );
+		}
+
+		// Allow a filter for custom safe directories.
+		$safe_directories = apply_filters( 'wp_mcp_ai_scrape_product_safe_directories', $safe_directories );
+
+		// Check if the file path starts with any safe directory.
+		foreach ( $safe_directories as $safe_dir ) {
+			if ( 0 === strpos( $normalized_path, $safe_dir ) ) {
+				return true;
+			}
+		}
+
+		// Path is not in any safe directory.
+		return new WP_Error(
+			'wp_mcp_ai_unsafe_file_path',
+			__( 'File path is not within allowed directories. Files must be in the WordPress uploads or content directory.', 'wp-mcp-ai' )
+		);
 	}
 
 	/**

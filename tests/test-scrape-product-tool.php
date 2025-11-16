@@ -259,9 +259,10 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 	 * Test reading HTML from file.
 	 */
 	public function test_read_html_file() {
-		// Create a temporary HTML file.
-		$temp_file = tempnam( sys_get_temp_dir(), 'test_product_' ) . '.html';
-		$html      = '<!DOCTYPE html>
+		// Create a temporary HTML file in WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$temp_file  = $upload_dir['basedir'] . '/test_product_' . uniqid() . '.html';
+		$html       = '<!DOCTYPE html>
 <html>
 <body>
 	<div class="swa-product-information__title swa-label-sans--default-strong">Test Product</div>
@@ -303,8 +304,9 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 	 * Test reading invalid file type.
 	 */
 	public function test_read_invalid_file_type() {
-		// Create a temporary non-HTML file.
-		$temp_file = tempnam( sys_get_temp_dir(), 'test_product_' ) . '.txt';
+		// Create a temporary non-HTML file in WordPress uploads directory.
+		$upload_dir = wp_upload_dir();
+		$temp_file  = $upload_dir['basedir'] . '/test_product_' . uniqid() . '.txt';
 		file_put_contents( $temp_file, 'Not HTML' );
 
 		$reflection = new ReflectionClass( $this->tool );
@@ -318,6 +320,27 @@ class Test_Scrape_Product_Tool extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'wp_mcp_ai_invalid_file_type', $result->get_error_code() );
+	}
+
+	/**
+	 * Test reading file from unsafe directory.
+	 */
+	public function test_read_file_from_unsafe_directory() {
+		// Try to read a file from /tmp which is not in safe directories.
+		$temp_file = tempnam( sys_get_temp_dir(), 'test_product_' ) . '.html';
+		file_put_contents( $temp_file, '<html><body>Test</body></html>' );
+
+		$reflection = new ReflectionClass( $this->tool );
+		$method     = $reflection->getMethod( 'read_html_file' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $this->tool, $temp_file );
+
+		// Clean up.
+		unlink( $temp_file );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_unsafe_file_path', $result->get_error_code() );
 	}
 
 	/**
