@@ -24,27 +24,45 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
-// Load all section implementations.
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-overview.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-general.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-providers.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-tools.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-jetengine.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-woocommerce.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-security.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-performance.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-media.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-comments.php';
-require_once WP_MCP_AI_PATH . 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php';
+// Register autoloader for settings sections (lazy loading).
+// This loads section class files only when they are actually instantiated,
+// significantly improving admin page load performance.
+spl_autoload_register(
+	function ( $class_name ) {
+		// Map of section class names to their file paths.
+		$section_files = array(
+			'WP_MCP_AI_Section_Overview'                 => 'includes/admin/sections/class-wp-mcp-ai-section-overview.php',
+			'WP_MCP_AI_Section_General'                  => 'includes/admin/sections/class-wp-mcp-ai-section-general.php',
+			'WP_MCP_AI_Section_Custom_Filters'           => 'includes/admin/sections/class-wp-mcp-ai-section-custom-filters.php',
+			'WP_MCP_AI_Section_Providers'                => 'includes/admin/sections/class-wp-mcp-ai-section-providers.php',
+			'WP_MCP_AI_Section_Authentication'           => 'includes/admin/sections/class-wp-mcp-ai-section-authentication.php',
+			'WP_MCP_AI_Section_Tools'                    => 'includes/admin/sections/class-wp-mcp-ai-section-tools.php',
+			'WP_MCP_AI_Section_Orchestration'            => 'includes/admin/sections/class-wp-mcp-ai-section-orchestration.php',
+			'WP_MCP_AI_Section_Integrations'             => 'includes/admin/sections/class-wp-mcp-ai-section-integrations.php',
+			'WP_MCP_AI_Section_JetEngine_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-jetengine.php',
+			'WP_MCP_AI_Section_WooCommerce_Integration'  => 'includes/admin/sections/class-wp-mcp-ai-section-woocommerce.php',
+			'WP_MCP_AI_Section_Elementor_Integration'    => 'includes/admin/sections/class-wp-mcp-ai-section-elementor.php',
+			'WP_MCP_AI_Section_Token_Manager'            => 'includes/admin/sections/class-wp-mcp-ai-section-token-manager.php',
+			'WP_MCP_AI_Section_Security'                 => 'includes/admin/sections/class-wp-mcp-ai-section-security.php',
+			'WP_MCP_AI_Section_Performance'              => 'includes/admin/sections/class-wp-mcp-ai-section-performance.php',
+			'WP_MCP_AI_Section_Advanced'                 => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
+			'WP_MCP_AI_Section_Media'                    => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
+			'WP_MCP_AI_Section_Comments'                 => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
+			'WP_MCP_AI_Section_Site_Creator'             => 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php',
+		);
+
+		// Check if this is a section class we should autoload.
+		if ( isset( $section_files[ $class_name ] ) ) {
+			$file = WP_MCP_AI_PATH . $section_files[ $class_name ];
+			if ( file_exists( $file ) ) {
+				require_once $file;
+			}
+		}
+	}
+);
 
 // Load integration admin pages.
+// These need to be loaded eagerly as they register admin menus and hooks.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-jetengine-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-woocommerce-integration.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-elementor.php';
