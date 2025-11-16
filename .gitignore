@@ -12,22 +12,7 @@ opcache-reset.php
 *.rar
 
 # Ignore all vendor by default
-/vendor/*
-
-# But keep production dependencies only (negation)
-!/vendor/autoload.php
-!/vendor/composer/
-!/vendor/nyholm/
-!/vendor/php-http/
-!/vendor/psr/
-!/vendor/rahul900day/
-!/vendor/symfony/
-
-# Ignore composer temporary and dev files
-/vendor/composer/*.zip~
-/vendor/composer/tmp-*.zip~
-/vendor/composer/installed.php
-/vendor/composer/installed.json
+/vendor/
 
 # Minified assets (generated during build)
 *.min.css
