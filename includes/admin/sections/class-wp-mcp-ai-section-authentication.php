@@ -284,8 +284,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				}
 
 				// Special handling for checkboxes: if not present in input, set to false.
+				// ONLY if the checkbox is actually in the input (user submitted the form for this subtab).
 				if ( 'checkbox' === $type ) {
-					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					// Only set the checkbox value if it's in the posted input OR if any field from this subtab is in input.
+					// This prevents checkboxes from being set to false when saving other subtabs.
+					if ( isset( $input[ $field_key ] ) ) {
+						$sanitized[ $field_key ] = (bool) $input[ $field_key ];
+					} else {
+						// Check if this is actually the active subtab being saved by checking if any field is in input.
+						$has_any_field = false;
+						foreach ( $active_field_keys as $check_key ) {
+							if ( isset( $input[ $check_key ] ) ) {
+								$has_any_field = true;
+								break;
+							}
+						}
+						// Only set checkbox to false if we're actually saving this subtab's form.
+						if ( $has_any_field ) {
+							$sanitized[ $field_key ] = false;
+						}
+						// Otherwise, omit the checkbox entirely so it doesn't overwrite existing value.
+					}
 					continue;
 				}
 
