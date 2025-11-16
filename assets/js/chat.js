@@ -3813,13 +3813,6 @@
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
 
-        // Log load session request
-        if (window.console && console.log) {
-            console.log('[WP oOS] Loading conversation details:', {
-                session_key: sessionKey
-            });
-        }
-
         // Construct URL with session_key in path (not as query param)
         let url = endpoint;
         if (!url.endsWith('/')) {
@@ -3847,6 +3840,16 @@
         
         if (assistantId !== null) {
             url += (url.indexOf('?') === -1 ? '?' : '&') + 'assistant_id=' + encodeURIComponent(assistantId);
+        }
+
+        // Log load session request with full details
+        if (window.console && console.log) {
+            console.log('[WP oOS] Loading conversation details:', {
+                session_key: sessionKey,
+                url: url,
+                user_id: userId,
+                assistant_id: assistantId
+            });
         }
 
         return fetch(url, {
