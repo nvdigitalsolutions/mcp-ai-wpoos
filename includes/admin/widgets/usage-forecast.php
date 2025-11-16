@@ -29,33 +29,35 @@ if ( 'increasing' === $trend ) {
 ?>
 
 <div class="wp-mcp-ai-widget-usage-forecast">
-	<!-- Forecast Summary -->
-	<div class="wp-mcp-ai-forecast-summary">
-		<div class="wp-mcp-ai-forecast-value">
-			<span class="wp-mcp-ai-forecast-amount"><?php echo esc_html( number_format_i18n( $projected_usage ) ); ?></span>
-			<span class="dashicons dashicons-<?php echo esc_attr( $trend_icon ); ?>" style="color: <?php echo esc_attr( $trend_color ); ?>; font-size: 20px; vertical-align: middle;"></span>
-		</div>
-		<div class="wp-mcp-ai-forecast-label">
-			<?php
-			printf(
-				/* translators: %s: forecast date */
-				esc_html__( 'Projected for %s', 'wp-mcp-ai' ),
-				esc_html( gmdate( 'M j, Y', strtotime( $projected_date ) ) )
-			);
-			?>
-		</div>
-		<?php if ( $confidence > 0 ) : ?>
-			<div class="wp-mcp-ai-forecast-confidence">
+	<?php if ( $projected_usage > 0 || $confidence > 0 ) : ?>
+		<!-- Forecast Summary -->
+		<div class="wp-mcp-ai-forecast-summary">
+			<div class="wp-mcp-ai-forecast-value">
+				<span class="wp-mcp-ai-forecast-amount"><?php echo esc_html( number_format_i18n( $projected_usage ) ); ?></span>
+				<span class="dashicons dashicons-<?php echo esc_attr( $trend_icon ); ?>" style="color: <?php echo esc_attr( $trend_color ); ?>; font-size: 20px; vertical-align: middle;"></span>
+			</div>
+			<div class="wp-mcp-ai-forecast-label">
 				<?php
 				printf(
-					/* translators: %d: confidence percentage */
-					esc_html__( 'Confidence: %d%%', 'wp-mcp-ai' ),
-					absint( $confidence )
+					/* translators: %s: forecast date */
+					esc_html__( 'Projected for %s', 'wp-mcp-ai' ),
+					esc_html( gmdate( 'M j, Y', strtotime( $projected_date ) ) )
 				);
 				?>
 			</div>
-		<?php endif; ?>
-	</div>
+			<?php if ( $confidence > 0 ) : ?>
+				<div class="wp-mcp-ai-forecast-confidence">
+					<?php
+					printf(
+						/* translators: %d: confidence percentage */
+						esc_html__( 'Confidence: %d%%', 'wp-mcp-ai' ),
+						absint( $confidence )
+					);
+					?>
+				</div>
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
 
 	<!-- Trend Indicator -->
 	<div class="wp-mcp-ai-forecast-trend" style="margin-top: 20px; padding: 15px; background: #f7f7f7; border-radius: 4px;">
