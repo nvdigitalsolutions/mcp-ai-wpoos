@@ -3820,9 +3820,14 @@
             });
         }
 
-        let url = endpoint + (endpoint.indexOf('?') === -1 ? '?' : '&') + 'session_key=' + encodeURIComponent(sessionKey);
+        // Construct URL with session_key in path (not as query param)
+        let url = endpoint;
+        if (!url.endsWith('/')) {
+            url += '/';
+        }
+        url += encodeURIComponent(sessionKey);
         
-        // Add user_id parameter
+        // Add user_id parameter as query string
         let userId = null;
         if (state && state.config && typeof state.config.userId !== 'undefined') {
             userId = state.config.userId;
@@ -3831,17 +3836,17 @@
         }
         
         if (userId !== null) {
-            url += '&user_id=' + encodeURIComponent(userId);
+            url += '?user_id=' + encodeURIComponent(userId);
         }
         
-        // Add assistant_id parameter
+        // Add assistant_id parameter as query string
         let assistantId = null;
         if (state && state.config && typeof state.config.assistantId !== 'undefined') {
             assistantId = state.config.assistantId;
         }
         
         if (assistantId !== null) {
-            url += '&assistant_id=' + encodeURIComponent(assistantId);
+            url += (url.indexOf('?') === -1 ? '?' : '&') + 'assistant_id=' + encodeURIComponent(assistantId);
         }
 
         return fetch(url, {
