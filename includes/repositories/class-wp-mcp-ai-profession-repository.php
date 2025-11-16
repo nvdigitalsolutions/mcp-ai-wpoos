@@ -50,8 +50,8 @@ class WP_MCP_AI_Profession_Repository {
 			'no_found_rows'  => true,
 		);
 
-		$query_args = wp_parse_args( $args, $defaults );
-		$query      = new WP_Query( $query_args );
+		$query_args  = wp_parse_args( $args, $defaults );
+		$query       = new WP_Query( $query_args );
 		$professions = $query->posts;
 
 		wp_cache_set( $cache_key, $professions, self::CACHE_GROUP, self::CACHE_EXPIRATION );
@@ -265,11 +265,11 @@ class WP_MCP_AI_Profession_Repository {
 	 */
 	public function save( array $data ) {
 		$post_data = array(
-			'post_type'   => WP_MCP_AI_Profession_CPT::POST_TYPE,
-			'post_title'  => isset( $data['title'] ) ? sanitize_text_field( $data['title'] ) : '',
-			'post_name'   => isset( $data['slug'] ) ? sanitize_title( $data['slug'] ) : '',
+			'post_type'    => WP_MCP_AI_Profession_CPT::POST_TYPE,
+			'post_title'   => isset( $data['title'] ) ? sanitize_text_field( $data['title'] ) : '',
+			'post_name'    => isset( $data['slug'] ) ? sanitize_title( $data['slug'] ) : '',
 			'post_content' => isset( $data['description'] ) ? wp_kses_post( $data['description'] ) : '',
-			'post_status' => isset( $data['status'] ) ? sanitize_key( $data['status'] ) : 'publish',
+			'post_status'  => isset( $data['status'] ) ? sanitize_key( $data['status'] ) : 'publish',
 		);
 
 		if ( isset( $data['id'] ) && $data['id'] > 0 ) {

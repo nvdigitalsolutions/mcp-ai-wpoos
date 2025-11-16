@@ -117,16 +117,16 @@ class WP_MCP_AI_Profession_Service {
 	 */
 	protected function transform_profession_for_assistant( $profession_post ) {
 		return array(
-			'id'                => $profession_post->ID,
-			'slug'              => $profession_post->post_name,
-			'name'              => $profession_post->post_title,
-			'description'       => $profession_post->post_content,
-			'category'          => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true ),
-			'role_description'  => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true ),
-			'expertise'         => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true ),
-			'warnings'          => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_WARNINGS, true ),
-			'knowledge_base'    => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true ),
-			'default_tools'     => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true ),
+			'id'               => $profession_post->ID,
+			'slug'             => $profession_post->post_name,
+			'name'             => $profession_post->post_title,
+			'description'      => $profession_post->post_content,
+			'category'         => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true ),
+			'role_description' => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true ),
+			'expertise'        => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true ),
+			'warnings'         => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_WARNINGS, true ),
+			'knowledge_base'   => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true ),
+			'default_tools'    => get_post_meta( $profession_post->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true ),
 		);
 	}
 
@@ -151,12 +151,12 @@ class WP_MCP_AI_Profession_Service {
 		$professions = $this->get_professions( $profession_slugs );
 
 		$merged = array(
-			'names'       => array(),
-			'roles'       => array(),
-			'expertise'   => array(),
-			'warnings'    => array(),
-			'knowledge'   => array(),
-			'tools'       => array(),
+			'names'     => array(),
+			'roles'     => array(),
+			'expertise' => array(),
+			'warnings'  => array(),
+			'knowledge' => array(),
+			'tools'     => array(),
 		);
 
 		foreach ( $professions as $profession ) {

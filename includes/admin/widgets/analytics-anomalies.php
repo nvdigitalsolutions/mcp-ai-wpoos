@@ -48,7 +48,7 @@ if ( $has_analytics ) {
 		// Sort by date (most recent first) and limit to 10.
 		usort(
 			$all_anomalies,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return strcmp( $b['date'], $a['date'] );
 			}
 		);

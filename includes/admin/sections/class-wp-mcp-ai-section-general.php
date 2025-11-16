@@ -133,19 +133,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 */
 		private function get_subtab_groups() {
 			return array(
-				'core'      => array(
+				'core'     => array(
 					'id'     => 'core',
 					'label'  => __( 'Core Settings', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'default_provider', 'default_assistant' ),
 				),
-				'behavior'  => array(
+				'behavior' => array(
 					'id'     => 'behavior',
 					'label'  => __( 'Behavior & Limits', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'max_history_messages', 'request_timeout' ),
 				),
-				'data'      => array(
+				'data'     => array(
 					'id'     => 'data',
 					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-database',
@@ -201,37 +201,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			return $options;
 		}
 
-	/**
-	 * Render section fields.
-	 */
-	public function render() {
-		$fields        = $this->get_fields();
-		$subtab_groups = $this->get_subtab_groups();
-		$active_subtab = $this->get_active_subtab();
+		/**
+		 * Render section fields.
+		 */
+		public function render() {
+			$fields        = $this->get_fields();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
 
-		// Get the active group.
-		if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
-			return;
-		}
+			// Get the active group.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return;
+			}
 
-		$active_group = $subtab_groups[ $active_subtab ];
+			$active_group = $subtab_groups[ $active_subtab ];
 
-		// Render fields for the active sub-tab.
-		foreach ( $active_group['fields'] as $key ) {
-			if ( isset( $fields[ $key ] ) ) {
-				$this->render_field( $key, $fields[ $key ] );
+			// Render fields for the active sub-tab.
+			foreach ( $active_group['fields'] as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
 			}
 		}
-	}
 
-	/**
-	 * Override render_wrapper to include sub-tab navigation.
-	 */
-	public function render_wrapper() {
-		$description   = $this->get_description();
-		$subtab_groups = $this->get_subtab_groups();
-		$active_subtab = $this->get_active_subtab();
-		?>
+		/**
+		 * Override render_wrapper to include sub-tab navigation.
+		 */
+		public function render_wrapper() {
+			$description   = $this->get_description();
+			$subtab_groups = $this->get_subtab_groups();
+			$active_subtab = $this->get_active_subtab();
+			?>
 		<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 			<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 			<?php if ( $description ) : ?>
@@ -253,8 +253,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						$is_active  = ( $group['id'] === $active_subtab );
 						?>
 						<a href="<?php echo esc_url( $subtab_url ); ?>" 
-						   class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
-						   data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+							class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+							data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 							<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
 							<?php echo esc_html( $group['label'] ); ?>
 						</a>
@@ -268,8 +268,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				</div>
 			</div>
 		</div>
-		<?php
-	}
+			<?php
+		}
 		/**
 		 * Sanitize section input.
 		 *

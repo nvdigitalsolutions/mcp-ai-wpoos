@@ -52,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Dashboard_Diagnostic' ) ) {
 				// This must be done early as it's referenced throughout the diagnostic.
 				global $menu, $submenu;
 				$using_old_settings = false;
-				
+
 				// Check for old settings under Settings submenu.
 				if ( isset( $submenu['options-general.php'] ) ) {
 					foreach ( $submenu['options-general.php'] as $item ) {

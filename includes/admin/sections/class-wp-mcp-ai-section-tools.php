@@ -58,14 +58,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		public function get_fields() {
 			return array(
 				// Features fields.
-				'enable_mesh_computing'                   => array(
+				'enable_mesh_computing'                => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Mesh Computing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable distributed computing features', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_federation'                       => array(
+				'enable_federation'                    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'wp-mcp-ai' ),
@@ -74,28 +74,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Media fields.
-				'enable_ai_media_library'                 => array(
+				'enable_ai_media_library'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Media Library', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze images on upload', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_media_generate_alt_text'              => array(
+				'ai_media_generate_alt_text'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Alt Text', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_generate_caption'               => array(
+				'ai_media_generate_caption'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Captions', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically generate image captions', 'wp-mcp-ai' ),
 					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
-				'ai_media_overwrite_existing'             => array(
+				'ai_media_overwrite_existing'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Overwrite Existing', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
@@ -104,14 +104,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Comments fields.
-				'enable_ai_comments_moderation'           => array(
+				'enable_ai_comments_moderation'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Comments Moderation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'ai_comments_sensitivity'                 => array(
+				'ai_comments_sensitivity'              => array(
 					'type'        => 'select',
 					'label'       => __( 'Moderation Sensitivity', 'wp-mcp-ai' ),
 					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'wp-mcp-ai' ),
@@ -122,7 +122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'ai_comments_min_confidence'              => array(
+				'ai_comments_min_confidence'           => array(
 					'type'        => 'select',
 					'label'       => __( 'Minimum Confidence Level', 'wp-mcp-ai' ),
 					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'wp-mcp-ai' ),
@@ -135,7 +135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => '0.7',
 				),
-				'ai_comments_auto_hold_low_confidence'    => array(
+				'ai_comments_auto_hold_low_confidence' => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Hold Low Confidence Comments', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'wp-mcp-ai' ),
@@ -144,28 +144,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Site Creator fields.
-				'enable_site_creator'                     => array(
+				'enable_site_creator'                  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
 					'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_plugin_install'       => array(
+				'site_creator_allow_plugin_install'    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_theme_install'        => array(
+				'site_creator_allow_theme_install'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
 					'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'site_creator_allow_option_updates'       => array(
+				'site_creator_allow_option_updates'    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
@@ -188,25 +188,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
-				'features'     => array(
+				'features'      => array(
 					'id'     => 'features',
 					'label'  => __( 'Features', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-tools',
 					'fields' => array( 'enable_mesh_computing', 'enable_federation' ),
 				),
-				'media'        => array(
+				'media'         => array(
 					'id'     => 'media',
 					'label'  => __( 'AI Media Library', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'enable_ai_media_library', 'ai_media_generate_alt_text', 'ai_media_generate_caption', 'ai_media_overwrite_existing' ),
 				),
-				'comments'     => array(
+				'comments'      => array(
 					'id'     => 'comments',
 					'label'  => __( 'AI Comments', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
 				),
-				'site_creator' => array(
+				'site_creator'  => array(
 					'id'     => 'site_creator',
 					'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-admin-site',
@@ -232,91 +232,91 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			return $subtab;
 		}
 
-	/**
-	 * Override sanitize to only process fields from the active sub-tab.
-	 *
-	 * This prevents inactive sub-tab settings from being cleared when saving.
-	 * Only fields from the currently active sub-tab are sanitized and returned.
-	 * Fields from inactive sub-tabs are preserved in the database.
-	 *
-	 * @param array $input Raw input from form.
-	 * @return array Sanitized input for active sub-tab only.
-	 */
-	public function sanitize( $input ) {
-		$active_subtab = $this->get_active_subtab();
-		$subtab_groups = $this->get_subtab_groups();
+		/**
+		 * Override sanitize to only process fields from the active sub-tab.
+		 *
+		 * This prevents inactive sub-tab settings from being cleared when saving.
+		 * Only fields from the currently active sub-tab are sanitized and returned.
+		 * Fields from inactive sub-tabs are preserved in the database.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input for active sub-tab only.
+		 */
+		public function sanitize( $input ) {
+			$active_subtab = $this->get_active_subtab();
+			$subtab_groups = $this->get_subtab_groups();
 
-		// Get fields that belong to the active sub-tab.
-		if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
-			return array();
+			// Get fields that belong to the active sub-tab.
+			if ( ! isset( $subtab_groups[ $active_subtab ] ) ) {
+				return array();
+			}
+
+			$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+			$all_fields        = $this->get_fields();
+			$sanitized         = array();
+
+			// Only process fields from the active sub-tab.
+			foreach ( $active_field_keys as $field_key ) {
+				if ( ! isset( $all_fields[ $field_key ] ) ) {
+					continue;
+				}
+
+				$field = $all_fields[ $field_key ];
+				$type  = isset( $field['type'] ) ? $field['type'] : 'text';
+
+				// Skip display-only field types.
+				if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
+					continue;
+				}
+
+				// Special handling for checkboxes: if not present in input, set to false.
+				if ( 'checkbox' === $type ) {
+					$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
+					continue;
+				}
+
+				// For other field types, skip if not present in input.
+				if ( ! isset( $input[ $field_key ] ) ) {
+					continue;
+				}
+
+				$value = $input[ $field_key ];
+
+				// Sanitize based on field type.
+				switch ( $type ) {
+					case 'text':
+					case 'password':
+					case 'url':
+						$sanitized[ $field_key ] = sanitize_text_field( $value );
+						break;
+
+					case 'textarea':
+						$sanitized[ $field_key ] = sanitize_textarea_field( $value );
+						break;
+
+					case 'email':
+						$sanitized[ $field_key ] = sanitize_email( $value );
+						break;
+
+					case 'number':
+						$sanitized[ $field_key ] = absint( $value );
+						break;
+
+					case 'select':
+						$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
+						if ( in_array( $value, $options, true ) ) {
+							$sanitized[ $field_key ] = $value;
+						}
+						break;
+
+					default:
+						$sanitized[ $field_key ] = sanitize_text_field( $value );
+						break;
+				}
+			}
+
+			return $sanitized;
 		}
-
-		$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
-		$all_fields        = $this->get_fields();
-		$sanitized         = array();
-
-		// Only process fields from the active sub-tab.
-		foreach ( $active_field_keys as $field_key ) {
-			if ( ! isset( $all_fields[ $field_key ] ) ) {
-				continue;
-			}
-
-			$field = $all_fields[ $field_key ];
-			$type  = isset( $field['type'] ) ? $field['type'] : 'text';
-
-			// Skip display-only field types.
-			if ( in_array( $type, array( 'html', 'custom' ), true ) ) {
-				continue;
-			}
-
-			// Special handling for checkboxes: if not present in input, set to false.
-			if ( 'checkbox' === $type ) {
-				$sanitized[ $field_key ] = isset( $input[ $field_key ] ) ? (bool) $input[ $field_key ] : false;
-				continue;
-			}
-
-			// For other field types, skip if not present in input.
-			if ( ! isset( $input[ $field_key ] ) ) {
-				continue;
-			}
-
-			$value = $input[ $field_key ];
-
-			// Sanitize based on field type.
-			switch ( $type ) {
-				case 'text':
-				case 'password':
-				case 'url':
-					$sanitized[ $field_key ] = sanitize_text_field( $value );
-					break;
-
-				case 'textarea':
-					$sanitized[ $field_key ] = sanitize_textarea_field( $value );
-					break;
-
-				case 'email':
-					$sanitized[ $field_key ] = sanitize_email( $value );
-					break;
-
-				case 'number':
-					$sanitized[ $field_key ] = absint( $value );
-					break;
-
-				case 'select':
-					$options = isset( $field['options'] ) ? array_keys( $field['options'] ) : array();
-					if ( in_array( $value, $options, true ) ) {
-						$sanitized[ $field_key ] = $value;
-					}
-					break;
-
-				default:
-					$sanitized[ $field_key ] = sanitize_text_field( $value );
-					break;
-			}
-		}
-
-		return $sanitized;
-	}
 
 		/**
 		 * Render section fields.
@@ -502,8 +502,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
 							<a href="<?php echo esc_url( $subtab_url ); ?>" 
-							   class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
-							   data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
+								class="wp-mcp-ai-subtab <?php echo $is_active ? 'wp-mcp-ai-subtab-active' : ''; ?>"
+								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
 								<?php echo esc_html( $group['label'] ); ?>
 							</a>
@@ -526,10 +526,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Displays all registered tools in a categorized table with enable/disable functionality.
 		 */
 		private function render_tools_manager() {
-			$registry      = WP_MCP_AI_Tool_Registry::get_instance();
-			$all_tools     = $registry->get_tools();
-			$tool_groups   = $registry->get_tool_group_map();
-			$group_labels  = $registry->get_tool_group_labels();
+			$registry     = WP_MCP_AI_Tool_Registry::get_instance();
+			$all_tools    = $registry->get_tools();
+			$tool_groups  = $registry->get_tool_group_map();
+			$group_labels = $registry->get_tool_group_labels();
 
 			// Group tools by category.
 			$categorized_tools = array(
@@ -583,11 +583,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
 						</label>
 						<input type="search" 
-							   id="tool_search" 
-							   name="tool_search" 
-							   value="<?php echo esc_attr( $search ); ?>" 
-							   placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
-							   style="flex: 1; max-width: 300px;">
+								id="tool_search" 
+								name="tool_search" 
+								value="<?php echo esc_attr( $search ); ?>" 
+								placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
+								style="flex: 1; max-width: 300px;">
 
 						<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
 							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
@@ -632,8 +632,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								$search_term = strtolower( $search );
 
 								return false !== stripos( $slug, $search_term ) ||
-									   false !== stripos( $description, $search_term ) ||
-									   false !== stripos( $name, $search_term );
+										false !== stripos( $description, $search_term ) ||
+										false !== stripos( $name, $search_term );
 							}
 						);
 
@@ -710,10 +710,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<?php if ( $is_available ) : ?>
 												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
 													<input type="checkbox" 
-														   class="wp-mcp-ai-tool-toggle" 
-														   data-tool-slug="<?php echo esc_attr( $slug ); ?>"
-														   <?php checked( $is_enabled ); ?>
-														   style="opacity: 0; width: 0; height: 0;">
+															class="wp-mcp-ai-tool-toggle" 
+															data-tool-slug="<?php echo esc_attr( $slug ); ?>"
+															<?php checked( $is_enabled ); ?>
+															style="opacity: 0; width: 0; height: 0;">
 													<span class="wp-mcp-ai-toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 24px; transition: .4s;"></span>
 												</label>
 											<?php else : ?>
@@ -799,18 +799,66 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			// Check for plugin-specific tools.
 			$plugin_requirements = array(
-				'get_elementor_templates'        => array( 'plugin' => 'Elementor', 'check' => 'class_exists', 'value' => '\Elementor\Plugin' ),
-				'get_woo_recent_orders'          => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
-				'get_woo_products'               => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
-				'create_woo_product'             => array( 'plugin' => 'WooCommerce', 'check' => 'class_exists', 'value' => 'WooCommerce' ),
-				'get_jetengine_items'            => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
-				'list_jetengine_rest_routes'     => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
-				'invoke_jetengine_route'         => array( 'plugin' => 'JetEngine', 'check' => 'function_exists', 'value' => 'jet_engine' ),
-				'get_jetformbuilder_forms'       => array( 'plugin' => 'JetFormBuilder', 'check' => 'class_exists', 'value' => 'Jet_Form_Builder\Plugin' ),
-				'get_jetformbuilder_submissions' => array( 'plugin' => 'JetFormBuilder', 'check' => 'class_exists', 'value' => 'Jet_Form_Builder\Plugin' ),
-				'get_rankmath_seo'               => array( 'plugin' => 'Rank Math SEO', 'check' => 'function_exists', 'value' => 'rank_math' ),
-				'create_wpcode_snippet'          => array( 'plugin' => 'WPCode', 'check' => 'class_exists', 'value' => 'WPCode' ),
-				'generate_simple_jwt_token'      => array( 'plugin' => 'Simple JWT Login', 'check' => 'class_exists', 'value' => 'SimpleJWTLogin\SimpleJWTLogin' ),
+				'get_elementor_templates'        => array(
+					'plugin' => 'Elementor',
+					'check'  => 'class_exists',
+					'value'  => '\Elementor\Plugin',
+				),
+				'get_woo_recent_orders'          => array(
+					'plugin' => 'WooCommerce',
+					'check'  => 'class_exists',
+					'value'  => 'WooCommerce',
+				),
+				'get_woo_products'               => array(
+					'plugin' => 'WooCommerce',
+					'check'  => 'class_exists',
+					'value'  => 'WooCommerce',
+				),
+				'create_woo_product'             => array(
+					'plugin' => 'WooCommerce',
+					'check'  => 'class_exists',
+					'value'  => 'WooCommerce',
+				),
+				'get_jetengine_items'            => array(
+					'plugin' => 'JetEngine',
+					'check'  => 'function_exists',
+					'value'  => 'jet_engine',
+				),
+				'list_jetengine_rest_routes'     => array(
+					'plugin' => 'JetEngine',
+					'check'  => 'function_exists',
+					'value'  => 'jet_engine',
+				),
+				'invoke_jetengine_route'         => array(
+					'plugin' => 'JetEngine',
+					'check'  => 'function_exists',
+					'value'  => 'jet_engine',
+				),
+				'get_jetformbuilder_forms'       => array(
+					'plugin' => 'JetFormBuilder',
+					'check'  => 'class_exists',
+					'value'  => 'Jet_Form_Builder\Plugin',
+				),
+				'get_jetformbuilder_submissions' => array(
+					'plugin' => 'JetFormBuilder',
+					'check'  => 'class_exists',
+					'value'  => 'Jet_Form_Builder\Plugin',
+				),
+				'get_rankmath_seo'               => array(
+					'plugin' => 'Rank Math SEO',
+					'check'  => 'function_exists',
+					'value'  => 'rank_math',
+				),
+				'create_wpcode_snippet'          => array(
+					'plugin' => 'WPCode',
+					'check'  => 'class_exists',
+					'value'  => 'WPCode',
+				),
+				'generate_simple_jwt_token'      => array(
+					'plugin' => 'Simple JWT Login',
+					'check'  => 'class_exists',
+					'value'  => 'SimpleJWTLogin\SimpleJWTLogin',
+				),
 			);
 
 			if ( isset( $plugin_requirements[ $slug ] ) ) {

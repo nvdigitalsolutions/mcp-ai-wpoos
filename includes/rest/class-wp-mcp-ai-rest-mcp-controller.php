@@ -374,10 +374,10 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'tools'      => rest_url( self::REST_NAMESPACE . '/tools' ),
 			),
 			'usage'           => array(
-				'discovery'      => 'GET /mcp (default - returns this discovery JSON for LM Studio, etc.)',
-				'jsonrpc'        => 'POST /mcp (JSON-RPC 2.0 protocol for tool execution)',
-				'sse_dedicated'  => 'GET /sse (dedicated SSE endpoint)',
-				'sse_opt_in'     => 'GET /mcp?stream=true (opt-in SSE on /mcp endpoint)',
+				'discovery'     => 'GET /mcp (default - returns this discovery JSON for LM Studio, etc.)',
+				'jsonrpc'       => 'POST /mcp (JSON-RPC 2.0 protocol for tool execution)',
+				'sse_dedicated' => 'GET /sse (dedicated SSE endpoint)',
+				'sse_opt_in'    => 'GET /mcp?stream=true (opt-in SSE on /mcp endpoint)',
 			),
 		);
 

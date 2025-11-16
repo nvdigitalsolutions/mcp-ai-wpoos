@@ -57,35 +57,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		public function get_fields() {
 			return array(
-				'memory_max_file_bytes'      => array(
+				'memory_max_file_bytes'           => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Memory File Size (bytes)', 'wp-mcp-ai' ),
 					'description' => __( 'Maximum file size for memory operations. Default: 5242880 (5 MB)', 'wp-mcp-ai' ),
 					'default'     => 5242880,
 					'placeholder' => '5242880',
 				),
-				'enable_extended_logging'    => array(
+				'enable_extended_logging'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Extended Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'wp-mcp-ai' ),
 					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_agentic_loop_logging' => array(
+				'enable_agentic_loop_logging'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Agentic Loop Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable detailed logging for agentic loop iterations and tool calls', 'wp-mcp-ai' ),
 					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs each iteration of the agentic loop, including tool calls, tool results, and iteration timing. Useful for debugging assistant behavior and tool execution flow.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_api_logging'         => array(
+				'enable_api_logging'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'API Request/Response Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable logging for AI provider API requests and responses', 'wp-mcp-ai' ),
 					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs API requests to OpenAI, Anthropic, Gemini, LM Studio and their responses. Helps debug API connectivity and response issues.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_tool_execution_logging' => array(
+				'enable_tool_execution_logging'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Tool Execution Logging', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Enable detailed logging for individual tool executions', 'wp-mcp-ai' ),
@@ -99,7 +99,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'description'    => __( 'Requires "Enable Logging" to be active in General Settings. Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
-				'enable_opcache_reset'       => array(
+				'enable_opcache_reset'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Auto OPcache Reset', 'wp-mcp-ai' ),
 					'checkbox_label' => __( 'Automatically reset OPcache when needed', 'wp-mcp-ai' ),
@@ -438,9 +438,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			$draft_count      = isset( $profession_count->draft ) ? $profession_count->draft : 0;
 
 			// Check if professions were seeded.
-			$is_seeded       = get_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, false );
-			$seeded_text     = $is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
-			$seeded_class    = $is_seeded ? 'success' : 'warning';
+			$is_seeded    = get_option( WP_MCP_AI_Profession_Seeder::SEEDED_OPTION, false );
+			$seeded_text  = $is_seeded ? __( 'Yes', 'wp-mcp-ai' ) : __( 'No', 'wp-mcp-ai' );
+			$seeded_class = $is_seeded ? 'success' : 'warning';
 			?>
 			<div class="wp-mcp-ai-data-management-section" style="margin-top: 30px;">
 				<h3><?php esc_html_e( 'Profession Data Management', 'wp-mcp-ai' ); ?></h3>

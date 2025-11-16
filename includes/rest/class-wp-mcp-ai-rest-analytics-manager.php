@@ -388,11 +388,11 @@ class WP_MCP_AI_REST_Analytics_Manager {
 
 		return new WP_REST_Response(
 			array(
-				'success'    => true,
+				'success'     => true,
 				'tool_slug_1' => $tool_slugs[0],
 				'tool_slug_2' => $tool_slugs[1],
-				'days'       => $days,
-				'comparison' => $comparison,
+				'days'        => $days,
+				'comparison'  => $comparison,
 			),
 			200
 		);
