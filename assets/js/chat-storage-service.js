@@ -154,6 +154,24 @@
 	}
 
 	/**
+	 * Sanitize a session key to remove whitespace and invalid characters.
+	 * Matches the PHP-side normalization in WP_MCP_AI_REST::normalise_transcript_session_key
+	 * which uses: preg_replace('/[^a-zA-Z0-9_-]/', '', $value)
+	 * 
+	 * @param {string} sessionKey - The session key to sanitize.
+	 * @return {string} The sanitized session key.
+	 */
+	function sanitizeSessionKey(sessionKey) {
+		if (!sessionKey || typeof sessionKey !== 'string') {
+			return '';
+		}
+		
+		// Remove all characters except alphanumeric, underscore, and hyphen
+		// This matches the PHP sanitization to ensure consistency
+		return sessionKey.replace(/[^a-zA-Z0-9_-]/g, '');
+	}
+
+	/**
 	 * Get localStorage usage statistics (async).
 	 * 
 	 * @param {Function} callback - Called with quota data
@@ -254,7 +272,7 @@
 				const storageKey = getStorageKey(assistantId);
 				const data = {
 					conversation: state.conversation || [],
-					sessionKey: state.config.sessionKey || '',
+					sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
 					timestamp: Date.now(),
 					assistantId: assistantId
 				};
@@ -274,7 +292,7 @@
 							const storageKey = getStorageKey(assistantId);
 							const data = {
 								conversation: state.conversation || [],
-								sessionKey: state.config.sessionKey || '',
+								sessionKey: sanitizeSessionKey(state.config.sessionKey || ''),
 								timestamp: Date.now(),
 								assistantId: assistantId
 							};
@@ -365,7 +383,7 @@
 
 			return {
 				conversation: Array.isArray(data.conversation) ? data.conversation : [],
-				sessionKey: data.sessionKey || '',
+				sessionKey: sanitizeSessionKey(data.sessionKey || ''),
 				assistantId: data.assistantId || assistantId
 			};
 		} catch (error) {
@@ -503,6 +521,7 @@
 	// Export public API
 	window.wpMcpAiChatStorage = {
 		getStorageKey: getStorageKey,
+		sanitizeSessionKey: sanitizeSessionKey,
 		getLocalStorageQuota: getLocalStorageQuota,
 		formatBytes: formatBytes,
 		cleanupOldStorageEntries: cleanupOldStorageEntries,
