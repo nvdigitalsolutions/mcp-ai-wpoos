@@ -434,6 +434,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'web_search'                      => 'external-tools',
 				'crawl4ai_price_lookup'           => 'external-tools',
 				'run_crawl4ai_job'                => 'external-tools',
+				'scrape_product'                  => 'external-tools',
 				'get_gdacs_events'                => 'external-tools',
 				'get_open_meteo_forecast'         => 'external-tools',
 				'get_nhc_active_storms'           => 'external-tools',
@@ -785,6 +786,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Search_Places'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
 				// Gemini image editing tool.
 				'WP_MCP_AI_Tool_Edit_Gemini_Image'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-edit-gemini-image.php',
+				// Product scraping tool.
+				'WP_MCP_AI_Tool_Scrape_Product'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-scrape-product.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
