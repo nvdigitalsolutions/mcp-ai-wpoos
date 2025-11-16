@@ -62,7 +62,9 @@
 - [🔐 JetEngine Capability Reference](#jetengine-capability-reference)
 - [🛰 JetEngine REST API Reference](#jetengine-rest-api-reference)
 - [🧮 Usage Tracking](#usage-tracking)
+- [🧷 Attachment MIME Controls](#attachment-mime-controls)
 - [🧾 Logging](#logging)
+- [🧾 JetEngine REST Endpoint Report Helper](#jetengine-rest-endpoint-report-helper)
 - [🔌 Optional Tools & Dependencies](#optional-tools-dependencies)
 - [✅ Manual QA Scenarios](#manual-qa-scenarios)
 
