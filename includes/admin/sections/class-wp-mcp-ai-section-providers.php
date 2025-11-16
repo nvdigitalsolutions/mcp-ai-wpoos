@@ -252,7 +252,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 *
 		 * @return array
 		 */
-		private function get_provider_groups() {
+		protected function get_provider_groups() {
 			return array(
 				'priority'  => array(
 					'id'     => 'priority',
@@ -298,7 +298,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 *
 		 * @return string
 		 */
-		private function get_active_subtab() {
+		protected function get_active_subtab() {
 			$provider_groups = $this->get_provider_groups();
 			$subtab          = '';
 
