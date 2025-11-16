@@ -1,0 +1,45 @@
+/**
+ * Admin Test Profession Page Styles
+ *
+ * Styles for the test profession modal and interface.
+ * Reuses styles from admin-test-assistant.css for consistency.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Modal backdrop and panel are shared - see admin-test-assistant.css */
+/* Only profession-specific styles are defined here */
+
+.wp-mcp-ai-test-profession-info {
+	background: #f0f6fc;
+	border-left: 4px solid #0073aa;
+	padding: 12px 16px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-test-profession-info p {
+	margin: 0;
+	color: #1d2327;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+/* Profession test button styling */
+.wp-mcp-ai-test-profession-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* Table column widths */
+.wp-list-table .column-actions {
+	width: 120px;
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-test-profession-info {
+		padding: 10px 12px;
+		font-size: 13px;
+	}
+}
