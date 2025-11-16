@@ -37,10 +37,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 		/**
 		 * Get tab ID.
 		 *
+		 * Note: This section is now integrated as a subtab within the Tools section.
+		 * Return an empty string to prevent it from appearing as a standalone section.
+		 *
 		 * @return string
 		 */
 		public function get_tab() {
-			return 'tools';
+			return '';
 		}
 
 		/**
