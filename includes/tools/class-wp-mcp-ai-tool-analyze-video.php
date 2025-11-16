@@ -261,6 +261,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	protected function call_gemini_video( $video_url, $prompt, $attachment_id = null ) {
 		// Ensure required classes are loaded.
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-file-service.php';
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-video-file-manager.php';
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 
 		// Get file path from attachment or download from URL.
@@ -292,11 +293,51 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$temp_file = true;
 		}
 
-		// Initialize Gemini File Service.
-		$file_service = new WP_MCP_AI_Gemini_File_Service();
+		// Initialize services.
+		$file_service    = new WP_MCP_AI_Gemini_File_Service();
+		$file_manager    = new WP_MCP_AI_Video_File_Manager( $file_service );
+		$video_hash      = $file_manager->generate_video_hash( $file_path );
+		$upload_result   = null;
+		$cache_hit       = false;
 
-		// Upload video to Gemini File API.
-		$upload_result = $file_service->upload_file( $file_path, $mime_type, basename( $file_path ) );
+		if ( is_wp_error( $video_hash ) ) {
+			// If hash generation fails, proceed without caching.
+			$video_hash = null;
+		} else {
+			// Check cache for existing upload.
+			$cached_file = $file_manager->get_cached_file( $video_hash );
+			if ( false !== $cached_file ) {
+				// Cache hit! Use existing file.
+				$upload_result = $cached_file;
+				$cache_hit     = true;
+
+				// Update last used timestamp.
+				$file_manager->touch_file( $video_hash );
+
+				WP_MCP_AI_Logger::log_event(
+					'video_cache_hit',
+					'Using cached video file upload.',
+					array(
+						'video_hash' => $video_hash,
+						'file_name'  => $cached_file['file_name'],
+					)
+				);
+			}
+		}
+
+		// Upload if not in cache.
+		if ( ! $cache_hit ) {
+			$upload_result = $file_service->upload_file( $file_path, $mime_type, basename( $file_path ) );
+
+			// Register the upload in cache if successful.
+			if ( ! is_wp_error( $upload_result ) && null !== $video_hash ) {
+				$metadata = array(
+					'attachment_id' => $attachment_id,
+					'video_url'     => $video_url,
+				);
+				$file_manager->register_file( $video_hash, $upload_result, $metadata );
+			}
+		}
 
 		// Clean up temp file after upload if needed.
 		if ( $temp_file && $file_path ) {
@@ -314,8 +355,10 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$processing_result = $file_service->wait_for_processing( $file_name, 300 );
 
 		if ( is_wp_error( $processing_result ) ) {
-			// Try to clean up file even if processing failed.
-			$file_service->delete_file( $file_name );
+			// Try to clean up file if processing failed and not cached.
+			if ( ! $cache_hit ) {
+				$file_service->delete_file( $file_name );
+			}
 			return $processing_result;
 		}
 
@@ -351,8 +394,12 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			)
 		);
 
-		// Clean up uploaded file.
-		$file_service->delete_file( $file_name );
+		// Clean up uploaded file only if it was a new upload (not from cache).
+		// Cached files are managed by the cleanup cron job.
+		if ( ! $cache_hit ) {
+			// Don't delete immediately - let it stay for potential reuse.
+			// The cleanup cron will handle expired files.
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return $response;

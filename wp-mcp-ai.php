@@ -422,6 +422,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-crawl4ai-local-api.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-response-attachments.php';
 require_once WP_MCP_AI_PATH . 'includes/crawler/class-wp-mcp-ai-crawler.php';
 require_once WP_MCP_AI_PATH . 'includes/job-notifier-init.php';
+require_once WP_MCP_AI_PATH . 'includes/video-file-manager-init.php';
 require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
@@ -1208,6 +1209,12 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_deactivate_single_site() {
+		// Clear scheduled cron jobs.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_video_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_video_files' );
+		}
+
 		flush_rewrite_rules();
 	}
 }
