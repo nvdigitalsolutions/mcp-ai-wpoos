@@ -149,6 +149,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 					'default'     => 86400,
 					'placeholder' => '86400',
 				),
+
+				// REST API Capabilities.
+				'rest_enable_assistant_create'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Allow creating assistants via REST API (POST /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, authenticated API clients can create new assistants remotely. Requires proper authentication (Auth0, assistant credentials, or JWT).', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'rest_enable_assistant_delete'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable REST Assistant Deletion', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'wp-mcp-ai' ),
+					'description'    => __( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'sse_enable_post_method'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable POST Method on SSE Endpoint', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Allow POST requests to /wp-json/mcp-ai/v1/sse endpoint', 'wp-mcp-ai' ),
+					'description'    => __( 'SSE (Server-Sent Events) standard only uses GET. Enable POST only if you have LM Studio or client bugs requiring it. Leave disabled for standard SSE compliance.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 			);
 		}
 
@@ -179,6 +202,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 				),
 				'Guest Access'                  => array(
 					'guest_token_lifetime',
+				),
+				'REST API Capabilities'         => array(
+					'rest_enable_assistant_create',
+					'rest_enable_assistant_delete',
+					'sse_enable_post_method',
 				),
 			);
 
