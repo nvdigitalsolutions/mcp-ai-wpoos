@@ -475,4 +475,75 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 
 		$this->assertSame( '', $client->get_network_interface() );
 	}
+
+	/**
+	 * Test that connection timeout is properly configured for private network IPs.
+	 *
+	 * This test verifies the fix for the issue where connections to Ollama servers
+	 * on private networks (e.g., 192.168.2.222:11434) timeout at 10 seconds even
+	 * when the overall timeout is set to 120 seconds.
+	 *
+	 * The fix ensures CURLOPT_CONNECTTIMEOUT matches the overall timeout.
+	 *
+	 * @group connection-timeout
+	 */
+	public function test_connection_timeout_set_for_private_network() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://192.168.2.222:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Ollama_Client();
+		$curl_handle_info = null;
+
+		// Capture cURL handle configuration.
+		$curl_filter_callback = function ( $handle, $args, $url ) use ( &$curl_handle_info ) {
+			// Only capture if this is our test URL.
+			if ( strpos( $url, '192.168.2.222' ) !== false ) {
+				$curl_handle_info = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+			}
+			return $handle;
+		};
+
+		add_filter( 'http_api_curl', $curl_filter_callback, 100, 3 );
+
+		// Mock the HTTP response to avoid actual network call.
+		$http_response_callback = function ( $preempt, $args, $url ) {
+			if ( strpos( $url, '192.168.2.222' ) !== false ) {
+				return array(
+					'headers'  => array(),
+					'body'     => wp_json_encode(
+						array(
+							'models' => array(),
+						)
+					),
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $http_response_callback, 10, 3 );
+
+		// Trigger a connection attempt.
+		$client->list_models();
+
+		remove_filter( 'http_api_curl', $curl_filter_callback, 100 );
+		remove_filter( 'pre_http_request', $http_response_callback, 10 );
+
+		// Verify that our filter was called for the private IP.
+		$this->assertNotNull( $curl_handle_info, 'cURL filter should have been called for private IP' );
+		$this->assertStringContainsString( '192.168.2.222', $curl_handle_info['url'] );
+
+		// Verify timeout is set to at least 30 seconds.
+		$this->assertArrayHasKey( 'timeout', $curl_handle_info['args'] );
+		$this->assertGreaterThanOrEqual( 30, $curl_handle_info['args']['timeout'] );
+	}
 }

@@ -34,6 +34,9 @@ class WP_MCP_AI_HTTP_Helper {
 
 		// Register network interface binding for local AI providers.
 		self::register_network_interface_binding();
+
+		// Register connection timeout handler for local AI providers.
+		self::register_connection_timeout_handler();
 	}
 
 	/**
@@ -416,5 +419,51 @@ class WP_MCP_AI_HTTP_Helper {
 	 */
 	public static function register_network_interface_binding() {
 		add_filter( 'http_api_curl', array( __CLASS__, 'apply_network_interface_binding' ), 10, 3 );
+	}
+
+	/**
+	 * Set connection timeout for cURL requests to local AI providers.
+	 *
+	 * WordPress uses cURL for HTTP requests, which has two separate timeout settings:
+	 * - CURLOPT_TIMEOUT: Overall request timeout (set via 'timeout' arg)
+	 * - CURLOPT_CONNECTTIMEOUT: Connection establishment timeout (defaults to 10s)
+	 *
+	 * For local AI providers on private networks (e.g., 192.168.2.222:11434), the
+	 * connection phase can take longer than 10 seconds due to network latency,
+	 * routing, or firewall rules. This causes "cURL error 28: Timeout was reached"
+	 * even when the overall timeout is set to 120 seconds.
+	 *
+	 * This filter sets CURLOPT_CONNECTTIMEOUT to match the overall timeout for
+	 * loopback and private network addresses, preventing premature connection failures.
+	 *
+	 * @param resource $handle The cURL handle.
+	 * @param array    $parsed_args The HTTP request arguments.
+	 * @param string   $url The request URL.
+	 * @return resource The modified cURL handle.
+	 */
+	public static function set_connection_timeout( $handle, $parsed_args, $url ) {
+		$parsed_url = wp_parse_url( $url );
+
+		// Only apply extended connection timeout for loopback/private network addresses.
+		if ( ! empty( $parsed_url['host'] ) && self::is_loopback_address( $parsed_url['host'] ) ) {
+			// Get the overall timeout from request args.
+			$timeout = isset( $parsed_args['timeout'] ) ? absint( $parsed_args['timeout'] ) : 30;
+
+			// Set connection timeout to match overall timeout.
+			// This prevents connection phase from timing out prematurely.
+			curl_setopt( $handle, CURLOPT_CONNECTTIMEOUT, $timeout );
+		}
+
+		return $handle;
+	}
+
+	/**
+	 * Register connection timeout handler.
+	 *
+	 * This should be called during plugin initialization to enable
+	 * extended connection timeouts for local AI providers.
+	 */
+	public static function register_connection_timeout_handler() {
+		add_filter( 'http_api_curl', array( __CLASS__, 'set_connection_timeout' ), 10, 3 );
 	}
 }
