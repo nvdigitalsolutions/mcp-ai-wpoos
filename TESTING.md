@@ -4,16 +4,27 @@ This document describes how to set up and run tests for the WP Open Operator Sys
 
 ## Overview
 
-The plugin includes a comprehensive PHPUnit test suite with 100+ tests covering:
-- REST API endpoints
-- Tool implementations
-- Helper functions
-- Memory management
-- Security features
+The plugin includes comprehensive test suites:
+
+### PHP Tests (PHPUnit)
+- 100+ tests covering:
+  - REST API endpoints
+  - Tool implementations
+  - Helper functions
+  - Memory management
+  - Security features
+
+### JavaScript Tests (Jest)
+- Unit tests for JavaScript modules
+- DOM manipulation testing
+- Event handling tests
+- Storage and utility function tests
 
 ## Quick Start
 
-### Option 1: Using Composer (Recommended for Development)
+### PHP Testing
+
+#### Option 1: Using Composer (Recommended for Development)
 
 Install development dependencies including PHPUnit:
 
@@ -33,39 +44,33 @@ Run tests:
 composer run test
 ```
 
-### Option 2: Using Pre-packaged Dev Dependencies
+### JavaScript Testing
 
-If you don't have internet access or prefer to use a pre-packaged version of the development dependencies (~140 MB), you can use the vendor-dev.zip package.
-
-#### Creating the Package
-
-On a machine with composer and internet access:
+Install Node.js dependencies:
 
 ```bash
-./bin/package-vendor-dev.sh
+npm install
 ```
 
-This creates `vendor-dev.zip` containing:
-- PHPUnit test framework
-- PHP_CodeSniffer & WordPress Coding Standards
-- WordPress stubs for IDE support
-- Other development dependencies
-
-#### Using the Package
-
-Transfer `vendor-dev.zip` to your target environment and run:
+Run JavaScript tests:
 
 ```bash
-./bin/install-vendor-dev.sh
+npm test
 ```
 
-This extracts the development dependencies and makes them available for testing.
+Run with coverage:
+
+```bash
+npm run test:coverage
+```
 
 ## Running Tests
 
-### All Tests
+### PHP Tests
 
-Run the complete test suite:
+#### All PHP Tests
+
+Run the complete PHP test suite:
 
 ```bash
 composer run test
@@ -77,7 +82,7 @@ Or directly with PHPUnit:
 vendor/bin/phpunit
 ```
 
-### Specific Test File
+#### Specific Test File
 
 Run a specific test file:
 
@@ -85,7 +90,7 @@ Run a specific test file:
 vendor/bin/phpunit tests/test-assistant-tools.php
 ```
 
-### With Coverage
+#### With Coverage
 
 Generate code coverage report (requires Xdebug):
 
@@ -93,13 +98,63 @@ Generate code coverage report (requires Xdebug):
 vendor/bin/phpunit --coverage-html coverage/
 ```
 
+### JavaScript Tests
+
+#### All JavaScript Tests
+
+Run the complete JavaScript test suite:
+
+```bash
+npm test
+```
+
+#### Watch Mode
+
+Run tests in watch mode (automatically re-runs on file changes):
+
+```bash
+npm run test:watch
+```
+
+#### With Coverage
+
+Generate JavaScript coverage report:
+
+```bash
+npm run test:coverage
+```
+
+View the HTML coverage report:
+
+```bash
+open coverage/lcov-report/index.html
+```
+
+#### Specific Test File
+
+Run a specific test file:
+
+```bash
+npm test -- storage-util.test.js
+```
+
+#### Verbose Output
+
+Run tests with detailed output:
+
+```bash
+npm run test:verbose
+```
+
 ## Available Test Commands
+
+### PHP Testing Commands
 
 ```bash
 # Install WordPress test environment
 composer run test:install
 
-# Run all tests
+# Run all PHP tests
 composer run test
 
 # Run PHP linting
@@ -110,6 +165,28 @@ composer run lint:compat
 
 # Auto-fix code style issues
 composer run format
+```
+
+### JavaScript Testing Commands
+
+```bash
+# Run all JavaScript tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests with verbose output
+npm run test:verbose
+
+# Run JavaScript linting
+npm run lint:js
+
+# Auto-fix JavaScript linting issues
+npm run lint:js:fix
 ```
 
 ## Test Environment Setup
@@ -146,6 +223,8 @@ To customize, edit `bin/install-wp-tests.sh` or provide environment variables.
 
 ## Test Organization
 
+### PHP Tests
+
 ```
 tests/
 ├── test-*.php              # Component-specific tests
@@ -153,12 +232,26 @@ tests/
 ├── rest-api/              # REST API integration tests
 ├── helpers/               # Helper function tests
 ├── memory/                # Memory and caching tests
-└── crawler/               # Crawl4AI integration tests
+├── crawler/               # Crawl4AI integration tests
+└── js/                    # JavaScript tests (see below)
 ```
+
+### JavaScript Tests
+
+```
+tests/js/
+├── setup.js               # Jest setup and global mocks
+├── *.test.js              # Test files (one per module/feature)
+└── README.md              # JavaScript testing guide
+```
+
+See [tests/js/README.md](tests/js/README.md) for detailed JavaScript testing documentation.
 
 ## Writing Tests
 
-### Basic Test Structure
+### Writing PHP Tests
+
+#### Basic Test Structure
 
 ```php
 <?php
@@ -181,20 +274,58 @@ class Test_Feature extends WP_UnitTestCase {
 }
 ```
 
-### Test Naming Conventions
+#### Test Naming Conventions
 
+**PHP Tests:**
 - Test classes: `Test_Feature_Name`
 - Test methods: `test_what_it_does`
 - File names: `test-feature-name.php`
 
+**JavaScript Tests:**
+- Test files: `module-name.test.js`
+- Test suites: `describe( 'Module', () => {} )`
+- Test cases: `it( 'should do something', () => {} )`
+
+### Writing JavaScript Tests
+
+See [tests/js/README.md](tests/js/README.md) for comprehensive JavaScript testing guide, including:
+- Test structure and patterns
+- Available mocks (WordPress, jQuery, browser APIs)
+- Testing async code, DOM, events, and timers
+- Debugging and best practices
+
+Quick example:
+
+```javascript
+describe( 'MyModule', () => {
+    it( 'should perform expected behavior', () => {
+        // Arrange
+        const input = 'test';
+        
+        // Act
+        const result = myFunction( input );
+        
+        // Assert
+        expect( result ).toBe( 'expected' );
+    } );
+} );
+```
+
 ## Continuous Integration
 
 The plugin uses GitHub Actions to run tests automatically:
-- On every push to main/develop branches
+
+### PHP Tests
+- On every push to main branch
 - On every pull request
 - Tests against PHP 8.1 and MySQL 8.0
+- See `.github/workflows/phpunit.yml`
 
-See `.github/workflows/phpunit.yml` for CI configuration.
+### JavaScript Tests
+- On every push to main branch
+- On every pull request  
+- Tests against Node.js 18.x and 20.x
+- See `.github/workflows/javascript-tests.yml`
 
 ## Troubleshooting
 

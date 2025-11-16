@@ -38,3 +38,8 @@ opcache-reset.php
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html
+
+# JavaScript test coverage
+/coverage/
+/.nyc_output/
+*.lcov
