@@ -43,7 +43,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 			</span>
 		</div>
 		<?php if ( $total_tokens > 0 ) : ?>
-			<div class="wp-mcp-ai-cost-tokens" style="margin-top: 5px; font-size: 12px; color: #666;">
+			<div class="wp-mcp-ai-cost-tokens" style="margin-top: 5px; font-size: 12px; color: #fff;">
 				<?php
 				printf(
 					/* translators: %s: total tokens */
