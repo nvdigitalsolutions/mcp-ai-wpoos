@@ -160,11 +160,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return string
 		 */
 		private function get_active_subtab() {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter.
-			$subtab        = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : 'core';
 			$subtab_groups = $this->get_subtab_groups();
+			$subtab        = '';
 
-			if ( ! isset( $subtab_groups[ $subtab ] ) ) {
+			// Check POST data first (when form is being submitted), then fall back to GET.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) ) {
+				$subtab = sanitize_key( $_POST['subtab'] );
+			} elseif ( isset( $_GET['subtab'] ) ) {
+				$subtab = sanitize_key( $_GET['subtab'] );
+			}
+
+			// Default to 'core' if not set or invalid.
+			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
 				$subtab = 'core';
 			}
 
