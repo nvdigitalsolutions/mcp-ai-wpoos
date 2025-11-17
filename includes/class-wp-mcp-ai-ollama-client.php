@@ -265,12 +265,21 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
+			// Determine finish_reason based on Ollama response.
+			// If 'done' is explicitly true, use 'stop'.
+			// If 'done' is false or missing but we have content, still use 'stop' to avoid
+			// showing "response ended prematurely" error when content is actually present.
+			// Only use 'length' if we have no content and done is false/missing.
+			$has_content   = '' !== trim( $content );
+			$is_done       = isset( $response['done'] ) && $response['done'];
+			$finish_reason = ( $is_done || $has_content ) ? 'stop' : 'length';
+
 			$normalized = array(
 				'choices'  => array(
 					array(
 						'index'         => 0,
 						'message'       => $message,
-						'finish_reason' => isset( $response['done'] ) && $response['done'] ? 'stop' : 'length',
+						'finish_reason' => $finish_reason,
 					),
 				),
 				'provider' => 'ollama',

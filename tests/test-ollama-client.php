@@ -546,4 +546,170 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'timeout', $curl_handle_info['args'] );
 		$this->assertGreaterThanOrEqual( 30, $curl_handle_info['args']['timeout'] );
 	}
+
+	/**
+	 * Test that finish_reason is 'stop' when done=true.
+	 *
+	 * @group finish-reason
+	 */
+	public function test_finish_reason_stop_when_done_true() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'llama2',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Test response',
+						),
+						'done'    => true,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+		$this->assertArrayHasKey( 'finish_reason', $response['choices'][0] );
+		$this->assertSame( 'stop', $response['choices'][0]['finish_reason'] );
+	}
+
+	/**
+	 * Test that finish_reason is 'stop' when done is missing but content exists.
+	 *
+	 * This tests the fix for the "response ended prematurely" error.
+	 *
+	 * @group finish-reason
+	 */
+	public function test_finish_reason_stop_when_done_missing_with_content() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'llama2',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => 'Valid response content',
+						),
+						// 'done' field is missing, but we have valid content.
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+		$this->assertArrayHasKey( 'finish_reason', $response['choices'][0] );
+		// Should be 'stop' because we have content, even though 'done' is missing.
+		$this->assertSame( 'stop', $response['choices'][0]['finish_reason'] );
+	}
+
+	/**
+	 * Test that finish_reason is 'length' when done=false and no content.
+	 *
+	 * @group finish-reason
+	 */
+	public function test_finish_reason_length_when_no_content() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'   => 'llama2',
+						'message' => array(
+							'role'    => 'assistant',
+							'content' => '', // Empty content.
+						),
+						'done'    => false,
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+		$this->assertArrayHasKey( 'finish_reason', $response['choices'][0] );
+		// Should be 'length' because we have no content and done=false.
+		$this->assertSame( 'length', $response['choices'][0]['finish_reason'] );
+	}
 }
