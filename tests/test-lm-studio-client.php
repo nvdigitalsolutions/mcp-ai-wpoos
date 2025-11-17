@@ -143,6 +143,72 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test wp_mcp_ai_lm_studio_fallback_model filter.
+	 */
+	public function test_lm_studio_fallback_model_filter() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'default_model' => 'gpt-4o',
+			)
+		);
+
+		// Add filter to customize fallback model.
+		add_filter(
+			'wp_mcp_ai_lm_studio_fallback_model',
+			function ( $fallback_model, $options ) {
+				return 'custom-fallback-model';
+			},
+			10,
+			2
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'resolve_model' );
+		$method->setAccessible( true );
+
+		$model = $method->invoke( $this->client, array() );
+		$this->assertEquals( 'custom-fallback-model', $model, 'Filter should allow customizing fallback model' );
+
+		// Clean up filter.
+		remove_all_filters( 'wp_mcp_ai_lm_studio_fallback_model' );
+	}
+
+	/**
+	 * Test wp_mcp_ai_lm_studio_fallback_model filter can disable fallback.
+	 */
+	public function test_lm_studio_fallback_model_filter_can_disable() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'default_model' => 'gpt-4o',
+			)
+		);
+
+		// Add filter to disable fallback by returning empty string.
+		add_filter(
+			'wp_mcp_ai_lm_studio_fallback_model',
+			function ( $fallback_model, $options ) {
+				return '';
+			},
+			10,
+			2
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'resolve_model' );
+		$method->setAccessible( true );
+
+		$model = $method->invoke( $this->client, array() );
+		$this->assertEmpty( $model, 'Filter should allow disabling fallback by returning empty string' );
+
+		// Clean up filter.
+		remove_all_filters( 'wp_mcp_ai_lm_studio_fallback_model' );
+	}
+
+	/**
 	 * Test test_connection with no endpoint configured.
 	 */
 	public function test_connection_with_no_endpoint() {

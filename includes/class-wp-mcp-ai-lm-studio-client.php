@@ -334,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		 * the same model resolution pattern as OpenAI:
 		 * 1. Use model from request options if provided
 		 * 2. Fall back to LM Studio-specific model setting
-		 * 3. Fall back to default_model setting (OpenAI-compatible behavior)
+		 * 3. Fall back to filtered fallback model (defaults to default_model setting)
 		 *
 		 * @param array $options Request options.
 		 * @return string
@@ -351,9 +351,25 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// Fall back to default_model for OpenAI-compatible behavior.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-			if ( ! empty( $settings['default_model'] ) ) {
-				return sanitize_text_field( $settings['default_model'] );
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
+			$fallback_model = ! empty( $settings['default_model'] ) ? $settings['default_model'] : '';
+
+			/**
+			 * Filter the fallback model for LM Studio when no model is configured.
+			 *
+			 * Allows customization of which model LM Studio should use when neither
+			 * the request options nor the lm_studio_model setting specify a model.
+			 * Defaults to the default_model setting for OpenAI compatibility.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $fallback_model The fallback model identifier. Default is default_model setting.
+			 * @param array  $options        Request options.
+			 */
+			$fallback_model = apply_filters( 'wp_mcp_ai_lm_studio_fallback_model', $fallback_model, $options );
+
+			if ( ! empty( $fallback_model ) ) {
+				return sanitize_text_field( $fallback_model );
 			}
 
 			return '';
