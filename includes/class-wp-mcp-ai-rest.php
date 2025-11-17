@@ -2140,8 +2140,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Store original tool result for frontend.
 					$tool_result_messages[] = $full_tool_message;
 
+					// Get the tool instance for interface-based sanitization.
+					$tool_instance    = null;
+					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates  = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug        = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+						$tool_instance = $this->registry->get_tool( $tool_slug );
+					}
+
 					// Create a sanitized version for the LLM (strip large content fields).
-					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
 
 					$tool_message = array(
 						'role'    => 'tool',
@@ -2520,8 +2529,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 					$tool_result_messages[] = $full_tool_message;
 
+					// Get the tool instance for interface-based sanitization.
+					$tool_instance    = null;
+					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates  = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug        = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
+						$tool_instance = $this->registry->get_tool( $tool_slug );
+					}
+
 					// Create sanitized version for LLM.
-					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config );
+					$sanitized_result = $this->validator->sanitize_tool_result_for_llm( $tool_result, $tool_name, $assistant_config, $tool_instance );
 
 					$tool_message = array(
 						'role'    => 'tool',

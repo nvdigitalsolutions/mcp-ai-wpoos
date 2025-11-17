@@ -751,12 +751,18 @@ class WP_MCP_AI_REST_Validator {
 	 * Ensures the result is in the correct format and doesn't contain
 	 * sensitive information that shouldn't be sent to the LLM.
 	 *
-	 * @param mixed  $result           The tool result to sanitize.
-	 * @param string $tool_name        The name of the tool.
-	 * @param array  $assistant_config Assistant configuration.
+	 * @param mixed                         $result           The tool result to sanitize.
+	 * @param string                        $tool_name        The name of the tool.
+	 * @param array                         $assistant_config Assistant configuration.
+	 * @param WP_MCP_AI_Tool_Interface|null $tool_instance    Optional tool instance for interface-based sanitization.
 	 * @return mixed Sanitized result.
 	 */
-	public function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array() ) {
+	public function sanitize_tool_result_for_llm( $result, $tool_name = '', $assistant_config = array(), $tool_instance = null ) {
+		// If tool implements custom sanitization interface, use it first.
+		if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
+			$result = $tool_instance->sanitize_for_llm( $result );
+		}
+
 		// Allow filtering of tool results before sending to LLM.
 		$result = apply_filters( 'wp_mcp_ai_sanitize_tool_result_llm', $result, $tool_name, $assistant_config );
 
