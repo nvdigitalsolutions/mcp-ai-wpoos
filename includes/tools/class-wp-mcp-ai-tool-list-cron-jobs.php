@@ -57,6 +57,13 @@ class WP_MCP_AI_Tool_List_Cron_Jobs implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// Check if cron orchestration is enabled.
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Budget_Enforcement_Service' ) ) {
+			if ( ! WP_MCP_AI_Orchestration_Budget_Enforcement_Service::is_cron_orchestration_enabled() ) {
+				return new WP_Error( 'wp_mcp_ai_cron_disabled', __( 'Cron-based task orchestration is currently disabled. Enable it in Settings → Orchestration Layer → Settings.', 'wp-mcp-ai' ) );
+			}
+		}
+
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
