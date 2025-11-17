@@ -52,6 +52,7 @@ class Test_AJAX_Handlers_Registered extends WP_UnitTestCase {
 		'wp_ajax_wp_mcp_ai_get_performance_metrics',
 		'wp_ajax_wp_mcp_ai_export_test_results',
 		'wp_ajax_wp_mcp_ai_dismiss_price_notice',
+		'wp_ajax_wp_mcp_ai_sync_models_to_cct',
 	);
 
 	/**

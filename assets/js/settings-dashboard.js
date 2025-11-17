@@ -20,6 +20,7 @@
 			this.initSliders();
 			this.initPresets();
 			this.initMeshPeers();
+			this.initSyncModels();
 		},
 
 		/**
@@ -692,6 +693,78 @@
 			// Remove peer site (delegated event)
 			$meshPeers.on('click', '.wp-mcp-ai-remove-peer', function() {
 				$(this).closest('tr').remove();
+			});
+		},
+
+		/**
+		 * Initialize sync models to CCT functionality.
+		 */
+		initSyncModels: function() {
+			const self = this;
+			const $syncButton = $('.wp-mcp-ai-sync-models');
+
+			if ($syncButton.length === 0) {
+				return;
+			}
+
+			$syncButton.on('click', function(e) {
+				e.preventDefault();
+				self.handleSyncModels($(this));
+			});
+		},
+
+		/**
+		 * Handle sync models to CCT.
+		 *
+		 * @param {jQuery} $button The sync button element.
+		 */
+		handleSyncModels: function($button) {
+			const self = this;
+			const nonce = $button.data('nonce');
+
+			if (!nonce) {
+				self.showNotice('Security nonce is missing. Please refresh the page and try again.', 'error');
+				return;
+			}
+
+			// Confirm before syncing
+			if (!confirm('This will clear existing CCT data and re-sync all models from internal logic. Continue?')) {
+				return;
+			}
+
+			// Disable button and add spinning icon
+			$button.prop('disabled', true).find('.dashicons').addClass('dashicons-update-spin');
+			$button.find('.dashicons').removeClass('dashicons-update');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiDashboard.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_sync_models_to_cct',
+					nonce: nonce
+				}
+			}, {
+				success: function(response) {
+					if (response.success) {
+						self.showNotice(response.data.message || 'Models synced successfully!', 'success');
+						// Reload page after 1.5 seconds to show updated stats
+						setTimeout(function() {
+							window.location.reload();
+						}, 1500);
+					} else {
+						self.showNotice(response.data.message || 'Failed to sync models.', 'error');
+						$button.prop('disabled', false);
+						$button.find('.dashicons').removeClass('dashicons-update-spin');
+						$button.find('.dashicons').addClass('dashicons-update');
+					}
+				},
+				error: function(error) {
+					self.showNotice(error.userMessage || 'An error occurred while syncing models.', 'error');
+					$button.prop('disabled', false);
+					$button.find('.dashicons').removeClass('dashicons-update-spin');
+					$button.find('.dashicons').addClass('dashicons-update');
+				}
 			});
 		},
 
