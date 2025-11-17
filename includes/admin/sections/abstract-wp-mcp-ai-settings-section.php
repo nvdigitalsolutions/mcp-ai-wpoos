@@ -127,9 +127,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			
 			// Only consider this a form submit if the submitted subtab matches the active subtab
 			// AND the submitted subtab actually exists in this section's subtab groups.
-			// This prevents cross-tab checkbox clearing when $_POST['subtab'] from a different
-			// section leaks into this section's sanitization.
-			$is_form_submit   = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
+			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
+			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
+
+			// If this is not the subtab being submitted, return empty array to avoid
+			// processing fields from inactive subtabs and preserve their existing values.
+			if ( ! $is_form_submit ) {
+				return array();
+			}
 
 			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
 		}
@@ -175,8 +180,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				switch ( $type ) {
 					case 'text':
 					case 'password':
-					case 'url':
 						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+
+					case 'url':
+						// Keep empty strings, only sanitize non-empty values with proper URL function.
+						$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
 						break;
 
 					case 'textarea':
@@ -188,7 +197,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					case 'number':
-						$sanitized[ $key ] = absint( $value );
+						// Keep empty strings for "use default" functionality (e.g., filter fields).
+						$sanitized[ $key ] = '' === $value ? '' : absint( $value );
 						break;
 
 					case 'range':
