@@ -119,6 +119,7 @@ Everything except the endpoint URL default:
 - ✅ Comprehensive tests
 - ✅ Token tracking
 - ✅ Cost calculations (zero cost)
+- ✅ Function calling / Tools support (as of latest update)
 
 ## Changes Made
 
