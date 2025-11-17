@@ -20,12 +20,16 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-servic
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-file-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-preset-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-health-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-orchestration-budget-enforcement-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-error-tracking-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cost-tracking-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-budget-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-reporting-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
+
+// Initialize orchestration budget enforcement (applies settings via filters).
+WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
 
 // Load performance monitor service only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
