@@ -98,6 +98,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'description'    => __( 'Records errors, warnings, and key activity (tool executions, API requests) to help troubleshoot issues. View logs in the Advanced tab.', 'wp-mcp-ai' ),
 					'default'        => false,
 				),
+				'enable_extended_logging'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Extended Logging', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'wp-mcp-ai' ),
+					'description'    => __( 'Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'enable_agentic_loop_logging'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Agentic Loop Logging', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable detailed logging for agentic loop iterations and tool calls', 'wp-mcp-ai' ),
+					'description'    => __( 'Logs each iteration of the agentic loop, including tool calls, tool results, and iteration timing. Useful for debugging assistant behavior and tool execution flow.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'enable_api_logging'                    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'API Request/Response Logging', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable logging for AI provider API requests and responses', 'wp-mcp-ai' ),
+					'description'    => __( 'Logs API requests to OpenAI, Anthropic, Gemini, LM Studio and their responses. Helps debug API connectivity and response issues.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'enable_tool_execution_logging'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Tool Execution Logging', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable detailed logging for individual tool executions', 'wp-mcp-ai' ),
+					'description'    => __( 'Logs each tool execution with arguments and results. Useful for debugging tool behavior and data flow.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'enable_chat_interaction_logging'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Chat Interaction Logging', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable logging for chat requests and responses', 'wp-mcp-ai' ),
+					'description'    => __( 'Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
 				'delete_on_uninstall'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Delete Data on Uninstall', 'wp-mcp-ai' ),
@@ -220,7 +255,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'id'     => 'data',
 					'label'  => __( 'Data Management', 'wp-mcp-ai' ),
 					'icon'   => 'dashicons-database',
-					'fields' => array( 'enable_logging', 'delete_on_uninstall' ),
+					'fields' => array(
+						'enable_logging',
+						'enable_extended_logging',
+						'enable_agentic_loop_logging',
+						'enable_api_logging',
+						'enable_tool_execution_logging',
+						'enable_chat_interaction_logging',
+						'delete_on_uninstall',
+					),
 				),
 				'custom_filters' => array(
 					'id'          => 'custom_filters',
@@ -323,6 +366,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						$this->render_field( $key, $fields[ $key ] );
 					}
 				}
+			}
+
+			// Render logging table if we're on the data management sub-tab.
+			if ( 'data' === $active_subtab ) {
+				echo '</table>'; // Close the form table.
+				$this->render_logging_table();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
 			}
 		}
 
@@ -428,6 +478,121 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		</div>
 			<?php
 		}
+
+		/**
+		 * Render the logging table if logging is enabled.
+		 */
+		private function render_logging_table() {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Only show the logging table if logging is enabled.
+			if ( empty( $settings['enable_logging'] ) ) {
+				return;
+			}
+
+			$entries = WP_MCP_AI_Logger::get_recent_error_messages();
+			?>
+			<div class="wp-mcp-ai-error-log-section" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Recent Error & Activity Log', 'wp-mcp-ai' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
+				<?php if ( empty( $entries ) ) : ?>
+					<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
+				<?php else : ?>
+					<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
+						<?php
+						foreach ( $entries as $entry ) :
+							$timestamp = '';
+
+							if ( ! empty( $entry['timestamp'] ) ) {
+								$timestamp = get_date_from_gmt(
+									$entry['timestamp'],
+									get_option( 'date_format' ) . ' ' . get_option( 'time_format' )
+								);
+							}
+
+							$type_label    = strtoupper( $entry['type'] );
+							$message_label = $entry['message'];
+							$context_label = '';
+
+							if ( isset( $entry['context'] ) && ! empty( $entry['context'] ) ) {
+								$options = 0;
+
+								if ( defined( 'JSON_PRETTY_PRINT' ) ) {
+									$options |= JSON_PRETTY_PRINT;
+								}
+
+								if ( defined( 'JSON_UNESCAPED_SLASHES' ) ) {
+									$options |= JSON_UNESCAPED_SLASHES;
+								}
+
+								$context_json = wp_json_encode( $entry['context'], $options );
+
+								if ( false !== $context_json ) {
+									$context_label = $context_json;
+								}
+							}
+							?>
+							<li style="background: #f9f9f9; padding: 15px; margin-bottom: 10px; border-left: 3px solid #dc3232; border-radius: 3px;">
+								<?php if ( ! empty( $timestamp ) ) : ?>
+									<span class="wp-mcp-ai-log-preview__time" style="color: #666; font-size: 0.9em;"><?php echo esc_html( $timestamp ); ?></span>
+									&mdash;
+								<?php endif; ?>
+								<span class="wp-mcp-ai-log-preview__type" style="font-weight: bold; color: #dc3232;"><?php echo esc_html( $type_label ); ?></span>:
+								<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
+								<?php if ( '' !== $context_label ) : ?>
+									<details class="wp-mcp-ai-log-preview__context" style="margin-top: 10px;">
+										<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'wp-mcp-ai' ); ?></summary>
+										<pre style="background: #fff; padding: 10px; margin-top: 10px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em;"><?php echo esc_html( $context_label ); ?></pre>
+									</details>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php endif; ?>
+				<?php
+				$log_file_path    = WP_MCP_AI_Logger::get_log_file_path();
+				$log_file_exists  = WP_MCP_AI_Logger::does_log_file_exist();
+				$log_file_size    = WP_MCP_AI_Logger::get_log_file_size();
+				$log_size_display = '';
+
+				if ( null !== $log_file_size ) {
+					$log_size_display = function_exists( 'size_format' )
+					? size_format( $log_file_size, 2 )
+					: $log_file_size . ' bytes';
+				}
+				?>
+				<div class="wp-mcp-ai-log-meta" style="margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 3px;">
+					<?php if ( '' !== $log_file_path ) : ?>
+						<p class="description">
+							<?php
+							if ( $log_file_exists ) {
+								if ( '' === $log_size_display ) {
+									$log_size_display = __( 'Unknown size', 'wp-mcp-ai' );
+								}
+
+								printf(
+									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
+									esc_html__( 'PHP error log: %1$s (%2$s).', 'wp-mcp-ai' ),
+									'<code>' . esc_html( $log_file_path ) . '</code>',
+									esc_html( $log_size_display )
+								);
+							} else {
+								printf(
+									/* translators: %s: Path to the PHP error log. */
+									esc_html__( 'PHP error log: %s (not created yet).', 'wp-mcp-ai' ),
+									'<code>' . esc_html( $log_file_path ) . '</code>'
+								);
+							}
+							?>
+						</p>
+					<?php else : ?>
+						<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
+					<?php endif; ?>
+				</div>
+			</div>
+			<?php
+		}
+
 		/**
 		 * Sanitize section input.
 		 *
