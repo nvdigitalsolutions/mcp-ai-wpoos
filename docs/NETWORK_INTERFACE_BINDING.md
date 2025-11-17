@@ -206,6 +206,8 @@ Potential improvements for future versions:
 
 ## Related Documentation
 
+- [Cloudflare Tunnel Setup](cloudflare-tunnel-setup.md) - Secure alternative for remote access to local AI services
+- [LM Studio Setup Guide](lm-studio-setup.md) - Complete LM Studio configuration
 - [Ollama Documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - [LM Studio Documentation](https://lmstudio.ai/docs)
 - [cURL CURLOPT_INTERFACE](https://curl.se/libcurl/c/CURLOPT_INTERFACE.html)
