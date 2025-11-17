@@ -1851,5 +1851,66 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			)
 		);
 	}
+
+	/**
+	 * Handle AJAX request to save model configuration.
+	 *
+	 * Follows SoC: delegates data operations to WP_MCP_AI_Model_Config.
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_save_model_config() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_admin', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions.', 'wp-mcp-ai' ) );
+		}
+
+		// Get model ID.
+		$model = isset( $_POST['model'] ) ? sanitize_text_field( wp_unslash( $_POST['model'] ) ) : '';
+
+		if ( empty( $model ) ) {
+			wp_send_json_error( __( 'Model ID is required.', 'wp-mcp-ai' ) );
+		}
+
+		// Get config data.
+		$config = isset( $_POST['config'] ) ? (array) wp_unslash( $_POST['config'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( empty( $config ) ) {
+			wp_send_json_error( __( 'Configuration data is required.', 'wp-mcp-ai' ) );
+		}
+
+		// Load model config class if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
+		}
+
+		// Get existing config to merge.
+		$existing_config = WP_MCP_AI_Model_Config::get_model_config( $model );
+
+		if ( ! $existing_config ) {
+			$existing_config = array();
+		}
+
+		// Merge with incoming changes.
+		$updated_config = array_merge( $existing_config, $config );
+
+		// Delegate save operation to model config class (SoC).
+		$result = WP_MCP_AI_Model_Config::set_model_config( $model, $updated_config );
+
+		if ( $result ) {
+			wp_send_json_success(
+				array(
+					'message' => __( 'Model configuration saved successfully.', 'wp-mcp-ai' ),
+					'model'   => $model,
+					'config'  => $updated_config,
+				)
+			);
+		} else {
+			wp_send_json_error( __( 'Failed to save model configuration.', 'wp-mcp-ai' ) );
+		}
+	}
 	}
 }

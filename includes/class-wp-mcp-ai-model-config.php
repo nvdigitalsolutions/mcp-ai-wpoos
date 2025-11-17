@@ -1,0 +1,539 @@
+<?php
+/**
+ * Manages per-model configuration and settings.
+ *
+ * This class stores model configuration primarily in WordPress options
+ * with optional JetEngine CCT backup for enhanced queryability.
+ *
+ * @package WP_MCP_AI
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Manages model configurations for the orchestration layer.
+ *
+ * Stores:
+ * - Rate limits (TPM, RPM, TPD, RPD)
+ * - Context window sizes
+ * - Fallback models
+ * - Provider settings
+ * - Cost per token
+ * - Status (active/disabled)
+ */
+class WP_MCP_AI_Model_Config {
+
+	/**
+	 * Option name for storing model configurations.
+	 */
+	const CONFIGS_OPTION = 'wp_mcp_ai_model_configs';
+
+	/**
+	 * CCT slug for JetEngine integration.
+	 */
+	const CCT_SLUG = 'ai_model_configs';
+
+	/**
+	 * Cache group for model configs.
+	 */
+	const CACHE_GROUP = 'wp_mcp_ai_model_configs';
+
+	/**
+	 * Initialize the model config system.
+	 */
+	public static function init() {
+		// Sync to CCT when JetEngine is available.
+		add_action( 'wp_mcp_ai_model_config_updated', array( __CLASS__, 'sync_to_cct' ), 10, 2 );
+	}
+
+	/**
+	 * Get all model configurations.
+	 *
+	 * @return array Array of model configurations keyed by model identifier.
+	 */
+	public static function get_all_configs() {
+		// Try cache first.
+		$configs = wp_cache_get( 'all_configs', self::CACHE_GROUP );
+
+		if ( false !== $configs ) {
+			return $configs;
+		}
+
+		// Get from options (primary storage).
+		$configs = get_option( self::CONFIGS_OPTION, array() );
+
+		if ( ! is_array( $configs ) ) {
+			$configs = array();
+		}
+
+		// Merge with defaults for known models.
+		$configs = self::merge_with_defaults( $configs );
+
+		/**
+		 * Filter all model configurations.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $configs Model configurations.
+		 */
+		$configs = apply_filters( 'wp_mcp_ai_all_model_configs', $configs );
+
+		// Cache for 5 minutes.
+		wp_cache_set( 'all_configs', $configs, self::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+
+		return $configs;
+	}
+
+	/**
+	 * Get configuration for a specific model.
+	 *
+	 * @param string $model Model identifier.
+	 * @return array|null Model configuration or null if not found.
+	 */
+	public static function get_model_config( $model ) {
+		$model = sanitize_text_field( $model );
+
+		if ( empty( $model ) ) {
+			return null;
+		}
+
+		// Try cache first.
+		$cache_key = 'model_' . md5( $model );
+		$config    = wp_cache_get( $cache_key, self::CACHE_GROUP );
+
+		if ( false !== $config ) {
+			return $config;
+		}
+
+		$all_configs = self::get_all_configs();
+
+		// Exact match first.
+		if ( isset( $all_configs[ $model ] ) ) {
+			$config = $all_configs[ $model ];
+			wp_cache_set( $cache_key, $config, self::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			return $config;
+		}
+
+		// Try prefix match for model families (longest match wins).
+		$best_match        = null;
+		$best_match_length = 0;
+
+		foreach ( $all_configs as $model_key => $model_config ) {
+			if ( 0 === strpos( $model, $model_key ) ) {
+				$match_length = strlen( $model_key );
+				if ( $match_length > $best_match_length ) {
+					$best_match        = $model_config;
+					$best_match_length = $match_length;
+				}
+			}
+		}
+
+		if ( $best_match ) {
+			wp_cache_set( $cache_key, $best_match, self::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			return $best_match;
+		}
+
+		// Fallback to CCT if available.
+		if ( class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			$cct_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model, false );
+			if ( $cct_data ) {
+				$config = self::convert_cct_to_config( $cct_data );
+				wp_cache_set( $cache_key, $config, self::CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+				return $config;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Set configuration for a specific model.
+	 *
+	 * @param string $model  Model identifier.
+	 * @param array  $config Configuration array.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function set_model_config( $model, $config ) {
+		$model = sanitize_text_field( $model );
+
+		if ( empty( $model ) || ! is_array( $config ) ) {
+			return false;
+		}
+
+		// Get all configs.
+		$all_configs = get_option( self::CONFIGS_OPTION, array() );
+
+		if ( ! is_array( $all_configs ) ) {
+			$all_configs = array();
+		}
+
+		// Sanitize config.
+		$config = self::sanitize_config( $config );
+
+		// Update config.
+		$all_configs[ $model ] = $config;
+
+		// Save to options (primary storage).
+		$result = update_option( self::CONFIGS_OPTION, $all_configs, false );
+
+		if ( $result ) {
+			// Clear cache.
+			wp_cache_delete( 'all_configs', self::CACHE_GROUP );
+			wp_cache_delete( 'model_' . md5( $model ), self::CACHE_GROUP );
+
+			/**
+			 * Fires after a model configuration is updated.
+			 *
+			 * @since 1.0.0
+			 *
+			 * @param string $model  Model identifier.
+			 * @param array  $config Model configuration.
+			 */
+			do_action( 'wp_mcp_ai_model_config_updated', $model, $config );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Delete configuration for a specific model.
+	 *
+	 * @param string $model Model identifier.
+	 * @return bool True on success, false on failure.
+	 */
+	public static function delete_model_config( $model ) {
+		$model = sanitize_text_field( $model );
+
+		if ( empty( $model ) ) {
+			return false;
+		}
+
+		$all_configs = get_option( self::CONFIGS_OPTION, array() );
+
+		if ( ! is_array( $all_configs ) || ! isset( $all_configs[ $model ] ) ) {
+			return false;
+		}
+
+		unset( $all_configs[ $model ] );
+
+		$result = update_option( self::CONFIGS_OPTION, $all_configs, false );
+
+		if ( $result ) {
+			// Clear cache.
+			wp_cache_delete( 'all_configs', self::CACHE_GROUP );
+			wp_cache_delete( 'model_' . md5( $model ), self::CACHE_GROUP );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Sync model configuration to JetEngine CCT (if available).
+	 *
+	 * @param string $model  Model identifier.
+	 * @param array  $config Model configuration.
+	 */
+	public static function sync_to_cct( $model, $config ) {
+		// Only sync if JetEngine and the model rate limits CCT are available.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			return;
+		}
+
+		// This is a future enhancement - for now, we rely on the existing CCT structure.
+		// The Model_Rate_Limits_CCT class already handles rate limits.
+		// This method is a placeholder for future bidirectional sync.
+	}
+
+	/**
+	 * Get default configurations for known models.
+	 *
+	 * @return array Default model configurations.
+	 */
+	protected static function get_default_configs() {
+		return array(
+			// OpenAI Models.
+			'o1-2024-12-17'  => array(
+				'name'           => 'o1 (Dec 2024)',
+				'provider'       => 'openai',
+				'tpm'            => 30000,
+				'rpm'            => 500,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 200000,
+				'fallback_model' => 'o1-mini',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			'o1-preview'     => array(
+				'name'           => 'o1 Preview',
+				'provider'       => 'openai',
+				'tpm'            => 30000,
+				'rpm'            => 500,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'o1-mini',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+			'o1-mini'        => array(
+				'name'           => 'o1 Mini',
+				'provider'       => 'openai',
+				'tpm'            => 80000,
+				'rpm'            => 800,
+				'tpd'            => 5000000,
+				'rpd'            => 20000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-mini',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+			'gpt-4o'         => array(
+				'name'           => 'GPT-4o',
+				'provider'       => 'openai',
+				'tpm'            => 30000,
+				'rpm'            => 500,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4o-mini',
+				'cost_per_1k'    => 0.005,
+				'status'         => 'active',
+			),
+			'gpt-4o-mini'    => array(
+				'name'           => 'GPT-4o Mini',
+				'provider'       => 'openai',
+				'tpm'            => 200000,
+				'rpm'            => 500,
+				'tpd'            => 10000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-3.5-turbo',
+				'cost_per_1k'    => 0.00015,
+				'status'         => 'active',
+			),
+			'gpt-4-turbo'    => array(
+				'name'           => 'GPT-4 Turbo',
+				'provider'       => 'openai',
+				'tpm'            => 30000,
+				'rpm'            => 500,
+				'tpd'            => 2000000,
+				'rpd'            => 10000,
+				'context_window' => 128000,
+				'fallback_model' => 'gpt-4',
+				'cost_per_1k'    => 0.01,
+				'status'         => 'active',
+			),
+			'gpt-3.5-turbo'  => array(
+				'name'           => 'GPT-3.5 Turbo',
+				'provider'       => 'openai',
+				'tpm'            => 60000,
+				'rpm'            => 3500,
+				'tpd'            => 5000000,
+				'rpd'            => 10000,
+				'context_window' => 16385,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0005,
+				'status'         => 'active',
+			),
+
+			// Anthropic Models.
+			'claude-3-5-sonnet-20241022' => array(
+				'name'           => 'Claude 3.5 Sonnet',
+				'provider'       => 'anthropic',
+				'tpm'            => 80000,
+				'rpm'            => 1000,
+				'tpd'            => 5000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-3-5-haiku-20241022',
+				'cost_per_1k'    => 0.003,
+				'status'         => 'active',
+			),
+			'claude-3-5-haiku-20241022' => array(
+				'name'           => 'Claude 3.5 Haiku',
+				'provider'       => 'anthropic',
+				'tpm'            => 100000,
+				'rpm'            => 2000,
+				'tpd'            => 8000000,
+				'rpd'            => 100000,
+				'context_window' => 200000,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.001,
+				'status'         => 'active',
+			),
+			'claude-3-opus-20240229' => array(
+				'name'           => 'Claude 3 Opus',
+				'provider'       => 'anthropic',
+				'tpm'            => 40000,
+				'rpm'            => 1000,
+				'tpd'            => 3000000,
+				'rpd'            => 50000,
+				'context_window' => 200000,
+				'fallback_model' => 'claude-3-5-sonnet-20241022',
+				'cost_per_1k'    => 0.015,
+				'status'         => 'active',
+			),
+
+			// Google Gemini Models.
+			'gemini-2.5-flash' => array(
+				'name'           => 'Gemini 2.5 Flash',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 1000000,
+				'fallback_model' => 'gemini-1.5-flash',
+				'cost_per_1k'    => 0.0001,
+				'status'         => 'active',
+			),
+			'gemini-exp-1206' => array(
+				'name'           => 'Gemini Exp 1206',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 50,
+				'context_window' => 2000000,
+				'fallback_model' => 'gemini-2.5-flash',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'gemini-1.5-pro' => array(
+				'name'           => 'Gemini 1.5 Pro',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 360,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 2000000,
+				'fallback_model' => 'gemini-1.5-flash',
+				'cost_per_1k'    => 0.00125,
+				'status'         => 'active',
+			),
+			'gemini-1.5-flash' => array(
+				'name'           => 'Gemini 1.5 Flash',
+				'provider'       => 'gemini',
+				'tpm'            => 1000000,
+				'rpm'            => 2000,
+				'tpd'            => 50000000,
+				'rpd'            => 1500,
+				'context_window' => 1000000,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.000075,
+				'status'         => 'active',
+			),
+		);
+	}
+
+	/**
+	 * Merge user configs with defaults.
+	 *
+	 * @param array $user_configs User-defined configurations.
+	 * @return array Merged configurations.
+	 */
+	protected static function merge_with_defaults( $user_configs ) {
+		$defaults = self::get_default_configs();
+
+		// Merge: user configs override defaults.
+		foreach ( $defaults as $model => $default_config ) {
+			if ( ! isset( $user_configs[ $model ] ) ) {
+				$user_configs[ $model ] = $default_config;
+			} else {
+				// Merge user config with defaults (user values take precedence).
+				$user_configs[ $model ] = array_merge( $default_config, $user_configs[ $model ] );
+			}
+		}
+
+		return $user_configs;
+	}
+
+	/**
+	 * Sanitize model configuration.
+	 *
+	 * @param array $config Configuration array.
+	 * @return array Sanitized configuration.
+	 */
+	protected static function sanitize_config( $config ) {
+		$sanitized = array();
+
+		// String fields.
+		$string_fields = array( 'name', 'provider', 'fallback_model', 'status' );
+		foreach ( $string_fields as $field ) {
+			if ( isset( $config[ $field ] ) ) {
+				$sanitized[ $field ] = sanitize_text_field( $config[ $field ] );
+			}
+		}
+
+		// Integer fields.
+		$int_fields = array( 'tpm', 'rpm', 'tpd', 'rpd', 'context_window' );
+		foreach ( $int_fields as $field ) {
+			if ( isset( $config[ $field ] ) ) {
+				$sanitized[ $field ] = absint( $config[ $field ] );
+			}
+		}
+
+		// Float fields.
+		if ( isset( $config['cost_per_1k'] ) ) {
+			$sanitized['cost_per_1k'] = floatval( $config['cost_per_1k'] );
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Convert CCT data to config format.
+	 *
+	 * @param array $cct_data CCT data.
+	 * @return array Config format.
+	 */
+	protected static function convert_cct_to_config( $cct_data ) {
+		return array(
+			'name'           => isset( $cct_data['model_name'] ) ? $cct_data['model_name'] : '',
+			'provider'       => isset( $cct_data['provider'] ) ? $cct_data['provider'] : '',
+			'tpm'            => isset( $cct_data['tpm'] ) ? absint( $cct_data['tpm'] ) : 0,
+			'rpm'            => isset( $cct_data['rpm'] ) ? absint( $cct_data['rpm'] ) : 0,
+			'tpd'            => isset( $cct_data['tpd'] ) ? absint( $cct_data['tpd'] ) : 0,
+			'rpd'            => isset( $cct_data['rpd'] ) ? absint( $cct_data['rpd'] ) : 0,
+			'context_window' => isset( $cct_data['context_window'] ) ? absint( $cct_data['context_window'] ) : 0,
+			'fallback_model' => isset( $cct_data['fallback_model'] ) ? sanitize_text_field( $cct_data['fallback_model'] ) : null,
+			'cost_per_1k'    => isset( $cct_data['input_cost_per_1k'] ) ? floatval( $cct_data['input_cost_per_1k'] ) : 0.0,
+			'status'         => 'active',
+		);
+	}
+
+	/**
+	 * Get available providers from settings.
+	 *
+	 * @return array Array of available providers.
+	 */
+	public static function get_available_providers() {
+		$settings  = get_option( 'wp_mcp_ai_settings', array() );
+		$providers = array();
+
+		if ( ! empty( $settings['openai_api_key'] ) ) {
+			$providers['openai'] = __( 'OpenAI', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			$providers['anthropic'] = __( 'Anthropic (Claude)', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $settings['gemini_api_key'] ) ) {
+			$providers['gemini'] = __( 'Google Gemini', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
+			$providers['ollama'] = __( 'Ollama (Local)', 'wp-mcp-ai' );
+		}
+
+		if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
+			$providers['lm_studio'] = __( 'LM Studio (Local)', 'wp-mcp-ai' );
+		}
+
+		return $providers;
+	}
+}
