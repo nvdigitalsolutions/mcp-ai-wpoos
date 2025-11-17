@@ -330,6 +330,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		/**
 		 * Resolve the model identifier for the request.
 		 *
+		 * Since LM Studio implements the OpenAI-compatible API, it follows
+		 * the same model resolution pattern as OpenAI:
+		 * 1. Use model from request options if provided
+		 * 2. Fall back to LM Studio-specific model setting
+		 * 3. Fall back to default_model setting (OpenAI-compatible behavior)
+		 *
 		 * @param array $options Request options.
 		 * @return string
 		 */
@@ -342,6 +348,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			if ( ! empty( $model ) ) {
 				return $model;
+			}
+
+			// Fall back to default_model for OpenAI-compatible behavior.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			if ( ! empty( $settings['default_model'] ) ) {
+				return sanitize_text_field( $settings['default_model'] );
 			}
 
 			return '';

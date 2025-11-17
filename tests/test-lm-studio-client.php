@@ -78,6 +78,71 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test resolve_model falls back to default_model when lm_studio_model is empty.
+	 *
+	 * Since LM Studio implements OpenAI-compatible API, it should support
+	 * the same model fallback behavior as OpenAI.
+	 */
+	public function test_resolve_model_falls_back_to_default_model() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'default_model' => 'gpt-4o',
+			)
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'resolve_model' );
+		$method->setAccessible( true );
+
+		$model = $method->invoke( $this->client, array() );
+		$this->assertEquals( 'gpt-4o', $model, 'Should fall back to default_model when lm_studio_model is not set' );
+	}
+
+	/**
+	 * Test resolve_model prioritizes lm_studio_model over default_model.
+	 */
+	public function test_resolve_model_prioritizes_lm_studio_model() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_model' => 'llama-3-8b',
+				'default_model'   => 'gpt-4o',
+			)
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'resolve_model' );
+		$method->setAccessible( true );
+
+		$model = $method->invoke( $this->client, array() );
+		$this->assertEquals( 'llama-3-8b', $model, 'Should prioritize lm_studio_model over default_model' );
+	}
+
+	/**
+	 * Test resolve_model prioritizes options model over all settings.
+	 */
+	public function test_resolve_model_prioritizes_options_model() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_model' => 'llama-3-8b',
+				'default_model'   => 'gpt-4o',
+			)
+		);
+
+		// Use reflection to access protected method.
+		$reflection = new ReflectionClass( $this->client );
+		$method     = $reflection->getMethod( 'resolve_model' );
+		$method->setAccessible( true );
+
+		$model = $method->invoke( $this->client, array( 'model' => 'custom-model' ) );
+		$this->assertEquals( 'custom-model', $model, 'Should prioritize options[model] over all settings' );
+	}
+
+	/**
 	 * Test test_connection with no endpoint configured.
 	 */
 	public function test_connection_with_no_endpoint() {
