@@ -394,6 +394,7 @@ require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-job-queue-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-assistant-cpt.php';
@@ -566,6 +567,9 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 
 WP_MCP_AI_Message_Attachments::init();
 WP_MCP_AI_Response_Attachments::init();
+
+// Initialize model config system.
+WP_MCP_AI_Model_Config::init();
 
 // Initialize REST API context parameter fix.
 WP_MCP_AI_REST_API_Context_Fix::init();
