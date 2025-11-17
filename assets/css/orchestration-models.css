@@ -1,0 +1,437 @@
+/**
+ * Orchestration Models View Styles
+ * 
+ * @package WP_MCP_AI
+ */
+
+/* Models View Container */
+.wp-mcp-ai-models-view {
+	background: #fff;
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.wp-mcp-ai-models-view h3 {
+	margin-top: 0;
+	font-size: 1.3em;
+}
+
+.wp-mcp-ai-models-view .description {
+	margin-bottom: 20px;
+	color: #666;
+}
+
+/* Provider Section */
+.wp-mcp-ai-provider-section {
+	margin: 30px 0;
+	background: #f9f9f9;
+	padding: 20px;
+	border-radius: 4px;
+	border: 1px solid #ddd;
+}
+
+.wp-mcp-ai-provider-section h4 {
+	margin: 0 0 15px;
+	font-size: 1.2em;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.wp-mcp-ai-provider-section h4 .dashicons {
+	color: #2271b1;
+}
+
+.wp-mcp-ai-provider-section .model-count {
+	font-size: 0.9em;
+	color: #666;
+	font-weight: normal;
+}
+
+/* Models Table */
+.wp-mcp-ai-models-table-wrapper {
+	overflow-x: auto;
+}
+
+.wp-mcp-ai-models-table {
+	background: #fff;
+	border: 1px solid #ddd;
+}
+
+.wp-mcp-ai-models-table th {
+	font-weight: 600;
+	white-space: nowrap;
+	background: #f0f0f1;
+}
+
+.wp-mcp-ai-models-table td {
+	vertical-align: top;
+	padding: 12px 10px;
+}
+
+/* Column Widths */
+.wp-mcp-ai-models-table .model-name {
+	width: 20%;
+	min-width: 180px;
+}
+
+.wp-mcp-ai-models-table .capabilities {
+	width: 18%;
+	min-width: 150px;
+}
+
+.wp-mcp-ai-models-table .context-window {
+	width: 12%;
+	min-width: 100px;
+}
+
+.wp-mcp-ai-models-table .cost {
+	width: 15%;
+	min-width: 120px;
+}
+
+.wp-mcp-ai-models-table .limits {
+	width: 15%;
+	min-width: 120px;
+}
+
+.wp-mcp-ai-models-table .tier {
+	width: 10%;
+	min-width: 80px;
+}
+
+.wp-mcp-ai-models-table .actions {
+	width: 10%;
+	min-width: 100px;
+	text-align: right;
+}
+
+/* Model Name Cell */
+.wp-mcp-ai-models-table .model-name strong {
+	display: block;
+	font-size: 1.05em;
+	margin-bottom: 4px;
+	color: #2271b1;
+}
+
+.model-notes,
+.model-fallback {
+	font-size: 0.85em;
+	color: #666;
+	margin-top: 4px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.model-notes .dashicons,
+.model-fallback .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+}
+
+.model-fallback code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+/* Capability Badges */
+.capability-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.capability-badges .badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 3px;
+	font-size: 0.8em;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.badge .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+}
+
+.badge-streaming {
+	background: #e8f4f8;
+	color: #0073aa;
+}
+
+.badge-functions {
+	background: #f0f6fc;
+	color: #2c5282;
+}
+
+.badge-vision {
+	background: #fef3e8;
+	color: #d97706;
+}
+
+/* Context Window */
+.context-info {
+	text-align: center;
+}
+
+.context-info strong {
+	display: block;
+	font-size: 1.1em;
+	color: #2271b1;
+}
+
+.context-info .max-output {
+	font-size: 0.85em;
+	color: #666;
+	margin-top: 4px;
+}
+
+/* Cost Display */
+.cost-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.cost-input,
+.cost-output {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.9em;
+}
+
+.cost-label {
+	font-weight: 600;
+	color: #666;
+	min-width: 30px;
+}
+
+.cost-value {
+	color: #2271b1;
+	font-family: monospace;
+}
+
+.free-model {
+	color: #46b450;
+	font-weight: 500;
+}
+
+/* Rate Limits */
+.limits-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 0.9em;
+}
+
+.limit-tpm,
+.limit-rpm {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.limit-label {
+	font-weight: 600;
+	color: #666;
+	min-width: 35px;
+}
+
+.limit-value {
+	color: #2271b1;
+	font-family: monospace;
+}
+
+.unlimited {
+	color: #46b450;
+	font-weight: 500;
+}
+
+/* Tier Badges */
+.tier-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 3px;
+	font-size: 0.85em;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.tier-badge.tier-free {
+	background: #f0f0f1;
+	color: #666;
+}
+
+.tier-badge.tier-tier-1 {
+	background: #e8f4f8;
+	color: #0073aa;
+}
+
+.tier-badge.tier-tier-2 {
+	background: #f0f6fc;
+	color: #2c5282;
+}
+
+.tier-badge.tier-tier-3 {
+	background: #fef3e8;
+	color: #d97706;
+}
+
+.tier-badge.tier-scale {
+	background: #f0e8ff;
+	color: #6b46c1;
+}
+
+/* Not Available */
+.not-available {
+	color: #999;
+	font-style: italic;
+}
+
+/* Editable Fields */
+.editable-field {
+	position: relative;
+	cursor: pointer;
+	border: 1px solid transparent;
+	padding: 2px 4px;
+	border-radius: 3px;
+	transition: all 0.2s;
+}
+
+.editable-field:hover {
+	background: #f0f6fc;
+	border-color: #c3e4ff;
+}
+
+.editable-field.editing {
+	background: #fff;
+	border-color: #2271b1;
+}
+
+.editable-field input {
+	width: 100%;
+	padding: 4px 6px;
+	border: 1px solid #8c8f94;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+.edit-actions {
+	display: none;
+	gap: 4px;
+	margin-top: 4px;
+}
+
+.editing .edit-actions {
+	display: flex;
+}
+
+.edit-actions .button {
+	padding: 2px 8px;
+	font-size: 0.85em;
+	line-height: 1.8;
+	height: auto;
+}
+
+/* Edit Icon */
+.edit-icon {
+	display: none;
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	color: #2271b1;
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+}
+
+.editable-field:hover .edit-icon {
+	display: inline-block;
+}
+
+/* Loading State */
+.updating {
+	opacity: 0.6;
+	pointer-events: none;
+	position: relative;
+}
+
+.updating::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 20px;
+	height: 20px;
+	border: 2px solid #2271b1;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: translate(-50%, -50%) rotate(360deg);
+	}
+}
+
+/* Sync button spinning icon */
+.dashicons.spin {
+	animation: spin-icon 1s linear infinite;
+}
+
+@keyframes spin-icon {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Action Buttons */
+.model-actions {
+	display: flex;
+	gap: 4px;
+	justify-content: flex-end;
+}
+
+.model-actions .button {
+	padding: 4px 8px;
+	font-size: 0.85em;
+	line-height: 1.6;
+	height: auto;
+}
+
+/* Responsive */
+@media screen and (max-width: 1200px) {
+	.wp-mcp-ai-models-table .model-name {
+		width: 25%;
+	}
+	
+	.wp-mcp-ai-models-table .capabilities {
+		width: 20%;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.wp-mcp-ai-models-table-wrapper {
+		overflow-x: scroll;
+	}
+	
+	.wp-mcp-ai-models-table {
+		min-width: 800px;
+	}
+	
+	.capability-badges {
+		flex-direction: column;
+	}
+}

@@ -2560,6 +2560,35 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 				)
 			);
+
+			// Enqueue models view assets if on orchestration tab with models view.
+			$active_tab  = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$active_view = isset( $_GET['view'] ) ? sanitize_key( $_GET['view'] ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+			if ( 'orchestration' === $active_tab && 'models' === $active_view ) {
+				wp_enqueue_style(
+					'wp-mcp-ai-orchestration-models',
+					WP_MCP_AI_URL . 'assets/css/orchestration-models.css',
+					array(),
+					WP_MCP_AI_VERSION
+				);
+
+				wp_enqueue_script(
+					'wp-mcp-ai-orchestration-models',
+					WP_MCP_AI_URL . 'assets/js/orchestration-models.js',
+					array( 'jquery' ),
+					WP_MCP_AI_VERSION,
+					true
+				);
+
+				wp_localize_script(
+					'wp-mcp-ai-orchestration-models',
+					'wpMcpAiModels',
+					array(
+						'nonce' => wp_create_nonce( 'wp_mcp_ai_models_nonce' ),
+					)
+				);
+			}
 		}
 
 		/**
