@@ -7,6 +7,7 @@ LM Studio is a local AI model hosting platform that provides an OpenAI-compatibl
 ## Features
 
 - **OpenAI-Compatible API**: LM Studio implements the OpenAI API format, making integration seamless
+- **Function Calling Support**: Full support for tool/function calling when models support it
 - **Local Execution**: Run models on your own hardware for privacy and cost control
 - **No API Keys Required**: No external API keys or cloud services needed
 - **Network Flexibility**: Support for localhost, LAN, and VPN configurations
@@ -367,6 +368,50 @@ $options = array(
 $response = $client->create_chat_completion($messages, $options);
 ```
 
+### With Tools/Function Calling
+
+```php
+// Define tools for function calling
+$tools = array(
+    array(
+        'type'     => 'function',
+        'function' => array(
+            'name'        => 'get_weather',
+            'description' => 'Get the current weather in a location',
+            'parameters'  => array(
+                'type'       => 'object',
+                'properties' => array(
+                    'location' => array(
+                        'type'        => 'string',
+                        'description' => 'The city and state, e.g. San Francisco, CA',
+                    ),
+                ),
+                'required'   => array( 'location' ),
+            ),
+        ),
+    ),
+);
+
+$options = array(
+    'model' => 'llama-3-8b-instruct',
+    'tools' => $tools,
+);
+
+$response = $client->create_chat_completion($messages, $options);
+
+// Check if model wants to call a function
+if (isset($response['choices'][0]['message']['tool_calls'])) {
+    $tool_calls = $response['choices'][0]['message']['tool_calls'];
+    foreach ($tool_calls as $tool_call) {
+        $function_name = $tool_call['function']['name'];
+        $arguments = json_decode($tool_call['function']['arguments'], true);
+        
+        // Execute the function
+        // ...
+    }
+}
+```
+
 ### Test Connection
 
 ```php
@@ -391,6 +436,7 @@ if (is_wp_error($result)) {
 - ✅ Chat completions
 - ✅ Text completions
 - ✅ Fixed endpoint URL bug (double `/v1/`)
+- ✅ Function calling / Tools support
 
 ## Future Enhancements
 
@@ -398,7 +444,6 @@ if (is_wp_error($result)) {
 - [ ] Hardware utilization monitoring
 - [ ] Model switching based on context
 - [ ] Streaming support
-- [ ] Function calling support
 - [ ] Vision model support
 
 ## References
