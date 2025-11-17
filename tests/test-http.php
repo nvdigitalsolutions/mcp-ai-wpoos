@@ -282,4 +282,180 @@ class WP_MCP_AI_HTTP_Tests extends WP_UnitTestCase {
 		$this->assertTrue( WP_MCP_AI_HTTP::is_wordpress_timeout_error( $error2 ) );
 		$this->assertTrue( WP_MCP_AI_HTTP::is_wordpress_timeout_error( $error3 ) );
 	}
+
+	/**
+	 * Test connection refused error detection with standard message.
+	 */
+	public function test_is_connection_refused_error_with_standard_message() {
+		$error = new WP_Error( 'http_request_failed', 'Connection refused' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with Windows message.
+	 */
+	public function test_is_connection_refused_error_with_windows_message() {
+		$error = new WP_Error( 'http_request_failed', 'No connection could be made because the target machine actively refused it' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with Cloudflared message.
+	 */
+	public function test_is_connection_refused_error_with_cloudflared_message() {
+		$error = new WP_Error( 'http_request_failed', 'dial tcp [::1]:1234: connectex: No connection could be made because the target machine actively refused it' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with cURL error 7.
+	 */
+	public function test_is_connection_refused_error_with_curl_error_7() {
+		$error = new WP_Error( 'http_request_failed', 'cURL error 7: Failed to connect to localhost port 1234: Connection refused' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with context canceled message.
+	 */
+	public function test_is_connection_refused_error_with_context_canceled() {
+		$error = new WP_Error( 'http_request_failed', 'Incoming request ended abruptly: context canceled' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with unable to reach message.
+	 */
+	public function test_is_connection_refused_error_with_unable_to_reach() {
+		$error = new WP_Error( 'http_request_failed', 'Unable to reach the origin service. The service may be down' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with errno 111 (Linux).
+	 */
+	public function test_is_connection_refused_error_with_errno_111() {
+		$error = new WP_Error( 'http_request_failed', 'Connection failed: errno 111' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection with errno 10061 (Windows).
+	 */
+	public function test_is_connection_refused_error_with_errno_10061() {
+		$error = new WP_Error( 'http_request_failed', 'Connection failed: errno 10061' );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection is case insensitive.
+	 */
+	public function test_connection_refused_detection_case_insensitive() {
+		$error1 = new WP_Error( 'http_request_failed', 'CONNECTION REFUSED' );
+		$error2 = new WP_Error( 'http_request_failed', 'connection refused' );
+		$error3 = new WP_Error( 'http_request_failed', 'Connection Refused' );
+
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error1 ) );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error2 ) );
+		$this->assertTrue( WP_MCP_AI_HTTP::is_connection_refused_error( $error3 ) );
+	}
+
+	/**
+	 * Test connection refused error detection returns false for non-connection-refused errors.
+	 */
+	public function test_is_connection_refused_error_returns_false_for_other_errors() {
+		$error = new WP_Error( 'http_request_failed', 'DNS resolution failed' );
+		$this->assertFalse( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test connection refused error detection returns false for timeout errors.
+	 */
+	public function test_is_connection_refused_error_returns_false_for_timeout() {
+		$error = new WP_Error( 'http_request_timeout', 'Request timed out' );
+		$this->assertFalse( WP_MCP_AI_HTTP::is_connection_refused_error( $error ) );
+	}
+
+	/**
+	 * Test prepare_transport_error handles connection refused errors.
+	 */
+	public function test_prepare_transport_error_handles_connection_refused() {
+		$original_error = new WP_Error( 'http_request_failed', 'Connection refused' );
+		$prepared_error = WP_MCP_AI_HTTP::prepare_transport_error(
+			$original_error,
+			'default_code',
+			'Default message',
+			'LM Studio'
+		);
+
+		$this->assertEquals( 'wp_mcp_ai_connection_refused', $prepared_error->get_error_code() );
+		$this->assertStringContainsString( 'LM Studio', $prepared_error->get_error_message() );
+		$this->assertStringContainsString( 'not be running', $prepared_error->get_error_message() );
+
+		$error_data = $prepared_error->get_error_data();
+		$this->assertArrayHasKey( 'actions', $error_data );
+		$this->assertArrayHasKey( 'check_service_running', $error_data['actions'] );
+		$this->assertArrayHasKey( 'verify_endpoint_url', $error_data['actions'] );
+		$this->assertArrayHasKey( 'check_firewall', $error_data['actions'] );
+		$this->assertArrayHasKey( 'check_service_listening', $error_data['actions'] );
+		$this->assertEquals( 502, $error_data['status'] );
+	}
+
+	/**
+	 * Test prepare_transport_error handles connection refused errors without service label.
+	 */
+	public function test_prepare_transport_error_handles_connection_refused_no_label() {
+		$original_error = new WP_Error( 'http_request_failed', 'No connection could be made' );
+		$prepared_error = WP_MCP_AI_HTTP::prepare_transport_error(
+			$original_error,
+			'default_code',
+			'Default message'
+		);
+
+		$this->assertEquals( 'wp_mcp_ai_connection_refused', $prepared_error->get_error_code() );
+		$this->assertStringContainsString( 'not be running', $prepared_error->get_error_message() );
+		$this->assertStringNotContainsString( 'LM Studio', $prepared_error->get_error_message() );
+	}
+
+	/**
+	 * Test prepare_transport_error prioritizes connection refused over timeout.
+	 */
+	public function test_prepare_transport_error_prioritizes_connection_refused() {
+		// Create an error that could match both patterns, but connection refused should win.
+		$original_error = new WP_Error( 'http_request_failed', 'Connection refused after timeout' );
+		$prepared_error = WP_MCP_AI_HTTP::prepare_transport_error(
+			$original_error,
+			'default_code',
+			'Default message',
+			'Test Service'
+		);
+
+		// Should detect as connection refused, not timeout.
+		$this->assertEquals( 'wp_mcp_ai_connection_refused', $prepared_error->get_error_code() );
+	}
+
+	/**
+	 * Test prepare_transport_error merges existing actions.
+	 */
+	public function test_prepare_transport_error_merges_actions_for_connection_refused() {
+		$original_error = new WP_Error( 'http_request_failed', 'Connection refused' );
+		$existing_data  = array(
+			'actions' => array(
+				'custom_action' => 'Custom action message',
+			),
+		);
+
+		$prepared_error = WP_MCP_AI_HTTP::prepare_transport_error(
+			$original_error,
+			'default_code',
+			'Default message',
+			'Test Service',
+			$existing_data
+		);
+
+		$error_data = $prepared_error->get_error_data();
+		$this->assertArrayHasKey( 'actions', $error_data );
+		$this->assertArrayHasKey( 'check_service_running', $error_data['actions'] );
+		$this->assertArrayHasKey( 'custom_action', $error_data['actions'] );
+	}
 }
