@@ -70,6 +70,35 @@ class WP_MCP_AI_Orchestration_Settings_Enforcement_Test extends WP_UnitTestCase 
 	}
 
 	/**
+	 * Test that budget management disabled lifts max_execution_time cap.
+	 *
+	 * When budget management is off, timeout should be 120s even for calls
+	 * with ignore_execution_time=false (used by OpenAI/Anthropic clients).
+	 */
+	public function test_budget_management_disabled_lifts_execution_time_cap() {
+		$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+
+		// Force low tier and typical max_execution_time.
+		add_filter( 'wp_mcp_ai_workload_tier', function() {
+			return 'low';
+		} );
+
+		// Disable budget management.
+		update_option( 'wp_mcp_ai_settings', array( 'enable_budget_management' => false ) );
+
+		// Call with ignore_execution_time=false (like OpenAI/Anthropic clients do).
+		// Should still return 120s, NOT clamped to max_execution_time - 5.
+		$timeout = $resource_mgr->get_request_timeout( false );
+
+		// Should return high tier timeout (120s) unconditionally when budget management is off.
+		$this->assertEquals( 120, $timeout );
+
+		// Clean up.
+		remove_all_filters( 'wp_mcp_ai_workload_tier' );
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
 	 * Test that cron orchestration setting blocks cron tools when disabled.
 	 */
 	public function test_cron_orchestration_setting_blocks_tools() {

@@ -68,7 +68,8 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 		// Check if budget management is enabled.
 		$budget_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_budget_management', true );
 
-		// If budget management is disabled, use high tier timeout.
+		// If budget management is disabled, return high tier timeout unconditionally.
+		// This removes all budget constraints including max_execution_time caps.
 		if ( ! $budget_enabled ) {
 			$timeout_map = array(
 				'low'    => 30,
@@ -76,15 +77,12 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 				'high'   => 120,
 			);
 
-			$base_timeout = $timeout_map['high'];
-
-			// Still respect max_execution_time if not ignoring it.
-			if ( ! $ignore_execution_time ) {
-				$max_allowed_timeout = max( 5, $max_execution_time - 5 );
-				return min( $base_timeout, $max_allowed_timeout );
-			}
-
-			return $base_timeout;
+			/**
+			 * Filter the timeout when budget management is disabled.
+			 *
+			 * @param int $timeout The timeout value (default: 120 seconds).
+			 */
+			return apply_filters( 'wp_mcp_ai_resource_request_timeout_unlimited', $timeout_map['high'] );
 		}
 
 		// Budget management is enabled, return the tier-based value.

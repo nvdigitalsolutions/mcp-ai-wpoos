@@ -48,7 +48,8 @@ API Requests (with enforced limits)
 - High tier (≥ 512MB): 16,000 tokens, 120s timeout
 
 **When disabled:**
-- All requests: 128,000 tokens, 120s timeout (or max_execution_time limit)
+- All requests: 128,000 tokens, 120s timeout
+- **Important:** The 120s timeout is applied unconditionally, even if it exceeds `max_execution_time`. This removes all budget constraints including PHP execution time caps, allowing long-running AI operations.
 
 **Works for:** All providers
 
