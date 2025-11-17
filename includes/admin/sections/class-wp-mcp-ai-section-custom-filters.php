@@ -152,6 +152,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 					'default'     => '',
 					'placeholder' => 'http://localhost:1234/v1',
 				),
+				'filter_lm_studio_fallback_model'       => array(
+					'type'        => 'text',
+					'label'       => __( 'LM Studio Fallback Model', 'wp-mcp-ai' ),
+					'description' => __( 'Model to use when LM Studio provider is selected but no model is specified. Overrides the wp_mcp_ai_lm_studio_fallback_model filter. Defaults to the "Default Model" setting for OpenAI compatibility. Leave empty to use default behavior.', 'wp-mcp-ai' ),
+					'default'     => '',
+					'placeholder' => __( 'Uses Default Model setting', 'wp-mcp-ai' ),
+				),
 			);
 		}
 
@@ -181,7 +188,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				),
 				'endpoint_urls'       => array(
 					'title'  => __( 'Local AI Endpoint URLs', 'wp-mcp-ai' ),
-					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url' ),
+					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url', 'filter_lm_studio_fallback_model' ),
 				),
 			);
 

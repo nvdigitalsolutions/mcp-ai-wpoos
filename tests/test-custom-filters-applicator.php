@@ -57,6 +57,7 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		$this->assertTrue( has_filter( 'wp_mcp_ai_max_attachment_bytes' ) );
 		$this->assertTrue( has_filter( 'wp_mcp_ai_default_ollama_endpoint_url' ) );
 		$this->assertTrue( has_filter( 'wp_mcp_ai_default_lm_studio_endpoint_url' ) );
+		$this->assertTrue( has_filter( 'wp_mcp_ai_lm_studio_fallback_model' ) );
 	}
 
 	/**
@@ -266,6 +267,41 @@ class WP_MCP_AI_Custom_Filters_Applicator_Test extends WP_UnitTestCase {
 		$default = 'http://localhost:1234/v1';
 		$result  = apply_filters( 'wp_mcp_ai_default_lm_studio_endpoint_url', $default );
 		$this->assertEquals( 'http://custom-lm-studio:1234/v1', $result );
+	}
+
+	/**
+	 * Test LM Studio fallback model with custom setting.
+	 */
+	public function test_lm_studio_fallback_model_with_custom_setting() {
+		// Set custom value.
+		update_option(
+			self::OPTION_NAME,
+			array(
+				'filter_lm_studio_fallback_model' => 'custom-local-model',
+			)
+		);
+
+		// Recreate applicator to pick up new setting.
+		$this->applicator = new WP_MCP_AI_Custom_Filters_Applicator();
+
+		$default = 'gpt-4o';
+		$result  = apply_filters( 'wp_mcp_ai_lm_studio_fallback_model', $default, array() );
+		$this->assertEquals( 'custom-local-model', $result );
+	}
+
+	/**
+	 * Test LM Studio fallback model uses default when not set.
+	 */
+	public function test_lm_studio_fallback_model_uses_default_when_not_set() {
+		// No custom value set.
+		update_option( self::OPTION_NAME, array() );
+
+		// Recreate applicator.
+		$this->applicator = new WP_MCP_AI_Custom_Filters_Applicator();
+
+		$default = 'gpt-4o';
+		$result  = apply_filters( 'wp_mcp_ai_lm_studio_fallback_model', $default, array() );
+		$this->assertEquals( 'gpt-4o', $result, 'Should use default when no custom setting' );
 	}
 
 	/**
