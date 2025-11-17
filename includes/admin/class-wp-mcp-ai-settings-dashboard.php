@@ -107,7 +107,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
-					'sanitize_callback' => array( $this, 'sanitize_settings' ),
+					'type'              => 'array',
+					'sanitize_callback' => null, // We handle sanitization in handle_save_settings().
 				)
 			);
 		}
