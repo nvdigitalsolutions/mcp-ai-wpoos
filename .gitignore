@@ -42,3 +42,7 @@ test-storage-service.html
 /coverage/
 /.nyc_output/
 *.lcov
+
+# Development and test scripts
+verify-*.php
+/wp-content/
