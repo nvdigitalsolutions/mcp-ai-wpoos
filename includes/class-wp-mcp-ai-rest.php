@@ -4926,27 +4926,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return array();
 			}
 
-			// Get provider from assistant config to filter incompatible tools.
-			$provider = isset( $assistant_config['provider'] ) ? sanitize_key( $assistant_config['provider'] ) : '';
-
 			$tools_payload = array();
 			foreach ( $allowed_tool_slugs as $slug ) {
 				$tool = $this->registry->get_tool( $slug );
 				if ( ! $tool ) {
 					WP_MCP_AI_Admin_Settings::log( 'Assistant references missing tool.', array( 'tool' => $slug ) );
-					continue;
-				}
-
-				// Check if tool is compatible with the provider.
-				if ( ! empty( $provider ) && ! $this->registry->is_tool_compatible_with_provider( $slug, $provider ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'debug',
-						'Tool excluded from payload due to provider incompatibility',
-						array(
-							'tool_slug' => $slug,
-							'provider'  => $provider,
-						)
-					);
 					continue;
 				}
 

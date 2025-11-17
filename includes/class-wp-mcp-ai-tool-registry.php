@@ -243,33 +243,6 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
-		 * Check if a tool is compatible with a specific provider.
-		 *
-		 * @param string $slug     Tool slug.
-		 * @param string $provider Provider name (e.g., 'openai', 'lm_studio', 'gemini').
-		 * @return bool True if compatible or no restrictions, false if incompatible.
-		 */
-		public function is_tool_compatible_with_provider( $slug, $provider ) {
-			$tool = $this->get_tool( $slug );
-			if ( ! $tool ) {
-				return false;
-			}
-
-			// Get tool rules if available.
-			$rules = method_exists( $tool, 'get_tool_rules' ) ? $tool->get_tool_rules() : array();
-
-			// If no provider restrictions, tool is compatible with all providers.
-			if ( empty( $rules['model_requirements']['providers'] ) ) {
-				return true;
-			}
-
-			$allowed_providers = $rules['model_requirements']['providers'];
-
-			// Check if provider is in allowed list.
-			return in_array( $provider, $allowed_providers, true );
-		}
-
-		/**
 		 * Get tool capability requirement.
 		 *
 		 * @param string $slug Tool slug.
