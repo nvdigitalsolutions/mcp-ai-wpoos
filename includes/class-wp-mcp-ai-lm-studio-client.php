@@ -424,14 +424,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 				$content = wp_kses_post( (string) $content );
 
-				// For assistant messages with tool_calls, content must be string or null for OpenAI compatibility.
-				// Normalize empty content to null when tool_calls are present.
-				$has_tool_calls = ( 'assistant' === $role && isset( $message['tool_calls'] ) && ! empty( $message['tool_calls'] ) );
-				if ( $has_tool_calls && '' === trim( $content ) ) {
-					$content = null;
-				}
-
-				if ( null !== $content && '' === trim( $content ) && 'tool' !== $role && ! $has_tool_calls ) {
+				if ( '' === trim( $content ) && 'tool' !== $role ) {
 					continue;
 				}
 
@@ -442,28 +435,16 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					$role      = 'user';
 				}
 
-				$formatted_message = array(
+				$formatted_messages[] = array(
 					'role'    => $role,
 					'content' => $content,
 				);
-
-				// Include tool_calls for assistant messages (OpenAI-compatible tool calling).
-				if ( $has_tool_calls ) {
-					$formatted_message['tool_calls'] = $message['tool_calls'];
-				}
-
-				$formatted_messages[] = $formatted_message;
 			}
 
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
 			);
-
-			// Add tools if provided (OpenAI-compatible tool calling).
-			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-				$payload['tools'] = $options['tools'];
-			}
 
 			// Add temperature if specified.
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
