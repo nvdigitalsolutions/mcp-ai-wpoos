@@ -166,6 +166,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			$active_subtab   = isset( $_POST['subtab'] ) ? sanitize_key( $_POST['subtab'] ) : '';
+			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
 
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -240,6 +241,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
 			if ( ! empty( $active_subtab ) ) {
 				$redirect_args['subtab'] = $active_subtab;
+			}
+
+			// Preserve view parameter for sections with view-based navigation (e.g., Orchestration, Token Manager).
+			if ( ! empty( $active_view ) ) {
+				$redirect_args['view'] = $active_view;
 			}
 
 			wp_safe_redirect(

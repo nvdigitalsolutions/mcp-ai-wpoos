@@ -96,6 +96,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					<?php endif; ?>
 				</nav>
 
+				<!-- Hidden field to preserve view during form submission -->
+				<input type="hidden" name="view" value="<?php echo esc_attr( $active_view ); ?>" />
+
 				<!-- View Content -->
 				<div class="wp-mcp-ai-token-manager__content">
 					<?php
