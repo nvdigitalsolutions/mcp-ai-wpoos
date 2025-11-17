@@ -7346,15 +7346,6 @@
 
                 // Continue reading
                 return readChunk();
-            }).catch(function (streamError) {
-                // Handle stream read errors (e.g., "Channel Error" when connection is interrupted)
-                // Return whatever content we've accumulated so far
-                if (fullContent) {
-                    return { content: fullContent };
-                }
-                
-                // If no content was received, propagate the error
-                throw streamError;
             });
         }
 
