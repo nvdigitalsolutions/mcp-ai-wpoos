@@ -1298,8 +1298,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Delegate settings registration to the base component.
 			$this->settings_base->register_settings();
 
-			// Keep existing field registrations for backward compatibility.
-			register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );
+			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
+			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.
+			// Keeping this would cause all checkboxes from inactive subtabs to be cleared to false.
+			// register_setting( self::SETTINGS_GROUP, self::OPTION_NAME, array( $this->settings_base, 'sanitize_settings' ) );
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',
