@@ -1293,10 +1293,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 		/**
 		 * Register the settings, sections, and fields exposed in the admin UI.
+		 *
+		 * NOTE: This method is legacy and no longer actively used. The Settings Dashboard
+		 * (WP_MCP_AI_Settings_Dashboard) handles all settings registration.
+		 * This method remains only for backward compatibility.
 		 */
 		public function register_settings() {
-			// Delegate settings registration to the base component.
-			$this->settings_base->register_settings();
+			// REMOVED: Settings registration now handled by Settings Dashboard.
+			// The old base class register_settings() method has been removed to prevent
+			// conflicting sanitization callbacks that wipe provider subtab settings.
+			// See: https://github.com/nvdigitalsolutions/wp-mcp-ai/issues/1296
 
 			// REMOVED: Old sanitization callback conflicts with new Settings Dashboard subtab handling.
 			// The Settings Dashboard (wp-mcp-ai-dashboard) now handles sanitization properly for subtabs.

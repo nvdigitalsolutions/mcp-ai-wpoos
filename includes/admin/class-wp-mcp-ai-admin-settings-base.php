@@ -39,20 +39,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		private static $settings_cache = null;
 
 		/**
-		 * Register settings with WordPress Settings API.
-		 */
-		public function register_settings() {
-			register_setting(
-				self::SETTINGS_GROUP,
-				self::OPTION_NAME,
-				array(
-					'sanitize_callback' => array( $this, 'sanitize_settings' ),
-				)
-			);
-		}
-
-		/**
 		 * Sanitize settings before saving.
+		 *
+		 * NOTE: This method is kept for backward compatibility but should NOT be used
+		 * as a WordPress sanitize_callback. The Settings Dashboard handles registration
+		 * with subtab-aware sanitization. This method is only for legacy code or
+		 * programmatic sanitization needs.
 		 *
 		 * @param array $settings Raw settings input.
 		 * @return array Sanitized settings.
