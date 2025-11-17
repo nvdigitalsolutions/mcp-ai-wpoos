@@ -444,6 +444,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
+				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
@@ -592,6 +593,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
+				'stream' => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
