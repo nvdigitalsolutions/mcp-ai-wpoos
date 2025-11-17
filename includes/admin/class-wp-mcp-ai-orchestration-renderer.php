@@ -461,5 +461,263 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				);
 			}
 		}
+
+		/**
+		 * Render models and capabilities view.
+		 *
+		 * @return string HTML output or fallback on error.
+		 */
+		public static function render_models_view() {
+			try {
+				// Check if Model Rate Limits CCT class is available.
+				if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model rate limits system not available. Please ensure JetEngine is active.', 'wp-mcp-ai' ) . '</p></div>';
+				}
+
+				// Get the item handler.
+				$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+				if ( ! $handler ) {
+					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model rate limits database not accessible. Please ensure JetEngine Custom Content Types module is active.', 'wp-mcp-ai' ) . '</p></div>';
+				}
+
+				$factory = $handler->get_factory();
+
+				if ( ! $factory || empty( $factory->db ) ) {
+					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Unable to access model database.', 'wp-mcp-ai' ) . '</p></div>';
+				}
+
+				// Query all models.
+				$models = $factory->db->query( array() );
+
+				if ( empty( $models ) || ! is_array( $models ) ) {
+					return '<div class="notice notice-info inline"><p>' . esc_html__( 'No models configured yet. Models will be auto-populated on first use.', 'wp-mcp-ai' ) . '</p></div>';
+				}
+
+				// Group models by provider.
+				$models_by_provider = array();
+				foreach ( $models as $model ) {
+					if ( ! isset( $model['provider'] ) ) {
+						continue;
+					}
+					$provider = sanitize_text_field( $model['provider'] );
+					if ( ! isset( $models_by_provider[ $provider ] ) ) {
+						$models_by_provider[ $provider ] = array();
+					}
+					$models_by_provider[ $provider ][] = $model;
+				}
+
+				// Get JetEngine admin URL for the CCT.
+				$cct_url = admin_url( 'admin.php?page=jet-cct-ai_model_rate_limits' );
+
+				ob_start();
+				?>
+				<div class="wp-mcp-ai-models-view">
+					<div class="models-header">
+						<h3><?php esc_html_e( 'AI Models and Capabilities', 'wp-mcp-ai' ); ?></h3>
+						<p class="description">
+							<?php esc_html_e( 'View available AI models and their capabilities. This data is managed in the JetEngine Custom Content Type.', 'wp-mcp-ai' ); ?>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( $cct_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-admin-generic"></span>
+								<?php esc_html_e( 'Manage Models in CCT', 'wp-mcp-ai' ); ?>
+							</a>
+						</p>
+					</div>
+
+					<div class="models-stats">
+						<div class="stat-card">
+							<span class="dashicons dashicons-admin-site-alt3"></span>
+							<div class="stat-content">
+								<div class="stat-value"><?php echo absint( count( $models ) ); ?></div>
+								<div class="stat-label"><?php esc_html_e( 'Total Models', 'wp-mcp-ai' ); ?></div>
+							</div>
+						</div>
+						<div class="stat-card">
+							<span class="dashicons dashicons-networking"></span>
+							<div class="stat-content">
+								<div class="stat-value"><?php echo absint( count( $models_by_provider ) ); ?></div>
+								<div class="stat-label"><?php esc_html_e( 'Providers', 'wp-mcp-ai' ); ?></div>
+							</div>
+						</div>
+					</div>
+
+					<?php foreach ( $models_by_provider as $provider => $provider_models ) : ?>
+						<?php
+						$provider_label = self::get_provider_label( $provider );
+						?>
+						<div class="provider-section">
+							<h4 class="provider-title">
+								<span class="dashicons dashicons-admin-site-alt3"></span>
+								<?php echo esc_html( $provider_label ); ?>
+								<span class="provider-count">(<?php echo absint( count( $provider_models ) ); ?> <?php esc_html_e( 'models', 'wp-mcp-ai' ); ?>)</span>
+							</h4>
+
+							<div class="models-grid">
+								<?php foreach ( $provider_models as $model ) : ?>
+									<?php echo self::render_model_card( $model ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_model_card method. ?>
+								<?php endforeach; ?>
+							</div>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<?php
+				return ob_get_clean();
+
+			} catch ( Exception $e ) {
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Models view rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'render_models_view',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
+
+				// Return safe fallback.
+				return '<div class="notice notice-error inline"><p>' . esc_html__( 'Failed to load models view. Please try again later.', 'wp-mcp-ai' ) . '</p></div>';
+			}
+		}
+
+		/**
+		 * Render a single model card.
+		 *
+		 * @param array $model Model data.
+		 * @return string HTML output.
+		 */
+		protected static function render_model_card( $model ) {
+			$model_name                = isset( $model['model_name'] ) ? sanitize_text_field( $model['model_name'] ) : '';
+			$tpm_limit                 = isset( $model['tpm_limit'] ) ? absint( $model['tpm_limit'] ) : 0;
+			$rpm_limit                 = isset( $model['rpm_limit'] ) ? absint( $model['rpm_limit'] ) : 0;
+			$context_window            = isset( $model['context_window'] ) ? absint( $model['context_window'] ) : 0;
+			$max_output_tokens         = isset( $model['max_output_tokens'] ) ? absint( $model['max_output_tokens'] ) : 0;
+			$tier                      = isset( $model['tier'] ) ? sanitize_text_field( $model['tier'] ) : '';
+			$supports_streaming        = isset( $model['supports_streaming'] ) && $model['supports_streaming'];
+			$supports_function_calling = isset( $model['supports_function_calling'] ) && $model['supports_function_calling'];
+			$supports_vision           = isset( $model['supports_vision'] ) && $model['supports_vision'];
+			$cost_input                = isset( $model['cost_per_1k_input_tokens'] ) ? floatval( $model['cost_per_1k_input_tokens'] ) : 0;
+			$cost_output               = isset( $model['cost_per_1k_output_tokens'] ) ? floatval( $model['cost_per_1k_output_tokens'] ) : 0;
+			$notes                     = isset( $model['notes'] ) ? sanitize_textarea_field( $model['notes'] ) : '';
+
+			ob_start();
+			?>
+			<div class="model-card">
+				<div class="model-header">
+					<h5 class="model-name"><?php echo esc_html( $model_name ); ?></h5>
+					<?php if ( $tier ) : ?>
+						<span class="model-tier tier-<?php echo esc_attr( $tier ); ?>">
+							<?php echo esc_html( ucfirst( str_replace( '-', ' ', $tier ) ) ); ?>
+						</span>
+					<?php endif; ?>
+				</div>
+
+				<div class="model-capabilities">
+					<h6><?php esc_html_e( 'Capabilities', 'wp-mcp-ai' ); ?></h6>
+					<div class="capabilities-list">
+						<?php echo self::render_capability( 'Streaming', $supports_streaming ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_capability method. ?>
+						<?php echo self::render_capability( 'Function Calling', $supports_function_calling ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_capability method. ?>
+						<?php echo self::render_capability( 'Vision', $supports_vision ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_capability method. ?>
+					</div>
+				</div>
+
+				<div class="model-limits">
+					<h6><?php esc_html_e( 'Token Limits', 'wp-mcp-ai' ); ?></h6>
+					<div class="limits-grid">
+						<?php if ( $tpm_limit > 0 ) : ?>
+							<div class="limit-item">
+								<span class="limit-label"><?php esc_html_e( 'TPM:', 'wp-mcp-ai' ); ?></span>
+								<span class="limit-value"><?php echo esc_html( number_format( $tpm_limit ) ); ?></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $rpm_limit > 0 ) : ?>
+							<div class="limit-item">
+								<span class="limit-label"><?php esc_html_e( 'RPM:', 'wp-mcp-ai' ); ?></span>
+								<span class="limit-value"><?php echo esc_html( number_format( $rpm_limit ) ); ?></span>
+							</div>
+						<?php endif; ?>
+						<div class="limit-item">
+							<span class="limit-label"><?php esc_html_e( 'Context:', 'wp-mcp-ai' ); ?></span>
+							<span class="limit-value"><?php echo esc_html( number_format( $context_window ) ); ?></span>
+						</div>
+						<?php if ( $max_output_tokens > 0 ) : ?>
+							<div class="limit-item">
+								<span class="limit-label"><?php esc_html_e( 'Max Output:', 'wp-mcp-ai' ); ?></span>
+								<span class="limit-value"><?php echo esc_html( number_format( $max_output_tokens ) ); ?></span>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<?php if ( $cost_input > 0 || $cost_output > 0 ) : ?>
+					<div class="model-costs">
+						<h6><?php esc_html_e( 'Pricing (per 1K tokens)', 'wp-mcp-ai' ); ?></h6>
+						<div class="costs-grid">
+							<div class="cost-item">
+								<span class="cost-label"><?php esc_html_e( 'Input:', 'wp-mcp-ai' ); ?></span>
+								<span class="cost-value">$<?php echo esc_html( number_format( $cost_input, 4 ) ); ?></span>
+							</div>
+							<div class="cost-item">
+								<span class="cost-label"><?php esc_html_e( 'Output:', 'wp-mcp-ai' ); ?></span>
+								<span class="cost-value">$<?php echo esc_html( number_format( $cost_output, 4 ) ); ?></span>
+							</div>
+						</div>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( $notes ) : ?>
+					<div class="model-notes">
+						<p><?php echo esc_html( $notes ); ?></p>
+					</div>
+				<?php endif; ?>
+			</div>
+			<?php
+			return ob_get_clean();
+		}
+
+		/**
+		 * Render a capability indicator.
+		 *
+		 * @param string $label     Capability label.
+		 * @param bool   $supported Whether the capability is supported.
+		 * @return string HTML output.
+		 */
+		protected static function render_capability( $label, $supported ) {
+			$class = $supported ? 'enabled' : 'disabled';
+			$icon  = $supported ? 'yes' : 'no';
+
+			return sprintf(
+				'<span class="capability %s"><span class="dashicons dashicons-%s"></span>%s</span>',
+				esc_attr( $class ),
+				esc_attr( $icon ),
+				esc_html( $label )
+			);
+		}
+
+		/**
+		 * Get human-readable provider label.
+		 *
+		 * @param string $provider Provider key.
+		 * @return string Provider label.
+		 */
+		protected static function get_provider_label( $provider ) {
+			$labels = array(
+				'openai'    => 'OpenAI',
+				'anthropic' => 'Anthropic',
+				'google'    => 'Google',
+				'azure'     => 'Azure OpenAI',
+				'ollama'    => 'Ollama',
+				'lm_studio' => 'LM Studio',
+			);
+
+			return isset( $labels[ $provider ] ) ? $labels[ $provider ] : ucfirst( $provider );
+		}
 	}
 }

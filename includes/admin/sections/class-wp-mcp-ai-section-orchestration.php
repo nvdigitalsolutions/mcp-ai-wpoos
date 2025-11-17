@@ -641,6 +641,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'models' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'models' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-admin-site-alt3"></span>
+			<?php esc_html_e( 'Models', 'wp-mcp-ai' ); ?>
+</a>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -655,6 +659,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
+					break;
+				case 'models':
+					$this->render_models_view();
 					break;
 				case 'overview':
 				default:
@@ -776,6 +783,342 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						}
 					}
 				}
+			}
+		}
+
+
+		/**
+		 * Render models view.
+		 */
+		private function render_models_view() {
+			// Use orchestration renderer for models view (SOC).
+			if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_models_view method.
+				echo WP_MCP_AI_Orchestration_Renderer::render_models_view();
+				
+				// Add styles for models view.
+				$this->render_models_styles();
+			} else {
+				echo '<div class="notice notice-error inline"><p>' . esc_html__( 'Orchestration renderer not available.', 'wp-mcp-ai' ) . '</p></div>';
+			}
+		}
+
+		/**
+		 * Render styles for models view.
+		 */
+		private function render_models_styles() {
+			?>
+			<style>
+				.wp-mcp-ai-models-view {
+					margin: 20px 0;
+				}
+				.models-header {
+					background: #fff;
+					padding: 20px;
+					margin-bottom: 20px;
+					border: 1px solid #ccd0d4;
+					box-shadow: 0 1px 1px rgba(0,0,0,.04);
+				}
+				.models-header h3 {
+					margin-top: 0;
+				}
+				.models-stats {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+					gap: 15px;
+					margin-bottom: 20px;
+				}
+				.models-stats .stat-card {
+					background: #fff;
+					padding: 20px;
+					border: 1px solid #ccd0d4;
+					box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					display: flex;
+					align-items: center;
+					gap: 15px;
+				}
+				.models-stats .stat-card .dashicons {
+					font-size: 32px;
+					width: 32px;
+					height: 32px;
+					color: #2271b1;
+				}
+				.models-stats .stat-content {
+					flex: 1;
+				}
+				.models-stats .stat-value {
+					font-size: 28px;
+					font-weight: bold;
+					color: #2271b1;
+					line-height: 1;
+				}
+				.models-stats .stat-label {
+					font-size: 13px;
+					color: #646970;
+					margin-top: 5px;
+				}
+				.provider-section {
+					margin-bottom: 30px;
+				}
+				.provider-title {
+					background: #f0f0f1;
+					padding: 12px 15px;
+					margin: 0 0 15px 0;
+					border-left: 4px solid #2271b1;
+					display: flex;
+					align-items: center;
+					gap: 8px;
+				}
+				.provider-title .dashicons {
+					color: #2271b1;
+				}
+				.provider-count {
+					margin-left: auto;
+					font-size: 14px;
+					font-weight: normal;
+					color: #646970;
+				}
+				.models-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+					gap: 15px;
+				}
+				.model-card {
+					background: #fff;
+					padding: 15px;
+					border: 1px solid #ccd0d4;
+					box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					transition: box-shadow 0.2s;
+				}
+				.model-card:hover {
+					box-shadow: 0 2px 6px rgba(0,0,0,.1);
+				}
+				.model-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-start;
+					margin-bottom: 12px;
+					padding-bottom: 12px;
+					border-bottom: 1px solid #f0f0f1;
+				}
+				.model-name {
+					margin: 0;
+					font-size: 15px;
+					font-weight: 600;
+					color: #1d2327;
+				}
+				.model-tier {
+					padding: 3px 8px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+					background: #e0e0e0;
+					color: #1d2327;
+				}
+				.model-tier.tier-free {
+					background: #d1f1d8;
+					color: #0a5622;
+				}
+				.model-tier.tier-tier-1 {
+					background: #c5e0f4;
+					color: #0c3c5a;
+				}
+				.model-tier.tier-tier-2 {
+					background: #ffd1aa;
+					color: #6b3807;
+				}
+				.model-capabilities,
+				.model-limits,
+				.model-costs {
+					margin-bottom: 12px;
+				}
+				.model-capabilities h6,
+				.model-limits h6,
+				.model-costs h6 {
+					margin: 0 0 8px 0;
+					font-size: 12px;
+					font-weight: 600;
+					color: #646970;
+					text-transform: uppercase;
+				}
+				.capabilities-list {
+					display: flex;
+					flex-direction: column;
+					gap: 4px;
+				}
+				.capability {
+					display: flex;
+					align-items: center;
+					gap: 6px;
+					font-size: 13px;
+				}
+				.capability.enabled {
+					color: #0a5622;
+				}
+				.capability.disabled {
+					color: #9ca2a7;
+				}
+				.capability .dashicons {
+					width: 16px;
+					height: 16px;
+					font-size: 16px;
+				}
+				.capability.enabled .dashicons {
+					color: #0a5622;
+				}
+				.capability.disabled .dashicons {
+					color: #9ca2a7;
+				}
+				.limits-grid,
+				.costs-grid {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					gap: 8px;
+				}
+				.limit-item,
+				.cost-item {
+					font-size: 13px;
+				}
+				.limit-label,
+				.cost-label {
+					color: #646970;
+					font-weight: 500;
+				}
+				.limit-value,
+				.cost-value {
+					color: #1d2327;
+					font-weight: 600;
+					margin-left: 4px;
+				}
+				.model-notes {
+					margin-top: 12px;
+					padding-top: 12px;
+					border-top: 1px solid #f0f0f1;
+				}
+				.model-notes p {
+					margin: 0;
+					font-size: 12px;
+					color: #646970;
+					font-style: italic;
+				}
+			</style>
+			<?php
+		}
+
+
+		/**
+						background: #d1f1d8;
+						color: #0a5622;
+					}
+					.model-tier.tier-tier-1 {
+						background: #c5e0f4;
+						color: #0c3c5a;
+					}
+					.model-tier.tier-tier-2 {
+						background: #ffd1aa;
+						color: #6b3807;
+					}
+					.model-capabilities,
+					.model-limits,
+					.model-costs {
+						margin-bottom: 12px;
+					}
+					.model-capabilities h6,
+					.model-limits h6,
+					.model-costs h6 {
+						margin: 0 0 8px 0;
+						font-size: 12px;
+						font-weight: 600;
+						color: #646970;
+						text-transform: uppercase;
+					}
+					.capabilities-list {
+						display: flex;
+						flex-direction: column;
+						gap: 4px;
+					}
+					.capability {
+						display: flex;
+						align-items: center;
+						gap: 6px;
+						font-size: 13px;
+					}
+					.capability.enabled {
+						color: #0a5622;
+					}
+					.capability.disabled {
+						color: #9ca2a7;
+					}
+					.capability .dashicons {
+						width: 16px;
+						height: 16px;
+						font-size: 16px;
+					}
+					.capability.enabled .dashicons {
+						color: #0a5622;
+					}
+					.capability.disabled .dashicons {
+						color: #9ca2a7;
+					}
+					.limits-grid,
+					.costs-grid {
+						display: grid;
+						grid-template-columns: 1fr 1fr;
+						gap: 8px;
+					}
+					.limit-item,
+					.cost-item {
+						font-size: 13px;
+					}
+					.limit-label,
+					.cost-label {
+						color: #646970;
+						font-weight: 500;
+					}
+					.limit-value,
+					.cost-value {
+						color: #1d2327;
+						font-weight: 600;
+						margin-left: 4px;
+					}
+					.model-notes {
+						margin-top: 12px;
+						padding-top: 12px;
+						border-top: 1px solid #f0f0f1;
+					}
+					.model-notes p {
+						margin: 0;
+						font-size: 12px;
+						color: #646970;
+						font-style: italic;
+					}
+				</style>
+				<?php
+
+			} catch ( Exception $e ) {
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Models view rendering failed: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_section',
+								'method'    => 'render_models_view',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) {
+						// Fallback to PHP error log if WP logger fails.
+						error_log( 'WP_MCP_AI: Failed to log models view error - ' . $log_error->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					}
+				} else {
+					// Logger not available, use PHP error log directly.
+					error_log( 'WP_MCP_AI: Models view rendering failed - ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				}
+
+				// Return safe fallback.
+				echo '<div class="notice notice-error inline"><p>' . esc_html__( 'Failed to load models view. Please try again later.', 'wp-mcp-ai' ) . '</p></div>';
 			}
 		}
 
