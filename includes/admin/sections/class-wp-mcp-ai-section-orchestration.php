@@ -641,6 +641,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'wp-mcp-ai' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'models' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'models' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-editor-table"></span>
+			<?php esc_html_e( 'Models', 'wp-mcp-ai' ); ?>
+</a>
 </nav>
 
 <!-- Hidden field to preserve view during form submission -->
@@ -655,6 +659,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
+					break;
+				case 'models':
+					$this->render_models_view();
 					break;
 				case 'overview':
 				default:
@@ -806,6 +813,280 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			);
 
 			return isset( $icons[ $status ] ) ? $icons[ $status ] : 'info';
+		}
+
+		/**
+		 * Render models view.
+		 */
+		private function render_models_view() {
+			echo '<div class="wp-mcp-ai-models-view">';
+			echo '<h3>' . esc_html__( 'AI Models Registry', 'wp-mcp-ai' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'View all AI models currently registered in the orchestration layer with their capabilities, costs, and limits. This is the source of truth for model routing, budget management, and cost calculation.', 'wp-mcp-ai' ) . '</p>';
+
+			// Check if Model Rate Limits CCT is available.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+				echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model Rate Limits CCT is not available. Please ensure JetEngine with Custom Content Types module is active.', 'wp-mcp-ai' ) . '</p></div>';
+				echo '</div>';
+				return;
+			}
+
+			try {
+				$models = $this->get_all_models();
+
+				if ( empty( $models ) ) {
+					echo '<div class="notice notice-info inline"><p>' . esc_html__( 'No models found. Models will be automatically populated on first use.', 'wp-mcp-ai' ) . '</p></div>';
+					echo '</div>';
+					return;
+				}
+
+				// Group models by provider.
+				$models_by_provider = array();
+				foreach ( $models as $model ) {
+					$provider = isset( $model['provider'] ) ? $model['provider'] : 'unknown';
+					if ( ! isset( $models_by_provider[ $provider ] ) ) {
+						$models_by_provider[ $provider ] = array();
+					}
+					$models_by_provider[ $provider ][] = $model;
+				}
+
+				// Render provider groups.
+				foreach ( $models_by_provider as $provider => $provider_models ) {
+					$this->render_provider_models_table( $provider, $provider_models );
+				}
+
+			} catch ( Exception $e ) {
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Models view rendering failed: ' . $e->getMessage(),
+						array(
+							'component' => 'orchestration_section',
+							'method'    => 'render_models_view',
+							'exception' => $e->getMessage(),
+						)
+					);
+				}
+				echo '<div class="notice notice-error inline"><p>' . esc_html__( 'Error loading models data. Please try again later.', 'wp-mcp-ai' ) . '</p></div>';
+			}
+
+			echo '</div>';
+		}
+
+		/**
+		 * Get all models from CCT.
+		 *
+		 * @return array Array of model data.
+		 */
+		private function get_all_models() {
+			$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+			if ( ! $handler ) {
+				return array();
+			}
+
+			$factory = $handler->get_factory();
+
+			if ( ! $factory || empty( $factory->db ) ) {
+				return array();
+			}
+
+			// Query all models.
+			$models = $factory->db->query( array() );
+
+			return is_array( $models ) ? $models : array();
+		}
+
+		/**
+		 * Render models table for a specific provider.
+		 *
+		 * @param string $provider Provider name.
+		 * @param array  $models   Array of model data for this provider.
+		 */
+		private function render_provider_models_table( $provider, $models ) {
+			$provider_labels = array(
+				'openai'    => 'OpenAI',
+				'google'    => 'Google Gemini',
+				'anthropic' => 'Anthropic',
+				'azure'     => 'Azure OpenAI',
+				'ollama'    => 'Ollama (Local)',
+				'lm_studio' => 'LM Studio (Local)',
+				'other'     => 'Other',
+			);
+
+			$provider_label = isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : ucfirst( $provider );
+
+			?>
+			<div class="wp-mcp-ai-provider-section">
+				<h4>
+					<span class="dashicons dashicons-admin-plugins"></span>
+					<?php echo esc_html( $provider_label ); ?>
+					<span class="model-count">(<?php echo count( $models ); ?> <?php echo esc_html( _n( 'model', 'models', count( $models ), 'wp-mcp-ai' ) ); ?>)</span>
+				</h4>
+				
+				<div class="wp-mcp-ai-models-table-wrapper">
+					<table class="wp-list-table widefat fixed striped wp-mcp-ai-models-table">
+						<thead>
+							<tr>
+								<th class="model-name"><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
+								<th class="capabilities"><?php esc_html_e( 'Capabilities', 'wp-mcp-ai' ); ?></th>
+								<th class="context-window"><?php esc_html_e( 'Context', 'wp-mcp-ai' ); ?></th>
+								<th class="cost"><?php esc_html_e( 'Cost (per 1K tokens)', 'wp-mcp-ai' ); ?></th>
+								<th class="limits"><?php esc_html_e( 'Rate Limits', 'wp-mcp-ai' ); ?></th>
+								<th class="tier"><?php esc_html_e( 'Tier', 'wp-mcp-ai' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $models as $model ) : ?>
+								<?php $this->render_model_row( $model ); ?>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<?php
+		}
+
+		/**
+		 * Render a single model row.
+		 *
+		 * @param array $model Model data.
+		 */
+		private function render_model_row( $model ) {
+			$model_id           = isset( $model['_ID'] ) ? absint( $model['_ID'] ) : 0;
+			$model_name         = isset( $model['model_name'] ) ? $model['model_name'] : 'Unknown';
+			$context_window     = isset( $model['context_window'] ) ? absint( $model['context_window'] ) : 0;
+			$max_output         = isset( $model['max_output_tokens'] ) ? absint( $model['max_output_tokens'] ) : 0;
+			$tpm_limit          = isset( $model['tpm_limit'] ) ? absint( $model['tpm_limit'] ) : 0;
+			$rpm_limit          = isset( $model['rpm_limit'] ) ? absint( $model['rpm_limit'] ) : 0;
+			$tier               = isset( $model['tier'] ) ? $model['tier'] : '';
+			$input_cost         = isset( $model['cost_per_1k_input_tokens'] ) ? (float) $model['cost_per_1k_input_tokens'] : 0;
+			$output_cost        = isset( $model['cost_per_1k_output_tokens'] ) ? (float) $model['cost_per_1k_output_tokens'] : 0;
+			$supports_streaming = isset( $model['supports_streaming'] ) && $model['supports_streaming'];
+			$supports_function  = isset( $model['supports_function_calling'] ) && $model['supports_function_calling'];
+			$supports_vision    = isset( $model['supports_vision'] ) && $model['supports_vision'];
+			$fallback_model     = isset( $model['fallback_model'] ) ? $model['fallback_model'] : '';
+			$notes              = isset( $model['notes'] ) ? $model['notes'] : '';
+
+			?>
+			<tr data-model-id="<?php echo esc_attr( $model_id ); ?>" data-model-name="<?php echo esc_attr( $model_name ); ?>">
+				<td class="model-name">
+					<strong><?php echo esc_html( $model_name ); ?></strong>
+					<?php if ( $notes ) : ?>
+						<div class="model-notes" title="<?php echo esc_attr( $notes ); ?>">
+							<span class="dashicons dashicons-info-outline"></span>
+							<span class="notes-text"><?php echo esc_html( wp_trim_words( $notes, 10 ) ); ?></span>
+						</div>
+					<?php endif; ?>
+					<?php if ( $fallback_model ) : ?>
+						<div class="model-fallback">
+							<span class="dashicons dashicons-backup"></span>
+							<span class="fallback-label"><?php esc_html_e( 'Fallback:', 'wp-mcp-ai' ); ?></span>
+							<code><?php echo esc_html( $fallback_model ); ?></code>
+						</div>
+					<?php endif; ?>
+				</td>
+				<td class="capabilities">
+					<div class="capability-badges">
+						<?php if ( $supports_streaming ) : ?>
+							<span class="badge badge-streaming" title="<?php esc_attr_e( 'Supports Streaming', 'wp-mcp-ai' ); ?>">
+								<span class="dashicons dashicons-controls-play"></span>
+								<?php esc_html_e( 'Stream', 'wp-mcp-ai' ); ?>
+							</span>
+						<?php endif; ?>
+						<?php if ( $supports_function ) : ?>
+							<span class="badge badge-functions" title="<?php esc_attr_e( 'Supports Function Calling', 'wp-mcp-ai' ); ?>">
+								<span class="dashicons dashicons-admin-tools"></span>
+								<?php esc_html_e( 'Functions', 'wp-mcp-ai' ); ?>
+							</span>
+						<?php endif; ?>
+						<?php if ( $supports_vision ) : ?>
+							<span class="badge badge-vision" title="<?php esc_attr_e( 'Supports Vision', 'wp-mcp-ai' ); ?>">
+								<span class="dashicons dashicons-format-image"></span>
+								<?php esc_html_e( 'Vision', 'wp-mcp-ai' ); ?>
+							</span>
+						<?php endif; ?>
+					</div>
+				</td>
+				<td class="context-window">
+					<?php if ( $context_window > 0 ) : ?>
+						<div class="editable-field" data-field="context_window" data-value="<?php echo esc_attr( $context_window ); ?>" data-label="<?php esc_attr_e( 'Context Window', 'wp-mcp-ai' ); ?>">
+							<div class="field-display context-info">
+								<strong><?php echo esc_html( number_format( $context_window ) ); ?></strong>
+								<?php if ( $max_output > 0 ) : ?>
+									<div class="editable-field max-output" data-field="max_output_tokens" data-value="<?php echo esc_attr( $max_output ); ?>" data-label="<?php esc_attr_e( 'Max Output Tokens', 'wp-mcp-ai' ); ?>">
+										<div class="field-display">
+											<?php
+											/* translators: %s: maximum output tokens */
+											printf( esc_html__( 'Max out: %s', 'wp-mcp-ai' ), esc_html( number_format( $max_output ) ) );
+											?>
+										</div>
+										<span class="dashicons dashicons-edit edit-icon"></span>
+									</div>
+								<?php endif; ?>
+							</div>
+							<span class="dashicons dashicons-edit edit-icon"></span>
+						</div>
+					<?php else : ?>
+						<span class="not-available">—</span>
+					<?php endif; ?>
+				</td>
+				<td class="cost">
+					<?php if ( $input_cost > 0 || $output_cost > 0 ) : ?>
+						<div class="cost-info">
+							<div class="editable-field cost-input" data-field="cost_per_1k_input_tokens" data-value="<?php echo esc_attr( $input_cost ); ?>" data-label="<?php esc_attr_e( 'Input Cost', 'wp-mcp-ai' ); ?>">
+								<div class="field-display">
+									<span class="cost-label"><?php esc_html_e( 'In:', 'wp-mcp-ai' ); ?></span>
+									<span class="cost-value">$<?php echo esc_html( number_format( $input_cost, 4 ) ); ?></span>
+								</div>
+								<span class="dashicons dashicons-edit edit-icon"></span>
+							</div>
+							<div class="editable-field cost-output" data-field="cost_per_1k_output_tokens" data-value="<?php echo esc_attr( $output_cost ); ?>" data-label="<?php esc_attr_e( 'Output Cost', 'wp-mcp-ai' ); ?>">
+								<div class="field-display">
+									<span class="cost-label"><?php esc_html_e( 'Out:', 'wp-mcp-ai' ); ?></span>
+									<span class="cost-value">$<?php echo esc_html( number_format( $output_cost, 4 ) ); ?></span>
+								</div>
+								<span class="dashicons dashicons-edit edit-icon"></span>
+							</div>
+						</div>
+					<?php else : ?>
+						<span class="free-model"><?php esc_html_e( 'Free / Local', 'wp-mcp-ai' ); ?></span>
+					<?php endif; ?>
+				</td>
+				<td class="limits">
+					<div class="limits-info">
+						<?php if ( $tpm_limit > 0 ) : ?>
+							<div class="editable-field limit-tpm" data-field="tpm_limit" data-value="<?php echo esc_attr( $tpm_limit ); ?>" data-label="<?php esc_attr_e( 'TPM Limit', 'wp-mcp-ai' ); ?>">
+								<div class="field-display">
+									<span class="limit-label"><?php esc_html_e( 'TPM:', 'wp-mcp-ai' ); ?></span>
+									<span class="limit-value"><?php echo esc_html( number_format( $tpm_limit ) ); ?></span>
+								</div>
+								<span class="dashicons dashicons-edit edit-icon"></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $rpm_limit > 0 ) : ?>
+							<div class="editable-field limit-rpm" data-field="rpm_limit" data-value="<?php echo esc_attr( $rpm_limit ); ?>" data-label="<?php esc_attr_e( 'RPM Limit', 'wp-mcp-ai' ); ?>">
+								<div class="field-display">
+									<span class="limit-label"><?php esc_html_e( 'RPM:', 'wp-mcp-ai' ); ?></span>
+									<span class="limit-value"><?php echo esc_html( number_format( $rpm_limit ) ); ?></span>
+								</div>
+								<span class="dashicons dashicons-edit edit-icon"></span>
+							</div>
+						<?php endif; ?>
+						<?php if ( $tpm_limit === 0 && $rpm_limit === 0 ) : ?>
+							<span class="unlimited"><?php esc_html_e( 'Unlimited', 'wp-mcp-ai' ); ?></span>
+						<?php endif; ?>
+					</div>
+				</td>
+				<td class="tier">
+					<?php if ( $tier ) : ?>
+						<span class="tier-badge tier-<?php echo esc_attr( $tier ); ?>">
+							<?php echo esc_html( ucwords( str_replace( array( '-', '_' ), ' ', $tier ) ) ); ?>
+						</span>
+					<?php else : ?>
+						<span class="not-available">—</span>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<?php
 		}
 	}
 }

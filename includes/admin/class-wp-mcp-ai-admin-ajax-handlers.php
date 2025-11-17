@@ -75,6 +75,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
+				'wp_ajax_wp_mcp_ai_update_model_constraint' => 'handle_update_model_constraint',
 			);
 
 			$action         = current_action();
@@ -1850,6 +1851,136 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'total_needing_migration' => $results['total_needing_migration'],
 			)
 		);
+	}
+
+	/**
+	 * Handle AJAX request to update model constraint.
+	 * 
+	 * Following SoC principles: This handler validates input and delegates to CCT for persistence.
+	 */
+	private function handle_update_model_constraint() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_models_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Get and validate input.
+		$model_id   = isset( $_POST['model_id'] ) ? absint( $_POST['model_id'] ) : 0;
+		$model_name = isset( $_POST['model_name'] ) ? sanitize_text_field( wp_unslash( $_POST['model_name'] ) ) : '';
+		$field      = isset( $_POST['field'] ) ? sanitize_key( $_POST['field'] ) : '';
+		$value      = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : '';
+
+		// Validate required fields.
+		if ( empty( $model_name ) || empty( $field ) ) {
+			wp_send_json_error( array( 'message' => __( 'Missing required fields.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Validate field name (security: only allow specific fields).
+		$allowed_fields = array(
+			'tpm_limit',
+			'rpm_limit',
+			'context_window',
+			'max_output_tokens',
+			'cost_per_1k_input_tokens',
+			'cost_per_1k_output_tokens',
+		);
+
+		if ( ! in_array( $field, $allowed_fields, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid field specified.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Validate and sanitize value based on field type.
+		if ( in_array( $field, array( 'cost_per_1k_input_tokens', 'cost_per_1k_output_tokens' ), true ) ) {
+			// Cost fields: must be numeric and >= 0.
+			$value = (float) $value;
+			if ( $value < 0 ) {
+				wp_send_json_error( array( 'message' => __( 'Cost values must be greater than or equal to 0.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+		} else {
+			// Limit fields: must be integer and >= 0.
+			$value = absint( $value );
+		}
+
+		// Check if Model Rate Limits CCT is available.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Model Rate Limits CCT is not available.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		try {
+			// Get the model data.
+			$model_data = WP_MCP_AI_Model_Rate_Limits_CCT::get_model_limits( $model_name, false );
+
+			if ( ! $model_data ) {
+				wp_send_json_error( array( 'message' => __( 'Model not found.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Update the field.
+			$model_data[ $field ] = $value;
+
+			// Get handler to update the CCT.
+			$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+			if ( ! $handler ) {
+				wp_send_json_error( array( 'message' => __( 'Unable to access model data handler.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Update the item.
+			$result = $handler->update_item( $model_data );
+
+			if ( ! $result ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to update model constraint.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Log the change.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'model_constraint_updated',
+					sprintf( 'Updated %s for model %s', $field, $model_name ),
+					array(
+						'model_name' => $model_name,
+						'field'      => $field,
+						'old_value'  => isset( $model_data[ $field ] ) ? $model_data[ $field ] : null,
+						'new_value'  => $value,
+						'user_id'    => get_current_user_id(),
+					)
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message' => __( 'Model constraint updated successfully.', 'wp-mcp-ai' ),
+					'field'   => $field,
+					'value'   => $value,
+				)
+			);
+
+		} catch ( Exception $e ) {
+			// Log error if logger is available.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Model constraint update failed: ' . $e->getMessage(),
+					array(
+						'model_name' => $model_name,
+						'field'      => $field,
+						'value'      => $value,
+						'exception'  => $e->getMessage(),
+					)
+				);
+			}
+
+			wp_send_json_error( array( 'message' => __( 'An error occurred while updating the model constraint.', 'wp-mcp-ai' ) ) );
+		}
 	}
 	}
 }
