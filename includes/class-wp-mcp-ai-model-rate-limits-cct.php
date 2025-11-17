@@ -645,7 +645,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				__( 'High-Capacity Fallback Model', 'wp-mcp-ai' ),
 				'text',
 				array(
-					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.0-flash-exp). Leave empty to use global fallback setting.', 'wp-mcp-ai' ),
+					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.5-flash). Leave empty to use global fallback setting.', 'wp-mcp-ai' ),
 				)
 			),
 		);

@@ -316,8 +316,8 @@ class WP_MCP_AI_Model_Selector {
 			return sanitize_text_field( $settings['high_token_fallback_model'] );
 		}
 
-		// Default to gemini-2.0-flash-exp which has high token capacity.
-		return 'gemini-2.0-flash-exp';
+		// Default to gemini-2.5-flash which has high token capacity.
+		return 'gemini-2.5-flash';
 	}
 
 	/**

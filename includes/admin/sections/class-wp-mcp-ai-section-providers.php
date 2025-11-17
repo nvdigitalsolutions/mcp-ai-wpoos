@@ -198,16 +198,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'default_gemini_model'        => array(
 					'type'        => 'select',
 					'label'       => __( 'Default Gemini Model', 'wp-mcp-ai' ),
-					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Flash is the latest production model. Gemini 2.0 Flash (Experimental) offers cutting-edge capabilities, while Gemini 1.5 Pro provides stable, proven performance. Gemini 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
+					'description' => __( 'The default model to use for Gemini requests. Gemini 2.5 Flash is the latest stable model with multimodal support (text, image, video). Gemini 2.0 Flash is the previous stable generation. Gemini 1.5 Pro provides proven performance, while 1.5 Flash is faster and more economical.', 'wp-mcp-ai' ),
 					'options'     => array(
-						'gemini-2.5-flash'     => 'Gemini 2.5 Flash (Latest)',
-						'gemini-2.0-flash-exp' => 'Gemini 2.0 Flash (Experimental)',
+						'gemini-2.5-flash'     => 'Gemini 2.5 Flash (Latest - Stable)',
+						'gemini-2.0-flash'     => 'Gemini 2.0 Flash',
 						'gemini-exp-1206'      => 'Gemini Exp 1206 (Experimental)',
 						'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
 						'gemini-1.5-flash'     => 'Gemini 1.5 Flash',
 						'gemini-pro'           => 'Gemini Pro',
 					),
-					'default'     => 'gemini-1.5-pro',
+					'default'     => 'gemini-2.5-flash',
 				),
 
 				// Ollama Settings.
