@@ -468,124 +468,190 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 		 * @return string HTML output or fallback on error.
 		 */
 		public static function render_models_view() {
-			try {
-				// Check if Model Rate Limits CCT class is available.
-				if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
-					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model rate limits system not available. Please ensure JetEngine is active.', 'wp-mcp-ai' ) . '</p></div>';
-				}
-
-				// Get the item handler.
-				$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
-
-				if ( ! $handler ) {
-					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model rate limits database not accessible. Please ensure JetEngine Custom Content Types module is active.', 'wp-mcp-ai' ) . '</p></div>';
-				}
-
-				$factory = $handler->get_factory();
-
-				if ( ! $factory || empty( $factory->db ) ) {
-					return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Unable to access model database.', 'wp-mcp-ai' ) . '</p></div>';
-				}
-
-				// Query all models.
-				$models = $factory->db->query( array() );
-
-				if ( empty( $models ) || ! is_array( $models ) ) {
-					return '<div class="notice notice-info inline"><p>' . esc_html__( 'No models configured yet. Models will be auto-populated on first use.', 'wp-mcp-ai' ) . '</p></div>';
-				}
-
-				// Group models by provider.
-				$models_by_provider = array();
-				foreach ( $models as $model ) {
-					if ( ! isset( $model['provider'] ) ) {
-						continue;
-					}
-					$provider = sanitize_text_field( $model['provider'] );
-					if ( ! isset( $models_by_provider[ $provider ] ) ) {
-						$models_by_provider[ $provider ] = array();
-					}
-					$models_by_provider[ $provider ][] = $model;
-				}
-
-				// Get JetEngine admin URL for the CCT.
-				$cct_url = admin_url( 'admin.php?page=jet-cct-ai_model_rate_limits' );
-
-				ob_start();
-				?>
-				<div class="wp-mcp-ai-models-view">
-					<div class="models-header">
-						<h3><?php esc_html_e( 'AI Models and Capabilities', 'wp-mcp-ai' ); ?></h3>
-						<p class="description">
-							<?php esc_html_e( 'View available AI models and their capabilities. This data is managed in the JetEngine Custom Content Type.', 'wp-mcp-ai' ); ?>
-						</p>
-						<p>
-							<a href="<?php echo esc_url( $cct_url ); ?>" class="button button-secondary">
-								<span class="dashicons dashicons-admin-generic"></span>
-								<?php esc_html_e( 'Manage Models in CCT', 'wp-mcp-ai' ); ?>
-							</a>
-						</p>
-					</div>
-
-					<div class="models-stats">
-						<div class="stat-card">
-							<span class="dashicons dashicons-admin-site-alt3"></span>
-							<div class="stat-content">
-								<div class="stat-value"><?php echo absint( count( $models ) ); ?></div>
-								<div class="stat-label"><?php esc_html_e( 'Total Models', 'wp-mcp-ai' ); ?></div>
-							</div>
-						</div>
-						<div class="stat-card">
-							<span class="dashicons dashicons-networking"></span>
-							<div class="stat-content">
-								<div class="stat-value"><?php echo absint( count( $models_by_provider ) ); ?></div>
-								<div class="stat-label"><?php esc_html_e( 'Providers', 'wp-mcp-ai' ); ?></div>
-							</div>
-						</div>
-					</div>
-
-					<?php foreach ( $models_by_provider as $provider => $provider_models ) : ?>
-						<?php
-						$provider_label = self::get_provider_label( $provider );
-						?>
-						<div class="provider-section">
-							<h4 class="provider-title">
-								<span class="dashicons dashicons-admin-site-alt3"></span>
-								<?php echo esc_html( $provider_label ); ?>
-								<span class="provider-count">(<?php echo absint( count( $provider_models ) ); ?> <?php esc_html_e( 'models', 'wp-mcp-ai' ); ?>)</span>
-							</h4>
-
-							<div class="models-grid">
-								<?php foreach ( $provider_models as $model ) : ?>
-									<?php echo self::render_model_card( $model ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_model_card method. ?>
-								<?php endforeach; ?>
-							</div>
-						</div>
-					<?php endforeach; ?>
-				</div>
-				<?php
-				return ob_get_clean();
-
-			} catch ( Exception $e ) {
-				// Log error if logger is available.
-				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
-					try {
-						WP_MCP_AI_Logger::log_error(
-							'Models view rendering failed: ' . $e->getMessage(),
-							array(
-								'component' => 'orchestration_renderer',
-								'method'    => 'render_models_view',
-								'exception' => $e->getMessage(),
-							)
-						);
-					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
-						// Ignore logging errors to prevent cascading failures.
-					}
-				}
-
-				// Return safe fallback.
-				return '<div class="notice notice-error inline"><p>' . esc_html__( 'Failed to load models view. Please try again later.', 'wp-mcp-ai' ) . '</p></div>';
+		try {
+			// Check if Model Rate Limits CCT class is available.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+				return '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model rate limits system not available.', 'wp-mcp-ai' ) . '</p></div>';
 			}
+
+			// Get models from internal logic (source of truth).
+			$internal_models = self::get_internal_model_definitions();
+
+			if ( empty( $internal_models ) || ! is_array( $internal_models ) ) {
+				return '<div class="notice notice-error inline"><p>' . esc_html__( 'Internal model definitions not available.', 'wp-mcp-ai' ) . '</p></div>';
+			}
+
+			// Check CCT sync status.
+			$cct_available = false;
+			$cct_models    = array();
+			$handler       = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+			if ( $handler ) {
+				$factory = $handler->get_factory();
+				if ( $factory && ! empty( $factory->db ) ) {
+					$cct_models    = $factory->db->query( array() );
+					$cct_available = true;
+				}
+			}
+
+			// Use internal models for display (source of truth).
+			$models = $internal_models;
+
+			// Group models by provider.
+			$models_by_provider = array();
+			foreach ( $models as $model ) {
+				if ( ! isset( $model['provider'] ) ) {
+					continue;
+				}
+				$provider = sanitize_text_field( $model['provider'] );
+				if ( ! isset( $models_by_provider[ $provider ] ) ) {
+					$models_by_provider[ $provider ] = array();
+				}
+				$models_by_provider[ $provider ][] = $model;
+			}
+
+			// Get JetEngine admin URL for the CCT.
+			$cct_url = admin_url( 'admin.php?page=jet-cct-ai_model_rate_limits' );
+
+			// Prepare sync status.
+			$sync_status_class = 'notice-info';
+			$sync_message      = '';
+			$needs_sync        = false;
+
+			if ( ! $cct_available ) {
+				$sync_status_class = 'notice-warning';
+				$sync_message      = __('JetEngine CCT not available. Install JetEngine to enable CRUD operations.', 'wp-mcp-ai' );
+				$needs_sync        = false;
+			} elseif ( empty( $cct_models ) ) {
+				$sync_status_class = 'notice-warning';
+				$sync_message      = __( 'CCT is empty. Sync required to enable CRUD operations.', 'wp-mcp-ai' );
+				$needs_sync        = true;
+			} elseif ( count( $cct_models ) !== count( $internal_models ) ) {
+				$sync_status_class = 'notice-warning';
+				$sync_message      = sprintf(
+					__('Sync mismatch: %1$d models in code vs %2$d in CCT. Re-sync recommended.', 'wp-mcp-ai' ),
+					count( $internal_models ),
+					count( $cct_models )
+				);
+				$needs_sync = true;
+			} else {
+				$sync_status_class = 'notice-success';
+				$sync_message      = __( 'CCT is synchronized. CRUD operations available in JetEngine.', 'wp-mcp-ai' );
+				$needs_sync        = false;
+			}
+
+			ob_start();
+			?>
+			<div class="wp-mcp-ai-models-view">
+				<div class="models-header">
+					<h3><?php esc_html_e( 'AI Models and Capabilities', 'wp-mcp-ai' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'Model definitions are defined in code (internal logic - source of truth). The CCT provides CRUD operations for runtime customization.', 'wp-mcp-ai' ); ?>
+					</p>
+
+					<?php if ( $sync_message ) : ?>
+						<div class="notice <?php echo esc_attr( $sync_status_class ); ?> inline">
+							<p>
+								<strong><?php esc_html_e( 'CCT Sync Status:', 'wp-mcp-ai' ); ?></strong> 
+								<?php echo esc_html( $sync_message ); ?>
+							</p>
+						</div>
+					<?php endif; ?>
+
+					<p class="models-actions">
+						<span class="source-indicator">
+							<span class="dashicons dashicons-media-code"></span>
+							<strong><?php esc_html_e( 'Source:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Internal Logic (Code)', 'wp-mcp-ai' ); ?>
+						</span>
+
+						<?php if ( $cct_available ) : ?>
+							&nbsp;|&nbsp;
+							<a href="<?php echo esc_url( $cct_url ); ?>" class="button button-secondary">
+								<span class="dashicons dashicons-database"></span>
+								<?php esc_html_e( 'CRUD in CCT', 'wp-mcp-ai' ); ?>
+							</a>
+						<?php endif; ?>
+
+						<?php if ( $needs_sync && $cct_available ) : ?>
+							&nbsp;
+							<button type="button" class="button button-primary wp-mcp-ai-sync-models" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_mcp_ai_sync_models' ) ); ?>">
+								<span class="dashicons dashicons-update"></span>
+								<?php esc_html_e( 'Sync to CCT', 'wp-mcp-ai' ); ?>
+							</button>
+						<?php endif; ?>
+					</p>
+				</div>
+
+				<div class="models-stats">
+					<div class="stat-card">
+						<span class="dashicons dashicons-media-code"></span>
+						<div class="stat-content">
+							<div class="stat-value"><?php echo absint( count( $internal_models ) ); ?></div>
+							<div class="stat-label"><?php esc_html_e( 'Models (Internal Logic)', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+					<div class="stat-card">
+						<span class="dashicons dashicons-networking"></span>
+						<div class="stat-content">
+							<div class="stat-value"><?php echo absint( count( $models_by_provider ) ); ?></div>
+							<div class="stat-label"><?php esc_html_e( 'Providers', 'wp-mcp-ai' ); ?></div>
+						</div>
+					</div>
+					<?php if ( $cct_available ) : ?>
+						<div class="stat-card <?php echo $needs_sync ? 'needs-sync' : ''; ?>">
+							<span class="dashicons dashicons-database"></span>
+							<div class="stat-content">
+								<div class="stat-value"><?php echo absint( count( $cct_models ) ); ?></div>
+								<div class="stat-label"><?php esc_html_e( 'Models in CCT', 'wp-mcp-ai' ); ?></div>
+							</div>
+						</div>
+					<?php endif; ?>
+				</div>
+
+				<?php foreach ( $models_by_provider as $provider => $provider_models ) : ?>
+					<?php
+					$provider_label = self::get_provider_label( $provider );
+					?>
+					<div class="provider-section">
+						<h4 class="provider-title">
+							<span class="dashicons dashicons-admin-site-alt3"></span>
+							<?php echo esc_html( $provider_label ); ?>
+							<span class="provider-count">(<?php echo absint( count( $provider_models ) ); ?> <?php esc_html_e( 'models', 'wp-mcp-ai' ); ?>)</span>
+						</h4>
+
+						<div class="models-grid">
+							<?php foreach ( $provider_models as $model ) : ?>
+								<?php echo self::render_model_card( $model ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_model_card method. ?>
+							<?php endforeach; ?>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<?php
+			return ob_get_clean();
+
+		} catch ( Exception $e ) {
+			// Log error if logger is available.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+				try {
+					WP_MCP_AI_Logger::log_error(
+						'Models view rendering failed: ' . $e->getMessage(),
+						array(
+							'component' => 'orchestration_renderer',
+							'method'    => 'render_models_view',
+							'exception' => $e->getMessage(),
+						)
+					);
+				} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+					// Ignore logging errors to prevent cascading failures.
+				}
+			}
+
+			// Return safe fallback.
+			return '<div class="notice notice-error inline"><p>' . esc_html__( 'Failed to load models view. Please try again later.', 'wp-mcp-ai' ) . '</p></div>';
 		}
+	}
 
 		/**
 		 * Render a single model card.
@@ -718,6 +784,47 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 			);
 
 			return isset( $labels[ $provider ] ) ? $labels[ $provider ] : ucfirst( $provider );
+		}
+
+		/**
+		 * Get internal model definitions from code (source of truth).
+		 *
+		 * Uses reflection to access the protected get_default_model_data method.
+		 *
+		 * @return array Model definitions.
+		 */
+		protected static function get_internal_model_definitions() {
+			try {
+				// Use reflection to access the protected method in Model_Rate_Limits_CCT.
+				if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+					return array();
+				}
+
+				$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+				$method     = $reflection->getMethod( 'get_default_model_data' );
+				$method->setAccessible( true );
+
+				return $method->invoke( null );
+
+			} catch ( Exception $e ) {
+				// Log error if logger is available.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+					try {
+						WP_MCP_AI_Logger::log_error(
+							'Failed to get internal model definitions: ' . $e->getMessage(),
+							array(
+								'component' => 'orchestration_renderer',
+								'method'    => 'get_internal_model_definitions',
+								'exception' => $e->getMessage(),
+							)
+						);
+					} catch ( Exception $log_error ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+						// Ignore logging errors to prevent cascading failures.
+					}
+				}
+
+				return array();
+			}
 		}
 	}
 }

@@ -1002,6 +1002,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					color: #646970;
 					font-style: italic;
 				}
+				/* Sync status styles */
+				.models-actions {
+					display: flex;
+					align-items: center;
+					gap: 10px;
+					flex-wrap: wrap;
+				}
+				.source-indicator {
+					display: flex;
+					align-items: center;
+					gap: 5px;
+				}
+				.source-indicator .dashicons {
+					color: #46b450;
+				}
+				.stat-card.needs-sync {
+					border-left: 3px solid #f0b849;
+				}
+				.stat-card.needs-sync .dashicons {
+					color: #f0b849;
+				}
 			</style>
 			<?php
 		}
