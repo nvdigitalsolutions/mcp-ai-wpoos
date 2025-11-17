@@ -386,6 +386,17 @@
 	}
 }
 
+/* Sync button spinning icon */
+.dashicons.spin {
+	animation: spin-icon 1s linear infinite;
+}
+
+@keyframes spin-icon {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 /* Action Buttons */
 .model-actions {
 	display: flex;

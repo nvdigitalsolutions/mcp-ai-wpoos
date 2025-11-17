@@ -76,6 +76,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
 				'wp_ajax_wp_mcp_ai_update_model_constraint' => 'handle_update_model_constraint',
+				'wp_ajax_wp_mcp_ai_sync_models'            => 'handle_sync_models',
 			);
 
 			$action         = current_action();
@@ -1980,6 +1981,201 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			wp_send_json_error( array( 'message' => __( 'An error occurred while updating the model constraint.', 'wp-mcp-ai' ) ) );
+		}
+	}
+
+	/**
+	 * Handle AJAX request to sync models from defaults.
+	 * 
+	 * Following SoC principles: This handler orchestrates the sync process,
+	 * delegating to the service layer (CCT) for actual persistence.
+	 */
+	private function handle_sync_models() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_models_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to perform this action.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		// Check if Model Rate Limits CCT is available.
+		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Model Rate Limits CCT is not available.', 'wp-mcp-ai' ) ) );
+			return;
+		}
+
+		try {
+			// Get the handler.
+			$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
+
+			if ( ! $handler ) {
+				wp_send_json_error( array( 'message' => __( 'Unable to access model data handler.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			$factory = $handler->get_factory();
+
+			if ( ! $factory || empty( $factory->db ) ) {
+				wp_send_json_error( array( 'message' => __( 'Unable to access model database.', 'wp-mcp-ai' ) ) );
+				return;
+			}
+
+			// Get existing models.
+			$existing_models = $factory->db->query( array() );
+			$existing_models = is_array( $existing_models ) ? $existing_models : array();
+
+			// Create a map of existing models by name for quick lookup.
+			$existing_map = array();
+			foreach ( $existing_models as $existing_model ) {
+				if ( isset( $existing_model['model_name'] ) ) {
+					$existing_map[ $existing_model['model_name'] ] = $existing_model;
+				}
+			}
+
+			// Get default model data using reflection (as it's a protected method).
+			$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
+			$method     = $reflection->getMethod( 'get_default_model_data' );
+			$method->setAccessible( true );
+			$default_models = $method->invoke( null );
+
+			$added_count   = 0;
+			$updated_count = 0;
+			$skipped_count = 0;
+
+			// Fields to update from defaults (excluding notes which might be custom).
+			$updateable_fields = array(
+				'provider',
+				'tpm_limit',
+				'rpm_limit',
+				'context_window',
+				'max_output_tokens',
+				'tier',
+				'supports_streaming',
+				'supports_function_calling',
+				'supports_vision',
+				'cost_per_1k_input_tokens',
+				'cost_per_1k_output_tokens',
+			);
+
+			foreach ( $default_models as $default_model ) {
+				if ( ! isset( $default_model['model_name'] ) ) {
+					continue;
+				}
+
+				$model_name = $default_model['model_name'];
+
+				if ( isset( $existing_map[ $model_name ] ) ) {
+					// Model exists - update it with new defaults while preserving custom fields.
+					$existing = $existing_map[ $model_name ];
+					$updated  = false;
+
+					foreach ( $updateable_fields as $field ) {
+						// Only update if the default value is different.
+						if ( isset( $default_model[ $field ] ) ) {
+							$default_value = $default_model[ $field ];
+							$existing_value = isset( $existing[ $field ] ) ? $existing[ $field ] : null;
+
+							// Update if values differ.
+							if ( $default_value !== $existing_value ) {
+								$existing[ $field ] = $default_value;
+								$updated = true;
+							}
+						}
+					}
+
+					// Update notes only if it's the default auto-created variant note.
+					if ( isset( $default_model['notes'] ) && 
+						 ( empty( $existing['notes'] ) || 
+						   false !== strpos( $existing['notes'], 'Auto-created variant of' ) ) ) {
+						$existing['notes'] = $default_model['notes'];
+						$updated = true;
+					}
+
+					if ( $updated ) {
+						$result = $handler->update_item( $existing );
+						if ( $result ) {
+							++$updated_count;
+						}
+					} else {
+						++$skipped_count;
+					}
+				} else {
+					// Model doesn't exist - add it.
+					$result = $handler->update_item( $default_model );
+					if ( $result ) {
+						++$added_count;
+					}
+				}
+			}
+
+			// Log the sync operation.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_event' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'models_synced',
+					'Models synced from defaults',
+					array(
+						'added'   => $added_count,
+						'updated' => $updated_count,
+						'skipped' => $skipped_count,
+						'total'   => count( $default_models ),
+						'user_id' => get_current_user_id(),
+					)
+				);
+			}
+
+			// Build success message.
+			$message_parts = array();
+			if ( $added_count > 0 ) {
+				$message_parts[] = sprintf(
+					/* translators: %d: number of models added */
+					_n( '%d model added', '%d models added', $added_count, 'wp-mcp-ai' ),
+					$added_count
+				);
+			}
+			if ( $updated_count > 0 ) {
+				$message_parts[] = sprintf(
+					/* translators: %d: number of models updated */
+					_n( '%d model updated', '%d models updated', $updated_count, 'wp-mcp-ai' ),
+					$updated_count
+				);
+			}
+			if ( $skipped_count > 0 ) {
+				$message_parts[] = sprintf(
+					/* translators: %d: number of models unchanged */
+					_n( '%d model unchanged', '%d models unchanged', $skipped_count, 'wp-mcp-ai' ),
+					$skipped_count
+				);
+			}
+
+			$message = ! empty( $message_parts ) 
+				? implode( ', ', $message_parts ) . '.' 
+				: __( 'No changes were needed.', 'wp-mcp-ai' );
+
+			wp_send_json_success(
+				array(
+					'message' => $message,
+					'added'   => $added_count,
+					'updated' => $updated_count,
+					'skipped' => $skipped_count,
+					'total'   => count( $default_models ),
+				)
+			);
+
+		} catch ( Exception $e ) {
+			// Log error if logger is available.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) && method_exists( 'WP_MCP_AI_Logger', 'log_error' ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Models sync failed: ' . $e->getMessage(),
+					array(
+						'exception' => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+			}
+
+			wp_send_json_error( array( 'message' => __( 'An error occurred while syncing models.', 'wp-mcp-ai' ) ) );
 		}
 	}
 	}

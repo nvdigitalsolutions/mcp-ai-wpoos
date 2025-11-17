@@ -823,6 +823,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'AI Models Registry', 'wp-mcp-ai' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'View all AI models currently registered in the orchestration layer with their capabilities, costs, and limits. This is the source of truth for model routing, budget management, and cost calculation.', 'wp-mcp-ai' ) . '</p>';
 
+			// Add sync button.
+			echo '<div class="models-actions" style="margin: 15px 0;">';
+			echo '<button type="button" id="sync-models-btn" class="button button-primary">';
+			echo '<span class="dashicons dashicons-update"></span> ';
+			echo esc_html__( 'Sync Models from Defaults', 'wp-mcp-ai' );
+			echo '</button>';
+			echo ' <span class="description">' . esc_html__( 'Update existing models and add new models from the latest default configuration. Custom modifications will be preserved.', 'wp-mcp-ai' ) . '</span>';
+			echo '</div>';
+
+
 			// Check if Model Rate Limits CCT is available.
 			if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 				echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'Model Rate Limits CCT is not available. Please ensure JetEngine with Custom Content Types module is active.', 'wp-mcp-ai' ) . '</p></div>';

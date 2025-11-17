@@ -25,6 +25,9 @@
 		 * Bind event handlers
 		 */
 		bindEvents: function() {
+			// Sync models button
+			$(document).on('click', '#sync-models-btn', this.syncModels.bind(this));
+
 			// Make constraint fields editable on click
 			$(document).on('click', '.editable-field:not(.editing)', this.startEditing.bind(this));
 			
@@ -258,6 +261,50 @@
 					$(this).remove();
 				});
 			}, 3000);
+		},
+
+		/**
+		 * Sync models from defaults
+		 */
+		syncModels: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			
+			if (!confirm('This will update existing models with latest pricing/limits and add new models. Custom modifications will be preserved. Continue?')) {
+				return;
+			}
+			
+			// Disable button and show loading
+			$button.prop('disabled', true);
+			$button.html('<span class="dashicons dashicons-update spin"></span> Syncing...');
+			
+			// Send AJAX request
+			$.ajax({
+				url: ajaxurl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_sync_models',
+					nonce: wpMcpAiModels.nonce
+				}
+			})
+			.done((response) => {
+				if (response.success) {
+					this.showNotice('success', response.data.message || 'Models synced successfully');
+					// Reload page after 2 seconds to show updated models
+					setTimeout(function() {
+						window.location.reload();
+					}, 2000);
+				} else {
+					this.showNotice('error', response.data || 'Failed to sync models');
+					$button.prop('disabled', false);
+					$button.html('<span class="dashicons dashicons-update"></span> Sync Models from Defaults');
+				}
+			})
+			.fail(() => {
+				this.showNotice('error', 'Failed to sync models. Please try again.');
+				$button.prop('disabled', false);
+				$button.html('<span class="dashicons dashicons-update"></span> Sync Models from Defaults');
+			});
 		}
 	};
 
