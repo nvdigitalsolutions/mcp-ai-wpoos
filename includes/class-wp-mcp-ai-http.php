@@ -370,10 +370,10 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 		}
 
 		/**
-		 * Prepare a transport error, promoting WordPress timeout failures to actionable guidance.
+		 * Prepare a transport error, promoting WordPress timeout failures and connection refused errors to actionable guidance.
 		 *
 		 * @param WP_Error $transport_error Raw transport error returned by WordPress.
-		 * @param string   $default_code    Error code to use when the error is not a timeout.
+		 * @param string   $default_code    Error code to use when the error is not a timeout or connection refused.
 		 * @param string   $default_message Fallback error message.
 		 * @param string   $service_label   Optional human readable service name.
 		 * @param array    $data            Optional error data to merge.
@@ -393,6 +393,30 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 
 			$data          = is_array( $data ) ? $data : array();
 			$data['error'] = $transport_error;
+
+			// Check for connection refused errors first (more specific than timeout).
+			if ( self::is_connection_refused_error( $transport_error ) ) {
+				$message = self::build_connection_refused_message( $service_label );
+
+				$actions = array(
+					'check_service_running'   => __( 'Ensure the service is running and accepting connections.', 'wp-mcp-ai' ),
+					'verify_endpoint_url'     => __( 'Verify the endpoint URL and port number are correct in Settings → WP oOS.', 'wp-mcp-ai' ),
+					'check_firewall'          => __( 'Check that no firewall is blocking connections to the service.', 'wp-mcp-ai' ),
+					'check_service_listening' => __( 'Confirm the service is listening on the correct interface (0.0.0.0 or the specific IP).', 'wp-mcp-ai' ),
+				);
+
+				if ( isset( $data['actions'] ) && is_array( $data['actions'] ) ) {
+					$data['actions'] = $actions + $data['actions'];
+				} else {
+					$data['actions'] = $actions;
+				}
+
+				if ( ! isset( $data['status'] ) ) {
+					$data['status'] = 502;
+				}
+
+				return new WP_Error( 'wp_mcp_ai_connection_refused', $message, $data );
+			}
 
 			if ( self::is_wordpress_timeout_error( $transport_error ) ) {
 				$message = self::build_timeout_message( $service_label );
@@ -511,6 +535,122 @@ if ( ! class_exists( 'WP_MCP_AI_HTTP' ) ) {
 			}
 
 			return false;
+		}
+
+		/**
+		 * Determine whether the supplied error represents a connection refused error.
+		 *
+		 * Connection refused errors occur when:
+		 * - The target service is not running
+		 * - The service is not listening on the specified port
+		 * - The service is listening on a different interface (e.g., 127.0.0.1 instead of 0.0.0.0)
+		 * - A firewall is blocking the connection
+		 *
+		 * Common error patterns:
+		 * - "Connection refused" (ECONNREFUSED - errno 111 on Linux, 10061 on Windows)
+		 * - "No connection could be made because the target machine actively refused it" (Windows)
+		 * - "dial tcp [::1]:1234: connectex: No connection could be made" (Go/Cloudflared)
+		 * - "cURL error 7: Failed to connect"
+		 * - "context canceled" (when connection is aborted)
+		 *
+		 * @param WP_Error $error Error object returned by the HTTP API.
+		 *
+		 * @return bool
+		 */
+		public static function is_connection_refused_error( $error ) {
+			if ( ! $error instanceof WP_Error ) {
+				return false;
+			}
+
+			foreach ( $error->get_error_codes() as $code ) {
+				// Check for known connection refused error codes.
+				if ( in_array( $code, array( 'http_request_failed', 'http_failure', 'http_no_url' ), true ) ) {
+					$messages = $error->get_error_messages( $code );
+					foreach ( $messages as $message ) {
+						if ( self::message_indicates_connection_refused( $message ) ) {
+							return true;
+						}
+					}
+				}
+			}
+
+			foreach ( $error->get_error_messages() as $message ) {
+				if ( self::message_indicates_connection_refused( $message ) ) {
+					return true;
+				}
+			}
+
+			$data = $error->get_error_data();
+			if ( is_array( $data ) ) {
+				// Check for connection refused status codes.
+				if ( isset( $data['status'] ) && in_array( (int) $data['status'], array( 502, 503 ), true ) ) {
+					// Only treat as connection refused if the message also indicates it.
+					foreach ( $error->get_error_messages() as $message ) {
+						if ( self::message_indicates_connection_refused( $message ) ) {
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Detect whether the supplied error message indicates a connection refused condition.
+		 *
+		 * @param string $message Error message from WordPress or cURL.
+		 *
+		 * @return bool
+		 */
+		protected static function message_indicates_connection_refused( $message ) {
+			if ( ! is_string( $message ) || '' === $message ) {
+				return false;
+			}
+
+			$normalised = strtolower( $message );
+
+			$needles = array(
+				'connection refused',
+				'no connection could be made',
+				'target machine actively refused',
+				'failed to connect',
+				'curl error 7',
+				'couldn\'t connect to',
+				'unable to connect',
+				'unable to reach',
+				'context canceled',
+				'context cancelled',
+				'connection reset',
+				'errno 111',  // Linux ECONNREFUSED.
+				'errno 10061', // Windows WSAECONNREFUSED.
+			);
+
+			foreach ( $needles as $needle ) {
+				if ( false !== strpos( $normalised, $needle ) ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * Build a connection refused error message tailored to the service label.
+		 *
+		 * @param string $service_label Optional human readable service name.
+		 *
+		 * @return string
+		 */
+		protected static function build_connection_refused_message( $service_label ) {
+			$service_label = is_string( $service_label ) ? trim( wp_strip_all_tags( $service_label ) ) : '';
+
+			if ( '' !== $service_label ) {
+				/* translators: %s: Human readable remote service label. */
+				return sprintf( __( 'Could not connect to %s. The service may not be running or is refusing connections.', 'wp-mcp-ai' ), $service_label );
+			}
+
+			return __( 'Could not connect to the service. It may not be running or is refusing connections.', 'wp-mcp-ai' );
 		}
 	}
 }

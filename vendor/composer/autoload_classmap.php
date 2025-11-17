@@ -319,5 +319,5 @@ return array(
     'Symfony\\Polyfill\\Ctype\\Ctype' => $vendorDir . '/symfony/polyfill-ctype/Ctype.php',
     'Symfony\\Polyfill\\Mbstring\\Mbstring' => $vendorDir . '/symfony/polyfill-mbstring/Mbstring.php',
     'Symfony\\Polyfill\\Php83\\Php83' => $vendorDir . '/symfony/polyfill-php83/Php83.php',
-    '©' => $vendorDir . '/symfony/cache/Traits/ValueWrapper.php',
+    'Â©' => $vendorDir . '/symfony/cache/Traits/ValueWrapper.php',
 );
