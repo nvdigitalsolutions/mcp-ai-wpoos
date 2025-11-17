@@ -643,6 +643,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 </a>
 </nav>
 
+<!-- Hidden field to preserve view during form submission -->
+<input type="hidden" name="view" value="<?php echo esc_attr( $active_view ); ?>" />
+
 <!-- View Content -->
 <div class="wp-mcp-ai-orchestration__content">
 			<?php
