@@ -263,60 +263,87 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-file-service.php';
 		require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 
-		// Get file path from attachment or download from URL.
-		$file_path = null;
+		// Get MIME type.
 		$mime_type = null;
-		$temp_file = false;
 
 		if ( $attachment_id ) {
-			// Get file from WordPress attachment.
-			$file_path = get_attached_file( $attachment_id );
 			$mime_type = get_post_mime_type( $attachment_id );
-
-			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_file_not_found',
-					__( 'Video file not found on server.', 'wp-mcp-ai' ),
-					array( 'status' => 404 )
-				);
-			}
 		} else {
-			// Download video from URL to temporary file.
-			$download_result = $this->download_video_to_temp( $video_url );
-			if ( is_wp_error( $download_result ) ) {
-				return $download_result;
+			// For remote URLs, we'll determine MIME type during download.
+			$mime_type = 'video/mp4'; // Default for now.
+		}
+
+		// Use video file manager for caching and lifecycle management.
+		$video_manager = wp_mcp_ai_get_video_file_manager();
+
+		if ( $video_manager ) {
+			// Get or upload video (with caching).
+			$upload_result = $video_manager->get_or_upload_video( $video_url, $mime_type, $attachment_id );
+
+			if ( is_wp_error( $upload_result ) ) {
+				return $upload_result;
 			}
 
-			$file_path = $download_result['file_path'];
-			$mime_type = $download_result['mime_type'];
-			$temp_file = true;
-		}
+			$file_name = $upload_result['file_name'];
+			$file_uri  = $upload_result['file_uri'];
+			$is_cached = isset( $upload_result['cached'] ) ? $upload_result['cached'] : false;
+		} else {
+			// Fallback to direct upload if manager not available.
+			$file_path = null;
+			$temp_file = false;
 
-		// Initialize Gemini File Service.
-		$file_service = new WP_MCP_AI_Gemini_File_Service();
+			if ( $attachment_id ) {
+				// Get file from WordPress attachment.
+				$file_path = get_attached_file( $attachment_id );
+				$mime_type = get_post_mime_type( $attachment_id );
 
-		// Upload video to Gemini File API.
-		$upload_result = $file_service->upload_file( $file_path, $mime_type, basename( $file_path ) );
+				if ( ! $file_path || ! file_exists( $file_path ) ) {
+					return new WP_Error(
+						'wp_mcp_ai_file_not_found',
+						__( 'Video file not found on server.', 'wp-mcp-ai' ),
+						array( 'status' => 404 )
+					);
+				}
+			} else {
+				// Download video from URL to temporary file.
+				$download_result = $this->download_video_to_temp( $video_url );
+				if ( is_wp_error( $download_result ) ) {
+					return $download_result;
+				}
 
-		// Clean up temp file after upload if needed.
-		if ( $temp_file && $file_path ) {
-			wp_delete_file( $file_path );
-		}
+				$file_path = $download_result['file_path'];
+				$mime_type = $download_result['mime_type'];
+				$temp_file = true;
+			}
 
-		if ( is_wp_error( $upload_result ) ) {
-			return $upload_result;
-		}
+			// Initialize Gemini File Service.
+			$file_service = new WP_MCP_AI_Gemini_File_Service();
 
-		$file_name = $upload_result['file_name'];
-		$file_uri  = $upload_result['file_uri'];
+			// Upload video to Gemini File API.
+			$upload_result = $file_service->upload_file( $file_path, $mime_type, basename( $file_path ) );
 
-		// Wait for file processing to complete.
-		$processing_result = $file_service->wait_for_processing( $file_name, 300 );
+			// Clean up temp file after upload if needed.
+			if ( $temp_file && $file_path ) {
+				wp_delete_file( $file_path );
+			}
 
-		if ( is_wp_error( $processing_result ) ) {
-			// Try to clean up file even if processing failed.
-			$file_service->delete_file( $file_name );
-			return $processing_result;
+			if ( is_wp_error( $upload_result ) ) {
+				return $upload_result;
+			}
+
+			$file_name = $upload_result['file_name'];
+			$file_uri  = $upload_result['file_uri'];
+
+			// Wait for file processing to complete.
+			$processing_result = $file_service->wait_for_processing( $file_name, 300 );
+
+			if ( is_wp_error( $processing_result ) ) {
+				// Try to clean up file even if processing failed.
+				$file_service->delete_file( $file_name );
+				return $processing_result;
+			}
+
+			$is_cached = false;
 		}
 
 		// Build message with file reference.
@@ -351,8 +378,11 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			)
 		);
 
-		// Clean up uploaded file.
-		$file_service->delete_file( $file_name );
+		// Don't clean up cached files - they are managed by the video file manager.
+		// Only cleanup if we did a direct upload without the manager.
+		if ( ! $is_cached && ! $video_manager && isset( $file_service ) ) {
+			$file_service->delete_file( $file_name );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
