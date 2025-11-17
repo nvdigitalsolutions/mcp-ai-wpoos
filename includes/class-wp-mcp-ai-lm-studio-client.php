@@ -471,6 +471,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
 			}
 
+			// Add tools if specified (for models that support function calling).
+			// LM Studio uses OpenAI-compatible format for tool calling.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$payload['tools'] = $options['tools'];
+			}
+
 			return $payload;
 		}
 
