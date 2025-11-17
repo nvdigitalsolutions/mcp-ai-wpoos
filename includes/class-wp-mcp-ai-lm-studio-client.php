@@ -451,11 +451,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
-			// Add tools if specified (LM Studio supports OpenAI-compatible function calling).
-			if ( ! empty( $options['tools'] ) ) {
-				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
-			}
-
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
@@ -539,75 +534,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			return $response;
-		}
-
-		/**
-		 * Normalize tools for the API payload.
-		 *
-		 * LM Studio uses OpenAI-compatible format, so we normalize tools
-		 * to match the function calling format expected by the API.
-		 *
-		 * @param array $tools Tool definitions sourced from the REST layer.
-		 * @return array
-		 */
-		protected function normalise_tools_for_payload( $tools ) {
-			if ( $tools instanceof \Traversable ) {
-				$tools = iterator_to_array( $tools );
-			}
-
-			if ( is_object( $tools ) ) {
-				$tools = (array) $tools;
-			}
-
-			if ( ! is_array( $tools ) ) {
-				return array();
-			}
-
-			$normalised = array();
-
-			foreach ( $tools as $tool ) {
-				if ( $tool instanceof \Traversable ) {
-					$tool = iterator_to_array( $tool );
-				}
-
-				if ( is_object( $tool ) ) {
-					$tool = (array) $tool;
-				}
-
-				if ( ! is_array( $tool ) || empty( $tool ) ) {
-					continue;
-				}
-
-				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
-
-				if ( 'function' === $type ) {
-					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
-						if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
-							$tool['name'] = (string) $tool['function']['name'];
-						}
-					}
-				}
-
-				if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
-					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
-						$tool['name'] = (string) $tool['function']['name'];
-					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
-						$tool['name'] = (string) $tool['slug'];
-					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
-						$tool['name'] = (string) $tool['id'];
-					}
-				}
-
-				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
-					continue;
-				}
-
-				$tool['name'] = (string) $tool['name'];
-
-				$normalised[] = $tool;
-			}
-
-			return array_values( $normalised );
 		}
 
 		/**
