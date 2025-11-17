@@ -246,10 +246,10 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 			$timeout = max( 5, $timeout );
 
-		// Ensure PHP execution time is sufficient for the timeout.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the timeout.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-		return $timeout;
+			return $timeout;
 		}
 
 		protected function normalize_response( array $response, $model ) {
@@ -265,12 +265,30 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				);
 			}
 
+			// Determine finish_reason based on Ollama response.
+			// Ollama provides a 'done_reason' field that indicates why generation stopped.
+			// Possible values: 'stop' (natural completion), 'length' (max tokens), 'load' (loading model).
+			// For non-streaming requests with stream=false, Ollama always sets done=true.
+			$finish_reason = 'stop'; // Default to 'stop' for successful completions.
+
+			if ( isset( $response['done_reason'] ) && '' !== $response['done_reason'] ) {
+				// Use Ollama's done_reason if available (most reliable).
+				$finish_reason = sanitize_key( $response['done_reason'] );
+			} elseif ( isset( $response['done'] ) && ! $response['done'] ) {
+				// If done=false explicitly, response was incomplete.
+				$finish_reason = 'length';
+			} elseif ( '' === trim( $content ) ) {
+				// If we have no content at all, something went wrong.
+				$finish_reason = 'length';
+			}
+			// Otherwise keep default 'stop' - we have content and done=true or missing (assumed complete).
+
 			$normalized = array(
 				'choices'  => array(
 					array(
 						'index'         => 0,
 						'message'       => $message,
-						'finish_reason' => isset( $response['done'] ) && $response['done'] ? 'stop' : 'length',
+						'finish_reason' => $finish_reason,
 					),
 				),
 				'provider' => 'ollama',

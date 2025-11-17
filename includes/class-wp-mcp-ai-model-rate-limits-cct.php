@@ -169,7 +169,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 		$variant_data['model_name'] = sanitize_text_field( $variant_name );
 
 		// Add a note indicating this is an auto-created variant.
-		$base_note = isset( $variant_data['notes'] ) ? $variant_data['notes'] : '';
+		$base_note             = isset( $variant_data['notes'] ) ? $variant_data['notes'] : '';
 		$variant_data['notes'] = sprintf(
 			'Auto-created variant of %s. %s',
 			$base_model['model_name'],
@@ -494,6 +494,14 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 						array(
 							'key'   => 'azure',
 							'value' => 'Azure OpenAI',
+						),
+						array(
+							'key'   => 'ollama',
+							'value' => 'Ollama',
+						),
+						array(
+							'key'   => 'lm_studio',
+							'value' => 'LM Studio',
 						),
 						array(
 							'key'   => 'other',
@@ -1259,7 +1267,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			// Ollama Models (local deployment, no API rate limits).
 			array(
 				'model_name'                => 'llama3',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 8192,
@@ -1274,7 +1282,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'llama3:70b',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 8192,
@@ -1289,7 +1297,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'mistral',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 8192,
@@ -1304,7 +1312,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'codellama',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 16384,
@@ -1319,7 +1327,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'phi3',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 4096,
@@ -1334,7 +1342,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'deepseek-coder',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 16384,
@@ -1349,7 +1357,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'qwen2',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 32768,
@@ -1364,7 +1372,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			),
 			array(
 				'model_name'                => 'gemma2',
-				'provider'                  => 'other',
+				'provider'                  => 'ollama',
 				'tpm_limit'                 => 0,
 				'rpm_limit'                 => 0,
 				'context_window'            => 8192,
