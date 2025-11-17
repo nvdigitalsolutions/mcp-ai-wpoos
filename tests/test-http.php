@@ -6,6 +6,8 @@
  */
 
 /**
+ * Test WP_MCP_AI_HTTP methods.
+ *
  * @group http
  */
 class WP_MCP_AI_HTTP_Tests extends WP_UnitTestCase {
