@@ -108,6 +108,7 @@ These two documents replace 107 individual audit reports, summaries, and status 
 |----------|-------------|----------|
 | [remote-client-quickstart.md](remote-client-quickstart.md) | Quick start guide for remote clients | Admins |
 | [remote-client-setup.md](remote-client-setup.md) | Detailed remote client configuration (14KB) | Admins |
+| [cloudflare-tunnel-setup.md](cloudflare-tunnel-setup.md) | Cloudflare Tunnel setup for exposing local AI services securely (16KB) | Admins |
 | [REMOTE_CLIENT_TESTING_SUMMARY.md](REMOTE_CLIENT_TESTING_SUMMARY.md) | Testing results for remote clients | Developers |
 | [lm-studio-testing.md](lm-studio-testing.md) | LM Studio specific testing | Developers |
 
