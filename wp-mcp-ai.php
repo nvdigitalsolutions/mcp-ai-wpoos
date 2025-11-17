@@ -392,6 +392,10 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
+// Load resource managers (Phase 2.1 - File lifecycle management).
+// This includes video file manager for caching and cleanup.
+require_once WP_MCP_AI_PATH . 'includes/resources-init.php';
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-mesh-router.php';
