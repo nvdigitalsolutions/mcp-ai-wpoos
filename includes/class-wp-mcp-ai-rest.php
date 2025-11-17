@@ -2176,7 +2176,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( is_wp_error( $tpm_validation ) ) {
 					// Check if we should switch to a higher-capacity model.
 					$settings            = WP_MCP_AI_Admin_Settings::get_settings();
-					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
+					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash';
 					$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
 					$switched_model      = false;
 
@@ -2565,7 +2565,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( is_wp_error( $tpm_validation ) ) {
 					// Handle model switching or truncation (same logic as non-streaming).
 					$settings            = WP_MCP_AI_Admin_Settings::get_settings();
-					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp';
+					$fallback_model      = isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash';
 					$auto_switch_enabled = isset( $settings['enable_high_token_model_switch'] ) ? (bool) $settings['enable_high_token_model_switch'] : true;
 					$switched_model      = false;
 

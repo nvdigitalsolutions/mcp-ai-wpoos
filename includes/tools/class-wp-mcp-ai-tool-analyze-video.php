@@ -342,7 +342,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Get model from settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$model    = isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.0-flash-exp';
+		$model    = isset( $settings['gemini_model'] ) ? $settings['gemini_model'] : 'gemini-2.5-flash';
 
 		$response = $client->create_chat_completion(
 			$messages,
@@ -454,8 +454,8 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	protected function is_video_capable_gemini_model( $model ) {
 		// Gemini 2.0 and later support video.
 		$video_capable_models = array(
-			'gemini-2.0-flash-exp',
 			'gemini-2.5-flash',
+			'gemini-2.0-flash',
 			'gemini-exp-1206',
 		);
 

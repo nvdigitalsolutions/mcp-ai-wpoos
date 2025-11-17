@@ -153,7 +153,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'High Token Fallback Model', 'wp-mcp-ai' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash' ); ?></code></td>
 							</tr>
 						</tbody>
 					</table>
@@ -324,7 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<td>
 									<?php if ( ! empty( $settings['enable_high_token_model_switch'] ) ) : ?>
 										<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'wp-mcp-ai' ); ?></span>
-										→ <code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.0-flash-exp' ); ?></code>
+										→ <code><?php echo esc_html( isset( $settings['high_token_fallback_model'] ) ? $settings['high_token_fallback_model'] : 'gemini-2.5-flash' ); ?></code>
 									<?php else : ?>
 										<span style="color: gray;">— <?php esc_html_e( 'Disabled', 'wp-mcp-ai' ); ?></span>
 									<?php endif; ?>
