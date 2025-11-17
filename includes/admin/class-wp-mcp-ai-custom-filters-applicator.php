@@ -46,6 +46,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 			// Endpoint URLs.
 			add_filter( 'wp_mcp_ai_default_ollama_endpoint_url', array( $this, 'apply_default_ollama_endpoint_url' ), 5 );
 			add_filter( 'wp_mcp_ai_default_lm_studio_endpoint_url', array( $this, 'apply_default_lm_studio_endpoint_url' ), 5 );
+			add_filter( 'wp_mcp_ai_lm_studio_fallback_model', array( $this, 'apply_lm_studio_fallback_model' ), 5, 2 );
 		}
 
 		/**
@@ -180,6 +181,18 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		public function apply_default_lm_studio_endpoint_url( $url ) {
 			$custom = $this->get_filter_setting( 'filter_default_lm_studio_endpoint_url' );
 			return null !== $custom ? esc_url_raw( $custom ) : $url;
+		}
+
+		/**
+		 * Apply LM Studio fallback model filter.
+		 *
+		 * @param string $fallback_model Current fallback model.
+		 * @param array  $options        Request options.
+		 * @return string
+		 */
+		public function apply_lm_studio_fallback_model( $fallback_model, $options ) {
+			$custom = $this->get_filter_setting( 'filter_lm_studio_fallback_model' );
+			return null !== $custom ? sanitize_text_field( $custom ) : $fallback_model;
 		}
 	}
 }
