@@ -266,13 +266,22 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			}
 
 			// Determine finish_reason based on Ollama response.
-			// If 'done' is explicitly true, use 'stop'.
-			// If 'done' is false or missing but we have content, still use 'stop' to avoid
-			// showing "response ended prematurely" error when content is actually present.
-			// Only use 'length' if we have no content and done is false/missing.
-			$has_content   = '' !== trim( $content );
-			$is_done       = isset( $response['done'] ) && $response['done'];
-			$finish_reason = ( $is_done || $has_content ) ? 'stop' : 'length';
+			// Ollama provides a 'done_reason' field that indicates why generation stopped.
+			// Possible values: 'stop' (natural completion), 'length' (max tokens), 'load' (loading model).
+			// For non-streaming requests with stream=false, Ollama always sets done=true.
+			$finish_reason = 'stop'; // Default to 'stop' for successful completions.
+
+			if ( isset( $response['done_reason'] ) && '' !== $response['done_reason'] ) {
+				// Use Ollama's done_reason if available (most reliable).
+				$finish_reason = sanitize_key( $response['done_reason'] );
+			} elseif ( isset( $response['done'] ) && ! $response['done'] ) {
+				// If done=false explicitly, response was incomplete.
+				$finish_reason = 'length';
+			} elseif ( '' === trim( $content ) ) {
+				// If we have no content at all, something went wrong.
+				$finish_reason = 'length';
+			}
+			// Otherwise keep default 'stop' - we have content and done=true or missing (assumed complete).
 
 			$normalized = array(
 				'choices'  => array(

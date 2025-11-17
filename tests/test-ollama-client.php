@@ -712,4 +712,60 @@ class WP_MCP_AI_Ollama_Client_Test extends WP_UnitTestCase {
 		// Should be 'length' because we have no content and done=false.
 		$this->assertSame( 'length', $response['choices'][0]['finish_reason'] );
 	}
+
+	/**
+	 * Test that finish_reason uses Ollama's done_reason field when available.
+	 *
+	 * @group finish-reason
+	 */
+	public function test_finish_reason_uses_done_reason_field() {
+		$defaults                        = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['ollama_endpoint_url'] = 'http://localhost:11434';
+		$defaults['ollama_model']        = 'llama2';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client = new WP_MCP_AI_Ollama_Client();
+
+		$filter_callback = function ( $preempt, $args, $url ) {
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'model'       => 'llama2',
+						'message'     => array(
+							'role'    => 'assistant',
+							'content' => 'Test response',
+						),
+						'done'        => true,
+						'done_reason' => 'stop', // Ollama's done_reason field.
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array() );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertNotEmpty( $response['choices'] );
+		$this->assertArrayHasKey( 'finish_reason', $response['choices'][0] );
+		// Should use Ollama's done_reason field value.
+		$this->assertSame( 'stop', $response['choices'][0]['finish_reason'] );
+	}
 }
