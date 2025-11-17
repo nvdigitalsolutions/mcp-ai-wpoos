@@ -304,6 +304,119 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test endpoint URL does NOT include /v1 in the base (to avoid /v1/v1/ paths).
+	 *
+	 * This test validates the fix for the bug where default endpoint was
+	 * http://localhost:1234/v1 causing URLs like http://localhost:1234/v1/v1/models.
+	 */
+	public function test_endpoint_url_no_v1_suffix() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		$captured_url = null;
+
+		// Capture the actual URL being requested.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					$captured_url = $url;
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode( array( 'data' => array() ) ),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$this->client->test_connection();
+
+		// Verify URL is correctly formed: http://localhost:1234/v1/models
+		// NOT: http://localhost:1234/v1/v1/models
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertStringEndsWith( '/v1/models', $captured_url, 'URL should end with /v1/models' );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should NOT contain /v1/v1/ (double v1)' );
+		$this->assertEquals( 'http://localhost:1234/v1/models', $captured_url, 'URL should be correctly constructed' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that chat completions use correct URL format.
+	 */
+	public function test_chat_completion_url_format() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_url = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/chat/completions' ) !== false ) {
+					$captured_url = $url;
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'chatcmpl-123',
+								'object'  => 'chat.completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'index'         => 0,
+										'message'       => array(
+											'role'    => 'assistant',
+											'content' => 'Test response',
+										),
+										'finish_reason' => 'stop',
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello',
+			),
+		);
+
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify correct URL format for chat completions.
+		$this->assertNotNull( $captured_url, 'URL should be captured' );
+		$this->assertStringEndsWith( '/v1/chat/completions', $captured_url, 'URL should end with /v1/chat/completions' );
+		$this->assertStringNotContainsString( '/v1/v1/', $captured_url, 'URL should NOT contain /v1/v1/ (double v1)' );
+		$this->assertEquals( 'http://localhost:1234/v1/chat/completions', $captured_url, 'URL should be correctly constructed' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
 	 * Test client methods return proper types.
 	 */
 	public function test_method_return_types() {
