@@ -75,7 +75,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_reseed_professions'     => 'handle_reseed_professions',
 				'wp_ajax_wp_mcp_ai_reseed_teams'           => 'handle_reseed_teams',
 				'wp_ajax_wp_mcp_ai_migrate_gemini_costs'   => 'handle_migrate_gemini_costs',
-				'wp_ajax_wp_mcp_ai_sync_models_to_cct'     => 'handle_sync_models_to_cct',
 			);
 
 			$action         = current_action();
@@ -1851,103 +1850,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'total_needing_migration' => $results['total_needing_migration'],
 			)
 		);
-	}
-
-	/**
-	 * Handle sync models to CCT AJAX request.
-	 *
-	 * Syncs internal model definitions to JetEngine CCT for CRUD operations.
-	 * Clears existing CCT data and re-populates from internal logic (source of truth).
-	 */
-	public function handle_sync_models_to_cct() {
-		// Check nonce.
-		check_ajax_referer( 'wp_mcp_ai_sync_models', 'nonce' );
-
-		// Check user capability.
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-mcp-ai' ) ) );
-		}
-
-		try {
-			$handler = WP_MCP_AI_Model_Rate_Limits_CCT::get_item_handler();
-			if ( ! $handler ) {
-				wp_send_json_error( array( 'message' => __( 'CCT not accessible. Please ensure JetEngine is active.', 'wp-mcp-ai' ) ) );
-			}
-
-			$factory = $handler->get_factory();
-			if ( ! $factory || empty( $factory->db ) ) {
-				wp_send_json_error( array( 'message' => __( 'CCT database not accessible.', 'wp-mcp-ai' ) ) );
-			}
-
-			// Get existing models to delete.
-			$existing_models = $factory->db->query( array() );
-
-			// Delete all existing entries.
-			if ( ! empty( $existing_models ) && is_array( $existing_models ) ) {
-				foreach ( $existing_models as $model ) {
-					if ( isset( $model['_ID'] ) ) {
-						$handler->delete_item( absint( $model['_ID'] ) );
-					}
-				}
-			}
-
-			// Get internal model definitions (source of truth).
-			$reflection = new ReflectionClass( 'WP_MCP_AI_Model_Rate_Limits_CCT' );
-			$method     = $reflection->getMethod( 'get_default_model_data' );
-			$method->setAccessible( true );
-			$default_models = $method->invoke( null );
-
-			// Populate with fresh data from internal logic.
-			$synced_count = 0;
-			foreach ( $default_models as $model_data ) {
-				$result = $handler->update_item( $model_data );
-				if ( $result ) {
-					++$synced_count;
-				}
-			}
-
-			WP_MCP_AI_Logger::log_event(
-				'models_synced_to_cct',
-				'Synced models from internal logic to CCT.',
-				array(
-					'deleted' => count( $existing_models ),
-					'synced'  => $synced_count,
-				)
-			);
-
-			wp_send_json_success(
-				array(
-					'message'     => sprintf(
-						/* translators: %d: Number of models synced */
-						__( 'Successfully synced %d models from internal logic to CCT. Previous %d entries cleared.', 'wp-mcp-ai' ),
-						$synced_count,
-						count( $existing_models )
-					),
-					'model_count' => $synced_count,
-					'deleted'     => count( $existing_models ),
-				)
-			);
-
-		} catch ( Exception $e ) {
-			WP_MCP_AI_Logger::log_error(
-				'Models sync to CCT failed: ' . $e->getMessage(),
-				array(
-					'component' => 'admin_ajax',
-					'method'    => 'handle_sync_models_to_cct',
-					'exception' => $e->getMessage(),
-				)
-			);
-
-			wp_send_json_error(
-				array(
-					'message' => sprintf(
-						/* translators: %s: Error message */
-						__( 'Sync failed: %s', 'wp-mcp-ai' ),
-						$e->getMessage()
-					),
-				)
-			);
-		}
 	}
 	}
 }

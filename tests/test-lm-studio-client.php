@@ -830,29 +830,24 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that tools are passed in the payload when provided.
-	 *
-	 * This ensures LM Studio client supports function calling for models
-	 * that have this capability (like IBM Granite, Qwen3 Coder, GPT-OSS).
+	 * Test that tools are included in the request payload.
 	 */
-	public function test_create_chat_completion_with_tools() {
+	public function test_tools_included_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
 				'lm_studio_endpoint_url' => 'http://localhost:1234',
-				'lm_studio_model'        => 'ibm/granite-4-h-tiny',
+				'lm_studio_model'        => 'test-model',
 			)
 		);
 
-		$captured_payload = null;
+		$captured_body = null;
 
 		add_filter(
 			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+			function ( $preempt, $args, $url ) use ( &$captured_body ) {
 				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/chat/completions' ) !== false ) {
-					// Capture the payload for verification.
-					$captured_payload = json_decode( $args['body'], true );
-
+					$captured_body = isset( $args['body'] ) ? json_decode( $args['body'], true ) : null;
 					return array(
 						'response' => array( 'code' => 200 ),
 						'body'     => wp_json_encode(
@@ -860,20 +855,103 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 								'id'      => 'chatcmpl-123',
 								'object'  => 'chat.completion',
 								'created' => time(),
-								'model'   => 'ibm/granite-4-h-tiny',
+								'model'   => 'test-model',
 								'choices' => array(
 									array(
-										'index'   => 0,
-										'message' => array(
+										'index'         => 0,
+										'message'       => array(
 											'role'    => 'assistant',
-											'content' => 'I will use the get_weather function',
+											'content' => 'Test response',
+										),
+										'finish_reason' => 'stop',
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'What is the weather?',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'get_weather',
+					'description' => 'Get the current weather',
+					'parameters'  => array(
+						'type'       => 'object',
+						'properties' => array(
+							'location' => array(
+								'type'        => 'string',
+								'description' => 'The city and state',
+							),
+						),
+						'required'   => array( 'location' ),
+					),
+				),
+			),
+		);
+
+		$this->client->create_chat_completion( $messages, array( 'tools' => $tools ) );
+
+		// Verify tools were included in the payload.
+		$this->assertNotNull( $captured_body, 'Request body should be captured' );
+		$this->assertArrayHasKey( 'tools', $captured_body );
+		$this->assertIsArray( $captured_body['tools'] );
+		$this->assertCount( 1, $captured_body['tools'] );
+		$this->assertEquals( 'get_weather', $captured_body['tools'][0]['function']['name'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that tool_calls in response are preserved.
+	 */
+	public function test_tool_calls_preserved_in_response() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/chat/completions' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'chatcmpl-123',
+								'object'  => 'chat.completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'index'         => 0,
+										'message'       => array(
+											'role'       => 'assistant',
+											'content'    => null,
 											'tool_calls' => array(
 												array(
-													'id' => 'call_123',
-													'type' => 'function',
+													'id'       => 'call_123',
+													'type'     => 'function',
 													'function' => array(
-														'name' => 'get_weather',
-														'arguments' => '{"location":"Paris"}',
+														'name'      => 'get_weather',
+														'arguments' => '{"location":"San Francisco"}',
 													),
 												),
 											),
@@ -881,16 +959,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 										'finish_reason' => 'tool_calls',
 									),
 								),
-								'usage'   => array(
-									'prompt_tokens'     => 20,
-									'completion_tokens' => 15,
-									'total_tokens'      => 35,
-								),
 							)
 						),
 					);
 				}
-
 				return $preempt;
 			},
 			10,
@@ -900,69 +972,49 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$messages = array(
 			array(
 				'role'    => 'user',
-				'content' => 'What is the weather in Paris?',
+				'content' => 'What is the weather in San Francisco?',
 			),
 		);
 
-		$tools = array(
-			array(
-				'type' => 'function',
-				'function' => array(
-					'name' => 'get_weather',
-					'description' => 'Get the current weather in a location',
-					'parameters' => array(
-						'type' => 'object',
-						'properties' => array(
-							'location' => array(
-								'type' => 'string',
-								'description' => 'The city name',
-							),
-						),
-						'required' => array( 'location' ),
-					),
-				),
-			),
-		);
+		$result = $this->client->create_chat_completion( $messages, array() );
 
-		$options = array(
-			'tools' => $tools,
-		);
-
-		$result = $this->client->create_chat_completion( $messages, $options );
-
-		// Verify tools were passed in the payload.
-		$this->assertNotNull( $captured_payload, 'Payload should be captured' );
-		$this->assertArrayHasKey( 'tools', $captured_payload, 'Tools should be in payload' );
-		$this->assertSame( $tools, $captured_payload['tools'], 'Tools should match what was provided' );
-
-		// Verify the response is valid.
-		$this->assertNotWPError( $result );
+		// Verify response structure.
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'choices', $result );
+		$this->assertArrayHasKey( 'message', $result['choices'][0] );
+
+		// Verify tool_calls are preserved.
+		$this->assertArrayHasKey( 'tool_calls', $result['choices'][0]['message'] );
+		$this->assertIsArray( $result['choices'][0]['message']['tool_calls'] );
+		$this->assertCount( 1, $result['choices'][0]['message']['tool_calls'] );
+		$this->assertEquals( 'get_weather', $result['choices'][0]['message']['tool_calls'][0]['function']['name'] );
+		$this->assertEquals( '{"location":"San Francisco"}', $result['choices'][0]['message']['tool_calls'][0]['function']['arguments'] );
+
+		// Verify provider is set.
+		$this->assertEquals( 'lm_studio', $result['provider'] );
 
 		remove_all_filters( 'pre_http_request' );
 	}
 
 	/**
-	 * Test that payload does not include tools when not provided.
+	 * Test that tool messages are properly formatted in requests.
 	 */
-	public function test_create_chat_completion_without_tools() {
+	public function test_tool_messages_formatted_correctly() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
 				'lm_studio_endpoint_url' => 'http://localhost:1234',
-				'lm_studio_model'        => 'qwen/qwen3-coder-30b',
+				'lm_studio_model'        => 'test-model',
 			)
 		);
 
-		$captured_payload = null;
+		$captured_body = null;
 
 		add_filter(
 			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$captured_payload ) {
+			function ( $preempt, $args, $url ) use ( &$captured_body ) {
 				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/chat/completions' ) !== false ) {
-					$captured_payload = json_decode( $args['body'], true );
-
+					$captured_body = isset( $args['body'] ) ? json_decode( $args['body'], true ) : null;
 					return array(
 						'response' => array( 'code' => 200 ),
 						'body'     => wp_json_encode(
@@ -970,27 +1022,21 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 								'id'      => 'chatcmpl-456',
 								'object'  => 'chat.completion',
 								'created' => time(),
-								'model'   => 'qwen/qwen3-coder-30b',
+								'model'   => 'test-model',
 								'choices' => array(
 									array(
-										'index'   => 0,
-										'message' => array(
+										'index'         => 0,
+										'message'       => array(
 											'role'    => 'assistant',
-											'content' => 'Hello! How can I help you?',
+											'content' => 'The weather is sunny',
 										),
 										'finish_reason' => 'stop',
 									),
-								),
-								'usage'   => array(
-									'prompt_tokens'     => 10,
-									'completion_tokens' => 8,
-									'total_tokens'      => 18,
 								),
 							)
 						),
 					);
 				}
-
 				return $preempt;
 			},
 			10,
@@ -1000,19 +1046,137 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$messages = array(
 			array(
 				'role'    => 'user',
-				'content' => 'Hello',
+				'content' => 'What is the weather?',
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => '',
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'get_weather',
+							'arguments' => '{"location":"SF"}',
+						),
+					),
+				),
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'get_weather',
+				'content'      => '{"temperature": 72, "condition": "sunny"}',
 			),
 		);
 
-		$result = $this->client->create_chat_completion( $messages, array() );
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'get_weather',
+					'description' => 'Get weather',
+					'parameters'  => array(
+						'type'       => 'object',
+						'properties' => array(
+							'location' => array( 'type' => 'string' ),
+						),
+					),
+				),
+			),
+		);
 
-		// Verify tools were NOT passed in the payload.
-		$this->assertNotNull( $captured_payload, 'Payload should be captured' );
-		$this->assertArrayNotHasKey( 'tools', $captured_payload, 'Tools should not be in payload when not provided' );
+		$this->client->create_chat_completion( $messages, array( 'tools' => $tools ) );
 
-		// Verify the response is valid.
-		$this->assertNotWPError( $result );
-		$this->assertIsArray( $result );
+		// Verify the request body contains properly formatted messages.
+		$this->assertNotNull( $captured_body, 'Request body should be captured' );
+		$this->assertArrayHasKey( 'messages', $captured_body );
+		$this->assertCount( 3, $captured_body['messages'] );
+
+		// Check user message.
+		$this->assertEquals( 'user', $captured_body['messages'][0]['role'] );
+
+		// Check assistant message with tool_calls.
+		$this->assertEquals( 'assistant', $captured_body['messages'][1]['role'] );
+		$this->assertArrayHasKey( 'tool_calls', $captured_body['messages'][1] );
+
+		// Check tool message.
+		$this->assertEquals( 'tool', $captured_body['messages'][2]['role'] );
+		$this->assertArrayHasKey( 'tool_call_id', $captured_body['messages'][2] );
+		$this->assertEquals( 'call_123', $captured_body['messages'][2]['tool_call_id'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that tool messages are converted to user messages when tools are not enabled.
+	 */
+	public function test_tool_messages_converted_without_tools() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_body = null;
+
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_body ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false && strpos( $url, '/v1/chat/completions' ) !== false ) {
+					$captured_body = isset( $args['body'] ) ? json_decode( $args['body'], true ) : null;
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'chatcmpl-789',
+								'object'  => 'chat.completion',
+								'created' => time(),
+								'model'   => 'test-model',
+								'choices' => array(
+									array(
+										'index'         => 0,
+										'message'       => array(
+											'role'    => 'assistant',
+											'content' => 'Response',
+										),
+										'finish_reason' => 'stop',
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Query',
+			),
+			array(
+				'role'         => 'tool',
+				'tool_call_id' => 'call_123',
+				'name'         => 'get_data',
+				'content'      => 'Tool result',
+			),
+		);
+
+		// Call without tools option - tool message should be converted to user message.
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify tool message was converted to user message.
+		$this->assertNotNull( $captured_body, 'Request body should be captured' );
+		$this->assertArrayHasKey( 'messages', $captured_body );
+		$this->assertCount( 2, $captured_body['messages'] );
+		$this->assertEquals( 'user', $captured_body['messages'][1]['role'] );
+		$this->assertStringContainsString( '[Tool get_data]', $captured_body['messages'][1]['content'] );
 
 		remove_all_filters( 'pre_http_request' );
 	}

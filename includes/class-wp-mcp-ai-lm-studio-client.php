@@ -409,6 +409,36 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
 
+				// Handle assistant messages with tool_calls.
+				if ( 'assistant' === $role && isset( $message['tool_calls'] ) ) {
+					$formatted_messages[] = array(
+						'role'       => 'assistant',
+						'content'    => $content,
+						'tool_calls' => $message['tool_calls'],
+					);
+					continue;
+				}
+
+				// Handle tool role messages (responses from tool execution).
+				if ( 'tool' === $role ) {
+					// Only include tool messages if we have tools enabled.
+					// Otherwise convert to user message for models that don't support tools.
+					if ( ! empty( $options['tools'] ) ) {
+						$formatted_messages[] = array(
+							'role'         => 'tool',
+							'content'      => wp_kses_post( (string) $content ),
+							'tool_call_id' => isset( $message['tool_call_id'] ) ? sanitize_text_field( $message['tool_call_id'] ) : '',
+							'name'         => isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : '',
+						);
+						continue;
+					} else {
+						// Convert tool message to user message for non-tool-enabled conversations.
+						$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
+						$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
+						$role      = 'user';
+					}
+				}
+
 				// Convert content array to string if needed.
 				if ( is_array( $content ) ) {
 					$text_parts = array();
@@ -428,13 +458,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					continue;
 				}
 
-				// Convert tool messages to user messages.
-				if ( 'tool' === $role ) {
-					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
-					$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
-					$role      = 'user';
-				}
-
 				$formatted_messages[] = array(
 					'role'    => $role,
 					'content' => $content,
@@ -449,6 +472,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			// Add temperature if specified.
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
 				$payload['temperature'] = (float) $options['temperature'];
+			}
+
+			// Add tools if specified.
+			// LM Studio supports OpenAI-compatible tool calling format.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$payload['tools'] = $options['tools'];
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
@@ -469,12 +498,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				}
 			} else {
 				$payload['max_tokens'] = absint( $options['max_tokens'] );
-			}
-
-			// Add tools if specified (for models that support function calling).
-			// LM Studio uses OpenAI-compatible format for tool calling.
-			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
-				$payload['tools'] = $options['tools'];
 			}
 
 			return $payload;
@@ -522,8 +545,9 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// Normalize content to array format if it's a string.
+			// Note: When tool_calls are present, content may be null/empty.
 			foreach ( $response['choices'] as $index => $choice ) {
-				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) ) {
+				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) && '' !== $choice['message']['content'] ) {
 					$response['choices'][ $index ]['message']['content'] = array(
 						array(
 							'type' => 'text',
@@ -531,6 +555,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 						),
 					);
 				}
+				// Preserve tool_calls as-is if present (already in OpenAI format).
 			}
 
 			$response['provider'] = 'lm_studio';
