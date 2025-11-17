@@ -289,4 +289,126 @@ class Test_REST_Validator extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertEquals( 'rest_invalid_param', $result->get_error_code() );
 	}
+
+	/**
+	 * Test sanitize_options preserves LM Studio provider.
+	 */
+	public function test_sanitize_options_preserves_lm_studio_provider() {
+		$options = array(
+			'provider' => 'lm_studio',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'lm_studio', $result['provider'], 'LM Studio provider should be preserved' );
+	}
+
+	/**
+	 * Test sanitize_options preserves Ollama provider.
+	 */
+	public function test_sanitize_options_preserves_ollama_provider() {
+		$options = array(
+			'provider' => 'ollama',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'ollama', $result['provider'], 'Ollama provider should be preserved' );
+	}
+
+	/**
+	 * Test sanitize_options preserves Anthropic provider.
+	 */
+	public function test_sanitize_options_preserves_anthropic_provider() {
+		$options = array(
+			'provider' => 'anthropic',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'anthropic', $result['provider'], 'Anthropic provider should be preserved' );
+	}
+
+	/**
+	 * Test sanitize_options preserves OpenAI provider.
+	 */
+	public function test_sanitize_options_preserves_openai_provider() {
+		$options = array(
+			'provider' => 'openai',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'openai', $result['provider'], 'OpenAI provider should be preserved' );
+	}
+
+	/**
+	 * Test sanitize_options preserves Gemini provider.
+	 */
+	public function test_sanitize_options_preserves_gemini_provider() {
+		$options = array(
+			'provider' => 'gemini',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'gemini', $result['provider'], 'Gemini provider should be preserved' );
+	}
+
+	/**
+	 * Test sanitize_options uses assistant config provider when not in options.
+	 */
+	public function test_sanitize_options_uses_assistant_config_provider() {
+		$options = array();
+
+		$assistant_config = array(
+			'provider' => 'lm_studio',
+		);
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'lm_studio', $result['provider'], 'Provider should come from assistant config' );
+	}
+
+	/**
+	 * Test sanitize_options rejects invalid provider and defaults to openai.
+	 */
+	public function test_sanitize_options_rejects_invalid_provider() {
+		$options = array(
+			'provider' => 'invalid_provider',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'openai', $result['provider'], 'Invalid provider should default to openai' );
+	}
+
+	/**
+	 * Test sanitize_options prioritizes request provider over assistant config.
+	 */
+	public function test_sanitize_options_prioritizes_request_provider() {
+		$options = array(
+			'provider' => 'ollama',
+		);
+
+		$assistant_config = array(
+			'provider' => 'openai',
+		);
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertEquals( 'ollama', $result['provider'], 'Request provider should override assistant config' );
+	}
 }
