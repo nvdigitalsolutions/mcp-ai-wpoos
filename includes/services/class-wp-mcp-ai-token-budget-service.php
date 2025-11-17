@@ -74,6 +74,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 		'codellama'              => 16384,
 		'phi3'                   => 4096,
 		'deepseek-coder'         => 16384,
+		'deepseek-r1-0528-qwen3-8b' => 32768,
 		'qwen2'                  => 32768,
 		'gemma2'                 => 8192,
 	);

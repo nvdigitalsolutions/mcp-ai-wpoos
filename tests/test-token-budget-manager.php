@@ -33,6 +33,10 @@ class WP_MCP_AI_Token_Budget_Manager_Test extends WP_UnitTestCase {
 		$limit = WP_MCP_AI_Token_Budget_Manager::get_model_limit( 'gpt-4o-mini' );
 		$this->assertSame( 128000, $limit );
 
+		// Test DeepSeek R1 model.
+		$limit = WP_MCP_AI_Token_Budget_Manager::get_model_limit( 'deepseek-r1-0528-qwen3-8b' );
+		$this->assertSame( 32768, $limit );
+
 		// Unknown model should return default.
 		$limit = WP_MCP_AI_Token_Budget_Manager::get_model_limit( 'unknown-model' );
 		$this->assertSame( 8192, $limit );
