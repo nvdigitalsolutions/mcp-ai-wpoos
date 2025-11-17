@@ -10,13 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';
@@ -553,5 +554,56 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
 		);
+	}
+
+	/**
+	 * Sanitize tool result before passing to LLM.
+	 *
+	 * Strips large base64-encoded image data to prevent bloating the LLM context.
+	 * The full result with inline content is preserved for frontend display.
+	 *
+	 * @param mixed $result Raw tool execution result.
+	 * @return mixed Sanitized result safe for LLM context.
+	 */
+	public function sanitize_for_llm( $result ) {
+		if ( ! is_array( $result ) ) {
+			return $result;
+		}
+
+		// Strip base64 content to reduce token usage.
+		if ( isset( $result['content'] ) && is_array( $result['content'] ) ) {
+			unset( $result['content']['data'] );
+			unset( $result['content']['data_url'] );
+
+			if ( empty( $result['content'] ) ) {
+				unset( $result['content'] );
+			}
+		}
+
+		// Keep only essential metadata for LLM reasoning.
+		$keep_fields = array(
+			'attachment_id',
+			'url',
+			'download_url',
+			'file_name',
+			'mime_type',
+			'bytes',
+			'title',
+			'model',
+			'aspect_ratio',
+			'edit_instruction',
+			'source_attachment',
+			'provider',
+			'usage',
+		);
+
+		$sanitized = array();
+		foreach ( $keep_fields as $key ) {
+			if ( isset( $result[ $key ] ) ) {
+				$sanitized[ $key ] = $result[ $key ];
+			}
+		}
+
+		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }
