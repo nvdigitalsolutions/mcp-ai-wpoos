@@ -271,6 +271,74 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 	}
 
 	/**
+	 * Test that agentic loop exits when finish_reason is 'stop'.
+	 *
+	 * This tests the fix for LM Studio and other providers that return
+	 * finish_reason='stop' to indicate completion, preventing infinite loops.
+	 */
+	public function test_agentic_loop_exits_on_finish_reason_stop() {
+		$iteration_count = 0;
+
+		$mock_client = $this->getMockBuilder( 'WP_MCP_AI_OpenAI_Client' )
+			->disableOriginalConstructor()
+			->onlyMethods( array( 'create_chat_completion' ) )
+			->getMock();
+
+		$mock_client
+			->method( 'create_chat_completion' )
+			->willReturnCallback(
+				function ( $messages ) use ( &$iteration_count ) {
+					++$iteration_count;
+
+					if ( 1 === $iteration_count ) {
+						// First call: Request a tool
+						return $this->create_response_with_tool_call( 'get_current_time' );
+					}
+
+					// Second call: Return response with finish_reason='stop'
+					// This should exit the loop even though we could request more tools
+					return array(
+						'id'      => 'test-response-stop',
+						'choices' => array(
+							array(
+								'message'       => array(
+									'role'    => 'assistant',
+									'content' => 'The current time is 10:30 AM. Is there anything else you need?',
+								),
+								'finish_reason' => 'stop',
+							),
+						),
+					);
+				}
+			);
+
+		$mock_router        = $this->create_mock_router_with_client( $mock_client );
+		$this->chat_service = $this->create_chat_service( $mock_router );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'What time is it?',
+			),
+		);
+
+		$response = $this->chat_service->process_chat_request(
+			$this->assistant_id,
+			$messages,
+			array(),
+			array(),
+			array( 'save_transcript' => false ),
+			$this->user_id,
+			10 // High max_iterations to ensure finish_reason stops the loop, not iteration limit
+		);
+
+		// Should complete after 2 iterations (initial + tool result) due to finish_reason='stop'
+		$this->assertEquals( 2, $iteration_count, 'Should exit loop on finish_reason=stop' );
+		$this->assertArrayHasKey( 'choices', $response );
+		$this->assertStringContainsString( '10:30 AM', $response['choices'][0]['message']['content'] );
+	}
+
+	/**
 	 * Test tool execution error handling.
 	 */
 	public function test_tool_execution_error_handling() {
@@ -649,10 +717,11 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			'id'      => 'test-response-' . wp_rand(),
 			'choices' => array(
 				array(
-					'message' => array(
+					'message'       => array(
 						'role'    => 'assistant',
 						'content' => $content,
 					),
+					'finish_reason' => 'stop',
 				),
 			),
 		);
@@ -669,7 +738,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 			'id'      => 'test-tool-response-' . wp_rand(),
 			'choices' => array(
 				array(
-					'message' => array(
+					'message'       => array(
 						'role'       => 'assistant',
 						'content'    => 'Let me get that for you.',
 						'tool_calls' => array(
@@ -683,6 +752,7 @@ class WP_MCP_AI_Test_Agentic_Chat_Workflow_Comprehensive extends WP_UnitTestCase
 							),
 						),
 					),
+					'finish_reason' => 'tool_calls',
 				),
 			),
 		);
