@@ -337,7 +337,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'federation_price_hints'               => array(),
 				// Orchestration Layer settings - defaults match "Balanced" preset.
 				'orchestration_preset'                 => 'custom',
-				'enable_budget_management'             => false,
+				'enable_budget_management'             => true,
 				'enable_predictive_optimization'       => false,
 				'enable_capability_gating'             => false,
 				'enable_cron_orchestration'            => false,
