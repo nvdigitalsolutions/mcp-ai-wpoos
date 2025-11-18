@@ -197,7 +197,14 @@ describe( 'Inline Content Extraction', () => {
 	} );
 
 	describe( 'Attachment entry structure', () => {
-		it( 'should create attachment with inline data when URL is missing', () => {
+		it( 'should create blob URL from inline data when URL is missing', () => {
+			// Mock createObjectUrlFromBase64 function
+			global.URL = {
+				createObjectURL: jest.fn( () => 'blob:http://localhost/test-blob-url' ),
+			};
+			global.atob = jest.fn( ( data ) => data );
+			global.Blob = jest.fn();
+
 			const result = {
 				file_name: 'gemini-image.png',
 				mime_type: 'image/png',
@@ -219,19 +226,30 @@ describe( 'Inline Content Extraction', () => {
 				meta: '1:1 • PNG',
 			};
 
-			// If we have inline content data and no URL, add it to the attachment
-			if ( inlineContent && ! url ) {
-				attachmentEntry.data = inlineContent.data;
-				if ( inlineContent.mime_type ) {
-					attachmentEntry.mime = inlineContent.mime_type;
+			// Simulate createObjectUrlFromBase64 function
+			function createObjectUrlFromBase64( base64, mimeType ) {
+				try {
+					const binary = atob( base64 );
+					const blob = new Blob( [ binary ], { type: mimeType || 'application/octet-stream' } );
+					return URL.createObjectURL( blob );
+				} catch ( error ) {
+					return '';
 				}
 			}
 
-			expect( attachmentEntry.data ).toBe( 'base64data' );
-			expect( attachmentEntry.mime ).toBe( 'image/png' );
+			// If we have inline content data and no URL, create a blob URL
+			if ( inlineContent && ! url ) {
+				const blobUrl = createObjectUrlFromBase64( inlineContent.data, inlineContent.mime_type );
+				if ( blobUrl ) {
+					attachmentEntry.url = blobUrl;
+				}
+			}
+
+			expect( attachmentEntry.url ).toBe( 'blob:http://localhost/test-blob-url' );
+			expect( attachmentEntry.url ).not.toBe( '' );
 		} );
 
-		it( 'should not add inline data when URL is present', () => {
+		it( 'should not create blob URL when URL is present', () => {
 			const result = {
 				url: 'https://example.com/image.png',
 				file_name: 'gemini-image.png',
@@ -252,17 +270,22 @@ describe( 'Inline Content Extraction', () => {
 				meta: '',
 			};
 
-			// If we have inline content data and no URL, add it to the attachment
+			// Mock createObjectUrlFromBase64 function
+			function createObjectUrlFromBase64( base64, mimeType ) {
+				return 'blob:should-not-be-created';
+			}
+
+			// If we have inline content data and no URL, create a blob URL
 			if ( inlineContent && ! url ) {
-				attachmentEntry.data = inlineContent.data;
-				if ( inlineContent.mime_type ) {
-					attachmentEntry.mime = inlineContent.mime_type;
+				const blobUrl = createObjectUrlFromBase64( inlineContent.data, inlineContent.mime_type );
+				if ( blobUrl ) {
+					attachmentEntry.url = blobUrl;
 				}
 			}
 
-			// Should not add inline data when URL exists
-			expect( attachmentEntry.data ).toBeUndefined();
-			expect( attachmentEntry.mime ).toBeUndefined();
+			// Should keep original URL, not create blob
+			expect( attachmentEntry.url ).toBe( 'https://example.com/image.png' );
+			expect( attachmentEntry.url ).not.toBe( 'blob:should-not-be-created' );
 		} );
 	} );
 } );

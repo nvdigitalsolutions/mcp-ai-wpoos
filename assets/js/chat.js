@@ -5847,12 +5847,13 @@
             meta: attachmentMeta,
         };
 
-        // If we have inline content data and no URL, add it to the attachment
-        // This allows the attachment to be displayed using a blob URL
+        // If we have inline content data and no URL, create a blob URL from the base64 data
+        // This allows the attachment to be displayed in the chat UI
         if (inlineContent && !url) {
-            attachmentEntry.data = inlineContent.data;
-            if (inlineContent.mime_type) {
-                attachmentEntry.mime = inlineContent.mime_type;
+            const blobUrl = createObjectUrlFromBase64(inlineContent.data, inlineContent.mime_type);
+            if (blobUrl) {
+                attachmentEntry.url = blobUrl;
+                registerObjectUrl(blobUrl);
             }
         }
 
