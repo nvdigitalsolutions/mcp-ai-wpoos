@@ -113,6 +113,7 @@ Everything except the endpoint URL default:
 - ✅ Model listing
 - ✅ Chat completions
 - ✅ Text completions
+- ✅ **Function calling / tool support** (now available!)
 - ✅ Provider priority/fallback
 - ✅ Admin UI
 - ✅ AJAX handlers
