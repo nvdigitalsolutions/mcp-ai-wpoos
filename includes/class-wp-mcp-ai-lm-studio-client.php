@@ -202,11 +202,18 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 				foreach ( $decoded['data'] as $model ) {
 					if ( isset( $model['id'] ) ) {
-						$models[] = array(
+						$model_info = array(
 							'id'       => $model['id'],
 							'owned_by' => isset( $model['owned_by'] ) ? $model['owned_by'] : '',
 							'created'  => isset( $model['created'] ) ? $model['created'] : 0,
 						);
+
+						// Capture context_length if available (critical for context window management).
+						if ( isset( $model['context_length'] ) ) {
+							$model_info['context_length'] = absint( $model['context_length'] );
+						}
+
+						$models[] = $model_info;
 					}
 				}
 			}
@@ -214,6 +221,195 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			WP_MCP_AI_Logger::log_event( 'lm_studio_list_models', 'LM Studio models retrieved.', array( 'count' => count( $models ) ) );
 
 			return $models;
+		}
+
+		/**
+		 * Get the context window size for a specific model.
+		 *
+		 * This method queries the LM Studio API to retrieve the model's
+		 * actual context_length parameter, which is critical for preventing
+		 * context overflow errors.
+		 *
+		 * @param string $model Model identifier.
+		 * @return int|WP_Error Context window size in tokens, or WP_Error on failure.
+		 */
+		public function get_model_context_window( $model ) {
+			$model = sanitize_text_field( $model );
+
+			if ( empty( $model ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_model',
+					__( 'No model specified for context window lookup.', 'wp-mcp-ai' )
+				);
+			}
+
+			// Try to get from cache first (5 minute cache).
+			$cache_key = 'lm_studio_context_' . md5( $model );
+			$cached    = wp_cache_get( $cache_key, 'wp_mcp_ai_lm_studio' );
+
+			if ( false !== $cached ) {
+				return $cached;
+			}
+
+			// Fetch model list from LM Studio API.
+			$models = $this->list_models();
+
+			if ( is_wp_error( $models ) ) {
+				// If we can't fetch models, return a conservative default.
+				WP_MCP_AI_Logger::log_error(
+					'Failed to fetch LM Studio models for context window lookup.',
+					array(
+						'model' => $model,
+						'error' => $models->get_error_message(),
+					)
+				);
+
+				// Return a conservative default (4096 tokens is common for smaller models).
+				return 4096;
+			}
+
+			// Find the model in the list.
+			foreach ( $models as $model_info ) {
+				if ( isset( $model_info['id'] ) && $model_info['id'] === $model ) {
+					if ( isset( $model_info['context_length'] ) && $model_info['context_length'] > 0 ) {
+						$context_window = absint( $model_info['context_length'] );
+
+						// Cache for 5 minutes.
+						wp_cache_set( $cache_key, $context_window, 'wp_mcp_ai_lm_studio', 5 * MINUTE_IN_SECONDS );
+
+						return $context_window;
+					}
+				}
+			}
+
+			// Model not found or context_length not available.
+			// Return a conservative default.
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_context_window_unknown',
+				'Context window not found for model, using conservative default.',
+				array( 'model' => $model )
+			);
+
+			return 4096;
+		}
+
+		/**
+		 * Validate that the message context fits within the model's context window.
+		 *
+		 * This prevents the "context overflow" error by checking token count
+		 * before sending the request to LM Studio.
+		 *
+		 * @param array  $messages Message array.
+		 * @param string $model    Model identifier.
+		 * @param array  $options  Request options.
+		 * @return bool|WP_Error True if validation passes, WP_Error otherwise.
+		 */
+		protected function validate_context_window( array $messages, $model, array $options = array() ) {
+			// Get the model's context window.
+			$context_window = $this->get_model_context_window( $model );
+
+			// If we got an error, log it but don't block the request
+			// (the error might be transient).
+			if ( is_wp_error( $context_window ) ) {
+				WP_MCP_AI_Logger::log_error(
+					'Failed to get context window for validation, proceeding with request.',
+					array(
+						'model' => $model,
+						'error' => $context_window->get_error_message(),
+					)
+				);
+				return true;
+			}
+
+			// Estimate token count for all messages.
+			$estimated_tokens = 0;
+
+			foreach ( $messages as $message ) {
+				if ( ! is_array( $message ) ) {
+					continue;
+				}
+
+				$content = isset( $message['content'] ) ? $message['content'] : '';
+
+				// Handle array content (multimodal).
+				if ( is_array( $content ) ) {
+					$text_parts = array();
+					foreach ( $content as $segment ) {
+						if ( is_string( $segment ) ) {
+							$text_parts[] = $segment;
+						} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+							$text_parts[] = $segment['text'];
+						}
+					}
+					$content = implode( "\n", $text_parts );
+				}
+
+				// Estimate tokens (rough heuristic: ~4 chars per token).
+				if ( ! empty( $content ) && is_string( $content ) ) {
+					$char_count        = function_exists( 'mb_strlen' ) ? mb_strlen( $content, 'UTF-8' ) : strlen( $content );
+					$estimated_tokens += (int) ceil( $char_count / 4 );
+				}
+
+				// Add overhead for message structure (~10 tokens per message).
+				$estimated_tokens += 10;
+			}
+
+			// Account for max_tokens setting (response tokens).
+			$max_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 2048;
+
+			// Add tool definitions if present (can be substantial).
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$tools_json        = wp_json_encode( $options['tools'] );
+				$tools_char_count  = function_exists( 'mb_strlen' ) ? mb_strlen( $tools_json, 'UTF-8' ) : strlen( $tools_json );
+				$estimated_tokens += (int) ceil( $tools_char_count / 4 );
+			}
+
+			$total_tokens = $estimated_tokens + $max_tokens;
+
+			// Add 10% safety margin for tokenization differences.
+			$total_tokens_with_margin = (int) ceil( $total_tokens * 1.1 );
+
+			WP_MCP_AI_Logger::log_event(
+				'lm_studio_context_validation',
+				'Validating context window.',
+				array(
+					'model'                    => $model,
+					'context_window'           => $context_window,
+					'estimated_input_tokens'   => $estimated_tokens,
+					'max_output_tokens'        => $max_tokens,
+					'total_with_margin'        => $total_tokens_with_margin,
+					'is_within_limit'          => $total_tokens_with_margin <= $context_window,
+				)
+			);
+
+			// Check if we're within the context window.
+			if ( $total_tokens_with_margin > $context_window ) {
+				return new WP_Error(
+					'wp_mcp_ai_context_overflow',
+					sprintf(
+						/* translators: 1: Estimated tokens, 2: Context window size, 3: Model name */
+						__( 'The request requires approximately %1$d tokens, but the model (%3$s) only supports %2$d tokens. Please reduce the message history or use a model with a larger context window.', 'wp-mcp-ai' ),
+						$total_tokens_with_margin,
+						$context_window,
+						$model
+					),
+					array(
+						'status'               => 400,
+						'estimated_tokens'     => $estimated_tokens,
+						'max_output_tokens'    => $max_tokens,
+						'total_tokens'         => $total_tokens_with_margin,
+						'context_window'       => $context_window,
+						'overflow_by'          => $total_tokens_with_margin - $context_window,
+						'actions'              => array(
+							'reduce_message_history'   => __( 'Reduce the number of messages in the conversation history.', 'wp-mcp-ai' ),
+							'reduce_max_tokens'        => __( 'Reduce the max_tokens parameter to allow more input.', 'wp-mcp-ai' ),
+							'use_larger_context_model' => __( 'Use a model with a larger context window (e.g., load the model with --ctx-size 8192 or higher).', 'wp-mcp-ai' ),
+						),
+					)
+				);
+			}
+
+			return true;
 		}
 
 		/**
@@ -252,6 +448,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 						),
 					)
 				);
+			}
+
+			// Validate context window before building payload to prevent overflow errors.
+			$context_check = $this->validate_context_window( $messages, $model, $options );
+			if ( is_wp_error( $context_check ) ) {
+				return $context_check;
 			}
 
 			$payload = $this->build_payload( $messages, $options, $model );
@@ -659,6 +861,42 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 						),
 					)
 				);
+			}
+
+			// Validate context window for completion requests too.
+			$context_window = $this->get_model_context_window( $model );
+			if ( ! is_wp_error( $context_window ) ) {
+				// Estimate prompt tokens.
+				$char_count       = function_exists( 'mb_strlen' ) ? mb_strlen( $prompt, 'UTF-8' ) : strlen( $prompt );
+				$prompt_tokens    = (int) ceil( $char_count / 4 );
+				$max_tokens       = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 2048;
+				$total_tokens     = (int) ceil( ( $prompt_tokens + $max_tokens ) * 1.1 ); // 10% safety margin.
+
+				if ( $total_tokens > $context_window ) {
+					return new WP_Error(
+						'wp_mcp_ai_context_overflow',
+						sprintf(
+							/* translators: 1: Estimated tokens, 2: Context window size, 3: Model name */
+							__( 'The completion request requires approximately %1$d tokens, but the model (%3$s) only supports %2$d tokens. Please reduce the prompt length or use a model with a larger context window.', 'wp-mcp-ai' ),
+							$total_tokens,
+							$context_window,
+							$model
+						),
+						array(
+							'status'            => 400,
+							'prompt_tokens'     => $prompt_tokens,
+							'max_output_tokens' => $max_tokens,
+							'total_tokens'      => $total_tokens,
+							'context_window'    => $context_window,
+							'overflow_by'       => $total_tokens - $context_window,
+							'actions'           => array(
+								'reduce_prompt'            => __( 'Reduce the prompt length.', 'wp-mcp-ai' ),
+								'reduce_max_tokens'        => __( 'Reduce the max_tokens parameter.', 'wp-mcp-ai' ),
+								'use_larger_context_model' => __( 'Use a model with a larger context window.', 'wp-mcp-ai' ),
+							),
+						)
+					);
+				}
 			}
 
 			$payload = array(

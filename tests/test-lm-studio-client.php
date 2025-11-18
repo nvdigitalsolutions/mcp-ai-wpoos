@@ -1352,6 +1352,399 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	/**
+	 * Test list_models captures context_length from LM Studio response.
+	 */
+	public function test_list_models_captures_context_length() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		// Mock response with context_length.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'openai/gpt-oss-20b',
+										'object'         => 'model',
+										'owned_by'       => 'lm-studio',
+										'context_length' => 4096,
+									),
+									array(
+										'id'             => 'llama3-8b',
+										'object'         => 'model',
+										'owned_by'       => 'lm-studio',
+										'context_length' => 8192,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$models = $this->client->list_models();
+
+		$this->assertIsArray( $models );
+		$this->assertCount( 2, $models );
+		$this->assertEquals( 'openai/gpt-oss-20b', $models[0]['id'] );
+		$this->assertArrayHasKey( 'context_length', $models[0] );
+		$this->assertEquals( 4096, $models[0]['context_length'] );
+		$this->assertEquals( 'llama3-8b', $models[1]['id'] );
+		$this->assertEquals( 8192, $models[1]['context_length'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test get_model_context_window retrieves context window from API.
+	 */
+	public function test_get_model_context_window() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		// Mock response with context_length.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'openai/gpt-oss-20b',
+										'object'         => 'model',
+										'context_length' => 4096,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$context_window = $this->client->get_model_context_window( 'openai/gpt-oss-20b' );
+
+		$this->assertEquals( 4096, $context_window );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test get_model_context_window returns default when model not found.
+	 */
+	public function test_get_model_context_window_returns_default_for_unknown_model() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		// Mock response without the requested model.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, 'localhost:1234' ) !== false ) {
+					return array(
+						'response' => array(
+							'code'    => 200,
+							'message' => 'OK',
+						),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'other-model',
+										'context_length' => 8192,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		$context_window = $this->client->get_model_context_window( 'unknown-model' );
+
+		// Should return conservative default of 4096.
+		$this->assertEquals( 4096, $context_window );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test chat completion rejects request when context window is exceeded.
+	 */
+	public function test_chat_completion_context_overflow_error() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'openai/gpt-oss-20b',
+			)
+		);
+
+		// Mock list_models to return 4096 token context window.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, '/v1/models' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'openai/gpt-oss-20b',
+										'context_length' => 4096,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		// Create a message that would exceed 4096 tokens.
+		// At ~4 chars per token, we need more than 16,384 characters.
+		// Plus response tokens and overhead, we need a lot of content.
+		$large_content = str_repeat( 'This is a test message with some content. ', 500 ); // ~20,000 chars = ~5000 tokens.
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $large_content,
+			),
+		);
+
+		$result = $this->client->create_chat_completion( $messages, array() );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_context_overflow', $result->get_error_code() );
+
+		$error_data = $result->get_error_data();
+		$this->assertArrayHasKey( 'context_window', $error_data );
+		$this->assertEquals( 4096, $error_data['context_window'] );
+		$this->assertArrayHasKey( 'overflow_by', $error_data );
+		$this->assertGreaterThan( 0, $error_data['overflow_by'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test chat completion succeeds when within context window.
+	 */
+	public function test_chat_completion_succeeds_within_context_window() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'openai/gpt-oss-20b',
+			)
+		);
+
+		// Mock list_models to return 4096 token context window.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, '/v1/models' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'openai/gpt-oss-20b',
+										'context_length' => 4096,
+									),
+								),
+							)
+						),
+					);
+				} elseif ( strpos( $url, '/chat/completions' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'id'      => 'chatcmpl-123',
+								'choices' => array(
+									array(
+										'message' => array(
+											'role'    => 'assistant',
+											'content' => 'Test response',
+										),
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		// Small message that fits in context.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Hello, how are you?',
+			),
+		);
+
+		$result = $this->client->create_chat_completion( $messages, array() );
+
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'id', $result );
+		$this->assertArrayHasKey( 'choices', $result );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test text completion rejects request when context window is exceeded.
+	 */
+	public function test_text_completion_context_overflow_error() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'openai/gpt-oss-20b',
+			)
+		);
+
+		// Mock list_models to return 4096 token context window.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) {
+				if ( strpos( $url, '/v1/models' ) !== false ) {
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'openai/gpt-oss-20b',
+										'context_length' => 4096,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		// Create a prompt that would exceed 4096 tokens.
+		$large_prompt = str_repeat( 'This is a test prompt with some content. ', 500 ); // ~20,000 chars = ~5000 tokens.
+
+		$result = $this->client->create_completion( $large_prompt, array() );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'wp_mcp_ai_context_overflow', $result->get_error_code() );
+
+		$error_data = $result->get_error_data();
+		$this->assertArrayHasKey( 'context_window', $error_data );
+		$this->assertEquals( 4096, $error_data['context_window'] );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test context validation uses caching to avoid repeated API calls.
+	 */
+	public function test_context_window_uses_caching() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$api_call_count = 0;
+
+		// Mock list_models endpoint.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$api_call_count ) {
+				if ( strpos( $url, '/v1/models' ) !== false ) {
+					$api_call_count++;
+					return array(
+						'response' => array( 'code' => 200 ),
+						'body'     => wp_json_encode(
+							array(
+								'data' => array(
+									array(
+										'id'             => 'test-model',
+										'context_length' => 8192,
+									),
+								),
+							)
+						),
+					);
+				}
+				return $preempt;
+			},
+			10,
+			3
+		);
+
+		// First call - should hit API.
+		$context_window_1 = $this->client->get_model_context_window( 'test-model' );
+		$this->assertEquals( 8192, $context_window_1 );
+		$this->assertEquals( 1, $api_call_count, 'First call should hit API' );
+
+		// Second call - should use cache.
+		$context_window_2 = $this->client->get_model_context_window( 'test-model' );
+		$this->assertEquals( 8192, $context_window_2 );
+		$this->assertEquals( 1, $api_call_count, 'Second call should use cache, not hit API again' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }
 
 
