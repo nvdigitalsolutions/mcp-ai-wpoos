@@ -212,12 +212,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_tokens'           => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Token Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3>',
+					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output.', 'wp-mcp-ai' ) . '</p>',
 				),
 				'low_tier_max_tokens'             => array(
 					'type'        => 'slider',
-					'label'       => __( 'Low Tier Max Tokens', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens for low-tier workloads (< 128MB memory). Modern AI standard: 2000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'Low Tier Context Window', 'wp-mcp-ai' ),
+					'description' => __( 'Total context window for low-tier workloads (< 128MB memory). Includes all input and output tokens. Modern AI standard: 2000 tokens.', 'wp-mcp-ai' ),
 					'min'         => 500,
 					'max'         => 5000,
 					'step'        => 100,
@@ -226,8 +226,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'medium_tier_max_tokens'          => array(
 					'type'        => 'slider',
-					'label'       => __( 'Medium Tier Max Tokens', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens for medium-tier workloads (128-512MB memory). Modern AI standard: 8000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'Medium Tier Context Window', 'wp-mcp-ai' ),
+					'description' => __( 'Total context window for medium-tier workloads (128-512MB memory). Includes all input and output tokens. Modern AI standard: 8000 tokens.', 'wp-mcp-ai' ),
 					'min'         => 2000,
 					'max'         => 10000,
 					'step'        => 500,
@@ -236,8 +236,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'high_tier_max_tokens'            => array(
 					'type'        => 'slider',
-					'label'       => __( 'High Tier Max Tokens', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens for high-tier workloads (> 512MB memory). Modern AI standard: 32000 tokens.', 'wp-mcp-ai' ),
+					'label'       => __( 'High Tier Context Window', 'wp-mcp-ai' ),
+					'description' => __( 'Total context window for high-tier workloads (> 512MB memory). Includes all input and output tokens. Modern AI standard: 32000 tokens.', 'wp-mcp-ai' ),
 					'min'         => 8000,
 					'max'         => 32000,
 					'step'        => 1000,
@@ -547,13 +547,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '</div>';
 				$content .= '</div>';
 
-				// Max tokens.
+				// Max tokens - Context Window.
 				$max_tokens = $resource_manager->get_max_tokens();
-				$content   .= '<div class="wp-mcp-ai-stats-card">';
+				$content   .= '<div class="wp-mcp-ai-stats-card wp-mcp-ai-stats-card--context-window">';
 				$content   .= '<div class="wp-mcp-ai-stats-card__icon"><span class="dashicons dashicons-chart-bar"></span></div>';
 				$content   .= '<div class="wp-mcp-ai-stats-card__content">';
-				$content   .= '<div class="wp-mcp-ai-stats-card__label">' . esc_html__( 'Max Tokens', 'wp-mcp-ai' ) . '</div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card__label">';
+				$content   .= esc_html__( 'Context Window (Max Tokens)', 'wp-mcp-ai' );
+				$content   .= ' <span class="dashicons dashicons-info-outline wp-mcp-ai-tooltip-trigger" data-tooltip="context-window-info"></span>';
+				$content   .= '</div>';
 				$content   .= '<div class="wp-mcp-ai-stats-card__value">' . esc_html( number_format( $max_tokens ) ) . '</div>';
+				$content   .= '<div class="wp-mcp-ai-stats-card__subtitle">' . esc_html__( 'Total Budget Per Request', 'wp-mcp-ai' ) . '</div>';
 				$content   .= '</div>';
 				$content   .= '</div>';
 
@@ -612,6 +616,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$content .= '</div>';
 
 				$content .= '</div>';
+
+				// Token Budget Explanation Panel - delegate to renderer for SoC.
+				if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
+					$content .= WP_MCP_AI_Orchestration_Renderer::render_token_budget_explanation( $max_tokens );
+				}
 
 				// Quick actions.
 				$content .= '<div>';
