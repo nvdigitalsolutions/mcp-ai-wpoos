@@ -595,9 +595,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Recommended)';
 			$gemini_models['gemini-2.5-flash-lite']  = 'Gemini 2.5 Flash Lite';
 			
-			// Image generation model - only for image generation/editing tools.
+			// Image editing model - only for image editing tools (edit_gemini_image).
 			if ( $requires_image_gen ) {
-				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image (Nano Banana)';
+				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image (Editing)';
 			}
 			
 			// Gemini 2.0 series.

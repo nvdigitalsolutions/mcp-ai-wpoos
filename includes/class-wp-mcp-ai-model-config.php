@@ -506,7 +506,7 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash-image' => array(
-				'name'           => 'Gemini 2.5 Flash Image (Nano Banana)',
+				'name'           => 'Gemini 2.5 Flash Image (Editing)',
 				'provider'       => 'gemini',
 				'tpm'            => 1000000,
 				'rpm'            => 2000,
