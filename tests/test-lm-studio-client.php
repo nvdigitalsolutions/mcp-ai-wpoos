@@ -830,11 +830,12 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that stream parameter is explicitly set to true in chat completion payloads.
+	 * Test that stream parameter is explicitly set to false in chat completion payloads.
 	 *
-	 * This ensures LM Studio streams responses for better user experience.
+	 * Streaming is disabled until proper SSE handling is implemented to avoid
+	 * json_decode failures when LM Studio returns SSE format.
 	 */
-	public function test_chat_completion_has_stream_true_in_payload() {
+	public function test_chat_completion_has_stream_false_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -883,21 +884,24 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_chat_completion( $messages, array() );
 
-		// Verify the payload contains stream: true.
+		// Verify the payload contains stream: false.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertTrue( $payload['stream'], 'Stream parameter should be true for response streaming' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false until SSE handling is implemented' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
 
 	/**
-	 * Test that stream parameter is explicitly set to true in text completion payloads.
+	 * Test that stream parameter is explicitly set to false in text completion payloads.
+	 *
+	 * Streaming is disabled until proper SSE handling is implemented to avoid
+	 * json_decode failures when LM Studio returns SSE format.
 	 */
-	public function test_text_completion_has_stream_true_in_payload() {
+	public function test_text_completion_has_stream_false_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -936,13 +940,13 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_completion( 'Test prompt', array() );
 
-		// Verify the payload contains stream: true.
+		// Verify the payload contains stream: false.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertTrue( $payload['stream'], 'Stream parameter should be true for response streaming' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false until SSE handling is implemented' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
@@ -1033,10 +1037,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertIsArray( $captured_payload['tools'] );
 		$this->assertCount( 1, $captured_payload['tools'] );
 		$this->assertEquals( 'get_weather', $captured_payload['tools'][0]['name'] );
-		
-		// Verify streaming is enabled when tools are used.
+
+		// Verify streaming is disabled when tools are used.
 		$this->assertArrayHasKey( 'stream', $captured_payload, 'Payload should have stream parameter' );
-		$this->assertTrue( $captured_payload['stream'], 'Stream should be true for response streaming even when tools are used' );
+		$this->assertFalse( $captured_payload['stream'], 'Stream should be false until SSE handling is implemented, even when tools are used' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
@@ -1148,7 +1152,7 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 			function ( $preempt, $args, $url ) {
 				if ( strpos( $url, '/v1/chat/completions' ) !== false ) {
 					$payload = json_decode( $args['body'], true );
-					
+
 					// Verify tools are present in request.
 					if ( ! isset( $payload['tools'] ) ) {
 						return new WP_Error( 'missing_tools', 'Tools not included in request' );
@@ -1167,8 +1171,8 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 											'content'    => null,
 											'tool_calls' => array(
 												array(
-													'id'       => 'call_123',
-													'type'     => 'function',
+													'id'   => 'call_123',
+													'type' => 'function',
 													'function' => array(
 														'name'      => 'get_weather',
 														'arguments' => '{"location":"London"}',

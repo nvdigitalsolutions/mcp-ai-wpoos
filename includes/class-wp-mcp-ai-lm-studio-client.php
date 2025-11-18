@@ -444,7 +444,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => true, // Enable streaming for LLM responses.
+				'stream'   => false, // Disable streaming until SSE handling is implemented.
 			);
 
 			// Add temperature if specified.
@@ -500,10 +500,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$timeout = max( 5, $timeout );
 
-		// Ensure PHP execution time is sufficient for the timeout.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the timeout.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-		return $timeout;
+			return $timeout;
 		}
 
 		/**
@@ -667,7 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
-				'stream' => true, // Enable streaming for LLM responses.
+				'stream' => false, // Disable streaming until SSE handling is implemented.
 			);
 
 			// Add temperature if specified.
