@@ -147,6 +147,38 @@ interface WP_MCP_AI_Tool_Capability_Flags_Interface {
 }
 
 /**
+ * Optional interface for tools that require specific model capabilities.
+ *
+ * Model capability requirements specify what AI model features are needed
+ * for the tool to function correctly (e.g., vision, image generation, multimodal).
+ *
+ * @since 1.0.0
+ */
+interface WP_MCP_AI_Tool_Model_Requirements_Interface {
+	/**
+	 * Get required model capabilities for this tool.
+	 *
+	 * Returns an array of model capability flags that determine which
+	 * AI models are compatible with this tool. These flags are used
+	 * to filter available models in dropdowns and enforce compatibility.
+	 *
+	 * Standard model capability flags:
+	 * - 'vision': Model can process and understand images
+	 * - 'multimodal': Model can handle text, images, audio, video
+	 * - 'image-generation': Model can generate images from text
+	 * - 'image-editing': Model can edit/modify existing images
+	 * - 'audio': Model can process audio input
+	 * - 'video': Model can process video input
+	 * - 'function-calling': Model supports native function/tool calling
+	 * - 'code-execution': Model can execute code
+	 * - 'web-search': Model has web search capabilities
+	 *
+	 * @return array<string> Array of required model capability flags.
+	 */
+	public function get_model_requirements();
+}
+
+/**
  * Optional interface for tools that define specific execution rules.
  *
  * Tool-specific rules provide detailed constraints and requirements
