@@ -31,6 +31,28 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 	/**
 	 * Register REST routes for teams.
+	 *
+	 * Registers team management REST API endpoints:
+	 * - GET /teams/{id}/members: Get list of profession members in a team
+	 *
+	 * Teams are collections of profession custom post types that define:
+	 * - Multi-agent collaboration workflows
+	 * - Specialized profession roles (advisory, creative, technical, etc.)
+	 * - Profession expertise areas and capabilities
+	 * - Default tool configurations per profession
+	 *
+	 * The members endpoint returns:
+	 * - Profession ID, title, and description
+	 * - Category (advisory, creative, technical, healthcare, legal, financial, other)
+	 * - Expertise areas array
+	 * - Assigned tools count
+	 *
+	 * Access control:
+	 * - Requires 'manage_options' capability (admin-only)
+	 * - Validates team post type existence
+	 * - Filters out invalid or deleted profession members
+	 *
+	 * @since 1.0.0
 	 */
 	public function register_routes() {
 		// Get team members endpoint.

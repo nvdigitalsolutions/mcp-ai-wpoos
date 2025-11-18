@@ -43,6 +43,29 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 	/**
 	 * Register MCP protocol routes.
+	 *
+	 * Registers all MCP (Model Context Protocol) related REST API endpoints:
+	 * - POST /mcp: JSON-RPC 2.0 protocol endpoint for MCP method calls
+	 * - GET /mcp: SSE discovery and Streamable HTTP transport (MCP 2024-11-05 spec)
+	 * - OPTIONS /mcp: CORS preflight handling for cross-origin requests
+	 * - GET /no-sse: Legacy endpoint for clients that don't support Server-Sent Events
+	 * - GET /assistants: MCP-compliant assistant directory with SSE support
+	 * - POST /assistants: Create new assistant via REST API
+	 * - DELETE /assistants/{id}: Delete an existing assistant
+	 *
+	 * The /mcp endpoint implements the MCP 2024-11-05 specification with:
+	 * - JSON-RPC 2.0 protocol for method invocation
+	 * - Streamable HTTP transport for SSE streaming
+	 * - Support for initialize, tools/list, tools/call, resources/list, prompts/list methods
+	 *
+	 * Authentication is handled via:
+	 * - WordPress REST nonces (same-origin)
+	 * - Assistant-issued bearer tokens (scoped to specific assistant)
+	 * - Auth0 bearer tokens (enterprise integrations)
+	 * - Mesh API keys (inter-service communication)
+	 *
+	 * @since 1.0.0
+	 * @see https://spec.modelcontextprotocol.io/specification/2024-11-05/
 	 */
 	public function register_routes() {
 		// /mcp - JSON-RPC 2.0 MCP protocol endpoint with SSE support.

@@ -44,6 +44,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 	/**
 	 * Register chat routes.
+	 *
+	 * Registers all chat-related REST API endpoints:
+	 * - POST /chat: MCP remote client chat with 5 iteration limit
+	 * - GET /chat: SSE handshake for streaming chat responses
+	 * - POST /chat-client: Browser client chat with 15 iteration limit
+	 * - GET /chat-client: SSE handshake for browser chat streaming
+	 * - GET /chat-transcripts: List chat transcripts for authenticated user
+	 * - POST /chat-transcripts: Save a chat transcript to persistent storage
+	 * - GET /chat-transcripts/{session_key}: Retrieve specific transcript by session key
+	 * - DELETE /chat-transcripts/{session_key}: Delete a specific transcript
+	 *
+	 * All endpoints support multiple authentication methods:
+	 * - WordPress REST nonce (same-origin requests)
+	 * - Assistant-issued bearer tokens (scoped to specific assistant)
+	 * - Auth0 bearer tokens (enterprise integrations)
+	 * - Guest tokens (public chat surfaces with allow_guests enabled)
+	 *
+	 * @since 1.0.0
 	 */
 	public function register_routes() {
 		// /chat - MCP remote client chat.
