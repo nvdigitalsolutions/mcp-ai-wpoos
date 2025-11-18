@@ -214,7 +214,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$image_config = array();
 
-			if ( '' !== $aspect_ratio ) {
+
+			// Aspect ratio is only supported by -image model variants (e.g., gemini-2.5-flash-image).
+			// The base multimodal models (e.g., gemini-2.5-flash) do not support aspectRatio configuration.
+			$supports_aspect_ratio = false !== strpos( $model, '-image' );
+			if ( $supports_aspect_ratio && '' !== $aspect_ratio ) {
 				$image_config['aspectRatio'] = $aspect_ratio;
 			}
 
@@ -462,7 +466,11 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$image_config = array();
 
-			if ( '' !== $aspect_ratio ) {
+
+			// Aspect ratio is only supported by -image model variants (e.g., gemini-2.5-flash-image).
+			// The base multimodal models (e.g., gemini-2.5-flash) do not support aspectRatio configuration.
+			$supports_aspect_ratio = false !== strpos( $model, '-image' );
+			if ( $supports_aspect_ratio && '' !== $aspect_ratio ) {
 				$image_config['aspectRatio'] = $aspect_ratio;
 			}
 

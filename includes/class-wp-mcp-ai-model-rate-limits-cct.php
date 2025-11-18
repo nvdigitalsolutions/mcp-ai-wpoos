@@ -947,7 +947,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'supports_vision'           => true,
 				'cost_per_1k_input_tokens'  => 0,
 				'cost_per_1k_output_tokens' => 0.03,
-				'notes'                     => 'Advanced image generation with editing, multi-image blending, character consistency. ~$0.039 per image. SynthID watermarking included.',
+				'notes'                     => 'Image editing model with multi-image blending, character consistency. Used by edit_gemini_image tool. For generation, use gemini-2.5-flash. ~$0.039 per image. SynthID watermarking included.',
 			),
 			array(
 				'model_name'                => 'gemini-2.0-flash-image',
@@ -962,7 +962,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'supports_vision'           => true,
 				'cost_per_1k_input_tokens'  => 0,
 				'cost_per_1k_output_tokens' => 0.03,
-				'notes'                     => 'Legacy Gemini image generation model. Consider upgrading to 2.5-flash-image for better quality and features.',
+				'notes'                     => 'Legacy image editing model. Consider upgrading to gemini-2.5-flash-image for editing or gemini-2.5-flash for generation.',
 			),
 			array(
 				'model_name'                => 'imagen-3',
