@@ -283,7 +283,7 @@ class Test_Gemini_Tool_Token_Tracking extends WP_UnitTestCase {
 			$user_id,
 			'generate_gemini_image',
 			'gemini',
-			'gemini-2.5-flash-image',
+			'gemini-2.5-flash',
 			150, // input_tokens.
 			50,  // output_tokens.
 			0.01, // cost_usd.
@@ -303,7 +303,7 @@ class Test_Gemini_Tool_Token_Tracking extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'generate_gemini_image', $breakdown['by_tool'], 'Gemini image tool should appear in tool breakdown' );
 
 		$this->assertArrayHasKey( 'by_model', $breakdown, 'Breakdown should have by_model data' );
-		$model_key = 'gemini|gemini-2.5-flash-image';
+		$model_key = 'gemini|gemini-2.5-flash';
 		$this->assertArrayHasKey( $model_key, $breakdown['by_model'], 'Gemini model should appear in model breakdown' );
 	}
 }
