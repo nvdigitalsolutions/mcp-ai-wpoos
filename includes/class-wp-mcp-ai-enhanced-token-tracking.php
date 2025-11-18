@@ -564,8 +564,13 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * @return string Inferred Gemini model.
 	 */
 	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
-		// Image-related Gemini tools use the Gemini image model.
+		// Image-related Gemini tools: preserve historical image model or use current default.
 		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
+			// If old model is a Gemini image model, preserve it (for historical accuracy).
+			if ( in_array( $old_model, array( 'gemini-2.5-flash-image', 'gemini-2.0-flash-image', 'gemini-1.5-flash-image' ), true ) ) {
+				return $old_model;
+			}
+			// Otherwise use current default for new/migrated records.
 			return 'gemini-2.5-flash';
 		}
 
