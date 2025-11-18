@@ -6,6 +6,16 @@
 # WP oOS – Changelog
 
 ## [Unreleased]
+### Added
+- **LM Studio Function Calling Support**: Added OpenAI-compatible function calling to LM Studio provider (#1360)
+  - Preserves OpenAI-compatible message structure for assistant messages with `tool_calls`
+  - Maintains tool role messages with `tool_call_id` and `name` fields
+  - Added `normalise_tools_for_payload()` method for consistent tool formatting
+  - Streaming explicitly disabled when tools are present for reliable execution
+  - Full backward compatibility - non-tool scenarios work exactly as before
+  - Target model: qwen/qwen3-coder-30b
+  - Comprehensive test coverage (4 new tests)
+
 ### Fixed
 - **Code Quality Improvements**: Comprehensive code review and documentation update (November 16, 2025)
   - Performed complete code review confirming 95/100 code quality score (Excellent)
