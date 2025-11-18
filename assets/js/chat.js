@@ -7226,6 +7226,14 @@
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 // Content will be properly formatted when finalized
                 bubble.textContent = content;
+                
+                // Add streaming class for visual cursor indicator
+                if (bubble.classList && !bubble.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
+                    bubble.classList.add('wp-mcp-ai-chat__bubble--streaming');
+                }
+                
+                // Auto-scroll to keep the streaming content visible
+                scrollBatcher.scrollToBottom(state.messagesEl);
             }
         }
 
@@ -7283,6 +7291,10 @@
                     if (streamingMessageElement) {
                         const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
                         if (bubble) {
+                            // Remove streaming class before rendering markdown
+                            if (bubble.classList) {
+                                bubble.classList.remove('wp-mcp-ai-chat__bubble--streaming');
+                            }
                             bubble.innerHTML = renderMarkdown(streamResult.content);
                         }
                         attachSpeechButton(bubble, state, streamResult.content);
