@@ -329,6 +329,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 						case 'select':
 							$options = isset( $field['options'] ) ? $field['options'] : array();
+							$disabled_options = isset( $field['disabled_options'] ) ? $field['disabled_options'] : array();
 							?>
 							<select
 								id="<?php echo esc_attr( $key ); ?>"
@@ -336,7 +337,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								<?php echo $required ? 'required' : ''; ?>
 							>
 								<?php foreach ( $options as $option_value => $option_label ) : ?>
-									<option value="<?php echo esc_attr( $option_value ); ?>" <?php selected( $value, $option_value ); ?>>
+									<option value="<?php echo esc_attr( $option_value ); ?>" <?php selected( $value, $option_value ); ?> <?php echo in_array( $option_value, $disabled_options, true ) ? 'disabled' : ''; ?>>
 										<?php echo esc_html( $option_label ); ?>
 									</option>
 								<?php endforeach; ?>

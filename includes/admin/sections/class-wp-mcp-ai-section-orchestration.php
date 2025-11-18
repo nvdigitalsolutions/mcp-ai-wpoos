@@ -69,33 +69,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => $this->get_presets_content(),
 				),
-				'enable_budget_management'        => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Dynamic Budget Management', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable dynamic budget management', 'wp-mcp-ai' ),
-					'description'    => __( 'Automatically allocate and adjust token budgets based on system resources and workload tier.', 'wp-mcp-ai' ),
-					'default'        => true,
-				),
-				'enable_predictive_optimization'  => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Predictive Optimization', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable predictive optimization', 'wp-mcp-ai' ),
-					'description'    => __( 'Use historical usage patterns to forecast and prevent resource exhaustion.', 'wp-mcp-ai' ),
-					'default'        => true,
-				),
-				'enable_capability_gating'        => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Capability-Based Tool Gating', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable capability-based tool gating', 'wp-mcp-ai' ),
-					'description'    => __( 'Enforce WordPress capability checks for tool access based on user roles.', 'wp-mcp-ai' ),
-					'default'        => true,
-				),
-				'enable_cron_orchestration'       => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Cron-Based Task Orchestration', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable cron-based task orchestration', 'wp-mcp-ai' ),
-					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
-					'default'        => true,
+				'orchestration_level'             => array(
+					'type'             => 'select',
+					'label'            => __( 'Orchestration Level', 'wp-mcp-ai' ),
+					'description'      => __( 'Select the orchestration feature set. Higher levels enable more advanced features: Low (basic budget management), Medium (adds predictive optimization and capability gating), High (all features including cron orchestration).', 'wp-mcp-ai' ),
+					'options'          => array(
+						''     => __( '-- Select Orchestration Level --', 'wp-mcp-ai' ),
+						'low'  => __( 'Low - Basic budget management only', 'wp-mcp-ai' ),
+						'med'  => __( 'Medium - Budget + optimization + capability gating', 'wp-mcp-ai' ),
+						'high' => __( 'High - All orchestration features enabled', 'wp-mcp-ai' ),
+					),
+					'disabled_options' => array( '' ),
+					'default'          => 'high',
 				),
 				'cron_job_retention_period'       => array(
 					'type'        => 'select',
@@ -248,12 +233,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'wp-mcp-ai' ) . '</p>',
 				),
-				'enable_per_call_limits'          => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Per-Call Token Limits', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable per-call token limits', 'wp-mcp-ai' ),
-					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'wp-mcp-ai' ),
-					'default'        => false,
+				'token_limit_enforcement'         => array(
+					'type'             => 'select',
+					'label'            => __( 'Token Limit Enforcement', 'wp-mcp-ai' ),
+					'description'      => __( 'Control how token limits are enforced to prevent runaway costs. Options: None (no limits), Per-Call only, Per-Session only, or Both (strictest control).', 'wp-mcp-ai' ),
+					'options'          => array(
+						''      => __( '-- Select Enforcement Level --', 'wp-mcp-ai' ),
+						'none'  => __( 'None - No token limits enforced', 'wp-mcp-ai' ),
+						'call'  => __( 'Per-Call - Limit individual tool calls only', 'wp-mcp-ai' ),
+						'session' => __( 'Per-Session - Limit entire chat sessions only', 'wp-mcp-ai' ),
+						'both'  => __( 'Both - Enforce both per-call and per-session limits', 'wp-mcp-ai' ),
+					),
+					'disabled_options' => array( '' ),
+					'default'          => 'none',
 				),
 				'per_call_token_limit'            => array(
 					'type'        => 'slider',
@@ -264,13 +256,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'step'        => 1000,
 					'default'     => 10000,
 					'suffix'      => '',
-				),
-				'enable_per_session_limits'       => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Per-Session Token Limits', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable per-session token limits', 'wp-mcp-ai' ),
-					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'wp-mcp-ai' ),
-					'default'        => false,
 				),
 				'per_session_token_limit'         => array(
 					'type'        => 'slider',
@@ -776,12 +761,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_settings_view() {
 			$fields = $this->get_fields();
 
-			// Settings fields: enable/disable toggles and cron retention.
+			// Settings fields: orchestration level and cron retention.
 			$settings_fields = array(
-				'enable_budget_management',
-				'enable_predictive_optimization',
-				'enable_capability_gating',
-				'enable_cron_orchestration',
+				'orchestration_level',
 				'cron_job_retention_period',
 			);
 
@@ -845,14 +827,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 			}
 
-			// Render checkbox fields in a table after sliders.
-			$checkbox_fields = array(
-				'enable_per_call_limits',
-				'enable_per_session_limits',
+			// Render dropdown field for token limit enforcement in a table after sliders.
+			$dropdown_fields = array(
+				'token_limit_enforcement',
 			);
 
 			echo '<table class="form-table" role="presentation">';
-			foreach ( $checkbox_fields as $key ) {
+			foreach ( $dropdown_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$this->render_field( $key, $fields[ $key ] );
 				}
@@ -950,10 +931,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'settings'   => array(
 					'label'  => __( 'Settings', 'wp-mcp-ai' ),
 					'fields' => array(
-						'enable_budget_management',
-						'enable_predictive_optimization',
-						'enable_capability_gating',
-						'enable_cron_orchestration',
+						'orchestration_level',
 						'cron_job_retention_period',
 					),
 				),
@@ -976,10 +954,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'medium_tier_max_tokens',
 						'high_tier_max_tokens',
 						'slider_section_call_limits',
+						'token_limit_enforcement',
 						'per_call_token_limit',
 						'per_session_token_limit',
-						'enable_per_call_limits',
-						'enable_per_session_limits',
 						'slider_section_predictive',
 						'prediction_confidence_threshold',
 						'prediction_safety_buffer',
