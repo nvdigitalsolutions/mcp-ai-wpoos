@@ -682,7 +682,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'gemini' ),
-				'models'    => array( 'gemini-2.5-flash-image', 'gemini-2.0-flash-exp', 'gemini-exp-1206' ),
+				'models'    => array( 'gemini-2.5-flash-image', 'gemini-exp-1206', 'gemini-2.0-flash-exp' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(
