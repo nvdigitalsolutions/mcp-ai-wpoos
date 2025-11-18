@@ -533,12 +533,24 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<p class="description">
 							<span class="dashicons dashicons-info"></span>
 							<?php
-							printf(
-								/* translators: 1: Token Manager link, 2: closing link tag */
-								esc_html__( 'For more detailed token tracking and analytics, visit the %1$sToken Manager%2$s.', 'wp-mcp-ai' ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '">',
-								'</a>'
-							);
+							$doc_path = WP_MCP_AI_PATH . 'docs/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
+							if ( file_exists( $doc_path ) ) {
+								printf(
+									/* translators: 1: Documentation link opening tag, 2: closing link tag, 3: Token Manager link opening tag, 4: closing link tag */
+									esc_html__( '%1$sLearn more about context windows%2$s or visit the %3$sToken Manager%4$s for detailed analytics.', 'wp-mcp-ai' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration#context-window-docs' ) ) . '">',
+									'</a>',
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '">',
+									'</a>'
+								);
+							} else {
+								printf(
+									/* translators: 1: Token Manager link, 2: closing link tag */
+									esc_html__( 'For more detailed token tracking and analytics, visit the %1$sToken Manager%2$s.', 'wp-mcp-ai' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '">',
+									'</a>'
+								);
+							}
 							?>
 						</p>
 					</div>
