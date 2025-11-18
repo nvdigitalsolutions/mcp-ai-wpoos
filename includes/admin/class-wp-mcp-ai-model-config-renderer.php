@@ -91,10 +91,13 @@ class WP_MCP_AI_Model_Config_Renderer {
 					box-shadow: 0 1px 1px rgba(0,0,0,.04);
 				}
 				.wp-mcp-ai-model-config-table input[type="number"],
-				.wp-mcp-ai-model-config-table input[type="text"],
-				.wp-mcp-ai-model-config-table select {
+				.wp-mcp-ai-model-config-table input[type="text"] {
 					width: 100%;
 					max-width: 150px;
+				}
+				.wp-mcp-ai-model-config-table select {
+					width: 100%;
+					max-width: 250px;
 				}
 				.wp-mcp-ai-model-status-active {
 					color: #46b450;
@@ -181,6 +184,12 @@ class WP_MCP_AI_Model_Config_Renderer {
 		$cost           = isset( $config['cost_per_1k'] ) ? floatval( $config['cost_per_1k'] ) : 0.0;
 		$status         = isset( $config['status'] ) ? sanitize_key( $config['status'] ) : 'active';
 		$provider_label = isset( $providers[ $provider ] ) ? esc_html( $providers[ $provider ] ) : esc_html( ucfirst( $provider ) );
+		
+		// Get capability flags for the current model.
+		$capability_flags = self::get_model_capability_flags( $model_id, $provider );
+		
+		// Get available models for fallback selection with capability filtering.
+		$available_models = self::get_available_models_for_fallback( $model_id, $capability_flags );
 
 		ob_start();
 		?>
@@ -219,14 +228,32 @@ class WP_MCP_AI_Model_Config_Renderer {
 				<?php echo number_format_i18n( $context ); ?>
 			</td>
 			<td>
-				<input 
-					type="text" 
-					class="wp-mcp-ai-model-config-input"
+				<select 
+					class="wp-mcp-ai-model-config-input wp-mcp-ai-fallback-model-select"
 					data-model="<?php echo esc_attr( $model_id ); ?>"
 					data-field="fallback_model"
-					value="<?php echo esc_attr( $fallback ); ?>"
-					placeholder="<?php esc_attr_e( 'None', 'wp-mcp-ai' ); ?>"
-				/>
+					style="width: 100%; max-width: 250px;"
+				>
+					<option value=""><?php esc_html_e( 'None', 'wp-mcp-ai' ); ?></option>
+					<?php
+					foreach ( $available_models as $group_key => $group_data ) :
+						// Handle optgroup or single option.
+						if ( is_array( $group_data ) && isset( $group_data['label'] ) && isset( $group_data['options'] ) ) {
+							?>
+							<optgroup label="<?php echo esc_attr( $group_data['label'] ); ?>">
+								<?php foreach ( $group_data['options'] as $fallback_model_id => $fallback_model_label ) : ?>
+									<?php if ( $fallback_model_id !== $model_id ) : // Don't allow model to be its own fallback ?>
+										<option value="<?php echo esc_attr( $fallback_model_id ); ?>" <?php selected( $fallback, $fallback_model_id ); ?>>
+											<?php echo esc_html( $fallback_model_label ); ?>
+										</option>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</optgroup>
+							<?php
+						}
+					endforeach;
+					?>
+				</select>
 			</td>
 			<td>
 				$<?php echo number_format( $cost, 4 ); ?>
@@ -422,5 +449,193 @@ class WP_MCP_AI_Model_Config_Renderer {
 		</script>
 		<?php
 		return ob_get_clean();
+	}
+
+	/**
+	 * Get capability flags for a model.
+	 *
+	 * Determines what capabilities a model has (vision, multimodal, etc.)
+	 * based on known model capabilities.
+	 *
+	 * @param string $model_id Model identifier.
+	 * @param string $provider Provider identifier.
+	 * @return array Capability flags.
+	 */
+	protected static function get_model_capability_flags( $model_id, $provider ) {
+		$capability_flags = array();
+
+		// OpenAI models.
+		if ( 'openai' === $provider ) {
+			// Reasoning models (text-only).
+			$reasoning_models = array( 'o1-2024-12-17', 'o1-preview', 'o1-mini', 'o3-mini' );
+			if ( in_array( $model_id, $reasoning_models, true ) ) {
+				return $capability_flags; // Text-only, no special flags.
+			}
+
+			// GPT-4o series (multimodal - vision capable).
+			if ( strpos( $model_id, 'gpt-4o' ) !== false || strpos( $model_id, 'chatgpt-4o' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
+			// GPT-4 Turbo (multimodal - vision capable).
+			if ( strpos( $model_id, 'gpt-4-turbo' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
+			// GPT-4 Vision.
+			if ( strpos( $model_id, 'gpt-4-vision' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
+			// Legacy GPT-4 and GPT-3.5 (text-only).
+			return $capability_flags;
+		}
+
+		// Anthropic models (all Claude models are multimodal).
+		if ( 'anthropic' === $provider ) {
+			$capability_flags[] = 'vision';
+			$capability_flags[] = 'multimodal';
+			return $capability_flags;
+		}
+
+		// Google Gemini models.
+		if ( 'gemini' === $provider ) {
+			// Gemini 2.x and 1.5 series (multimodal - text, image, video).
+			if ( strpos( $model_id, 'gemini-2' ) !== false || strpos( $model_id, 'gemini-1.5' ) !== false || strpos( $model_id, 'gemini-exp' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
+			// Gemini Pro Vision.
+			if ( strpos( $model_id, 'gemini-pro-vision' ) !== false ) {
+				$capability_flags[] = 'vision';
+				return $capability_flags;
+			}
+
+			// Gemma models (text-only).
+			if ( strpos( $model_id, 'gemma' ) !== false ) {
+				return $capability_flags;
+			}
+
+			// Default Gemini Pro (text-only).
+			return $capability_flags;
+		}
+
+		// Ollama and LM Studio models - assume text-only unless specified.
+		return $capability_flags;
+	}
+
+	/**
+	 * Get available models for fallback selection with capability filtering.
+	 *
+	 * Returns models grouped by provider, filtered based on the source model's capabilities.
+	 * This ensures fallback models have compatible capabilities.
+	 *
+	 * @param string $source_model_id  The model we're selecting a fallback for.
+	 * @param array  $source_capability_flags Capability flags of the source model.
+	 * @return array Available models grouped by provider.
+	 */
+	protected static function get_available_models_for_fallback( $source_model_id, $source_capability_flags ) {
+		// Determine if source model requires specific capabilities.
+		$requires_vision     = in_array( 'vision', $source_capability_flags, true );
+		$requires_multimodal = in_array( 'multimodal', $source_capability_flags, true );
+
+		// Use WP_MCP_AI_Tool_Token_Limits to get available models (it has the capability filtering logic).
+		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
+			// Get capability flags in the format expected by get_available_models.
+			$capability_flags = array();
+			if ( $requires_vision ) {
+				$capability_flags[] = 'requires-vision-model';
+			}
+			if ( $requires_multimodal ) {
+				$capability_flags[] = 'requires-multimodal-model';
+			}
+
+			// Create a temporary tool slug to get filtered models.
+			$temp_tool_slug = 'model_config_fallback_' . sanitize_key( $source_model_id );
+			
+			// Use filter to inject capability flags.
+			add_filter(
+				'wp_mcp_ai_tool_capability_flags',
+				function( $flags, $tool_slug ) use ( $temp_tool_slug, $capability_flags ) {
+					if ( $tool_slug === $temp_tool_slug ) {
+						return $capability_flags;
+					}
+					return $flags;
+				},
+				10,
+				2
+			);
+
+			$models = WP_MCP_AI_Tool_Token_Limits::get_available_models( $temp_tool_slug );
+
+			// Remove the filter.
+			remove_all_filters( 'wp_mcp_ai_tool_capability_flags' );
+
+			// Remove the 'default' option as it's not applicable for fallback.
+			unset( $models['default'] );
+
+			return $models;
+		}
+
+		// Fallback: basic model list without capability filtering.
+		return self::get_basic_model_list();
+	}
+
+	/**
+	 * Get basic model list without capability filtering.
+	 *
+	 * Fallback method when WP_MCP_AI_Tool_Token_Limits is not available.
+	 *
+	 * @return array Basic model list.
+	 */
+	protected static function get_basic_model_list() {
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$models   = array();
+
+		// OpenAI models.
+		if ( ! empty( $settings['openai_api_key'] ) ) {
+			$models['openai_group'] = array(
+				'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
+				'options' => array(
+					'gpt-4o'        => 'GPT-4o',
+					'gpt-4o-mini'   => 'GPT-4o Mini',
+					'gpt-4-turbo'   => 'GPT-4 Turbo',
+					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
+				),
+			);
+		}
+
+		// Anthropic models.
+		if ( ! empty( $settings['anthropic_api_key'] ) ) {
+			$models['anthropic_group'] = array(
+				'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+				'options' => array(
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+				),
+			);
+		}
+
+		// Gemini models.
+		if ( ! empty( $settings['gemini_api_key'] ) ) {
+			$models['gemini_group'] = array(
+				'label'   => __( 'Google Gemini', 'wp-mcp-ai' ),
+				'options' => array(
+					'gemini-2.5-flash' => 'Gemini 2.5 Flash',
+					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
+					'gemini-1.5-flash' => 'Gemini 1.5 Flash',
+				),
+			);
+		}
+
+		return $models;
 	}
 }
