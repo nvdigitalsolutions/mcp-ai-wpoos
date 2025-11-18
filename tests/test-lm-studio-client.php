@@ -830,11 +830,11 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that stream parameter is explicitly set to false in chat completion payloads.
+	 * Test that stream parameter is explicitly set to true in chat completion payloads.
 	 *
-	 * This ensures LM Studio doesn't default to streaming mode which could cause delays.
+	 * This ensures LM Studio streams responses for better user experience.
 	 */
-	public function test_chat_completion_has_stream_false_in_payload() {
+	public function test_chat_completion_has_stream_true_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -883,21 +883,21 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_chat_completion( $messages, array() );
 
-		// Verify the payload contains stream: false.
+		// Verify the payload contains stream: true.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
+		$this->assertTrue( $payload['stream'], 'Stream parameter should be true for response streaming' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
 
 	/**
-	 * Test that stream parameter is explicitly set to false in text completion payloads.
+	 * Test that stream parameter is explicitly set to true in text completion payloads.
 	 */
-	public function test_text_completion_has_stream_false_in_payload() {
+	public function test_text_completion_has_stream_true_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -936,13 +936,13 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_completion( 'Test prompt', array() );
 
-		// Verify the payload contains stream: false.
+		// Verify the payload contains stream: true.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
+		$this->assertTrue( $payload['stream'], 'Stream parameter should be true for response streaming' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
@@ -1034,9 +1034,9 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertCount( 1, $captured_payload['tools'] );
 		$this->assertEquals( 'get_weather', $captured_payload['tools'][0]['name'] );
 		
-		// Verify streaming is still disabled when tools are used.
+		// Verify streaming is enabled when tools are used.
 		$this->assertArrayHasKey( 'stream', $captured_payload, 'Payload should have stream parameter' );
-		$this->assertFalse( $captured_payload['stream'], 'Stream should be false even when tools are used' );
+		$this->assertTrue( $captured_payload['stream'], 'Stream should be true for response streaming even when tools are used' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
