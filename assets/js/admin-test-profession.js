@@ -143,7 +143,7 @@
 
 		// Show modal.
 		modal.style.display = 'block';
-		document.body.classList.add('wp-mcp-ai-modal-open');
+		document.body.classList.add('wp-mcp-ai-test-modal-open');
 
 		// Trigger chat.js initialization.
 		initializeChatInstance(instanceId);
@@ -158,7 +158,7 @@
 
 		if (modal) {
 			modal.style.display = 'none';
-			document.body.classList.remove('wp-mcp-ai-modal-open');
+			document.body.classList.remove('wp-mcp-ai-test-modal-open');
 		}
 
 		// Clear chat container.
