@@ -1,11 +1,31 @@
-
----
-
-### 📄 `CHANGELOG.md`
-```markdown
 # WP oOS – Changelog
 
 ## [Unreleased]
+
+### Documentation
+- **Documentation Reorganization (November 18, 2025)**: Comprehensive cleanup and consolidation of documentation
+  - Consolidated bug reports into single comprehensive `docs/TESTING_AND_QUALITY_REPORT.md` (753 lines)
+    - Merged BUG_REPORT.md and BUG_REPORT_SUMMARY.md
+    - Includes test suite results (2,106 tests, 73.4% pass rate)
+    - Code quality analysis (2,120 linting issues categorized)
+    - Security audit findings and recommendations
+    - Prioritized action items with time estimates
+  - Reorganized 95+ documentation files into logical archive structure
+    - Created `docs/archive/implementations/` for implementation summaries
+    - Created `docs/archive/phases/` for phase documents
+    - Created `docs/archive/fixes/` for fix summaries and issue resolutions
+    - Created `docs/archive/features/` for feature documentation
+    - Created `docs/archive/code-reviews/` for code review reports
+    - Created `docs/archive/testing/` for test infrastructure docs
+  - **Root directory now contains only 5 essential files**:
+    - README.md - Main plugin documentation
+    - CONTRIBUTING.md - Contribution guidelines
+    - SECURITY.md - Security policy
+    - CHANGELOG.md - This file
+    - BUILD.md - Build and development instructions
+  - All documentation preserved (nothing deleted, only organized)
+  - Easier navigation and discovery of relevant documentation
+
 ### Added
 - **LM Studio Function Calling Support**: Added OpenAI-compatible function calling to LM Studio provider (#1360)
   - Preserves OpenAI-compatible message structure for assistant messages with `tool_calls`
