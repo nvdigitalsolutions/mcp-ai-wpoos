@@ -167,23 +167,30 @@ class WP_MCP_AI_Chat_Service {
 		$tool_result_messages = array();
 
 		while ( $iteration < $max_iterations && ! is_wp_error( $response ) ) {
-			$tool_calls = $this->extract_tool_calls_from_response( $response );
+			$tool_calls    = $this->extract_tool_calls_from_response( $response );
+			$finish_reason = $this->extract_finish_reason_from_response( $response );
 
-			if ( empty( $tool_calls ) ) {
+			// Exit loop if no tool calls or if model indicates completion.
+			// finish_reason of 'stop' means the model has completed its response,
+			// even if tool_calls are present in the message (for context/history).
+			if ( empty( $tool_calls ) || 'stop' === $finish_reason ) {
 				if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
+					$exit_reason = 'stop' === $finish_reason ? 'finish_reason: stop' : 'no more tool calls';
 					WP_MCP_AI_Logger::log_event(
 						'debug',
-						'Agentic loop completed - no more tool calls',
+						'Agentic loop completed - ' . $exit_reason,
 						array(
 							'iteration'        => $iteration,
 							'total_iterations' => $iteration,
+							'finish_reason'    => $finish_reason,
+							'has_tool_calls'   => ! empty( $tool_calls ),
 							'assistant_id'     => $assistant_id,
 						)
 					);
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-					error_log( sprintf( '[WP oOS Agentic Loop] Completed after %d iterations - no more tool calls', $iteration ) );
+					error_log( sprintf( '[WP oOS Agentic Loop] Completed after %d iterations - %s', $iteration, $exit_reason ) );
 				}
-				break; // No more tools, final response ready.
+				break; // Final response ready.
 			}
 
 			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
@@ -352,6 +359,20 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $response['choices'][0]['message']['tool_calls'];
+	}
+
+	/**
+	 * Extract finish reason from LLM response
+	 *
+	 * @param array $response LLM response.
+	 * @return string Finish reason ('stop', 'tool_calls', 'length', etc.) or empty string.
+	 */
+	private function extract_finish_reason_from_response( $response ) {
+		if ( empty( $response['choices'][0]['finish_reason'] ) ) {
+			return '';
+		}
+
+		return (string) $response['choices'][0]['finish_reason'];
 	}
 
 	/**
