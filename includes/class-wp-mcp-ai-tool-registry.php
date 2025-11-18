@@ -410,6 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// External Tools - Tools requiring external APIs or credentials.
 				'generate_openai_image'           => 'external-tools',
 				'generate_gemini_image'           => 'external-tools',
+				'generate_lm_studio_image'        => 'external-tools',
 				'edit_gemini_image'               => 'external-tools',
 				'generate_openai_speech'          => 'external-tools',
 				'transcribe_openai_audio'         => 'external-tools',
@@ -748,6 +749,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php',
 				'WP_MCP_AI_Tool_Generate_OpenAI_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
+				'WP_MCP_AI_Tool_Generate_LM_Studio_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-lm-studio-image.php',
 				'WP_MCP_AI_Tool_Submit_Document_Prompt'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-submit-document-prompt.php',
 				'WP_MCP_AI_Tool_Save_Post'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post.php',
 				'WP_MCP_AI_Tool_Create_Assistant'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-assistant.php',
