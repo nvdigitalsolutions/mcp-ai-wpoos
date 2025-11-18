@@ -244,6 +244,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 32000,
 					'suffix'      => '',
 				),
+				'slider_section_call_limits'      => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'wp-mcp-ai' ) . '</p>',
+				),
+				'enable_per_call_limits'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Per-Call Token Limits', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable per-call token limits', 'wp-mcp-ai' ),
+					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'per_call_token_limit'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Per-Call Token Limit', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens per individual tool call (applies to all tools unless overridden). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'min'         => 0,
+					'max'         => 100000,
+					'step'        => 1000,
+					'default'     => 10000,
+					'suffix'      => '',
+				),
+				'enable_per_session_limits'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Per-Session Token Limits', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable per-session token limits', 'wp-mcp-ai' ),
+					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'per_session_token_limit'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Per-Session Token Limit', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'min'         => 0,
+					'max'         => 500000,
+					'step'        => 5000,
+					'default'     => 50000,
+					'suffix'      => '',
+				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'wp-mcp-ai' ) . '</h3>',
@@ -764,6 +802,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'low_tier_max_tokens',
 				'medium_tier_max_tokens',
 				'high_tier_max_tokens',
+				'slider_section_call_limits',
+				'enable_per_call_limits',
+				'per_call_token_limit',
+				'enable_per_session_limits',
+				'per_session_token_limit',
 				'slider_section_predictive',
 				'prediction_confidence_threshold',
 				'prediction_safety_buffer',
@@ -781,6 +824,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_slider method.
 							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
 						}
+					} elseif ( 'checkbox' === $field['type'] ) {
+						// Render checkbox fields.
+						$this->render_field( $key, $field );
 					}
 				}
 			}
