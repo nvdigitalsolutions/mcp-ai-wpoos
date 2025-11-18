@@ -494,24 +494,23 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['openai_api_key'] ) ) {
 			$openai_models = array();
 
-			// Reasoning models (text-only).
+			// Reasoning models (text-only) - November 2025.
 			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$openai_models['o1-2024-12-17'] = 'o1 (Dec 2024)';
-				$openai_models['o1-preview']    = 'o1 Preview';
-				$openai_models['o1-mini']       = 'o1 Mini';
-				$openai_models['o3-mini']       = 'o3 Mini';
+				$openai_models['o3']       = 'o3';
+				$openai_models['o3-mini']  = 'o3 Mini';
+				$openai_models['o4-mini']  = 'o4 Mini';
 			}
 
 			// GPT-4o series (multimodal - vision capable).
-			$openai_models['gpt-4o']               = 'GPT-4o';
+			$openai_models['gpt-4o']               = 'GPT-4o (Default)';
 			$openai_models['gpt-4o-mini']          = 'GPT-4o Mini';
 			$openai_models['gpt-4o-2024-11-20']    = 'GPT-4o (Nov 2024)';
 			$openai_models['gpt-4o-2024-08-06']    = 'GPT-4o (Aug 2024)';
 			$openai_models['gpt-4o-2024-05-13']    = 'GPT-4o (May 2024)';
 			$openai_models['chatgpt-4o-latest']    = 'ChatGPT-4o (Latest)';
 
-			// GPT-4 Turbo (multimodal - vision capable).
-			$openai_models['gpt-4-turbo']          = 'GPT-4 Turbo';
+			// GPT-4 Turbo (multimodal - vision capable, legacy).
+			$openai_models['gpt-4-turbo']          = 'GPT-4 Turbo (Legacy)';
 			$openai_models['gpt-4-turbo-2024-04-09'] = 'GPT-4 Turbo (Apr 2024)';
 			$openai_models['gpt-4-turbo-preview']  = 'GPT-4 Turbo Preview';
 
@@ -524,6 +523,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 				$openai_models['gpt-4-0613']    = 'GPT-4 (Jun 2023)';
 				$openai_models['gpt-3.5-turbo'] = 'GPT-3.5 Turbo';
 				$openai_models['gpt-3.5-turbo-0125'] = 'GPT-3.5 Turbo (Jan 2025)';
+				
+				// Deprecated models - kept for backward compatibility.
+				$openai_models['o1']          = 'o1 (Deprecated - use o3)';
+				$openai_models['o1-preview']  = 'o1 Preview (Deprecated)';
+				$openai_models['o1-mini']     = 'o1 Mini (Deprecated)';
 			}
 
 			if ( ! empty( $openai_models ) ) {
@@ -538,15 +542,21 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['anthropic_api_key'] ) ) {
 			$anthropic_models = array();
 
-			// Claude 3.5 series (multimodal - vision capable).
-			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Latest)';
-			$anthropic_models['claude-3-5-sonnet-20240620'] = 'Claude 3.5 Sonnet (Jun 2024)';
-			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku';
+			// Claude 4.5 series (multimodal - vision capable) - November 2025.
+			$anthropic_models['claude-sonnet-4.5'] = 'Claude Sonnet 4.5';
+			$anthropic_models['claude-haiku-4.5']  = 'Claude Haiku 4.5';
+			$anthropic_models['claude-opus-4.1']   = 'Claude Opus 4.1';
+			$anthropic_models['claude-opus-4.0']   = 'Claude Opus 4.0';
 
-			// Claude 3 series (multimodal - vision capable).
-			$anthropic_models['claude-3-opus-20240229']   = 'Claude 3 Opus';
-			$anthropic_models['claude-3-sonnet-20240229'] = 'Claude 3 Sonnet';
-			$anthropic_models['claude-3-haiku-20240307']  = 'Claude 3 Haiku';
+			// Claude 3.5 series (deprecated Nov 10, 2025).
+			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Deprecated)';
+			$anthropic_models['claude-3-5-sonnet-20240620'] = 'Claude 3.5 Sonnet Jun 2024 (Deprecated)';
+			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Deprecated)';
+
+			// Claude 3 series (multimodal - vision capable, legacy).
+			$anthropic_models['claude-3-opus-20240229']   = 'Claude 3 Opus (Legacy)';
+			$anthropic_models['claude-3-sonnet-20240229'] = 'Claude 3 Sonnet (Legacy)';
+			$anthropic_models['claude-3-haiku-20240307']  = 'Claude 3 Haiku (Legacy)';
 
 			if ( ! empty( $anthropic_models ) ) {
 				$models['anthropic_group'] = array(
@@ -560,24 +570,31 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['gemini_api_key'] ) ) {
 			$gemini_models = array();
 
-			// Gemini 2.x series (multimodal - text, image, video).
-			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Latest - Stable)';
-			$gemini_models['gemini-2.0-flash-exp']   = 'Gemini 2.0 Flash (Experimental)';
+			// Gemini 2.5 series (multimodal - text, image, video) - November 2025.
+			$gemini_models['gemini-2.5-pro']         = 'Gemini 2.5 Pro';
+			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Recommended)';
+			$gemini_models['gemini-2.5-flash-lite']  = 'Gemini 2.5 Flash Lite';
+			$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image (Nano Banana)';
+			
+			// Gemini 2.0 series.
 			$gemini_models['gemini-2.0-flash']       = 'Gemini 2.0 Flash';
-			$gemini_models['gemini-exp-1206']        = 'Gemini Exp 1206';
-			$gemini_models['gemini-exp-1121']        = 'Gemini Exp 1121';
+			$gemini_models['gemini-2.0-flash-exp']   = 'Gemini 2.0 Flash (Experimental)';
+			
+			// Experimental models (unstable).
+			$gemini_models['gemini-exp-1206']        = 'Gemini Exp 1206 (Experimental)';
+			$gemini_models['gemini-exp-1121']        = 'Gemini Exp 1121 (Experimental)';
 
-			// Gemini 1.5 series (multimodal - text, image, video).
-			$gemini_models['gemini-1.5-pro']         = 'Gemini 1.5 Pro';
+			// Gemini 1.5 series (multimodal - text, image, video, legacy).
+			$gemini_models['gemini-1.5-pro']         = 'Gemini 1.5 Pro (Legacy)';
 			$gemini_models['gemini-1.5-pro-002']     = 'Gemini 1.5 Pro (002)';
 			$gemini_models['gemini-1.5-flash']       = 'Gemini 1.5 Flash';
 			$gemini_models['gemini-1.5-flash-002']   = 'Gemini 1.5 Flash (002)';
 			$gemini_models['gemini-1.5-flash-8b']    = 'Gemini 1.5 Flash-8B';
 
-			// Gemini 1.0 series (text and vision).
+			// Gemini 1.0 series (text and vision) - Deprecated.
 			if ( ! $requires_multimodal ) {
-				$gemini_models['gemini-pro']         = 'Gemini Pro';
-				$gemini_models['gemini-pro-vision']  = 'Gemini Pro Vision';
+				$gemini_models['gemini-pro']         = 'Gemini Pro (Deprecated)';
+				$gemini_models['gemini-pro-vision']  = 'Gemini Pro Vision (Deprecated)';
 			}
 
 			// Gemma models (Google's open models - text-only).
