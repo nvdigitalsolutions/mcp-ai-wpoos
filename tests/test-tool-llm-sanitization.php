@@ -326,23 +326,39 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 		// Execute tool calls.
 		$results = $method->invoke( $chat_service, $tool_calls, 1, $assistant_config, 0, 5 );
 
-		// Verify result was returned.
-		$this->assertCount( 1, $results );
-		$this->assertEquals( 'tool', $results[0]['role'] );
-		$this->assertEquals( 'call_123', $results[0]['tool_call_id'] );
-		$this->assertEquals( 'test_large_data_tool', $results[0]['name'] );
+		// Verify result structure has both keys.
+		$this->assertArrayHasKey( 'for_frontend', $results );
+		$this->assertArrayHasKey( 'for_llm', $results );
 
-		// Decode the content to verify sanitization was applied.
-		$content = json_decode( $results[0]['content'], true );
-		$this->assertNotNull( $content );
+		// Verify frontend result has full data.
+		$this->assertCount( 1, $results['for_frontend'] );
+		$this->assertEquals( 'tool', $results['for_frontend'][0]['role'] );
+		$this->assertEquals( 'call_123', $results['for_frontend'][0]['tool_call_id'] );
+		$this->assertEquals( 'test_large_data_tool', $results['for_frontend'][0]['name'] );
 
-		// Verify large 'content' field was removed.
-		$this->assertArrayNotHasKey( 'content', $content );
+		// Decode frontend content - should have FULL data.
+		$frontend_content = json_decode( $results['for_frontend'][0]['content'], true );
+		$this->assertNotNull( $frontend_content );
+		$this->assertArrayHasKey( 'content', $frontend_content, 'Frontend should have full content field' );
+		$this->assertArrayHasKey( 'data', $frontend_content['content'], 'Frontend should have base64 data' );
+		$this->assertEquals( 123, $frontend_content['attachment_id'] );
+		$this->assertEquals( 'https://example.com/image.png', $frontend_content['url'] );
 
-		// Verify essential metadata was kept.
-		$this->assertEquals( 123, $content['attachment_id'] );
-		$this->assertEquals( 'https://example.com/image.png', $content['url'] );
-		$this->assertEquals( 'test.png', $content['file_name'] );
+		// Verify LLM result has sanitized data.
+		$this->assertCount( 1, $results['for_llm'] );
+		$this->assertEquals( 'tool', $results['for_llm'][0]['role'] );
+		$this->assertEquals( 'call_123', $results['for_llm'][0]['tool_call_id'] );
+		$this->assertEquals( 'test_large_data_tool', $results['for_llm'][0]['name'] );
+
+		// Decode LLM content - should have SANITIZED data.
+		$llm_content = json_decode( $results['for_llm'][0]['content'], true );
+		$this->assertNotNull( $llm_content );
+		$this->assertArrayNotHasKey( 'content', $llm_content, 'LLM should NOT have content field (sanitized)' );
+
+		// Verify essential metadata was kept in LLM version.
+		$this->assertEquals( 123, $llm_content['attachment_id'] );
+		$this->assertEquals( 'https://example.com/image.png', $llm_content['url'] );
+		$this->assertEquals( 'test.png', $llm_content['file_name'] );
 	}
 
 	/**

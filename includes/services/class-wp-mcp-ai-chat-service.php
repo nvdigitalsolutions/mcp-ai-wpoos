@@ -228,9 +228,9 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			// Execute each tool with iteration context for flow stage validation.
-			$iteration_start_time = microtime( true );
-			$tool_results         = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
-			$iteration_duration   = microtime( true ) - $iteration_start_time;
+			$iteration_start_time   = microtime( true );
+			$tool_execution_results = $this->execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration, $max_iterations );
+			$iteration_duration     = microtime( true ) - $iteration_start_time;
 
 			if ( WP_MCP_AI_Admin_Settings::is_agentic_loop_logging_enabled() ) {
 				WP_MCP_AI_Logger::log_event(
@@ -239,7 +239,7 @@ class WP_MCP_AI_Chat_Service {
 					array(
 						'iteration'      => $iteration,
 						'tool_count'     => count( $tool_calls ),
-						'result_count'   => count( $tool_results ),
+						'result_count'   => count( $tool_execution_results['for_llm'] ),
 						'execution_time' => round( $iteration_duration * 1000, 2 ) . 'ms',
 						'assistant_id'   => $assistant_id,
 					)
@@ -251,14 +251,18 @@ class WP_MCP_AI_Chat_Service {
 						'[WP oOS Agentic Loop] Iteration %d - Tool execution completed in %sms (%d results)',
 						$iteration + 1,
 						round( $iteration_duration * 1000, 2 ),
-						count( $tool_results )
+						count( $tool_execution_results['for_llm'] )
 					)
 				);
 			}
 
-			// Add tool results to conversation.
-			foreach ( $tool_results as $tool_result ) {
-				$messages[]             = $tool_result;
+			// Add sanitized tool results to LLM conversation context.
+			foreach ( $tool_execution_results['for_llm'] as $tool_result ) {
+				$messages[] = $tool_result;
+			}
+
+			// Add full tool results to frontend display array.
+			foreach ( $tool_execution_results['for_frontend'] as $tool_result ) {
 				$tool_result_messages[] = $tool_result;
 			}
 
@@ -357,17 +361,22 @@ class WP_MCP_AI_Chat_Service {
 	}
 
 	/**
-	 * Execute tool calls
+	 * Execute tool calls and return both full and sanitized results.
+	 *
+	 * Returns an array with two keys:
+	 * - 'for_frontend': Full tool results for frontend display (includes all data)
+	 * - 'for_llm': Sanitized tool results for LLM context (strips large binary data)
 	 *
 	 * @param array $tool_calls       Tool calls from LLM.
 	 * @param int   $assistant_id     Assistant ID.
 	 * @param array $assistant_config Assistant configuration.
 	 * @param int   $iteration        Current iteration number.
 	 * @param int   $max_iterations   Maximum iterations.
-	 * @return array Tool result messages.
+	 * @return array Array with 'for_frontend' and 'for_llm' keys containing tool result messages.
 	 */
 	private function execute_tool_calls( $tool_calls, $assistant_id, $assistant_config, $iteration = 0, $max_iterations = 5 ) {
-		$results = array();
+		$results_for_frontend = array();
+		$results_for_llm      = array();
 
 		foreach ( $tool_calls as $tool_call ) {
 			$tool_name = $tool_call['function']['name'] ?? '';
@@ -378,7 +387,7 @@ class WP_MCP_AI_Chat_Service {
 			$arguments      = json_decode( $arguments_json, true );
 
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
-				$results[] = array(
+				$error_result = array(
 					'role'         => 'tool',
 					'tool_call_id' => $tool_id,
 					'name'         => $tool_name,
@@ -388,6 +397,9 @@ class WP_MCP_AI_Chat_Service {
 						)
 					),
 				);
+				// Same error for both frontend and LLM.
+				$results_for_frontend[] = $error_result;
+				$results_for_llm[]      = $error_result;
 				continue;
 			}
 
@@ -403,28 +415,47 @@ class WP_MCP_AI_Chat_Service {
 				)
 			);
 
-			// Sanitize tool result for LLM consumption (strip large data like base64 images).
-			if ( ! is_wp_error( $tool_result ) ) {
-				$tool_instance = $this->tool_registry->get_tool( $tool_name );
-				if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
-					$tool_result = $tool_instance->sanitize_for_llm( $tool_result );
-				}
-			}
-
-			// Format result.
-			$result_content = is_wp_error( $tool_result )
+			// Create full result message for frontend display.
+			$full_result_content = is_wp_error( $tool_result )
 				? wp_json_encode( array( 'error' => $tool_result->get_error_message() ) )
 				: wp_json_encode( $tool_result );
 
-			$results[] = array(
+			$full_result_message = array(
 				'role'         => 'tool',
 				'tool_call_id' => $tool_id,
 				'name'         => $tool_name,
-				'content'      => $result_content,
+				'content'      => $full_result_content,
 			);
+
+			$results_for_frontend[] = $full_result_message;
+
+			// Create sanitized result message for LLM (strip large data like base64 images).
+			$sanitized_result = $tool_result;
+			if ( ! is_wp_error( $tool_result ) ) {
+				$tool_instance = $this->tool_registry->get_tool( $tool_name );
+				if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
+					$sanitized_result = $tool_instance->sanitize_for_llm( $tool_result );
+				}
+			}
+
+			$sanitized_result_content = is_wp_error( $sanitized_result )
+				? wp_json_encode( array( 'error' => $sanitized_result->get_error_message() ) )
+				: wp_json_encode( $sanitized_result );
+
+			$sanitized_result_message = array(
+				'role'         => 'tool',
+				'tool_call_id' => $tool_id,
+				'name'         => $tool_name,
+				'content'      => $sanitized_result_content,
+			);
+
+			$results_for_llm[] = $sanitized_result_message;
 		}
 
-		return $results;
+		return array(
+			'for_frontend' => $results_for_frontend,
+			'for_llm'      => $results_for_llm,
+		);
 	}
 
 	/**
