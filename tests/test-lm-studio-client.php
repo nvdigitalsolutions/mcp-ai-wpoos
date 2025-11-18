@@ -1033,6 +1033,10 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 		$this->assertIsArray( $captured_payload['tools'] );
 		$this->assertCount( 1, $captured_payload['tools'] );
 		$this->assertEquals( 'get_weather', $captured_payload['tools'][0]['name'] );
+		
+		// Verify streaming is still disabled when tools are used.
+		$this->assertArrayHasKey( 'stream', $captured_payload, 'Payload should have stream parameter' );
+		$this->assertFalse( $captured_payload['stream'], 'Stream should be false even when tools are used' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
