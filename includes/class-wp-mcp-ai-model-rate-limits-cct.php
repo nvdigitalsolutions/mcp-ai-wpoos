@@ -1400,6 +1400,23 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'cost_per_1k_output_tokens' => 0,
 				'notes'                     => 'Gemma 2 via Ollama. Google\'s efficient open model.',
 			),
+
+			// LM Studio Models (local deployment, OpenAI-compatible API).
+			array(
+				'model_name'                => 'openai/gpt-oss-20b',
+				'provider'                  => 'lm_studio',
+				'tpm_limit'                 => 0,
+				'rpm_limit'                 => 0,
+				'context_window'            => 8192,
+				'max_output_tokens'         => 4096,
+				'tier'                      => 'free',
+				'supports_streaming'        => true,
+				'supports_function_calling' => true,
+				'supports_vision'           => false,
+				'cost_per_1k_input_tokens'  => 0,
+				'cost_per_1k_output_tokens' => 0,
+				'notes'                     => 'GPT-OSS 20B via LM Studio. Open-source 20B parameter model from OpenAI. Local deployment with OpenAI-compatible API.',
+			),
 		);
 	}
 }
