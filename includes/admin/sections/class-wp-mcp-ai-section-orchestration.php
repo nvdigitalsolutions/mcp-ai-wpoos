@@ -212,7 +212,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				),
 				'slider_section_tokens'           => array(
 					'type'    => 'html',
-					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output.', 'wp-mcp-ai' ) . '</p>',
+					'content' => '<h3>' . esc_html__( 'Context Window Limits by Workload Tier', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'These limits represent the total token budget per request, including system prompt, conversation history, user input, tool data, and AI output. Configuration Presets (above) set these values automatically, or you can customize them here.', 'wp-mcp-ai' ) . '</p><p class="description"><strong>' . esc_html__( 'Note:', 'wp-mcp-ai' ) . '</strong> ' . esc_html__( 'This is different from the "Tier Base Limits (tokens/day)" in the Token Manager, which control daily usage quotas per user tier.', 'wp-mcp-ai' ) . '</p>',
 				),
 				'low_tier_max_tokens'             => array(
 					'type'        => 'slider',

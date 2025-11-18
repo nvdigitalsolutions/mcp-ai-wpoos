@@ -191,4 +191,46 @@ class WP_MCP_AI_Resource_Manager_Test extends WP_UnitTestCase {
 		// It should match the base timeout for the tier (30, 60, or 120).
 		$this->assertContains( $timeout_without_constraint, array( 30, 60, 120 ) );
 	}
+
+	/**
+	 * Test that get_max_tokens reads from orchestration settings.
+	 */
+	public function test_get_max_tokens_reads_from_orchestration_settings() {
+		$manager = WP_MCP_AI_Resource_Manager::instance();
+		$tier    = $manager->get_workload_tier();
+
+		// Set a custom value in orchestration settings.
+		$custom_value = 15000;
+		$setting_key  = $tier . '_tier_max_tokens';
+		update_option( 'wp_mcp_ai_settings', array( $setting_key => $custom_value ) );
+
+		// Clear any cached values.
+		wp_cache_flush();
+
+		// Get max tokens - should read from settings.
+		$max_tokens = $manager->get_max_tokens();
+
+		// Should return the custom value from settings.
+		$this->assertSame( $custom_value, $max_tokens );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test that get_max_tokens falls back to defaults when settings not available.
+	 */
+	public function test_get_max_tokens_falls_back_to_defaults() {
+		$manager = WP_MCP_AI_Resource_Manager::instance();
+
+		// Ensure no settings exist.
+		delete_option( 'wp_mcp_ai_settings' );
+		wp_cache_flush();
+
+		// Get max tokens - should use defaults.
+		$max_tokens = $manager->get_max_tokens();
+
+		// Should return one of the modern default values.
+		$this->assertContains( $max_tokens, array( 2000, 8000, 32000 ) );
+	}
 }
