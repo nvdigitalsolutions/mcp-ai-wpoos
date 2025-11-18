@@ -149,6 +149,18 @@ npm run test:watch
 
 See [TESTING.md](TESTING.md) for comprehensive testing documentation.
 
+### Documentation Validation
+
+#### Validate README Anchors
+
+Verify that all Table of Contents links in README.md work correctly:
+
+```bash
+python3 bin/validate-readme-anchors.py
+```
+
+This script ensures TOC anchors match their corresponding section headers according to GitHub's anchor generation rules.
+
 ### PHP Linting and Testing
 
 #### Lint PHP Code
