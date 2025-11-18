@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent log entries from WordPress, WP oOS, and plugin log files for diagnostics.', 'wp-mcp-ai' );
+		return __( 'Returns recent log entries from WordPress, WP oOS (including OpenAI, LM Studio, and other AI provider activity), and plugin log files for diagnostics.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, lm_studio_request, lm_studio_response, lm_studio_test_connection, lm_studio_list_models, lm_studio_completion_request, lm_studio_completion_response, etc.).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -138,8 +138,10 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs.', 'wp-mcp-ai' ) );
+		// Allow users with edit_posts capability or higher to view logs.
+		// This includes Contributors, Authors, Editors, and Administrators.
+		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs. This requires at least Contributor level access.', 'wp-mcp-ai' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {

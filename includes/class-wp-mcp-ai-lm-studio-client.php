@@ -452,6 +452,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add tools if specified (for LM Studio models that support function calling).
+			// LM Studio supports OpenAI-compatible function calling format.
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$payload['tools'] = $options['tools'];
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
