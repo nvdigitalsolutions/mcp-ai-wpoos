@@ -830,9 +830,11 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that stream parameter defaults to false when no stream option is provided.
+	 * Test that stream parameter is explicitly set to false in chat completion payloads.
+	 *
+	 * This ensures LM Studio doesn't default to streaming mode which could cause delays.
 	 */
-	public function test_chat_completion_has_stream_false_by_default() {
+	public function test_chat_completion_has_stream_false_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -881,172 +883,21 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_chat_completion( $messages, array() );
 
-		// Verify the payload contains stream: false by default.
+		// Verify the payload contains stream: false.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertFalse( $payload['stream'], 'Stream parameter should be false by default' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
 
 		remove_all_filters( 'pre_http_request' );
 	}
 
 	/**
-	 * Test that streaming can be enabled when no tools are present.
+	 * Test that stream parameter is explicitly set to false in text completion payloads.
 	 */
-	public function test_chat_completion_allows_streaming_without_tools() {
-		update_option(
-			WP_MCP_AI_Admin_Settings::OPTION_NAME,
-			array(
-				'lm_studio_endpoint_url' => 'http://localhost:1234',
-				'lm_studio_model'        => 'test-model',
-			)
-		);
-
-		$captured_args = null;
-
-		// Intercept wp_remote_post to capture request args.
-		add_filter(
-			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$captured_args ) {
-				$captured_args = $args;
-				return array(
-					'response' => array(
-						'code'    => 200,
-						'message' => 'OK',
-					),
-					'body'     => wp_json_encode(
-						array(
-							'id'      => 'test-id',
-							'choices' => array(
-								array(
-									'message' => array(
-										'role'    => 'assistant',
-										'content' => 'Test response',
-									),
-								),
-							),
-						)
-					),
-				);
-			},
-			10,
-			3
-		);
-
-		$messages = array(
-			array(
-				'role'    => 'user',
-				'content' => 'Test message',
-			),
-		);
-
-		// Request streaming without tools.
-		$this->client->create_chat_completion( $messages, array( 'stream' => true ) );
-
-		// Verify streaming is enabled.
-		$this->assertNotNull( $captured_args, 'Request args should be captured' );
-		$payload = json_decode( $captured_args['body'], true );
-		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertTrue( $payload['stream'], 'Stream should be enabled when no tools are present' );
-
-		remove_all_filters( 'pre_http_request' );
-	}
-
-	/**
-	 * Test that streaming is forced to false when tools are present.
-	 */
-	public function test_chat_completion_disables_streaming_with_tools() {
-		update_option(
-			WP_MCP_AI_Admin_Settings::OPTION_NAME,
-			array(
-				'lm_studio_endpoint_url' => 'http://localhost:1234',
-				'lm_studio_model'        => 'test-model',
-			)
-		);
-
-		$captured_args = null;
-
-		// Intercept wp_remote_post to capture request args.
-		add_filter(
-			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$captured_args ) {
-				$captured_args = $args;
-				return array(
-					'response' => array(
-						'code'    => 200,
-						'message' => 'OK',
-					),
-					'body'     => wp_json_encode(
-						array(
-							'id'      => 'test-id',
-							'choices' => array(
-								array(
-									'message' => array(
-										'role'    => 'assistant',
-										'content' => '',
-										'tool_calls' => array(
-											array(
-												'id'       => 'call_123',
-												'type'     => 'function',
-												'function' => array(
-													'name'      => 'test_tool',
-													'arguments' => '{"param":"value"}',
-												),
-											),
-										),
-									),
-								),
-							),
-						)
-					),
-				);
-			},
-			10,
-			3
-		);
-
-		$messages = array(
-			array(
-				'role'    => 'user',
-				'content' => 'Test message',
-			),
-		);
-
-		$tools = array(
-			array(
-				'type'     => 'function',
-				'function' => array(
-					'name'        => 'test_tool',
-					'description' => 'A test tool',
-					'parameters'  => array(
-						'type'       => 'object',
-						'properties' => array(
-							'param' => array( 'type' => 'string' ),
-						),
-					),
-				),
-			),
-		);
-
-		// Request streaming WITH tools - streaming should be disabled.
-		$this->client->create_chat_completion( $messages, array( 'stream' => true, 'tools' => $tools ) );
-
-		// Verify streaming is forcefully disabled when tools are present.
-		$this->assertNotNull( $captured_args, 'Request args should be captured' );
-		$payload = json_decode( $captured_args['body'], true );
-		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertFalse( $payload['stream'], 'Stream must be false when tools are present, even if requested' );
-		$this->assertArrayHasKey( 'tools', $payload, 'Payload should contain tools' );
-
-		remove_all_filters( 'pre_http_request' );
-	}
-
-	/**
-	 * Test that stream parameter defaults to false for text completions when not requested.
-	 */
-	public function test_text_completion_has_stream_false_by_default() {
+	public function test_text_completion_has_stream_false_in_payload() {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
@@ -1085,64 +936,13 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		$this->client->create_completion( 'Test prompt', array() );
 
-		// Verify the payload contains stream: false by default.
+		// Verify the payload contains stream: false.
 		$this->assertNotNull( $captured_args, 'Request args should be captured' );
 		$this->assertArrayHasKey( 'body', $captured_args );
 		$payload = json_decode( $captured_args['body'], true );
 		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
 		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertFalse( $payload['stream'], 'Stream parameter should be false by default' );
-
-		remove_all_filters( 'pre_http_request' );
-	}
-
-	/**
-	 * Test that streaming can be enabled for text completions.
-	 */
-	public function test_text_completion_allows_streaming_when_requested() {
-		update_option(
-			WP_MCP_AI_Admin_Settings::OPTION_NAME,
-			array(
-				'lm_studio_endpoint_url' => 'http://localhost:1234',
-				'lm_studio_model'        => 'test-model',
-			)
-		);
-
-		$captured_args = null;
-
-		// Intercept wp_remote_post to capture request args.
-		add_filter(
-			'pre_http_request',
-			function ( $preempt, $args, $url ) use ( &$captured_args ) {
-				$captured_args = $args;
-				return array(
-					'response' => array(
-						'code'    => 200,
-						'message' => 'OK',
-					),
-					'body'     => wp_json_encode(
-						array(
-							'id'      => 'test-id',
-							'choices' => array(
-								array(
-									'text' => 'Test response',
-								),
-							),
-						)
-					),
-				);
-			},
-			10,
-			3
-		);
-
-		$this->client->create_completion( 'Test prompt', array( 'stream' => true ) );
-
-		// Verify streaming is enabled when requested.
-		$this->assertNotNull( $captured_args, 'Request args should be captured' );
-		$payload = json_decode( $captured_args['body'], true );
-		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
-		$this->assertTrue( $payload['stream'], 'Stream should be enabled when requested for text completions' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
 
 		remove_all_filters( 'pre_http_request' );
 	}

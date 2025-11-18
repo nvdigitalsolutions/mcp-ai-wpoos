@@ -441,17 +441,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
-			// Determine streaming behavior.
-			// LM Studio supports streaming, but when tools are present, streaming must be disabled
-			// because tool calls require the complete response to parse function arguments correctly.
-			$has_tools        = ! empty( $options['tools'] );
-			$stream_requested = isset( $options['stream'] ) && true === $options['stream'];
-
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				// Disable streaming when tools are present; otherwise honor the stream option.
-				'stream'   => $has_tools ? false : $stream_requested,
+				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
@@ -460,7 +453,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// Add tools if specified (LM Studio supports OpenAI-compatible function calling).
-			if ( $has_tools ) {
+			if ( ! empty( $options['tools'] ) ) {
 				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
 			}
 
@@ -676,13 +669,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
-			// The legacy completions endpoint doesn't support tools, so streaming can be honored if requested.
-			$stream_requested = isset( $options['stream'] ) && true === $options['stream'];
-
 			$payload = array(
 				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
-				'stream' => $stream_requested,
+				'stream' => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
