@@ -47,8 +47,6 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
-		$defaults = $this->get_configured_defaults();
-
 		$aspect_choices = array_keys( $this->get_allowed_aspect_ratios() );
 		$mime_choices   = array_keys( $this->get_allowed_mime_types() );
 
@@ -75,22 +73,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'string',
 					'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
 				),
-				'model'            => array(
-					'type'        => 'string',
-					'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
-					'default'     => $defaults['model'],
-				),
 				'aspect_ratio'     => array(
 					'type'        => 'string',
 					'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
 					'enum'        => $aspect_choices,
-					'default'     => $defaults['aspect_ratio'],
 				),
 				'mime_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
 					'enum'        => $mime_choices,
-					'default'     => $defaults['mime_type'],
 				),
 				'file_name'        => array(
 					'type'        => 'string',
@@ -189,8 +180,10 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$mime_type = $defaults['mime_type'];
 		}
 
-		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : $defaults['model'];
-		$model = '' === $model ? $defaults['model'] : $model;
+		// Always use the configured Gemini model - never accept model from arguments.
+		// This prevents issues when non-Gemini assistants (e.g., GPT-4) call this tool
+		// and try to pass their own model name.
+		$model = $defaults['model'];
 
 		$file_name = isset( $arguments['file_name'] ) ? sanitize_file_name( $arguments['file_name'] ) : '';
 		$timeout   = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 0;
