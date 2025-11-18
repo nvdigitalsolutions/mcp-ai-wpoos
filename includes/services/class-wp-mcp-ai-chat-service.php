@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
+
 /**
  * Chat Service class
  *
@@ -400,6 +402,14 @@ class WP_MCP_AI_Chat_Service {
 					'max_iterations'   => $max_iterations,
 				)
 			);
+
+			// Sanitize tool result for LLM consumption (strip large data like base64 images).
+			if ( ! is_wp_error( $tool_result ) ) {
+				$tool_instance = $this->tool_registry->get_tool( $tool_name );
+				if ( $tool_instance && $tool_instance instanceof WP_MCP_AI_Tool_LLM_Sanitizer_Interface ) {
+					$tool_result = $tool_instance->sanitize_for_llm( $tool_result );
+				}
+			}
 
 			// Format result.
 			$result_content = is_wp_error( $tool_result )
