@@ -399,6 +399,8 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// LM Studio uses OpenAI format, so we can pass messages mostly as-is.
+			// When tools are provided, preserve OpenAI-compatible message structure.
+			$has_tools          = ! empty( $options['tools'] );
 			$formatted_messages = array();
 
 			foreach ( $messages as $message ) {
@@ -409,6 +411,68 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$role    = isset( $message['role'] ) ? sanitize_key( $message['role'] ) : 'user';
 				$content = isset( $message['content'] ) ? $message['content'] : '';
 
+				// When using tools, preserve assistant messages with tool_calls.
+				if ( $has_tools && 'assistant' === $role ) {
+					$formatted_message = array( 'role' => $role );
+
+					// Convert content array to string if needed.
+					if ( is_array( $content ) ) {
+						$text_parts = array();
+						foreach ( $content as $segment ) {
+							if ( is_string( $segment ) ) {
+								$text_parts[] = $segment;
+							} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$text_parts[] = $segment['text'];
+							}
+						}
+						$content = implode( "\n", $text_parts );
+					}
+
+					$formatted_message['content'] = wp_kses_post( (string) $content );
+
+					// Preserve tool_calls if present.
+					if ( isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) ) {
+						$formatted_message['tool_calls'] = $message['tool_calls'];
+					}
+
+					$formatted_messages[] = $formatted_message;
+					continue;
+				}
+
+				// When using tools, preserve tool role messages with tool_call_id.
+				if ( $has_tools && 'tool' === $role ) {
+					$formatted_message = array( 'role' => $role );
+
+					// Convert content array to string if needed.
+					if ( is_array( $content ) ) {
+						$text_parts = array();
+						foreach ( $content as $segment ) {
+							if ( is_string( $segment ) ) {
+								$text_parts[] = $segment;
+							} elseif ( is_array( $segment ) && isset( $segment['text'] ) ) {
+								$text_parts[] = $segment['text'];
+							}
+						}
+						$content = implode( "\n", $text_parts );
+					}
+
+					$formatted_message['content'] = wp_kses_post( (string) $content );
+
+					// Preserve tool_call_id if present.
+					if ( isset( $message['tool_call_id'] ) ) {
+						$formatted_message['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
+					}
+
+					// Preserve tool name if present.
+					if ( isset( $message['name'] ) ) {
+						$formatted_message['name'] = sanitize_text_field( $message['name'] );
+					}
+
+					$formatted_messages[] = $formatted_message;
+					continue;
+				}
+
+				// For non-tool scenarios or other roles, use simplified format.
 				// Convert content array to string if needed.
 				if ( is_array( $content ) ) {
 					$text_parts = array();
@@ -428,13 +492,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					continue;
 				}
 
-				// Convert tool messages to user messages.
-				if ( 'tool' === $role ) {
-					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
-					$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
-					$role      = 'user';
-				}
-
 				$formatted_messages[] = array(
 					'role'    => $role,
 					'content' => $content,
@@ -446,6 +503,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				'messages' => $formatted_messages,
 				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
 			);
+
+			// Add tools if provided (OpenAI-compatible function calling).
+			if ( ! empty( $options['tools'] ) ) {
+				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+			}
 
 			// Add temperature if specified.
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
@@ -684,6 +746,75 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			WP_MCP_AI_Logger::log_event( 'lm_studio_completion_response', 'LM Studio completion request completed.' );
 
 			return $decoded;
+		}
+
+		/**
+		 * Normalise tool definitions to satisfy the OpenAI payload schema.
+		 *
+		 * Follows the same pattern as OpenAI client to ensure compatibility
+		 * with LM Studio's OpenAI-compatible API implementation.
+		 *
+		 * @param array $tools Tool definitions sourced from the REST layer.
+		 * @return array
+		 */
+		protected function normalise_tools_for_payload( $tools ) {
+			if ( $tools instanceof \Traversable ) {
+				$tools = iterator_to_array( $tools );
+			}
+
+			if ( is_object( $tools ) ) {
+				$tools = (array) $tools;
+			}
+
+			if ( ! is_array( $tools ) ) {
+				return array();
+			}
+
+			$normalised = array();
+
+			foreach ( $tools as $tool ) {
+				if ( $tool instanceof \Traversable ) {
+					$tool = iterator_to_array( $tool );
+				}
+
+				if ( is_object( $tool ) ) {
+					$tool = (array) $tool;
+				}
+
+				if ( ! is_array( $tool ) || empty( $tool ) ) {
+					continue;
+				}
+
+				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+				if ( 'function' === $type ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
+						if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+							$tool['name'] = (string) $tool['function']['name'];
+						}
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+						$tool['name'] = (string) $tool['function']['name'];
+					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+						$tool['name'] = (string) $tool['slug'];
+					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+						$tool['name'] = (string) $tool['id'];
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					continue;
+				}
+
+				$tool['name'] = (string) $tool['name'];
+
+				$normalised[] = $tool;
+			}
+
+			return array_values( $normalised );
 		}
 	}
 }
