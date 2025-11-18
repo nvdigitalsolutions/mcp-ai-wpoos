@@ -452,6 +452,11 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add tools if specified (LM Studio supports OpenAI-compatible function calling).
+			if ( ! empty( $options['tools'] ) ) {
+				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
+			}
+
 			// Apply resource-aware max_tokens if not explicitly set.
 			if ( ! isset( $options['max_tokens'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
@@ -517,15 +522,22 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			// Normalize content to array format if it's a string.
+			// Skip normalization if tool_calls are present (content may be null/empty).
 			foreach ( $response['choices'] as $index => $choice ) {
-				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) ) {
-					$response['choices'][ $index ]['message']['content'] = array(
-						array(
-							'type' => 'text',
-							'text' => $choice['message']['content'],
-						),
-					);
+				if ( isset( $choice['message']['content'] ) && is_string( $choice['message']['content'] ) && '' !== $choice['message']['content'] ) {
+					// Don't normalize content to array if tool_calls are present.
+					if ( empty( $choice['message']['tool_calls'] ) ) {
+						$response['choices'][ $index ]['message']['content'] = array(
+							array(
+								'type' => 'text',
+								'text' => $choice['message']['content'],
+							),
+						);
+					}
 				}
+
+				// Preserve tool_calls if present (LM Studio returns OpenAI-compatible format).
+				// No transformation needed - tool_calls pass through as-is.
 			}
 
 			$response['provider'] = 'lm_studio';
@@ -535,6 +547,73 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			}
 
 			return $response;
+		}
+
+		/**
+		 * Normalise tool definitions to satisfy the OpenAI-compatible payload schema.
+		 * LM Studio uses the same format as OpenAI for function calling.
+		 *
+		 * @param array $tools Tool definitions sourced from the REST layer.
+		 * @return array
+		 */
+		protected function normalise_tools_for_payload( $tools ) {
+			if ( $tools instanceof \Traversable ) {
+				$tools = iterator_to_array( $tools );
+			}
+
+			if ( is_object( $tools ) ) {
+				$tools = (array) $tools;
+			}
+
+			if ( ! is_array( $tools ) ) {
+				return array();
+			}
+
+			$normalised = array();
+
+			foreach ( $tools as $tool ) {
+				if ( $tool instanceof \Traversable ) {
+					$tool = iterator_to_array( $tool );
+				}
+
+				if ( is_object( $tool ) ) {
+					$tool = (array) $tool;
+				}
+
+				if ( ! is_array( $tool ) || empty( $tool ) ) {
+					continue;
+				}
+
+				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
+
+				if ( 'function' === $type ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
+						if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+							$tool['name'] = (string) $tool['function']['name'];
+						}
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
+					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
+						$tool['name'] = (string) $tool['function']['name'];
+					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
+						$tool['name'] = (string) $tool['slug'];
+					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
+						$tool['name'] = (string) $tool['id'];
+					}
+				}
+
+				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
+					continue;
+				}
+
+				$tool['name'] = (string) $tool['name'];
+
+				$normalised[] = $tool;
+			}
+
+			return array_values( $normalised );
 		}
 
 		/**

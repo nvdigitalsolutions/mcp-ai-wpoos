@@ -7,10 +7,21 @@ LM Studio is a local AI model hosting platform that provides an OpenAI-compatibl
 ## Features
 
 - **OpenAI-Compatible API**: LM Studio implements the OpenAI API format, making integration seamless
+- **Function Calling / Tool Support**: Full support for tool/function calling with compatible models (e.g., Qwen, Llama 3.1+)
 - **Local Execution**: Run models on your own hardware for privacy and cost control
 - **No API Keys Required**: No external API keys or cloud services needed
 - **Network Flexibility**: Support for localhost, LAN, and VPN configurations
 - **Automatic Fallback**: Part of the provider priority system with automatic failover
+
+## Tool/Function Calling Support
+
+LM Studio supports OpenAI-compatible function calling with models that have this capability:
+
+- **Compatible Models**: Qwen (e.g., qwen/qwen3-coder-30b:2), Llama 3.1+, and other function-calling capable models
+- **Agentic Workflows**: Full support for multi-turn conversations with tool execution
+- **Tool Format**: Uses standard OpenAI function calling format
+
+See the [Tool Support Documentation](#tool-support-details) section below for more details.
 
 ## Installation & Configuration
 
@@ -391,14 +402,107 @@ if (is_wp_error($result)) {
 - ✅ Chat completions
 - ✅ Text completions
 - ✅ Fixed endpoint URL bug (double `/v1/`)
+- ✅ **Function calling / tool support** (added in latest version)
+
+## Tool Support Details
+
+LM Studio now supports OpenAI-compatible function calling with models that have this capability.
+
+### Compatible Models
+
+Models that support function calling:
+- **Qwen**: `qwen/qwen3-coder-30b:2` and similar Qwen models
+- **Llama**: Llama 3.1+ models with function calling support
+- Other models that implement OpenAI function calling format
+
+### How It Works
+
+1. **Assistant Configuration**: Create an assistant with tools enabled
+2. **Tool Definitions**: Tools are automatically passed to LM Studio in OpenAI format
+3. **Model Decision**: The model decides if it needs to call tools
+4. **Tool Execution**: WP oOS executes the requested tools
+5. **Response Generation**: Results are sent back to the model for final response
+
+### Example Request Format
+
+```json
+{
+  "model": "qwen/qwen3-coder-30b:2",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What dell products do you have under $50 in electronics?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "search_products",
+        "description": "Search the product catalog",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": { "type": "string" },
+            "category": { "type": "string" },
+            "max_price": { "type": "number" }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+### Example Response with Tool Calls
+
+```json
+{
+  "choices": [{
+    "finish_reason": "tool_calls",
+    "message": {
+      "role": "assistant",
+      "tool_calls": [{
+        "id": "365174485",
+        "type": "function",
+        "function": {
+          "name": "search_products",
+          "arguments": "{\"query\":\"dell\",\"category\":\"electronics\",\"max_price\":50}"
+        }
+      }]
+    }
+  }]
+}
+```
+
+### Configuration
+
+No special configuration needed. If your LM Studio model supports function calling:
+1. Enable tools in your assistant settings
+2. The plugin automatically includes tools in requests
+3. Tool calls are automatically detected and executed
+
+### Testing Tool Support
+
+Use models known to support function calling and test with assistants that have tools configured:
+
+```bash
+# Test with curl
+curl http://127.0.0.1:1234/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen/qwen3-coder-30b:2",
+    "messages": [{"role": "user", "content": "Search for products"}],
+    "tools": [{"type": "function", "function": {"name": "search"}}]
+  }'
+```
 
 ## Future Enhancements
 
 - [ ] Automatic model detection
 - [ ] Hardware utilization monitoring
 - [ ] Model switching based on context
-- [ ] Streaming support
-- [ ] Function calling support
+- [ ] Streaming support for tool calls
 - [ ] Vision model support
 
 ## References
@@ -407,3 +511,5 @@ if (is_wp_error($result)) {
 - [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)
 - [WP oOS Documentation](/docs/)
 - [WP oOS Provider Documentation](/docs/provider-configuration.md)
+- [Function Calling Implementation](/docs/lm-studio-tools-implementation.md) (if available)
+
