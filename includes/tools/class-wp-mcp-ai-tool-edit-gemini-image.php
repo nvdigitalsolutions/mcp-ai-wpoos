@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';
@@ -66,6 +66,14 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'image_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'URL of the image to edit (alternative to attachment_id).', 'wp-mcp-ai' ),
+				),
+				'image_data'    => array(
+					'type'        => 'string',
+					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id or image_url). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
+				),
+				'source_mime_type' => array(
+					'type'        => 'string',
+					'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
 				),
 				'model'         => array(
 					'type'        => 'string',
@@ -156,10 +164,17 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'No editing instruction was supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 		}
 
-		// Get the source image - either from attachment_id or image_url.
+		// Get the source image - either from attachment_id, image_url, or image_data.
 		$source_image = $this->get_source_image( $arguments, $user_id );
 		if ( is_wp_error( $source_image ) ) {
 			return $source_image;
+		}
+
+		// Ensure image data is base64-encoded for Gemini API.
+		// All sources return raw binary data, so we need to encode it.
+		if ( isset( $source_image['data'] ) && ! empty( $source_image['data'] ) ) {
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+			$source_image['data'] = base64_encode( $source_image['data'] );
 		}
 
 		$defaults = $this->get_configured_defaults();
@@ -259,7 +274,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	}
 
 	/**
-	 * Get the source image data from attachment_id or image_url.
+	 * Get the source image data from attachment_id, image_url, or image_data.
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param int   $user_id   Current user ID.
@@ -268,6 +283,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	protected function get_source_image( array $arguments, $user_id ) {
 		$attachment_id = isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : 0;
 		$image_url     = isset( $arguments['image_url'] ) ? esc_url_raw( $arguments['image_url'] ) : '';
+		$image_data    = isset( $arguments['image_data'] ) ? $arguments['image_data'] : '';
 
 		if ( $attachment_id > 0 ) {
 			// Get image from WordPress attachment.
@@ -320,8 +336,35 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'mime_type' => $mime_type,
 				'source'    => 'url',
 			);
+		} elseif ( '' !== $image_data ) {
+			// Use base64-encoded image data (blob) directly.
+			// This is useful for editing images that were just created in the chat.
+			$decoded_data = base64_decode( $image_data, true );
+
+			if ( false === $decoded_data ) {
+				return new WP_Error( 'wp_mcp_ai_invalid_image_data', __( 'The provided image data is not valid base64.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			}
+
+			if ( '' === $decoded_data ) {
+				return new WP_Error( 'wp_mcp_ai_empty_image_data', __( 'The decoded image data is empty.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			}
+
+			// Get MIME type from argument or default to PNG.
+			$mime_type = isset( $arguments['source_mime_type'] ) ? sanitize_mime_type( $arguments['source_mime_type'] ) : 'image/png';
+
+			// Validate MIME type.
+			$allowed_mime_types = array( 'image/png', 'image/jpeg', 'image/jpg', 'image/webp' );
+			if ( ! in_array( $mime_type, $allowed_mime_types, true ) ) {
+				$mime_type = 'image/png';
+			}
+
+			return array(
+				'data'      => $decoded_data,
+				'mime_type' => $mime_type,
+				'source'    => 'blob',
+			);
 		} else {
-			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id or image_url must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'Either attachment_id, image_url, or image_data must be provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
 		}
 	}
 
@@ -650,6 +693,50 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_model_requirements() {
 		return array(
 			'image-editing', // Requires model capable of editing images.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_tool_rules() {
+		return array(
+			'model_requirements'    => array(
+				'providers' => array( 'gemini' ),
+				'models'    => array( 'gemini-2.5-flash-image', 'gemini-exp-1206', 'gemini-2.0-flash-exp' ),
+				'required'  => true,
+			),
+			'parameter_constraints' => array(
+				'required_fields'   => array( 'prompt' ),
+				'optional_fields'   => array( 'attachment_id', 'image_url', 'image_data', 'source_mime_type', 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
+				'max_prompt_length' => 4000,
+			),
+			'rate_limits'           => array(
+				'requests_per_minute' => 15,
+				'requests_per_hour'   => 100,
+				'concurrent_requests' => 2,
+			),
+			'timeout_constraints'   => array(
+				'recommended_timeout' => 60,
+				'max_execution_time'  => 120,
+			),
+			'response_constraints'  => array(
+				'max_size'           => 5242880, // 5MB typical image size.
+				'supports_streaming' => false,
+			),
+			'dependencies'          => array(
+				'required_settings'   => array(
+					'api_key' => 'wp_mcp_ai_gemini_api_key',
+				),
+				'required_extensions' => array( 'gd' ), // For image processing.
+			),
+			'orchestration_hints'   => array(
+				'can_run_parallel' => true,
+				'requires_lock'    => false,
+				'cache_ttl'        => 0, // Don't cache - each edit is unique.
+				'retry_strategy'   => 'exponential_backoff',
+				'max_retries'      => 3,
+			),
 		);
 	}
 
