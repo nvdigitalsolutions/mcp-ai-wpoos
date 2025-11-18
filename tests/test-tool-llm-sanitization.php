@@ -241,6 +241,127 @@ class WP_MCP_AI_Tool_LLM_Sanitization_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that chat service sanitizes tool results in agentic loop.
+	 *
+	 * Verifies that when tools return large data (base64 images, raw HTML, etc.),
+	 * the chat service strips this data before sending it back to the LLM.
+	 */
+	public function test_chat_service_sanitizes_tool_results_in_agentic_loop() {
+		// Create a mock tool that returns large data.
+		$mock_tool = new class() implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+			public function get_slug() {
+				return 'test_large_data_tool';
+			}
+			public function get_name() {
+				return 'Test Large Data Tool';
+			}
+			public function get_description() {
+				return 'Test tool that returns large data';
+			}
+			public function get_parameters_schema() {
+				return array(
+					'type'       => 'object',
+					'properties' => array(),
+				);
+			}
+			public function execute( array $arguments = array(), array $context = array() ) {
+				return array(
+					'attachment_id' => 123,
+					'url'           => 'https://example.com/image.png',
+					'file_name'     => 'test.png',
+					'content'       => array(
+						'encoding' => 'base64',
+						'data'     => str_repeat( 'A', 100000 ), // 100KB of base64 data.
+						'data_url' => 'data:image/png;base64,' . str_repeat( 'A', 100000 ),
+					),
+				);
+			}
+			public function sanitize_for_llm( $result ) {
+				// Remove large content field.
+				if ( isset( $result['content'] ) ) {
+					unset( $result['content'] );
+				}
+				return $result;
+			}
+		};
+
+		// Register the mock tool.
+		$registry   = WP_MCP_AI_Tool_Registry::get_instance();
+		$reflection = new ReflectionClass( $registry );
+		$property   = $reflection->getProperty( 'tools' );
+		$property->setAccessible( true );
+		$tools                           = $property->getValue( $registry );
+		$tools['test_large_data_tool']   = $mock_tool;
+		$property->setValue( $registry, $tools );
+
+		// Create chat service instance.
+		$router               = new WP_MCP_AI_Language_Model_Router();
+		$rate_limiter         = new WP_MCP_AI_Rate_Limit_Manager();
+		$token_budget_manager = new WP_MCP_AI_Token_Budget_Manager();
+		$chat_service         = new WP_MCP_AI_Chat_Service(
+			$router,
+			$rate_limiter,
+			$token_budget_manager,
+			$registry
+		);
+
+		// Use reflection to access private execute_tool_calls method.
+		$reflection = new ReflectionClass( $chat_service );
+		$method     = $reflection->getMethod( 'execute_tool_calls' );
+		$method->setAccessible( true );
+
+		// Create tool call payload.
+		$tool_calls = array(
+			array(
+				'id'       => 'call_123',
+				'function' => array(
+					'name'      => 'test_large_data_tool',
+					'arguments' => '{}',
+				),
+			),
+		);
+
+		$assistant_config = array( 'tools' => array( 'test_large_data_tool' ) );
+
+		// Execute tool calls.
+		$results = $method->invoke( $chat_service, $tool_calls, 1, $assistant_config, 0, 5 );
+
+		// Verify result structure has both keys.
+		$this->assertArrayHasKey( 'for_frontend', $results );
+		$this->assertArrayHasKey( 'for_llm', $results );
+
+		// Verify frontend result has full data.
+		$this->assertCount( 1, $results['for_frontend'] );
+		$this->assertEquals( 'tool', $results['for_frontend'][0]['role'] );
+		$this->assertEquals( 'call_123', $results['for_frontend'][0]['tool_call_id'] );
+		$this->assertEquals( 'test_large_data_tool', $results['for_frontend'][0]['name'] );
+
+		// Decode frontend content - should have FULL data.
+		$frontend_content = json_decode( $results['for_frontend'][0]['content'], true );
+		$this->assertNotNull( $frontend_content );
+		$this->assertArrayHasKey( 'content', $frontend_content, 'Frontend should have full content field' );
+		$this->assertArrayHasKey( 'data', $frontend_content['content'], 'Frontend should have base64 data' );
+		$this->assertEquals( 123, $frontend_content['attachment_id'] );
+		$this->assertEquals( 'https://example.com/image.png', $frontend_content['url'] );
+
+		// Verify LLM result has sanitized data.
+		$this->assertCount( 1, $results['for_llm'] );
+		$this->assertEquals( 'tool', $results['for_llm'][0]['role'] );
+		$this->assertEquals( 'call_123', $results['for_llm'][0]['tool_call_id'] );
+		$this->assertEquals( 'test_large_data_tool', $results['for_llm'][0]['name'] );
+
+		// Decode LLM content - should have SANITIZED data.
+		$llm_content = json_decode( $results['for_llm'][0]['content'], true );
+		$this->assertNotNull( $llm_content );
+		$this->assertArrayNotHasKey( 'content', $llm_content, 'LLM should NOT have content field (sanitized)' );
+
+		// Verify essential metadata was kept in LLM version.
+		$this->assertEquals( 123, $llm_content['attachment_id'] );
+		$this->assertEquals( 'https://example.com/image.png', $llm_content['url'] );
+		$this->assertEquals( 'test.png', $llm_content['file_name'] );
+	}
+
+	/**
 	 * Helper to get REST controller instance.
 	 *
 	 * @return WP_MCP_AI_REST REST controller.
