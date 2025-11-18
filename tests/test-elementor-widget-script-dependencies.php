@@ -13,21 +13,6 @@
  */
 class WP_MCP_AI_Elementor_Widget_Script_Dependencies_Test extends WP_UnitTestCase {
 	/**
-	 * Create an Elementor widget instance for testing.
-	 *
-	 * Elementor widgets have protected constructors, so we use reflection
-	 * to instantiate them without calling the constructor. This is the
-	 * recommended approach for testing Elementor widgets.
-	 *
-	 * @param string $widget_class The widget class name.
-	 * @return object The widget instance.
-	 */
-	protected function create_widget_instance( $widget_class ) {
-		$reflection = new ReflectionClass( $widget_class );
-		return $reflection->newInstanceWithoutConstructor();
-	}
-
-	/**
 	 * Test that chat widget has get_script_depends method.
 	 */
 	public function test_chat_widget_has_get_script_depends_method() {
@@ -57,7 +42,9 @@ class WP_MCP_AI_Elementor_Widget_Script_Dependencies_Test extends WP_UnitTestCas
 			return;
 		}
 
-		$widget = $this->create_widget_instance( 'WP_MCP_AI_Elementor_Widget' );
+		// Create widget instance using reflection to bypass protected constructor.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Elementor_Widget' );
+		$widget     = $reflection->newInstanceWithoutConstructor();
 
 		$dependencies = $widget->get_script_depends();
 
@@ -79,7 +66,9 @@ class WP_MCP_AI_Elementor_Widget_Script_Dependencies_Test extends WP_UnitTestCas
 			return;
 		}
 
-		$widget = $this->create_widget_instance( 'WP_MCP_AI_Elementor_Widget' );
+		// Create widget instance using reflection to bypass protected constructor.
+		$reflection = new ReflectionClass( 'WP_MCP_AI_Elementor_Widget' );
+		$widget     = $reflection->newInstanceWithoutConstructor();
 
 		$dependencies = $widget->get_style_depends();
 

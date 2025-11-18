@@ -244,6 +244,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'default'     => 32000,
 					'suffix'      => '',
 				),
+				'slider_section_call_limits'      => array(
+					'type'    => 'html',
+					'content' => '<h3>' . esc_html__( 'Per-Call and Per-Session Limits', 'wp-mcp-ai' ) . '</h3><p class="description">' . esc_html__( 'Set maximum token limits for individual tool calls and chat sessions to prevent runaway costs and ensure fair resource distribution.', 'wp-mcp-ai' ) . '</p>',
+				),
+				'enable_per_call_limits'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Per-Call Token Limits', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable per-call token limits', 'wp-mcp-ai' ),
+					'description'    => __( 'Limit the maximum number of tokens a single tool call can consume.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'per_call_token_limit'            => array(
+					'type'        => 'slider',
+					'label'       => __( 'Per-Call Token Limit', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens per individual tool call (applies to all tools unless overridden). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'min'         => 0,
+					'max'         => 100000,
+					'step'        => 1000,
+					'default'     => 10000,
+					'suffix'      => '',
+				),
+				'enable_per_session_limits'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Per-Session Token Limits', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Enable per-session token limits', 'wp-mcp-ai' ),
+					'description'    => __( 'Limit the total number of tokens a single chat session can consume across all tool calls.', 'wp-mcp-ai' ),
+					'default'        => false,
+				),
+				'per_session_token_limit'         => array(
+					'type'        => 'slider',
+					'label'       => __( 'Per-Session Token Limit', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens per chat session (cumulative across all tool calls). Set to 0 for unlimited.', 'wp-mcp-ai' ),
+					'min'         => 0,
+					'max'         => 500000,
+					'step'        => 5000,
+					'default'     => 50000,
+					'suffix'      => '',
+				),
 				'slider_section_predictive'       => array(
 					'type'    => 'html',
 					'content' => '<h3>' . esc_html__( 'Predictive Analytics', 'wp-mcp-ai' ) . '</h3>',
@@ -620,6 +658,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		}
 
 		/**
+		 * Override render_wrapper to use custom structure without table.
+		 */
+		public function render_wrapper() {
+			$description = $this->get_description();
+			?>
+			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
+				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
+				<?php if ( $description ) : ?>
+					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php $this->render(); ?>
+			</div>
+			<?php
+		}
+
+		/**
 		 * Render section fields.
 		 */
 		public function render() {
@@ -734,11 +788,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'wp-mcp-ai' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling. All orchestration features work uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'wp-mcp-ai' ) . '</p>';
 
+			echo '<table class="form-table" role="presentation">';
 			foreach ( $settings_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$this->render_field( $key, $fields[ $key ] );
 				}
 			}
+			echo '</table>';
 		}
 
 		/**
@@ -764,11 +820,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'low_tier_max_tokens',
 				'medium_tier_max_tokens',
 				'high_tier_max_tokens',
+				'slider_section_call_limits',
+				'per_call_token_limit',
+				'per_session_token_limit',
 				'slider_section_predictive',
 				'prediction_confidence_threshold',
 				'prediction_safety_buffer',
 			);
 
+			// Render sliders and section headers.
 			foreach ( $threshold_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
@@ -784,6 +844,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					}
 				}
 			}
+
+			// Render checkbox fields in a table after sliders.
+			$checkbox_fields = array(
+				'enable_per_call_limits',
+				'enable_per_session_limits',
+			);
+
+			echo '<table class="form-table" role="presentation">';
+			foreach ( $checkbox_fields as $key ) {
+				if ( isset( $fields[ $key ] ) ) {
+					$this->render_field( $key, $fields[ $key ] );
+				}
+			}
+			echo '</table>';
 		}
 
 		/**
@@ -807,6 +881,118 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 
+
+		/**
+		 * Sanitize input for this section.
+		 *
+		 * Orchestration section uses views similar to subtabs.
+		 * Only process fields from the active view to prevent clearing
+		 * settings from other views when saving.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input.
+		 */
+		public function sanitize( $input ) {
+			return $this->sanitize_with_views( $input );
+		}
+
+		/**
+		 * Sanitize input for sections with views.
+		 *
+		 * Only processes fields from the active view to prevent clearing
+		 * settings from inactive views when saving.
+		 *
+		 * @param array $input Raw input from form.
+		 * @return array Sanitized input for active view only.
+		 */
+		protected function sanitize_with_views( $input ) {
+			$view_groups = $this->get_view_groups();
+			
+			// Get the submitted view from the hidden field in the form.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_view = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+
+			// If no valid view submitted, return empty to preserve all existing settings.
+			if ( ! isset( $view_groups[ $submitted_view ] ) ) {
+				return array();
+			}
+
+			$active_field_keys = $view_groups[ $submitted_view ]['fields'];
+			$all_fields        = $this->get_fields();
+
+			// Filter to only active fields.
+			$active_fields = array();
+			foreach ( $active_field_keys as $field_key ) {
+				if ( isset( $all_fields[ $field_key ] ) ) {
+					$active_fields[ $field_key ] = $all_fields[ $field_key ];
+				}
+			}
+
+			return $this->sanitize_fields( $input, $active_fields, true );
+		}
+
+		/**
+		 * Get view groups with their fields.
+		 *
+		 * @return array View groups configuration.
+		 */
+		protected function get_view_groups() {
+			return array(
+				'overview'   => array(
+					'label'  => __( 'Overview', 'wp-mcp-ai' ),
+					'fields' => array(
+						'orchestration_intro',
+						'health_status',
+						'configuration_presets',
+						'orchestration_stats',
+					),
+				),
+				'settings'   => array(
+					'label'  => __( 'Settings', 'wp-mcp-ai' ),
+					'fields' => array(
+						'enable_budget_management',
+						'enable_predictive_optimization',
+						'enable_capability_gating',
+						'enable_cron_orchestration',
+						'cron_job_retention_period',
+					),
+				),
+				'thresholds' => array(
+					'label'  => __( 'Thresholds', 'wp-mcp-ai' ),
+					'fields' => array(
+						'slider_section_health',
+						'memory_warning_threshold',
+						'memory_critical_threshold',
+						'error_rate_warning_threshold',
+						'error_rate_critical_threshold',
+						'slider_section_budget',
+						'high_priority_budget',
+						'medium_priority_budget',
+						'low_priority_budget',
+						'critical_health_reduction',
+						'warning_health_reduction',
+						'slider_section_tokens',
+						'low_tier_max_tokens',
+						'medium_tier_max_tokens',
+						'high_tier_max_tokens',
+						'slider_section_call_limits',
+						'per_call_token_limit',
+						'per_session_token_limit',
+						'enable_per_call_limits',
+						'enable_per_session_limits',
+						'slider_section_predictive',
+						'prediction_confidence_threshold',
+						'prediction_safety_buffer',
+					),
+				),
+				'models'     => array(
+					'label'  => __( 'Per Model', 'wp-mcp-ai' ),
+					'fields' => array(
+						// Model-specific fields are handled separately by WP_MCP_AI_Model_Config_Renderer.
+					),
+				),
+			);
+		}
 
 		/**
 		 * Validate section input.
