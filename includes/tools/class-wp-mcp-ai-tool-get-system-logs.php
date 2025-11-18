@@ -31,7 +31,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent log entries from WordPress, WP oOS, and plugin log files for diagnostics.', 'wp-mcp-ai' );
+		return __( 'Returns recent log entries from WordPress, WP oOS (including OpenAI, LM Studio, and other AI provider activity), and plugin log files for diagnostics.', 'wp-mcp-ai' );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of WP oOS activity types to include (tool_execution, openai_request, lm_studio_request, lm_studio_response, lm_studio_test_connection, lm_studio_list_models, lm_studio_completion_request, lm_studio_completion_response, etc.).', 'wp-mcp-ai' ),
 					'items'       => array(
 						'type' => 'string',
 					),
