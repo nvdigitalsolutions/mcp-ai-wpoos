@@ -134,6 +134,13 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 					<p class="description">
 						<?php esc_html_e( 'Choose a preset configuration or customize your own settings. Clicking a preset will apply its settings immediately.', 'wp-mcp-ai' ); ?>
 					</p>
+					<div class="notice notice-info inline" style="margin: 15px 0; padding: 10px 15px;">
+						<p style="margin: 0;">
+							<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
+							<strong><?php esc_html_e( 'What Presets Control:', 'wp-mcp-ai' ); ?></strong>
+							<?php esc_html_e( 'Each preset configures context window limits (max tokens per request), health monitoring thresholds, budget allocation, and predictive settings. These apply uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'wp-mcp-ai' ); ?>
+						</p>
+					</div>
 					<div class="wp-mcp-ai-current-preset-indicator">
 						<span class="dashicons dashicons-admin-settings"></span>
 						<strong><?php esc_html_e( 'Currently Active:', 'wp-mcp-ai' ); ?></strong>
