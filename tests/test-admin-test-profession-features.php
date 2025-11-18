@@ -173,6 +173,37 @@ class Test_Admin_Test_Profession_Features extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that profession details are included in test button data attributes.
+	 */
+	public function test_profession_details_in_button_data() {
+		// Start output buffering to capture rendered HTML.
+		ob_start();
+		$this->test_profession->render_page();
+		$output = ob_get_clean();
+
+		// Verify that profession data is included in the button.
+		$this->assertStringContainsString( 'data-profession-data=', $output );
+		$this->assertStringContainsString( 'data-profession-id="' . $this->profession_id . '"', $output );
+		$this->assertStringContainsString( 'Test Profession', $output );
+
+		// Check that profession metadata is in the JSON data.
+		$this->assertStringContainsString( 'technical', $output );
+	}
+
+	/**
+	 * Test that profession details container exists in modal.
+	 */
+	public function test_profession_details_container_in_modal() {
+		// Start output buffering to capture rendered HTML.
+		ob_start();
+		$this->test_profession->render_page();
+		$output = ob_get_clean();
+
+		// Verify that the details container exists in the modal.
+		$this->assertStringContainsString( 'wp-mcp-ai-profession-details-container', $output );
+	}
+
+	/**
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {
