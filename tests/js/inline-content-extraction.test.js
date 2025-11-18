@@ -46,7 +46,7 @@ describe( 'Inline Content Extraction', () => {
 	describe( 'extractInlineContentData', () => {
 		it( 'should extract base64 data and mime_type from result.content', () => {
 			const result = {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-flash-image',
 				mime_type: 'image/png',
 				aspect_ratio: '1:1',
 				format: 'png',
@@ -77,7 +77,7 @@ describe( 'Inline Content Extraction', () => {
 
 		it( 'should return null if result.content is missing', () => {
 			const result = {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-flash-image',
 				url: 'https://example.com/image.png',
 			};
 
@@ -87,7 +87,7 @@ describe( 'Inline Content Extraction', () => {
 
 		it( 'should return null if result.content.data is missing', () => {
 			const result = {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-flash-image',
 				content: {
 					mime_type: 'image/png',
 				},
@@ -99,7 +99,7 @@ describe( 'Inline Content Extraction', () => {
 
 		it( 'should return null if result.content.data is empty string', () => {
 			const result = {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-flash-image',
 				content: {
 					data: '',
 					mime_type: 'image/png',
@@ -153,7 +153,7 @@ describe( 'Inline Content Extraction', () => {
 
 		it( 'should extract content from edit_gemini_image response', () => {
 			const result = {
-				model: 'gemini-2.5-flash',
+				model: 'gemini-2.5-flash-image',
 				mime_type: 'image/png',
 				aspect_ratio: '1:1',
 				format: 'png',
