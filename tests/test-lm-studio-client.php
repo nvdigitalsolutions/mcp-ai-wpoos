@@ -828,4 +828,122 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	/**
+	 * Test that stream parameter is explicitly set to false in chat completion payloads.
+	 *
+	 * This ensures LM Studio doesn't default to streaming mode which could cause delays.
+	 */
+	public function test_chat_completion_has_stream_false_in_payload() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_args = null;
+
+		// Intercept wp_remote_post to capture request args.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_args ) {
+				$captured_args = $args;
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'test-id',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'Test response',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test message',
+			),
+		);
+
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify the payload contains stream: false.
+		$this->assertNotNull( $captured_args, 'Request args should be captured' );
+		$this->assertArrayHasKey( 'body', $captured_args );
+		$payload = json_decode( $captured_args['body'], true );
+		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
+		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
+
+	/**
+	 * Test that stream parameter is explicitly set to false in text completion payloads.
+	 */
+	public function test_text_completion_has_stream_false_in_payload() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'test-model',
+			)
+		);
+
+		$captured_args = null;
+
+		// Intercept wp_remote_post to capture request args.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_args ) {
+				$captured_args = $args;
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'test-id',
+							'choices' => array(
+								array(
+									'text' => 'Test response',
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		$this->client->create_completion( 'Test prompt', array() );
+
+		// Verify the payload contains stream: false.
+		$this->assertNotNull( $captured_args, 'Request args should be captured' );
+		$this->assertArrayHasKey( 'body', $captured_args );
+		$payload = json_decode( $captured_args['body'], true );
+		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
+		$this->assertArrayHasKey( 'stream', $payload, 'Payload should contain stream parameter' );
+		$this->assertFalse( $payload['stream'], 'Stream parameter should be false' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }
