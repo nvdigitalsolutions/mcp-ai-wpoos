@@ -5802,7 +5802,7 @@
             if (qualityValue) {
                 metaParts.push(qualityValue);
             }
-        } else if (toolName === 'generate_gemini_image') {
+        } else if (toolName === 'generate_gemini_image' || toolName === 'edit_gemini_image') {
             if (aspectRatioValue) {
                 metaParts.push(aspectRatioValue);
             }
@@ -5872,6 +5872,8 @@
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
         } else if (toolName === 'generate_gemini_image') {
             text = getString('geminiImageToolSuccess', 'Gemini image saved to the Media Library.');
+        } else if (toolName === 'edit_gemini_image') {
+            text = getString('editGeminiImageToolSuccess', 'Gemini image edited and saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
         }

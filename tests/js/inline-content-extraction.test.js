@@ -1,6 +1,6 @@
 /**
  * Test suite for inline content extraction from tool results
- * Specifically tests the generate_gemini_image response handling
+ * Specifically tests the generate_gemini_image and edit_gemini_image response handling
  *
  * @package WP_MCP_AI
  */
@@ -149,6 +149,28 @@ describe( 'Inline Content Extraction', () => {
 			expect( extracted ).not.toBeNull();
 			expect( extracted.data ).toBe( 'base64data' );
 			expect( extracted.mime_type ).toBe( '' );
+		} );
+
+		it( 'should extract content from edit_gemini_image response', () => {
+			const result = {
+				model: 'gemini-2.5-flash-image',
+				mime_type: 'image/png',
+				aspect_ratio: '1:1',
+				format: 'png',
+				edit_instruction: 'remove background',
+				content: {
+					encoding: 'base64',
+					data: 'editedImageBase64Data',
+					data_url: 'data:image/png;base64,editedImageBase64Data',
+					mime_type: 'image/png',
+				},
+			};
+
+			const extracted = extractInlineContentData( result );
+
+			expect( extracted ).not.toBeNull();
+			expect( extracted.data ).toBe( 'editedImageBase64Data' );
+			expect( extracted.mime_type ).toBe( 'image/png' );
 		} );
 
 		it( 'should not include base64 data in conversation messages', () => {
