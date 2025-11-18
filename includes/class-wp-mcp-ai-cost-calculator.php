@@ -19,7 +19,7 @@ class WP_MCP_AI_Cost_Calculator {
 	/**
 	 * Provider pricing models (USD per 1M tokens).
 	 *
-	 * Prices updated as of November 2024.
+	 * Prices updated as of November 2025.
 	 * Source: Official provider pricing pages.
 	 */
 	const PRICING = array(
@@ -64,6 +64,24 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
+			// o-series reasoning models (November 2025).
+			'o3'            => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
+			'o3-mini'       => array(
+				'input'  => 3.00,
+				'output' => 12.00,
+			),
+			'o4-mini'       => array(
+				'input'  => 2.00,
+				'output' => 8.00,
+			),
+			// Deprecated o1 series (fallback to o3).
+			'o1'            => array(
+				'input'  => 15.00,
+				'output' => 60.00,
+			),
 			'o1-2024-12-17' => array(
 				'input'  => 15.00,
 				'output' => 60.00,
@@ -76,12 +94,31 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 12.00,
 			),
-			'o3-mini'       => array(
-				'input'  => 1.10,
-				'output' => 4.40,
-			),
 		),
 		'gemini'    => array(
+			// Gemini 2.5 series (November 2025).
+			'gemini-2.5-pro'   => array(
+				'input'  => 1.25,
+				'output' => 5.00,
+			),
+			'gemini-2.5-flash' => array(
+				'input'  => 0.10,
+				'output' => 0.40,
+			),
+			'gemini-2.5-flash-lite' => array(
+				'input'  => 0.05,
+				'output' => 0.20,
+			),
+			'gemini-2.5-flash-image' => array(
+				'input'  => 39.00,  // $0.039 per image (1024x1024).
+				'output' => 39.00,
+			),
+			// Gemini 2.0 series.
+			'gemini-2.0-flash' => array(
+				'input'  => 0.10,
+				'output' => 0.40,
+			),
+			// Gemini 1.5 series (legacy).
 			'gemini-1.5-pro'   => array(
 				'input'  => 1.25,
 				'output' => 5.00,
@@ -98,20 +135,31 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 0.075,
 				'output' => 0.30,
 			),
-			'gemini-2.0-flash' => array(
-				'input'  => 0.10,
-				'output' => 0.40,
-			),
-			'gemini-2.5-flash' => array(
-				'input'  => 0.075,
-				'output' => 0.30,
-			),
+			// Deprecated Gemini 1.0.
 			'gemini-pro'       => array(
 				'input'  => 0.50,
 				'output' => 1.50,
 			),
 		),
 		'anthropic' => array(
+			// Claude 4.5 series (November 2025).
+			'claude-sonnet-4.5' => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-haiku-4.5' => array(
+				'input'  => 1.00,
+				'output' => 5.00,
+			),
+			'claude-opus-4.1' => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			'claude-opus-4.0' => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			// Claude 3.5 series (deprecated Nov 10, 2025).
 			'claude-3.5-sonnet' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
@@ -120,7 +168,20 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
+			'claude-3-5-sonnet-20241022' => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-3-5-haiku-20241022' => array(
+				'input'  => 0.80,
+				'output' => 4.00,
+			),
+			// Claude 3 series (legacy).
 			'claude-3-opus'     => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			'claude-3-opus-20240229' => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
