@@ -679,6 +679,18 @@ class WP_MCP_AI_Model_Config {
 				'cost_per_1k'    => 0.0,
 				'status'         => 'active',
 			),
+			'openai/gpt-oss-20b' => array(
+				'name'           => 'GPT-OSS 20B',
+				'provider'       => 'lm_studio',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 8192,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
 		);
 	}
 

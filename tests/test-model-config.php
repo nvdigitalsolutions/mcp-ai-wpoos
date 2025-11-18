@@ -48,6 +48,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
 		$this->assertArrayHasKey( 'llama-3-8b-instruct', $configs );
 		$this->assertArrayHasKey( 'mistral-7b-instruct', $configs );
+		$this->assertArrayHasKey( 'openai/gpt-oss-20b', $configs );
 	}
 
 	/**
@@ -272,6 +273,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 			'qwen-2.5-7b-instruct',
 			'phi-3-mini',
 			'deepseek-coder-6.7b',
+			'openai/gpt-oss-20b',
 		);
 
 		foreach ( $lm_studio_models as $model_id ) {
