@@ -6,7 +6,7 @@
 
 This document provides a comprehensive index of all documentation available for the WP Open Operator System (WP oOS) plugin.
 
-**Total Documentation:** 69+ files in docs/ folder, 5 essential files in root
+**Total Documentation:** 70+ files in docs/ folder, 5 essential files in root
 
 **📋 Documentation Reorganization (November 18, 2025):**
 - 95+ historical documents moved to organized archive structure
@@ -100,6 +100,7 @@ This document provides a comprehensive index of all documentation available for 
 | [elementor-widgets.md](elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
 | [jetengine-api-compatibility.md](jetengine-api-compatibility.md) | JetEngine API compatibility layer (v3.3+ support) | Developers |
+| [lm-studio-context-validation.md](lm-studio-context-validation.md) | LM Studio context window validation and overflow prevention | Developers/Admins |
 
 ### Remote Client Setup
 
@@ -218,7 +219,7 @@ This document provides a comprehensive index of all documentation available for 
 ### Categories
 - **Setup & Installation:** 4 documents
 - **Architecture & Design:** 6 documents
-- **Integration Guides:** 4 documents
+- **Integration Guides:** 5 documents
 - **Security & Auth:** 4 documents
 - **API & Tools:** 4 documents
 - **Performance & Optimization:** 6 documents
