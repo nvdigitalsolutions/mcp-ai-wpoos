@@ -21,6 +21,33 @@ class WP_MCP_AI_REST_Token_Manager {
 
 	/**
 	 * Register REST API routes.
+	 *
+	 * Registers token management and budget control REST API endpoints:
+	 * - GET /users/{id}/token-tier: Get user's token tier and associated limits
+	 * - POST /users/{id}/token-tier: Update user's token tier (admin-only)
+	 * - GET /users/{id}/token-usage: Get current token usage and remaining budget
+	 * - GET /users/{id}/token-forecast: Get usage forecast and budget predictions
+	 *
+	 * Token tier system provides:
+	 * - Free tier: Basic token limits for general tools
+	 * - Pro tier: Enhanced limits for power users
+	 * - Enterprise tier: Unlimited or very high limits
+	 * - Per-tool budget constraints (e.g., Crawl4AI job limits)
+	 * - Expiry dates for temporary tier upgrades
+	 *
+	 * Usage tracking includes:
+	 * - Current period token consumption
+	 * - Remaining tokens in budget
+	 * - Per-tool usage breakdowns
+	 * - Historical usage patterns
+	 * - Reset dates and renewal information
+	 *
+	 * Permission model:
+	 * - Users can view their own tier and usage
+	 * - Only administrators can update tiers
+	 * - Usage forecasts available to tier subscribers
+	 *
+	 * @since 1.0.0
 	 */
 	public static function register_routes() {
 		// Get user's tier and limits.

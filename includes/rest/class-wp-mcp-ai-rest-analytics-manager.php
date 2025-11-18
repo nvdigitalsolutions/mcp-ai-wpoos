@@ -21,6 +21,27 @@ class WP_MCP_AI_REST_Analytics_Manager {
 
 	/**
 	 * Register REST API routes.
+	 *
+	 * Registers analytics-related REST API endpoints for data analysis and insights:
+	 * - GET /analytics/trends/{user_id}: Get usage trends for a specific user over time
+	 * - GET /analytics/patterns/{user_id}: Analyze usage patterns and behaviors for a user
+	 * - GET /analytics/compare: Compare metrics across multiple users
+	 * - GET /analytics/anomalies: Detect anomalous usage patterns requiring attention
+	 * - GET /analytics/tools/compare: Compare tool usage and performance across tools
+	 *
+	 * All endpoints require appropriate analytics permissions:
+	 * - Users can access their own analytics data
+	 * - Administrators can access all analytics data
+	 * - Capability: 'manage_options' for cross-user analytics
+	 *
+	 * Data returned includes:
+	 * - Usage trends (tokens, costs, tool calls over time)
+	 * - Behavior patterns (peak usage times, tool preferences)
+	 * - Comparative metrics (multi-user comparisons)
+	 * - Anomaly detection (unusual spikes, potential issues)
+	 * - Tool performance analytics (execution times, success rates)
+	 *
+	 * @since 1.0.0
 	 */
 	public static function register_routes() {
 		// Get user trends.

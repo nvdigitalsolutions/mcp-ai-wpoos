@@ -27,6 +27,31 @@ class WP_MCP_AI_REST_Cost_Manager {
 
 	/**
 	 * Register REST API routes.
+	 *
+	 * Registers cost tracking and analysis REST API endpoints:
+	 * - GET /users/{id}/cost-breakdown: Get detailed cost breakdown for a specific user
+	 * - GET /cost/total: Get site-wide cost breakdown across all users
+	 * - GET /cost/by-provider: Get cost breakdown by AI provider (OpenAI, Gemini, Ollama)
+	 * - GET /cost/trend: Get cost trends over time for budget forecasting
+	 * - GET /users/{id}/roi: Calculate return on investment metrics for a user
+	 * - GET /cost/dashboard-summary: Get summary data for admin cost dashboard
+	 *
+	 * Permission levels:
+	 * - User cost breakdown: Users can access their own data, admins can access all
+	 * - Site-wide costs: Requires 'manage_options' capability (admin-only)
+	 * - Provider costs: Requires 'manage_options' capability (admin-only)
+	 * - Cost trends: Requires 'manage_options' capability (admin-only)
+	 * - User ROI: Users can access their own data, admins can access all
+	 * - Dashboard summary: Requires 'manage_options' capability (admin-only)
+	 *
+	 * Cost data includes:
+	 * - Token usage costs (input tokens, output tokens, cached tokens)
+	 * - Tool execution costs (API calls, processing time)
+	 * - Breakdown by model, assistant, and time period
+	 * - Formatted cost strings in configured currency
+	 * - Historical trends and forecasting data
+	 *
+	 * @since 1.0.0
 	 */
 	public static function register_routes() {
 		// Get user cost breakdown.
