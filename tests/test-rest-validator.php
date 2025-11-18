@@ -411,4 +411,29 @@ class Test_REST_Validator extends WP_UnitTestCase {
 
 		$this->assertEquals( 'ollama', $result['provider'], 'Request provider should override assistant config' );
 	}
+
+	/**
+	 * Test sanitize_options removes stream parameter.
+	 *
+	 * The 'stream' parameter is only used by the SSE handler to determine response
+	 * format (SSE vs JSON), and should not be passed to AI provider clients which
+	 * manage their own streaming behavior. This test verifies that the stream
+	 * parameter is filtered out to prevent it from being sent to providers like
+	 * LM Studio which explicitly disable streaming.
+	 */
+	public function test_sanitize_options_removes_stream_parameter() {
+		$options = array(
+			'provider' => 'lm_studio',
+			'stream'   => true,
+			'model'    => 'test-model',
+		);
+
+		$assistant_config = array();
+
+		$result = $this->validator->sanitize_options( $options, $assistant_config );
+
+		$this->assertArrayNotHasKey( 'stream', $result, 'Stream parameter should be removed from sanitized options' );
+		$this->assertEquals( 'lm_studio', $result['provider'], 'Provider should be preserved' );
+		$this->assertEquals( 'test-model', $result['model'], 'Other options should be preserved' );
+	}
 }
