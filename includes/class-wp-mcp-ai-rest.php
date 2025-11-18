@@ -1924,7 +1924,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function handle_chat_request( WP_REST_Request $request ) {
 			$this->hydrate_request_body_params( $request );
 
-			$assistant_id = $this->resolve_assistant_id( $request->get_param( 'assistant_id' ) );
+			// Check if this is a profession test request.
+			$raw_assistant_id = $request->get_param( 'assistant_id' );
+			$profession_id    = $this->extract_profession_id( $raw_assistant_id );
+
+			$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
 			if ( is_wp_error( $scoped_id ) ) {
 				return $scoped_id;
@@ -1954,6 +1958,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+			// If testing a profession, merge profession configuration.
+			if ( $profession_id ) {
+				$assistant_config = $this->load_profession_configuration( $profession_id, $assistant_config );
+			}
 
 			$options = $this->validator->sanitize_options( $request->get_param( 'options' ), $assistant_config );
 
@@ -3782,6 +3791,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return int
 		 */
 		protected function resolve_assistant_id( $assistant_id ) {
+			// Check if this is a profession test request with format "profession_123".
+			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
+				// Extract the profession ID and use default assistant (profession data will be merged separately).
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
+				return $default;
+			}
+
 			$assistant_id = absint( $assistant_id );
 			if ( $assistant_id ) {
 				return $assistant_id;
@@ -3791,6 +3808,92 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$default  = isset( $settings['default_assistant'] ) ? absint( $settings['default_assistant'] ) : 0;
 
 			return $default;
+		}
+
+		/**
+		 * Extract profession ID from assistant_id parameter if it has profession_ prefix.
+		 *
+		 * @param mixed $assistant_id Assistant ID parameter from request.
+		 * @return int|false Profession ID or false if not a profession test request.
+		 */
+		protected function extract_profession_id( $assistant_id ) {
+			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'profession_' ) ) {
+				return false;
+			}
+
+			$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			if ( ! $profession_id ) {
+				return false;
+			}
+
+			// Verify it's actually a profession post.
+			$profession_post = get_post( $profession_id );
+			if ( ! $profession_post || 'mcp_ai_profession' !== $profession_post->post_type ) {
+				return false;
+			}
+
+			return $profession_id;
+		}
+
+		/**
+		 * Load profession configuration and merge with assistant configuration.
+		 *
+		 * @param int   $profession_id     Profession post ID.
+		 * @param array $assistant_config  Base assistant configuration.
+		 * @return array Merged configuration with profession data.
+		 */
+		protected function load_profession_configuration( $profession_id, $assistant_config ) {
+			$profession_id = absint( $profession_id );
+			if ( ! $profession_id ) {
+				return $assistant_config;
+			}
+
+			// Get profession meta data.
+			$role_description     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_role_description', true );
+			$knowledge_base       = get_post_meta( $profession_id, '_wp_mcp_ai_profession_knowledge_base', true );
+			$default_tools        = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_tools', true );
+			$memory_files         = get_post_meta( $profession_id, '_wp_mcp_ai_profession_memory_files', true );
+			$default_provider_val = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_provider', true );
+			$default_model_val    = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_model', true );
+			$default_temp_val     = get_post_meta( $profession_id, '_wp_mcp_ai_profession_default_temperature', true );
+
+			// Build system prompt from profession data.
+			$system_prompt = '';
+			if ( ! empty( $role_description ) ) {
+				$system_prompt = $role_description;
+			}
+
+			if ( ! empty( $knowledge_base ) ) {
+				$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+			}
+
+			// Merge profession configuration with assistant configuration.
+			// Profession data takes priority over assistant defaults for testing.
+			if ( ! empty( $system_prompt ) ) {
+				$assistant_config['system_prompt'] = $system_prompt;
+			}
+
+			if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
+				$assistant_config['tools'] = $default_tools;
+			}
+
+			if ( is_array( $memory_files ) && ! empty( $memory_files ) ) {
+				$assistant_config['memory_files'] = $memory_files;
+			}
+
+			if ( ! empty( $default_provider_val ) ) {
+				$assistant_config['provider'] = $default_provider_val;
+			}
+
+			if ( ! empty( $default_model_val ) ) {
+				$assistant_config['model'] = $default_model_val;
+			}
+
+			if ( ! empty( $default_temp_val ) && is_numeric( $default_temp_val ) ) {
+				$assistant_config['temperature'] = floatval( $default_temp_val );
+			}
+
+			return $assistant_config;
 		}
 
 		/**
