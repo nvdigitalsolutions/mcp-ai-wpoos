@@ -42,9 +42,20 @@
 			button.addEventListener('click', function () {
 				const professionId = button.getAttribute('data-profession-id');
 				const professionTitle = button.getAttribute('data-profession-title');
+				const professionDataJson = button.getAttribute('data-profession-data');
+				let professionData = null;
+
+				// Parse profession data if available
+				if (professionDataJson) {
+					try {
+						professionData = JSON.parse(professionDataJson);
+					} catch (e) {
+						console.error('Failed to parse profession data:', e);
+					}
+				}
 
 				if (professionId) {
-					openTestModal(professionId, professionTitle);
+					openTestModal(professionId, professionTitle, professionData);
 				}
 			});
 		});
@@ -77,11 +88,13 @@
 	 *
 	 * @param {string} professionId     The profession post ID.
 	 * @param {string} professionTitle  The profession title for display.
+	 * @param {Object} professionData   Profession details data.
 	 */
-	function openTestModal(professionId, professionTitle) {
+	function openTestModal(professionId, professionTitle, professionData) {
 		const modal = document.getElementById('wp-mcp-ai-test-profession-modal');
 		const modalTitle = document.getElementById('wp-mcp-ai-test-profession-modal__title');
 		const chatContainer = document.getElementById('wp-mcp-ai-test-profession-chat-container');
+		const detailsContainer = document.getElementById('wp-mcp-ai-profession-details-container');
 
 		if (!modal || !chatContainer) {
 			return;
@@ -90,6 +103,13 @@
 		// Update modal title.
 		if (modalTitle) {
 			modalTitle.textContent = 'Test Profession: ' + escapeHtml(professionTitle || 'Unknown Profession');
+		}
+
+		// Display profession details.
+		if (detailsContainer && professionData) {
+			detailsContainer.innerHTML = buildProfessionDetailsHTML(professionData);
+		} else if (detailsContainer) {
+			detailsContainer.innerHTML = '';
 		}
 
 		// Clear previous chat container.
@@ -156,6 +176,7 @@
 	function closeTestModal() {
 		const modal = document.getElementById('wp-mcp-ai-test-profession-modal');
 		const chatContainer = document.getElementById('wp-mcp-ai-test-profession-chat-container');
+		const detailsContainer = document.getElementById('wp-mcp-ai-profession-details-container');
 
 		if (modal) {
 			modal.style.display = 'none';
@@ -166,6 +187,76 @@
 		if (chatContainer) {
 			chatContainer.innerHTML = '';
 		}
+		
+		// Clear details container.
+		if (detailsContainer) {
+			detailsContainer.innerHTML = '';
+		}
+	}
+
+	/**
+	 * Build profession details HTML display.
+	 *
+	 * @param {Object} professionData Profession details data.
+	 * @return {string} HTML string for profession details.
+	 */
+	function buildProfessionDetailsHTML(professionData) {
+		if (!professionData) {
+			return '';
+		}
+
+		let html = '<div class="wp-mcp-ai-profession-details">';
+
+		// Category
+		if (professionData.category) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Category</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value">' + escapeHtml(professionData.category) + '</div>';
+			html += '</div>';
+		}
+
+		// Role Description
+		if (professionData.role_description) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Role Description</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value">' + escapeHtml(professionData.role_description) + '</div>';
+			html += '</div>';
+		}
+
+		// Expertise Areas
+		if (professionData.expertise && professionData.expertise.length > 0) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Expertise Areas</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value"><ul>';
+			professionData.expertise.forEach(function(area) {
+				html += '<li>' + escapeHtml(area) + '</li>';
+			});
+			html += '</ul></div>';
+			html += '</div>';
+		}
+
+		// Default Tools
+		if (professionData.tools && professionData.tools.length > 0) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Default Tools</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value"><ul>';
+			professionData.tools.forEach(function(tool) {
+				html += '<li><code>' + escapeHtml(tool) + '</code></li>';
+			});
+			html += '</ul></div>';
+			html += '</div>';
+		}
+
+		// Knowledge Base Preview
+		if (professionData.knowledge_base) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Knowledge Base Preview</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value">' + escapeHtml(professionData.knowledge_base) + '...</div>';
+			html += '</div>';
+		}
+
+		html += '</div>';
+		return html;
 	}
 
 	/**

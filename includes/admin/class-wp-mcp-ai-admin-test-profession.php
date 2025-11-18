@@ -166,10 +166,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 						<tbody>
 							<?php foreach ( $professions as $profession ) : ?>
 								<?php
-								$category    = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
-								$expertise   = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
-								$tools       = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
-								$edit_url    = get_edit_post_link( $profession->ID );
+								$category          = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+								$expertise         = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+								$tools             = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+								$role_description  = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
+								$knowledge_base    = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_KNOWLEDGE_BASE, true );
+								$edit_url          = get_edit_post_link( $profession->ID );
 
 								$category_labels = array(
 									'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
@@ -184,6 +186,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 								$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '—' );
 								$expertise_count  = is_array( $expertise ) ? count( $expertise ) : 0;
 								$tools_count      = is_array( $tools ) ? count( $tools ) : 0;
+								
+								// Prepare profession data for JavaScript.
+								$profession_data = array(
+									'id'               => $profession->ID,
+									'title'            => $profession->post_title,
+									'category'         => $category_display,
+									'role_description' => $role_description,
+									'expertise'        => is_array( $expertise ) ? $expertise : array(),
+									'tools'            => is_array( $tools ) ? $tools : array(),
+									'knowledge_base'   => ! empty( $knowledge_base ) ? substr( wp_strip_all_tags( $knowledge_base ), 0, 200 ) : '',
+								);
 								?>
 								<tr>
 									<td>
@@ -229,6 +242,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 											class="button button-primary wp-mcp-ai-test-profession-btn"
 											data-profession-id="<?php echo esc_attr( $profession->ID ); ?>"
 											data-profession-title="<?php echo esc_attr( $profession->post_title ); ?>"
+											data-profession-data="<?php echo esc_attr( wp_json_encode( $profession_data ) ); ?>"
 										>
 											<?php echo esc_html__( 'Test', 'wp-mcp-ai' ); ?>
 										</button>
@@ -252,9 +266,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 						<div class="wp-mcp-ai-test-modal__body">
 							<div class="wp-mcp-ai-test-profession-info">
 								<p class="description">
-									<?php echo esc_html__( 'Testing profession behavior by creating a temporary assistant. This allows you to validate the profession\'s role, expertise, tools, and knowledge base configuration.', 'wp-mcp-ai' ); ?>
+									<?php echo esc_html__( 'Testing profession behavior by creating a temporary assistant. Review the profession details below to understand the capabilities being tested.', 'wp-mcp-ai' ); ?>
 								</p>
 							</div>
+							<!-- Profession details will be populated here -->
+							<div id="wp-mcp-ai-profession-details-container"></div>
 							<!-- Chat interface will be initialized here -->
 							<div id="wp-mcp-ai-test-profession-chat-container"></div>
 						</div>
