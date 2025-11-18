@@ -209,6 +209,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			return $storage;
 		}
 
+		// Build descriptive text message for the LLM and chat UI.
+		$text = sprintf(
+			/* translators: 1: image title, 2: attachment ID */
+			__( 'Successfully edited image "%1$s" (ID: %2$d). Edit instruction: %3$s', 'wp-mcp-ai' ),
+			$storage['title'],
+			$storage['attachment_id'],
+			$prompt
+		);
+		
 		$result = array(
 			'attachment_id'     => $storage['attachment_id'],
 			'url'               => $storage['url'],
@@ -223,6 +232,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'edit_instruction'  => $prompt,
 			'source_attachment' => isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null,
 			'provider'          => 'gemini', // Track provider for accurate cost attribution.
+			'text'              => $text, // Descriptive message for LLM and chat UI.
 		);
 
 		// Include usage metadata if available for accurate cost tracking.
@@ -682,6 +692,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'source_attachment',
 			'provider',
 			'usage',
+			'text', // Descriptive message about the edited image.
 		);
 
 		$sanitized = array();
