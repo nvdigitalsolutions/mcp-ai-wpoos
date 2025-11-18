@@ -7406,6 +7406,19 @@
                                 }
                             } else if (data.data) {
                                 // Final response with complete data
+                                // Extract content from the final response if no streaming chunks were received
+                                if (!fullContent && data.data.choices && data.data.choices[0]) {
+                                    const finalMessage = data.data.choices[0].message;
+                                    if (finalMessage && finalMessage.content) {
+                                        fullContent = typeof finalMessage.content === 'string' 
+                                            ? finalMessage.content 
+                                            : '';
+                                        // Update the streaming message to show the content
+                                        if (fullContent) {
+                                            updateCallback(fullContent);
+                                        }
+                                    }
+                                }
                                 return { content: fullContent, finalData: data };
                             }
                         }
