@@ -7494,9 +7494,14 @@
             const toolName = data.tool_name || 'tool';
             const result = data.result || {};
             
+            // Extract attachments from tool result (e.g., generated images, audio files)
+            const normalized = typeof result === 'object' && result !== null ? 
+                normaliseToolResultForDisplay(toolName, result) : null;
+            
             // Show tool result in chat
             let resultText = '';
             let isError = false;
+            let attachments = [];
             
             if (typeof result === 'string') {
                 resultText = result;
@@ -7509,8 +7514,14 @@
                           lowerResult.indexOf('failed') !== -1 ||
                           lowerResult.indexOf('forbidden') !== -1 ||
                           lowerResult.indexOf('missing') !== -1;
+            } else if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+                // Tool result has attachments (images, files) - use normalized text and attachments
+                resultText = normalized.text || (toolName + ': ' + getString('completed', 'Completed'));
+                attachments = normalized.attachments;
             } else if (result.summary) {
                 resultText = toolName + ': ' + result.summary;
+            } else if (result.text) {
+                resultText = result.text;
             } else {
                 resultText = toolName + ': ' + getString('completed', 'Completed');
             }
@@ -7519,8 +7530,10 @@
             const prefix = isError ? '⚠️ ' : '✓ ';
             const messageType = isError ? 'system' : 'tool';
             
+            // Display the tool result with attachments if available
             appendMessage(state.messagesEl, messageType, {
-                text: prefix + resultText
+                text: prefix + resultText,
+                attachments: attachments
             });
         }
     }
