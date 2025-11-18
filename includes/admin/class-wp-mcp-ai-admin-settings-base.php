@@ -311,7 +311,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'openai_speech_voice'                  => 'alloy',
 				'openai_speech_format'                 => 'mp3',
 				'openai_embedding_model'               => 'text-embedding-3-small',
-				'gemini_image_model'                   => 'gemini-2.5-flash-image',
+				'gemini_image_model'                   => 'gemini-2.5-flash',
 				'gemini_image_aspect_ratio'            => '1:1',
 				'gemini_image_mime_type'               => 'image/png',
 				'max_history_messages'                 => 8,

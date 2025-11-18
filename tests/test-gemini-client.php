@@ -168,7 +168,7 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 		$response = $client->generate_image(
 			'A banana for scale',
 			array(
-				'model'        => 'gemini-2.5-flash-image',
+				'model'        => 'gemini-2.5-flash',
 				'aspect_ratio' => '16:9',
 				'mime_type'    => 'image/png',
 			)
@@ -188,14 +188,14 @@ class WP_MCP_AI_Gemini_Client_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'imageConfig', $payload['generationConfig'] );
 		$this->assertSame( '16:9', $payload['generationConfig']['imageConfig']['aspectRatio'] );
 		$this->assertArrayNotHasKey( 'temperature', $payload['generationConfig'] );
-		$this->assertSame( 'gemini-2.5-flash-image', $this->extract_model_from_url( $captured_request['url'] ) );
+		$this->assertSame( 'gemini-2.5-flash', $this->extract_model_from_url( $captured_request['url'] ) );
 
 		$this->assertIsArray( $response );
 		$this->assertArrayHasKey( 'image', $response );
 		$this->assertSame( $binary_image, $response['image'] );
 		$this->assertSame( 'image/png', $response['mime_type'] );
 		$this->assertSame( 'png', $response['format'] );
-		$this->assertSame( 'gemini-2.5-flash-image', $response['model'] );
+		$this->assertSame( 'gemini-2.5-flash', $response['model'] );
 		$this->assertSame( '16:9', $response['aspect_ratio'] );
 		$this->assertArrayHasKey( 'created', $response );
 		$this->assertIsInt( $response['created'] );

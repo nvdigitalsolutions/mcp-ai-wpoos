@@ -18,7 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
-	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
+	const DEFAULT_MODEL        = 'gemini-2.5-flash';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';
 
@@ -703,7 +703,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'model_requirements'    => array(
 				'providers' => array( 'gemini' ),
-				'models'    => array( 'gemini-2.5-flash-image', 'gemini-exp-1206', 'gemini-2.0-flash-exp' ),
+				'models'    => array( 'gemini-2.5-flash', 'gemini-exp-1206', 'gemini-2.0-flash-exp' ),
 				'required'  => true,
 			),
 			'parameter_constraints' => array(
