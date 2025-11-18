@@ -55,19 +55,19 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'prompt'        => array(
+				'prompt'           => array(
 					'type'        => 'string',
 					'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'wp-mcp-ai' ),
 				),
-				'attachment_id' => array(
+				'attachment_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the image to edit.', 'wp-mcp-ai' ),
 				),
-				'image_url'     => array(
+				'image_url'        => array(
 					'type'        => 'string',
 					'description' => __( 'URL of the image to edit (alternative to attachment_id).', 'wp-mcp-ai' ),
 				),
-				'image_data'    => array(
+				'image_data'       => array(
 					'type'        => 'string',
 					'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id or image_url). Useful for editing images created in the chat.', 'wp-mcp-ai' ),
 				),
@@ -75,28 +75,28 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'string',
 					'description' => __( 'MIME type of the source image data (required when using image_data).', 'wp-mcp-ai' ),
 				),
-				'model'         => array(
+				'model'            => array(
 					'type'        => 'string',
 					'description' => __( 'Gemini image model to use.', 'wp-mcp-ai' ),
 					'default'     => $defaults['model'],
 				),
-				'aspect_ratio'  => array(
+				'aspect_ratio'     => array(
 					'type'        => 'string',
 					'description' => __( 'Aspect ratio for the edited image.', 'wp-mcp-ai' ),
 					'enum'        => $aspect_choices,
 					'default'     => $defaults['aspect_ratio'],
 				),
-				'mime_type'     => array(
+				'mime_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Preferred MIME type for the saved image.', 'wp-mcp-ai' ),
 					'enum'        => $mime_choices,
 					'default'     => $defaults['mime_type'],
 				),
-				'file_name'     => array(
+				'file_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved image attachment.', 'wp-mcp-ai' ),
 				),
-				'timeout'       => array(
+				'timeout'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Override the Gemini request timeout in seconds.', 'wp-mcp-ai' ),
 					'minimum'     => 5,
@@ -232,7 +232,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$storage['attachment_id'],
 			$prompt
 		);
-		
+
 		$result = array(
 			'attachment_id'     => $storage['attachment_id'],
 			'url'               => $storage['url'],
