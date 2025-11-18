@@ -138,8 +138,10 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs.', 'wp-mcp-ai' ) );
+		// Allow users with edit_posts capability or higher to view logs.
+		// This includes Contributors, Authors, Editors, and Administrators.
+		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs. This requires at least Contributor level access.', 'wp-mcp-ai' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
