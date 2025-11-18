@@ -100,6 +100,62 @@ class WP_MCP_AI_Gemini_Image_Tool_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * The tool should implement the Tool Rules Interface.
+	 */
+	public function test_implements_tool_rules_interface() {
+		$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+
+		$this->assertTrue( method_exists( $tool, 'get_tool_rules' ), 'Tool should implement get_tool_rules method' );
+
+		$rules = $tool->get_tool_rules();
+
+		$this->assertIsArray( $rules );
+		$this->assertArrayHasKey( 'model_requirements', $rules );
+		$this->assertArrayHasKey( 'parameter_constraints', $rules );
+		$this->assertArrayHasKey( 'rate_limits', $rules );
+		$this->assertArrayHasKey( 'timeout_constraints', $rules );
+		$this->assertArrayHasKey( 'response_constraints', $rules );
+		$this->assertArrayHasKey( 'dependencies', $rules );
+		$this->assertArrayHasKey( 'orchestration_hints', $rules );
+
+		// Verify model requirements.
+		$this->assertArrayHasKey( 'providers', $rules['model_requirements'] );
+		$this->assertContains( 'gemini', $rules['model_requirements']['providers'] );
+
+		// Verify parameter constraints.
+		$this->assertArrayHasKey( 'required_fields', $rules['parameter_constraints'] );
+		$this->assertContains( 'prompt', $rules['parameter_constraints']['required_fields'] );
+
+		// Verify dependencies.
+		$this->assertArrayHasKey( 'required_settings', $rules['dependencies'] );
+		$this->assertArrayHasKey( 'api_key', $rules['dependencies']['required_settings'] );
+		$this->assertSame( 'wp_mcp_ai_gemini_api_key', $rules['dependencies']['required_settings']['api_key'] );
+	}
+
+	/**
+	 * The tool should have correct capability flags.
+	 */
+	public function test_has_correct_capability_flags() {
+		$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
+
+		$flags = $tool->get_capability_flags();
+
+		$this->assertIsArray( $flags );
+		$this->assertContains( 'requires-credentials', $flags, 'Should require Gemini API credentials' );
+		$this->assertContains( 'requires-capability', $flags, 'Should require user capabilities' );
+		$this->assertContains( 'write', $flags, 'Should create media files' );
+		$this->assertContains( 'async', $flags, 'Should be async operation' );
+		$this->assertContains( 'rate-limited', $flags, 'Should be rate limited' );
+		$this->assertContains( 'requires-model', $flags, 'Should require model specification' );
+		$this->assertContains( 'consumes-tokens', $flags, 'Should consume tokens' );
+		$this->assertContains( 'model-dependent', $flags, 'Should be model dependent' );
+
+		// Verify incorrect flags are not present.
+		$this->assertNotContains( 'read-only', $flags, 'Should NOT be read-only as it creates files' );
+		$this->assertNotContains( 'local-only', $flags, 'Should NOT be local-only as it makes API calls' );
+	}
+
+	/**
 	 * The tool should handle base64url encoded inline data from Gemini.
 	 */
 	public function test_execute_decodes_base64url_inline_payload() {

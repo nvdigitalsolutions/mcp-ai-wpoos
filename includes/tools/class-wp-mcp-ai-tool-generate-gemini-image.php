@@ -17,7 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 /**
  * Provides a tool for generating images via Gemini and storing them as attachments.
  */
-class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
 	const DEFAULT_ASPECT_RATIO = '1:1';
@@ -220,12 +220,11 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		/**
 		 * Allow third parties to filter the Gemini image generation result before it is returned.
 		 *
-		 * @param array $result    Final response payload.
-		 * @param array $arguments Original tool arguments.
-		 * @param array $context   Invocation context.
-		 * @param array $image     Raw payload returned from the Gemini client.
+		 * @param array $result    Result array to be returned.
+		 * @param array $arguments Arguments supplied to the tool.
+		 * @param array $context   Execution context supplied to the tool.
 		 */
-		$result = apply_filters( 'wp_mcp_ai_generate_gemini_image_result', $result, $arguments, $context, $image );
+		$result = apply_filters( 'wp_mcp_ai_generate_gemini_image_result', $result, $arguments, $context );
 
 		return $result;
 	}
@@ -665,9 +664,58 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'requires-credentials', // Requires Gemini API credentials.
 			'requires-capability',  // Requires user capabilities.
+			'write',                // Creates media files.
+			'async',                // May take significant time to generate images.
+			'rate-limited',         // Subject to Gemini rate limits.
+			'requires-model',       // Requires image model specification.
+			'consumes-tokens',      // Uses AI credits/tokens.
+			'model-dependent',      // Output quality varies by model.
+		);
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_tool_rules() {
+		return array(
+			'model_requirements'    => array(
+				'providers' => array( 'gemini' ),
+				'models'    => array( 'gemini-2.5-flash-image', 'gemini-2.0-flash-exp', 'gemini-exp-1206' ),
+				'required'  => true,
+			),
+			'parameter_constraints' => array(
+				'required_fields'   => array( 'prompt' ),
+				'optional_fields'   => array( 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
+				'max_prompt_length' => 4000,
+			),
+			'rate_limits'           => array(
+				'requests_per_minute' => 15,
+				'requests_per_hour'   => 100,
+				'concurrent_requests' => 2,
+			),
+			'timeout_constraints'   => array(
+				'recommended_timeout' => 60,
+				'max_execution_time'  => 120,
+			),
+			'response_constraints'  => array(
+				'max_size'           => 5242880, // 5MB typical image size.
+				'supports_streaming' => false,
+			),
+			'dependencies'          => array(
+				'required_settings'   => array(
+					'api_key' => 'wp_mcp_ai_gemini_api_key',
+				),
+				'required_extensions' => array( 'gd' ), // For image processing.
+			),
+			'orchestration_hints'   => array(
+				'can_run_parallel' => true,
+				'requires_lock'    => false,
+				'cache_ttl'        => 0, // Don't cache - each generation unique.
+				'retry_strategy'   => 'exponential_backoff',
+				'max_retries'      => 3,
+			),
 		);
 	}
 
