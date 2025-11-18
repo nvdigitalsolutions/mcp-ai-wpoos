@@ -2,6 +2,7 @@
  * Admin Test Profession Page JavaScript
  *
  * Handles the test profession modal and chat interface initialization.
+ * Follows SoC by separating UI interaction from chat logic.
  * Follows the same pattern as admin-test-assistant.js for consistency.
  *
  * @package WP_MCP_AI
