@@ -467,7 +467,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					$tool_stats       = WP_MCP_AI_Tool_Token_Limits::get_tool_statistics( $tool_slug );
 					$multiplier       = $this->get_tool_multiplier( $tool_slug );
 					$model_preference = WP_MCP_AI_Tool_Token_Limits::get_tool_model_preference( $tool_slug );
-					$available_models = WP_MCP_AI_Tool_Token_Limits::get_available_models();
+					$available_models = WP_MCP_AI_Tool_Token_Limits::get_available_models( $tool_slug );
 
 					// Get recommendation for this tool.
 					$recommendation = WP_MCP_AI_Tool_Recommendations::get_tool_recommendation( $tool_slug );

@@ -300,4 +300,191 @@ class Test_Tool_Token_Limits extends WP_UnitTestCase {
 		$usage_after = WP_MCP_AI_Tool_Token_Limits::get_user_tool_usage( $this->test_user_id );
 		$this->assertArrayNotHasKey( $old_date, $usage_after[ $tool_slug ]['daily'] );
 	}
+
+	/**
+	 * Test get_available_models returns models when API keys are configured.
+	 */
+	public function test_get_available_models_with_configured_providers() {
+		// Configure settings with API keys.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'openai_api_key'    => 'test-openai-key',
+				'anthropic_api_key' => 'test-anthropic-key',
+				'gemini_api_key'    => 'test-gemini-key',
+			)
+		);
+
+		$models = WP_MCP_AI_Tool_Token_Limits::get_available_models();
+
+		// Should include default option.
+		$this->assertArrayHasKey( 'default', $models );
+
+		// Should include OpenAI models.
+		$this->assertArrayHasKey( 'openai_group', $models );
+		$this->assertArrayHasKey( 'label', $models['openai_group'] );
+		$this->assertArrayHasKey( 'options', $models['openai_group'] );
+		$this->assertArrayHasKey( 'gpt-4o', $models['openai_group']['options'] );
+		$this->assertArrayHasKey( 'o1-2024-12-17', $models['openai_group']['options'] );
+
+		// Should include Anthropic models.
+		$this->assertArrayHasKey( 'anthropic_group', $models );
+		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $models['anthropic_group']['options'] );
+
+		// Should include Gemini models.
+		$this->assertArrayHasKey( 'gemini_group', $models );
+		$this->assertArrayHasKey( 'gemini-2.5-flash', $models['gemini_group']['options'] );
+		$this->assertArrayHasKey( 'gemma-2-27b-it', $models['gemini_group']['options'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_available_models filters models based on capability flags for vision requirements.
+	 */
+	public function test_get_available_models_filters_for_vision_tools() {
+		// Configure settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'openai_api_key' => 'test-key',
+			)
+		);
+
+		// Create a mock tool with vision requirement.
+		$tool_slug = 'test_vision_tool';
+		
+		// Register a test tool with vision capability flag.
+		add_filter(
+			'wp_mcp_ai_tool_capability_flags_' . $tool_slug,
+			function() {
+				return array( 'requires-vision-model' );
+			}
+		);
+
+		// Mock the tool registry to return our capability flags.
+		add_filter(
+			'wp_mcp_ai_tool_registry_capability_flags',
+			function( $flags, $slug ) use ( $tool_slug ) {
+				if ( $slug === $tool_slug ) {
+					return array( 'requires-vision-model' );
+				}
+				return $flags;
+			},
+			10,
+			2
+		);
+
+		$models = WP_MCP_AI_Tool_Token_Limits::get_available_models( $tool_slug );
+
+		// Should include vision-capable models.
+		if ( isset( $models['openai_group']['options'] ) ) {
+			$this->assertArrayHasKey( 'gpt-4o', $models['openai_group']['options'] );
+			$this->assertArrayHasKey( 'gpt-4-vision-preview', $models['openai_group']['options'] );
+			
+			// Should NOT include text-only reasoning models.
+			$this->assertArrayNotHasKey( 'o1-2024-12-17', $models['openai_group']['options'] );
+			$this->assertArrayNotHasKey( 'gpt-3.5-turbo', $models['openai_group']['options'] );
+		}
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_available_models filters models based on multimodal capability requirements.
+	 */
+	public function test_get_available_models_filters_for_multimodal_tools() {
+		// Configure settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'openai_api_key' => 'test-key',
+				'gemini_api_key' => 'test-gemini-key',
+			)
+		);
+
+		$tool_slug = 'test_multimodal_tool';
+
+		// Mock the tool registry for multimodal capability.
+		add_filter(
+			'wp_mcp_ai_tool_registry_capability_flags',
+			function( $flags, $slug ) use ( $tool_slug ) {
+				if ( $slug === $tool_slug ) {
+					return array( 'requires-multimodal-model' );
+				}
+				return $flags;
+			},
+			10,
+			2
+		);
+
+		$models = WP_MCP_AI_Tool_Token_Limits::get_available_models( $tool_slug );
+
+		// Should include multimodal models.
+		if ( isset( $models['openai_group']['options'] ) ) {
+			$this->assertArrayHasKey( 'gpt-4o', $models['openai_group']['options'] );
+			
+			// Should NOT include text-only models.
+			$this->assertArrayNotHasKey( 'o1-2024-12-17', $models['openai_group']['options'] );
+			$this->assertArrayNotHasKey( 'gpt-4', $models['openai_group']['options'] );
+		}
+
+		if ( isset( $models['gemini_group']['options'] ) ) {
+			$this->assertArrayHasKey( 'gemini-2.5-flash', $models['gemini_group']['options'] );
+			
+			// Gemma models are text-only, should not be included.
+			$this->assertArrayNotHasKey( 'gemma-2-27b-it', $models['gemini_group']['options'] );
+		}
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_available_models includes Gemma models for text-only tools.
+	 */
+	public function test_get_available_models_includes_gemma_for_text_tools() {
+		// Configure settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'gemini_api_key' => 'test-key',
+			)
+		);
+
+		$models = WP_MCP_AI_Tool_Token_Limits::get_available_models();
+
+		// Should include Gemma models when no specific requirements.
+		$this->assertArrayHasKey( 'gemini_group', $models );
+		$this->assertArrayHasKey( 'gemma-2-27b-it', $models['gemini_group']['options'] );
+		$this->assertArrayHasKey( 'gemma-2-9b-it', $models['gemini_group']['options'] );
+		$this->assertArrayHasKey( 'gemma-2-2b-it', $models['gemini_group']['options'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test get_available_models includes Ollama models when configured.
+	 */
+	public function test_get_available_models_includes_ollama_models() {
+		// Configure Ollama settings.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'ollama_endpoint_url' => 'http://localhost:11434',
+				'ollama_model'        => 'llama3',
+			)
+		);
+
+		$models = WP_MCP_AI_Tool_Token_Limits::get_available_models();
+
+		// Should include Ollama group.
+		$this->assertArrayHasKey( 'ollama_group', $models );
+		$this->assertArrayHasKey( 'llama3', $models['ollama_group']['options'] );
+		
+		// Should include common Ollama models.
+		$this->assertArrayHasKey( 'gemma2', $models['ollama_group']['options'] );
+		$this->assertArrayHasKey( 'mistral', $models['ollama_group']['options'] );
+
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }

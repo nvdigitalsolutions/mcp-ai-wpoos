@@ -452,7 +452,13 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 *
 	 * @return array Array of model options with provider labels.
 	 */
-	public static function get_available_models() {
+	/**
+	 * Get available models for tool preferences.
+	 *
+	 * @param string $tool_slug Optional tool slug to filter models by capability flags.
+	 * @return array Available models grouped by provider.
+	 */
+	public static function get_available_models( $tool_slug = '' ) {
 		$models = array(
 			'default' => __( 'Default (use assistant/global setting)', 'wp-mcp-ai' ),
 		);
@@ -460,59 +466,156 @@ class WP_MCP_AI_Tool_Token_Limits {
 		// Get settings.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
+		// Get tool capability flags if tool_slug is provided.
+		$capability_flags = array();
+		if ( ! empty( $tool_slug ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry         = WP_MCP_AI_Tool_Registry::get_instance();
+			$capability_flags = $registry->get_tool_capability_flags( $tool_slug );
+		}
+
+		// Determine if tool requires specific model capabilities.
+		$requires_vision     = in_array( 'requires-vision-model', $capability_flags, true );
+		$requires_multimodal = in_array( 'requires-multimodal-model', $capability_flags, true );
+
 		// OpenAI models.
 		if ( ! empty( $settings['openai_api_key'] ) ) {
-			$models['openai_group'] = array(
-				'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
-				'options' => array(
-					// Reasoning models.
-					'o1-2024-12-17' => 'o1 (Dec 2024)',
-					'o1-preview'    => 'o1 Preview',
-					'o1-mini'       => 'o1 Mini',
-					'o3-mini'       => 'o3 Mini',
-					// GPT-4o series.
-					'gpt-4o'        => 'GPT-4o',
-					'gpt-4o-mini'   => 'GPT-4o Mini',
-					// Legacy models.
-					'gpt-4-turbo'   => 'GPT-4 Turbo',
-					'gpt-4'         => 'GPT-4',
-					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
-				),
-			);
+			$openai_models = array();
+
+			// Reasoning models (text-only).
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				$openai_models['o1-2024-12-17'] = 'o1 (Dec 2024)';
+				$openai_models['o1-preview']    = 'o1 Preview';
+				$openai_models['o1-mini']       = 'o1 Mini';
+				$openai_models['o3-mini']       = 'o3 Mini';
+			}
+
+			// GPT-4o series (multimodal - vision capable).
+			$openai_models['gpt-4o']               = 'GPT-4o';
+			$openai_models['gpt-4o-mini']          = 'GPT-4o Mini';
+			$openai_models['gpt-4o-2024-11-20']    = 'GPT-4o (Nov 2024)';
+			$openai_models['gpt-4o-2024-08-06']    = 'GPT-4o (Aug 2024)';
+			$openai_models['gpt-4o-2024-05-13']    = 'GPT-4o (May 2024)';
+			$openai_models['chatgpt-4o-latest']    = 'ChatGPT-4o (Latest)';
+
+			// GPT-4 Turbo (multimodal - vision capable).
+			$openai_models['gpt-4-turbo']          = 'GPT-4 Turbo';
+			$openai_models['gpt-4-turbo-2024-04-09'] = 'GPT-4 Turbo (Apr 2024)';
+			$openai_models['gpt-4-turbo-preview']  = 'GPT-4 Turbo Preview';
+
+			// GPT-4 Vision.
+			$openai_models['gpt-4-vision-preview'] = 'GPT-4 Vision Preview';
+
+			// Legacy models (text-only).
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				$openai_models['gpt-4']         = 'GPT-4';
+				$openai_models['gpt-4-0613']    = 'GPT-4 (Jun 2023)';
+				$openai_models['gpt-3.5-turbo'] = 'GPT-3.5 Turbo';
+				$openai_models['gpt-3.5-turbo-0125'] = 'GPT-3.5 Turbo (Jan 2025)';
+			}
+
+			if ( ! empty( $openai_models ) ) {
+				$models['openai_group'] = array(
+					'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
+					'options' => $openai_models,
+				);
+			}
 		}
 
 		// Anthropic models.
 		if ( ! empty( $settings['anthropic_api_key'] ) ) {
-			$models['anthropic_group'] = array(
-				'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'options' => array(
-					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
-					'claude-3-opus-20240229'     => 'Claude 3 Opus',
-				),
-			);
+			$anthropic_models = array();
+
+			// Claude 3.5 series (multimodal - vision capable).
+			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Latest)';
+			$anthropic_models['claude-3-5-sonnet-20240620'] = 'Claude 3.5 Sonnet (Jun 2024)';
+			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku';
+
+			// Claude 3 series (multimodal - vision capable).
+			$anthropic_models['claude-3-opus-20240229']   = 'Claude 3 Opus';
+			$anthropic_models['claude-3-sonnet-20240229'] = 'Claude 3 Sonnet';
+			$anthropic_models['claude-3-haiku-20240307']  = 'Claude 3 Haiku';
+
+			if ( ! empty( $anthropic_models ) ) {
+				$models['anthropic_group'] = array(
+					'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+					'options' => $anthropic_models,
+				);
+			}
 		}
 
 		// Gemini models.
 		if ( ! empty( $settings['gemini_api_key'] ) ) {
-			$models['gemini_group'] = array(
-				'label'   => __( 'Google Gemini', 'wp-mcp-ai' ),
-				'options' => array(
-					'gemini-2.5-flash' => 'Gemini 2.5 Flash (Latest - Stable)',
-					'gemini-exp-1206'      => 'Gemini Exp 1206 (Experimental)',
-					'gemini-1.5-pro'       => 'Gemini 1.5 Pro',
-					'gemini-1.5-flash'     => 'Gemini 1.5 Flash',
-				),
-			);
+			$gemini_models = array();
+
+			// Gemini 2.x series (multimodal - text, image, video).
+			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Latest - Stable)';
+			$gemini_models['gemini-2.0-flash-exp']   = 'Gemini 2.0 Flash (Experimental)';
+			$gemini_models['gemini-2.0-flash']       = 'Gemini 2.0 Flash';
+			$gemini_models['gemini-exp-1206']        = 'Gemini Exp 1206';
+			$gemini_models['gemini-exp-1121']        = 'Gemini Exp 1121';
+
+			// Gemini 1.5 series (multimodal - text, image, video).
+			$gemini_models['gemini-1.5-pro']         = 'Gemini 1.5 Pro';
+			$gemini_models['gemini-1.5-pro-002']     = 'Gemini 1.5 Pro (002)';
+			$gemini_models['gemini-1.5-flash']       = 'Gemini 1.5 Flash';
+			$gemini_models['gemini-1.5-flash-002']   = 'Gemini 1.5 Flash (002)';
+			$gemini_models['gemini-1.5-flash-8b']    = 'Gemini 1.5 Flash-8B';
+
+			// Gemini 1.0 series (text and vision).
+			if ( ! $requires_multimodal ) {
+				$gemini_models['gemini-pro']         = 'Gemini Pro';
+				$gemini_models['gemini-pro-vision']  = 'Gemini Pro Vision';
+			}
+
+			// Gemma models (Google's open models - text-only).
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				$gemini_models['gemma-2-27b-it']     = 'Gemma 2 27B (Instruct)';
+				$gemini_models['gemma-2-9b-it']      = 'Gemma 2 9B (Instruct)';
+				$gemini_models['gemma-2-2b-it']      = 'Gemma 2 2B (Instruct)';
+			}
+
+			if ( ! empty( $gemini_models ) ) {
+				$models['gemini_group'] = array(
+					'label'   => __( 'Google Gemini & Gemma', 'wp-mcp-ai' ),
+					'options' => $gemini_models,
+				);
+			}
 		}
 
 		// Ollama models (if configured).
 		if ( ! empty( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_model'] ) ) {
+			$ollama_models = array(
+				$settings['ollama_model'] => $settings['ollama_model'],
+			);
+
+			// Add common Ollama models (Gemma, Llama, etc.) if model is one of them.
+			$common_ollama_models = array(
+				'llama3.2'          => 'Llama 3.2',
+				'llama3.1'          => 'Llama 3.1',
+				'llama3'            => 'Llama 3',
+				'llama2'            => 'Llama 2',
+				'mistral'           => 'Mistral',
+				'mixtral'           => 'Mixtral',
+				'gemma2'            => 'Gemma 2',
+				'gemma'             => 'Gemma',
+				'codellama'         => 'CodeLlama',
+				'deepseek-coder'    => 'DeepSeek Coder',
+				'phi3'              => 'Phi-3',
+				'qwen2.5'           => 'Qwen 2.5',
+			);
+
+			// Add common models that match vision/multimodal requirements.
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				foreach ( $common_ollama_models as $model_id => $model_name ) {
+					if ( $model_id !== $settings['ollama_model'] ) {
+						$ollama_models[ $model_id ] = $model_name;
+					}
+				}
+			}
+
 			$models['ollama_group'] = array(
 				'label'   => __( 'Ollama (Local)', 'wp-mcp-ai' ),
-				'options' => array(
-					$settings['ollama_model'] => $settings['ollama_model'],
-				),
+				'options' => $ollama_models,
 			);
 		}
 
@@ -531,9 +634,11 @@ class WP_MCP_AI_Tool_Token_Limits {
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param array $models Available models grouped by provider.
+		 * @param array  $models    Available models grouped by provider.
+		 * @param string $tool_slug Tool slug for context.
+		 * @param array  $capability_flags Tool capability flags.
 		 */
-		return apply_filters( 'wp_mcp_ai_available_tool_models', $models );
+		return apply_filters( 'wp_mcp_ai_available_tool_models', $models, $tool_slug, $capability_flags );
 	}
 
 	/**
