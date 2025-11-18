@@ -473,6 +473,19 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$capability_flags = $registry->get_tool_capability_flags( $tool_slug );
 		}
 
+		/**
+		 * Filter the capability flags for a tool.
+		 *
+		 * This allows capability flags to be provided for unregistered tool slugs,
+		 * such as temporary slugs used by the model config fallback dropdown.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $capability_flags Tool capability flags.
+		 * @param string $tool_slug        Tool identifier.
+		 */
+		$capability_flags = apply_filters( 'wp_mcp_ai_tool_capability_flags', $capability_flags, $tool_slug );
+
 		// Determine if tool requires specific model capabilities.
 		$requires_vision     = in_array( 'requires-vision-model', $capability_flags, true );
 		$requires_multimodal = in_array( 'requires-multimodal-model', $capability_flags, true );
