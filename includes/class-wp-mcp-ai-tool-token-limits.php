@@ -468,9 +468,16 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		// Get tool capability flags if tool_slug is provided.
 		$capability_flags = array();
+		$model_requirements = array();
 		if ( ! empty( $tool_slug ) && class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$registry         = WP_MCP_AI_Tool_Registry::get_instance();
+			$tool             = $registry->get_tool( $tool_slug );
 			$capability_flags = $registry->get_tool_capability_flags( $tool_slug );
+			
+			// Get model requirements if tool implements the interface.
+			if ( $tool && method_exists( $tool, 'get_model_requirements' ) ) {
+				$model_requirements = $tool->get_model_requirements();
+			}
 		}
 
 		/**
@@ -486,9 +493,22 @@ class WP_MCP_AI_Tool_Token_Limits {
 		 */
 		$capability_flags = apply_filters( 'wp_mcp_ai_tool_capability_flags', $capability_flags, $tool_slug );
 
+		/**
+		 * Filter the model requirements for a tool.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array  $model_requirements Model capability requirements.
+		 * @param string $tool_slug          Tool identifier.
+		 */
+		$model_requirements = apply_filters( 'wp_mcp_ai_tool_model_requirements', $model_requirements, $tool_slug );
+
 		// Determine if tool requires specific model capabilities.
-		$requires_vision     = in_array( 'requires-vision-model', $capability_flags, true );
-		$requires_multimodal = in_array( 'requires-multimodal-model', $capability_flags, true );
+		// Legacy support: Check old capability flags first.
+		$requires_vision     = in_array( 'requires-vision-model', $capability_flags, true ) || in_array( 'vision', $model_requirements, true );
+		$requires_multimodal = in_array( 'requires-multimodal-model', $capability_flags, true ) || in_array( 'multimodal', $model_requirements, true );
+		$requires_image_gen  = in_array( 'requires-image-generation-model', $capability_flags, true ) || in_array( 'image-generation', $model_requirements, true ) || in_array( 'image-editing', $model_requirements, true );
+
 
 		// OpenAI models.
 		if ( ! empty( $settings['openai_api_key'] ) ) {
@@ -575,8 +595,10 @@ class WP_MCP_AI_Tool_Token_Limits {
 			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Recommended)';
 			$gemini_models['gemini-2.5-flash-lite']  = 'Gemini 2.5 Flash Lite';
 			
-			// Note: gemini-2.5-flash-image is image-generation only and not included here.
-			// It's available in image generation tools via their own model lists.
+			// Image generation model - only for image generation/editing tools.
+			if ( $requires_image_gen ) {
+				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image (Nano Banana)';
+			}
 			
 			// Gemini 2.0 series.
 			$gemini_models['gemini-2.0-flash']       = 'Gemini 2.0 Flash';
