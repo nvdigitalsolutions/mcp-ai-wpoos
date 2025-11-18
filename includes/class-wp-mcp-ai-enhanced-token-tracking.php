@@ -432,7 +432,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 					'gemini-1.5-flash',
 					'gemini-2.0-flash',
 					'gemini-pro',
-					'gemini-2.5-flash-image',
+					'gemini-2.5-flash',
 				),
 			),
 		);
