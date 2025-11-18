@@ -675,11 +675,53 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		// LM Studio models (if configured).
 		if ( ! empty( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_model'] ) ) {
+			$lm_studio_models = array(
+				$settings['lm_studio_model'] => $settings['lm_studio_model'],
+			);
+
+			// Add common LM Studio models (popular models from HuggingFace/LM Studio).
+			$common_lm_studio_models = array(
+				// Qwen models (function calling, coding, vision).
+				'qwen/qwen3-coder-30b'        => 'Qwen 3 Coder 30B',
+				'qwen/qwen3-vl-30b'           => 'Qwen 3 Vision-Language 30B',
+				'qwen/qwen2.5-coder-32b'      => 'Qwen 2.5 Coder 32B',
+				'qwen/qwen2.5-32b'            => 'Qwen 2.5 32B',
+				'qwen/qwen2.5-14b'            => 'Qwen 2.5 14B',
+				'qwen/qwen2.5-7b'             => 'Qwen 2.5 7B',
+				// Google Gemma models.
+				'google/gemma-3-12b:2'        => 'Gemma 3 12B (v2)',
+				'google/gemma-2-27b-it'       => 'Gemma 2 27B Instruct',
+				'google/gemma-2-9b-it'        => 'Gemma 2 9B Instruct',
+				'google/gemma-2-2b-it'        => 'Gemma 2 2B Instruct',
+				// Llama models.
+				'meta-llama/llama-3.3-70b'    => 'Llama 3.3 70B',
+				'meta-llama/llama-3.2-3b'     => 'Llama 3.2 3B',
+				'meta-llama/llama-3.2-1b'     => 'Llama 3.2 1B',
+				'meta-llama/llama-3.1-8b'     => 'Llama 3.1 8B',
+				// Mistral models.
+				'mistralai/mistral-7b-v0.3'   => 'Mistral 7B v0.3',
+				'mistralai/mixtral-8x7b'      => 'Mixtral 8x7B',
+				'mistralai/mixtral-8x22b'     => 'Mixtral 8x22B',
+				// DeepSeek models.
+				'deepseek-ai/deepseek-coder-33b' => 'DeepSeek Coder 33B',
+				'deepseek-ai/deepseek-v3'     => 'DeepSeek V3',
+				// Microsoft Phi models.
+				'microsoft/phi-4'             => 'Phi-4',
+				'microsoft/phi-3.5-mini'      => 'Phi-3.5 Mini',
+			);
+
+			// Add common models that match vision/multimodal requirements.
+			if ( ! $requires_vision && ! $requires_multimodal ) {
+				foreach ( $common_lm_studio_models as $model_id => $model_name ) {
+					if ( $model_id !== $settings['lm_studio_model'] ) {
+						$lm_studio_models[ $model_id ] = $model_name;
+					}
+				}
+			}
+
 			$models['lm_studio_group'] = array(
 				'label'   => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
-				'options' => array(
-					$settings['lm_studio_model'] => $settings['lm_studio_model'],
-				),
+				'options' => $lm_studio_models,
 			);
 		}
 
