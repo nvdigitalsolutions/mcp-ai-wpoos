@@ -705,9 +705,19 @@ Complete these after installation to unlock every integration point:
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → WP oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 
-## 🧠 Language Model Providers (OpenAI, Gemini & Ollama)
+## 🧠 Language Model Providers (OpenAI, Gemini, Ollama & LM Studio)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, or a local Ollama instance while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, or LM Studio while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → WP oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+
+### LM Studio Support
+
+**LM Studio with Function Calling** - Full support for OpenAI-compatible function calling with local LM Studio instances:
+- OpenAI-compatible message structure preserved for tool calls
+- Tools/functions can be invoked by LM Studio models (e.g., qwen/qwen3-coder-30b)
+- Streaming automatically disabled when tools are present for reliable execution
+- Full backward compatibility with non-tool scenarios
+- Connect via JSON-RPC endpoint (recommended) or SSE streaming
+- See [LM Studio setup guide](#lm-studio-setup) for configuration details
 
 ### Provider Priority List & Automatic Fallback
 
