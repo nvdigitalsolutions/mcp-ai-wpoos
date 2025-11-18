@@ -2433,15 +2433,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration            = 0;
 			$tool_result_messages = array();
 
-			$transcript_context['request_started_at'] = microtime( true );
-
-			// Use streaming method if available on router, otherwise fall back to non-streaming.
-			if ( method_exists( $this->client, 'stream_chat_completion' ) ) {
-				$response = $this->client->stream_chat_completion( $messages, $options );
-			} else {
-				$response = $this->client->create_chat_completion( $messages, $options );
-			}
-
+			$transcript_context['request_started_at']    = microtime( true );
+			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {
@@ -2636,12 +2629,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					)
 				);
 
-				// Use streaming method if available.
-				if ( method_exists( $this->client, 'stream_chat_completion' ) ) {
-					$response = $this->client->stream_chat_completion( $messages, $options );
-				} else {
-					$response = $this->client->create_chat_completion( $messages, $options );
-				}
+				// Call LLM again with tool results.
+				$response = $this->client->create_chat_completion( $messages, $options );
 
 				if ( ! is_wp_error( $response ) ) {
 					$response = $this->maybe_convert_failed_chat_response( $response );
