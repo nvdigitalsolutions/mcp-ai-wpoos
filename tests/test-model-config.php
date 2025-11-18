@@ -46,6 +46,8 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-4o', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
+		$this->assertArrayHasKey( 'llama-3-8b-instruct', $configs );
+		$this->assertArrayHasKey( 'mistral-7b-instruct', $configs );
 	}
 
 	/**
@@ -254,6 +256,53 @@ class Test_Model_Config extends WP_UnitTestCase {
 
 		// Gemini should not be present (no API key).
 		$this->assertArrayNotHasKey( 'gemini', $providers );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
+
+	/**
+	 * Test LM Studio models have correct configuration.
+	 */
+	public function test_lm_studio_models_configuration() {
+		$lm_studio_models = array(
+			'llama-3-8b-instruct',
+			'llama-3-70b-instruct',
+			'mistral-7b-instruct',
+			'qwen-2.5-7b-instruct',
+			'phi-3-mini',
+			'deepseek-coder-6.7b',
+		);
+
+		foreach ( $lm_studio_models as $model_id ) {
+			$config = WP_MCP_AI_Model_Config::get_model_config( $model_id );
+
+			$this->assertIsArray( $config, "Model $model_id should have a configuration" );
+			$this->assertEquals( 'lm_studio', $config['provider'], "Model $model_id should have lm_studio provider" );
+			$this->assertEquals( 0.0, $config['cost_per_1k'], "Model $model_id should have zero cost (local)" );
+			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
+			$this->assertGreaterThan( 0, $config['context_window'], "Model $model_id should have context window" );
+			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
+			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
+		}
+	}
+
+	/**
+	 * Test LM Studio provider availability.
+	 */
+	public function test_lm_studio_provider_availability() {
+		// Set up LM Studio endpoint.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+			)
+		);
+
+		$providers = WP_MCP_AI_Model_Config::get_available_providers();
+
+		$this->assertArrayHasKey( 'lm_studio', $providers );
+		$this->assertEquals( 'LM Studio (Local)', $providers['lm_studio'] );
 
 		// Clean up.
 		delete_option( 'wp_mcp_ai_settings' );
