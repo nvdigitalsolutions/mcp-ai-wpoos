@@ -444,17 +444,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'    => $model,
 				'messages' => $formatted_messages,
-				'stream'   => true, // Enable streaming for LLM responses.
+				'stream'   => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
 			if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
 				$payload['temperature'] = (float) $options['temperature'];
-			}
-
-			// Add tools if specified (OpenAI-compatible tool calling).
-			if ( ! empty( $options['tools'] ) ) {
-				$payload['tools'] = $this->normalise_tools_for_payload( $options['tools'] );
 			}
 
 			// Apply resource-aware max_tokens if not explicitly set.
@@ -543,75 +538,6 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 		}
 
 		/**
-		 * Normalise tool definitions to satisfy the OpenAI-compatible payload schema.
-		 *
-		 * LM Studio supports OpenAI-compatible tool calling format, so we use
-		 * the same normalization logic as the OpenAI client.
-		 *
-		 * @param array $tools Tool definitions sourced from the REST layer.
-		 * @return array
-		 */
-		protected function normalise_tools_for_payload( $tools ) {
-			if ( $tools instanceof \Traversable ) {
-				$tools = iterator_to_array( $tools );
-			}
-
-			if ( is_object( $tools ) ) {
-				$tools = (array) $tools;
-			}
-
-			if ( ! is_array( $tools ) ) {
-				return array();
-			}
-
-			$normalised = array();
-
-			foreach ( $tools as $tool ) {
-				if ( $tool instanceof \Traversable ) {
-					$tool = iterator_to_array( $tool );
-				}
-
-				if ( is_object( $tool ) ) {
-					$tool = (array) $tool;
-				}
-
-				if ( ! is_array( $tool ) || empty( $tool ) ) {
-					continue;
-				}
-
-				$type = isset( $tool['type'] ) ? sanitize_key( $tool['type'] ) : '';
-
-				if ( 'function' === $type ) {
-					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) ) {
-						if ( isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
-							$tool['name'] = (string) $tool['function']['name'];
-						}
-					}
-				}
-
-				if ( ! isset( $tool['name'] ) || '' === $tool['name'] ) {
-					if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['name'] ) && '' !== $tool['function']['name'] ) {
-						$tool['name'] = (string) $tool['function']['name'];
-					} elseif ( isset( $tool['slug'] ) && '' !== $tool['slug'] ) {
-						$tool['name'] = (string) $tool['slug'];
-					} elseif ( isset( $tool['id'] ) && '' !== $tool['id'] ) {
-						$tool['name'] = (string) $tool['id'];
-					}
-				}
-
-				if ( ! isset( $tool['name'] ) || '' === trim( (string) $tool['name'] ) ) {
-					continue;
-				}
-
-				$tool['name'] = (string) $tool['name'];
-
-				$normalised[] = $tool;
-			}
-
-			return array_values( $normalised );
-		}
-
-		/**
 		 * Create a text completion request against LM Studio.
 		 * This uses the legacy completions endpoint which is useful for
 		 * simple text completion tasks without the chat format overhead.
@@ -667,7 +593,7 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			$payload = array(
 				'model'  => $model,
 				'prompt' => wp_kses_post( (string) $prompt ),
-				'stream' => true, // Enable streaming for LLM responses.
+				'stream' => false, // Explicitly disable streaming to prevent chunked responses.
 			);
 
 			// Add temperature if specified.
