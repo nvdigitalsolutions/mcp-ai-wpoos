@@ -492,6 +492,15 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					continue;
 				}
 
+				// When tools are NOT provided, convert tool messages to user messages for backward compatibility.
+				// This handles cases where conversation history contains tool responses but the current
+				// request doesn't include the tools option (e.g., replaying saved conversations).
+				if ( ! $has_tools && 'tool' === $role ) {
+					$tool_name = isset( $message['name'] ) ? sanitize_text_field( $message['name'] ) : 'tool';
+					$content   = sprintf( '[Tool %s]: %s', $tool_name, $content );
+					$role      = 'user';
+				}
+
 				$formatted_messages[] = array(
 					'role'    => $role,
 					'content' => $content,

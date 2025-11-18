@@ -1245,5 +1245,113 @@ class WP_MCP_AI_LM_Studio_Client_Tests extends WP_UnitTestCase {
 
 		remove_all_filters( 'pre_http_request' );
 	}
+
+	/**
+	 * Test that tool messages are converted to user messages when tools are NOT provided.
+	 * This ensures backward compatibility when replaying conversations with tool history
+	 * but without providing the tools option.
+	 */
+	public function test_tool_messages_converted_to_user_without_tools() {
+		update_option(
+			WP_MCP_AI_Admin_Settings::OPTION_NAME,
+			array(
+				'lm_studio_endpoint_url' => 'http://localhost:1234',
+				'lm_studio_model'        => 'qwen/qwen3-coder-30b',
+			)
+		);
+
+		$captured_args = null;
+
+		// Intercept wp_remote_post to capture request args.
+		add_filter(
+			'pre_http_request',
+			function ( $preempt, $args, $url ) use ( &$captured_args ) {
+				$captured_args = $args;
+				return array(
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'body'     => wp_json_encode(
+						array(
+							'id'      => 'test-id',
+							'choices' => array(
+								array(
+									'message' => array(
+										'role'    => 'assistant',
+										'content' => 'The weather is sunny',
+									),
+								),
+							),
+						)
+					),
+				);
+			},
+			10,
+			3
+		);
+
+		// Conversation history with tool messages but NO tools option provided.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'What is the weather?',
+			),
+			array(
+				'role'       => 'assistant',
+				'content'    => '',
+				'tool_calls' => array(
+					array(
+						'id'       => 'call_123',
+						'type'     => 'function',
+						'function' => array(
+							'name'      => 'get_weather',
+							'arguments' => '{"location":"San Francisco"}',
+						),
+					),
+				),
+			),
+			array(
+				'role'         => 'tool',
+				'content'      => 'Sunny, 72F',
+				'tool_call_id' => 'call_123',
+				'name'         => 'get_weather',
+			),
+			array(
+				'role'    => 'user',
+				'content' => 'Thanks!',
+			),
+		);
+
+		// Note: NO tools option provided - this simulates replaying saved conversation.
+		$this->client->create_chat_completion( $messages, array() );
+
+		// Verify the payload converts tool message to user message.
+		$this->assertNotNull( $captured_args, 'Request args should be captured' );
+		$this->assertArrayHasKey( 'body', $captured_args );
+		$payload = json_decode( $captured_args['body'], true );
+		$this->assertIsArray( $payload, 'Payload should be valid JSON' );
+		$this->assertArrayHasKey( 'messages', $payload );
+
+		// The tool message should be converted to user message.
+		$tool_message_found = false;
+		foreach ( $payload['messages'] as $msg ) {
+			if ( isset( $msg['content'] ) && false !== strpos( $msg['content'], '[Tool get_weather]' ) ) {
+				$this->assertEquals( 'user', $msg['role'], 'Tool message should be converted to user role' );
+				$this->assertStringContainsString( 'Sunny, 72F', $msg['content'], 'Tool content should be preserved' );
+				$this->assertArrayNotHasKey( 'tool_call_id', $msg, 'Should not have tool_call_id when converted to user' );
+				$tool_message_found = true;
+				break;
+			}
+		}
+
+		$this->assertTrue( $tool_message_found, 'Tool message should be found and converted to user message' );
+
+		// Verify no tools in payload.
+		$this->assertArrayNotHasKey( 'tools', $payload, 'Payload should not contain tools when not provided' );
+
+		remove_all_filters( 'pre_http_request' );
+	}
 }
+
 
