@@ -52,7 +52,7 @@ class WP_MCP_AI_Gemini_Image_Tool_Response_Display_Test extends WP_UnitTestCase 
 		$this->assertArrayHasKey( 'data_url', $tool_result['content'], 'Content should include data URL' );
 
 		// Test that sanitize_for_display preserves the content field.
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 		$sanitized = $validator->sanitize_tool_result_for_display( $tool_result, 'generate_gemini_image' );
 
 		// Display sanitization should preserve ALL fields including content.

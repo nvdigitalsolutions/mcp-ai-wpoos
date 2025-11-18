@@ -21,7 +21,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 	 * Test that Gemini image tool result preserves content field for streaming display.
 	 */
 	public function test_gemini_image_result_preserves_content_for_streaming() {
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 
 		// Simulate a Gemini image generation tool result.
 		$tool_result = array(
@@ -66,7 +66,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 	 * Test that OpenAI image tool result preserves content field for streaming display.
 	 */
 	public function test_openai_image_result_preserves_content_for_streaming() {
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 
 		// Simulate an OpenAI image generation tool result.
 		$tool_result = array(
@@ -108,7 +108,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 	 * Test that text-only tool results work correctly in streaming.
 	 */
 	public function test_text_only_tool_result_for_streaming() {
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 
 		// Simulate a text-only tool result (no attachments).
 		$tool_result = array(
@@ -142,7 +142,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 			),
 		);
 
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 		$sanitized = $validator->sanitize_tool_result_for_display( $tool_result, 'generate_gemini_image' );
 
 		// Build the SSE event payload structure.
@@ -166,7 +166,7 @@ class WP_MCP_AI_Streaming_Tool_Result_Attachments_Test extends WP_UnitTestCase {
 	 */
 	public function test_llm_vs_display_sanitization_difference() {
 		$tool = new WP_MCP_AI_Tool_Generate_Gemini_Image();
-		$validator = new WP_MCP_AI_REST_Validator( null );
+		$validator = new WP_MCP_AI_REST_Validator();
 
 		$tool_result = array(
 			'attachment_id' => 999,
