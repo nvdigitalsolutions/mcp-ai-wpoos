@@ -637,13 +637,14 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 
 ## 📚 Documentation
 
-WP oOS includes comprehensive documentation covering all aspects of the plugin:
+WP oOS includes comprehensive documentation covering all aspects of the plugin. **Documentation was reorganized in November 2025** - 95+ historical documents moved to `docs/archive/` for better navigation.
 
 ### Quick Links
 - **[Quick Reference Guide](docs/QUICK_REFERENCE.md)** - Fast access to common tasks and commands
-- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all 32 documentation files
+- **[Documentation Index](docs/DOCUMENTATION_INDEX.md)** - Complete map of all documentation files
 - **[Tool Reference](docs/tool-reference.md)** - Detailed guide to all 70+ built-in tools
 - **[REST API Documentation](docs/rest-api.md)** - Complete API reference with examples
+- **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Comprehensive test results and code quality analysis
 
 ### For New Users
 - [Setup Checklist](docs/mcp-ai-plugin-setup-checklist.md) - Step-by-step installation and configuration
@@ -651,7 +652,8 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Best Practices](docs/BEST_PRACTICES.md) - Recommended usage patterns and optimization tips
 
 ### For Developers
-- [Code Review Report](docs/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
+- **[Testing & Quality Report](docs/TESTING_AND_QUALITY_REPORT.md)** - Test suite results (2,106 tests, 73.4% pass rate), code quality analysis, security audit
+- [Code Review Master](docs/CODE-REVIEW-MASTER.md) - Comprehensive code quality analysis (95/100 score)
 - [Action Items](docs/ACTION_ITEMS.md) - Prioritized development tasks (180+ hours)
 - [Authentication Guide](docs/mcp-server-authentication.md) - Authentication methods and security
 - [MCP JSON-RPC 2.0 Endpoint](docs/mcp-endpoint.md) - Model Context Protocol implementation
@@ -664,12 +666,20 @@ WP oOS includes comprehensive documentation covering all aspects of the plugin:
 - [Federation & Discovery](docs/federation-discovery.md) - Decentralized AI capability network with peer discovery and well-known endpoints
 
 ### Performance & Optimization
-- **[Optimization Recommendations](OPTIMIZATION_RECOMMENDATIONS.md)** - Comprehensive code review with performance, security, and architecture enhancements
 - [Message Bundling](docs/message-bundling-feature.md) - Client-side message optimization
 - [High Token Tool Handling](docs/high-token-tool-handling.md) - Agentic loop token management
 - [Job Notification System](docs/job-notification-system.md) - Real-time async job updates
 - [Chat Performance Optimizations](docs/chat-performance-optimizations.md) - Complete performance guide
 - [Mesh Routing Guide](docs/mesh-routing-guide.md) - Intelligent compute routing across sites and providers
+
+### Historical Documentation
+- **[Archive Directory](docs/archive/)** - 95+ historical documents organized by category:
+  - `implementations/` - Implementation summaries and technical details
+  - `phases/` - Development phase documents
+  - `fixes/` - Bug fix summaries and issue resolutions
+  - `features/` - Feature documentation
+  - `code-reviews/` - Code review reports
+  - `testing/` - Test infrastructure documentation
 
 ---
 
@@ -1131,7 +1141,7 @@ Claude Desktop supports MCP servers through a JSON configuration file. Add your 
 
 See the complete [Claude Desktop setup guide](docs/remote-client-setup.md#claude-desktop-setup) and [example configurations](assets/examples/claude-desktop-config.json) for multi-assistant deployments.
 
-### LM Studio setup
+### LM Studio Setup
 
 **⚠️ Having SSE content-type errors?** Use the JSON-RPC endpoint instead!
 
