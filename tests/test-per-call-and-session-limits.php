@@ -289,4 +289,80 @@ class Test_Per_Call_And_Session_Limits extends WP_UnitTestCase {
 		$data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $this->test_user_id, $session_id );
 		$this->assertNull( $data );
 	}
+
+	/**
+	 * Test that session limit enforcement uses safety buffer to prevent overage.
+	 *
+	 * This test validates the fix for the issue where sessions could exceed
+	 * their limit on the final call because pre-execution checks didn't account
+	 * for tokens from the current call.
+	 */
+	public function test_session_limit_safety_buffer_prevents_overage() {
+		$session_id = 'test-session-' . time();
+		$tool_slug  = 'test_tool';
+		$context    = array(
+			'user_id'    => $this->test_user_id,
+			'session_id' => $session_id,
+		);
+
+		// Enable per-session limits with low threshold (10K tokens).
+		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		update_option( 'wp_mcp_ai_per_session_token_limit', 10000 );
+
+		// First call: Use 6K tokens (60% of limit).
+		$result1 = str_repeat( 'a', 24000 ); // ~6000 tokens.
+		WP_MCP_AI_Tool_Token_Limits::record_tool_usage( $tool_slug, array(), $context, $result1 );
+
+		// Verify session usage is ~6K.
+		$usage = WP_MCP_AI_Tool_Token_Limits::get_session_usage( $this->test_user_id, $session_id );
+		$this->assertGreaterThan( 5500, $usage );
+		$this->assertLessThan( 6500, $usage );
+
+		// Second call: Try to use another 6K tokens.
+		// With 20% safety buffer, effective limit is 8K.
+		// Current usage (6K) + safety buffer check should trigger at 8K.
+		// Since 6K < 8K, this call should still be allowed.
+		$result2 = str_repeat( 'a', 24000 ); // ~6000 tokens.
+		WP_MCP_AI_Tool_Token_Limits::record_tool_usage( $tool_slug . '_2', array(), $context, $result2 );
+
+		// After second call, total should be ~12K (exceeded 10K limit).
+		$usage = WP_MCP_AI_Tool_Token_Limits::get_session_usage( $this->test_user_id, $session_id );
+		$this->assertGreaterThan( 11000, $usage );
+
+		// Third call should now be blocked because session is marked over-budget.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessageMatches( '/Session token limit exceeded/' );
+
+		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug . '_3', array(), $context );
+	}
+
+	/**
+	 * Test that session marked as over-budget blocks all subsequent calls.
+	 */
+	public function test_over_budget_session_blocks_future_calls() {
+		$session_id = 'test-session-' . time();
+		$tool_slug  = 'test_tool';
+		$context    = array(
+			'user_id'    => $this->test_user_id,
+			'session_id' => $session_id,
+		);
+
+		// Enable per-session limits with very low threshold.
+		update_option( 'wp_mcp_ai_enable_per_session_limits', true );
+		update_option( 'wp_mcp_ai_per_session_token_limit', 5000 );
+
+		// First call: Use 8K tokens (exceeds 5K limit).
+		$result = str_repeat( 'a', 32000 ); // ~8000 tokens.
+		WP_MCP_AI_Tool_Token_Limits::record_tool_usage( $tool_slug, array(), $context, $result );
+
+		// Session should now be marked as over-budget.
+		$session_data = WP_MCP_AI_Tool_Token_Limits::get_session_data( $this->test_user_id, $session_id );
+		$this->assertTrue( $session_data['over_budget'] );
+
+		// Second call should be blocked immediately.
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessageMatches( '/Session token limit exceeded/' );
+
+		WP_MCP_AI_Tool_Token_Limits::check_tool_limit( $tool_slug . '_2', array(), $context );
+	}
 }

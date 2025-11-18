@@ -814,6 +814,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 	 * Check per-session token limit.
 	 *
 	 * Verifies that the current session has not exceeded its token budget.
+	 * Uses a safety buffer approach to account for tokens from the current call.
+	 * Also checks if session was marked as over-budget from a previous call.
 	 * Throws an exception if the limit is exceeded and enforcement is enabled.
 	 *
 	 * @since 1.1.0
@@ -844,19 +846,81 @@ class WP_MCP_AI_Tool_Token_Limits {
 			return;
 		}
 
-		// Get current session usage.
-		$session_usage = self::get_session_usage( $user_id, $session_id );
+		// Check if session was marked as over-budget from a previous call.
+		$session_data = get_transient( "wp_mcp_ai_session_{$user_id}_{$session_id}" );
+		if ( is_array( $session_data ) && ! empty( $session_data['over_budget'] ) ) {
+			$session_usage = isset( $session_data['total_tokens'] ) ? (int) $session_data['total_tokens'] : 0;
 
-		if ( $session_usage >= $limit ) {
 			WP_MCP_AI_Logger::log_event(
-				'per_session_token_limit_exceeded',
-				'Session exceeded per-session token limit.',
+				'per_session_already_over_budget',
+				'Session was previously marked as over-budget, blocking call.',
 				array(
 					'user_id'    => $user_id,
 					'session_id' => $session_id,
 					'tool_slug'  => $tool_slug,
 					'usage'      => $session_usage,
 					'limit'      => $limit,
+				)
+			);
+
+			/**
+			 * Filter whether to enforce per-session token limits.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param bool   $enforce    Whether to enforce limits. Default true.
+			 * @param int    $user_id    User ID.
+			 * @param string $session_id Session identifier.
+			 * @param int    $usage      Current session usage.
+			 * @param int    $limit      Session token limit.
+			 */
+			$enforce = apply_filters( 'wp_mcp_ai_enforce_per_session_limits', true, $user_id, $session_id, $session_usage, $limit );
+
+			if ( $enforce ) {
+				throw new Exception(
+					sprintf(
+						/* translators: 1: Session usage, 2: Session limit */
+						__( 'Session token limit exceeded. This session has used %1$d tokens of the %2$d token limit. Please start a new session to continue.', 'wp-mcp-ai' ),
+						$session_usage,
+						$limit
+					)
+				);
+			}
+		}
+
+		// Get current session usage.
+		$session_usage = self::get_session_usage( $user_id, $session_id );
+
+		// Apply safety buffer (20% of limit) to account for tokens from current call.
+		// This prevents sessions from exceeding their limit by allowing one more call.
+		$safety_buffer = (int) ( $limit * 0.20 );
+		$effective_limit = $limit - $safety_buffer;
+
+		/**
+		 * Filter the safety buffer percentage for session limits.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param float  $buffer_percentage Safety buffer as percentage (0.20 = 20%).
+		 * @param int    $limit             Session token limit.
+		 * @param int    $session_usage     Current session usage.
+		 */
+		$buffer_percentage = apply_filters( 'wp_mcp_ai_session_limit_safety_buffer', 0.20, $limit, $session_usage );
+		$safety_buffer = (int) ( $limit * $buffer_percentage );
+		$effective_limit = max( $limit - $safety_buffer, 0 );
+
+		if ( $session_usage >= $effective_limit ) {
+			WP_MCP_AI_Logger::log_event(
+				'per_session_token_limit_exceeded',
+				'Session exceeded per-session token limit (with safety buffer).',
+				array(
+					'user_id'         => $user_id,
+					'session_id'      => $session_id,
+					'tool_slug'       => $tool_slug,
+					'usage'           => $session_usage,
+					'limit'           => $limit,
+					'safety_buffer'   => $safety_buffer,
+					'effective_limit' => $effective_limit,
 				)
 			);
 
@@ -901,6 +965,9 @@ class WP_MCP_AI_Tool_Token_Limits {
 	/**
 	 * Record token usage for a session.
 	 *
+	 * Also checks if the session exceeded its limit after recording,
+	 * and marks the session as over-budget to prevent further calls.
+	 *
 	 * @since 1.1.0
 	 *
 	 * @param int    $user_id   User ID.
@@ -928,6 +995,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 				'total_tokens' => 0,
 				'tool_calls'   => array(),
 				'started_at'   => time(),
+				'over_budget'  => false,
 			);
 		}
 
@@ -945,6 +1013,26 @@ class WP_MCP_AI_Tool_Token_Limits {
 
 		$session_data['tool_calls'][ $tool_slug ]['count']++;
 		$session_data['tool_calls'][ $tool_slug ]['tokens'] += $tokens;
+
+		// Check if session exceeded limit after this call.
+		$limit = absint( WP_MCP_AI_Settings_Registry::get_setting( 'per_session_token_limit', 50000 ) );
+		if ( $limit > 0 && $session_data['total_tokens'] > $limit ) {
+			// Mark session as over budget.
+			$session_data['over_budget'] = true;
+
+			WP_MCP_AI_Logger::log_event(
+				'session_budget_exceeded_post_call',
+				'Session exceeded budget after call execution.',
+				array(
+					'user_id'      => $user_id,
+					'session_id'   => $session_id,
+					'tool_slug'    => $tool_slug,
+					'total_tokens' => $session_data['total_tokens'],
+					'limit'        => $limit,
+					'overage'      => $session_data['total_tokens'] - $limit,
+				)
+			);
+		}
 
 		// Store session data with 24-hour expiration.
 		set_transient( "wp_mcp_ai_session_{$user_id}_{$session_id}", $session_data, DAY_IN_SECONDS );
