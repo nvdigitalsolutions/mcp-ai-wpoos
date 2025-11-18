@@ -338,9 +338,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				// Orchestration Layer settings - defaults match "Balanced" preset.
 				'orchestration_preset'                 => 'custom',
 				'enable_budget_management'             => true,
-				'enable_predictive_optimization'       => false,
-				'enable_capability_gating'             => false,
-				'enable_cron_orchestration'            => false,
+				'enable_predictive_optimization'       => true,
+				'enable_capability_gating'             => true,
+				'enable_cron_orchestration'            => true,
 				'cron_job_retention_period'            => '24',
 				'memory_warning_threshold'             => 70,
 				'memory_critical_threshold'            => 85,
