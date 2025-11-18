@@ -2126,7 +2126,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Create a full tool message with structured result for frontend.
 					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => $tool_result,
+						'content' => is_string( $tool_result ) ? $tool_result : wp_json_encode( $tool_result ),
 					);
 
 					if ( '' !== $tool_call_id ) {
@@ -2516,7 +2516,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Create full tool message for frontend.
 					$full_tool_message = array(
 						'role'    => 'tool',
-						'content' => $tool_result,
+						'content' => is_string( $tool_result ) ? $tool_result : wp_json_encode( $tool_result ),
 					);
 
 					if ( '' !== $tool_call_id ) {
