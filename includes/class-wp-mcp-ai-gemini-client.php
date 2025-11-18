@@ -1890,9 +1890,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				return new WP_Error( 'wp_mcp_ai_image_empty', __( 'Gemini returned an empty image response.', 'wp-mcp-ai' ) );
 			}
 
-			// Track if we found any text-only responses (model doesn't support image generation).
-			$text_responses = array();
-
 			foreach ( $response['candidates'] as $candidate ) {
 				$revised_prompt = $this->extract_revised_prompt_from_candidate( $candidate, $response );
 
@@ -1901,11 +1898,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				foreach ( $candidate['content']['parts'] as $part ) {
-					// Collect text responses for better error messages.
-					if ( isset( $part['text'] ) && is_string( $part['text'] ) && '' !== trim( $part['text'] ) ) {
-						$text_responses[] = trim( $part['text'] );
-					}
-
 					if ( isset( $part['inlineData'] ) && is_array( $part['inlineData'] ) ) {
 						$inline    = $part['inlineData'];
 						$data      = isset( $inline['data'] ) ? $inline['data'] : '';
@@ -1965,39 +1957,6 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						);
 					}
 				}
-			}
-
-			// If we got text responses but no image, provide a more helpful error.
-			if ( ! empty( $text_responses ) ) {
-				$text_message = implode( ' ', $text_responses );
-				WP_MCP_AI_Logger::log_error(
-					'Gemini returned text instead of image.',
-					array(
-						'response'     => $response,
-						'text_message' => $text_message,
-					)
-				);
-
-				// Check if the message indicates the model doesn't support image generation.
-				if ( false !== stripos( $text_message, 'text output' ) || false !== stripos( $text_message, 'text only' ) || false !== stripos( $text_message, 'cannot generate' ) ) {
-					return new WP_Error(
-						'wp_mcp_ai_model_unsupported',
-						sprintf(
-							/* translators: %s: model's text response */
-							__( 'The model does not support image generation. Response: %s', 'wp-mcp-ai' ),
-							$text_message
-						)
-					);
-				}
-
-				return new WP_Error(
-					'wp_mcp_ai_unexpected_response',
-					sprintf(
-						/* translators: %s: model's text response */
-						__( 'Gemini returned text instead of an image. Response: %s', 'wp-mcp-ai' ),
-						$text_message
-					)
-				);
 			}
 
 			WP_MCP_AI_Logger::log_error( 'Gemini image response missing supported payload keys.', array( 'response' => $response ) );
