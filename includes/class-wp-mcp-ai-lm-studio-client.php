@@ -495,10 +495,10 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			$timeout = max( 5, $timeout );
 
-		// Ensure PHP execution time is sufficient for the timeout.
-		$resource_mgr->ensure_execution_time( $timeout + 10 );
+			// Ensure PHP execution time is sufficient for the timeout.
+			$resource_mgr->ensure_execution_time( $timeout + 10 );
 
-		return $timeout;
+			return $timeout;
 		}
 
 		/**
@@ -685,5 +685,425 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 
 			return $decoded;
 		}
+
+	/**
+	 * Perform a streaming chat completion request against LM Studio.
+	 *
+	 * This method enables Server-Sent Events (SSE) streaming for real-time token delivery.
+	 * Similar to the Gemini client implementation, this buffers the complete SSE response
+	 * from wp_remote_post() and then parses it chunk-by-chunk.
+	 *
+	 * @param array    $messages Message payload to send to LM Studio.
+	 * @param array    $options  Additional options (model, temperature, tools, timeout).
+	 * @param callable $callback Callback function to process each chunk of streaming data.
+	 *                           Receives ($content, $type) where type is 'text' or 'tool_call'.
+	 * @return array|WP_Error Final accumulated response or WP_Error on failure.
+	 */
+	public function stream_chat_completion( array $messages, array $options = array(), $callback = null ) {
+		$endpoint_url = $this->get_endpoint_url();
+
+		if ( empty( $endpoint_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_lm_studio_endpoint',
+				__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$model = $this->resolve_model( $options );
+
+		if ( empty( $model ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_lm_studio_model',
+				__( 'No LM Studio model has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$payload = $this->build_payload( $messages, $options, $model );
+
+		if ( is_wp_error( $payload ) ) {
+			return $payload;
+		}
+
+		// Enable streaming for SSE response.
+		$payload['stream'] = true;
+
+		$url = untrailingslashit( $endpoint_url ) . '/v1/chat/completions';
+
+		$request_args = array(
+			'headers'  => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'     => wp_json_encode( $payload ),
+			'timeout'  => max( 120, $this->resolve_timeout( $options ) ),
+			'stream'   => true,
+			'blocking' => true,
+		);
+
+		WP_MCP_AI_Logger::log_event( 'lm_studio_stream_request', 'Sending streaming request to LM Studio.', array( 'model' => $model ) );
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'LM Studio streaming request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The LM Studio API streaming request failed to complete.', 'wp-mcp-ai' ),
+				__( 'LM Studio', 'wp-mcp-ai' )
+			);
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( $code < 200 || $code >= 300 ) {
+			$decoded = json_decode( $body, true );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				$decoded = null;
+			}
+
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+
+			WP_MCP_AI_Logger::log_error(
+				'LM Studio returned an error response for streaming.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		// Process SSE stream response (buffered by wp_remote_post).
+		$accumulated = array(
+			'content'    => '',
+			'tool_calls' => array(),
+			'role'       => 'assistant',
+		);
+
+		$lines = explode( "\n", $body );
+
+		foreach ( $lines as $line ) {
+			$line = trim( $line );
+
+			if ( '' === $line || 'data: [DONE]' === $line ) {
+				continue;
+			}
+
+			if ( 0 === strpos( $line, 'data: ' ) ) {
+				$json_str = substr( $line, 6 );
+				$chunk    = json_decode( $json_str, true );
+
+				if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+					continue;
+				}
+
+				// Process chunk (OpenAI-compatible format).
+				if ( isset( $chunk['choices'] ) && is_array( $chunk['choices'] ) ) {
+					foreach ( $chunk['choices'] as $choice ) {
+						if ( isset( $choice['delta']['content'] ) && '' !== $choice['delta']['content'] ) {
+							$accumulated['content'] .= $choice['delta']['content'];
+
+							if ( is_callable( $callback ) ) {
+								call_user_func( $callback, $choice['delta']['content'], 'text' );
+							}
+						}
+
+						if ( isset( $choice['delta']['role'] ) ) {
+							$accumulated['role'] = $choice['delta']['role'];
+						}
+
+						// Handle tool calls in streaming.
+						if ( isset( $choice['delta']['tool_calls'] ) && is_array( $choice['delta']['tool_calls'] ) ) {
+							foreach ( $choice['delta']['tool_calls'] as $tool_call_delta ) {
+								$index = isset( $tool_call_delta['index'] ) ? $tool_call_delta['index'] : 0;
+
+								if ( ! isset( $accumulated['tool_calls'][ $index ] ) ) {
+									$accumulated['tool_calls'][ $index ] = array(
+										'id'       => isset( $tool_call_delta['id'] ) ? $tool_call_delta['id'] : '',
+										'type'     => isset( $tool_call_delta['type'] ) ? $tool_call_delta['type'] : 'function',
+										'function' => array(
+											'name'      => '',
+											'arguments' => '',
+										),
+									);
+								}
+
+								if ( isset( $tool_call_delta['id'] ) && '' !== $tool_call_delta['id'] ) {
+									$accumulated['tool_calls'][ $index ]['id'] = $tool_call_delta['id'];
+								}
+
+								if ( isset( $tool_call_delta['function']['name'] ) ) {
+									$accumulated['tool_calls'][ $index ]['function']['name'] .= $tool_call_delta['function']['name'];
+								}
+
+								if ( isset( $tool_call_delta['function']['arguments'] ) ) {
+									$accumulated['tool_calls'][ $index ]['function']['arguments'] .= $tool_call_delta['function']['arguments'];
+								}
+
+								if ( is_callable( $callback ) ) {
+									call_user_func( $callback, $tool_call_delta, 'tool_call' );
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Build OpenAI-compatible response format.
+		$normalized = array(
+			'id'       => 'chatcmpl-' . uniqid(),
+			'object'   => 'chat.completion',
+			'created'  => time(),
+			'model'    => $model,
+			'provider' => 'lm_studio',
+			'choices'  => array(
+				array(
+					'index'         => 0,
+					'message'       => array(
+						'role'    => $accumulated['role'],
+						'content' => array(
+							array(
+								'type' => 'text',
+								'text' => $accumulated['content'],
+							),
+						),
+					),
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		// Add tool calls to the response if present.
+		if ( ! empty( $accumulated['tool_calls'] ) ) {
+			$normalized['choices'][0]['message']['tool_calls'] = array_values( $accumulated['tool_calls'] );
+		}
+
+		WP_MCP_AI_Logger::log_event( 'lm_studio_stream_response', 'LM Studio streaming request completed.' );
+
+		return $normalized;
 	}
+
+	/**
+	 * Perform a streaming text completion request against LM Studio.
+	 *
+	 * This method enables Server-Sent Events (SSE) streaming for real-time token delivery.
+	 * Similar to the Gemini client implementation, this buffers the complete SSE response
+	 * from wp_remote_post() and then parses it chunk-by-chunk.
+	 *
+	 * @param string   $prompt   The text prompt to complete.
+	 * @param array    $options  Additional options (model, temperature, max_tokens, timeout).
+	 * @param callable $callback Callback function to process each chunk of streaming data.
+	 *                           Receives ($content, $type) where type is 'text'.
+	 * @return array|WP_Error Final accumulated response or WP_Error on failure.
+	 */
+	public function stream_completion( $prompt, array $options = array(), $callback = null ) {
+		$endpoint_url = $this->get_endpoint_url();
+
+		if ( empty( $endpoint_url ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_lm_studio_endpoint',
+				__( 'No LM Studio endpoint URL has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_lm_studio_endpoint' => __( 'Add an LM Studio endpoint URL in the WP oOS settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$model = $this->resolve_model( $options );
+
+		if ( empty( $model ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_lm_studio_model',
+				__( 'No LM Studio model has been configured.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'configure_lm_studio_model' => __( 'Choose an LM Studio model in the WP oOS settings.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		if ( empty( $prompt ) || ! is_string( $prompt ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_prompt',
+				__( 'No prompt was provided for the completion request.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 400,
+					'actions' => array(
+						'review_request_payload' => __( 'Provide a text prompt before calling the API.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		$payload = array(
+			'model'  => $model,
+			'prompt' => wp_kses_post( (string) $prompt ),
+			'stream' => true, // Enable streaming for SSE response.
+		);
+
+		// Add temperature if specified.
+		if ( isset( $options['temperature'] ) && '' !== $options['temperature'] && null !== $options['temperature'] ) {
+			$payload['temperature'] = (float) $options['temperature'];
+		}
+
+		// Apply resource-aware max_tokens if not explicitly set.
+		if ( ! isset( $options['max_tokens'] ) ) {
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$max_tokens   = $resource_mgr->get_max_tokens();
+
+			/**
+			 * Filter the maximum tokens for LM Studio streaming completion requests.
+			 *
+			 * @param int   $max_tokens The maximum tokens to use.
+			 * @param array $options    Request options.
+			 */
+			$max_tokens = apply_filters( 'wp_mcp_ai_lm_studio_stream_completion_max_tokens', $max_tokens, $options );
+
+			if ( $max_tokens > 0 ) {
+				$payload['max_tokens'] = $max_tokens;
+			}
+		} else {
+			$payload['max_tokens'] = absint( $options['max_tokens'] );
+		}
+
+		$url = untrailingslashit( $endpoint_url ) . '/v1/completions';
+
+		$request_args = array(
+			'headers'  => array(
+				'Content-Type' => 'application/json',
+			),
+			'body'     => wp_json_encode( $payload ),
+			'timeout'  => max( 120, $this->resolve_timeout( $options ) ),
+			'stream'   => true,
+			'blocking' => true,
+		);
+
+		WP_MCP_AI_Logger::log_event( 'lm_studio_stream_completion_request', 'Sending streaming completion request to LM Studio.', array( 'model' => $model ) );
+
+		$response = wp_remote_post( $url, $request_args );
+
+		if ( is_wp_error( $response ) ) {
+			WP_MCP_AI_Logger::log_error( 'LM Studio streaming completion request failed.', array( 'error' => $response->get_error_message() ) );
+
+			return WP_MCP_AI_HTTP::prepare_transport_error(
+				$response,
+				'wp_mcp_ai_http_error',
+				__( 'The LM Studio completion API streaming request failed to complete.', 'wp-mcp-ai' ),
+				__( 'LM Studio', 'wp-mcp-ai' )
+			);
+		}
+
+		$code = wp_remote_retrieve_response_code( $response );
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( $code < 200 || $code >= 300 ) {
+			$decoded = json_decode( $body, true );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				$decoded = null;
+			}
+
+			$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from LM Studio.', 'wp-mcp-ai' );
+
+			WP_MCP_AI_Logger::log_error(
+				'LM Studio completion returned an error response for streaming.',
+				array(
+					'code' => $code,
+					'body' => $decoded,
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_api_error',
+				$error_message,
+				array(
+					'status' => $code,
+					'body'   => $decoded,
+				)
+			);
+		}
+
+		// Process SSE stream response (buffered by wp_remote_post).
+		$accumulated_text = '';
+
+		$lines = explode( "\n", $body );
+
+		foreach ( $lines as $line ) {
+			$line = trim( $line );
+
+			if ( '' === $line || 'data: [DONE]' === $line ) {
+				continue;
+			}
+
+			if ( 0 === strpos( $line, 'data: ' ) ) {
+				$json_str = substr( $line, 6 );
+				$chunk    = json_decode( $json_str, true );
+
+				if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $chunk ) ) {
+					continue;
+				}
+
+				// Process chunk (OpenAI-compatible format).
+				if ( isset( $chunk['choices'] ) && is_array( $chunk['choices'] ) ) {
+					foreach ( $chunk['choices'] as $choice ) {
+						if ( isset( $choice['text'] ) && '' !== $choice['text'] ) {
+							$accumulated_text .= $choice['text'];
+
+							if ( is_callable( $callback ) ) {
+								call_user_func( $callback, $choice['text'], 'text' );
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Build OpenAI-compatible response format.
+		$result = array(
+			'id'      => 'cmpl-' . uniqid(),
+			'object'  => 'text_completion',
+			'created' => time(),
+			'model'   => $model,
+			'choices' => array(
+				array(
+					'text'          => $accumulated_text,
+					'index'         => 0,
+					'logprobs'      => null,
+					'finish_reason' => 'stop',
+				),
+			),
+		);
+
+		WP_MCP_AI_Logger::log_event( 'lm_studio_stream_completion_response', 'LM Studio streaming completion request completed.' );
+
+		return $result;
+	}
+}
 }
