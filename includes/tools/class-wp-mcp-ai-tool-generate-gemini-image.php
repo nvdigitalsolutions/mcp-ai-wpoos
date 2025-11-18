@@ -714,7 +714,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 			),
 			'parameter_constraints' => array(
 				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
+				'optional_fields'   => array( 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
 			'rate_limits'           => array(

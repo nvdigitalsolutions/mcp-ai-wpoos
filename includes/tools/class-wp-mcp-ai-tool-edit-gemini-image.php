@@ -701,7 +701,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			'parameter_constraints' => array(
 				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'attachment_id', 'image_url', 'image_data', 'source_mime_type', 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
+				'optional_fields'   => array( 'attachment_id', 'image_url', 'image_data', 'source_mime_type', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
 			'rate_limits'           => array(
