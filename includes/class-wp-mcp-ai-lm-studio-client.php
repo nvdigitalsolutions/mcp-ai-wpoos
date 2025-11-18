@@ -398,6 +398,26 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 				);
 			}
 
+			// Prepare system messages array (will be prepended to messages).
+			$system_messages = array();
+
+			// Add system_prompt if provided (assistant knowledge and instructions).
+			if ( ! empty( $options['system_prompt'] ) ) {
+				$system_messages[] = array(
+					'role'    => 'system',
+					'content' => wp_kses_post( (string) $options['system_prompt'] ),
+				);
+			}
+
+			// Add memory documents if provided (assistant knowledge base).
+			// Memory documents are additional context from uploaded files or vector stores.
+			if ( ! empty( $options['memory_documents'] ) && is_array( $options['memory_documents'] ) ) {
+				$memory_messages = $this->build_memory_messages_from_options( $options );
+				if ( ! empty( $memory_messages ) ) {
+					$system_messages = array_merge( $system_messages, $memory_messages );
+				}
+			}
+
 			// LM Studio uses OpenAI format, so we can pass messages mostly as-is.
 			// When tools are provided, preserve OpenAI-compatible message structure.
 			$has_tools          = ! empty( $options['tools'] );
@@ -505,6 +525,12 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 					'role'    => $role,
 					'content' => $content,
 				);
+			}
+
+			// Prepend system messages to the formatted messages.
+			// This ensures assistant knowledge and instructions are passed to LM Studio.
+			if ( ! empty( $system_messages ) ) {
+				$formatted_messages = array_merge( $system_messages, $formatted_messages );
 			}
 
 			$payload = array(
@@ -755,6 +781,53 @@ if ( ! class_exists( 'WP_MCP_AI_LM_Studio_Client' ) ) {
 			WP_MCP_AI_Logger::log_event( 'lm_studio_completion_response', 'LM Studio completion request completed.' );
 
 			return $decoded;
+		}
+
+		/**
+		 * Build additional system messages from memory documents.
+		 *
+		 * Memory documents provide additional context from assistant knowledge base
+		 * (uploaded files, vector stores, etc.) that should be available to the model.
+		 *
+		 * @param array $options Chat request options containing memory_documents.
+		 * @return array Array of system messages for memory documents.
+		 */
+		protected function build_memory_messages_from_options( array $options ) {
+			if ( empty( $options['memory_documents'] ) || ! is_array( $options['memory_documents'] ) ) {
+				return array();
+			}
+
+			$messages = array();
+
+			foreach ( $options['memory_documents'] as $document ) {
+				if ( empty( $document['chunks'] ) || ! is_array( $document['chunks'] ) ) {
+					continue;
+				}
+
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? sanitize_text_field( $document['title'] ) : __( 'Document', 'wp-mcp-ai' );
+				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
+				$parts      = count( $chunks );
+				$part_index = 0;
+
+				foreach ( $chunks as $chunk ) {
+					++$part_index;
+
+					$label = $title;
+
+					if ( $parts > 1 ) {
+						/* translators: %1$s: document title, %2$d: chunk number. */
+						$label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
+					}
+
+					$messages[] = array(
+						'role'    => 'system',
+						/* translators: %1$s: document title, %2$s: extracted text snippet. */
+						'content' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, wp_kses_post( $chunk ) ),
+					);
+				}
+			}
+
+			return $messages;
 		}
 
 		/**
