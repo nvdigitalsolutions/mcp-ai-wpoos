@@ -3354,6 +3354,46 @@
     }
 
     /**
+     * Extract inline content data from tool result.
+     * Used for tools that return base64-encoded content (e.g., generate_gemini_image).
+     * 
+     * @param {Object} result - Tool result object
+     * @return {Object|null} Object with data and mime_type, or null if no inline content
+     */
+    function extractInlineContentData(result) {
+        if (!result || typeof result !== 'object') {
+            return null;
+        }
+
+        const content = result.content;
+        if (!content || typeof content !== 'object') {
+            return null;
+        }
+
+        let base64Data = '';
+        let mimeType = '';
+
+        // Extract base64 data from various possible formats
+        if (typeof content.data === 'string' && content.data.trim()) {
+            base64Data = content.data.trim();
+        }
+
+        // Extract MIME type
+        if (typeof content.mime_type === 'string' && content.mime_type.trim()) {
+            mimeType = content.mime_type.trim();
+        }
+
+        if (!base64Data) {
+            return null;
+        }
+
+        return {
+            data: base64Data,
+            mime_type: mimeType
+        };
+    }
+
+    /**
      * Truncate preview text to a maximum length with ellipsis.
      * 
      * @param {string} text - Text to truncate
@@ -5671,8 +5711,11 @@
             }
         }
 
-        // If no URL found, try generic extraction for tools that return structured data
-        if (!url) {
+        // Check for inline content with base64 data (e.g., from generate_gemini_image)
+        const inlineContent = extractInlineContentData(result);
+        
+        // If no URL found and no inline content, try generic extraction for tools that return structured data
+        if (!url && !inlineContent) {
             return extractGenericToolResponse(result);
         }
 
@@ -5759,7 +5802,7 @@
             if (qualityValue) {
                 metaParts.push(qualityValue);
             }
-        } else if (toolName === 'generate_gemini_image') {
+        } else if (toolName === 'generate_gemini_image' || toolName === 'edit_gemini_image') {
             if (aspectRatioValue) {
                 metaParts.push(aspectRatioValue);
             }
@@ -5796,12 +5839,25 @@
             label = downloadName;
         }
 
-        attachments.push({
+        // Build attachment entry with URL or inline content
+        const attachmentEntry = {
             url: url,
             label: label || getString('downloadAttachment', 'Download attachment'),
             downloadName: downloadName,
             meta: attachmentMeta,
-        });
+        };
+
+        // If we have inline content data and no URL, create a blob URL from the base64 data
+        // This allows the attachment to be displayed in the chat UI
+        if (inlineContent && !url) {
+            const blobUrl = createObjectUrlFromBase64(inlineContent.data, inlineContent.mime_type);
+            if (blobUrl) {
+                attachmentEntry.url = blobUrl;
+                registerObjectUrl(blobUrl);
+            }
+        }
+
+        attachments.push(attachmentEntry);
 
         if (!attachments.length) {
             return null;
@@ -5817,6 +5873,8 @@
             text = getString('imageToolSuccess', 'Image saved to the Media Library.');
         } else if (toolName === 'generate_gemini_image') {
             text = getString('geminiImageToolSuccess', 'Gemini image saved to the Media Library.');
+        } else if (toolName === 'edit_gemini_image') {
+            text = getString('editGeminiImageToolSuccess', 'Gemini image edited and saved to the Media Library.');
         } else if (toolName === SPEECH_TOOL_NAME) {
             text = getString('speechToolSuccess', 'Speech audio saved to the Media Library.');
         }

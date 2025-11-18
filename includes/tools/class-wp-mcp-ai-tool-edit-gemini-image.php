@@ -219,6 +219,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			'title'             => $storage['title'],
 			'model'             => isset( $image['model'] ) ? $image['model'] : $model,
 			'aspect_ratio'      => isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
+			'format'            => isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ),
 			'edit_instruction'  => $prompt,
 			'source_attachment' => isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null,
 			'provider'          => 'gemini', // Track provider for accurate cost attribution.
@@ -227,6 +228,12 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		// Include usage metadata if available for accurate cost tracking.
 		if ( isset( $image['usage'] ) && is_array( $image['usage'] ) ) {
 			$result['usage'] = $image['usage'];
+		}
+
+		$inline_content = $this->build_inline_content_payload( $storage );
+
+		if ( ! empty( $inline_content ) ) {
+			$result['content'] = $inline_content;
 		}
 
 		/**
@@ -543,6 +550,72 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		/* translators: %s: Short excerpt of the editing instruction. */
 		return sprintf( __( 'Gemini Edit: %s', 'wp-mcp-ai' ), $excerpt );
+	}
+
+	/**
+	 * Build an inline content payload for the stored image so API clients can render immediately.
+	 *
+	 * @param array $storage Stored attachment metadata.
+	 * @return array
+	 */
+	protected function build_inline_content_payload( array $storage ) {
+		$file_path = isset( $storage['file'] ) ? $storage['file'] : '';
+
+		if ( '' === $file_path || ! is_readable( $file_path ) ) {
+			return array();
+		}
+
+		$file_contents = file_get_contents( $file_path );
+
+		if ( false === $file_contents || '' === $file_contents ) {
+			return array();
+		}
+
+		$encoded = base64_encode( $file_contents );
+
+		if ( '' === $encoded ) {
+			return array();
+		}
+
+		$mime_type = isset( $storage['mime_type'] ) ? $storage['mime_type'] : '';
+
+		$content = array(
+			'encoding' => 'base64',
+			'data'     => $encoded,
+		);
+
+		if ( '' !== $mime_type ) {
+			$content['mime_type'] = $mime_type;
+			$content['data_url']  = sprintf( 'data:%s;base64,%s', $mime_type, $encoded );
+		}
+
+		if ( isset( $storage['file_name'] ) && '' !== $storage['file_name'] ) {
+			$content['file_name'] = $storage['file_name'];
+		}
+
+		if ( isset( $storage['bytes'] ) && $storage['bytes'] ) {
+			$content['bytes'] = (int) $storage['bytes'];
+		}
+
+		return $content;
+	}
+
+	/**
+	 * Map a MIME type to a file format identifier.
+	 *
+	 * @param string $mime_type MIME type string.
+	 * @return string
+	 */
+	protected function map_mime_type_to_format( $mime_type ) {
+		switch ( $mime_type ) {
+			case 'image/jpeg':
+				return 'jpeg';
+			case 'image/webp':
+				return 'webp';
+			case 'image/png':
+			default:
+				return 'png';
+		}
 	}
 
 	/**
