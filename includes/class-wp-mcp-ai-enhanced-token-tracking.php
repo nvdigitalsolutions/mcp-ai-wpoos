@@ -432,7 +432,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 					'gemini-1.5-flash',
 					'gemini-2.0-flash',
 					'gemini-pro',
-					'gemini-2.5-flash',
+					'gemini-2.5-flash-image',
 				),
 			),
 		);
@@ -447,11 +447,11 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 			WHERE tool IN ({$placeholders})
 		";
 
-		$count_prepare_args   = $gemini_tools;
+		$count_prepare_args = $gemini_tools;
 		$count_prepared_query = $wpdb->prepare( $count_query, $count_prepare_args ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
-		$total_gemini_records            = $wpdb->get_var( $count_prepared_query );
+		$total_gemini_records = $wpdb->get_var( $count_prepared_query );
 		$results['total_gemini_records'] = intval( $total_gemini_records );
 
 		// Count misattributed records (all records that need migration, not just the limited batch).
@@ -488,7 +488,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 		$records = $wpdb->get_results( $prepared_query, ARRAY_A );
 
-		$results['total_checked']           = count( $records );
+		$results['total_checked'] = count( $records );
 		$results['total_needing_migration'] = $total_misattributed;
 
 		foreach ( $records as $record ) {
@@ -564,14 +564,9 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * @return string Inferred Gemini model.
 	 */
 	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
-		// Image-related Gemini tools: preserve historical image model or use current default.
+		// Image-related Gemini tools use the Gemini image model.
 		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
-			// If old model is a Gemini image model, preserve it (for historical accuracy).
-			if ( in_array( $old_model, array( 'gemini-2.5-flash-image', 'gemini-2.0-flash-image', 'gemini-1.5-flash-image' ), true ) ) {
-				return $old_model;
-			}
-			// Otherwise use current default for new/migrated records.
-			return 'gemini-2.5-flash';
+			return 'gemini-2.5-flash-image';
 		}
 
 		// Default to flash if the tool is unknown but assumed to be Gemini.
