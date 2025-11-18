@@ -396,7 +396,7 @@ class WP_MCP_AI_Shortcode {
 					'assistant'             => '',
 					'allow_guests'          => 'false',
 					'save_transcript'       => 'true',
-					'enable_streaming'      => 'false',
+					'enable_streaming'      => 'true',
 					'allow_sensitive_tools' => 'false',
 				),
 				$atts,

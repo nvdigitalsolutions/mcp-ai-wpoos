@@ -129,7 +129,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
 				'label_off'    => __( 'No', 'wp-mcp-ai' ),
 				'return_value' => 'true',
-				'default'      => 'false',
+				'default'      => 'true',
 				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated.', 'wp-mcp-ai' ),
 			)
 		);
