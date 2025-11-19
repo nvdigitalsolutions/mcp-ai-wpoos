@@ -69,6 +69,11 @@ class WP_MCP_AI_Profession_CPT {
 	const META_SUPPORTED_MIME_TYPES = '_wp_mcp_ai_profession_supported_mime_types';
 
 	/**
+	 * Meta key for associated assistant ID for testing.
+	 */
+	const META_ASSOCIATED_ASSISTANT = '_wp_mcp_ai_profession_associated_assistant';
+
+	/**
 	 * Metabox instances.
 	 *
 	 * @var array<string, WP_MCP_AI_Metabox_Base>
@@ -284,6 +289,20 @@ class WP_MCP_AI_Profession_CPT {
 				'description'       => __( 'Supported MIME types for file uploads', 'wp-mcp-ai' ),
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_array_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Associated assistant for testing.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ASSOCIATED_ASSISTANT,
+			array(
+				'type'              => 'integer',
+				'description'       => __( 'Associated assistant ID for testing this profession', 'wp-mcp-ai' ),
+				'single'            => true,
+				'sanitize_callback' => 'absint',
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
 			)

@@ -136,10 +136,20 @@
 		const allowedFileMimes = (window.wpMcpAiChat && window.wpMcpAiChat.allowedFileMimes) ? window.wpMcpAiChat.allowedFileMimes : [];
 		const allowedExtensions = (window.wpMcpAiChat && window.wpMcpAiChat.allowedExtensions) ? window.wpMcpAiChat.allowedExtensions : [];
 
-		// Use profession ID directly as the assistant ID for testing
-		// The backend will create a temporary test assistant based on the profession
+		// Determine which assistant ID to use:
+		// 1. If profession has an associated assistant, use that assistant's ID directly
+		// 2. Otherwise, use 'profession_' prefix to signal backend to create temporary assistant
+		let assistantId;
+		if (professionData && professionData.associated_assistant > 0) {
+			// Use the associated assistant directly for testing
+			assistantId = professionData.associated_assistant;
+		} else {
+			// Fall back to profession-based temporary assistant
+			assistantId = 'profession_' + professionId;
+		}
+
 		window.wpMcpAiChatInstances[instanceId] = {
-			assistantId: 'profession_' + professionId,
+			assistantId: assistantId,
 			professionId: professionId,
 			userId: (window.wpMcpAiChat && typeof window.wpMcpAiChat.currentUserId !== 'undefined') ? window.wpMcpAiChat.currentUserId : 0,
 			messagesEndpoint: baseRestUrl + '/chat-client',
@@ -206,6 +216,14 @@
 		}
 
 		let html = '<div class="wp-mcp-ai-profession-details">';
+
+		// Associated Assistant (show if configured)
+		if (professionData.assistant_title) {
+			html += '<div class="wp-mcp-ai-profession-details__section">';
+			html += '<span class="wp-mcp-ai-profession-details__label">Test Assistant</span>';
+			html += '<div class="wp-mcp-ai-profession-details__value"><strong>' + escapeHtml(professionData.assistant_title) + '</strong></div>';
+			html += '</div>';
+		}
 
 		// Category
 		if (professionData.category) {

@@ -61,9 +61,10 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	public function render( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
 
-		$default_provider    = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
-		$default_model       = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
-		$default_temperature = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_temperature', true );
+		$default_provider      = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
+		$default_model         = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
+		$default_temperature   = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_temperature', true );
+		$associated_assistant  = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
 
 		if ( empty( $default_provider ) ) {
 			$default_provider = 'openai';
@@ -75,10 +76,38 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 			$default_temperature = 0.7;
 		}
 
+		// Get all published assistants for the dropdown.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
 		?>
 		<div class="wp-mcp-ai-profession-defaults">
 			<p class="description">
 				<?php esc_html_e( 'These settings will be applied to assistants created from this professional template.', 'wp-mcp-ai' ); ?>
+			</p>
+
+			<p>
+				<label for="profession_associated_assistant">
+					<strong><?php esc_html_e( 'Test Assistant', 'wp-mcp-ai' ); ?></strong>
+				</label><br>
+				<select name="profession_associated_assistant" id="profession_associated_assistant" class="widefat">
+					<option value=""><?php esc_html_e( '— Use Profession Settings —', 'wp-mcp-ai' ); ?></option>
+					<?php foreach ( $assistants as $assistant ) : ?>
+						<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $associated_assistant, $assistant->ID ); ?>>
+							<?php echo esc_html( $assistant->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				<span class="description" style="display: block; margin-top: 5px;">
+					<?php esc_html_e( 'Associate with an existing assistant to use its configuration when testing this profession.', 'wp-mcp-ai' ); ?>
+				</span>
 			</p>
 
 			<p>
@@ -134,6 +163,22 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			return;
+		}
+
+		// Save associated assistant.
+		if ( isset( $_POST['profession_associated_assistant'] ) ) {
+			$associated_assistant = absint( wp_unslash( $_POST['profession_associated_assistant'] ) );
+			if ( $associated_assistant > 0 ) {
+				// Verify the assistant exists and is published.
+				$assistant_post = get_post( $associated_assistant );
+				if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+					update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $associated_assistant );
+				} else {
+					delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT );
+				}
+			} else {
+				delete_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT );
+			}
 		}
 
 		// Save default provider.
