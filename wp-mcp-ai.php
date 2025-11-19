@@ -392,6 +392,11 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
+// Initialize async tool executor early to register cron hook handler.
+// This ensures wp_mcp_ai_async_tool_execution cron jobs can execute tools.
+// SOC: Executor handles execution, this file handles initialization timing.
+wp_mcp_ai_get_async_tool_executor();
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
