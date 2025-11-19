@@ -1,7 +1,0 @@
-composer.lock
-phpstan.neon
-phpunit.xml
-vendor
-.php-cs-fixer.cache
-.phpunit.result.cache
-.tmp
