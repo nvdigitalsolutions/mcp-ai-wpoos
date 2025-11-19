@@ -231,6 +231,113 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that get_assistant_professionals returns empty array for assistant without professions.
+	 */
+	public function test_get_assistant_professionals_returns_empty_for_no_professions() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_assistant_professionals' );
+		$method->setAccessible( true );
+
+		$professionals = $method->invoke( $this->test_assistant, $this->assistant_id );
+
+		$this->assertIsArray( $professionals );
+		$this->assertEmpty( $professionals );
+	}
+
+	/**
+	 * Test that get_assistant_professionals returns profession names when professions are assigned.
+	 */
+	public function test_get_assistant_professionals_returns_profession_names() {
+		// Ensure the profession CPT class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-cpt.php';
+		}
+
+		// Create test professions.
+		$profession1_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Marketing Expert',
+				'post_status' => 'publish',
+			)
+		);
+
+		$profession2_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Content Writer',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Assign professions to the assistant.
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, array( $profession1_id, $profession2_id ) );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_assistant_professionals' );
+		$method->setAccessible( true );
+
+		$professionals = $method->invoke( $this->test_assistant, $this->assistant_id );
+
+		$this->assertIsArray( $professionals );
+		$this->assertCount( 2, $professionals );
+		$this->assertContains( 'Marketing Expert', $professionals );
+		$this->assertContains( 'Content Writer', $professionals );
+
+		// Clean up.
+		wp_delete_post( $profession1_id, true );
+		wp_delete_post( $profession2_id, true );
+	}
+
+	/**
+	 * Test that get_assistant_professionals handles deleted professions gracefully.
+	 */
+	public function test_get_assistant_professionals_handles_deleted_professions() {
+		// Create a test profession.
+		$profession_id = $this->factory->post->create(
+			array(
+				'post_type'   => 'mcp_ai_profession',
+				'post_title'  => 'Test Profession',
+				'post_status' => 'publish',
+			)
+		);
+
+		// Assign profession to the assistant.
+		update_post_meta( $this->assistant_id, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, array( $profession_id, 999999 ) );
+
+		// Delete the profession.
+		wp_delete_post( $profession_id, true );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_assistant_professionals' );
+		$method->setAccessible( true );
+
+		$professionals = $method->invoke( $this->test_assistant, $this->assistant_id );
+
+		// Should return empty array since both professions are invalid (one deleted, one never existed).
+		$this->assertIsArray( $professionals );
+		$this->assertEmpty( $professionals );
+	}
+
+	/**
+	 * Test that get_assistant_professionals returns empty array for invalid assistant ID.
+	 */
+	public function test_get_assistant_professionals_returns_empty_for_invalid_id() {
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $this->test_assistant );
+		$method     = $reflection->getMethod( 'get_assistant_professionals' );
+		$method->setAccessible( true );
+
+		$professionals = $method->invoke( $this->test_assistant, 0 );
+
+		$this->assertIsArray( $professionals );
+		$this->assertEmpty( $professionals );
+	}
+
+	/**
 	 * Tear down test environment.
 	 */
 	public function tearDown(): void {

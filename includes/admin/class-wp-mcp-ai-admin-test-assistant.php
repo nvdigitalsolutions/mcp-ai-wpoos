@@ -140,6 +140,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 								<th scope="col"><?php echo esc_html__( 'Assistant Name', 'wp-mcp-ai' ); ?></th>
 								<th scope="col"><?php echo esc_html__( 'Provider', 'wp-mcp-ai' ); ?></th>
 								<th scope="col"><?php echo esc_html__( 'Model', 'wp-mcp-ai' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Professionals', 'wp-mcp-ai' ); ?></th>
 								<th scope="col"><?php echo esc_html__( 'Tools', 'wp-mcp-ai' ); ?></th>
 								<th scope="col" class="column-actions"><?php echo esc_html__( 'Actions', 'wp-mcp-ai' ); ?></th>
 							</tr>
@@ -159,6 +160,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 								$tool_count     = isset( $config['tools'] ) && is_array( $config['tools'] ) ? count( $config['tools'] ) : 0;
 								$edit_url       = get_edit_post_link( $assistant->ID );
 								$tool_shortcuts = $this->get_assistant_tool_shortcuts( $assistant->ID );
+								$professionals  = $this->get_assistant_professionals( $assistant->ID );
 								?>
 								<tr>
 									<td>
@@ -173,6 +175,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 									</td>
 									<td><?php echo esc_html( ucfirst( $provider ) ); ?></td>
 									<td><code><?php echo esc_html( $model ); ?></code></td>
+									<td>
+										<?php
+										if ( empty( $professionals ) ) {
+											echo '<em>' . esc_html__( 'None', 'wp-mcp-ai' ) . '</em>';
+										} else {
+											echo esc_html( implode( ', ', $professionals ) );
+										}
+										?>
+									</td>
 									<td>
 										<?php
 										/* translators: %d: number of tools enabled for the assistant */
@@ -240,6 +251,54 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 			}
 
 			return array();
+		}
+
+		/**
+		 * Get professionals associated with an assistant.
+		 *
+		 * @param int $assistant_id Assistant post ID.
+		 * @return array Array of profession names.
+		 */
+		private function get_assistant_professionals( $assistant_id ) {
+			$assistant_id = absint( $assistant_id );
+
+			if ( ! $assistant_id ) {
+				return array();
+			}
+
+			// Safety check: Ensure class exists.
+			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				return array();
+			}
+
+			// Get primary roles (profession post IDs).
+			$primary_roles = get_post_meta( $assistant_id, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, true );
+
+			if ( ! is_array( $primary_roles ) || empty( $primary_roles ) ) {
+				return array();
+			}
+
+			$profession_names = array();
+
+			foreach ( $primary_roles as $profession_id ) {
+				$profession_id = absint( $profession_id );
+
+				if ( ! $profession_id ) {
+					continue;
+				}
+
+				// Get the profession post.
+				$profession = get_post( $profession_id );
+
+				// Skip if post doesn't exist or isn't a profession.
+				if ( ! $profession || 'mcp_ai_profession' !== $profession->post_type ) {
+					continue;
+				}
+
+				$profession_names[] = $profession->post_title;
+			}
+
+			return $profession_names;
 		}
 	}
 }
