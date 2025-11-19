@@ -827,9 +827,9 @@ The loop has a maximum iteration limit to prevent:
    update_post_meta( $assistant_id, 'max_agentic_iterations', 20 );
    ```
 
-2. **Admin Setting** (Custom AI Settings tab)
+2. **Admin Setting** (General Settings → Custom AI Settings subtab)
    ```
-   Settings → WP oOS → Custom AI Settings → Max Agentic Iterations
+   Settings → WP oOS → General Settings → Custom AI Settings (Filters) → Max Agentic Iterations
    ```
 
 3. **Programmatic Filter**
