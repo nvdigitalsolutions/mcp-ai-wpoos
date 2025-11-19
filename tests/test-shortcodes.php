@@ -361,4 +361,41 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertTrue( wp_verify_nonce( $config['restNonce'], 'wp_rest' ), 'restNonce should be a valid wp_rest nonce.' );
 		}
 	}
+
+	/**
+	 * Ensure the instance config includes restUrl for async tool polling.
+	 */
+	public function test_chat_shortcode_instance_config_includes_rest_url() {
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'RestUrl Config Assistant',
+			)
+		);
+
+		wp_scripts()->reset();
+
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered );
+
+		$registered = wp_scripts()->registered[ $handle ];
+
+		// Check instance config has restUrl for async tool polling.
+		$instance_config = implode( "\n", $registered->extra['before'] ?? array() );
+		$this->assertMatchesRegularExpression( '/"restUrl":"[^"]+"/', $instance_config, 'Instance config should include restUrl for async tool polling.' );
+
+		// Parse the JSON to verify it's a valid URL.
+		preg_match( '/wpMcpAiChatInstances\["[^"]+"\]\s*=\s*({.*?});/', $instance_config, $matches );
+		if ( ! empty( $matches[1] ) ) {
+			$config = json_decode( $matches[1], true );
+			$this->assertIsArray( $config, 'Instance config should be valid JSON.' );
+			$this->assertArrayHasKey( 'restUrl', $config, 'Instance config should have restUrl key.' );
+			$this->assertNotEmpty( $config['restUrl'], 'restUrl should not be empty.' );
+			$this->assertStringContainsString( '/wp-json/mcp-ai/v1', $config['restUrl'], 'restUrl should point to the MCP AI REST namespace.' );
+		}
+	}
 }
