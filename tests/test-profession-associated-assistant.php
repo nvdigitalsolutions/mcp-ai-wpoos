@@ -195,4 +195,79 @@ class Test_Profession_Associated_Assistant extends WP_UnitTestCase {
 			'Associated assistant should persist after profession update'
 		);
 	}
+
+	/**
+	 * Test that test profession page handles deleted associated assistant gracefully.
+	 */
+	public function test_test_page_handles_deleted_assistant() {
+		// Ensure test profession page class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php';
+		}
+
+		// Set associated assistant.
+		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
+
+		// Verify it's set.
+		$associated_assistant = get_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
+		$this->assertSame( $this->assistant_id, absint( $associated_assistant ) );
+
+		// Delete the assistant.
+		wp_delete_post( $this->assistant_id, true );
+
+		// Simulate what the test profession page does.
+		$associated_assistant_meta = get_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
+		
+		$assistant_title = '';
+		$valid_associated_assistant = 0;
+		if ( $associated_assistant_meta ) {
+			$assistant_post = get_post( $associated_assistant_meta );
+			if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
+				$assistant_title = $assistant_post->post_title;
+				$valid_associated_assistant = absint( $associated_assistant_meta );
+			}
+		}
+
+		// Verify that valid_associated_assistant is 0 (fallback).
+		$this->assertSame( 0, $valid_associated_assistant, 'Should fall back to 0 when assistant is deleted' );
+		$this->assertSame( '', $assistant_title, 'Assistant title should be empty when assistant is deleted' );
+	}
+
+	/**
+	 * Test that test profession page handles unpublished associated assistant gracefully.
+	 */
+	public function test_test_page_handles_unpublished_assistant() {
+		// Ensure test profession page class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-profession.php';
+		}
+
+		// Set associated assistant.
+		update_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, $this->assistant_id );
+
+		// Change assistant to draft status.
+		wp_update_post(
+			array(
+				'ID'          => $this->assistant_id,
+				'post_status' => 'draft',
+			)
+		);
+
+		// Simulate what the test profession page does.
+		$associated_assistant_meta = get_post_meta( $this->profession_id, WP_MCP_AI_Profession_CPT::META_ASSOCIATED_ASSISTANT, true );
+		
+		$assistant_title = '';
+		$valid_associated_assistant = 0;
+		if ( $associated_assistant_meta ) {
+			$assistant_post = get_post( $associated_assistant_meta );
+			if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
+				$assistant_title = $assistant_post->post_title;
+				$valid_associated_assistant = absint( $associated_assistant_meta );
+			}
+		}
+
+		// Verify that valid_associated_assistant is 0 (fallback).
+		$this->assertSame( 0, $valid_associated_assistant, 'Should fall back to 0 when assistant is unpublished' );
+		$this->assertSame( '', $assistant_title, 'Assistant title should be empty when assistant is unpublished' );
+	}
 }

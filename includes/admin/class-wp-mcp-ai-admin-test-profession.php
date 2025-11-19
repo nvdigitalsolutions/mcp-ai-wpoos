@@ -188,12 +188,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 								$expertise_count  = is_array( $expertise ) ? count( $expertise ) : 0;
 								$tools_count      = is_array( $tools ) ? count( $tools ) : 0;
 
-								// Get associated assistant title if set.
+								// Get associated assistant title if set and validate the assistant exists.
 								$assistant_title = '';
+								$valid_associated_assistant = 0;
 								if ( $associated_assistant ) {
 									$assistant_post = get_post( $associated_assistant );
 									if ( $assistant_post && 'publish' === $assistant_post->post_status ) {
 										$assistant_title = $assistant_post->post_title;
+										$valid_associated_assistant = absint( $associated_assistant );
 									}
 								}
 
@@ -206,7 +208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 									'expertise'            => is_array( $expertise ) ? $expertise : array(),
 									'tools'                => is_array( $tools ) ? $tools : array(),
 									'knowledge_base'       => ! empty( $knowledge_base ) ? substr( wp_strip_all_tags( $knowledge_base ), 0, 200 ) : '',
-									'associated_assistant' => $associated_assistant ? absint( $associated_assistant ) : 0,
+									'associated_assistant' => $valid_associated_assistant,
 									'assistant_title'      => $assistant_title,
 								);
 								?>
