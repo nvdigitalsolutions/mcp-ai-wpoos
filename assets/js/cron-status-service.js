@@ -107,7 +107,7 @@
 
 			// Set up polling interval
 			this.pollers[containerId] = setInterval(function () {
-				self.fetchStatus(endpoint, nonce, 10).then(function (data) {
+				self.fetchStatus(endpoint, nonce, 10, assistantId).then(function (data) {
 					if (data) {
 						self.cache[containerId] = data;
 						if (callback && typeof callback === 'function') {
@@ -146,7 +146,7 @@
 		 * @param {string} containerId - Chat container ID
 		 */
 		clearCache: function (containerId) {
-			if (this->cache[containerId]) {
+			if (this.cache[containerId]) {
 				delete this.cache[containerId];
 			}
 		},
