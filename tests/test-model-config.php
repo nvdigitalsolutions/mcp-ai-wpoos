@@ -269,13 +269,12 @@ class Test_Model_Config extends WP_UnitTestCase {
 	 */
 	public function test_lm_studio_models_configuration() {
 		$lm_studio_models = array(
-			'llama-3-8b-instruct',
-			'llama-3-70b-instruct',
-			'mistral-7b-instruct',
-			'qwen-2.5-7b-instruct',
-			'phi-3-mini',
-			'deepseek-coder-6.7b',
-			'openai/gpt-oss-20b',
+			'qwen/qwen2.5-7b',
+			'meta-llama/llama-3.1-8b-instruct',
+			'mistralai/mistral-7b-instruct-v0.3',
+			'deepseek-ai/deepseek-coder-33b-instruct',
+			'microsoft/phi-3.5-mini-instruct',
+			'google/gemma-2-9b-it',
 		);
 
 		foreach ( $lm_studio_models as $model_id ) {
