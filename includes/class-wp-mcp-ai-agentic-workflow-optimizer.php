@@ -143,6 +143,7 @@ class WP_MCP_AI_Agentic_Workflow_Optimizer {
 			'get_jetengine_items',
 			'get_woo_products',
 			'get_rankmath_seo',
+			'web_search', // Web search results can be cached for short periods.
 		);
 
 		/**

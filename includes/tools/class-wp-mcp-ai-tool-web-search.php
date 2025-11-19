@@ -199,19 +199,27 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 		}
 
+		// Deduplicate results by URL to prevent repeated content.
+		$results = $this->deduplicate_results( $results );
 		$results = array_slice( $results, 0, $max_results );
 
 		if ( empty( $results ) ) {
 			return array(
-				'query'   => $query,
-				'results' => array(),
-				'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'query'    => $query,
+				'results'  => array(),
+				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'cached'   => false,
+				'provider' => 'duckduckgo',
 			);
 		}
 
 		return array(
-			'query'   => $query,
-			'results' => $results,
+			'query'        => $query,
+			'results'      => $results,
+			'result_count' => count( $results ),
+			'cached'       => false,
+			'provider'     => 'duckduckgo',
+			'timestamp'    => time(),
 		);
 	}
 
@@ -310,17 +318,26 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			}
 		}
 
+		// Deduplicate results by URL to prevent repeated content.
+		$results = $this->deduplicate_results( $results );
+
 		if ( empty( $results ) ) {
 			return array(
-				'query'   => $query,
-				'results' => array(),
-				'note'    => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'query'    => $query,
+				'results'  => array(),
+				'note'     => __( 'No web search results were found for this query.', 'wp-mcp-ai' ),
+				'cached'   => false,
+				'provider' => 'brave',
 			);
 		}
 
 		return array(
-			'query'   => $query,
-			'results' => $results,
+			'query'        => $query,
+			'results'      => $results,
+			'result_count' => count( $results ),
+			'cached'       => false,
+			'provider'     => 'brave',
+			'timestamp'    => time(),
 		);
 	}
 
@@ -365,6 +382,39 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		);
 
 		return count( $results ) >= $max_results;
+	}
+
+	/**
+	 * Deduplicate search results by URL.
+	 *
+	 * Removes duplicate results to prevent the same content from appearing multiple times,
+	 * which can help reduce confusion and prevent infinite loops in agentic workflows.
+	 *
+	 * @param array $results Array of search results.
+	 * @return array Deduplicated results.
+	 */
+	protected function deduplicate_results( array $results ) {
+		$seen_urls = array();
+		$unique    = array();
+
+		foreach ( $results as $result ) {
+			if ( empty( $result['url'] ) ) {
+				continue;
+			}
+
+			// Normalize URL for comparison (remove trailing slashes, query params that don't matter).
+			$normalized_url = untrailingslashit( $result['url'] );
+
+			// Skip if we've already seen this URL.
+			if ( in_array( $normalized_url, $seen_urls, true ) ) {
+				continue;
+			}
+
+			$seen_urls[] = $normalized_url;
+			$unique[]    = $result;
+		}
+
+		return $unique;
 	}
 
 	/**
