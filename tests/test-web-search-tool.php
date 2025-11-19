@@ -431,4 +431,60 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'https://example.com/page1', $result['results'][0]['url'] );
 		$this->assertSame( 'https://example.com/page2', $result['results'][1]['url'] );
 	}
+
+	/**
+	 * Rate limiting should prevent excessive searches.
+	 */
+	public function test_execute_enforces_rate_limiting() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$http_stub = static function ( $preempt, $args, $url ) {
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode( array() ),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Set a low rate limit for testing.
+		add_filter( 'wp_mcp_ai_web_search_rate_limit', function() {
+			return 3; // Only 3 searches per minute.
+		} );
+
+		// First 3 searches should succeed.
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$result = $tool->execute(
+				array(
+					'query' => 'test query ' . $i,
+				),
+				array(
+					'user_id' => $user_id,
+				)
+			);
+
+			$this->assertIsArray( $result, "Search #{$i} should succeed" );
+		}
+
+		// Fourth search should fail with rate limit error.
+		$result = $tool->execute(
+			array(
+				'query' => 'test query 4',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_rate_limit_exceeded', $result->get_error_code() );
+		$this->assertStringContainsString( 'rate limit exceeded', strtolower( $result->get_error_message() ) );
+	}
 }

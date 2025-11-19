@@ -86,6 +86,12 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error( 'wp_mcp_ai_missing_query', __( 'A search query is required.', 'wp-mcp-ai' ) );
 		}
 
+		// Check rate limiting to prevent abuse and infinite loops.
+		$rate_limit_check = $this->check_rate_limit( $user_id );
+		if ( is_wp_error( $rate_limit_check ) ) {
+			return $rate_limit_check;
+		}
+
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		$max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
 
@@ -102,6 +108,49 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		return $this->perform_duckduckgo_search( $query, $max_results );
+	}
+
+	/**
+	 * Check rate limiting for web searches.
+	 *
+	 * Prevents abuse and infinite loops by limiting search requests per user.
+	 *
+	 * @param int $user_id User ID performing the search.
+	 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+	 */
+	protected function check_rate_limit( $user_id ) {
+		$transient_key  = 'wp_mcp_ai_web_search_' . $user_id;
+		$current_count  = get_transient( $transient_key );
+		$max_per_minute = 20; // Allow up to 20 searches per minute per user.
+
+		/**
+		 * Filter the maximum web searches allowed per minute per user.
+		 *
+		 * @param int $max_per_minute Maximum searches per minute (default: 20).
+		 * @param int $user_id        User ID.
+		 */
+		$max_per_minute = apply_filters( 'wp_mcp_ai_web_search_rate_limit', $max_per_minute, $user_id );
+
+		if ( false === $current_count ) {
+			// First search, start counting.
+			set_transient( $transient_key, 1, MINUTE_IN_SECONDS );
+			return true;
+		}
+
+		if ( $current_count >= $max_per_minute ) {
+			return new WP_Error(
+				'wp_mcp_ai_rate_limit_exceeded',
+				sprintf(
+					/* translators: %d: maximum searches allowed per minute */
+					__( 'Web search rate limit exceeded. Maximum %d searches per minute allowed.', 'wp-mcp-ai' ),
+					$max_per_minute
+				)
+			);
+		}
+
+		// Increment counter.
+		set_transient( $transient_key, $current_count + 1, MINUTE_IN_SECONDS );
+		return true;
 	}
 
 	/**
