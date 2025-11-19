@@ -838,6 +838,31 @@
     border-top-color: var(--wp-mcp-ai-color-status-tool-spinner, #a855f7);
 }
 
+.wp-mcp-ai-chat__status--text-stream {
+    background: var(--wp-mcp-ai-color-status-text-stream-bg, #fef3c7);
+    border-left-color: var(--wp-mcp-ai-color-status-text-stream-border, #f59e0b);
+    color: var(--wp-mcp-ai-color-status-text-stream-text, #78350f);
+}
+
+.wp-mcp-ai-chat__status--text-stream .wp-mcp-ai-chat__status-text {
+    font-family: var(--wp-mcp-ai-font-mono, 'Courier New', monospace);
+    font-size: 0.9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wp-mcp-ai-chat__status--text-stream .wp-mcp-ai-chat__status-text::after {
+    content: '▋';
+    display: inline-block;
+    margin-left: 2px;
+    animation: wp-mcp-ai-cursor-blink 1s step-end infinite;
+}
+
+@keyframes wp-mcp-ai-cursor-blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
 .wp-mcp-ai-chat__label {
     display: block;
     font-weight: 600;

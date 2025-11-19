@@ -1096,6 +1096,18 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 										}
 									}
 
+									if ( isset( $part['thought'] ) ) {
+										// Gemini 2.0 Flash Thinking mode provides thinking text
+										if ( ! isset( $accumulated['thinking'] ) ) {
+											$accumulated['thinking'] = '';
+										}
+										$accumulated['thinking'] .= $part['thought'];
+
+										if ( is_callable( $callback ) ) {
+											call_user_func( $callback, $part['thought'], 'thought' );
+										}
+									}
+
 									if ( isset( $part['functionCall'] ) && is_array( $part['functionCall'] ) ) {
 										$accumulated['tool_calls'][] = $part['functionCall'];
 
