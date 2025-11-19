@@ -514,40 +514,34 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['openai_api_key'] ) ) {
 			$openai_models = array();
 
-			// Reasoning models (text-only) - November 2025.
+			// GPT-5 series (flagship - 2025).
+			$openai_models['gpt-5.1']              = 'GPT-5.1 (Flagship)';
+			$openai_models['gpt-5.1-2025-11-13']   = 'GPT-5.1 (Nov 2025)';
+			$openai_models['gpt-5']                = 'GPT-5';
+			$openai_models['gpt-5-2025-08-07']     = 'GPT-5 (Aug 2025)';
+			$openai_models['gpt-5-mini']           = 'GPT-5 Mini';
+			$openai_models['gpt-5-nano']           = 'GPT-5 Nano';
+			$openai_models['gpt-5-pro']            = 'GPT-5 Pro';
+			
+			// GPT-5 Codex variants (coding-optimized).
 			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$openai_models['o3']       = 'o3';
-				$openai_models['o3-mini']  = 'o3 Mini';
-				$openai_models['o4-mini']  = 'o4 Mini';
+				$openai_models['gpt-5-codex']      = 'GPT-5 Codex';
+				$openai_models['gpt-5-codex-mini'] = 'GPT-5 Codex Mini';
 			}
 
 			// GPT-4o series (multimodal - vision capable).
-			$openai_models['gpt-4o']               = 'GPT-4o (Default)';
+			$openai_models['gpt-4o']               = 'GPT-4o';
 			$openai_models['gpt-4o-mini']          = 'GPT-4o Mini';
 			$openai_models['gpt-4o-2024-11-20']    = 'GPT-4o (Nov 2024)';
 			$openai_models['gpt-4o-2024-08-06']    = 'GPT-4o (Aug 2024)';
 			$openai_models['gpt-4o-2024-05-13']    = 'GPT-4o (May 2024)';
 			$openai_models['chatgpt-4o-latest']    = 'ChatGPT-4o (Latest)';
 
-			// GPT-4 Turbo (multimodal - vision capable, legacy).
-			$openai_models['gpt-4-turbo']          = 'GPT-4 Turbo (Legacy)';
-			$openai_models['gpt-4-turbo-2024-04-09'] = 'GPT-4 Turbo (Apr 2024)';
-			$openai_models['gpt-4-turbo-preview']  = 'GPT-4 Turbo Preview';
-
-			// GPT-4 Vision.
-			$openai_models['gpt-4-vision-preview'] = 'GPT-4 Vision Preview';
-
 			// Legacy models (text-only).
 			if ( ! $requires_vision && ! $requires_multimodal ) {
-				$openai_models['gpt-4']         = 'GPT-4';
-				$openai_models['gpt-4-0613']    = 'GPT-4 (Jun 2023)';
-				$openai_models['gpt-3.5-turbo'] = 'GPT-3.5 Turbo';
-				$openai_models['gpt-3.5-turbo-0125'] = 'GPT-3.5 Turbo (Jan 2025)';
-				
-				// Deprecated models - kept for backward compatibility.
-				$openai_models['o1']          = 'o1 (Deprecated - use o3)';
-				$openai_models['o1-preview']  = 'o1 Preview (Deprecated)';
-				$openai_models['o1-mini']     = 'o1 Mini (Deprecated)';
+				$openai_models['gpt-4-turbo']    = 'GPT-4 Turbo (Legacy)';
+				$openai_models['gpt-4']          = 'GPT-4 (Legacy)';
+				$openai_models['gpt-3.5-turbo']  = 'GPT-3.5 Turbo (Legacy)';
 			}
 
 			if ( ! empty( $openai_models ) ) {
@@ -562,21 +556,16 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['anthropic_api_key'] ) ) {
 			$anthropic_models = array();
 
-			// Claude 4.5 series (multimodal - vision capable) - November 2025.
-			$anthropic_models['claude-sonnet-4.5'] = 'Claude Sonnet 4.5';
-			$anthropic_models['claude-haiku-4.5']  = 'Claude Haiku 4.5';
-			$anthropic_models['claude-opus-4.1']   = 'Claude Opus 4.1';
-			$anthropic_models['claude-opus-4.0']   = 'Claude Opus 4.0';
+			// Claude 4 series (multimodal - vision capable) - 2025.
+			$anthropic_models['claude-sonnet-4.5']         = 'Claude Sonnet 4.5 (Recommended)';
+			$anthropic_models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
+			$anthropic_models['claude-haiku-4.5']          = 'Claude Haiku 4.5 (Fastest)';
+			$anthropic_models['claude-opus-4.1']           = 'Claude Opus 4.1 (Flagship)';
+			$anthropic_models['claude-opus-4.0']           = 'Claude Opus 4.0';
 
-			// Claude 3.5 series (deprecated Nov 10, 2025).
-			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Deprecated)';
-			$anthropic_models['claude-3-5-sonnet-20240620'] = 'Claude 3.5 Sonnet Jun 2024 (Deprecated)';
-			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Deprecated)';
-
-			// Claude 3 series (multimodal - vision capable, legacy).
-			$anthropic_models['claude-3-opus-20240229']   = 'Claude 3 Opus (Legacy)';
-			$anthropic_models['claude-3-sonnet-20240229'] = 'Claude 3 Sonnet (Legacy)';
-			$anthropic_models['claude-3-haiku-20240307']  = 'Claude 3 Haiku (Legacy)';
+			// Claude 3.5 series (legacy - for backward compatibility).
+			$anthropic_models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Legacy)';
+			$anthropic_models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Legacy)';
 
 			if ( ! empty( $anthropic_models ) ) {
 				$models['anthropic_group'] = array(
@@ -590,36 +579,38 @@ class WP_MCP_AI_Tool_Token_Limits {
 		if ( ! empty( $settings['gemini_api_key'] ) ) {
 			$gemini_models = array();
 
-			// Gemini 2.5 series (multimodal - text, image, video) - November 2025.
+			// Gemini 3 series (multimodal - latest generation) - Preview.
+			$gemini_models['gemini-3-pro-preview']   = 'Gemini 3 Pro (Preview)';
+
+			// Gemini 2.5 series (multimodal - text, image, video) - Stable.
 			$gemini_models['gemini-2.5-pro']         = 'Gemini 2.5 Pro';
 			$gemini_models['gemini-2.5-flash']       = 'Gemini 2.5 Flash (Recommended)';
 			$gemini_models['gemini-2.5-flash-lite']  = 'Gemini 2.5 Flash Lite';
+			$gemini_models['gemini-2.5-flash-preview-09-2025'] = 'Gemini 2.5 Flash (Sep 2025 Preview)';
+			
+			// Gemini 2.5 specialized models.
+			$gemini_models['gemini-live-2.5-flash-preview'] = 'Gemini Live 2.5 Flash (Voice/Multimodal)';
+			$gemini_models['gemini-2.5-flash-preview-native-audio-dialog'] = 'Gemini 2.5 Native Audio Dialog';
+			$gemini_models['gemini-2.5-flash-preview-tts'] = 'Gemini 2.5 Flash TTS';
+			$gemini_models['gemini-2.5-pro-preview-tts']   = 'Gemini 2.5 Pro TTS';
 			
 			// Image generation model - only for image generation/editing tools.
 			if ( $requires_image_gen ) {
-				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image (Nano Banana)';
+				$gemini_models['gemini-2.5-flash-image'] = 'Gemini 2.5 Flash Image';
 			}
 			
-			// Gemini 2.0 series.
+			// Gemini 2.0 series (stable).
 			$gemini_models['gemini-2.0-flash']       = 'Gemini 2.0 Flash';
+			$gemini_models['gemini-2.0-flash-lite']  = 'Gemini 2.0 Flash Lite';
 			$gemini_models['gemini-2.0-flash-exp']   = 'Gemini 2.0 Flash (Experimental)';
 			
-			// Experimental models (unstable).
-			$gemini_models['gemini-exp-1206']        = 'Gemini Exp 1206 (Experimental)';
-			$gemini_models['gemini-exp-1121']        = 'Gemini Exp 1121 (Experimental)';
+			// Experimental models.
+			$gemini_models['gemini-exp-1206']        = 'Gemini Exp 1206';
+			$gemini_models['gemini-exp-1121']        = 'Gemini Exp 1121';
 
-			// Gemini 1.5 series (multimodal - text, image, video, legacy).
+			// Gemini 1.5 series (legacy - for backward compatibility).
 			$gemini_models['gemini-1.5-pro']         = 'Gemini 1.5 Pro (Legacy)';
-			$gemini_models['gemini-1.5-pro-002']     = 'Gemini 1.5 Pro (002)';
-			$gemini_models['gemini-1.5-flash']       = 'Gemini 1.5 Flash';
-			$gemini_models['gemini-1.5-flash-002']   = 'Gemini 1.5 Flash (002)';
-			$gemini_models['gemini-1.5-flash-8b']    = 'Gemini 1.5 Flash-8B';
-
-			// Gemini 1.0 series (text and vision) - Deprecated.
-			if ( ! $requires_multimodal ) {
-				$gemini_models['gemini-pro']         = 'Gemini Pro (Deprecated)';
-				$gemini_models['gemini-pro-vision']  = 'Gemini Pro Vision (Deprecated)';
-			}
+			$gemini_models['gemini-1.5-flash']       = 'Gemini 1.5 Flash (Legacy)';
 
 			// Gemma models (Google's open models - text-only).
 			if ( ! $requires_vision && ! $requires_multimodal ) {
@@ -679,35 +670,38 @@ class WP_MCP_AI_Tool_Token_Limits {
 				$settings['lm_studio_model'] => $settings['lm_studio_model'],
 			);
 
-			// Add common LM Studio models (popular models from HuggingFace/LM Studio).
+			// Add common LM Studio models (popular models from lmstudio.ai - 2025).
 			$common_lm_studio_models = array(
-				// Qwen models (function calling, coding, vision).
+				// Qwen models (function calling, coding, vision) - Top performers.
 				'qwen/qwen3-coder-30b'        => 'Qwen 3 Coder 30B',
 				'qwen/qwen3-vl-30b'           => 'Qwen 3 Vision-Language 30B',
 				'qwen/qwen2.5-coder-32b'      => 'Qwen 2.5 Coder 32B',
 				'qwen/qwen2.5-32b'            => 'Qwen 2.5 32B',
 				'qwen/qwen2.5-14b'            => 'Qwen 2.5 14B',
 				'qwen/qwen2.5-7b'             => 'Qwen 2.5 7B',
+				// Llama models (Meta's flagship).
+				'meta-llama/llama-3.3-70b-instruct' => 'Llama 3.3 70B Instruct',
+				'meta-llama/llama-3.2-3b-instruct'  => 'Llama 3.2 3B Instruct',
+				'meta-llama/llama-3.2-1b-instruct'  => 'Llama 3.2 1B Instruct',
+				'meta-llama/llama-3.1-8b-instruct'  => 'Llama 3.1 8B Instruct',
+				// Mistral models (efficient reasoning).
+				'mistralai/mistral-large-2411'      => 'Mistral Large 2411',
+				'mistralai/mistral-nemo-2407'       => 'Mistral Nemo 2407',
+				'mistralai/mistral-7b-instruct-v0.3' => 'Mistral 7B Instruct v0.3',
+				'mistralai/mixtral-8x7b-instruct'   => 'Mixtral 8x7B Instruct',
+				'mistralai/mixtral-8x22b-instruct'  => 'Mixtral 8x22B Instruct',
+				// DeepSeek models (coding specialist).
+				'deepseek-ai/deepseek-coder-33b-instruct' => 'DeepSeek Coder 33B Instruct',
+				'deepseek-ai/deepseek-v3'                 => 'DeepSeek V3',
+				'deepseek-ai/deepseek-r1'                 => 'DeepSeek R1 (Reasoning)',
+				// Microsoft Phi models (small but capable).
+				'microsoft/phi-4'                   => 'Phi-4',
+				'microsoft/phi-3.5-mini-instruct'   => 'Phi-3.5 Mini Instruct',
 				// Google Gemma models.
-				'google/gemma-3-12b:2'        => 'Gemma 3 12B (v2)',
-				'google/gemma-2-27b-it'       => 'Gemma 2 27B Instruct',
-				'google/gemma-2-9b-it'        => 'Gemma 2 9B Instruct',
-				'google/gemma-2-2b-it'        => 'Gemma 2 2B Instruct',
-				// Llama models.
-				'meta-llama/llama-3.3-70b'    => 'Llama 3.3 70B',
-				'meta-llama/llama-3.2-3b'     => 'Llama 3.2 3B',
-				'meta-llama/llama-3.2-1b'     => 'Llama 3.2 1B',
-				'meta-llama/llama-3.1-8b'     => 'Llama 3.1 8B',
-				// Mistral models.
-				'mistralai/mistral-7b-v0.3'   => 'Mistral 7B v0.3',
-				'mistralai/mixtral-8x7b'      => 'Mixtral 8x7B',
-				'mistralai/mixtral-8x22b'     => 'Mixtral 8x22B',
-				// DeepSeek models.
-				'deepseek-ai/deepseek-coder-33b' => 'DeepSeek Coder 33B',
-				'deepseek-ai/deepseek-v3'     => 'DeepSeek V3',
-				// Microsoft Phi models.
-				'microsoft/phi-4'             => 'Phi-4',
-				'microsoft/phi-3.5-mini'      => 'Phi-3.5 Mini',
+				'google/gemma-3-12b-it'             => 'Gemma 3 12B Instruct',
+				'google/gemma-2-27b-it'             => 'Gemma 2 27B Instruct',
+				'google/gemma-2-9b-it'              => 'Gemma 2 9B Instruct',
+				'google/gemma-2-2b-it'              => 'Gemma 2 2B Instruct',
 			);
 
 			// Add common models that match vision/multimodal requirements.
