@@ -302,7 +302,7 @@ Tool Call Received
 
 ### Issue: Workflow stops too early
 **Check:** Max iterations setting  
-**Fix:** Increase in Settings → WP oOS → Custom AI Settings
+**Fix:** Increase in Settings → WP oOS → General Settings → Custom AI Settings (Filters)
 
 ### Issue: Tool not executing
 **Check:** User capability & tool enabled for assistant  

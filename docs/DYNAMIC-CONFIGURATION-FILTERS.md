@@ -33,7 +33,7 @@ All hardcoded constants, timeouts, delays, and default URLs in the plugin can no
 
 **NEW in 1.0.0:** The plugin provides an admin UI for configuring filters without writing code.
 
-Navigate to **Settings → WP oOS → Custom AI Settings (Filters)** to configure these filters through a user-friendly interface. This section allows you to override default values for the most commonly needed filters without writing any PHP code.
+Navigate to **Settings → WP oOS → General Settings → Custom AI Settings (Filters)** to configure these filters through a user-friendly interface. This section allows you to override default values for the most commonly needed filters without writing any PHP code.
 
 ### Supported Admin UI Filters
 
@@ -49,6 +49,7 @@ The following filters can be configured through the admin interface:
 - `wp_mcp_ai_max_attachment_bytes` - Maximum file attachment size
 - `wp_mcp_ai_default_ollama_endpoint_url` - Default Ollama endpoint URL
 - `wp_mcp_ai_default_lm_studio_endpoint_url` - Default LM Studio endpoint URL
+- `wp_mcp_ai_lm_studio_fallback_model` - LM Studio fallback model for OpenAI compatibility
 
 **Note:** Settings configured in the admin UI take effect at priority 5, so programmatic filters at priority 1-4 will override them. Empty fields in the admin UI will use system defaults.
 
@@ -652,13 +653,14 @@ add_filter( 'wp_mcp_ai_federation_peer_verification_delay', function( $delay ) {
 
 ### Using the Admin UI (Recommended for Non-Developers)
 
-Navigate to **Settings → WP oOS → Custom AI Settings (Filters)** and configure:
+Navigate to **Settings → WP oOS → General Settings → Custom AI Settings (Filters)** and configure:
 - AI model selection (light/advanced)
 - Agentic iterations limit
 - Resource management (tokens, timeouts)
 - Retry settings
 - File attachment size limit
 - Local AI endpoint URLs (Ollama, LM Studio)
+- LM Studio fallback model
 
 **Advantages:**
 - No code required

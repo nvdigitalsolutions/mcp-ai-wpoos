@@ -217,7 +217,7 @@ Configuration is applied in this priority order:
    ```
 
 2. **Admin Setting**
-   - Navigate to: **Settings → WP oOS → Custom AI Settings**
+   - Navigate to: **Settings → WP oOS → General Settings → Custom AI Settings (Filters)**
    - Field: **Max Agentic Iterations**
    - Range: 1-50
    - Default: 5

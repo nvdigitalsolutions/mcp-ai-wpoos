@@ -4,7 +4,9 @@
 
 The **Custom AI Settings (Filters)** feature provides a user-friendly admin interface for configuring WordPress filter values that control AI behavior. This allows administrators to customize the plugin's behavior without writing any PHP code.
 
-**Location:** Settings → WP oOS → Custom AI Settings (Filters)
+**Location:** Settings → WP oOS → General Settings → Custom AI Settings (Filters)
+
+**URL:** `admin.php?page=wp-mcp-ai-dashboard&tab=general&subtab=custom_filters`
 
 ## Purpose
 
@@ -106,19 +108,28 @@ Plugin Behavior (model selection, retries, timeouts, etc.)
   - Filter: `wp_mcp_ai_default_lm_studio_endpoint_url`
   - Used by: Admin settings sections
 
+- **LM Studio Fallback Model** (`filter_lm_studio_fallback_model`)
+  - Default: Uses "Default Model" setting
+  - Filter: `wp_mcp_ai_lm_studio_fallback_model`
+  - Used by: LM Studio provider when no model is explicitly specified
+  - Purpose: Provides OpenAI compatibility for LM Studio local AI
+
+
 ## Usage Examples
 
 ### For Non-Developers
 
 1. Go to **WordPress Admin → Settings → WP oOS**
-2. Click the **Custom AI Settings (Filters)** tab
-3. Configure desired settings:
+2. Click the **General Settings** tab
+3. Click the **Custom AI Settings (Filters)** subtab
+4. Configure desired settings:
    - Set default AI models
    - Adjust iteration limits
    - Configure timeouts
    - Set file size limits
    - Configure local AI endpoints
-4. Click **Save Changes**
+   - Set LM Studio fallback model
+5. Click **Save Changes**
 
 Empty fields use system defaults. No code required!
 
@@ -198,7 +209,7 @@ Tests verify:
 - ✅ Custom settings override defaults
 - ✅ Empty strings use defaults
 - ✅ Filter priority system works
-- ✅ All 10 filter types function correctly
+- ✅ All 11 filter types function correctly
 
 Run tests:
 ```bash
