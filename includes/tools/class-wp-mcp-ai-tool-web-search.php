@@ -481,6 +481,8 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'cacheable',            // Results can be cached for short periods.
 			'network-dependent',    // Requires internet connectivity.
 			'non-deterministic',    // Results may vary over time.
+			'may-timeout',          // May exceed typical HTTP request timeout.
+			'async-capable',        // Can execute asynchronously via cron.
 		);
 	}
 }

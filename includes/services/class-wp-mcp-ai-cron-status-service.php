@@ -43,12 +43,14 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Returns a lightweight array of active and recently completed jobs.
 	 * Only includes jobs created by the current user or accessible to admins.
 	 * Now includes async tool execution jobs.
+	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int $user_id User ID to filter jobs by (0 for all if admin).
-	 * @param int $limit   Maximum number of jobs to return (default 10).
+	 * @param int      $user_id User ID to filter jobs by (0 for all if admin).
+	 * @param int      $limit   Maximum number of jobs to return (default 10).
+	 * @param int|null $assistant_id Optional assistant ID to filter jobs for specific chat widget.
 	 * @return array Array of job status objects.
 	 */
-	public function get_status_summary( $user_id = 0, $limit = 10 ) {
+	public function get_status_summary( $user_id = 0, $limit = 10, $assistant_id = null ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -63,8 +65,8 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Get all jobs.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		// Get async tool jobs.
-		$async_jobs = $this->get_async_tool_jobs( $user_id );
+		// Get async tool jobs with optional assistant filter.
+		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 
 		// Merge async tool jobs with regular cron jobs.
 		$all_jobs = array_merge( $jobs, $async_jobs );
@@ -222,11 +224,13 @@ class WP_MCP_AI_Cron_Status_Service {
 	 *
 	 * Retrieves async tool execution jobs and formats them for status display.
 	 * Follows SOC by delegating actual job retrieval to async executor.
+	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int $user_id User ID to filter by.
+	 * @param int      $user_id User ID to filter by.
+	 * @param int|null $assistant_id Optional assistant ID to filter by.
 	 * @return array Array of async tool jobs formatted like cron jobs.
 	 */
-	protected function get_async_tool_jobs( $user_id ) {
+	protected function get_async_tool_jobs( $user_id, $assistant_id = null ) {
 		// Lazy load async executor.
 		$executor = $this->get_async_executor();
 
@@ -270,6 +274,15 @@ class WP_MCP_AI_Cron_Status_Service {
 
 			if ( ! $is_admin && $job_user_id !== $user_id ) {
 				continue;
+			}
+
+			// Filter by assistant_id if specified (for multi-widget isolation).
+			if ( null !== $assistant_id ) {
+				$job_assistant_id = isset( $metadata['context']['assistant_id'] ) ? absint( $metadata['context']['assistant_id'] ) : 0;
+
+				if ( $job_assistant_id !== $assistant_id ) {
+					continue;
+				}
 			}
 
 			// Add user_id for consistency.
@@ -365,11 +378,13 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Get count of jobs by status
 	 *
 	 * Now includes async tool jobs in counts.
+	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int $user_id User ID to filter by.
-	 * @return array Array with counts: pending, completed, total.
+	 * @param int      $user_id User ID to filter by.
+	 * @param int|null $assistant_id Optional assistant ID to filter by.
+	 * @return array Array with counts: pending, running, completed, failed, total.
 	 */
-	public function get_status_counts( $user_id = 0 ) {
+	public function get_status_counts( $user_id = 0, $assistant_id = null ) {
 		$user_id = absint( $user_id );
 		if ( ! $user_id ) {
 			$user_id = get_current_user_id();
@@ -380,8 +395,8 @@ class WP_MCP_AI_Cron_Status_Service {
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		// Include async tool jobs.
-		$async_jobs = $this->get_async_tool_jobs( $user_id );
+		// Include async tool jobs with optional assistant filter.
+		$async_jobs = $this->get_async_tool_jobs( $user_id, $assistant_id );
 		$all_jobs   = array_merge( $jobs, $async_jobs );
 
 		$counts = array(

@@ -159,7 +159,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			true
 		);
 
-		// /cron-status - Lightweight cron job status for admin dashboard.
+		// /cron-status - Lightweight cron job status for admin dashboard and chat widgets.
 		register_rest_route(
 			self::REST_NAMESPACE,
 			'/cron-status',
@@ -168,6 +168,21 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'methods'             => WP_REST_Server::READABLE,
 					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
 					'callback'            => array( $this, 'handle_cron_status_request' ),
+					'args'                => array(
+						'assistant_id' => array(
+							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'limit'        => array(
+							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'default'           => 10,
+							'sanitize_callback' => 'absint',
+						),
+					),
 					'args'                => array(
 						'limit' => array(
 							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
