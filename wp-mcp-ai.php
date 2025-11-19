@@ -950,6 +950,31 @@ if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
 }
 
+/**
+ * Initialize async tool executor during plugin bootstrap.
+ *
+ * Ensures the executor's init() method is called early enough to register
+ * the wp_mcp_ai_async_tool_execution cron hook handler. Without this,
+ * async tool cron jobs would be scheduled but never execute.
+ *
+ * SOC: Executor handles execution logic, this hook ensures initialization timing.
+ */
+if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor' ) ) {
+	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
+	/**
+	 * Initialize the async tool executor.
+	 *
+	 * Called during wp_mcp_ai_bootstrapped action to ensure the executor
+	 * registers its cron hook handler before any async jobs might run.
+	 */
+	function wp_mcp_ai_init_async_executor() {
+		wp_mcp_ai_get_async_tool_executor();
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
 	/**
 	 * Helper function to iterate through all sites in a multisite network.
