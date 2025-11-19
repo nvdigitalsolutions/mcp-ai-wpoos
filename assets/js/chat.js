@@ -7397,15 +7397,46 @@
                         } else if (eventType === 'error') {
                             handleErrorEvent(state, data);
                         } else if (eventType === 'message' || !eventType) {
-                            // Final message or OpenAI format streaming response
+                            // Handle streaming responses from different AI providers
+                            let contentChunk = null;
+                            
+                            // OpenAI format: choices[0].delta.content
                             if (data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
                                 if (delta && delta.content) {
-                                    fullContent += delta.content;
-                                    updateCallback(fullContent);
+                                    contentChunk = delta.content;
                                 }
-                            } else if (data.data) {
-                                // Final response with complete data
+                            }
+                            // Gemini format: candidates[0].content.parts[0].text
+                            else if (data.candidates && data.candidates[0]) {
+                                const candidate = data.candidates[0];
+                                if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
+                                    contentChunk = candidate.content.parts[0].text;
+                                }
+                            }
+                            // Ollama/LM Studio format: message.content or response
+                            else if (data.message && data.message.content) {
+                                contentChunk = data.message.content;
+                            }
+                            else if (data.response) {
+                                contentChunk = data.response;
+                            }
+                            // Direct content field
+                            else if (data.content && typeof data.content === 'string') {
+                                contentChunk = data.content;
+                            }
+                            // Direct text field
+                            else if (data.text && typeof data.text === 'string') {
+                                contentChunk = data.text;
+                            }
+                            
+                            // If we found content, add it to fullContent and update UI
+                            if (contentChunk) {
+                                fullContent += contentChunk;
+                                updateCallback(fullContent);
+                            }
+                            // Check for final response with complete data
+                            else if (data.data) {
                                 return { content: fullContent, finalData: data };
                             }
                         }
