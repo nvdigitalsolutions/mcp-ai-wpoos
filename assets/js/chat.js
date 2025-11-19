@@ -7407,8 +7407,19 @@
                             // OpenAI format: choices[0].delta.content
                             if (data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
-                                if (delta && delta.content) {
-                                    contentChunk = delta.content;
+                                if (delta) {
+                                    // Main content
+                                    if (delta.content) {
+                                        contentChunk = delta.content;
+                                    }
+                                    // OpenAI o1 models may have reasoning_content (if exposed in future)
+                                    if (delta.reasoning_content && typeof delta.reasoning_content === 'string') {
+                                        thinkingChunk = delta.reasoning_content;
+                                    }
+                                    // Alternative reasoning field
+                                    if (delta.reasoning && typeof delta.reasoning === 'string') {
+                                        thinkingChunk = delta.reasoning;
+                                    }
                                 }
                             }
                             // Gemini format: candidates[0].content.parts[0].text
@@ -7418,6 +7429,7 @@
                                     // Check for thinking/thought parts
                                     for (let p = 0; p < candidate.content.parts.length; p++) {
                                         const part = candidate.content.parts[p];
+                                        // Gemini 2.0 Flash Thinking mode
                                         if (part.thought && typeof part.thought === 'string') {
                                             thinkingChunk = part.thought;
                                         } else if (part.text && typeof part.text === 'string') {
@@ -7426,9 +7438,23 @@
                                     }
                                 }
                             }
+                            // Anthropic format: May have thinking in content blocks
+                            else if (data.type === 'content_block_delta' && data.delta) {
+                                if (data.delta.type === 'text_delta' && data.delta.text) {
+                                    contentChunk = data.delta.text;
+                                }
+                                // Anthropic extended thinking (if exposed)
+                                if (data.delta.type === 'thinking_delta' && data.delta.thinking) {
+                                    thinkingChunk = data.delta.thinking;
+                                }
+                            }
                             // Ollama/LM Studio format: message.content or response
                             else if (data.message && data.message.content) {
                                 contentChunk = data.message.content;
+                                // Check if message has thinking field (some models may support this)
+                                if (data.message.thinking && typeof data.message.thinking === 'string') {
+                                    thinkingChunk = data.message.thinking;
+                                }
                             }
                             else if (data.response) {
                                 contentChunk = data.response;
@@ -7440,6 +7466,18 @@
                             // Direct text field
                             else if (data.text && typeof data.text === 'string') {
                                 contentChunk = data.text;
+                            }
+                            
+                            // Check for thinking/reasoning in common fields across providers
+                            if (!thinkingChunk) {
+                                // Generic thinking field
+                                if (data.thinking && typeof data.thinking === 'string') {
+                                    thinkingChunk = data.thinking;
+                                }
+                                // Generic reasoning field
+                                if (data.reasoning && typeof data.reasoning === 'string') {
+                                    thinkingChunk = data.reasoning;
+                                }
                             }
                             
                             // Display thinking text in status section if present

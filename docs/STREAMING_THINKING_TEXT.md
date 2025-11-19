@@ -66,19 +66,48 @@ if ( isset( $part['thought'] ) ) {
 }
 ```
 
-### 3. Frontend Display
+### 3. Frontend Multi-Provider Detection
 
-The JavaScript `processSSEStream()` function detects thinking chunks and displays them in the status section:
+The JavaScript `processSSEStream()` function intelligently detects thinking text from multiple provider formats:
 
 ```javascript
-// Parse Gemini parts for thinking text
-for (let p = 0; p < candidate.content.parts.length; p++) {
-    const part = candidate.content.parts[p];
-    if (part.thought && typeof part.thought === 'string') {
-        thinkingChunk = part.thought;
-    }
+// OpenAI format
+if (delta.reasoning_content) {
+    thinkingChunk = delta.reasoning_content;
 }
 
+// Gemini format
+if (part.thought) {
+    thinkingChunk = part.thought;
+}
+
+// Anthropic format
+if (data.delta.type === 'thinking_delta') {
+    thinkingChunk = data.delta.thinking;
+}
+
+// Generic fallback
+if (data.thinking || data.reasoning) {
+    thinkingChunk = data.thinking || data.reasoning;
+}
+```
+
+**Supported Field Names:**
+- `delta.reasoning_content` - OpenAI (if available)
+- `delta.reasoning` - OpenAI alternative
+- `part.thought` - Gemini Thinking mode
+- `delta.thinking` - Anthropic (if available)
+- `message.thinking` - Ollama/LM Studio
+- `thinking` - Generic fallback
+- `reasoning` - Generic fallback
+
+This multi-provider approach ensures the feature works automatically when any provider adds thinking/reasoning output to their streaming API.
+
+### 4. Frontend Display
+
+The status section is updated with the accumulated thinking text:
+
+```javascript
 // Display in status section
 if (thinkingChunk) {
     state.thinkingText += thinkingChunk;
@@ -90,7 +119,7 @@ if (thinkingChunk) {
 }
 ```
 
-### 4. Visual Feedback
+### 5. Visual Feedback
 
 The status section shows:
 - Progressive accumulation of thinking text
@@ -98,7 +127,7 @@ The status section shows:
 - Monospace font for readability
 - Amber theme to distinguish from other statuses
 
-### 5. Cleanup
+### 6. Cleanup
 
 When streaming completes, the thinking text buffer is cleared:
 
@@ -109,19 +138,49 @@ state.thinkingText = null;
 
 ## Supported Providers
 
-### Gemini (✅ Full Support)
+### Gemini (✅ Full Support - Confirmed)
 - **Gemini 2.0 Flash Thinking Mode**: Provides `thought` parts in streaming responses
 - **Format**: `candidates[0].content.parts[].thought`
 - **Display**: Real-time streaming of thinking text in status section
+- **Status**: Fully implemented and tested
 
-### OpenAI (❌ Limited Support)
-- **O1 Models**: Perform internal reasoning but don't expose it in streaming API
-- **Format**: No `reasoning_content` or similar field in streaming responses
-- **Display**: Not applicable (thinking happens internally, not streamed)
+### OpenAI (🔄 Partial Support - Future Ready)
+- **O1 Models**: Perform internal reasoning but currently don't expose it in streaming API
+- **Potential Formats**: 
+  - `choices[0].delta.reasoning_content` - If OpenAI exposes reasoning in future
+  - `choices[0].delta.reasoning` - Alternative field name
+- **Display**: Will automatically work if OpenAI adds thinking output
+- **Status**: Code ready, waiting for API support
 
-### Ollama/LM Studio (❓ Unknown)
-- **Support**: Depends on model capabilities
-- **Format**: Would need to be added if models support thinking output
+### Anthropic (🔄 Partial Support - Future Ready)
+- **Claude Models**: Extended thinking feature may be available
+- **Potential Formats**:
+  - `delta.type === 'thinking_delta'` with `delta.thinking` field
+  - Claude's streaming format with thinking blocks
+- **Display**: Will automatically work if Anthropic exposes thinking
+- **Status**: Code ready, waiting for API support
+
+### Ollama (🔄 Partial Support - Model Dependent)
+- **Support**: Depends on underlying model capabilities
+- **Potential Formats**:
+  - `message.thinking` - If model supports thinking output
+  - `thinking` - Generic field in response
+- **Display**: Will work if local model provides thinking field
+- **Status**: Compatible, requires model with thinking support
+
+### LM Studio (🔄 Partial Support - Model Dependent)
+- **Support**: Depends on model and configuration
+- **Formats**: Usually OpenAI-compatible, may not have thinking field
+- **Display**: Will work if model provides thinking in compatible format
+- **Status**: Compatible, requires model with thinking support
+
+### Generic Fallback (✅ Supported)
+- **Any Provider**: The code checks for common field names
+- **Formats Supported**:
+  - `data.thinking` - Generic thinking field
+  - `data.reasoning` - Generic reasoning field
+- **Display**: Will automatically detect and display
+- **Status**: Broad compatibility built-in
 
 ## CSS Classes
 
