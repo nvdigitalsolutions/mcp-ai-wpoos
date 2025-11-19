@@ -1370,6 +1370,18 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				);
 			}
 
+			if ( isset( $this->metaboxes['primary-roles'] ) ) {
+				$metabox = $this->metaboxes['primary-roles'];
+				add_meta_box(
+					$metabox->get_id(),
+					$metabox->get_title(),
+					array( $metabox, 'render' ),
+					self::POST_TYPE,
+					$metabox->get_context(),
+					$metabox->get_priority()
+				);
+			}
+
 			// Only show mesh routing meta box if mesh is enabled.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			if ( ! empty( $settings['enable_mesh'] ) && isset( $this->metaboxes['mesh-routing'] ) ) {
