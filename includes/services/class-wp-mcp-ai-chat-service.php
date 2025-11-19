@@ -423,9 +423,21 @@ class WP_MCP_AI_Chat_Service {
 			);
 
 			// Format result.
-			$result_content = is_wp_error( $tool_result )
-				? wp_json_encode( array( 'error' => $tool_result->get_error_message() ) )
-				: wp_json_encode( $tool_result );
+			if ( is_wp_error( $tool_result ) ) {
+				$error_payload = array(
+					'error' => $tool_result->get_error_message(),
+				);
+
+				// Include error data if available (helps AI understand error context).
+				$error_data = $tool_result->get_error_data();
+				if ( is_array( $error_data ) && ! empty( $error_data ) ) {
+					$error_payload['error_data'] = $error_data;
+				}
+
+				$result_content = wp_json_encode( $error_payload );
+			} else {
+				$result_content = wp_json_encode( $tool_result );
+			}
 
 			$results[] = array(
 				'role'         => 'tool',

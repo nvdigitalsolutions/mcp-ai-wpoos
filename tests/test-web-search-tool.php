@@ -313,14 +313,20 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
-		$this->assertSame(
-			'The web search results are not ready yet. Try again in a few seconds.',
+		$this->assertStringContainsString(
+			'still being processed',
+			$result->get_error_message()
+		);
+		$this->assertStringContainsString(
+			'cannot be resolved by retrying immediately',
 			$result->get_error_message()
 		);
 
 		$data = $result->get_error_data();
 		$this->assertIsArray( $data );
 		$this->assertSame( 202, $data['status'] );
+		$this->assertTrue( $data['is_pending'] );
+		$this->assertTrue( $data['should_wait'] );
 		$this->assertSame( '7', $data['retry_after'] );
 	}
 
