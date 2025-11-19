@@ -466,8 +466,20 @@ class WP_MCP_AI_Model_Config_Renderer {
 
 		// OpenAI models.
 		if ( 'openai' === $provider ) {
+			// GPT-5 Codex variants (coding-optimized, text-only).
+			if ( strpos( $model_id, 'gpt-5-codex' ) !== false ) {
+				return $capability_flags; // Text-only, no special flags.
+			}
+
+			// GPT-5 series (multimodal - vision capable) - 2025.
+			if ( strpos( $model_id, 'gpt-5' ) !== false ) {
+				$capability_flags[] = 'vision';
+				$capability_flags[] = 'multimodal';
+				return $capability_flags;
+			}
+
 			// Reasoning models (text-only).
-			$reasoning_models = array( 'o1-2024-12-17', 'o1-preview', 'o1-mini', 'o3-mini' );
+			$reasoning_models = array( 'o1-2024-12-17', 'o1-preview', 'o1-mini', 'o3-mini', 'o3', 'o4-mini' );
 			if ( in_array( $model_id, $reasoning_models, true ) ) {
 				return $capability_flags; // Text-only, no special flags.
 			}
@@ -506,8 +518,8 @@ class WP_MCP_AI_Model_Config_Renderer {
 
 		// Google Gemini models.
 		if ( 'gemini' === $provider ) {
-			// Gemini 2.x and 1.5 series (multimodal - text, image, video).
-			if ( strpos( $model_id, 'gemini-2' ) !== false || strpos( $model_id, 'gemini-1.5' ) !== false || strpos( $model_id, 'gemini-exp' ) !== false ) {
+			// Gemini 3.x, 2.x and 1.5 series (multimodal - text, image, video).
+			if ( strpos( $model_id, 'gemini-3' ) !== false || strpos( $model_id, 'gemini-2' ) !== false || strpos( $model_id, 'gemini-1.5' ) !== false || strpos( $model_id, 'gemini-exp' ) !== false || strpos( $model_id, 'gemini-live' ) !== false ) {
 				$capability_flags[] = 'vision';
 				$capability_flags[] = 'multimodal';
 				return $capability_flags;
