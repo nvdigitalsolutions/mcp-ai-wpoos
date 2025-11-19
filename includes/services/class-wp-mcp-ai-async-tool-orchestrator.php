@@ -39,10 +39,10 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * @var array
 	 */
 	protected $timeout_risk_flags = array(
-		'async',
-		'long-running',
-		'may-timeout',
-		'background-only',
+		'async',             // Tool may take significant time.
+		'long-running',      // Execution may take minutes or hours.
+		'may-timeout',       // May exceed typical HTTP request timeout.
+		'background-only',   // Must run in background to avoid timeouts.
 	);
 
 	/**
@@ -52,6 +52,7 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * 1. Tool capability flags
 	 * 2. Explicit async parameter in arguments
 	 * 3. Global async execution setting
+	 * 4. Whether tool has its own async mechanism (deferred-result)
 	 *
 	 * @param object $tool Tool instance implementing WP_MCP_AI_Tool_Interface.
 	 * @param array  $arguments Tool arguments.
@@ -59,6 +60,11 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * @return bool True if tool should execute asynchronously.
 	 */
 	public function should_execute_async( $tool, array $arguments = array(), array $context = array() ) {
+		// Check if tool has its own internal async mechanism - don't queue these
+		if ( $this->has_self_async_mechanism( $tool ) ) {
+			return false;
+		}
+
 		// Check if tool explicitly requests async execution.
 		if ( isset( $arguments['async'] ) && true === $arguments['async'] ) {
 			return true;
@@ -109,6 +115,8 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 		return apply_filters( 'wp_mcp_ai_async_execution_enabled', true );
 	}
 
+
+
 	/**
 	 * Check if tool has timeout risk based on capability flags
 	 *
@@ -133,6 +141,26 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check if tool prefers background execution
+	 *
+	 * @param object $tool Tool instance.
+	 * @return bool True if tool prefers background.
+	 */
+	protected function prefers_background( $tool ) {
+		if ( ! $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+			return false;
+		}
+
+		$flags = $tool->get_capability_flags();
+
+		if ( ! is_array( $flags ) ) {
+			return false;
+		}
+
+		return in_array( 'background-preferred', $flags, true );
 	}
 
 	/**
