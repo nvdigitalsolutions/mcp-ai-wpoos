@@ -44,11 +44,18 @@
 		 * @param {number} limit - Maximum number of jobs to fetch
 		 * @return {Promise} Promise resolving to status data
 		 */
-		fetchStatus: function (endpoint, nonce, limit) {
+		fetchStatus: function (endpoint, nonce, limit, assistantId) {
 			limit = limit || 10;
 
-			const url = endpoint + '?limit=' + limit;
-			const headers = {
+			// Build URL with parameters
+		let url = endpoint + '?limit=' + limit;
+		
+		// Add assistant_id for multi-widget isolation
+		if (assistantId) {
+			url += '&assistant_id=' + encodeURIComponent(assistantId);
+		}
+		
+		const headers = {
 				'Content-Type': 'application/json',
 			};
 
@@ -83,13 +90,13 @@
 		 * @param {string} nonce - WordPress REST nonce
 		 * @param {Function} callback - Callback function to handle status updates
 		 */
-		startPolling: function (containerId, endpoint, nonce, callback) {
+		startPolling: function (containerId, endpoint, nonce, callback, assistantId) {
 			// Stop existing poller if any
 			this.stopPolling(containerId);
 
 			// Fetch immediately
 			const self = this;
-			this.fetchStatus(endpoint, nonce, 10).then(function (data) {
+			this.fetchStatus(endpoint, nonce, 10, assistantId).then(function (data) {
 				if (data) {
 					self.cache[containerId] = data;
 					if (callback && typeof callback === 'function') {

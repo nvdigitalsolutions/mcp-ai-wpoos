@@ -1838,8 +1838,13 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_capability_flags() {
 		return array(
 			'read-only',            // Only reads data, does not modify state.
-			'local-only',           // No external API calls.
+			'external-api',         // Makes external HTTP requests to Crawl4AI service.
 			'requires-capability',  // Requires user capabilities.
+			'network-dependent',    // Requires connectivity to Crawl4AI service.
+			'long-running',         // Web crawling can take minutes.
+			'may-timeout',          // Crawling multiple pages can exceed PHP timeout.
+			'async-capable',        // Can execute asynchronously via new cron system.
+			'background-preferred', // Should default to background execution for large jobs.
 		);
 	}
 }

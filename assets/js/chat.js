@@ -9458,8 +9458,9 @@
             }
         }
 
-        // Start polling for cron status
-        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay);
+        // Start polling for cron status with assistant_id for multi-widget isolation
+        const assistantId = config.assistantId || null;
+        window.wpMcpAiCronStatus.startPolling(instanceId, cronStatusEndpoint, nonce, updateCronStatusDisplay, assistantId);
 
         // Stop polling when chat is destroyed or hidden
         const observer = new MutationObserver(function(mutations) {

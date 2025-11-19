@@ -875,14 +875,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$limit = 10;
 			}
 
-			// Get status summary and counts.
-			$jobs   = $service->get_status_summary( $user_id, $limit );
-			$counts = $service->get_status_counts( $user_id );
+			$assistant_id = $request->get_param( 'assistant_id' );
+			if ( $assistant_id ) {
+				$assistant_id = absint( $assistant_id );
+			}
+
+			// Get status summary and counts with optional assistant filter.
+			$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id );
+			$counts = $service->get_status_counts( $user_id, $assistant_id );
 
 			$response = array(
 				'jobs'   => $jobs,
 				'counts' => $counts,
 			);
+
+			// Include assistant_id in response if filtered.
+			if ( $assistant_id ) {
+				$response['assistant_id'] = $assistant_id;
+			}
 
 			return rest_ensure_response( $response );
 		}
@@ -7096,6 +7106,76 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// parameters like 'messages' that aren't in the tool's schema.
 			$arguments = $this->filter_tool_arguments_by_schema( $tool, $arguments );
 
+			// Orchestration Layer: Check if tool should execute asynchronously.
+			// Get async orchestrator to determine execution strategy.
+			$orchestrator = wp_mcp_ai_get_async_tool_orchestrator();
+			$should_async = $orchestrator->should_execute_async( $tool, $arguments, $context );
+
+			// CRITICAL: Prevent infinite loops in agentic workflows.
+			// If we're already in an iteration and this is an async tool, check if we should defer.
+			// Async tools queued in agentic loops should be marked to prevent re-queuing.
+			if ( $should_async && $iteration > 0 ) {
+				// Check if this tool was already queued in a previous iteration.
+				$tool_call_signature = md5( wp_json_encode( array( $tool_slug, $arguments ) ) );
+				$previous_calls      = isset( $context['tool_call_history'] ) ? $context['tool_call_history'] : array();
+
+				if ( in_array( $tool_call_signature, $previous_calls, true ) ) {
+					// Tool already called with same arguments - don't queue again.
+					$should_async = false;
+					WP_MCP_AI_Logger::log_event(
+						'async_tool_loop_prevented',
+						sprintf( 'Prevented async re-queuing of %s in iteration %d', $tool_slug, $iteration ),
+						array(
+							'tool_slug'  => $tool_slug,
+							'iteration'  => $iteration,
+							'signature'  => $tool_call_signature,
+						)
+					);
+				}
+			}
+
+			if ( $should_async ) {
+				// Queue tool for async execution via cron.
+				$executor = wp_mcp_ai_get_async_tool_executor();
+				$job_id   = $executor->queue_tool( $tool_slug, $arguments, $context );
+
+				if ( is_wp_error( $job_id ) ) {
+					// Failed to queue - execute synchronously as fallback.
+					WP_MCP_AI_Logger::log_error(
+						sprintf( 'Failed to queue async tool %s, executing synchronously', $tool_slug ),
+						array(
+							'tool_slug' => $tool_slug,
+							'error'     => $job_id->get_error_message(),
+						)
+					);
+				} else {
+					// Successfully queued - return pending status.
+					WP_MCP_AI_Logger::log_event(
+						'async_tool_queued',
+						sprintf( 'Tool %s queued for async execution', $tool_slug ),
+						array(
+							'tool_slug' => $tool_slug,
+							'job_id'    => $job_id,
+						)
+					);
+
+					// Return a structured response indicating the tool is processing asynchronously.
+					// The LLM should understand this and not retry immediately.
+					return array(
+						'status'   => 'pending',
+						'job_id'   => $job_id,
+						'message'  => sprintf(
+							/* translators: %s: tool name */
+							__( 'Tool "%s" is processing in the background. Results will be available shortly. Please check the cron status for completion.', 'wp-mcp-ai' ),
+							$tool_name
+						),
+						'async'    => true,
+						'tool_slug' => $tool_slug,
+					);
+				}
+			}
+
+			// Execute tool synchronously (either not async-capable or async queueing failed).
 			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
 			try {
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
