@@ -6258,6 +6258,195 @@
         });
     }
 
+    /**
+     * Poll for async tool execution result
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @param {string} toolName Tool name for display purposes
+     * @return {Promise} Promise that resolves with the tool result
+     */
+    function waitForAsyncToolResult(state, jobId, toolName) {
+        if (!jobId || !state || !state.config) {
+            return Promise.reject(new Error('Missing job ID or state'));
+        }
+
+        const pollDelay = 3000; // Poll every 3 seconds
+        const timeout = 180000; // 3 minute timeout
+        const startTime = Date.now();
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+
+        state.pendingAsyncTools[jobId] = {
+            entry: pendingEntry,
+            pollDelay: pollDelay,
+            timeout: timeout,
+            start: startTime,
+            timer: null,
+            toolName: toolName,
+        };
+
+        return new Promise(function (resolve, reject) {
+            function cleanup() {
+                const record = state.pendingAsyncTools[jobId];
+                if (record && record.timer) {
+                    clearTimeout(record.timer);
+                }
+                delete state.pendingAsyncTools[jobId];
+            }
+
+            function scheduleNext() {
+                const record = state.pendingAsyncTools[jobId];
+                if (!record) {
+                    return;
+                }
+                record.timer = setTimeout(poll, record.pollDelay);
+            }
+
+            function poll() {
+                const record = state.pendingAsyncTools[jobId];
+                if (!record) {
+                    return;
+                }
+
+                if (Date.now() - record.start >= record.timeout) {
+                    cleanup();
+                    updatePendingTaskEntry(pendingEntry, getString('toolTimeout', 'Tool timed out before completing.'));
+                    reject(new Error('timeout'));
+                    return;
+                }
+
+                fetchAsyncToolResult(state, jobId)
+                    .then(function (payload) {
+                        if (!payload) {
+                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                            scheduleNext();
+                            return;
+                        }
+
+                        const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+
+                        if (status === 'failed' || status === 'error') {
+                            cleanup();
+                            const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
+                            updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'Tool failed: %s'), errorMessage));
+                            reject(new Error(errorMessage));
+                            return;
+                        }
+
+                        if (status === 'completed') {
+                            cleanup();
+                            // Remove the pending message
+                            if (pendingEntry && pendingEntry.parentNode) {
+                                pendingEntry.parentNode.removeChild(pendingEntry);
+                            }
+                            // Display the actual result
+                            if (payload.result) {
+                                displayAsyncToolResult(state, record.toolName, payload.result);
+                                resolve(payload.result);
+                            } else {
+                                updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
+                                resolve(payload);
+                            }
+                            return;
+                        }
+
+                        // Still pending or running
+                        updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                        scheduleNext();
+                    })
+                    .catch(function (error) {
+                        cleanup();
+                        const message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
+                        updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'Tool failed: %s'), message));
+                        reject(error);
+                    });
+            }
+
+            poll();
+        });
+    }
+
+    /**
+     * Fetch async tool result from cron-status endpoint
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @return {Promise} Promise that resolves with the job status
+     */
+    function fetchAsyncToolResult(state, jobId) {
+        if (!state || !state.config || !state.config.restUrl) {
+            return Promise.reject(new Error('REST URL not configured.'));
+        }
+
+        let url = state.config.restUrl;
+        if (url.charAt(url.length - 1) !== '/') {
+            url += '/';
+        }
+        url += 'cron-status/' + encodeURIComponent(jobId);
+
+        return fetch(url, {
+            method: 'GET',
+            headers: buildJsonHeaders(state),
+            credentials: 'same-origin',
+        }).then(function (response) {
+            if (response.status === 404) {
+                return null;
+            }
+
+            return response
+                .json()
+                .catch(function () {
+                    return null;
+                })
+                .then(function (data) {
+                    if (!response.ok) {
+                        const error = new Error('HTTP ' + response.status);
+                        error.status = response.status;
+                        throw error;
+                    }
+                    return data;
+                });
+        });
+    }
+
+    /**
+     * Display async tool result in the chat
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} toolName Tool name
+     * @param {Object} result Tool result data
+     */
+    function displayAsyncToolResult(state, toolName, result) {
+        if (!state || !state.messagesEl || !result) {
+            return;
+        }
+
+        // Extract attachments from tool result (e.g., generated images, audio files)
+        const normalized = typeof result === 'object' && result !== null ? 
+            normaliseToolResultForDisplay(toolName, result) : null;
+
+        let resultText = '';
+        let attachments = [];
+
+        if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+            // Tool result has attachments (images, files) - use normalized text and attachments
+            resultText = normalized.text || (toolName + ': ' + getString('completed', 'Completed'));
+            attachments = normalized.attachments;
+        } else if (result.text) {
+            resultText = result.text;
+        } else if (result.message) {
+            resultText = result.message;
+        } else {
+            resultText = toolName + ': ' + getString('completed', 'Completed successfully');
+        }
+
+        // Display the tool result with attachments
+        appendMessage(state.messagesEl, 'tool', {
+            text: '✓ ' + resultText,
+            attachments: attachments
+        });
+    }
+
     function formatBytes(bytes) {
         if (typeof bytes !== 'number' || !isFinite(bytes) || bytes <= 0) {
             return '';
@@ -6638,6 +6827,7 @@
                 speechCache: Object.create(null),
                 activeSpeech: null,
                 pendingCrawlTasks: Object.create(null),
+                pendingAsyncTools: Object.create(null),
                 transcribing: false,
                 isRecording: false,
                 recordingStream: null,
@@ -7590,6 +7780,19 @@
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
             const result = data.result || {};
+            
+            // Check if this is an async tool execution that's still pending
+            if (result.async === true && result.status === 'pending' && result.job_id) {
+                // Start polling for the async result
+                waitForAsyncToolResult(state, result.job_id, toolName).catch(function (error) {
+                    // Error is already displayed by waitForAsyncToolResult
+                    if (window.console && console.error) {
+                        console.error('[WP oOS] Async tool polling failed:', error);
+                    }
+                });
+                // Don't display the pending message here - waitForAsyncToolResult handles it
+                return;
+            }
             
             // Extract attachments from tool result (e.g., generated images, audio files)
             const normalized = typeof result === 'object' && result !== null ? 
