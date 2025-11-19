@@ -35,10 +35,6 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
 
-// Initialize async tool executor hooks.
-$async_executor = new WP_MCP_AI_Tool_Async_Executor();
-$async_executor->init();
-
 // Load performance monitor service only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance-monitor-service.php';

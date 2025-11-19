@@ -48,11 +48,11 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	/**
 	 * Determine if a tool should execute asynchronously
 	 *
-	 * Decision is based on:
-	 * 1. Tool capability flags
-	 * 2. Explicit async parameter in arguments
-	 * 3. Global async execution setting
-	 * 4. Whether tool has its own async mechanism (deferred-result)
+	 * Decision hierarchy (SOC - User preference > System intelligence):
+	 * 1. Explicit user parameter (async=true/false) - HIGHEST PRIORITY
+	 * 2. Legacy compatibility (wait_for_completion=false) - COMPATIBILITY
+	 * 3. Background-only flag - SYSTEM REQUIREMENT
+	 * 4. Global async setting + timeout risk flags - SYSTEM INTELLIGENCE
 	 *
 	 * @param object $tool Tool instance implementing WP_MCP_AI_Tool_Interface.
 	 * @param array  $arguments Tool arguments.
@@ -60,33 +60,35 @@ class WP_MCP_AI_Async_Tool_Orchestrator {
 	 * @return bool True if tool should execute asynchronously.
 	 */
 	public function should_execute_async( $tool, array $arguments = array(), array $context = array() ) {
-		// Check if tool has its own internal async mechanism - don't queue these
-		if ( $this->has_self_async_mechanism( $tool ) ) {
-			return false;
+		// Priority 1: Explicit async parameter from user/LLM
+		if ( isset( $arguments['async'] ) ) {
+			return (bool) $arguments['async'];
 		}
 
-		// Check if tool explicitly requests async execution.
-		if ( isset( $arguments['async'] ) && true === $arguments['async'] ) {
+		// Priority 2: Legacy compatibility - respect wait_for_completion parameter
+		// If wait_for_completion=false, tool wants async (don't wait)
+		// If wait_for_completion=true, tool wants sync (wait in same request)
+		if ( isset( $arguments['wait_for_completion'] ) ) {
+			return ! (bool) $arguments['wait_for_completion'];
+		}
+
+		// Priority 3: Background-only tools MUST run async
+		if ( $this->is_background_only( $tool ) ) {
 			return true;
 		}
 
-		// Check if tool explicitly disables async execution.
-		if ( isset( $arguments['async'] ) && false === $arguments['async'] ) {
-			return false;
-		}
-
-		// Check global async execution setting.
+		// Priority 4: System intelligence - check global setting
 		if ( ! $this->is_async_execution_enabled() ) {
 			return false;
 		}
 
-		// Check tool capability flags.
+		// Priority 5: Check tool capability flags for timeout risk
 		if ( ! $this->has_timeout_risk( $tool ) ) {
 			return false;
 		}
 
-		// Check if tool is marked as background-only.
-		if ( $this->is_background_only( $tool ) ) {
+		// Priority 6: Check if tool prefers background execution
+		if ( $this->prefers_background( $tool ) ) {
 			return true;
 		}
 
