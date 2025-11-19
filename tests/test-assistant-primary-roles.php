@@ -293,4 +293,45 @@ class Test_Assistant_Primary_Roles extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'system_prompt', $config );
 		$this->assertEquals( 'Only custom prompt.', $config['system_prompt'] );
 	}
+
+	/**
+	 * Test that primary-roles metabox is registered.
+	 */
+	public function test_primary_roles_metabox_is_registered() {
+		// Create a mock registry.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		$registry->init();
+
+		// Create assistant CPT instance.
+		$assistant_cpt = new WP_MCP_AI_Assistant_CPT( $registry );
+
+		// Simulate editing an assistant post.
+		global $current_screen;
+		$current_screen = (object) array(
+			'post_type' => 'mcp_ai_assistant',
+		);
+
+		// Call register_meta_boxes.
+		$assistant_cpt->register_meta_boxes();
+
+		// Check that the primary-roles metabox is registered.
+		global $wp_meta_boxes;
+		$this->assertNotEmpty( $wp_meta_boxes['mcp_ai_assistant'], 'Metaboxes should be registered for assistant post type' );
+
+		// Find the primary-roles metabox.
+		$found = false;
+		foreach ( $wp_meta_boxes['mcp_ai_assistant'] as $context => $priority_boxes ) {
+			foreach ( $priority_boxes as $priority => $boxes ) {
+				if ( isset( $boxes['wp_mcp_ai_primary_roles'] ) ) {
+					$found = true;
+					break 2;
+				}
+			}
+		}
+
+		$this->assertTrue( $found, 'Primary Roles metabox should be registered' );
+
+		// Clean up.
+		$current_screen = null;
+	}
 }
