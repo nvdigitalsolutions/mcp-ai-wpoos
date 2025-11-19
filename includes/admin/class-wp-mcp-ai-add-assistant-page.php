@@ -304,7 +304,13 @@ class WP_MCP_AI_Add_Assistant_Page {
 		$final_model       = ! empty( $model ) ? $model : $default_model_val;
 		$final_temperature = $default_temp_val;
 
-		// Build system prompt from profession data.
+		// Set the profession as a primary role for programmatic prompt construction.
+		// This enables the new Primary Roles feature.
+		$primary_roles = array( $profession_id );
+
+		// Build system prompt from profession data (backward compatibility).
+		// Note: With primary roles set, get_assistant_configuration() will programmatically
+		// build the prompt. We keep this for assistants that may not use primary roles.
 		$system_prompt = $role_description;
 		if ( ! empty( $knowledge_base ) ) {
 			$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
@@ -329,6 +335,9 @@ class WP_MCP_AI_Add_Assistant_Page {
 		update_post_meta( $assistant_id, '_wp_mcp_ai_model', $final_model );
 		update_post_meta( $assistant_id, '_wp_mcp_ai_temperature', $final_temperature );
 		update_post_meta( $assistant_id, '_wp_mcp_ai_system_prompt', $system_prompt );
+
+		// Set primary role - enables programmatic prompt construction.
+		update_post_meta( $assistant_id, '_wp_mcp_ai_primary_roles', $primary_roles );
 
 		if ( is_array( $default_tools ) && ! empty( $default_tools ) ) {
 			update_post_meta( $assistant_id, '_wp_mcp_ai_tools', $default_tools );
