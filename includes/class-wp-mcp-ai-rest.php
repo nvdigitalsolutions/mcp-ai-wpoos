@@ -2665,6 +2665,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$messages[] = $tool_message;
 				}
 
+				// Stream thinking status immediately after tool execution completes.
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'thinking',
+						'message' => __( 'Analyzing tool results…', 'wp-mcp-ai' ),
+					)
+				);
+
 				// Validate token budget before next iteration.
 				$model             = isset( $options['model'] ) ? $options['model'] : 'gpt-4o-mini';
 				$max_output_tokens = isset( $options['max_tokens'] ) ? absint( $options['max_tokens'] ) : 0;
@@ -2727,15 +2736,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						);
 					}
 				}
-
-				// Stream thinking status.
-				$this->send_sse_event(
-					'status',
-					array(
-						'type'    => 'thinking',
-						'message' => __( 'Analyzing tool results…', 'wp-mcp-ai' ),
-					)
-				);
 
 				// Call LLM again with tool results.
 				$response = $this->client->create_chat_completion( $messages, $options );
