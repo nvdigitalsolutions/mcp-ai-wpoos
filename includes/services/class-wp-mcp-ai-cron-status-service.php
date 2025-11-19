@@ -24,16 +24,25 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
  * - Retrieving active/pending/completed cron job status
  * - Providing lightweight status data for UI consumption
  * - Filtering and formatting job information
+ * - Including async tool execution results
  *
  * @since 1.0.0
  */
 class WP_MCP_AI_Cron_Status_Service {
 
 	/**
+	 * Async tool executor instance (lazy loaded)
+	 *
+	 * @var WP_MCP_AI_Tool_Async_Executor|null
+	 */
+	protected $async_executor = null;
+
+	/**
 	 * Get cron job status summary
 	 *
 	 * Returns a lightweight array of active and recently completed jobs.
 	 * Only includes jobs created by the current user or accessible to admins.
+	 * Now includes async tool execution jobs.
 	 *
 	 * @param int $user_id User ID to filter jobs by (0 for all if admin).
 	 * @param int $limit   Maximum number of jobs to return (default 10).
@@ -54,14 +63,20 @@ class WP_MCP_AI_Cron_Status_Service {
 		// Get all jobs.
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
-		if ( empty( $jobs ) ) {
+		// Get async tool jobs.
+		$async_jobs = $this->get_async_tool_jobs( $user_id );
+
+		// Merge async tool jobs with regular cron jobs.
+		$all_jobs = array_merge( $jobs, $async_jobs );
+
+		if ( empty( $all_jobs ) ) {
 			return array();
 		}
 
 		$status_data = array();
 		$count       = 0;
 
-		foreach ( $jobs as $job_id => $job ) {
+		foreach ( $all_jobs as $job_id => $job ) {
 			if ( $count >= $limit ) {
 				break;
 			}
@@ -72,36 +87,45 @@ class WP_MCP_AI_Cron_Status_Service {
 				continue;
 			}
 
-			$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
-			$args            = isset( $job['args'] ) ? $job['args'] : array();
-			$args            = WP_MCP_AI_Cron_Manager::normalise_args( $args );
-			$first_timestamp = isset( $job['first_timestamp'] ) ? absint( $job['first_timestamp'] ) : 0;
+			// Check if this is an async tool job.
+			$is_async_tool = isset( $job['tool_slug'] );
 
-			// Get scheduled event from WordPress.
-			$event = wp_get_scheduled_event( $hook, $args );
+			if ( $is_async_tool ) {
+				// Format async tool job data.
+				$job_data = $this->format_async_tool_job( $job );
+			} else {
+				// Format regular cron job data.
+				$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
+				$args            = isset( $job['args'] ) ? $job['args'] : array();
+				$args            = WP_MCP_AI_Cron_Manager::normalise_args( $args );
+				$first_timestamp = isset( $job['first_timestamp'] ) ? absint( $job['first_timestamp'] ) : 0;
 
-			// Determine status.
-			$status = $this->determine_job_status( $event, $first_timestamp );
+				// Get scheduled event from WordPress.
+				$event = wp_get_scheduled_event( $hook, $args );
 
-			// Format job data.
-			$job_data = array(
-				'job_id'     => $job_id,
-				'hook'       => $hook,
-				'status'     => $status,
-				'next_run'   => null,
-				'created_by' => $created_by,
-			);
+				// Determine status.
+				$status = $this->determine_job_status( $event, $first_timestamp );
 
-			if ( 'pending' === $status && $event ) {
-				$job_data['next_run'] = array(
-					'timestamp' => $event->timestamp,
-					'relative'  => $this->format_relative_time( $event->timestamp ),
+				// Format job data.
+				$job_data = array(
+					'job_id'     => $job_id,
+					'hook'       => $hook,
+					'status'     => $status,
+					'next_run'   => null,
+					'created_by' => $created_by,
 				);
-			} elseif ( 'completed' === $status && $first_timestamp > 0 ) {
-				$job_data['completed_at'] = array(
-					'timestamp' => $first_timestamp,
-					'relative'  => $this->format_relative_time( $first_timestamp, true ),
-				);
+
+				if ( 'pending' === $status && $event ) {
+					$job_data['next_run'] = array(
+						'timestamp' => $event->timestamp,
+						'relative'  => $this->format_relative_time( $event->timestamp ),
+					);
+				} elseif ( 'completed' === $status && $first_timestamp > 0 ) {
+					$job_data['completed_at'] = array(
+						'timestamp' => $first_timestamp,
+						'relative'  => $this->format_relative_time( $first_timestamp, true ),
+					);
+				}
 			}
 
 			$status_data[] = $job_data;
@@ -194,7 +218,153 @@ class WP_MCP_AI_Cron_Status_Service {
 	}
 
 	/**
+	 * Get async tool jobs for a user
+	 *
+	 * Retrieves async tool execution jobs and formats them for status display.
+	 * Follows SOC by delegating actual job retrieval to async executor.
+	 *
+	 * @param int $user_id User ID to filter by.
+	 * @return array Array of async tool jobs formatted like cron jobs.
+	 */
+	protected function get_async_tool_jobs( $user_id ) {
+		// Lazy load async executor.
+		$executor = $this->get_async_executor();
+
+		if ( ! $executor ) {
+			return array();
+		}
+
+		// Get async tool jobs from transients.
+		// This is a lightweight operation that doesn't hit the main jobs table.
+		global $wpdb;
+
+		$prefix = WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$transient_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT REPLACE(option_name, '_transient_', '') as transient_key 
+				FROM {$wpdb->options} 
+				WHERE option_name LIKE %s 
+				LIMIT 50",
+				$wpdb->esc_like( '_transient_' . $prefix ) . '%'
+			)
+		);
+
+		if ( empty( $transient_keys ) ) {
+			return array();
+		}
+
+		$is_admin = user_can( $user_id, 'manage_options' );
+		$jobs     = array();
+
+		foreach ( $transient_keys as $transient_key ) {
+			$metadata = get_transient( $transient_key );
+
+			if ( ! $metadata || ! is_array( $metadata ) ) {
+				continue;
+			}
+
+			// Filter by user unless admin.
+			$job_user_id = isset( $metadata['context']['user_id'] ) ? absint( $metadata['context']['user_id'] ) : 0;
+
+			if ( ! $is_admin && $job_user_id !== $user_id ) {
+				continue;
+			}
+
+			// Add user_id for consistency.
+			$metadata['created_by'] = $job_user_id;
+
+			$jobs[ $metadata['job_id'] ] = $metadata;
+		}
+
+		return $jobs;
+	}
+
+	/**
+	 * Format async tool job for status display
+	 *
+	 * Transforms async tool job metadata into consistent status format.
+	 * Follows SOC by only formatting, not executing or managing jobs.
+	 *
+	 * @param array $job Async tool job metadata.
+	 * @return array Formatted job data for UI.
+	 */
+	protected function format_async_tool_job( $job ) {
+		$job_id     = isset( $job['job_id'] ) ? $job['job_id'] : '';
+		$tool_slug  = isset( $job['tool_slug'] ) ? $job['tool_slug'] : 'unknown';
+		$status     = isset( $job['status'] ) ? $job['status'] : 'unknown';
+		$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
+
+		$job_data = array(
+			'job_id'     => $job_id,
+			'hook'       => 'wp_mcp_ai_async_tool_execution',
+			'tool_slug'  => $tool_slug,
+			'status'     => $status,
+			'type'       => 'async_tool',
+			'created_by' => $created_by,
+		);
+
+		// Add timing information based on status.
+		if ( 'pending' === $status && isset( $job['queued_at'] ) ) {
+			$job_data['queued_at'] = array(
+				'timestamp' => $job['queued_at'],
+				'relative'  => $this->format_relative_time( $job['queued_at'], true ),
+			);
+		} elseif ( 'running' === $status && isset( $job['started_at'] ) ) {
+			$job_data['started_at'] = array(
+				'timestamp' => $job['started_at'],
+				'relative'  => $this->format_relative_time( $job['started_at'], true ),
+			);
+		} elseif ( 'completed' === $status && isset( $job['completed_at'] ) ) {
+			$job_data['completed_at'] = array(
+				'timestamp' => $job['completed_at'],
+				'relative'  => $this->format_relative_time( $job['completed_at'], true ),
+			);
+
+			// Include result summary if available.
+			if ( isset( $job['result'] ) ) {
+				$job_data['has_result'] = true;
+			}
+
+			if ( isset( $job['duration'] ) ) {
+				$job_data['duration'] = round( $job['duration'], 2 );
+			}
+		} elseif ( 'failed' === $status ) {
+			if ( isset( $job['completed_at'] ) ) {
+				$job_data['failed_at'] = array(
+					'timestamp' => $job['completed_at'],
+					'relative'  => $this->format_relative_time( $job['completed_at'], true ),
+				);
+			}
+
+			if ( isset( $job['error'] ) ) {
+				$job_data['error'] = sanitize_text_field( $job['error'] );
+			}
+		}
+
+		return $job_data;
+	}
+
+	/**
+	 * Get async executor instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Async_Executor|null
+	 */
+	protected function get_async_executor() {
+		if ( null === $this->async_executor ) {
+			if ( class_exists( 'WP_MCP_AI_Tool_Async_Executor' ) ) {
+				$this->async_executor = new WP_MCP_AI_Tool_Async_Executor();
+			}
+		}
+
+		return $this->async_executor;
+	}
+
+	/**
 	 * Get count of jobs by status
+	 *
+	 * Now includes async tool jobs in counts.
 	 *
 	 * @param int $user_id User ID to filter by.
 	 * @return array Array with counts: pending, completed, total.
@@ -210,28 +380,44 @@ class WP_MCP_AI_Cron_Status_Service {
 		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
 		$jobs = WP_MCP_AI_Cron_Manager::get_jobs();
 
+		// Include async tool jobs.
+		$async_jobs = $this->get_async_tool_jobs( $user_id );
+		$all_jobs   = array_merge( $jobs, $async_jobs );
+
 		$counts = array(
 			'pending'   => 0,
+			'running'   => 0,
 			'completed' => 0,
+			'failed'    => 0,
 			'total'     => 0,
 		);
 
-		foreach ( $jobs as $job ) {
+		foreach ( $all_jobs as $job ) {
 			$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
 			if ( ! $is_admin && $created_by !== $user_id ) {
 				continue;
 			}
 
-			$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
-			$args            = isset( $job['args'] ) ? $job['args'] : array();
-			$args            = WP_MCP_AI_Cron_Manager::normalise_args( $args );
-			$first_timestamp = isset( $job['first_timestamp'] ) ? absint( $job['first_timestamp'] ) : 0;
+			// Check if async tool job.
+			if ( isset( $job['tool_slug'] ) && isset( $job['status'] ) ) {
+				$status = $job['status'];
+			} else {
+				$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
+				$args            = isset( $job['args'] ) ? $job['args'] : array();
+				$args            = WP_MCP_AI_Cron_Manager::normalise_args( $args );
+				$first_timestamp = isset( $job['first_timestamp'] ) ? absint( $job['first_timestamp'] ) : 0;
 
-			$event  = wp_get_scheduled_event( $hook, $args );
-			$status = $this->determine_job_status( $event, $first_timestamp );
+				$event  = wp_get_scheduled_event( $hook, $args );
+				$status = $this->determine_job_status( $event, $first_timestamp );
+			}
 
+			// Count by status.
 			if ( 'pending' === $status ) {
 				++$counts['pending'];
+			} elseif ( 'running' === $status ) {
+				++$counts['running'];
+			} elseif ( 'failed' === $status ) {
+				++$counts['failed'];
 			} else {
 				++$counts['completed'];
 			}

@@ -28,8 +28,16 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-performance
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-usage-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-performance-service.php';
 
+// Load async tool orchestration services.
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-orchestrator.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
+
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
+
+// Initialize async tool executor hooks.
+$async_executor = new WP_MCP_AI_Tool_Async_Executor();
+$async_executor->init();
 
 // Load performance monitor service only when not in base version mode.
 if ( ! wp_mcp_ai_is_base_version() ) {
@@ -222,4 +230,39 @@ function wp_mcp_ai_get_cost_tracking_service() {
  */
 function wp_mcp_ai_get_token_performance_service() {
 	return 'WP_MCP_AI_Token_Performance_Service';
+}
+
+/**
+ * Get async tool orchestrator instance
+ *
+ * Helper function to get async tool orchestrator for routing tools to async/sync execution.
+ *
+ * @return WP_MCP_AI_Async_Tool_Orchestrator Orchestrator instance.
+ */
+function wp_mcp_ai_get_async_tool_orchestrator() {
+	static $orchestrator = null;
+
+	if ( null === $orchestrator ) {
+		$orchestrator = new WP_MCP_AI_Async_Tool_Orchestrator();
+	}
+
+	return $orchestrator;
+}
+
+/**
+ * Get async tool executor instance
+ *
+ * Helper function to get async tool executor for managing async job execution.
+ *
+ * @return WP_MCP_AI_Tool_Async_Executor Executor instance.
+ */
+function wp_mcp_ai_get_async_tool_executor() {
+	static $executor = null;
+
+	if ( null === $executor ) {
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$executor->init();
+	}
+
+	return $executor;
 }
