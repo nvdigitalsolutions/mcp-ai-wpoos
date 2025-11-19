@@ -198,6 +198,28 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			),
 			true
 		);
+
+		// /cron-status/(?P<job_id>[a-zA-Z0-9_]+) - Get details for a specific cron job.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/cron-status/(?P<job_id>[a-zA-Z0-9_]+)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'permission_callback' => array( $this, 'permissions_check_cron_status' ),
+					'callback'            => array( $this, 'handle_cron_job_details_request' ),
+					'args'                => array(
+						'job_id' => array(
+							'description'       => __( 'Cron job identifier.', 'wp-mcp-ai' ),
+							'type'              => 'string',
+							'required'          => true,
+							'sanitize_callback' => 'sanitize_key',
+						),
+					),
+				),
+			),
+			true
+		);
 	}
 
 	/**
@@ -332,5 +354,22 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			return $this->main_controller->handle_cron_status_request( $request );
 		}
 		return $this->error( 'not_implemented', __( 'Cron status endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
+	}
+
+	/**
+	 * Handle GET /cron-status/{job_id} request.
+	 *
+	 * Returns detailed information about a specific cron job.
+	 * Follows SOC by delegating to cron status service.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_cron_job_details_request( WP_REST_Request $request ) {
+		// Delegate to main controller.
+		if ( $this->main_controller ) {
+			return $this->main_controller->handle_cron_job_details_request( $request );
+		}
+		return $this->error( 'not_implemented', __( 'Cron job details endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
 	}
 }

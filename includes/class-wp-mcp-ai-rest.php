@@ -898,6 +898,40 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Handle GET /cron-status/{job_id} request.
+		 *
+		 * Returns detailed information about a specific cron job.
+		 * Follows SOC by delegating to cron status service for data retrieval.
+		 *
+		 * @param WP_REST_Request $request REST request object.
+		 * @return WP_REST_Response|WP_Error Response object.
+		 */
+		public function handle_cron_job_details_request( WP_REST_Request $request ) {
+			// Load the cron status service.
+			if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-cron-status-service.php';
+			}
+
+			$service = $this->get_cron_status_service();
+
+			// Get authenticated user ID from auth context (supports bearer tokens, nonces, mesh keys).
+			$auth_context = $this->get_auth_context();
+			$user_id      = isset( $auth_context['user_id'] ) ? absint( $auth_context['user_id'] ) : get_current_user_id();
+
+			// Get job ID from URL parameter.
+			$job_id = $request->get_param( 'job_id' );
+
+			// Get job details from service (includes permission check).
+			$job_details = $service->get_job_details( $job_id, $user_id );
+
+			if ( is_wp_error( $job_details ) ) {
+				return $job_details;
+			}
+
+			return rest_ensure_response( $job_details );
+		}
+
+		/**
 		 * Provide a directory of assistants the authenticated client can access.
 		 *
 		 * Credential-scoped requests are limited to the issuing assistant while
@@ -2259,10 +2293,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result_messages[] = $full_tool_message;
 
 					// Get the tool instance for interface-based sanitization.
-					$tool_instance    = null;
-					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-					$tool_candidates  = $this->generate_tool_slug_candidates( $tool_name );
-					$tool_slug        = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					$tool_instance   = null;
+					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
 						$tool_instance = $this->registry->get_tool( $tool_slug );
 					}
@@ -2648,10 +2682,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$tool_result_messages[] = $full_tool_message;
 
 					// Get the tool instance for interface-based sanitization.
-					$tool_instance    = null;
-					$allowed_tools    = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
-					$tool_candidates  = $this->generate_tool_slug_candidates( $tool_name );
-					$tool_slug        = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
+					$tool_instance   = null;
+					$allowed_tools   = isset( $assistant_config['tools'] ) ? $assistant_config['tools'] : array();
+					$tool_candidates = $this->generate_tool_slug_candidates( $tool_name );
+					$tool_slug       = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 					if ( $tool_slug && in_array( $tool_slug, $allowed_tools, true ) ) {
 						$tool_instance = $this->registry->get_tool( $tool_slug );
 					}
@@ -7126,9 +7160,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'async_tool_loop_prevented',
 						sprintf( 'Prevented async re-queuing of %s in iteration %d', $tool_slug, $iteration ),
 						array(
-							'tool_slug'  => $tool_slug,
-							'iteration'  => $iteration,
-							'signature'  => $tool_call_signature,
+							'tool_slug' => $tool_slug,
+							'iteration' => $iteration,
+							'signature' => $tool_call_signature,
 						)
 					);
 				}
@@ -7162,14 +7196,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Return a structured response indicating the tool is processing asynchronously.
 					// The LLM should understand this and not retry immediately.
 					return array(
-						'status'   => 'pending',
-						'job_id'   => $job_id,
-						'message'  => sprintf(
+						'status'    => 'pending',
+						'job_id'    => $job_id,
+						'message'   => sprintf(
 							/* translators: %s: tool name */
 							__( 'Tool "%s" is processing in the background. Results will be available shortly. Please check the cron status for completion.', 'wp-mcp-ai' ),
 							$tool_name
 						),
-						'async'    => true,
+						'async'     => true,
 						'tool_slug' => $tool_slug,
 					);
 				}

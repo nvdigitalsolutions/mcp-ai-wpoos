@@ -146,9 +146,47 @@
 		 * @param {string} containerId - Chat container ID
 		 */
 		clearCache: function (containerId) {
-			if (this.cache[containerId]) {
+			if (this->cache[containerId]) {
 				delete this.cache[containerId];
 			}
+		},
+
+		/**
+		 * Make job IDs clickable with admin URLs
+		 * 
+		 * Adds click handlers to job elements to open admin cron manager.
+		 * Follows SOC by only handling UI interaction, not data manipulation.
+		 * 
+		 * @param {HTMLElement} container - Container element with job display
+		 */
+		makeJobsClickable: function (container) {
+			if (!container) {
+				return;
+			}
+
+			// Find all elements with data-job-url attribute
+			const jobElements = container.querySelectorAll('[data-job-url]');
+
+			jobElements.forEach(function (element) {
+				const url = element.getAttribute('data-job-url');
+				
+				if (url && !element.classList.contains('wp-mcp-ai-job-clickable')) {
+					// Mark as clickable
+					element.classList.add('wp-mcp-ai-job-clickable');
+					element.style.cursor = 'pointer';
+					element.style.textDecoration = 'underline';
+					element.title = 'Click to view in Cron Manager';
+
+					// Add click handler
+					element.addEventListener('click', function (e) {
+						e.preventDefault();
+						e.stopPropagation();
+						
+						// Open in new window/tab
+						window.open(url, '_blank');
+					});
+				}
+			});
 		}
 	};
 

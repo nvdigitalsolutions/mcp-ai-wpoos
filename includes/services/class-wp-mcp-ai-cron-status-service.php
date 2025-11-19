@@ -115,6 +115,7 @@ class WP_MCP_AI_Cron_Status_Service {
 					'status'     => $status,
 					'next_run'   => null,
 					'created_by' => $created_by,
+					'admin_url'  => $this->get_admin_url( $job_id ),
 				);
 
 				if ( 'pending' === $status && $event ) {
@@ -316,6 +317,7 @@ class WP_MCP_AI_Cron_Status_Service {
 			'status'     => $status,
 			'type'       => 'async_tool',
 			'created_by' => $created_by,
+			'admin_url'  => $this->get_admin_url( $job_id ),
 		);
 
 		// Add timing information based on status.
@@ -441,5 +443,110 @@ class WP_MCP_AI_Cron_Status_Service {
 		}
 
 		return $counts;
+	}
+
+	/**
+	 * Get admin URL for viewing cron manager page
+	 *
+	 * Returns the URL to the admin cron manager page.
+	 * Follows SOC by keeping URL generation logic in one place.
+	 *
+	 * @param string|null $job_id Optional job ID to highlight in admin.
+	 * @return string Admin URL for cron manager.
+	 */
+	public function get_admin_url( $job_id = null ) {
+		$url = admin_url( 'admin.php?page=wp-mcp-ai-cron-manager' );
+
+		if ( $job_id ) {
+			$url = add_query_arg( 'highlight', sanitize_key( $job_id ), $url );
+		}
+
+		return $url;
+	}
+
+	/**
+	 * Get details for a specific cron job
+	 *
+	 * Returns detailed information about a single cron job.
+	 * Checks permissions before returning data.
+	 * Follows SOC by delegating to appropriate services.
+	 *
+	 * @param string $job_id Job identifier.
+	 * @param int    $user_id User requesting the job details.
+	 * @return array|WP_Error Job details or error.
+	 */
+	public function get_job_details( $job_id, $user_id = 0 ) {
+		$job_id  = sanitize_key( $job_id );
+		$user_id = absint( $user_id );
+
+		if ( ! $user_id ) {
+			$user_id = get_current_user_id();
+		}
+
+		$is_admin = user_can( $user_id, 'manage_options' );
+
+		// Check if it's an async tool job.
+		if ( 0 === strpos( $job_id, 'async_' ) ) {
+			$executor = $this->get_async_executor();
+			if ( ! $executor ) {
+				return new WP_Error(
+					'wp_mcp_ai_service_unavailable',
+					__( 'Async executor service is not available.', 'wp-mcp-ai' )
+				);
+			}
+
+			$result = $executor->get_result( $job_id );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Check permissions.
+			$created_by = isset( $result['context']['user_id'] ) ? absint( $result['context']['user_id'] ) : 0;
+			if ( ! $is_admin && $created_by !== $user_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+				);
+			}
+
+			// Add admin URL.
+			$result['admin_url'] = $this->get_admin_url( $job_id );
+
+			return $result;
+		}
+
+		// Regular cron job.
+		$job = WP_MCP_AI_Cron_Manager::get_job( $job_id );
+
+		if ( ! $job ) {
+			return new WP_Error(
+				'wp_mcp_ai_job_not_found',
+				__( 'Job not found or has been removed.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Check permissions.
+		$created_by = isset( $job['created_by'] ) ? absint( $job['created_by'] ) : 0;
+		if ( ! $is_admin && $created_by !== $user_id ) {
+			return new WP_Error(
+				'wp_mcp_ai_forbidden',
+				__( 'You do not have permission to view this job.', 'wp-mcp-ai' )
+			);
+		}
+
+		// Add runtime status.
+		$hook            = isset( $job['hook'] ) ? (string) $job['hook'] : '';
+		$args            = isset( $job['args'] ) ? $job['args'] : array();
+		$args            = WP_MCP_AI_Cron_Manager::normalise_args( $args );
+		$first_timestamp = isset( $job['first_timestamp'] ) ? absint( $job['first_timestamp'] ) : 0;
+
+		$event           = wp_get_scheduled_event( $hook, $args );
+		$job['status']   = $this->determine_job_status( $event, $first_timestamp );
+		$job['next_run'] = $event ? $event->timestamp : null;
+
+		// Add admin URL.
+		$job['admin_url'] = $this->get_admin_url( $job_id );
+
+		return $job;
 	}
 }
