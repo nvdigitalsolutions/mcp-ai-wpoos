@@ -7317,6 +7317,9 @@
                         role: 'assistant',
                         content: streamResult.content
                     });
+                    
+                    // Clear thinking text buffer
+                    state.thinkingText = null;
                 }
 
                 saveConversationToStorage(state);
@@ -7399,6 +7402,7 @@
                         } else if (eventType === 'message' || !eventType) {
                             // Handle streaming responses from different AI providers
                             let contentChunk = null;
+                            let thinkingChunk = null;
                             
                             // OpenAI format: choices[0].delta.content
                             if (data.choices && data.choices[0]) {
@@ -7410,8 +7414,16 @@
                             // Gemini format: candidates[0].content.parts[0].text
                             else if (data.candidates && data.candidates[0]) {
                                 const candidate = data.candidates[0];
-                                if (candidate.content && candidate.content.parts && candidate.content.parts[0]) {
-                                    contentChunk = candidate.content.parts[0].text;
+                                if (candidate.content && candidate.content.parts) {
+                                    // Check for thinking/thought parts
+                                    for (let p = 0; p < candidate.content.parts.length; p++) {
+                                        const part = candidate.content.parts[p];
+                                        if (part.thought && typeof part.thought === 'string') {
+                                            thinkingChunk = part.thought;
+                                        } else if (part.text && typeof part.text === 'string') {
+                                            contentChunk = part.text;
+                                        }
+                                    }
                                 }
                             }
                             // Ollama/LM Studio format: message.content or response
@@ -7428,6 +7440,22 @@
                             // Direct text field
                             else if (data.text && typeof data.text === 'string') {
                                 contentChunk = data.text;
+                            }
+                            
+                            // Display thinking text in status section if present
+                            if (thinkingChunk) {
+                                // Initialize or append to thinking buffer
+                                if (!state.thinkingText) {
+                                    state.thinkingText = '';
+                                }
+                                state.thinkingText += thinkingChunk;
+                                
+                                // Update status with thinking text
+                                setStatus(state.container, {
+                                    message: state.thinkingText,
+                                    type: 'text-stream',
+                                    showTime: false
+                                });
                             }
                             
                             // If we found content, add it to fullContent and update UI
@@ -8061,6 +8089,13 @@
                 '<path d="M10 2a8 8 0 018 8h-2a6 6 0 00-6-6V2z">' +
                 '<animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="1s" repeatCount="indefinite"/>' +
                 '</path>' +
+                '</svg>' +
+                '</span>';
+        } else if (type === 'text-stream') {
+            statusClass += ' wp-mcp-ai-chat__status--text-stream';
+            indicatorHTML = '<span class="wp-mcp-ai-chat__status-indicator">' +
+                '<svg class="wp-mcp-ai-chat__status-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+                '<path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>' +
                 '</svg>' +
                 '</span>';
         } else if (type === 'tool') {
