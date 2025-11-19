@@ -538,6 +538,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 	 * Returns models grouped by provider, filtered based on the source model's capabilities.
 	 * This ensures fallback models have compatible capabilities.
 	 *
+	 * Uses WP_MCP_AI_Tool_Token_Limits as the source of truth for model availability,
+	 * ensuring consistency with the rest of the plugin.
+	 *
 	 * @param string $source_model_id  The model we're selecting a fallback for.
 	 * @param array  $source_capability_flags Capability flags of the source model.
 	 * @return array Available models grouped by provider.
@@ -547,7 +550,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 		$requires_vision     = in_array( 'vision', $source_capability_flags, true );
 		$requires_multimodal = in_array( 'multimodal', $source_capability_flags, true );
 
-		// Use WP_MCP_AI_Tool_Token_Limits to get available models (it has the capability filtering logic).
+		// Use WP_MCP_AI_Tool_Token_Limits to get available models (PRIMARY SOURCE OF TRUTH).
 		if ( class_exists( 'WP_MCP_AI_Tool_Token_Limits' ) ) {
 			// Get capability flags in the format expected by get_available_models.
 			$capability_flags = array();
@@ -585,57 +588,82 @@ class WP_MCP_AI_Model_Config_Renderer {
 			return $models;
 		}
 
-		// Fallback: basic model list without capability filtering.
-		return self::get_basic_model_list();
+		// Fallback: use Model Service if Tool Token Limits not available.
+		return self::get_models_from_service( $requires_vision, $requires_multimodal );
 	}
 
 	/**
-	 * Get basic model list without capability filtering.
+	 * Get models from Model Service.
 	 *
-	 * Fallback method when WP_MCP_AI_Tool_Token_Limits is not available.
+	 * Uses WP_MCP_AI_Model_Service as the source of truth for available models.
+	 * This ensures the Model Configurations UI always reflects the latest model updates.
 	 *
-	 * @return array Basic model list.
+	 * @param bool $requires_vision       Whether vision capability is required.
+	 * @param bool $requires_multimodal   Whether multimodal capability is required.
+	 * @return array Model list grouped by provider.
 	 */
-	protected static function get_basic_model_list() {
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$models   = array();
-
-		// OpenAI models.
-		if ( ! empty( $settings['openai_api_key'] ) ) {
-			$models['openai_group'] = array(
-				'label'   => __( 'OpenAI', 'wp-mcp-ai' ),
-				'options' => array(
-					'gpt-4o'        => 'GPT-4o',
-					'gpt-4o-mini'   => 'GPT-4o Mini',
-					'gpt-4-turbo'   => 'GPT-4 Turbo',
-					'gpt-3.5-turbo' => 'GPT-3.5 Turbo',
+	protected static function get_models_from_service( $requires_vision = false, $requires_multimodal = false ) {
+		// Use Model Service if available (RECOMMENDED SOURCE OF TRUTH).
+		if ( class_exists( 'WP_MCP_AI_Model_Service' ) ) {
+			$model_service = new WP_MCP_AI_Model_Service();
+			$models        = array();
+			$settings      = get_option( 'wp_mcp_ai_settings', array() );
+			
+			// Build capability flags for filtering.
+			$capability_flags = array();
+			if ( $requires_vision ) {
+				$capability_flags[] = 'vision';
+			}
+			if ( $requires_multimodal ) {
+				$capability_flags[] = 'multimodal';
+			}
+			
+			$args = array( 'capability_flags' => $capability_flags );
+			
+			// Get models for each configured provider.
+			$providers = array(
+				'openai'    => array(
+					'label' => __( 'OpenAI', 'wp-mcp-ai' ),
+					'check' => ! empty( $settings['openai_api_key'] ),
+				),
+				'anthropic' => array(
+					'label' => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
+					'check' => ! empty( $settings['anthropic_api_key'] ),
+				),
+				'gemini'    => array(
+					'label' => __( 'Google Gemini & Gemma', 'wp-mcp-ai' ),
+					'check' => ! empty( $settings['gemini_api_key'] ),
+				),
+				'ollama'    => array(
+					'label' => __( 'Ollama (Local)', 'wp-mcp-ai' ),
+					'check' => ! empty( $settings['ollama_endpoint_url'] ) && ! empty( $settings['ollama_model'] ),
+				),
+				'lm_studio' => array(
+					'label' => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+					'check' => ! empty( $settings['lm_studio_endpoint_url'] ) && ! empty( $settings['lm_studio_model'] ),
 				),
 			);
+			
+			foreach ( $providers as $provider => $config ) {
+				if ( ! $config['check'] ) {
+					continue;
+				}
+				
+				$provider_models = $model_service->get_models_for_provider( $provider, $args );
+				
+				if ( ! empty( $provider_models ) ) {
+					$models[ $provider . '_group' ] = array(
+						'label'   => $config['label'],
+						'options' => $provider_models,
+					);
+				}
+			}
+			
+			return $models;
 		}
-
-		// Anthropic models.
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
-			$models['anthropic_group'] = array(
-				'label'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'options' => array(
-					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
-				),
-			);
-		}
-
-		// Gemini models.
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
-			$models['gemini_group'] = array(
-				'label'   => __( 'Google Gemini', 'wp-mcp-ai' ),
-				'options' => array(
-					'gemini-2.5-flash' => 'Gemini 2.5 Flash',
-					'gemini-1.5-pro'   => 'Gemini 1.5 Pro',
-					'gemini-1.5-flash' => 'Gemini 1.5 Flash',
-				),
-			);
-		}
-
-		return $models;
+		
+		// Ultimate fallback: return empty array if Model Service is not available.
+		// This should never happen in production, but provides safety.
+		return array();
 	}
 }
