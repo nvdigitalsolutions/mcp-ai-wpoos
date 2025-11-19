@@ -24,6 +24,7 @@ URL: `/wp-admin/edit.php?post_type=mcp_ai_team&page=wp-mcp-ai-test-team`
    - Click the "Test" button next to any profession
    - A modal opens with a chat interface
    - The system creates a temporary assistant based on the profession
+   - Alternatively, if an associated assistant is configured, it uses that assistant's configuration
    - Chat with the profession to validate its behavior
 
 3. **What Gets Tested**
@@ -33,6 +34,19 @@ URL: `/wp-admin/edit.php?post_type=mcp_ai_team&page=wp-mcp-ai-test-team`
    - Knowledge base content
    - Memory files integration
    - Provider and model configuration (if set)
+   - Associated assistant configuration (if set)
+
+4. **Configuring Test Assistant Association** (New Feature)
+   - Edit any profession
+   - In the "Default AI Settings" metabox (sidebar), find "Test Assistant" dropdown
+   - Select an existing assistant to use for testing this profession
+   - When selected, testing will use that assistant's full configuration
+   - When empty, falls back to creating a temporary assistant from profession settings
+   - Useful for:
+     - Testing professions with production assistant configurations
+     - Validating assistant-profession compatibility
+     - Ensuring consistent testing environments
+     - Building the correct test "package" with all assistant features
 
 ## Using the Test Team Page
 
