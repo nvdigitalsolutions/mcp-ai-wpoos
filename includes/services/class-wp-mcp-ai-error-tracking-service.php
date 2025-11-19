@@ -114,7 +114,19 @@ class WP_MCP_AI_Error_Tracking_Service {
 		add_action( 'wp_mcp_ai_cleanup_old_errors', array( $this, 'cleanup_old_errors' ) );
 
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_old_errors' ) ) {
-			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_old_errors' );
+			$cleanup_timestamp = time();
+			wp_schedule_event( $cleanup_timestamp, 'daily', 'wp_mcp_ai_cleanup_old_errors' );
+
+			// Record cleanup cron job in cron manager for visibility.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				WP_MCP_AI_Cron_Manager::record_job(
+					'wp_mcp_ai_cleanup_old_errors',
+					array(),
+					'daily',
+					$cleanup_timestamp,
+					0 // System-created job.
+				);
+			}
 		}
 	}
 
