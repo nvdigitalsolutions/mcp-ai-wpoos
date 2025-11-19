@@ -35,6 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		const META_EXTERNAL_ACTION_ID      = '_wp_mcp_ai_external_action_id';
 		const META_EXTERNAL_ACTION_TYPE    = '_wp_mcp_ai_external_action_type';
 		const META_REQUIRED_CAPABILITY     = 'mcp_ai_required_capability';
+		const META_PRIMARY_ROLES           = '_wp_mcp_ai_primary_roles';
 		const SYNC_LOCK_TIMEOUT            = 5;
 
 		/**
@@ -69,6 +70,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			// Initialize metabox instances.
 			$this->metaboxes['credentials']    = new WP_MCP_AI_Metabox_Credentials( $this );
 			$this->metaboxes['defaults']       = new WP_MCP_AI_Metabox_Defaults( $this );
+			$this->metaboxes['primary-roles']  = new WP_MCP_AI_Metabox_Primary_Roles( $this );
 			$this->metaboxes['base-knowledge'] = new WP_MCP_AI_Metabox_Base_Knowledge( $this );
 			$this->metaboxes['mesh-routing']   = new WP_MCP_AI_Metabox_Mesh_Routing( $this );
 
@@ -1025,6 +1027,25 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					'auth_callback'     => $auth_callback,
 				)
 			);
+
+			register_post_meta(
+				self::POST_TYPE,
+				self::META_PRIMARY_ROLES,
+				array(
+					'type'              => 'array',
+					'single'            => true,
+					'show_in_rest'      => array(
+						'schema' => array(
+							'type'  => 'array',
+							'items' => array(
+								'type' => 'integer',
+							),
+						),
+					),
+					'sanitize_callback' => array( __CLASS__, 'sanitize_primary_roles_meta' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
 		}
 
 		/**
@@ -1245,6 +1266,34 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			}
 
 			return '';
+		}
+
+		/**
+		 * Sanitize the primary roles meta value.
+		 *
+		 * Primary roles are profession post IDs. Max 3 allowed.
+		 *
+		 * @param mixed $roles Raw primary roles value.
+		 * @return array
+		 */
+		public static function sanitize_primary_roles_meta( $roles ) {
+			if ( ! is_array( $roles ) ) {
+				return array();
+			}
+
+			// Sanitize each role ID and validate it's a valid profession post.
+			$sanitized = array();
+			foreach ( $roles as $role_id ) {
+				$role_id = absint( $role_id );
+				if ( $role_id > 0 && 'mcp_ai_profession' === get_post_type( $role_id ) ) {
+					$sanitized[] = $role_id;
+				}
+			}
+
+			// Limit to 3 roles maximum.
+			$sanitized = array_slice( array_unique( $sanitized ), 0, 3 );
+
+			return $sanitized;
 		}
 
 		/**
@@ -3326,6 +3375,21 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				}
 			}
 
+			// Handle primary roles meta.
+			if ( isset( $_POST['wp_mcp_ai_primary_roles_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_primary_roles_meta_nonce'] ) ), 'wp_mcp_ai_primary_roles_meta' ) ) {
+				$primary_roles = array();
+				if ( isset( $_POST['wp_mcp_ai_primary_roles'] ) ) {
+					// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized via sanitize_primary_roles_meta().
+					$primary_roles = self::sanitize_primary_roles_meta( wp_unslash( $_POST['wp_mcp_ai_primary_roles'] ) );
+				}
+
+				if ( empty( $primary_roles ) ) {
+					delete_post_meta( $post_id, self::META_PRIMARY_ROLES );
+				} else {
+					update_post_meta( $post_id, self::META_PRIMARY_ROLES, $primary_roles );
+				}
+			}
+
 			// Handle defaults meta.
 			if ( isset( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_defaults_meta_nonce'] ) ), 'wp_mcp_ai_defaults_meta' ) ) {
 				$provider = isset( $_POST['wp_mcp_ai_provider'] )
@@ -3527,6 +3591,89 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		}
 
 		/**
+		 * Build system prompt from primary roles.
+		 *
+		 * Programmatically constructs a system prompt by combining role descriptions
+		 * and knowledge bases from assigned profession posts.
+		 *
+		 * @param array $primary_roles Array of profession post IDs.
+		 * @return string The constructed system prompt.
+		 */
+		public static function build_prompt_from_primary_roles( $primary_roles ) {
+			if ( ! is_array( $primary_roles ) || empty( $primary_roles ) ) {
+				return '';
+			}
+
+			$prompt_parts = array();
+
+			// Add each role's instructions.
+			foreach ( $primary_roles as $role_id ) {
+				$role_id = absint( $role_id );
+				if ( $role_id <= 0 || 'mcp_ai_profession' !== get_post_type( $role_id ) ) {
+					continue;
+				}
+
+				$profession = get_post( $role_id );
+				if ( ! $profession ) {
+					continue;
+				}
+
+				// Get role description.
+				$role_description = get_post_meta( $role_id, '_wp_mcp_ai_profession_role_description', true );
+				if ( ! empty( $role_description ) ) {
+					$prompt_parts[] = sprintf(
+						"## Role: %s\n\n%s",
+						$profession->post_title,
+						$role_description
+					);
+				}
+
+				// Get knowledge base.
+				$knowledge_base = get_post_meta( $role_id, '_wp_mcp_ai_profession_knowledge_base', true );
+				if ( ! empty( $knowledge_base ) ) {
+					$prompt_parts[] = sprintf(
+						"### Knowledge Base for %s\n\n%s",
+						$profession->post_title,
+						$knowledge_base
+					);
+				}
+
+				// Get expertise areas.
+				$expertise = get_post_meta( $role_id, '_wp_mcp_ai_profession_expertise', true );
+				if ( is_array( $expertise ) && ! empty( $expertise ) ) {
+					$expertise_list = implode( "\n- ", $expertise );
+					$prompt_parts[] = sprintf(
+						"### Expertise Areas for %s\n\n- %s",
+						$profession->post_title,
+						$expertise_list
+					);
+				}
+
+				// Get warnings.
+				$warnings = get_post_meta( $role_id, '_wp_mcp_ai_profession_warnings', true );
+				if ( is_array( $warnings ) && ! empty( $warnings ) ) {
+					$warnings_list = implode( "\n- ", $warnings );
+					$prompt_parts[] = sprintf(
+						"### Important Warnings for %s\n\n- %s",
+						$profession->post_title,
+						$warnings_list
+					);
+				}
+			}
+
+			if ( empty( $prompt_parts ) ) {
+				return '';
+			}
+
+			// Combine all parts with separators.
+			$prompt = "# Your Roles and Capabilities\n\n";
+			$prompt .= "You are an AI assistant with the following professional roles:\n\n";
+			$prompt .= implode( "\n\n---\n\n", $prompt_parts );
+
+			return $prompt;
+		}
+
+		/**
 		 * Retrieve the configuration for a specific assistant.
 		 *
 		 * @param int $assistant_id Assistant post ID.
@@ -3583,6 +3730,20 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$config['system_prompt'] = '';
 			} else {
 				$config['system_prompt'] = self::sanitize_system_prompt_meta( $config['system_prompt'] );
+			}
+
+			// Build prompt from primary roles if assigned.
+			$primary_roles = get_post_meta( $assistant_id, self::META_PRIMARY_ROLES, true );
+			if ( is_array( $primary_roles ) && ! empty( $primary_roles ) ) {
+				$roles_prompt = self::build_prompt_from_primary_roles( $primary_roles );
+				if ( ! empty( $roles_prompt ) ) {
+					// Prepend roles prompt to existing system prompt.
+					if ( ! empty( $config['system_prompt'] ) ) {
+						$config['system_prompt'] = $roles_prompt . "\n\n---\n\n# Additional Instructions\n\n" . $config['system_prompt'];
+					} else {
+						$config['system_prompt'] = $roles_prompt;
+					}
+				}
 			}
 
 			if ( ! is_array( $config['memory_files'] ) ) {
