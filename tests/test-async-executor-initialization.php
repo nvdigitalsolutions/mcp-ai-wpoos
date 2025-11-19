@@ -117,8 +117,10 @@ class WP_MCP_AI_Async_Executor_Initialization_Test extends WP_UnitTestCase {
 	public function test_executor_initialized_during_bootstrap() {
 		global $wp_filter;
 
-		// The executor should already be initialized by wp-mcp-ai.php.
-		// This test verifies our fix works.
+		// Simulate the bootstrap process.
+		do_action( 'wp_mcp_ai_bootstrapped' );
+
+		// The executor should be initialized by the hook.
 		$hook_name = WP_MCP_AI_Tool_Async_Executor::CRON_HOOK;
 
 		$this->assertTrue(

@@ -392,11 +392,6 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
-// Initialize async tool executor early to register cron hook handler.
-// This ensures wp_mcp_ai_async_tool_execution cron jobs can execute tools.
-// SOC: Executor handles execution, this file handles initialization timing.
-wp_mcp_ai_get_async_tool_executor();
-
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
@@ -953,6 +948,31 @@ if ( ! function_exists( 'wp_mcp_ai_bootstrap' ) ) {
 
 if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap' ) ) {
 	add_action( 'plugins_loaded', 'wp_mcp_ai_bootstrap', 20 );
+}
+
+/**
+ * Initialize async tool executor during plugin bootstrap.
+ *
+ * Ensures the executor's init() method is called early enough to register
+ * the wp_mcp_ai_async_tool_execution cron hook handler. Without this,
+ * async tool cron jobs would be scheduled but never execute.
+ *
+ * SOC: Executor handles execution logic, this hook ensures initialization timing.
+ */
+if ( ! has_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor' ) ) {
+	add_action( 'wp_mcp_ai_bootstrapped', 'wp_mcp_ai_init_async_executor', 5 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
+	/**
+	 * Initialize the async tool executor.
+	 *
+	 * Called during wp_mcp_ai_bootstrapped action to ensure the executor
+	 * registers its cron hook handler before any async jobs might run.
+	 */
+	function wp_mcp_ai_init_async_executor() {
+		wp_mcp_ai_get_async_tool_executor();
+	}
 }
 
 if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
