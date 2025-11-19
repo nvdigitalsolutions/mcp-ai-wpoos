@@ -42,20 +42,22 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertIsArray( $configs );
 		$this->assertNotEmpty( $configs );
 
-		// Check for known models.
+		// Check for known 2025 models.
+		$this->assertArrayHasKey( 'gpt-5.1', $configs );
+		$this->assertArrayHasKey( 'gpt-5', $configs );
 		$this->assertArrayHasKey( 'gpt-4o', $configs );
+		$this->assertArrayHasKey( 'claude-sonnet-4.5', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
+		$this->assertArrayHasKey( 'gemini-3-pro-preview', $configs );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
-		$this->assertArrayHasKey( 'llama-3-8b-instruct', $configs );
-		$this->assertArrayHasKey( 'mistral-7b-instruct', $configs );
-		$this->assertArrayHasKey( 'openai/gpt-oss-20b', $configs );
+		$this->assertArrayHasKey( 'qwen/qwen3-coder-30b', $configs );
 	}
 
 	/**
 	 * Test get_model_config returns specific model configuration.
 	 */
 	public function test_get_model_config_returns_specific_config() {
-		$config = WP_MCP_AI_Model_Config::get_model_config( 'gpt-4o' );
+		$config = WP_MCP_AI_Model_Config::get_model_config( 'gpt-5.1' );
 
 		$this->assertIsArray( $config );
 		$this->assertArrayHasKey( 'name', $config );
@@ -64,7 +66,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'rpm', $config );
 		$this->assertArrayHasKey( 'context_window', $config );
 
-		$this->assertEquals( 'GPT-4o', $config['name'] );
+		$this->assertEquals( 'GPT-5.1 (Flagship)', $config['name'] );
 		$this->assertEquals( 'openai', $config['provider'] );
 	}
 
