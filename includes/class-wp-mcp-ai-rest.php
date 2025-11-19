@@ -1284,6 +1284,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				if ( true === $mesh_validated ) {
 					$this->mark_token_authenticated( 'mesh', array( 'mesh_authenticated' => true ) );
+					// Check rate limiting for mesh authenticated requests.
+					$rate_limit_check = $this->check_rate_limit( 0 ); // Use 0 for mesh requests.
+					if ( is_wp_error( $rate_limit_check ) ) {
+						return $rate_limit_check;
+					}
 					return true;
 				} elseif ( is_wp_error( $mesh_validated ) ) {
 					return $mesh_validated;
@@ -1296,6 +1301,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$local = $this->validate_local_token( $token, $request );
 
 				if ( true === $local ) {
+					// Check rate limiting for local token authenticated requests.
+					$user_id          = get_current_user_id();
+					$rate_limit_check = $this->check_rate_limit( $user_id );
+					if ( is_wp_error( $rate_limit_check ) ) {
+						return $rate_limit_check;
+					}
 					return true;
 				} elseif ( $local instanceof WP_Error ) {
 					return $local;
@@ -1307,6 +1318,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $validated;
 				}
 
+				// Check rate limiting for bearer token authenticated requests.
+				$user_id          = get_current_user_id();
+				$rate_limit_check = $this->check_rate_limit( $user_id );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
 				return true;
 			}
 
@@ -1316,6 +1333,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$this->set_authenticated_user_id( get_current_user_id() );
 				}
 
+				// Check rate limiting for public/guest requests.
+				$user_id          = get_current_user_id(); // Will be 0 for guests.
+				$rate_limit_check = $this->check_rate_limit( $user_id );
+				if ( is_wp_error( $rate_limit_check ) ) {
+					return $rate_limit_check;
+				}
 				return true;
 			}
 
@@ -1351,6 +1374,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			$this->set_authenticated_user_id( get_current_user_id() );
+
+			// Check rate limiting if enabled.
+			$user_id          = get_current_user_id();
+			$rate_limit_check = $this->check_rate_limit( $user_id );
+			if ( is_wp_error( $rate_limit_check ) ) {
+				return $rate_limit_check;
+			}
 
 			return true;
 		}
@@ -1860,6 +1890,75 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function validate_bearer_token( $token, WP_REST_Request $request ) {
 			return $this->authenticator->validate_bearer_token( $token, $request );
+		}
+
+		/**
+		 * Check if rate limiting is enabled and enforce limits.
+		 *
+		 * @param int $user_id User ID making the request (0 for guests).
+		 * @return true|WP_Error True if allowed, WP_Error if rate limit exceeded.
+		 */
+		protected function check_rate_limit( $user_id ) {
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			// Check if rate limiting is enabled.
+			if ( empty( $settings['enable_rate_limiting'] ) ) {
+				return true;
+			}
+
+			// Get rate limit configuration.
+			$max_requests = isset( $settings['rate_limit_requests'] ) ? absint( $settings['rate_limit_requests'] ) : 100;
+			$time_window  = isset( $settings['rate_limit_window'] ) ? absint( $settings['rate_limit_window'] ) : 3600;
+
+			// Create a unique key for this user.
+			$transient_key = 'wp_mcp_ai_rate_limit_' . $user_id;
+			$current_count = get_transient( $transient_key );
+
+			if ( false === $current_count ) {
+				// First request in this time window, start counting.
+				set_transient( $transient_key, 1, $time_window );
+				return true;
+			}
+
+			if ( $current_count >= $max_requests ) {
+				// Rate limit exceeded.
+				WP_MCP_AI_Logger::log_event(
+					'rate_limit_exceeded',
+					sprintf(
+						'User %d exceeded rate limit of %d requests per %d seconds.',
+						$user_id,
+						$max_requests,
+						$time_window
+					),
+					array(
+						'user_id'      => $user_id,
+						'max_requests' => $max_requests,
+						'time_window'  => $time_window,
+						'ip_address'   => isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown',
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_rate_limit_exceeded',
+					sprintf(
+						/* translators: 1: Maximum requests allowed, 2: Time window in seconds */
+						__( 'Rate limit exceeded. Maximum %1$d requests allowed per %2$d seconds.', 'wp-mcp-ai' ),
+						$max_requests,
+						$time_window
+					),
+					array(
+						'status'        => 429,
+						'retry_after'   => $time_window,
+						'max_requests'  => $max_requests,
+						'time_window'   => $time_window,
+						'current_count' => $current_count,
+					)
+				);
+			}
+
+			// Increment the counter.
+			set_transient( $transient_key, $current_count + 1, $time_window );
+			return true;
 		}
 
 		/**
