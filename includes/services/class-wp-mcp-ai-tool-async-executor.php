@@ -89,13 +89,25 @@ class WP_MCP_AI_Tool_Async_Executor {
 	 */
 	public function init() {
 		add_action( self::CRON_HOOK, array( $this, 'execute_async_tool' ), 10, 1 );
-		
+
 		// Cleanup expired results periodically.
 		add_action( 'wp_mcp_ai_cleanup_async_results', array( $this, 'cleanup_expired_results' ) );
-		
+
 		// Schedule cleanup if not already scheduled.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_async_results' ) ) {
-			wp_schedule_event( time(), 'hourly', 'wp_mcp_ai_cleanup_async_results' );
+			$cleanup_timestamp = time();
+			wp_schedule_event( $cleanup_timestamp, 'hourly', 'wp_mcp_ai_cleanup_async_results' );
+
+			// Record cleanup cron job in cron manager for visibility.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				WP_MCP_AI_Cron_Manager::record_job(
+					'wp_mcp_ai_cleanup_async_results',
+					array(),
+					'hourly',
+					$cleanup_timestamp,
+					0 // System-created job.
+				);
+			}
 		}
 	}
 
@@ -128,24 +140,25 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Store initial job metadata.
 		$metadata = array(
-			'job_id'     => $job_id,
-			'tool_slug'  => $tool_slug,
-			'arguments'  => $arguments,
-			'context'    => $this->sanitize_context( $context ),
-			'status'     => 'pending',
-			'queued_at'  => time(),
-			'started_at' => null,
+			'job_id'       => $job_id,
+			'tool_slug'    => $tool_slug,
+			'arguments'    => $arguments,
+			'context'      => $this->sanitize_context( $context ),
+			'status'       => 'pending',
+			'queued_at'    => time(),
+			'started_at'   => null,
 			'completed_at' => null,
-			'result'     => null,
-			'error'      => null,
+			'result'       => null,
+			'error'        => null,
 		);
 
 		// Store metadata (use transient for quick access).
 		$this->save_metadata( $job_id, $metadata );
 
 		// Schedule cron job.
+		$timestamp = time();
 		$scheduled = wp_schedule_single_event(
-			time(),
+			$timestamp,
 			self::CRON_HOOK,
 			array( $job_id )
 		);
@@ -153,6 +166,18 @@ class WP_MCP_AI_Tool_Async_Executor {
 		if ( false === $scheduled ) {
 			$this->delete_metadata( $job_id );
 			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule async tool execution.', 'wp-mcp-ai' ) );
+		}
+
+		// Record cron job in cron manager for visibility and management.
+		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+			WP_MCP_AI_Cron_Manager::record_job(
+				self::CRON_HOOK,
+				array( $job_id ),
+				'single',
+				$timestamp,
+				$user_id
+			);
 		}
 
 		// Log queuing event.
@@ -256,9 +281,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 	/**
 	 * Handle tool execution error
 	 *
-	 * @param string     $job_id Job identifier.
-	 * @param array      $metadata Job metadata.
-	 * @param string     $error_message Error message.
+	 * @param string        $job_id Job identifier.
+	 * @param array         $metadata Job metadata.
+	 * @param string        $error_message Error message.
 	 * @param WP_Error|null $error WP_Error object if available.
 	 */
 	protected function handle_execution_error( $job_id, $metadata, $error_message, $error = null ) {
@@ -358,10 +383,10 @@ class WP_MCP_AI_Tool_Async_Executor {
 	 */
 	protected function save_metadata( $job_id, array $metadata ) {
 		$transient_key = self::METADATA_TRANSIENT_PREFIX . $job_id;
-		
+
 		// Use transient for fast access (expires in 24 hours by default).
 		$expiry = self::DEFAULT_RESULT_EXPIRY;
-		
+
 		/**
 		 * Filter async result expiration time.
 		 *
@@ -370,7 +395,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		 * @param array  $metadata Job metadata.
 		 */
 		$expiry = apply_filters( 'wp_mcp_ai_async_result_expiry', $expiry, $job_id, $metadata );
-		
+
 		return set_transient( $transient_key, $metadata, $expiry );
 	}
 
@@ -410,11 +435,11 @@ class WP_MCP_AI_Tool_Async_Executor {
 		if ( $size > self::MAX_RESULT_SIZE / 10 ) {
 			if ( function_exists( 'gzcompress' ) ) {
 				$compressed = gzcompress( $serialized, 6 );
-				
+
 				if ( $compressed && strlen( $compressed ) < $size ) {
 					return array(
-						'compressed' => true,
-						'data'       => base64_encode( $compressed ),
+						'compressed'    => true,
+						'data'          => base64_encode( $compressed ),
 						'original_size' => $size,
 					);
 				}
@@ -422,8 +447,8 @@ class WP_MCP_AI_Tool_Async_Executor {
 		}
 
 		return array(
-			'compressed' => false,
-			'data'       => $result,
+			'compressed'    => false,
+			'data'          => $result,
 			'original_size' => $size,
 		);
 	}
@@ -463,7 +488,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Find expired transients.
 		$prefix = self::METADATA_TRANSIENT_PREFIX;
-		
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
