@@ -6742,6 +6742,10 @@
                 instanceConfig.filesEndpoint = globalConfig.filesEndpoint || '';
             }
 
+            if (!instanceConfig.restUrl) {
+                instanceConfig.restUrl = globalConfig.restUrl || '';
+            }
+
             if (!instanceConfig.restNonce) {
                 instanceConfig.restNonce = globalConfig.nonce || '';
             }
