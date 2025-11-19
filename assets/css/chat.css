@@ -10,6 +10,7 @@
 }
 
 .wp-mcp-ai-chat__messages {
+    min-height: 120px;
     max-height: 360px;
     overflow-y: auto;
     margin-bottom: 0.75rem;
