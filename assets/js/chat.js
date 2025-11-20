@@ -8072,9 +8072,18 @@
             assistantMessage.tool_calls = message.tool_calls;
         }
 
+        // OpenAI requires assistant messages with tool_calls to have valid content.
+        // Empty string causes "Invalid parameter(s): messages" errors.
+        // Use null for messages with tool_calls but no text content.
         if (assistantMessage.content || assistantMessage.tool_calls) {
             if (!assistantMessage.hasOwnProperty('content')) {
-                assistantMessage.content = '';
+                // Use null instead of empty string for tool_calls without content
+                // This prevents "Invalid parameter(s): messages" errors from OpenAI
+                assistantMessage.content = hasToolCalls ? null : '';
+            } else if (assistantMessage.content === '' && hasToolCalls) {
+                // Convert empty string to null for tool_calls messages
+                // OpenAI accepts null but not empty string for content when tool_calls present
+                assistantMessage.content = null;
             }
             state.conversation.push(assistantMessage);
         }
