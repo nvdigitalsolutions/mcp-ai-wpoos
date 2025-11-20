@@ -1,6 +1,6 @@
 # Video Analysis Implementation Roadmap
 
-## Current Status: Phase 2 Complete (Gemini File API Integration)
+## Current Status: Phase 2.1 Complete (File Management & Caching)
 
 ### What's Implemented ✅
 
@@ -40,6 +40,24 @@
   - [x] All tests passing
   - [x] All code passes WPCS linting
 
+**Phase 2.1: File Management (Optional Enhancement)** ✅ **COMPLETE**
+- [x] File caching to avoid re-uploading same videos
+  - [x] Cache key generation based on URL or attachment ID
+  - [x] Transient-based caching with 24-hour expiration
+  - [x] Cache verification before reuse
+- [x] File tracking for lifecycle management
+  - [x] Track uploaded files in WordPress options
+  - [x] Store upload timestamps for age-based cleanup
+  - [x] Handle both cached and expired tracked files
+- [x] Automatic cleanup of old files
+  - [x] Cron job scheduled daily (`wp_mcp_ai_cleanup_gemini_files`)
+  - [x] Cleanup files older than 24 hours
+  - [x] Remove both Gemini files and local cache entries
+- [x] Comprehensive error handling
+  - [x] Graceful handling of upload failures
+  - [x] Proper logging at all stages
+  - [x] Transient expiration handling
+
 **Current Behavior:**
 - ✅ Video analysis is fully functional via Gemini
 - ✅ Automatic file upload to Gemini File API
@@ -48,32 +66,32 @@
 - ✅ Support for WordPress attachments
 - ✅ Support for remote video URLs
 - ✅ Comprehensive error handling
+- ✅ File caching to avoid duplicate uploads
+- ✅ Automatic cleanup via daily cron job
 
 ### Implementation Status
 
-**Completed Tasks:** 16/16 from Phase 2
-**Lines of Code Added:** ~1,500
-**Test Coverage:** 33 new unit tests
-**Services Added:** 1 (Gemini File Service)
-**Client Enhancements:** 2 new methods
+**Completed Phases:** Phase 1 ✅, Phase 2 ✅, Phase 2.1 ✅
+**Lines of Code Added:** ~2,000 (includes caching and cleanup)
+**Test Coverage:** 54 unit tests (33 from Phase 2 + 21 from Phase 2.1)
+**Services Added:** 2 (Gemini File Service, Video Analysis Service)
+**Client Enhancements:** 2 new methods (file support in Gemini Client)
 **Tools Updated:** 2 (analyze_video, generate_video_caption)
+**Cron Jobs Added:** 2 (Gemini file cleanup, OpenAI file cleanup)
 
 ### What's Not Yet Implemented ⚠️
 
-**Phase 2.1: File Management (Optional Enhancement)** (1 week)
+**Phase 2.1: File Management (Optional Enhancement)** ✅ **COMPLETE**
 
-Additional file management features for production use:
+All Phase 2.1 tasks have been completed:
+- ✅ Track uploaded files in transients and options
+- ✅ Cleanup old files via cron job
+- ✅ Handle upload failures gracefully
+- ✅ Add caching to avoid re-uploading same videos
+- ✅ Comprehensive test coverage (21 unit tests)
 
-**Implementation Tasks:**
-
-- [ ] Add file management
-  - [ ] Track uploaded files in post meta or transients
-  - [ ] Cleanup old files (cron job)
-  - [ ] Handle upload failures gracefully
-  - [ ] Add caching to avoid re-uploading same videos
-
-**Estimated Effort:** 1 week
-**Priority:** Medium (optional optimization)
+**Estimated Effort:** 1 week (Completed)
+**Priority:** Medium (optional optimization) - **DONE**
 
 ---
 
@@ -286,6 +304,24 @@ This approach:
 - ✅ Memory-efficient temporary file handling
 - ✅ Support for both attachments and remote URLs
 
+**Phase 2.1 Complete When:** ✅ **ALL ACHIEVED**
+- ✅ File caching implemented and functional
+- ✅ Same video not re-uploaded within 24 hours
+- ✅ Files tracked in WordPress options
+- ✅ Daily cron job cleaning up old files
+- ✅ Comprehensive test coverage (21 new unit tests)
+- ✅ All code passes WordPress Coding Standards
+- ✅ Proper logging and error handling
+
+**Actual Implementation:**
+- ✅ 100% of Phase 2.1 tasks completed
+- ✅ Caching via WordPress transients (24-hour expiration)
+- ✅ File tracking via WordPress options (persistent)
+- ✅ Automated cleanup via WordPress cron (daily schedule)
+- ✅ Cache key generation with file modification detection
+- ✅ Support for both URL-based and attachment-based caching
+- ✅ Graceful handling of expired transients
+
 **Phase 3 Complete When:**
 - ✅ Frame extraction works for all common codecs
 - ✅ OpenAI analysis produces quality results
@@ -305,8 +341,8 @@ This approach:
 
 **Remaining Limitations:**
 - OpenAI video support not yet implemented (requires frame extraction - Phase 3)
-- No file caching (same video re-uploaded each time - Phase 2.1 optional)
-- No upload tracking for lifecycle management (Phase 2.1 optional)
+- ~~No file caching (same video re-uploaded each time - Phase 2.1 optional)~~ ✅ **RESOLVED**
+- ~~No upload tracking for lifecycle management (Phase 2.1 optional)~~ ✅ **RESOLVED**
 
 ---
 
@@ -319,6 +355,6 @@ This approach:
 
 ---
 
-**Last Updated:** 2025-11-16
-**Status:** Phase 2 Complete ✅
-**Next Phase:** Phase 2.1 (Optional File Management) or Phase 3 (OpenAI Frame Extraction)
+**Last Updated:** 2025-11-20
+**Status:** Phase 2.1 Complete ✅
+**Next Phase:** Phase 3 (OpenAI Video Support via Frame Extraction)
