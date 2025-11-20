@@ -7214,6 +7214,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$orchestrator = wp_mcp_ai_get_async_tool_orchestrator();
 			$should_async = $orchestrator->should_execute_async( $tool, $arguments, $context );
 
+			// CRITICAL: Force synchronous execution in agentic loop.
+			// Async tools must complete before the loop continues to ensure the LLM
+			// receives actual results, not pending status. Without this, the agentic
+			// loop would continue with pending tool results, and the final LLM response
+			// would not include the actual tool output (e.g., generated image links).
+			if ( $should_async && ! empty( $context['agentic_loop'] ) ) {
+				$should_async = false;
+				WP_MCP_AI_Logger::log_event(
+					'async_tool_forced_sync',
+					sprintf( 'Forced synchronous execution of %s in agentic loop', $tool_slug ),
+					array(
+						'tool_slug' => $tool_slug,
+						'iteration' => $iteration,
+						'reason'    => 'agentic_loop_requires_complete_results',
+					)
+				);
+			}
+
 			// CRITICAL: Prevent infinite loops in agentic workflows.
 			// If we're already in an iteration and this is an async tool, check if we should defer.
 			// Async tools queued in agentic loops should be marked to prevent re-queuing.
@@ -7279,14 +7297,40 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Execute tool synchronously (either not async-capable or async queueing failed).
-			// Orchestration Layer: Wrap in try-catch to handle budget enforcement.
+			// Orchestration Layer: Wrap in try-catch to handle budget enforcement and timeouts.
 			try {
+				// Set execution time limit for synchronous tool execution in agentic loop
+				// to prevent PHP timeout. Default WordPress limit is 30s, we allow up to 60s
+				// for tools that might take longer (like image generation).
+				if ( ! empty( $context['agentic_loop'] ) ) {
+					$original_time_limit = ini_get( 'max_execution_time' );
+					$tool_timeout        = apply_filters( 'wp_mcp_ai_agentic_tool_timeout', 60, $tool_slug );
+					
+					// Only set if we can (some hosting environments don't allow this)
+					if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
+						@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+					}
+				}
+				
 				do_action( 'wp_mcp_ai_before_tool_execution', $tool_slug, $arguments, $context );
 
 				$result = $tool->execute( $arguments, $context );
 
 				if ( is_wp_error( $result ) ) {
 					WP_MCP_AI_Logger::log_tool_execution( $tool_slug, $arguments, $result, $context );
+					
+					// In agentic loop, if sync execution failed and tool supports async,
+					// provide helpful error message instead of returning WP_Error object
+					// which would break the conversation flow.
+					if ( ! empty( $context['agentic_loop'] ) ) {
+						return sprintf(
+							/* translators: 1: tool name, 2: error message */
+							__( 'Tool "%1$s" execution failed: %2$s', 'wp-mcp-ai' ),
+							$tool_name,
+							$result->get_error_message()
+						);
+					}
+					
 					return $result->get_error_message();
 				}
 
@@ -7304,15 +7348,27 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return $result;
 
 			} catch ( Exception $e ) {
-				// Orchestration Layer: Budget constraint violation.
+				// Orchestration Layer: Budget constraint violation or execution timeout.
 				WP_MCP_AI_Logger::log_error(
-					'Tool execution blocked by orchestration layer',
+					'Tool execution blocked by orchestration layer or failed',
 					array(
-						'tool_slug' => $tool_slug,
-						'error'     => $e->getMessage(),
-						'context'   => $context,
+						'tool_slug'    => $tool_slug,
+						'error'        => $e->getMessage(),
+						'context'      => $context,
+						'agentic_loop' => ! empty( $context['agentic_loop'] ),
 					)
 				);
+
+				// In agentic loop, provide a graceful error message that the LLM can understand
+				// and potentially work around, rather than breaking the conversation flow.
+				if ( ! empty( $context['agentic_loop'] ) ) {
+					return sprintf(
+						/* translators: 1: tool name, 2: error message */
+						__( 'Tool "%1$s" execution error: %2$s. The tool could not complete successfully.', 'wp-mcp-ai' ),
+						$tool_name,
+						$e->getMessage()
+					);
+				}
 
 				return $e->getMessage();
 			}
