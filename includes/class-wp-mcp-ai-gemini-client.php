@@ -1978,6 +1978,32 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 			}
 
+			// Critical fix: Ensure all values in 'properties' are schema objects (arrays), not scalars.
+			// Gemini API expects each property value to be a Schema object like {"type": "string"},
+			// not a scalar value like "string". Convert any scalar values to proper schema objects.
+			if ( isset( $sanitized['properties'] ) && is_array( $sanitized['properties'] ) ) {
+				foreach ( $sanitized['properties'] as $prop_name => $prop_value ) {
+					// If a property value is a scalar (string/number/bool) instead of a schema object,
+					// convert it to a proper schema object with that value as the type.
+					if ( ! is_array( $prop_value ) && ! is_object( $prop_value ) ) {
+						// Assume the scalar value is meant to be the type.
+						$sanitized['properties'][ $prop_name ] = array(
+							'type' => is_string( $prop_value ) ? $prop_value : 'string',
+						);
+
+						WP_MCP_AI_Logger::log_event(
+							'gemini_schema_fix',
+							'Converted scalar property value to schema object',
+							array(
+								'property'      => $prop_name,
+								'original_value' => $prop_value,
+								'converted_to'  => $sanitized['properties'][ $prop_name ],
+							)
+						);
+					}
+				}
+			}
+
 			// Enhancement: Ensure property schemas have a 'type' field.
 			// If we're processing a property definition (parent_key is a property name from 'properties'),
 			// or an items definition (parent_key is 'items'), and it lacks a 'type' field,
