@@ -7174,67 +7174,96 @@
 
             const role = message.role;
             const content = message.content;
+            const display = message.display || null;
 
             if (role === 'system') {
-                // Skip system messages in UI
+                // Render system messages
+                // Use display metadata if available, otherwise use content directly
+                const systemPayload = display || { text: content || '' };
+                
+                // Preserve bubbleType if present in display metadata
+                if (display && display.bubbleType) {
+                    systemPayload.bubbleType = display.bubbleType;
+                }
+                
+                appendMessage(state.messagesEl, 'system', systemPayload);
                 return;
             }
 
             if (role === 'tool') {
                 // Render tool responses
-                appendMessage(state.messagesEl, 'tool', content);
+                // Use display metadata if available
+                const toolPayload = display || content;
+                appendMessage(state.messagesEl, 'tool', toolPayload);
                 return;
             }
 
             if (role === 'user') {
                 // Render user messages
-                const displayPayload = { text: '', attachments: [] };
+                // Use display metadata if available, otherwise build from content
+                let displayPayload;
+                
+                if (display) {
+                    // Use saved display metadata for consistency
+                    displayPayload = {
+                        text: display.text || '',
+                        attachments: display.attachments || []
+                    };
+                    
+                    // Preserve bubbleType if present
+                    if (display.bubbleType) {
+                        displayPayload.bubbleType = display.bubbleType;
+                    }
+                } else {
+                    // Fallback: build display payload from content
+                    displayPayload = { text: '', attachments: [] };
 
-                if (typeof content === 'string') {
-                    displayPayload.text = content;
-                } else if (Array.isArray(content)) {
-                    // Extract text from structured content and build attachment links
-                    const textParts = [];
-                    content.forEach(function (segment) {
-                        if (segment && segment.type === 'text' && segment.text) {
-                            textParts.push(segment.text);
-                        } else if (segment && (segment.type === 'input_image' || segment.type === 'image_url')) {
-                            // Build attachment link for image
-                            // Handle both segment.url and segment.image_url formats
-                            let imageUrl = segment.url || '';
-                            if (!imageUrl && segment.image_url) {
-                                if (typeof segment.image_url === 'string') {
-                                    imageUrl = segment.image_url;
-                                } else if (segment.image_url.url) {
-                                    imageUrl = segment.image_url.url;
+                    if (typeof content === 'string') {
+                        displayPayload.text = content;
+                    } else if (Array.isArray(content)) {
+                        // Extract text from structured content and build attachment links
+                        const textParts = [];
+                        content.forEach(function (segment) {
+                            if (segment && segment.type === 'text' && segment.text) {
+                                textParts.push(segment.text);
+                            } else if (segment && (segment.type === 'input_image' || segment.type === 'image_url')) {
+                                // Build attachment link for image
+                                // Handle both segment.url and segment.image_url formats
+                                let imageUrl = segment.url || '';
+                                if (!imageUrl && segment.image_url) {
+                                    if (typeof segment.image_url === 'string') {
+                                        imageUrl = segment.image_url;
+                                    } else if (segment.image_url.url) {
+                                        imageUrl = segment.image_url.url;
+                                    }
+                                }
+                                
+                                if (imageUrl) {
+                                    displayPayload.attachments.push({
+                                        url: imageUrl,
+                                        label: segment.caption || segment.name || 'Image attachment',
+                                        downloadName: segment.name || '',
+                                        meta: '',
+                                    });
+                                } else {
+                                    textParts.push('[Image attachment]');
+                                }
+                            } else if (segment && segment.type === 'input_file') {
+                                // Build attachment link for file
+                                if (segment.url) {
+                                    displayPayload.attachments.push({
+                                        url: segment.url,
+                                        label: segment.display_name || segment.name || 'File attachment',
+                                        downloadName: segment.display_name || segment.name || '',
+                                        meta: '',
+                                    });
+                                } else {
+                                    textParts.push('[File attachment]');
                                 }
                             }
-                            
-                            if (imageUrl) {
-                                displayPayload.attachments.push({
-                                    url: imageUrl,
-                                    label: segment.caption || segment.name || 'Image attachment',
-                                    downloadName: segment.name || '',
-                                    meta: '',
-                                });
-                            } else {
-                                textParts.push('[Image attachment]');
-                            }
-                        } else if (segment && segment.type === 'input_file') {
-                            // Build attachment link for file
-                            if (segment.url) {
-                                displayPayload.attachments.push({
-                                    url: segment.url,
-                                    label: segment.display_name || segment.name || 'File attachment',
-                                    downloadName: segment.display_name || segment.name || '',
-                                    meta: '',
-                                });
-                            } else {
-                                textParts.push('[File attachment]');
-                            }
-                        }
-                    });
-                    displayPayload.text = textParts.join('\n');
+                        });
+                        displayPayload.text = textParts.join('\n');
+                    }
                 }
 
                 appendMessage(state.messagesEl, 'user', displayPayload);
@@ -7243,15 +7272,32 @@
 
             if (role === 'assistant') {
                 // Render assistant messages
-                // If content is an array (structured content with image_url blocks), 
-                // pass it as content so normaliseContent can handle it properly
-                const assistantPayload = Array.isArray(content) 
-                    ? { content: content }
-                    : { text: content || '' };
+                // Use display metadata if available, otherwise build from content
+                let assistantPayload;
                 
-                const textForSpeech = Array.isArray(content) 
-                    ? normaliseContent(content) 
-                    : (content || '');
+                if (display) {
+                    // Use saved display metadata for consistency
+                    assistantPayload = {
+                        text: display.text || '',
+                        attachments: display.attachments || []
+                    };
+                    
+                    // Preserve bubbleType if present
+                    if (display.bubbleType) {
+                        assistantPayload.bubbleType = display.bubbleType;
+                    }
+                } else {
+                    // Fallback: build from content
+                    // If content is an array (structured content with image_url blocks), 
+                    // pass it as content so normaliseContent can handle it properly
+                    assistantPayload = Array.isArray(content) 
+                        ? { content: content }
+                        : { text: content || '' };
+                }
+                
+                const textForSpeech = display && display.text 
+                    ? display.text 
+                    : (Array.isArray(content) ? normaliseContent(content) : (content || ''));
                 
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                     speech: {
