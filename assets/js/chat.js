@@ -4963,7 +4963,7 @@
                 return;
             }
 
-            if (type === 'input_image' || type === 'image_file' || type === 'output_image') {
+            if (type === 'input_image' || type === 'image_file' || type === 'output_image' || type === 'image_url') {
                 let inlineFileId = segment.file_id || '';
                 if (!inlineFileId) {
                     const imageFile = segment.image_file || segment.image || segment.file || null;
@@ -8058,7 +8058,14 @@
                     text: assistantDisplay.text || '',
                 },
             });
-            assistantMessage.content = assistantDisplay.text || '';
+            // Preserve the original content structure if it's an array (contains image blocks)
+            // This is needed to maintain image_url content in the agentic loop
+            // When content is array, it means it has structured data like image_url blocks
+            if (Array.isArray(message.content)) {
+                assistantMessage.content = message.content;
+            } else {
+                assistantMessage.content = assistantDisplay.text || '';
+            }
         }
 
         if (!hasDisplayContent && !hasToolCalls) {
