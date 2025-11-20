@@ -589,6 +589,30 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$metadata = array();
 		}
 
+		// Store OpenAI response metadata for reference.
+		$openai_meta = array(
+			'source'         => 'openai',
+			'original_prompt' => sanitize_textarea_field( $prompt ),
+		);
+
+		if ( ! empty( $image['model'] ) ) {
+			$openai_meta['model'] = sanitize_text_field( $image['model'] );
+		}
+
+		if ( ! empty( $image['revised_prompt'] ) ) {
+			$openai_meta['revised_prompt'] = sanitize_textarea_field( $image['revised_prompt'] );
+		}
+
+		if ( ! empty( $image['created'] ) ) {
+			$openai_meta['created'] = absint( $image['created'] );
+		}
+
+		if ( ! empty( $format ) ) {
+			$openai_meta['format'] = sanitize_key( $format );
+		}
+
+		update_post_meta( $attachment_id, '_wp_mcp_ai_openai_image_meta', $openai_meta );
+
 		$bytes = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
 		return array(
