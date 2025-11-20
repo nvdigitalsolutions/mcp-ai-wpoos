@@ -215,6 +215,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_key',
 						),
+						'stream' => array(
+							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'wp-mcp-ai' ),
+							'type'        => 'boolean',
+							'required'    => false,
+							'default'     => false,
+						),
 					),
 				),
 			),

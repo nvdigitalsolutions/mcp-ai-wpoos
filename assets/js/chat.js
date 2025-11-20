@@ -21,6 +21,9 @@
 
     // Audio service compatibility layer - use external service if available
     const audioService = window.wpMcpAiChatAudio || null;
+
+    // SSE service compatibility layer - use external service if available
+    const sseService = window.wpMcpAiSSE || null;
     let objectUrlRegistry = [];
 
     // Audio-related constants - use from service if available
@@ -6345,14 +6348,155 @@
     }
 
     /**
-     * Poll for async tool execution result
+     * Wait for async tool result using SSE streaming
+     * Uses SSE service for proper separation of concerns.
      * 
      * @param {Object} state Chat state object
      * @param {string} jobId Job ID for the async tool execution
      * @param {string} toolName Tool name for display purposes
      * @return {Promise} Promise that resolves with the tool result
      */
-    function waitForAsyncToolResult(state, jobId, toolName) {
+    function waitForAsyncToolResultSSE(state, jobId, toolName) {
+        if (!jobId || !state || !state.config || !state.config.restUrl) {
+            return Promise.reject(new Error('Missing job ID, state, or REST URL'));
+        }
+
+        // Check if SSE service is available
+        if (!sseService || !sseService.isSupported()) {
+            // Fall back to polling
+            return waitForAsyncToolResultPolling(state, jobId, toolName);
+        }
+
+        const timeout = 180000; // 3 minute timeout
+        const startTime = Date.now();
+        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+
+        return new Promise(function (resolve, reject) {
+            let sseConnection = null;
+            let timeoutTimer = null;
+            let resolved = false;
+
+            function cleanup() {
+                if (sseConnection) {
+                    sseConnection.close();
+                    sseConnection = null;
+                }
+                if (timeoutTimer) {
+                    clearTimeout(timeoutTimer);
+                    timeoutTimer = null;
+                }
+                delete state.pendingAsyncTools[jobId];
+            }
+
+            function handleComplete(result) {
+                if (resolved) {
+                    return;
+                }
+                resolved = true;
+                cleanup();
+
+                // Remove the pending message
+                if (pendingEntry && pendingEntry.parentNode) {
+                    pendingEntry.parentNode.removeChild(pendingEntry);
+                }
+
+                // Display the actual result
+                if (result) {
+                    displayAsyncToolResult(state, toolName, result);
+                    resolve(result);
+                } else {
+                    updatePendingTaskEntry(pendingEntry, getString('toolSuccess', 'Tool completed successfully.'));
+                    resolve({});
+                }
+            }
+
+            function handleError(errorMessage) {
+                if (resolved) {
+                    return;
+                }
+                resolved = true;
+                cleanup();
+                updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolName || 'Tool', errorMessage));
+                reject(new Error(errorMessage));
+            }
+
+            // Set up timeout
+            timeoutTimer = setTimeout(function () {
+                if (!resolved) {
+                    handleError(getString('toolTimeout', 'Tool timed out before completing.'));
+                }
+            }, timeout);
+
+            // Build SSE URL with stream=true parameter
+            let url = state.config.restUrl;
+            if (url.charAt(url.length - 1) !== '/') {
+                url += '/';
+            }
+            url += 'cron-status/' + encodeURIComponent(jobId) + '?stream=true';
+
+            // Create SSE connection using service
+            sseConnection = sseService.connect(url, {
+                eventHandlers: {
+                    cron_job_status: function (payload) {
+                        const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+
+                        if (status === 'completed') {
+                            // Job completed - extract result and display
+                            if (payload.result) {
+                                handleComplete(payload.result);
+                            } else {
+                                handleComplete(payload);
+                            }
+                        } else if (status === 'failed' || status === 'error') {
+                            const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
+                            handleError(errorMessage);
+                        } else {
+                            // Still pending or running - update status
+                            updatePendingTaskEntry(pendingEntry, getString('toolPolling', 'Tool is processing…'));
+                        }
+                    }
+                },
+                onMessage: function (data) {
+                    // Handle [DONE] marker
+                    if (!resolved && !data) {
+                        handleComplete({});
+                    }
+                },
+                onError: function (error) {
+                    console.error('[WP oOS] SSE connection error:', error);
+                    // Fall back to polling
+                    cleanup();
+                    waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry).then(resolve).catch(reject);
+                }
+            });
+
+            // Track in pending async tools
+            state.pendingAsyncTools[jobId] = {
+                entry: pendingEntry,
+                timeout: timeout,
+                start: startTime,
+                toolName: toolName,
+                sseConnection: sseConnection,
+            };
+
+            // Handle case where connection failed to be created
+            if (!sseConnection) {
+                cleanup();
+                waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry).then(resolve).catch(reject);
+            }
+        });
+    }
+
+    /**
+     * Poll for async tool execution result (fallback for when SSE is not available)
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @param {string} toolName Tool name for display purposes
+     * @param {Element} pendingEntry Optional existing pending entry element
+     * @return {Promise} Promise that resolves with the tool result
+     */
+    function waitForAsyncToolResultPolling(state, jobId, toolName, pendingEntry) {
         if (!jobId || !state || !state.config) {
             return Promise.reject(new Error('Missing job ID or state'));
         }
@@ -6360,7 +6504,10 @@
         const pollDelay = 3000; // Poll every 3 seconds
         const timeout = 180000; // 3 minute timeout
         const startTime = Date.now();
-        const pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        
+        if (!pendingEntry) {
+            pendingEntry = appendMessage(state.messagesEl, 'system', getString('toolQueued', 'Tool is processing in the background. Results will appear shortly.'));
+        }
 
         state.pendingAsyncTools[jobId] = {
             entry: pendingEntry,
@@ -6452,6 +6599,44 @@
 
             poll();
         });
+    }
+
+    /**
+     * Poll for async tool execution result
+     * Automatically uses SSE if supported, falls back to polling
+     * Delegates to SSE service for proper separation of concerns.
+     * 
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @param {string} toolName Tool name for display purposes
+     * @return {Promise} Promise that resolves with the tool result
+     */
+    function waitForAsyncToolResult(state, jobId, toolName) {
+        if (!jobId || !state || !state.config) {
+            return Promise.reject(new Error('Missing job ID or state'));
+        }
+
+        // Check if SSE service is available and supported
+        if (sseService && sseService.isSupported()) {
+            return waitForAsyncToolResultSSE(state, jobId, toolName);
+        }
+
+        // Fall back to polling
+        return waitForAsyncToolResultPolling(state, jobId, toolName);
+    }
+
+    /**
+     * Legacy polling function - kept for compatibility
+     * Now just an alias to waitForAsyncToolResult
+     * 
+     * @deprecated Use waitForAsyncToolResult instead
+     * @param {Object} state Chat state object
+     * @param {string} jobId Job ID for the async tool execution
+     * @param {string} toolName Tool name for display purposes
+     * @return {Promise} Promise that resolves with the tool result
+     */
+    function waitForAsyncToolResultLegacy(state, jobId, toolName) {
+        return waitForAsyncToolResult(state, jobId, toolName);
     }
 
     /**
