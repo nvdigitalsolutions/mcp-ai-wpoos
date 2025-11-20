@@ -46,3 +46,4 @@ test-storage-service.html
 # Development and test scripts
 verify-*.php
 /wp-content/
+test-transcript-routes.php
