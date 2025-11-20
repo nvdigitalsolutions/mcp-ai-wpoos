@@ -1846,21 +1846,48 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		/**
 		 * Sanitize JSON Schema parameters for Gemini API compatibility.
 		 *
-		 * Gemini API does not support certain JSON Schema fields:
+		 * Gemini API uses a restricted subset of OpenAPI 3.0 Schema Object and does NOT support:
 		 * - additionalProperties: Not supported at any level
 		 * - type as array: Union types like ['string', 'array'] must be converted to single type
+		 * - default: Default values for parameters
+		 * - examples: Example values array
+		 * - const: Constant value constraints
+		 * - nullable: Nullable type indicator (use type array instead, which we convert)
+		 * - $ref, $schema, $id: JSON Schema meta-keywords
+		 * - oneOf, anyOf, allOf: Schema composition keywords
+		 * - format: Format validators (limited/no support in function declarations)
 		 *
-		 * This method recursively strips these unsupported fields from the schema.
+		 * This method recursively strips these unsupported schema keywords while preserving
+		 * property names that may match keyword names (e.g., a parameter named 'format').
 		 *
-		 * @param array $schema JSON Schema object to sanitize.
+		 * @param array  $schema     JSON Schema object to sanitize.
+		 * @param string $parent_key The parent key to determine context (internal use).
 		 * @return array Sanitized schema compatible with Gemini API.
 		 */
-		protected function sanitize_parameters_for_gemini( array $schema ) {
+		protected function sanitize_parameters_for_gemini( array $schema, $parent_key = '' ) {
 			$sanitized = array();
 
+			// List of unsupported keywords to filter out.
+			$unsupported_keywords = array(
+				'additionalProperties',
+				'default',
+				'examples',
+				'const',
+				'nullable',
+				'$ref',
+				'$schema',
+				'$id',
+				'oneOf',
+				'anyOf',
+				'allOf',
+				'format',
+			);
+
 			foreach ( $schema as $key => $value ) {
-				// Skip additionalProperties - not supported by Gemini.
-				if ( 'additionalProperties' === $key ) {
+				// IMPORTANT: Only filter schema keywords, not property names.
+				// When parent_key is 'properties', the keys are parameter names, not schema keywords.
+				// Example: A parameter named 'format' should be preserved, but a 'format' keyword should be removed.
+				if ( 'properties' !== $parent_key && in_array( $key, $unsupported_keywords, true ) ) {
 					continue;
 				}
 
@@ -1873,8 +1900,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				// Recursively sanitize nested objects and arrays.
+				// Pass the current key as parent_key to track context.
 				if ( is_array( $value ) ) {
-					$sanitized[ $key ] = $this->sanitize_parameters_for_gemini( $value );
+					$sanitized[ $key ] = $this->sanitize_parameters_for_gemini( $value, $key );
 				} else {
 					$sanitized[ $key ] = $value;
 				}
