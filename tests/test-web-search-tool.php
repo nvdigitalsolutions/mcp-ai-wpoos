@@ -314,11 +314,11 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
 		$this->assertStringContainsString(
-			'still being processed',
+			'temporarily processing',
 			$result->get_error_message()
 		);
 		$this->assertStringContainsString(
-			'cannot be resolved by retrying immediately',
+			'alternative information sources',
 			$result->get_error_message()
 		);
 
@@ -326,7 +326,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $data );
 		$this->assertSame( 202, $data['status'] );
 		$this->assertTrue( $data['is_pending'] );
-		$this->assertTrue( $data['should_wait'] );
+		$this->assertFalse( $data['should_wait'] );
 		$this->assertSame( '7', $data['retry_after'] );
 	}
 
@@ -550,7 +550,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
 		$this->assertStringContainsString(
-			'still being processed',
+			'temporarily processing',
 			$result->get_error_message()
 		);
 
@@ -558,7 +558,72 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $data );
 		$this->assertSame( 202, $data['status'] );
 		$this->assertTrue( $data['is_pending'] );
-		$this->assertTrue( $data['should_wait'] );
+		$this->assertFalse( $data['should_wait'] );
 		$this->assertSame( '5', $data['retry_after'] );
+	}
+
+	/**
+	 * Successful search results should be cached to reduce API calls.
+	 */
+	public function test_execute_caches_successful_results() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		$call_count = 0;
+
+		$http_stub = static function ( $preempt, $args, $url ) use ( &$call_count ) {
+			$call_count++;
+			return array(
+				'response' => array(
+					'code' => 200,
+				),
+				'body'     => wp_json_encode(
+					array(
+						'Heading'      => 'Test Result',
+						'AbstractText' => 'Test abstract text.',
+						'AbstractURL'  => 'https://example.com/test',
+					)
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		// Ensure caching is enabled for this test.
+		add_filter( 'wp_mcp_ai_cache_enabled', '__return_true' );
+
+		// First call should hit the API.
+		$result1 = $tool->execute(
+			array(
+				'query' => 'test caching',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		$this->assertIsArray( $result1 );
+		$this->assertFalse( $result1['cached'] );
+		$this->assertSame( 1, $call_count );
+
+		// Second call with same query should use cache.
+		$result2 = $tool->execute(
+			array(
+				'query' => 'test caching',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_filter( 'wp_mcp_ai_cache_enabled', '__return_true' );
+
+		$this->assertIsArray( $result2 );
+		$this->assertTrue( $result2['cached'] );
+		// Call count should still be 1 (cached result, no second API call).
+		$this->assertSame( 1, $call_count );
 	}
 }

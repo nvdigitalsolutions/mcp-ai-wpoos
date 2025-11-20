@@ -13,6 +13,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 }
 
+if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
+}
+
 /**
  * Performs lightweight web searches and returns the top results.
  */
@@ -86,12 +90,6 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			return new WP_Error( 'wp_mcp_ai_missing_query', __( 'A search query is required.', 'wp-mcp-ai' ) );
 		}
 
-		// Check rate limiting to prevent abuse and infinite loops.
-		$rate_limit_check = $this->check_rate_limit( $user_id );
-		if ( is_wp_error( $rate_limit_check ) ) {
-			return $rate_limit_check;
-		}
-
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		$max_results = $max_results > 0 ? min( $max_results, 10 ) : 5;
 
@@ -103,11 +101,48 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$provider = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 
-		if ( 'brave' === $provider ) {
-			return $this->perform_brave_search( $query, $max_results, $settings );
+		// Check cache first to avoid unnecessary API calls.
+		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = $this->get_cache_key( $query, $max_results, $provider );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
+
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				$cached_result['cached'] = true;
+				return $cached_result;
+			}
 		}
 
-		return $this->perform_duckduckgo_search( $query, $max_results );
+		// Check rate limiting after cache check to allow cached results even when rate limited.
+		$rate_limit_check = $this->check_rate_limit( $user_id );
+		if ( is_wp_error( $rate_limit_check ) ) {
+			return $rate_limit_check;
+		}
+
+		// Perform the search.
+		if ( 'brave' === $provider ) {
+			$result = $this->perform_brave_search( $query, $max_results, $settings );
+		} else {
+			$result = $this->perform_duckduckgo_search( $query, $max_results );
+		}
+
+		// Cache successful results to reduce redundant API calls.
+		if ( ! is_wp_error( $result ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_ttl = 5 * MINUTE_IN_SECONDS;
+
+			/**
+			 * Filter the cache TTL for web search results.
+			 *
+			 * @param int    $cache_ttl Cache time-to-live in seconds (default: 300).
+			 * @param string $query     The search query.
+			 * @param string $provider  Search provider name.
+			 */
+			$cache_ttl = apply_filters( 'wp_mcp_ai_web_search_cache_ttl', $cache_ttl, $query, $provider );
+
+			$cache_key = $this->get_cache_key( $query, $max_results, $provider );
+			WP_MCP_AI_Cache_Helper::set( $cache_key, $result, $cache_ttl );
+		}
+
+		return $result;
 	}
 
 	/**
@@ -151,6 +186,18 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		// Increment counter.
 		set_transient( $transient_key, $current_count + 1, MINUTE_IN_SECONDS );
 		return true;
+	}
+
+	/**
+	 * Generate a cache key for search results.
+	 *
+	 * @param string $query       The search query.
+	 * @param int    $max_results Maximum number of results.
+	 * @param string $provider    Search provider name.
+	 * @return string Cache key for the search (without prefix - Cache Helper adds it).
+	 */
+	protected function get_cache_key( $query, $max_results, $provider ) {
+		return 'search_' . md5( $query . '|' . $max_results . '|' . $provider );
 	}
 
 	/**
@@ -198,7 +245,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$error_data = array(
 				'status'      => 202,
 				'is_pending'  => true,
-				'should_wait' => true,
+				'should_wait' => false, // Don't suggest waiting - continue with alternative approaches.
 			);
 
 			if ( ! empty( $retry_after ) ) {
@@ -207,7 +254,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 			return new WP_Error(
 				'wp_mcp_ai_search_pending',
-				__( 'The web search is still being processed by the search provider. This is a temporary state that cannot be resolved by retrying immediately. Please wait before making another search request, or try a different search query or approach to answer the user\'s question.', 'wp-mcp-ai' ),
+				__( 'The web search provider is temporarily processing this query asynchronously. Since this result is cached, you can try the same query again in a moment if needed. For now, please try a different search query, use alternative information sources, or continue answering the user\'s question with available information.', 'wp-mcp-ai' ),
 				$error_data
 			);
 		}
@@ -326,7 +373,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$error_data = array(
 				'status'      => 202,
 				'is_pending'  => true,
-				'should_wait' => true,
+				'should_wait' => false, // Don't suggest waiting - continue with alternative approaches.
 			);
 
 			if ( ! empty( $retry_after ) ) {
@@ -335,7 +382,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 			return new WP_Error(
 				'wp_mcp_ai_search_pending',
-				__( 'The web search is still being processed by the search provider. This is a temporary state that cannot be resolved by retrying immediately. Please wait before making another search request, or try a different search query or approach to answer the user\'s question.', 'wp-mcp-ai' ),
+				__( 'The web search provider is temporarily processing this query asynchronously. Since this result is cached, you can try the same query again in a moment if needed. For now, please try a different search query, use alternative information sources, or continue answering the user\'s question with available information.', 'wp-mcp-ai' ),
 				$error_data
 			);
 		}
