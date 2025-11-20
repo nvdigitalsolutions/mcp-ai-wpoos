@@ -9421,12 +9421,21 @@
         }
     }
 
-    function formatString(template, value) {
+    function formatString(template) {
         if (!template) {
-            return value;
+            return '';
         }
 
-        return template.replace('%s', value);
+        // Get all arguments after the template
+        const values = Array.prototype.slice.call(arguments, 1);
+        
+        // Replace each %s with the corresponding value
+        let result = template;
+        for (let i = 0; i < values.length; i++) {
+            result = result.replace('%s', values[i] !== undefined ? values[i] : '');
+        }
+        
+        return result;
     }
 
     /**
