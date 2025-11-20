@@ -975,6 +975,63 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 	}
 }
 
+/**
+ * Register cron job handlers for file cleanup.
+ */
+if ( ! has_action( 'wp_mcp_ai_cleanup_gemini_files', 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {
+	add_action( 'wp_mcp_ai_cleanup_gemini_files', 'wp_mcp_ai_cleanup_gemini_files_handler' );
+}
+
+if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' ) ) {
+	add_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {
+	/**
+	 * Cron job handler for cleaning up old Gemini files.
+	 *
+	 * Runs daily to remove files older than 24 hours from Gemini File API
+	 * and clear associated cache entries.
+	 */
+	function wp_mcp_ai_cleanup_gemini_files_handler() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-gemini-file-service.php';
+
+		$file_service = new WP_MCP_AI_Gemini_File_Service();
+
+		// Cleanup files older than 24 hours.
+		$result = $file_service->cleanup_old_files( 24 * HOUR_IN_SECONDS );
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_file_cleanup_cron',
+			'Daily Gemini file cleanup completed.',
+			$result
+		);
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_cleanup_openai_files_handler' ) ) {
+	/**
+	 * Cron job handler for cleaning up old OpenAI files.
+	 *
+	 * Runs daily to remove files older than 24 hours from OpenAI File API
+	 * and clear associated cache entries.
+	 */
+	function wp_mcp_ai_cleanup_openai_files_handler() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-openai-file-service.php';
+
+		$file_service = new WP_MCP_AI_OpenAI_File_Service();
+
+		// Cleanup files older than 24 hours.
+		$result = $file_service->cleanup_old_files( 24 * HOUR_IN_SECONDS );
+
+		WP_MCP_AI_Logger::log_event(
+			'openai_file_cleanup_cron',
+			'Daily OpenAI file cleanup completed.',
+			$result
+		);
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_iterate_network_sites' ) ) {
 	/**
 	 * Helper function to iterate through all sites in a multisite network.
@@ -1206,6 +1263,14 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// Check site security and store result for display in admin notice.
 		wp_mcp_ai_check_activation_security();
 
+		// Schedule file cleanup cron job (daily).
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
+		}
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
+		}
+
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
@@ -1241,6 +1306,16 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_deactivate_single_site() {
+		// Unschedule file cleanup cron jobs.
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_gemini_files' );
+		}
+		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'wp_mcp_ai_cleanup_openai_files' );
+		}
+
 		flush_rewrite_rules();
 	}
 }
