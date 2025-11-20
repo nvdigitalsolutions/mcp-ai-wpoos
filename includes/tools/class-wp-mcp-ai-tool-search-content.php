@@ -110,7 +110,8 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 								'description' => __( 'Meta key to compare.', 'wp-mcp-ai' ),
 							),
 							'value'   => array(
-								'description' => __( 'Meta value to compare. Arrays are supported for IN/NOT IN comparisons.', 'wp-mcp-ai' ),
+								'type'        => 'string',
+								'description' => __( 'Meta value to compare. Can be a string or JSON-encoded array for IN/NOT IN comparisons.', 'wp-mcp-ai' ),
 							),
 							'compare' => array(
 								'type'        => 'string',

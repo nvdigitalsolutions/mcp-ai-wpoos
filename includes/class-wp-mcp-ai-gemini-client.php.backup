@@ -1899,47 +1899,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					continue;
 				}
 
-				// Handle 'enum' field - ensure it's not recursively processed as a nested schema.
-				// Enum values should be preserved as-is (array of scalars).
-				if ( 'enum' === $key && is_array( $value ) ) {
-					$sanitized[ $key ] = $value;
-					continue;
-				}
-
-				// Handle 'required' field - preserve as-is (array of property names).
-				if ( 'required' === $key && is_array( $value ) ) {
-					$sanitized[ $key ] = $value;
-					continue;
-				}
-
 				// Recursively sanitize nested objects and arrays.
 				// Pass the current key as parent_key to track context.
 				if ( is_array( $value ) ) {
 					$sanitized[ $key ] = $this->sanitize_parameters_for_gemini( $value, $key );
 				} else {
 					$sanitized[ $key ] = $value;
-				}
-			}
-
-			// Enhancement: Ensure property schemas have a 'type' field.
-			// If we're processing a property definition (parent_key is a property name from 'properties'),
-			// and it has 'description' but no 'type', add a default type.
-			if ( 'properties' === $parent_key ) {
-				foreach ( $sanitized as $prop_name => $prop_schema ) {
-					if ( is_array( $prop_schema ) && isset( $prop_schema['description'] ) && ! isset( $prop_schema['type'] ) ) {
-						// Default to 'string' type for properties missing type.
-						// This handles cases like the 'value' parameter in search-content tool.
-						$sanitized[ $prop_name ]['type'] = 'string';
-						
-						WP_MCP_AI_Logger::log_event(
-							'gemini_schema_enhancement',
-							'Added missing type field to property schema',
-							array(
-								'property' => $prop_name,
-								'default_type' => 'string',
-							)
-						);
-					}
 				}
 			}
 
