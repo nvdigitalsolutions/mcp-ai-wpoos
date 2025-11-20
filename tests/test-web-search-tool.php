@@ -459,9 +459,12 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
 		// Set a low rate limit for testing.
-		add_filter( 'wp_mcp_ai_web_search_rate_limit', function() {
-			return 3; // Only 3 searches per minute.
-		} );
+		add_filter(
+			'wp_mcp_ai_web_search_rate_limit',
+			function () {
+				return 3; // Only 3 searches per minute.
+			}
+		);
 
 		// First 3 searches should succeed.
 		for ( $i = 1; $i <= 3; $i++ ) {
@@ -492,5 +495,70 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'wp_mcp_ai_rate_limit_exceeded', $result->get_error_code() );
 		$this->assertStringContainsString( 'rate limit exceeded', strtolower( $result->get_error_message() ) );
+	}
+
+	/**
+	 * Brave Search should also handle HTTP 202 pending responses correctly.
+	 */
+	public function test_brave_search_returns_pending_error_on_202_status() {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $user_id );
+
+		$tool = new WP_MCP_AI_Tool_Web_Search();
+
+		// Mock settings to enable Brave Search.
+		add_filter(
+			'option_wp_mcp_ai_settings',
+			function () {
+				return array(
+					'web_search_provider'  => 'brave',
+					'brave_search_api_key' => 'test_api_key_123',
+				);
+			}
+		);
+
+		$http_stub = static function ( $preempt, $args, $url ) {
+			// Verify this is a Brave Search request.
+			if ( strpos( $url, 'api.search.brave.com' ) !== false ) {
+				return array(
+					'response' => array(
+						'code' => 202,
+					),
+					'headers'  => array(
+						'retry-after' => '5',
+					),
+					'body'     => '',
+				);
+			}
+			return $preempt;
+		};
+
+		add_filter( 'pre_http_request', $http_stub, 10, 3 );
+
+		$result = $tool->execute(
+			array(
+				'query' => 'breaking news',
+			),
+			array(
+				'user_id' => $user_id,
+			)
+		);
+
+		remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_all_filters( 'option_wp_mcp_ai_settings' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wp_mcp_ai_search_pending', $result->get_error_code() );
+		$this->assertStringContainsString(
+			'still being processed',
+			$result->get_error_message()
+		);
+
+		$data = $result->get_error_data();
+		$this->assertIsArray( $data );
+		$this->assertSame( 202, $data['status'] );
+		$this->assertTrue( $data['is_pending'] );
+		$this->assertTrue( $data['should_wait'] );
+		$this->assertSame( '5', $data['retry_after'] );
 	}
 }
