@@ -106,6 +106,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'attachment_id', $result );
 		$this->assertArrayHasKey( 'url', $result );
+		$this->assertNotEmpty( $result['url'] );
+		$this->assertStringContainsString( 'wp-content/uploads/', $result['url'] );
 		$this->assertSame( 'png', $result['format'] );
 		$this->assertSame( '1024x1792', $result['size'] );
 		$this->assertSame( 'high', $result['quality'] );
@@ -113,6 +115,13 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'b64_json', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
 		$this->assertSame( 456, $result['created'] );
+		
+		// Verify text field includes descriptive information.
+		$this->assertArrayHasKey( 'text', $result );
+		$this->assertStringContainsString( 'Successfully generated image', $result['text'] );
+		$this->assertStringContainsString( 'Revised prompt: A friendlier robot', $result['text'] );
+		$this->assertStringContainsString( '1024x1792', $result['text'] );
+		$this->assertStringContainsString( 'high', $result['text'] );
 
 		$attachment_id = $result['attachment_id'];
 		$this->assertNotEmpty( $attachment_id );
