@@ -7695,14 +7695,15 @@
                                 });
                             }
                             
-                            // If we found content, add it to fullContent and update UI
-                            if (contentChunk) {
+                            // Check for final response with complete data first
+                            // This ensures tool_results and structured content are captured
+                            if (data.data) {
+                                return { content: fullContent, finalData: data };
+                            }
+                            // If we found streaming content, add it to fullContent and update UI
+                            else if (contentChunk) {
                                 fullContent += contentChunk;
                                 updateCallback(fullContent);
-                            }
-                            // Check for final response with complete data
-                            else if (data.data) {
-                                return { content: fullContent, finalData: data };
                             }
                         }
                     } catch (parseError) {
