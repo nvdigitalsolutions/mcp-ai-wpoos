@@ -8077,9 +8077,18 @@
             assistantMessage.tool_calls = message.tool_calls;
         }
 
+        // OpenAI requires assistant messages with tool_calls to have valid content.
+        // Empty string causes "Invalid parameter(s): messages" errors.
+        // Use null for messages with tool_calls but no text content.
         if (assistantMessage.content || assistantMessage.tool_calls) {
             if (!assistantMessage.hasOwnProperty('content')) {
-                assistantMessage.content = '';
+                // Use null instead of empty string for tool_calls without content
+                // This prevents "Invalid parameter(s): messages" errors from OpenAI
+                assistantMessage.content = hasToolCalls ? null : '';
+            } else if (assistantMessage.content === '' && hasToolCalls) {
+                // Convert empty string to null for tool_calls messages
+                // OpenAI accepts null but not empty string for content when tool_calls present
+                assistantMessage.content = null;
             }
             state.conversation.push(assistantMessage);
         }
@@ -8149,24 +8158,29 @@
                         const lastMessage = state.messagesEl.lastElementChild;
                         if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
                             lastMessage.parentNode.removeChild(lastMessage);
-                            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
-                                speech: {
-                                    state: state,
-                                    text: assistantDisplay.text || '',
-                                },
-                            });
                         }
-                    } else {
-                        // No text content but we have attachments - show them
                         appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                             speech: {
                                 state: state,
                                 text: assistantDisplay.text || '',
                             },
                         });
-                        // Update conversation with assistant message containing attachments
+                        // Update conversation content with text from tool results
+                        if (hasTextFromTools && !hasDisplayContent) {
+                            assistantMessage.content = assistantDisplay.text;
+                        }
+                    } else {
+                        // No text content at all but we have attachments - show them
+                        appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                            speech: {
+                                state: state,
+                                text: assistantDisplay.text || '',
+                            },
+                        });
+                        // For OpenAI API compatibility, use null instead of empty string
+                        // when we have tool_calls but no content
                         if (!assistantMessage.content) {
-                            assistantMessage.content = '';
+                            assistantMessage.content = hasToolCalls ? null : '';
                         }
                         // Add to conversation if not already added
                         if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
@@ -9414,12 +9428,21 @@
         }
     }
 
-    function formatString(template, value) {
+    function formatString(template) {
         if (!template) {
-            return value;
+            return '';
         }
 
-        return template.replace('%s', value);
+        // Get all arguments after the template
+        const values = Array.prototype.slice.call(arguments, 1);
+        
+        // Replace each %s with the corresponding value
+        let result = template;
+        for (let i = 0; i < values.length; i++) {
+            result = result.replace('%s', values[i] !== undefined ? values[i] : '');
+        }
+        
+        return result;
     }
 
     /**
