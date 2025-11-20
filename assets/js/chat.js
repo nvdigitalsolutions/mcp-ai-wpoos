@@ -8111,16 +8111,39 @@
                     }
 
                     const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
-                    const normalized = normaliseToolResultForDisplay(toolName, matchingResult.content);
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = matchingResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = matchingResult.content;
+                        }
+                    }
+                    
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
-                    if (normalized && normalized.attachments && normalized.attachments.length > 0) {
+                    if (normalized) {
+                        // Add text from tool result to assistant display if available
+                        if (normalized.text && typeof normalized.text === 'string') {
+                            if (assistantDisplay.text) {
+                                assistantDisplay.text += '\n\n' + normalized.text;
+                            } else {
+                                assistantDisplay.text = normalized.text;
+                            }
+                        }
+                        
                         // Add attachments to the assistant display.
-                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        if (normalized.attachments && normalized.attachments.length > 0) {
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        }
                     }
                 });
 
-                // Re-render the assistant message if we added attachments.
-                if (assistantDisplay.attachments.length > 0) {
+                // Re-render the assistant message if we added attachments or text from tool results.
+                if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
                     if (hasDisplayContent) {
                         // Update existing assistant message with attachments
                         const lastMessage = state.messagesEl.lastElementChild;
