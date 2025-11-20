@@ -6177,6 +6177,7 @@
             timeout: timeout,
             start: startTime,
             timer: null,
+            toolName: toolName,
         };
 
         return new Promise(function (resolve, reject) {
@@ -6223,7 +6224,8 @@
                         if (status === 'failed' || status === 'error') {
                             cleanup();
                             const errorMessage = payload && payload.metadata && payload.metadata.error ? payload.metadata.error : getString('toolError', 'The tool request failed.');
-                            updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), errorMessage));
+                            const toolDisplayName = record.toolName || 'Tool';
+                            updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
                             reject(new Error(errorMessage));
                             return;
                         }
@@ -6249,7 +6251,8 @@
                     .catch(function (error) {
                         cleanup();
                         const message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
-                        updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'The crawl failed: %s'), message));
+                        const toolDisplayName = record.toolName || 'Tool';
+                        updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, message));
                         reject(error);
                     });
             }
@@ -6328,7 +6331,8 @@
                         if (status === 'failed' || status === 'error') {
                             cleanup();
                             const errorMessage = payload && payload.error ? payload.error : getString('toolError', 'The tool request failed.');
-                            updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'Tool failed: %s'), errorMessage));
+                            const toolDisplayName = record.toolName || 'Tool';
+                            updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, errorMessage));
                             reject(new Error(errorMessage));
                             return;
                         }
@@ -6357,7 +6361,8 @@
                     .catch(function (error) {
                         cleanup();
                         const message = error && error.message ? error.message : getString('toolError', 'The tool request failed.');
-                        updatePendingTaskEntry(pendingEntry, formatString(getString('toolFailed', 'Tool failed: %s'), message));
+                        const toolDisplayName = record.toolName || 'Tool';
+                        updatePendingTaskEntry(pendingEntry, formatString('%s failed: %s', toolDisplayName, message));
                         reject(error);
                     });
             }

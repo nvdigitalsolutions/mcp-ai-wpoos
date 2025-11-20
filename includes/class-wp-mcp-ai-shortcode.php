@@ -210,11 +210,11 @@ class WP_MCP_AI_Shortcode {
 																'toolExecuting' => __( 'Running tool: %s', 'wp-mcp-ai' ),
 					'toolSuccess'                   => __( 'Tool response ready.', 'wp-mcp-ai' ),
 					'toolError'                     => __( 'The tool request failed.', 'wp-mcp-ai' ),
-					'toolQueued'                    => __( 'Crawl queued. Results will appear shortly.', 'wp-mcp-ai' ),
-					'toolPolling'                   => __( 'Crawl in progress…', 'wp-mcp-ai' ),
-					'toolTimeout'                   => __( 'Crawl timed out before completing.', 'wp-mcp-ai' ),
-					/* translators: %s: crawl failure error message */
-																'toolFailed' => __( 'The crawl failed: %s', 'wp-mcp-ai' ),
+					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'wp-mcp-ai' ),
+					'toolPolling'                   => __( 'Tool is processing…', 'wp-mcp-ai' ),
+					'toolTimeout'                   => __( 'Tool timed out before completing.', 'wp-mcp-ai' ),
+					/* translators: %s: tool failure error message */
+				'toolFailed' => __( 'Tool failed: %s', 'wp-mcp-ai' ),
 					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'wp-mcp-ai' ),
 					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'wp-mcp-ai' ),
 					/* translators: %s: task name */
