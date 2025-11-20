@@ -1922,6 +1922,18 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 								$schema[ $opt_key ] = $opt_value;
 							}
 						}
+
+						// Log the composition keyword handling for debugging.
+						WP_MCP_AI_Logger::log_event(
+							'gemini_schema_composition',
+							"Converted {$comp_key} to first option in schema",
+							array(
+								'composition_keyword' => $comp_key,
+								'parent_key'          => $parent_key,
+								'first_option_type'   => isset( $first_option['type'] ) ? $first_option['type'] : 'unknown',
+								'options_count'       => count( $schema[ $comp_key ] ),
+							)
+						);
 					}
 					// Remove the composition keyword after extracting its first option.
 					unset( $schema[ $comp_key ] );
