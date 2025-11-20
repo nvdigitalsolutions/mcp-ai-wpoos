@@ -901,6 +901,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * Handle GET /cron-status/{job_id} request.
 		 *
 		 * Returns detailed information about a specific cron job.
+		 * Supports SSE streaming for real-time updates when requested.
 		 * Follows SOC by delegating to cron status service for data retrieval.
 		 *
 		 * @param WP_REST_Request $request REST request object.
@@ -926,6 +927,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( is_wp_error( $job_details ) ) {
 				return $job_details;
+			}
+
+			// Check if SSE streaming was requested.
+			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
+				// Stream the job details via SSE.
+				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
 			}
 
 			return rest_ensure_response( $job_details );
