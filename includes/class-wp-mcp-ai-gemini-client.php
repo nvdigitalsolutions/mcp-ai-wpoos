@@ -1877,11 +1877,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * - const: Constant value constraints
 		 * - nullable: Nullable type indicator (use type array instead, which we convert)
 		 * - $ref, $schema, $id: JSON Schema meta-keywords
-		 * - oneOf, anyOf, allOf: Schema composition keywords
+		 * - oneOf, anyOf, allOf: Schema composition keywords (we extract the first option)
 		 * - format: Format validators (limited/no support in function declarations)
 		 *
 		 * This method recursively strips these unsupported schema keywords while preserving
 		 * property names that may match keyword names (e.g., a parameter named 'format').
+		 *
+		 * For schema composition keywords (oneOf, anyOf, allOf), we extract the first schema
+		 * option and merge it into the parent schema to preserve type information.
 		 *
 		 * @param array  $schema     JSON Schema object to sanitize.
 		 * @param string $parent_key The parent key to determine context (internal use).
@@ -1900,11 +1903,42 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				'$ref',
 				'$schema',
 				'$id',
-				'oneOf',
-				'anyOf',
-				'allOf',
 				'format',
 			);
+
+			// Handle oneOf, anyOf, allOf - schema composition keywords.
+			// Extract the first schema option and merge it into the current schema.
+			$composition_keywords = array( 'oneOf', 'anyOf', 'allOf' );
+			foreach ( $composition_keywords as $comp_key ) {
+				if ( isset( $schema[ $comp_key ] ) && is_array( $schema[ $comp_key ] ) && ! empty( $schema[ $comp_key ] ) ) {
+					// Get the first schema from the composition array.
+					$first_option = $schema[ $comp_key ][0];
+					if ( is_array( $first_option ) ) {
+						// Merge the first option into the current schema.
+						// This allows properties from the first option to be used.
+						foreach ( $first_option as $opt_key => $opt_value ) {
+							// Don't override existing keys in the schema.
+							if ( ! isset( $schema[ $opt_key ] ) ) {
+								$schema[ $opt_key ] = $opt_value;
+							}
+						}
+
+						// Log the composition keyword handling for debugging.
+						WP_MCP_AI_Logger::log_event(
+							'gemini_schema_composition',
+							"Converted {$comp_key} to first option in schema",
+							array(
+								'composition_keyword' => $comp_key,
+								'parent_key'          => $parent_key,
+								'first_option_type'   => isset( $first_option['type'] ) ? $first_option['type'] : 'unknown',
+								'options_count'       => count( $schema[ $comp_key ] ),
+							)
+						);
+					}
+					// Remove the composition keyword after extracting its first option.
+					unset( $schema[ $comp_key ] );
+				}
+			}
 
 			foreach ( $schema as $key => $value ) {
 				// IMPORTANT: Only filter schema keywords, not property names.
