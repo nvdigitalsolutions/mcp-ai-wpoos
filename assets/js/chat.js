@@ -832,6 +832,81 @@
     }
 
     /**
+     * Extract display metadata from a rendered message element.
+     * This captures bubble type, attachments, and display text for persistence.
+     * 
+     * @param {HTMLElement} messageElement - The rendered message element
+     * @param {Object} displayPayload - The original display payload used to render
+     * @return {Object|null} Display metadata object or null if no metadata to preserve
+     */
+    function extractDisplayMetadata(messageElement, displayPayload) {
+        if (!messageElement) {
+            return null;
+        }
+
+        const bubble = messageElement.querySelector('.wp-mcp-ai-chat__bubble');
+        if (!bubble) {
+            return null;
+        }
+
+        const metadata = {};
+        let hasMetadata = false;
+
+        // Extract bubble type
+        if (bubble.dataset.bubbleType) {
+            metadata.bubbleType = bubble.dataset.bubbleType;
+            hasMetadata = true;
+        }
+
+        // Extract display text if provided
+        if (displayPayload && displayPayload.text) {
+            metadata.text = displayPayload.text;
+            hasMetadata = true;
+        }
+
+        // Extract attachments if provided
+        if (displayPayload && Array.isArray(displayPayload.attachments) && displayPayload.attachments.length > 0) {
+            metadata.attachments = displayPayload.attachments;
+            hasMetadata = true;
+        }
+
+        return hasMetadata ? metadata : null;
+    }
+
+    /**
+     * Create a conversation message object with display metadata.
+     * This ensures proper persistence and restoration of message display.
+     * 
+     * @param {string} role - Message role (user, assistant, tool, system)
+     * @param {*} content - Message content (string or structured content)
+     * @param {Object} displayMetadata - Display metadata from extractDisplayMetadata
+     * @param {Object} additionalFields - Additional fields to include (tool_calls, etc.)
+     * @return {Object} Conversation message object
+     */
+    function createConversationMessage(role, content, displayMetadata, additionalFields) {
+        const message = {
+            role: role,
+            content: content
+        };
+
+        // Add display metadata if present
+        if (displayMetadata) {
+            message.display = displayMetadata;
+        }
+
+        // Add any additional fields (tool_calls, etc.)
+        if (additionalFields && typeof additionalFields === 'object') {
+            Object.keys(additionalFields).forEach(function(key) {
+                if (!message.hasOwnProperty(key)) {
+                    message[key] = additionalFields[key];
+                }
+            });
+        }
+
+        return message;
+    }
+
+    /**
      * Save the current conversation to CCT via the REST API.
      * This is called before clearing a conversation to ensure messages are not lost.
      * 
@@ -4111,12 +4186,20 @@
                 return;
             }
 
-            const payload = { text: trimmedContent };
+            // Use display metadata if available for accurate reconstruction
+            let payload;
+            if (message.display && typeof message.display === 'object') {
+                payload = message.display;
+            } else {
+                payload = { text: trimmedContent };
+            }
+            
             const allowMarkdown = role === 'assistant';
 
             appendMessage(state.messagesEl, role, payload, allowMarkdown);
             if (hasContent || role === 'tool') {
-                state.conversation.push({ role: role, content: trimmedContent });
+                // Preserve the original message structure including display metadata
+                state.conversation.push(message);
             }
         });
 
@@ -7243,12 +7326,13 @@
         });
 
         let userMessageElement = null;
+        const displayPayload = {
+            text: inputValue,
+            attachments: displayAttachments,
+        };
 
         if (trimmedMessage || displayAttachments.length) {
-            userMessageElement = appendMessage(state.messagesEl, 'user', {
-                text: inputValue,
-                attachments: displayAttachments,
-            });
+            userMessageElement = appendMessage(state.messagesEl, 'user', displayPayload);
         }
 
         let payloadContent;
@@ -7259,7 +7343,14 @@
         }
 
         const previousConversationLength = state.conversation.length;
-        state.conversation.push({ role: 'user', content: payloadContent });
+        
+        // Extract display metadata from rendered message
+        const displayMetadata = extractDisplayMetadata(userMessageElement, displayPayload);
+        
+        // Create conversation message with display metadata for proper restoration
+        const userMessage = createConversationMessage('user', payloadContent, displayMetadata);
+        
+        state.conversation.push(userMessage);
 
         // Save conversation immediately after user message
         saveConversationToStorage(state);
@@ -7543,10 +7634,12 @@
                         }
                     }
 
-                    state.conversation.push({
-                        role: 'assistant',
-                        content: streamResult.content
-                    });
+                    // Create assistant message with display metadata
+                    const displayPayload = { text: streamResult.content };
+                    const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                    const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                    
+                    state.conversation.push(assistantMessage);
                     
                     // Clear thinking text buffer
                     state.thinkingText = null;
@@ -8084,12 +8177,13 @@
         }
 
         if (hasDisplayContent) {
-            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+            const assistantMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                 speech: {
                     state: state,
                     text: assistantDisplay.text || '',
                 },
             });
+            
             // Preserve the original content structure if it's an array (contains image blocks)
             // This is needed to maintain image_url content in the agentic loop
             // When content is array, it means it has structured data like image_url blocks
@@ -8097,6 +8191,12 @@
                 assistantMessage.content = message.content;
             } else {
                 assistantMessage.content = assistantDisplay.text || '';
+            }
+            
+            // Extract and preserve display metadata for persistence
+            const displayMetadata = extractDisplayMetadata(assistantMessageElement, assistantDisplay);
+            if (displayMetadata) {
+                assistantMessage.display = displayMetadata;
             }
         }
 
@@ -8198,19 +8298,26 @@
                         if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
                             lastMessage.parentNode.removeChild(lastMessage);
                         }
-                        appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        const updatedMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                             speech: {
                                 state: state,
                                 text: assistantDisplay.text || '',
                             },
                         });
+                        
                         // Update conversation content with text from tool results
                         if (hasTextFromTools && !hasDisplayContent) {
                             assistantMessage.content = assistantDisplay.text;
                         }
+                        
+                        // Update display metadata in already-saved message
+                        const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay);
+                        if (displayMetadata) {
+                            assistantMessage.display = displayMetadata;
+                        }
                     } else {
                         // No text content at all but we have attachments - show them
-                        appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        const newMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                             speech: {
                                 state: state,
                                 text: assistantDisplay.text || '',
@@ -8223,6 +8330,11 @@
                         }
                         // Add to conversation if not already added
                         if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
+                            // Extract and preserve display metadata
+                            const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay);
+                            if (displayMetadata) {
+                                assistantMessage.display = displayMetadata;
+                            }
                             state.conversation.push(assistantMessage);
                         }
                         hasDisplayContent = true;
@@ -8568,15 +8680,22 @@
 
         const hasText = text.trim() !== '';
         const hasAttachments = attachments.length > 0;
-        const showJsonResponse =
+        
+        // Check for bubble type hints from payload
+        const bubbleType = payload && payload.bubbleType ? payload.bubbleType : null;
+        
+        // Determine bubble type based on content or hint
+        const showJsonResponse = bubbleType === 'json' || (
             hasText &&
             !hasAttachments &&
-            shouldDisplayJsonResponse(role, text, allowMarkdown);
-        const showTruncatedResponse =
+            shouldDisplayJsonResponse(role, text, allowMarkdown)
+        );
+        const showTruncatedResponse = bubbleType === 'truncated' || (
             hasText &&
             !showJsonResponse &&
             !allowMarkdown &&
-            isTruncatedByOrchestration(text);
+            isTruncatedByOrchestration(text)
+        );
 
         if (!hasText && !hasAttachments) {
             return null;
@@ -8587,12 +8706,17 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'wp-mcp-ai-chat__bubble';
+        
+        // Track bubble type for persistence
+        let activeBubbleType = null;
 
         if (showJsonResponse) {
             bubble.classList.add('wp-mcp-ai-chat__bubble--json');
+            activeBubbleType = 'json';
             bubble.appendChild(createJsonResponseElement(text));
         } else if (showTruncatedResponse) {
             bubble.classList.add('wp-mcp-ai-chat__bubble--truncated');
+            activeBubbleType = 'truncated';
             bubble.appendChild(createTruncatedResponseElement(text));
         } else if (hasText) {
             if (allowMarkdown) {
@@ -8601,6 +8725,11 @@
                 const normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
                 bubble.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
             }
+        }
+        
+        // Store bubble type on bubble element for retrieval
+        if (activeBubbleType) {
+            bubble.dataset.bubbleType = activeBubbleType;
         }
 
         if (hasAttachments) {
