@@ -1954,7 +1954,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						// Determine the appropriate type based on schema structure.
 						$inferred_type = 'string'; // Default fallback
 						$reason        = 'default';
-						
+
 						if ( isset( $prop_schema['items'] ) ) {
 							// If 'items' is present, this should be an array type.
 							$inferred_type = 'array';
@@ -1964,9 +1964,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							$inferred_type = 'object';
 							$reason        = 'has_properties';
 						}
-						
+
 						$sanitized[ $prop_name ]['type'] = $inferred_type;
-						
+
 						WP_MCP_AI_Logger::log_event(
 							'gemini_schema_enhancement',
 							'Added missing type field to property schema',
@@ -1982,7 +1982,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				// Handle the items schema itself when it's missing a type.
 				$inferred_type = 'string'; // Default fallback
 				$reason        = 'default';
-				
+
 				if ( isset( $sanitized['items'] ) ) {
 					// If 'items' is present, this should be an array type.
 					$inferred_type = 'array';
@@ -1992,9 +1992,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$inferred_type = 'object';
 					$reason        = 'has_properties';
 				}
-				
+
 				$sanitized['type'] = $inferred_type;
-				
+
 				WP_MCP_AI_Logger::log_event(
 					'gemini_schema_enhancement',
 					'Added missing type field to items schema',
