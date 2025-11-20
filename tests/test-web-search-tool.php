@@ -591,6 +591,9 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_http_request', $http_stub, 10, 3 );
 
+		// Ensure caching is enabled for this test.
+		add_filter( 'wp_mcp_ai_cache_enabled', '__return_true' );
+
 		// First call should hit the API.
 		$result1 = $tool->execute(
 			array(
@@ -616,6 +619,7 @@ class WP_MCP_AI_Web_Search_Tool_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'pre_http_request', $http_stub, 10 );
+		remove_filter( 'wp_mcp_ai_cache_enabled', '__return_true' );
 
 		$this->assertIsArray( $result2 );
 		$this->assertTrue( $result2['cached'] );

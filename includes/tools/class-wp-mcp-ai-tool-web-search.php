@@ -13,6 +13,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings.php';
 }
 
+if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
+}
+
 /**
  * Performs lightweight web searches and returns the top results.
  */
@@ -98,12 +102,14 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$provider = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 
 		// Check cache first to avoid unnecessary API calls.
-		$cache_key     = $this->get_cache_key( $query, $max_results, $provider );
-		$cached_result = get_transient( $cache_key );
+		if ( WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
+			$cache_key     = $this->get_cache_key( $query, $max_results, $provider );
+			$cached_result = WP_MCP_AI_Cache_Helper::get( $cache_key );
 
-		if ( false !== $cached_result && is_array( $cached_result ) ) {
-			$cached_result['cached'] = true;
-			return $cached_result;
+			if ( false !== $cached_result && is_array( $cached_result ) ) {
+				$cached_result['cached'] = true;
+				return $cached_result;
+			}
 		}
 
 		// Check rate limiting after cache check to allow cached results even when rate limited.
@@ -120,7 +126,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		// Cache successful results to reduce redundant API calls.
-		if ( ! is_wp_error( $result ) ) {
+		if ( ! is_wp_error( $result ) && WP_MCP_AI_Cache_Helper::is_caching_enabled() ) {
 			$cache_ttl = 5 * MINUTE_IN_SECONDS;
 
 			/**
@@ -132,7 +138,8 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			 */
 			$cache_ttl = apply_filters( 'wp_mcp_ai_web_search_cache_ttl', $cache_ttl, $query, $provider );
 
-			set_transient( $cache_key, $result, $cache_ttl );
+			$cache_key = $this->get_cache_key( $query, $max_results, $provider );
+			WP_MCP_AI_Cache_Helper::set( $cache_key, $result, $cache_ttl );
 		}
 
 		return $result;
@@ -187,10 +194,10 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * @param string $query       The search query.
 	 * @param int    $max_results Maximum number of results.
 	 * @param string $provider    Search provider name.
-	 * @return string Cache key for the search.
+	 * @return string Cache key for the search (without prefix - Cache Helper adds it).
 	 */
 	protected function get_cache_key( $query, $max_results, $provider ) {
-		return 'wp_mcp_ai_search_' . md5( $query . '|' . $max_results . '|' . $provider );
+		return 'search_' . md5( $query . '|' . $max_results . '|' . $provider );
 	}
 
 	/**
