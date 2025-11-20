@@ -106,6 +106,8 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'attachment_id', $result );
 		$this->assertArrayHasKey( 'url', $result );
+		$this->assertNotEmpty( $result['url'] );
+		$this->assertStringContainsString( 'wp-content/uploads/', $result['url'] );
 		$this->assertSame( 'png', $result['format'] );
 		$this->assertSame( '1024x1792', $result['size'] );
 		$this->assertSame( 'high', $result['quality'] );
@@ -113,6 +115,13 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( 'b64_json', $result['response_format'] );
 		$this->assertSame( 'A friendlier robot', $result['revised_prompt'] );
 		$this->assertSame( 456, $result['created'] );
+		
+		// Verify text field includes descriptive information.
+		$this->assertArrayHasKey( 'text', $result );
+		$this->assertStringContainsString( 'Successfully generated image', $result['text'] );
+		$this->assertStringContainsString( 'Revised prompt: A friendlier robot', $result['text'] );
+		$this->assertStringContainsString( '1024x1792', $result['text'] );
+		$this->assertStringContainsString( 'high', $result['text'] );
 
 		$attachment_id = $result['attachment_id'];
 		$this->assertNotEmpty( $attachment_id );
@@ -124,6 +133,16 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 		$this->assertSame( $png_binary, file_get_contents( $file_path ) );
 
 		$this->assertGreaterThan( 0, (int) $result['bytes'] );
+
+		// Verify OpenAI metadata is saved to attachment.
+		$openai_meta = get_post_meta( $attachment_id, '_wp_mcp_ai_openai_image_meta', true );
+		$this->assertIsArray( $openai_meta );
+		$this->assertSame( 'openai', $openai_meta['source'] );
+		$this->assertSame( 'A friendly robot painting a portrait', $openai_meta['original_prompt'] );
+		$this->assertSame( 'gpt-image-test', $openai_meta['model'] );
+		$this->assertSame( 'A friendlier robot', $openai_meta['revised_prompt'] );
+		$this->assertSame( 456, $openai_meta['created'] );
+		$this->assertSame( 'png', $openai_meta['format'] );
 
 		wp_delete_attachment( $attachment_id, true );
 	}
