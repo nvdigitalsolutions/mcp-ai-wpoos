@@ -1825,7 +1825,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				}
 
 				if ( isset( $function['parameters'] ) && is_array( $function['parameters'] ) ) {
-					$declaration['parameters'] = $function['parameters'];
+					// Sanitize parameters to remove fields not supported by Gemini API.
+					$declaration['parameters'] = $this->sanitize_parameters_for_gemini( $function['parameters'] );
 				}
 
 				$declarations[] = $declaration;
@@ -1840,6 +1841,46 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					'functionDeclarations' => $declarations,
 				),
 			);
+		}
+
+		/**
+		 * Sanitize JSON Schema parameters for Gemini API compatibility.
+		 *
+		 * Gemini API does not support certain JSON Schema fields:
+		 * - additionalProperties: Not supported at any level
+		 * - type as array: Union types like ['string', 'array'] must be converted to single type
+		 *
+		 * This method recursively strips these unsupported fields from the schema.
+		 *
+		 * @param array $schema JSON Schema object to sanitize.
+		 * @return array Sanitized schema compatible with Gemini API.
+		 */
+		protected function sanitize_parameters_for_gemini( array $schema ) {
+			$sanitized = array();
+
+			foreach ( $schema as $key => $value ) {
+				// Skip additionalProperties - not supported by Gemini.
+				if ( 'additionalProperties' === $key ) {
+					continue;
+				}
+
+				// Handle 'type' field - convert arrays to single type.
+				if ( 'type' === $key && is_array( $value ) ) {
+					// For union types, use the first type (most specific).
+					// E.g., ['string', 'array'] becomes 'string'.
+					$sanitized[ $key ] = is_string( $value[0] ) ? $value[0] : 'string';
+					continue;
+				}
+
+				// Recursively sanitize nested objects and arrays.
+				if ( is_array( $value ) ) {
+					$sanitized[ $key ] = $this->sanitize_parameters_for_gemini( $value );
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+
+			return $sanitized;
 		}
 
 		/**

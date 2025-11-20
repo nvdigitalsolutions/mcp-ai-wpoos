@@ -1,0 +1,414 @@
+<?php
+/**
+ * Tests for Gemini tool parameter sanitization.
+ *
+ * @package WP_MCP_AI
+ */
+
+/**
+ * Test class for WP_MCP_AI_Gemini_Client tool sanitization.
+ */
+class WP_MCP_AI_Gemini_Tool_Sanitization_Test extends WP_UnitTestCase {
+
+	/**
+	 * Test that additionalProperties is stripped from tool parameters.
+	 */
+	public function test_sanitize_parameters_strips_additional_properties() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-3-pro-preview';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'candidates'    => array(
+							array(
+								'content'      => array(
+									'parts' => array(
+										array( 'text' => 'Test response' ),
+									),
+								),
+								'finishReason' => 'STOP',
+							),
+						),
+						'usageMetadata' => array(
+							'promptTokenCount'     => 10,
+							'candidatesTokenCount' => 5,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test message',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'test_tool',
+					'description' => 'Test tool',
+					'parameters'  => array(
+						'type'                 => 'object',
+						'properties'           => array(
+							'param1' => array(
+								'type'        => 'string',
+								'description' => 'Test parameter',
+							),
+						),
+						'additionalProperties' => false,
+					),
+				),
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array( 'tools' => $tools ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertNotNull( $captured_request );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+
+		$this->assertArrayHasKey( 'tools', $payload );
+		$this->assertIsArray( $payload['tools'] );
+		$this->assertCount( 1, $payload['tools'] );
+
+		$function_declarations = $payload['tools'][0]['functionDeclarations'];
+		$this->assertIsArray( $function_declarations );
+		$this->assertCount( 1, $function_declarations );
+
+		$declaration = $function_declarations[0];
+		$this->assertEquals( 'test_tool', $declaration['name'] );
+		$this->assertArrayHasKey( 'parameters', $declaration );
+
+		// Verify additionalProperties is NOT present.
+		$this->assertArrayNotHasKey( 'additionalProperties', $declaration['parameters'] );
+		$this->assertEquals( 'object', $declaration['parameters']['type'] );
+		$this->assertArrayHasKey( 'properties', $declaration['parameters'] );
+	}
+
+	/**
+	 * Test that nested additionalProperties are stripped.
+	 */
+	public function test_sanitize_parameters_strips_nested_additional_properties() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-3-pro-preview';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'candidates'    => array(
+							array(
+								'content'      => array(
+									'parts' => array(
+										array( 'text' => 'Test response' ),
+									),
+								),
+								'finishReason' => 'STOP',
+							),
+						),
+						'usageMetadata' => array(
+							'promptTokenCount'     => 10,
+							'candidatesTokenCount' => 5,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test message',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'test_tool',
+					'description' => 'Test tool',
+					'parameters'  => array(
+						'type'                 => 'object',
+						'properties'           => array(
+							'data' => array(
+								'type'       => 'object',
+								'properties' => array(
+									'items' => array(
+										'type'  => 'array',
+										'items' => array(
+											'type'                 => 'object',
+											'additionalProperties' => false,
+										),
+									),
+								),
+								'additionalProperties' => false,
+							),
+						),
+						'additionalProperties' => false,
+					),
+				),
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array( 'tools' => $tools ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertNotNull( $captured_request );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+
+		$declaration = $payload['tools'][0]['functionDeclarations'][0];
+
+		// Verify no additionalProperties at any level.
+		$this->assertArrayNotHasKey( 'additionalProperties', $declaration['parameters'] );
+		$this->assertArrayNotHasKey( 'additionalProperties', $declaration['parameters']['properties']['data'] );
+		$this->assertArrayNotHasKey( 'additionalProperties', $declaration['parameters']['properties']['data']['properties']['items']['items'] );
+	}
+
+	/**
+	 * Test that type arrays (union types) are converted to single type.
+	 */
+	public function test_sanitize_parameters_converts_type_arrays() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-3-pro-preview';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'candidates'    => array(
+							array(
+								'content'      => array(
+									'parts' => array(
+										array( 'text' => 'Test response' ),
+									),
+								),
+								'finishReason' => 'STOP',
+							),
+						),
+						'usageMetadata' => array(
+							'promptTokenCount'     => 10,
+							'candidatesTokenCount' => 5,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test message',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'test_tool',
+					'description' => 'Test tool',
+					'parameters'  => array(
+						'type'       => 'object',
+						'properties' => array(
+							'color' => array(
+								'type'        => array( 'string', 'array' ),
+								'description' => 'Color value',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array( 'tools' => $tools ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertNotNull( $captured_request );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+
+		$declaration = $payload['tools'][0]['functionDeclarations'][0];
+
+		// Verify type array is converted to single type (first element).
+		$this->assertEquals( 'string', $declaration['parameters']['properties']['color']['type'] );
+		$this->assertIsString( $declaration['parameters']['properties']['color']['type'] );
+	}
+
+	/**
+	 * Test that valid parameters are preserved.
+	 */
+	public function test_sanitize_parameters_preserves_valid_fields() {
+		$defaults                         = WP_MCP_AI_Admin_Settings::get_default_settings();
+		$defaults['gemini_api_key']       = 'gsk-test';
+		$defaults['default_gemini_model'] = 'gemini-3-pro-preview';
+
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $defaults );
+
+		$client           = new WP_MCP_AI_Gemini_Client();
+		$captured_request = null;
+
+		$filter_callback = function ( $preempt, $args, $url ) use ( &$captured_request ) {
+			$captured_request = array(
+				'args' => $args,
+				'url'  => $url,
+			);
+
+			return array(
+				'headers'  => array(),
+				'body'     => wp_json_encode(
+					array(
+						'candidates'    => array(
+							array(
+								'content'      => array(
+									'parts' => array(
+										array( 'text' => 'Test response' ),
+									),
+								),
+								'finishReason' => 'STOP',
+							),
+						),
+						'usageMetadata' => array(
+							'promptTokenCount'     => 10,
+							'candidatesTokenCount' => 5,
+						),
+					)
+				),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+			);
+		};
+
+		add_filter( 'pre_http_request', $filter_callback, 10, 3 );
+
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Test message',
+			),
+		);
+
+		$tools = array(
+			array(
+				'type'     => 'function',
+				'function' => array(
+					'name'        => 'test_tool',
+					'description' => 'Test tool',
+					'parameters'  => array(
+						'type'       => 'object',
+						'properties' => array(
+							'count' => array(
+								'type'        => 'integer',
+								'description' => 'Count value',
+								'minimum'     => 1,
+								'maximum'     => 100,
+								'default'     => 10,
+							),
+							'tags'  => array(
+								'type'        => 'array',
+								'description' => 'Tag list',
+								'items'       => array(
+									'type' => 'string',
+								),
+							),
+						),
+						'required' => array( 'count' ),
+					),
+				),
+			),
+		);
+
+		$response = $client->create_chat_completion( $messages, array( 'tools' => $tools ) );
+
+		remove_filter( 'pre_http_request', $filter_callback, 10 );
+
+		$this->assertIsArray( $response );
+		$this->assertNotNull( $captured_request );
+
+		$payload = json_decode( $captured_request['args']['body'], true );
+
+		$declaration = $payload['tools'][0]['functionDeclarations'][0];
+
+		// Verify valid fields are preserved.
+		$this->assertEquals( 'integer', $declaration['parameters']['properties']['count']['type'] );
+		$this->assertEquals( 1, $declaration['parameters']['properties']['count']['minimum'] );
+		$this->assertEquals( 100, $declaration['parameters']['properties']['count']['maximum'] );
+		$this->assertEquals( 10, $declaration['parameters']['properties']['count']['default'] );
+		$this->assertEquals( array( 'count' ), $declaration['parameters']['required'] );
+
+		// Verify array items are preserved.
+		$this->assertEquals( 'array', $declaration['parameters']['properties']['tags']['type'] );
+		$this->assertArrayHasKey( 'items', $declaration['parameters']['properties']['tags'] );
+		$this->assertEquals( 'string', $declaration['parameters']['properties']['tags']['items']['type'] );
+	}
+}
