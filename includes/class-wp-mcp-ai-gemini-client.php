@@ -1867,6 +1867,46 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		}
 
 		/**
+		 * Normalize malformed property values in a properties object.
+		 *
+		 * Ensures that all values in a 'properties' object are proper Schema objects
+		 * (arrays with at least a 'type' field), not scalar values. This prevents
+		 * Gemini API errors like: "Invalid value... expecting Schema object but got string".
+		 *
+		 * @since 1.0.0
+		 * @param array $properties The properties object to normalize.
+		 * @return array Normalized properties object.
+		 */
+		protected function normalize_property_schemas( array $properties ) {
+			$normalized = array();
+
+			foreach ( $properties as $prop_name => $prop_value ) {
+				// If a property value is a scalar (string/number/bool) instead of a schema object,
+				// convert it to a proper schema object with that value as the type.
+				if ( ! is_array( $prop_value ) && ! is_object( $prop_value ) ) {
+					// Assume the scalar value is meant to be the type.
+					$normalized[ $prop_name ] = array(
+						'type' => is_string( $prop_value ) ? $prop_value : 'string',
+					);
+
+					WP_MCP_AI_Logger::log_event(
+						'gemini_schema_fix',
+						'Converted scalar property value to schema object',
+						array(
+							'property'       => $prop_name,
+							'original_value' => $prop_value,
+							'converted_to'   => $normalized[ $prop_name ],
+						)
+					);
+				} else {
+					$normalized[ $prop_name ] = $prop_value;
+				}
+			}
+
+			return $normalized;
+		}
+
+		/**
 		 * Sanitize JSON Schema parameters for Gemini API compatibility.
 		 *
 		 * Gemini API uses a restricted subset of OpenAPI 3.0 Schema Object and does NOT support:
@@ -1976,6 +2016,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				} else {
 					$sanitized[ $key ] = $value;
 				}
+			}
+
+			// Critical fix: Normalize property values to ensure they are schema objects, not scalars.
+			// This prevents Gemini API errors where scalars are sent instead of Schema objects.
+			if ( isset( $sanitized['properties'] ) && is_array( $sanitized['properties'] ) ) {
+				$sanitized['properties'] = $this->normalize_property_schemas( $sanitized['properties'] );
 			}
 
 			// Enhancement: Ensure property schemas have a 'type' field.
