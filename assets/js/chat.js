@@ -844,8 +844,8 @@
             return null;
         }
 
-        const bubble = messageElement.querySelector('.wp-mcp-ai-chat__bubble');
-        if (!bubble) {
+        // Message element is now the bubble itself (merged structure)
+        if (!messageElement.classList.contains('wp-mcp-ai-chat__bubble')) {
             return null;
         }
 
@@ -853,8 +853,8 @@
         let hasMetadata = false;
 
         // Extract bubble type
-        if (bubble.dataset.bubbleType) {
-            metadata.bubbleType = bubble.dataset.bubbleType;
+        if (messageElement.dataset.bubbleType) {
+            metadata.bubbleType = messageElement.dataset.bubbleType;
             hasMetadata = true;
         }
 
@@ -2738,7 +2738,7 @@
             return;
         }
 
-        const selector = '.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble';
+        const selector = '.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant';
         const bubbles = state.messagesEl.querySelectorAll(selector);
 
         Array.prototype.forEach.call(bubbles, function (bubble) {
@@ -6223,12 +6223,12 @@
             return;
         }
 
-        const bubble = entry.querySelector('.wp-mcp-ai-chat__bubble');
-        if (!bubble) {
+        // Entry is now the bubble itself (merged structure)
+        if (!entry.classList.contains('wp-mcp-ai-chat__bubble')) {
             return;
         }
 
-        bubble.textContent = message;
+        entry.textContent = message;
     }
 
     /**
@@ -7511,13 +7511,9 @@
                 // Create the message element structure directly for streaming
                 // We can't use appendMessage with empty text as it returns null
                 const entry = document.createElement('div');
-                entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__message--assistant';
+                entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant wp-mcp-ai-chat__bubble--streaming';
+                entry.textContent = ''; // Empty initially, will be filled as chunks arrive
                 
-                const bubble = document.createElement('div');
-                bubble.className = 'wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--streaming';
-                bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
-                
-                entry.appendChild(bubble);
                 state.messagesEl.appendChild(entry);
                 
                 streamingMessageElement = entry;
@@ -7539,22 +7535,22 @@
             }
 
             // Find the bubble content element
-            const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
-            if (bubble) {
+            // streamingMessageElement is now the bubble itself (merged structure)
+            if (streamingMessageElement) {
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 // Content will be properly formatted when finalized
-                bubble.textContent = content;
+                streamingMessageElement.textContent = content;
                 
                 // Add streaming class for visual cursor indicator
-                if (bubble.classList && !bubble.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
-                    bubble.classList.add('wp-mcp-ai-chat__bubble--streaming');
+                if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
+                    streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--streaming');
                 }
                 
                 // Auto-scroll to keep the streaming content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
-                console.warn('[WP oOS] Streaming bubble element not found');
+                console.warn('[WP oOS] Streaming message element not found');
             }
         }
 
@@ -7610,21 +7606,19 @@
                 if (streamResult && streamResult.content) {
                     // Update the streaming message with proper formatting
                     if (streamingMessageElement) {
-                        const bubble = streamingMessageElement.querySelector('.wp-mcp-ai-chat__bubble');
-                        if (bubble) {
-                            // Remove streaming class before rendering markdown
-                            if (bubble.classList) {
-                                bubble.classList.remove('wp-mcp-ai-chat__bubble--streaming');
-                            }
-                            bubble.innerHTML = renderMarkdown(streamResult.content);
+                        // streamingMessageElement is now the bubble itself (merged structure)
+                        // Remove streaming class before rendering markdown
+                        if (streamingMessageElement.classList) {
+                            streamingMessageElement.classList.remove('wp-mcp-ai-chat__bubble--streaming');
                         }
-                        attachSpeechButton(bubble, state, streamResult.content);
-                        attachCopyButton(bubble, streamResult.content);
+                        streamingMessageElement.innerHTML = renderMarkdown(streamResult.content);
+                        attachSpeechButton(streamingMessageElement, state, streamResult.content);
+                        attachCopyButton(streamingMessageElement, streamResult.content);
 
                         // Auto-play speech if voice chat mode is active
-                        if (state.voiceChatModeActive && bubble) {
+                        if (state.voiceChatModeActive && streamingMessageElement) {
                             setTimeout(function() {
-                                const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                                const speechButton = streamingMessageElement.querySelector('.' + SPEECH_BUTTON_CLASS);
                                 if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
                                     handleSpeechButtonClick(state, speechButton);
                                 }
@@ -8701,35 +8695,33 @@
             return null;
         }
 
+        // Create a single element with both message and bubble classes
         const entry = document.createElement('div');
-        entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__message--' + role;
-
-        const bubble = document.createElement('div');
-        bubble.className = 'wp-mcp-ai-chat__bubble';
+        entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--' + role;
         
         // Track bubble type for persistence
         let activeBubbleType = null;
 
         if (showJsonResponse) {
-            bubble.classList.add('wp-mcp-ai-chat__bubble--json');
+            entry.classList.add('wp-mcp-ai-chat__bubble--json');
             activeBubbleType = 'json';
-            bubble.appendChild(createJsonResponseElement(text));
+            entry.appendChild(createJsonResponseElement(text));
         } else if (showTruncatedResponse) {
-            bubble.classList.add('wp-mcp-ai-chat__bubble--truncated');
+            entry.classList.add('wp-mcp-ai-chat__bubble--truncated');
             activeBubbleType = 'truncated';
-            bubble.appendChild(createTruncatedResponseElement(text));
+            entry.appendChild(createTruncatedResponseElement(text));
         } else if (hasText) {
             if (allowMarkdown) {
-                bubble.innerHTML = renderMarkdown(text);
+                entry.innerHTML = renderMarkdown(text);
             } else {
                 const normalisedText = String(text).replace(/\r\n|\r|\u2028|\u2029/g, '\n');
-                bubble.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
+                entry.innerHTML = escapeHtml(normalisedText).replace(/\n/g, '<br />');
             }
         }
         
-        // Store bubble type on bubble element for retrieval
+        // Store bubble type on element for retrieval
         if (activeBubbleType) {
-            bubble.dataset.bubbleType = activeBubbleType;
+            entry.dataset.bubbleType = activeBubbleType;
         }
 
         if (hasAttachments) {
@@ -8770,20 +8762,20 @@
             if (useFragment) {
                 list.appendChild(container);
             }
-            bubble.appendChild(list);
+            entry.appendChild(list);
         }
 
         if (role === 'assistant') {
             const speechState = options && options.speech ? options.speech.state || null : null;
             const speechText = options && options.speech ? options.speech.text || '' : text;
-            attachSpeechButton(bubble, speechState, speechText);
-            attachCopyButton(bubble, speechText);
+            attachSpeechButton(entry, speechState, speechText);
+            attachCopyButton(entry, speechText);
 
             // Auto-play speech if voice chat mode is active
             if (speechState && speechState.voiceChatModeActive) {
                 // Find the speech button and trigger it after a short delay
                 setTimeout(function() {
-                    const speechButton = bubble.querySelector('.' + SPEECH_BUTTON_CLASS);
+                    const speechButton = entry.querySelector('.' + SPEECH_BUTTON_CLASS);
                     if (speechButton && speechButton.dataset && speechButton.dataset.speechText) {
                         handleSpeechButtonClick(speechState, speechButton);
                     }
@@ -8793,7 +8785,6 @@
             }
         }
 
-        entry.appendChild(bubble);
         listEl.appendChild(entry);
         scrollBatcher.scrollToBottom(listEl);
 

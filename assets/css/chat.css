@@ -237,20 +237,30 @@
     cursor: default;
 }
 
+/* Message elements are now the bubbles themselves (merged structure) */
 .wp-mcp-ai-chat__message {
-    display: flex;
+    padding: 1rem 1.25rem;
+    border-radius: 20px;
+    line-height: 1.6;
+    background: var(--wp-mcp-ai-color-bubble-neutral-background, #f5f5f5);
+    color: var(--wp-mcp-ai-color-bubble-neutral-text, #111827);
+    max-width: 80%;
+    word-break: break-word;
+    border: 1px solid var(--wp-mcp-ai-color-bubble-neutral-border, rgba(148, 163, 184, 0.4));
+    box-shadow: 0 6px 16px var(--wp-mcp-ai-color-bubble-neutral-shadow, rgba(15, 23, 42, 0.06));
 }
 
-.wp-mcp-ai-chat__message--user {
-    justify-content: flex-end;
+.wp-mcp-ai-chat__bubble--user {
+    align-self: flex-end;
 }
 
-.wp-mcp-ai-chat__message--assistant,
-.wp-mcp-ai-chat__message--tool,
-.wp-mcp-ai-chat__message--system {
-    justify-content: flex-start;
+.wp-mcp-ai-chat__bubble--assistant,
+.wp-mcp-ai-chat__bubble--tool,
+.wp-mcp-ai-chat__bubble--system {
+    align-self: flex-start;
 }
 
+/* Legacy bubble class for backwards compatibility */
 .wp-mcp-ai-chat__bubble {
     padding: 1rem 1.25rem;
     border-radius: 20px;
@@ -525,7 +535,8 @@
     text-decoration: none;
 }
 
-.wp-mcp-ai-chat__message--user .wp-mcp-ai-chat__bubble {
+/* User messages (combined class selector) */
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--user {
     background: linear-gradient(
         120deg,
         var(--wp-mcp-ai-color-user-bubble-gradient-start, #2747f0),
@@ -536,30 +547,32 @@
     box-shadow: 0 12px 24px var(--wp-mcp-ai-color-user-bubble-shadow, rgba(39, 71, 240, 0.35));
 }
 
-.wp-mcp-ai-chat__message--user .wp-mcp-ai-chat__bubble a,
-.wp-mcp-ai-chat__message--user .wp-mcp-ai-chat__bubble-attachment a {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--user a,
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--user .wp-mcp-ai-chat__bubble-attachment a {
     color: var(--wp-mcp-ai-color-user-bubble-text, #fff);
 }
 
-.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble {
+/* Assistant messages (combined class selector) */
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant {
     background: var(--wp-mcp-ai-color-assistant-bubble-background, #f8faff);
     border: 1px solid var(--wp-mcp-ai-color-assistant-bubble-border, rgba(59, 130, 246, 0.25));
     box-shadow: 0 10px 20px var(--wp-mcp-ai-color-assistant-bubble-shadow, rgba(59, 130, 246, 0.08));
 }
 
-.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble-attachment a {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant .wp-mcp-ai-chat__bubble-attachment a {
     color: var(--wp-mcp-ai-color-bubble-link-text, #fff);
 }
 
-.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble strong {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant strong {
     color: var(--wp-mcp-ai-color-assistant-strong-text, #1d4ed8);
 }
 
-.wp-mcp-ai-chat__message--assistant .wp-mcp-ai-chat__bubble em {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--assistant em {
     color: var(--wp-mcp-ai-color-assistant-em-text, #4338ca);
 }
 
-.wp-mcp-ai-chat__message--tool .wp-mcp-ai-chat__bubble {
+/* Tool messages (combined class selector) */
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--tool {
     font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
     white-space: pre-wrap;
     background: var(--wp-mcp-ai-color-tool-bubble-background, #0f172a);
@@ -736,16 +749,16 @@
     max-height: 24rem;
 }
 
-.wp-mcp-ai-chat__message--tool .wp-mcp-ai-chat__bubble a {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--tool a {
     color: var(--wp-mcp-ai-color-tool-bubble-link-text, #93c5fd);
 }
 
-.wp-mcp-ai-chat__message--tool .wp-mcp-ai-chat__bubble code {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--tool code {
     background: var(--wp-mcp-ai-color-tool-code-background, rgba(148, 163, 184, 0.18));
     color: var(--wp-mcp-ai-color-tool-code-text, #f8fafc);
 }
 
-.wp-mcp-ai-chat__message--system .wp-mcp-ai-chat__bubble {
+.wp-mcp-ai-chat__message.wp-mcp-ai-chat__bubble--system {
     background: var(--wp-mcp-ai-color-system-bubble-background, #fef9c3);
     color: var(--wp-mcp-ai-color-system-bubble-text, #854d0e);
     border-left: 4px solid var(--wp-mcp-ai-color-system-bubble-border, #facc15);
