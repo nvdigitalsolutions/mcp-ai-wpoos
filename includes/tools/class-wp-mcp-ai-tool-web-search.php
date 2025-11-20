@@ -239,27 +239,8 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( 202 === $status_code ) {
-			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-
-			$error_data = array(
-				'status'      => 202,
-				'is_pending'  => true,
-				'should_wait' => false, // Don't suggest waiting - continue with alternative approaches.
-			);
-
-			if ( ! empty( $retry_after ) ) {
-				$error_data['retry_after'] = $retry_after;
-			}
-
-			return new WP_Error(
-				'wp_mcp_ai_search_pending',
-				__( 'The web search provider is temporarily processing this query asynchronously. Since this result is cached, you can try the same query again in a moment if needed. For now, please try a different search query, use alternative information sources, or continue answering the user\'s question with available information.', 'wp-mcp-ai' ),
-				$error_data
-			);
-		}
-
-		if ( 200 !== $status_code ) {
+		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
+		if ( 200 !== $status_code && 202 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
@@ -367,27 +348,8 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( 202 === $status_code ) {
-			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-
-			$error_data = array(
-				'status'      => 202,
-				'is_pending'  => true,
-				'should_wait' => false, // Don't suggest waiting - continue with alternative approaches.
-			);
-
-			if ( ! empty( $retry_after ) ) {
-				$error_data['retry_after'] = $retry_after;
-			}
-
-			return new WP_Error(
-				'wp_mcp_ai_search_pending',
-				__( 'The web search provider is temporarily processing this query asynchronously. Since this result is cached, you can try the same query again in a moment if needed. For now, please try a different search query, use alternative information sources, or continue answering the user\'s question with available information.', 'wp-mcp-ai' ),
-				$error_data
-			);
-		}
-
-		if ( 200 !== $status_code ) {
+		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
+		if ( 200 !== $status_code && 202 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
