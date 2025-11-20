@@ -328,7 +328,24 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Decompress result if needed.
 		if ( isset( $metadata['result'] ) && is_array( $metadata['result'] ) ) {
-			$metadata['result'] = $this->decompress_result( $metadata['result'] );
+			$decompressed = $this->decompress_result( $metadata['result'] );
+			
+			// If decompression failed but job was completed, return error.
+			if ( null === $decompressed && isset( $metadata['status'] ) && 'completed' === $metadata['status'] ) {
+				$this->log_error(
+					'Failed to decompress completed job result',
+					array(
+						'job_id'    => $job_id,
+						'tool_slug' => isset( $metadata['tool_slug'] ) ? $metadata['tool_slug'] : 'unknown',
+					)
+				);
+				return new WP_Error(
+					'wp_mcp_ai_decompression_failed',
+					__( 'Failed to retrieve job result. The result may be corrupted.', 'wp-mcp-ai' )
+				);
+			}
+			
+			$metadata['result'] = $decompressed;
 		}
 
 		return $metadata;
@@ -464,18 +481,42 @@ class WP_MCP_AI_Tool_Async_Executor {
 			return isset( $compressed_result['data'] ) ? $compressed_result['data'] : null;
 		}
 
-		if ( ! isset( $compressed_result['data'] ) || ! function_exists( 'gzuncompress' ) ) {
+		if ( ! isset( $compressed_result['data'] ) ) {
+			$this->log_error( 'Compressed result missing data field', array( 'result' => $compressed_result ) );
 			return null;
 		}
 
-		$decoded      = base64_decode( $compressed_result['data'] );
+		if ( ! function_exists( 'gzuncompress' ) ) {
+			$this->log_error( 'gzuncompress function not available for decompression', array() );
+			return null;
+		}
+
+		$decoded = base64_decode( $compressed_result['data'], true );
+		if ( false === $decoded ) {
+			$this->log_error( 'Failed to base64 decode compressed result', array() );
+			return null;
+		}
+
 		$uncompressed = gzuncompress( $decoded );
 
 		if ( false === $uncompressed ) {
+			$this->log_error( 'Failed to gzuncompress result data', array( 'original_size' => $compressed_result['original_size'] ?? 'unknown' ) );
 			return null;
 		}
 
-		return maybe_unserialize( $uncompressed );
+		$result = maybe_unserialize( $uncompressed );
+		
+		// Log successful decompression for debugging.
+		$this->log_event(
+			'async_result_decompressed',
+			'Successfully decompressed async tool result',
+			array(
+				'original_size'     => $compressed_result['original_size'] ?? 0,
+				'decompressed_size' => strlen( $uncompressed ),
+			)
+		);
+
+		return $result;
 	}
 
 	/**

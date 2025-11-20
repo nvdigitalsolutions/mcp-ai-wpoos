@@ -128,6 +128,33 @@ class Test_Async_Tool_Execution_Flow extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test decompression error handling.
+	 */
+	public function test_decompression_error_handling() {
+		if ( ! function_exists( 'gzcompress' ) ) {
+			$this->markTestSkipped( 'gzcompress not available' );
+		}
+
+		$executor = new WP_MCP_AI_Tool_Async_Executor();
+		$executor->init();
+
+		// Create an invalid compressed result.
+		$invalid_compressed = array(
+			'compressed' => true,
+			'data'       => 'invalid_base64_data!!!',
+		);
+
+		// Use reflection to test decompress.
+		$reflection        = new ReflectionClass( $executor );
+		$decompress_method = $reflection->getMethod( 'decompress_result' );
+		$decompress_method->setAccessible( true );
+
+		$result = $decompress_method->invoke( $executor, $invalid_compressed );
+
+		$this->assertNull( $result, 'Invalid compressed data should return null' );
+	}
+
+	/**
 	 * Test small result is not compressed.
 	 */
 	public function test_small_result_not_compressed() {
