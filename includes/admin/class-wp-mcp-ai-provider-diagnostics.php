@@ -613,11 +613,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 			try {
 				// Test by listing models.
-				$url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . $settings['gemini_api_key'];
+				$url = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 				$response = wp_remote_get(
 					$url,
 					array(
+						'headers' => array(
+							'x-goog-api-key' => $settings['gemini_api_key'],
+						),
 						'timeout' => 30,
 					)
 				);

@@ -107,11 +107,12 @@ class WP_MCP_AI_Gemini_File_Service {
 		$body     = $this->build_multipart_body( $file_content, $mime_type, $display_name, $boundary );
 
 		// Build URL with API key.
-		$url = add_query_arg( 'key', rawurlencode( $api_key ), self::API_UPLOAD_ENDPOINT );
+		$url = self::API_UPLOAD_ENDPOINT;
 
 		$request_args = array(
 			'headers' => array(
-				'Content-Type' => 'multipart/related; boundary=' . $boundary,
+				'Content-Type'   => 'multipart/related; boundary=' . $boundary,
+				'x-goog-api-key' => $api_key,
 			),
 			'body'    => $body,
 			'timeout' => 300, // 5 minutes for large files.
@@ -239,11 +240,11 @@ class WP_MCP_AI_Gemini_File_Service {
 
 		// Build URL.
 		$url = trailingslashit( self::API_FILES_ENDPOINT ) . rawurlencode( $file_name );
-		$url = add_query_arg( 'key', rawurlencode( $api_key ), $url );
 
 		$request_args = array(
 			'headers' => array(
-				'Content-Type' => 'application/json',
+				'Content-Type'   => 'application/json',
+				'x-goog-api-key' => $api_key,
 			),
 			'timeout' => 30,
 		);
@@ -441,12 +442,12 @@ class WP_MCP_AI_Gemini_File_Service {
 
 		// Build URL.
 		$url = trailingslashit( self::API_FILES_ENDPOINT ) . rawurlencode( $file_name );
-		$url = add_query_arg( 'key', rawurlencode( $api_key ), $url );
 
 		$request_args = array(
 			'method'  => 'DELETE',
 			'headers' => array(
-				'Content-Type' => 'application/json',
+				'Content-Type'   => 'application/json',
+				'x-goog-api-key' => $api_key,
 			),
 			'timeout' => 30,
 		);
