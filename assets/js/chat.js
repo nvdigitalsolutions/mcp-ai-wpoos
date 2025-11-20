@@ -8342,7 +8342,7 @@
                     if (hasDisplayContent) {
                         // Update existing assistant message with attachments
                         const lastMessage = state.messagesEl.lastElementChild;
-                        if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
+                        if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__bubble--assistant')) {
                             lastMessage.parentNode.removeChild(lastMessage);
                         }
                         const updatedMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
