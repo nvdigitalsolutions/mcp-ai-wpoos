@@ -51,6 +51,46 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		}
 
 		/**
+		 * Get allowed quality values for a specific image model.
+		 *
+		 * Different OpenAI image models support different quality parameter values:
+		 * - DALL-E 2 and DALL-E 3 use: 'standard', 'hd'
+		 * - gpt-image-1 uses: 'low', 'medium', 'high', 'auto'
+		 *
+		 * @param string $model Image model identifier.
+		 * @return array Array of allowed quality values for the model.
+		 */
+		protected static function get_image_model_allowed_qualities( $model ) {
+			$model = strtolower( sanitize_text_field( $model ) );
+
+			// gpt-image-1 uses a different set of quality values.
+			if ( 'gpt-image-1' === $model ) {
+				return array( 'low', 'medium', 'high', 'auto' );
+			}
+
+			// DALL-E 2, DALL-E 3, and other models use standard/hd.
+			return array( 'standard', 'hd' );
+		}
+
+		/**
+		 * Get the default quality value for a specific image model.
+		 *
+		 * @param string $model Image model identifier.
+		 * @return string Default quality value for the model.
+		 */
+		protected static function get_image_model_default_quality( $model ) {
+			$model = strtolower( sanitize_text_field( $model ) );
+
+			// gpt-image-1 defaults to 'medium' quality.
+			if ( 'gpt-image-1' === $model ) {
+				return 'medium';
+			}
+
+			// DALL-E models default to 'standard' quality.
+			return 'standard';
+		}
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -636,11 +676,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$size    = isset( $options['size'] ) && '' !== $options['size'] ? sanitize_text_field( $options['size'] ) : $default_size;
 			$quality = isset( $options['quality'] ) && '' !== $options['quality'] ? sanitize_key( $options['quality'] ) : $default_quality;
 
-			// Sanitize quality to only allowed values: low, medium, high, auto.
-			// This prevents 400 errors from OpenAI API.
-			$allowed = array( 'low', 'medium', 'high', 'auto' );
-			if ( empty( $quality ) || ! in_array( $quality, $allowed, true ) ) {
-				$quality = 'medium';
+			// Normalize quality for the selected model. Different models support different quality values.
+			// gpt-image-1 uses: low, medium, high, auto
+			// DALL-E models use: standard, hd
+			$allowed_qualities = self::get_image_model_allowed_qualities( $model );
+			if ( ! in_array( $quality, $allowed_qualities, true ) ) {
+				// If quality is not valid for the model, use the model's default quality.
+				$quality = self::get_image_model_default_quality( $model );
 			}
 
 			$requested_format = isset( $options['format'] ) && '' !== $options['format'] ? sanitize_key( $options['format'] ) : 'png';
