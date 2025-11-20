@@ -320,6 +320,26 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
+		if ( 202 === $status_code ) {
+			$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
+
+			$error_data = array(
+				'status'      => 202,
+				'is_pending'  => true,
+				'should_wait' => true,
+			);
+
+			if ( ! empty( $retry_after ) ) {
+				$error_data['retry_after'] = $retry_after;
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_search_pending',
+				__( 'The web search is still being processed by the search provider. This is a temporary state that cannot be resolved by retrying immediately. Please wait before making another search request, or try a different search query or approach to answer the user\'s question.', 'wp-mcp-ai' ),
+				$error_data
+			);
+		}
+
 		if ( 200 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',

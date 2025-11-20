@@ -425,7 +425,8 @@ class WP_MCP_AI_Chat_Service {
 			// Format result.
 			if ( is_wp_error( $tool_result ) ) {
 				$error_payload = array(
-					'error' => $tool_result->get_error_message(),
+					'error_code'    => $tool_result->get_error_code(),
+					'error_message' => $tool_result->get_error_message(),
 				);
 
 				// Include error data if available (helps AI understand error context).
