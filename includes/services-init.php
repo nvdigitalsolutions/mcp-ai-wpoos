@@ -31,6 +31,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-token-perfo
 // Load async tool orchestration services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-orchestrator.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
 // Initialize orchestration budget enforcement (applies settings via filters).
 WP_MCP_AI_Orchestration_Budget_Enforcement_Service::init();
@@ -261,4 +262,15 @@ function wp_mcp_ai_get_async_tool_executor() {
 	}
 
 	return $executor;
+}
+
+/**
+ * Get async health monitor instance
+ *
+ * Helper function to check async task system health and detect issues.
+ *
+ * @return string Class name for static method access.
+ */
+function wp_mcp_ai_get_async_health_monitor() {
+	return 'WP_MCP_AI_Async_Health_Monitor';
 }

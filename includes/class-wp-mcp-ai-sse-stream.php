@@ -77,6 +77,11 @@ class WP_MCP_AI_SSE_Stream {
 	/**
 	 * Build the SSE stream body by polling job status.
 	 *
+	 * Safety mechanisms:
+	 * - Maximum iteration limit prevents infinite loops
+	 * - Connection abortion check exits early if client disconnects
+	 * - Maximum duration timeout ensures bounded execution
+	 *
 	 * @param string $job_id        Job identifier.
 	 * @param int    $max_duration  Maximum duration in seconds.
 	 * @param int    $poll_interval Polling interval in seconds.
@@ -88,6 +93,8 @@ class WP_MCP_AI_SSE_Stream {
 		$last_status     = null;
 		$stream          = '';
 		$terminal_states = array( 'completed', 'failed', 'cancelled' );
+		$iteration_count = 0;
+		$max_iterations  = ceil( $max_duration / max( 1, $poll_interval ) ) + 10; // Safety margin.
 
 		// Send initial connection message.
 		$stream .= self::format_sse_message(
@@ -100,8 +107,22 @@ class WP_MCP_AI_SSE_Stream {
 			)
 		);
 
-		// Poll until max duration or terminal state.
-		while ( ( time() - $start_time ) < $max_duration ) {
+		// Poll until max duration, terminal state, or client disconnect.
+		while ( ( time() - $start_time ) < $max_duration && $iteration_count < $max_iterations ) {
+			++$iteration_count;
+
+			// Check if client disconnected (prevent wasted processing).
+			if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+				$stream .= self::format_sse_message(
+					'disconnected',
+					array(
+						'job_id'  => $job_id,
+						'message' => 'Client connection aborted',
+					)
+				);
+				break;
+			}
+
 			$status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
 
 			// Send status update if changed.
