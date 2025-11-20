@@ -8072,18 +8072,9 @@
             assistantMessage.tool_calls = message.tool_calls;
         }
 
-        // OpenAI requires assistant messages with tool_calls to have valid content.
-        // Empty string causes "Invalid parameter(s): messages" errors.
-        // Use null for messages with tool_calls but no text content.
         if (assistantMessage.content || assistantMessage.tool_calls) {
             if (!assistantMessage.hasOwnProperty('content')) {
-                // Use null instead of empty string for tool_calls without content
-                // This prevents "Invalid parameter(s): messages" errors from OpenAI
-                assistantMessage.content = hasToolCalls ? null : '';
-            } else if (assistantMessage.content === '' && hasToolCalls) {
-                // Convert empty string to null for tool_calls messages
-                // OpenAI accepts null but not empty string for content when tool_calls present
-                assistantMessage.content = null;
+                assistantMessage.content = '';
             }
             state.conversation.push(assistantMessage);
         }
@@ -8117,58 +8108,37 @@
                     const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
                     const normalized = normaliseToolResultForDisplay(toolName, matchingResult.content);
 
-                    if (normalized) {
+                    if (normalized && normalized.attachments && normalized.attachments.length > 0) {
                         // Add attachments to the assistant display.
-                        if (normalized.attachments && normalized.attachments.length > 0) {
-                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
-                        }
-                        
-                        // Add text from tool result to assistant display if present.
-                        // This ensures tools that return images with descriptive text (e.g., generate_gemini_image)
-                        // have that text included in the conversation for proper OpenAI API compliance.
-                        if (normalized.text && normalized.text.trim()) {
-                            if (!assistantDisplay.text) {
-                                assistantDisplay.text = normalized.text.trim();
-                            } else {
-                                assistantDisplay.text += '\n\n' + normalized.text.trim();
-                            }
-                        }
+                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
                     }
                 });
 
                 // Re-render the assistant message if we added attachments.
                 if (assistantDisplay.attachments.length > 0) {
-                    // Check if we now have text from tool results
-                    const hasTextFromTools = assistantDisplay.text && assistantDisplay.text.trim() !== '';
-                    
-                    if (hasDisplayContent || hasTextFromTools) {
-                        // Update existing assistant message with attachments and/or text from tools
+                    if (hasDisplayContent) {
+                        // Update existing assistant message with attachments
                         const lastMessage = state.messagesEl.lastElementChild;
                         if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
                             lastMessage.parentNode.removeChild(lastMessage);
-                        }
-                        appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
-                            speech: {
-                                state: state,
-                                text: assistantDisplay.text || '',
-                            },
-                        });
-                        // Update conversation content with text from tool results
-                        if (hasTextFromTools && !hasDisplayContent) {
-                            assistantMessage.content = assistantDisplay.text;
+                            appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                                speech: {
+                                    state: state,
+                                    text: assistantDisplay.text || '',
+                                },
+                            });
                         }
                     } else {
-                        // No text content at all but we have attachments - show them
+                        // No text content but we have attachments - show them
                         appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
                             speech: {
                                 state: state,
                                 text: assistantDisplay.text || '',
                             },
                         });
-                        // For OpenAI API compatibility, use null instead of empty string
-                        // when we have tool_calls but no content
+                        // Update conversation with assistant message containing attachments
                         if (!assistantMessage.content) {
-                            assistantMessage.content = hasToolCalls ? null : '';
+                            assistantMessage.content = '';
                         }
                         // Add to conversation if not already added
                         if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
