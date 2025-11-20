@@ -8058,9 +8058,10 @@
                     text: assistantDisplay.text || '',
                 },
             });
-            // Preserve the original content structure if it contains image blocks
+            // Preserve the original content structure if it's an array (contains image blocks)
             // This is needed to maintain image_url content in the agentic loop
-            if (Array.isArray(message.content) && !assistantDisplay.text) {
+            // When content is array, it means it has structured data like image_url blocks
+            if (Array.isArray(message.content)) {
                 assistantMessage.content = message.content;
             } else {
                 assistantMessage.content = assistantDisplay.text || '';
