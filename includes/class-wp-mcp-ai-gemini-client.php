@@ -1923,24 +1923,63 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			// Enhancement: Ensure property schemas have a 'type' field.
 			// If we're processing a property definition (parent_key is a property name from 'properties'),
-			// and it has 'description' but no 'type', add a default type.
+			// or an items definition (parent_key is 'items'), and it lacks a 'type' field,
+			// infer an appropriate type based on schema structure.
 			if ( 'properties' === $parent_key ) {
 				foreach ( $sanitized as $prop_name => $prop_schema ) {
-					if ( is_array( $prop_schema ) && isset( $prop_schema['description'] ) && ! isset( $prop_schema['type'] ) ) {
-						// Default to 'string' type for properties missing type.
-						// This handles cases like the 'value' parameter in search-content tool.
-						$sanitized[ $prop_name ]['type'] = 'string';
+					if ( is_array( $prop_schema ) && ! isset( $prop_schema['type'] ) ) {
+						// Determine the appropriate type based on schema structure.
+						$inferred_type = 'string'; // Default fallback
+						$reason        = 'default';
+						
+						if ( isset( $prop_schema['items'] ) ) {
+							// If 'items' is present, this should be an array type.
+							$inferred_type = 'array';
+							$reason        = 'has_items';
+						} elseif ( isset( $prop_schema['properties'] ) ) {
+							// If 'properties' is present, this should be an object type.
+							$inferred_type = 'object';
+							$reason        = 'has_properties';
+						}
+						
+						$sanitized[ $prop_name ]['type'] = $inferred_type;
 						
 						WP_MCP_AI_Logger::log_event(
 							'gemini_schema_enhancement',
 							'Added missing type field to property schema',
 							array(
-								'property' => $prop_name,
-								'default_type' => 'string',
+								'property'      => $prop_name,
+								'inferred_type' => $inferred_type,
+								'reason'        => $reason,
 							)
 						);
 					}
 				}
+			} elseif ( 'items' === $parent_key && is_array( $sanitized ) && ! isset( $sanitized['type'] ) ) {
+				// Handle the items schema itself when it's missing a type.
+				$inferred_type = 'string'; // Default fallback
+				$reason        = 'default';
+				
+				if ( isset( $sanitized['items'] ) ) {
+					// If 'items' is present, this should be an array type.
+					$inferred_type = 'array';
+					$reason        = 'has_items';
+				} elseif ( isset( $sanitized['properties'] ) ) {
+					// If 'properties' is present, this should be an object type.
+					$inferred_type = 'object';
+					$reason        = 'has_properties';
+				}
+				
+				$sanitized['type'] = $inferred_type;
+				
+				WP_MCP_AI_Logger::log_event(
+					'gemini_schema_enhancement',
+					'Added missing type field to items schema',
+					array(
+						'inferred_type' => $inferred_type,
+						'reason'        => $reason,
+					)
+				);
 			}
 
 			return $sanitized;
