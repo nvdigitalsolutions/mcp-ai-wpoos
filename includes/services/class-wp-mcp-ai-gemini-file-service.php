@@ -2,8 +2,16 @@
 /**
  * Gemini File Service
  *
- * Handles file upload, status checking, and deletion for Gemini File API.
- * Used primarily for video analysis via Gemini's vision models.
+ * Handles file upload, status checking, deletion, and caching for Gemini File API.
+ * Supports all file types: videos (MP4, MOV, WebM), images (PNG, JPG, GIF, WebP),
+ * documents (PDF, TXT, HTML, CSV, XML, RTF), and audio files.
+ *
+ * Features:
+ * - File upload with multipart/related encoding
+ * - Automatic file caching to avoid re-uploads
+ * - Processing status polling
+ * - Cleanup of old files via cron
+ * - Support for WordPress attachments and remote URLs
  *
  * @package WP_MCP_AI
  * @since 1.0.0
@@ -17,10 +25,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Gemini File Service class
  *
  * Responsible for:
- * - Uploading files to Gemini File API
+ * - Uploading files to Gemini File API (videos, images, PDFs, audio, etc.)
+ * - Caching uploaded files to avoid duplicate uploads
  * - Checking processing status
  * - Polling for completion
  * - Deleting files after use
+ * - Scheduled cleanup of old files
+ *
+ * Supported File Types:
+ * - Videos: MP4, MOV, MPEG, AVI, WebM, 3GPP, WMV, FLV, MKV
+ * - Images: PNG, JPEG, GIF, WebP, BMP, ICO
+ * - Documents: PDF, TXT, HTML, CSS, JavaScript, CSV, XML, RTF
+ * - Audio: WAV, MP3, AIFF, AAC, OGG, FLAC
  *
  * @since 1.0.0
  */
@@ -575,5 +591,286 @@ class WP_MCP_AI_Gemini_File_Service {
 		}
 
 		return $api_key;
+	}
+
+	/**
+	 * Get cached file information for any file type
+	 *
+	 * Checks if a file has been uploaded recently and returns the cached file info.
+	 * Uses file URL or attachment ID hash as the cache key.
+	 * Works for all file types: videos, images, PDFs, audio, documents.
+	 *
+	 * @param string   $file_url      File URL (optional if attachment_id provided).
+	 * @param int|null $attachment_id WordPress attachment ID (optional if file_url provided).
+	 * @return array|null Cached file info or null if not found/expired.
+	 */
+	public function get_cached_file( $file_url = '', $attachment_id = null ) {
+		$cache_key = $this->generate_cache_key( $file_url, $attachment_id );
+
+		if ( ! $cache_key ) {
+			return null;
+		}
+
+		$cached_data = get_transient( $cache_key );
+
+		if ( false === $cached_data ) {
+			return null;
+		}
+
+		// Verify the file still exists on Gemini's servers.
+		$status = $this->get_file_status( $cached_data['file_name'] );
+
+		if ( is_wp_error( $status ) || 'ACTIVE' !== ( isset( $status['state'] ) ? $status['state'] : '' ) ) {
+			// File no longer available, delete the cache.
+			delete_transient( $cache_key );
+			return null;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_file_cache_hit',
+			'Using cached Gemini file instead of re-uploading.',
+			array(
+				'cache_key' => $cache_key,
+				'file_name' => $cached_data['file_name'],
+				'mime_type' => isset( $cached_data['mime_type'] ) ? $cached_data['mime_type'] : '',
+			)
+		);
+
+		return $cached_data;
+	}
+
+	/**
+	 * Track an uploaded file in cache
+	 *
+	 * Stores file information in a transient for reuse.
+	 * Cache expires after 24 hours (86400 seconds).
+	 * Works for all file types: videos, images, PDFs, audio, documents.
+	 *
+	 * @param string   $file_name     Gemini file name.
+	 * @param string   $file_uri      Gemini file URI.
+	 * @param string   $mime_type     File MIME type.
+	 * @param string   $file_url      File URL (optional if attachment_id provided).
+	 * @param int|null $attachment_id WordPress attachment ID (optional if file_url provided).
+	 * @return bool True on success, false on failure.
+	 */
+	public function track_uploaded_file( $file_name, $file_uri, $mime_type, $video_url = '', $attachment_id = null ) {
+		$cache_key = $this->generate_cache_key( $video_url, $attachment_id );
+
+		if ( ! $cache_key ) {
+			return false;
+		}
+
+		$upload_time = time();
+		$cache_data  = array(
+			'file_name'     => $file_name,
+			'file_uri'      => $file_uri,
+			'mime_type'     => $mime_type,
+			'uploaded_at'   => $upload_time,
+			'video_url'     => $video_url,
+			'attachment_id' => $attachment_id,
+		);
+
+		// Cache for 24 hours (Gemini files are auto-deleted after 48 hours).
+		$expiration = 24 * HOUR_IN_SECONDS;
+
+		$result = set_transient( $cache_key, $cache_data, $expiration );
+
+		if ( $result ) {
+			// Also add to list of tracked files for cleanup.
+			// Store upload time in tracking list to persist beyond transient expiration.
+			$this->add_to_tracked_files_list( $cache_key, $file_name, $upload_time );
+
+			WP_MCP_AI_Logger::log_event(
+				'gemini_file_tracked',
+				'File tracked in cache for reuse.',
+				array(
+					'cache_key' => $cache_key,
+					'file_name' => $file_name,
+					'expires'   => gmdate( 'Y-m-d H:i:s', time() + $expiration ),
+				)
+			);
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Get list of all tracked files
+	 *
+	 * Returns all files currently tracked, including those whose transients have expired.
+	 * This ensures cleanup can still delete old files after cache expiration.
+	 *
+	 * @return array Array of tracked file information.
+	 */
+	public function list_tracked_files() {
+		$tracked_files_list = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
+		$tracked_files      = array();
+
+		foreach ( $tracked_files_list as $cache_key => $file_data ) {
+			// Try to get cached data first.
+			$cached_data = get_transient( $cache_key );
+
+			if ( false !== $cached_data ) {
+				// Transient still exists, use it.
+				$cached_data['cache_key'] = $cache_key;
+				$tracked_files[]          = $cached_data;
+			} else {
+				// Transient expired, but we need the tracking data for cleanup.
+				// Use the file_name and uploaded_at from the tracking list.
+				if ( is_array( $file_data ) && isset( $file_data['file_name'], $file_data['uploaded_at'] ) ) {
+					$tracked_files[] = array(
+						'cache_key'   => $cache_key,
+						'file_name'   => $file_data['file_name'],
+						'uploaded_at' => $file_data['uploaded_at'],
+					);
+				}
+			}
+		}
+
+		return $tracked_files;
+	}
+
+	/**
+	 * Cleanup old files from Gemini and local cache
+	 *
+	 * Removes files older than specified age from Gemini File API
+	 * and clears associated transients.
+	 *
+	 * @param int $max_age_seconds Maximum age in seconds. Default 24 hours.
+	 * @return array Cleanup results with counts of deleted files.
+	 */
+	public function cleanup_old_files( $max_age_seconds = 86400 ) {
+		$tracked_files = $this->list_tracked_files();
+		$current_time  = time();
+		$deleted_count = 0;
+		$failed_count  = 0;
+		$errors        = array();
+
+		foreach ( $tracked_files as $file_info ) {
+			$age = $current_time - ( isset( $file_info['uploaded_at'] ) ? $file_info['uploaded_at'] : 0 );
+
+			if ( $age > $max_age_seconds ) {
+				// Delete from Gemini.
+				$result = $this->delete_file( $file_info['file_name'] );
+
+				if ( is_wp_error( $result ) ) {
+					++$failed_count;
+					$errors[] = array(
+						'file_name' => $file_info['file_name'],
+						'error'     => $result->get_error_message(),
+					);
+
+					WP_MCP_AI_Logger::log_error(
+						'Failed to delete old Gemini file during cleanup.',
+						array(
+							'file_name' => $file_info['file_name'],
+							'age'       => $age,
+							'error'     => $result->get_error_message(),
+						)
+					);
+				} else {
+					++$deleted_count;
+
+					// Delete from cache.
+					if ( isset( $file_info['cache_key'] ) ) {
+						delete_transient( $file_info['cache_key'] );
+						$this->remove_from_tracked_files_list( $file_info['cache_key'] );
+					}
+
+					WP_MCP_AI_Logger::log_event(
+						'gemini_file_cleanup',
+						'Old Gemini file deleted during cleanup.',
+						array(
+							'file_name' => $file_info['file_name'],
+							'age'       => $age,
+						)
+					);
+				}
+			}
+		}
+
+		$result = array(
+			'deleted_count' => $deleted_count,
+			'failed_count'  => $failed_count,
+			'total_checked' => count( $tracked_files ),
+		);
+
+		if ( ! empty( $errors ) ) {
+			$result['errors'] = $errors;
+		}
+
+		WP_MCP_AI_Logger::log_event(
+			'gemini_file_cleanup_complete',
+			'Gemini file cleanup completed.',
+			$result
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Generate a cache key for a video
+	 *
+	 * Generates a unique cache key based on video URL or attachment ID.
+	 * For attachments, includes the file modification time to ensure cache
+	 * invalidation when the file is updated.
+	 *
+	 * Works for all video types: MP4, MOV, WebM, AVI, MKV, etc.
+	 *
+	 * @param string   $video_url     Video URL.
+	 * @param int|null $attachment_id WordPress attachment ID.
+	 * @return string|null Cache key or null if invalid input.
+	 */
+	private function generate_cache_key( $video_url = '', $attachment_id = null ) {
+		if ( $attachment_id ) {
+			$attachment_id = absint( $attachment_id );
+			
+			// Include file modification time to invalidate cache if file changes.
+			$file_path = get_attached_file( $attachment_id );
+			$mod_time  = '';
+			
+			if ( $file_path && file_exists( $file_path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_filemtime
+				$mod_time = filemtime( $file_path );
+			}
+			
+			return 'wp_mcp_ai_gemini_file_' . $attachment_id . '_' . $mod_time;
+		}
+
+		if ( ! empty( $video_url ) ) {
+			return 'wp_mcp_ai_gemini_file_' . md5( $video_url );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Add file to tracked files list
+	 *
+	 * @param string $cache_key    Cache key.
+	 * @param string $file_name    Gemini file name.
+	 * @param int    $uploaded_at  Upload timestamp.
+	 */
+	private function add_to_tracked_files_list( $cache_key, $file_name, $uploaded_at ) {
+		$tracked_files = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
+		$tracked_files[ $cache_key ] = array(
+			'file_name'   => $file_name,
+			'uploaded_at' => $uploaded_at,
+		);
+		update_option( 'wp_mcp_ai_gemini_tracked_files', $tracked_files, false );
+	}
+
+	/**
+	 * Remove file from tracked files list
+	 *
+	 * @param string $cache_key Cache key.
+	 */
+	private function remove_from_tracked_files_list( $cache_key ) {
+		$tracked_files = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
+
+		if ( isset( $tracked_files[ $cache_key ] ) ) {
+			unset( $tracked_files[ $cache_key ] );
+			update_option( 'wp_mcp_ai_gemini_tracked_files', $tracked_files, false );
+		}
 	}
 }
