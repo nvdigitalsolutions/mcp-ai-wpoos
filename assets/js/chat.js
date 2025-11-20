@@ -8474,14 +8474,19 @@
 
             // Render tool results as attachments in the assistant's message.
             // This ensures images and other media files are displayed with links.
+            // 
+            // Handle two cases:
+            // 1. Message has tool_calls: Match tool_results with tool_calls for proper ordering
+            // 2. Message has no tool_calls: Process all tool_results (agentic loop final response)
             if (hasToolCalls && message.tool_calls) {
+                // Case 1: Match tool results with tool calls in the current message
                 message.tool_calls.forEach(function (toolCall) {
                     const toolCallId = toolCall.id || '';
                     if (!toolCallId) {
                         return;
                     }
 
-                    // Find matching tool result.
+                    // Find matching tool result
                     const matchingResult = data.tool_results.find(function (result) {
                         return result.tool_call_id === toolCallId;
                     });
@@ -8521,56 +8526,96 @@
                         }
                     }
                 });
+            } else {
+                // Case 2: No tool_calls in message, process all tool results
+                // This happens in the agentic loop where the final response doesn't have tool_calls
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult || !toolResult.content) {
+                        return;
+                    }
 
-                // Re-render the assistant message if we added attachments or text from tool results.
-                if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
-                    if (hasDisplayContent) {
-                        // Update existing assistant message with attachments
-                        const lastMessage = state.messagesEl.lastElementChild;
-                        if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__bubble--assistant')) {
-                            lastMessage.parentNode.removeChild(lastMessage);
+                    const toolName = toolResult.name || '';
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = toolResult.content;
                         }
-                        const updatedMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
-                            speech: {
-                                state: state,
-                                text: assistantDisplay.text || '',
-                            },
-                        });
-                        
-                        // Update conversation content with text from tool results
-                        if (hasTextFromTools && !hasDisplayContent) {
-                            assistantMessage.content = assistantDisplay.text;
+                    }
+                    
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+
+                    if (normalized) {
+                        // Add text from tool result to assistant display if available
+                        if (normalized.text && typeof normalized.text === 'string') {
+                            if (assistantDisplay.text) {
+                                assistantDisplay.text += '\n\n' + normalized.text;
+                            } else {
+                                assistantDisplay.text = normalized.text;
+                            }
                         }
                         
-                        // Update display metadata in already-saved message
-                        const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay);
+                        // Add attachments to the assistant display.
+                        if (normalized.attachments && normalized.attachments.length > 0) {
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        }
+                    }
+                });
+            }
+
+            // Re-render the assistant message if we added attachments or text from tool results.
+            if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
+                if (hasDisplayContent) {
+                    // Update existing assistant message with attachments
+                    const lastMessage = state.messagesEl.lastElementChild;
+                    if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__bubble--assistant')) {
+                        lastMessage.parentNode.removeChild(lastMessage);
+                    }
+                    const updatedMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        speech: {
+                            state: state,
+                            text: assistantDisplay.text || '',
+                        },
+                    });
+                    
+                    // Update conversation content with text from tool results
+                    const hasTextFromTools = assistantDisplay.text && (!message.content || !normaliseContent(message.content));
+                    if (hasTextFromTools && !hasDisplayContent) {
+                        assistantMessage.content = assistantDisplay.text;
+                    }
+                    
+                    // Update display metadata in already-saved message
+                    const displayMetadata = extractDisplayMetadata(updatedMessageElement, assistantDisplay);
+                    if (displayMetadata) {
+                        assistantMessage.display = displayMetadata;
+                    }
+                } else {
+                    // No text content at all but we have attachments - show them
+                    const newMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
+                        speech: {
+                            state: state,
+                            text: assistantDisplay.text || '',
+                        },
+                    });
+                    // For OpenAI API compatibility, use null instead of empty string
+                    // when we have tool_calls but no content
+                    if (!assistantMessage.content) {
+                        assistantMessage.content = hasToolCalls ? null : '';
+                    }
+                    // Add to conversation if not already added
+                    if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
+                        // Extract and preserve display metadata
+                        const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay);
                         if (displayMetadata) {
                             assistantMessage.display = displayMetadata;
                         }
-                    } else {
-                        // No text content at all but we have attachments - show them
-                        const newMessageElement = appendMessage(state.messagesEl, 'assistant', assistantDisplay, true, {
-                            speech: {
-                                state: state,
-                                text: assistantDisplay.text || '',
-                            },
-                        });
-                        // For OpenAI API compatibility, use null instead of empty string
-                        // when we have tool_calls but no content
-                        if (!assistantMessage.content) {
-                            assistantMessage.content = hasToolCalls ? null : '';
-                        }
-                        // Add to conversation if not already added
-                        if (state.conversation.length === 0 || state.conversation[state.conversation.length - 1] !== assistantMessage) {
-                            // Extract and preserve display metadata
-                            const displayMetadata = extractDisplayMetadata(newMessageElement, assistantDisplay);
-                            if (displayMetadata) {
-                                assistantMessage.display = displayMetadata;
-                            }
-                            state.conversation.push(assistantMessage);
-                        }
-                        hasDisplayContent = true;
+                        state.conversation.push(assistantMessage);
                     }
+                    hasDisplayContent = true;
                 }
             }
         }
