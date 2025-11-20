@@ -8474,44 +8474,98 @@
 
             // Render tool results as attachments in the assistant's message.
             // This ensures images and other media files are displayed with links.
-            // Process all tool results, not just those matching current message's tool_calls.
-            // This is important for the agentic loop where the final response may not have tool_calls.
-            data.tool_results.forEach(function (toolResult) {
-                if (!toolResult || !toolResult.content) {
-                    return;
-                }
-
-                const toolName = toolResult.name || '';
-                
-                // Parse the tool result content (JSON string) into an object
-                let parsedContent = toolResult.content;
-                if (typeof parsedContent === 'string') {
-                    try {
-                        parsedContent = JSON.parse(parsedContent);
-                    } catch (e) {
-                        // If parsing fails, use the string as-is
-                        parsedContent = toolResult.content;
+            // 
+            // Handle two cases:
+            // 1. Message has tool_calls: Match tool_results with tool_calls for proper ordering
+            // 2. Message has no tool_calls: Process all tool_results (agentic loop final response)
+            if (hasToolCalls && message.tool_calls) {
+                // Case 1: Match tool results with tool calls in the current message
+                message.tool_calls.forEach(function (toolCall) {
+                    const toolCallId = toolCall.id || '';
+                    if (!toolCallId) {
+                        return;
                     }
-                }
-                
-                const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
-                if (normalized) {
-                    // Add text from tool result to assistant display if available
-                    if (normalized.text && typeof normalized.text === 'string') {
-                        if (assistantDisplay.text) {
-                            assistantDisplay.text += '\n\n' + normalized.text;
-                        } else {
-                            assistantDisplay.text = normalized.text;
+                    // Find matching tool result
+                    const matchingResult = data.tool_results.find(function (result) {
+                        return result.tool_call_id === toolCallId;
+                    });
+
+                    if (!matchingResult || !matchingResult.content) {
+                        return;
+                    }
+
+                    const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = matchingResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = matchingResult.content;
                         }
                     }
                     
-                    // Add attachments to the assistant display.
-                    if (normalized.attachments && normalized.attachments.length > 0) {
-                        assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+
+                    if (normalized) {
+                        // Add text from tool result to assistant display if available
+                        if (normalized.text && typeof normalized.text === 'string') {
+                            if (assistantDisplay.text) {
+                                assistantDisplay.text += '\n\n' + normalized.text;
+                            } else {
+                                assistantDisplay.text = normalized.text;
+                            }
+                        }
+                        
+                        // Add attachments to the assistant display.
+                        if (normalized.attachments && normalized.attachments.length > 0) {
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                // Case 2: No tool_calls in message, process all tool results
+                // This happens in the agentic loop where the final response doesn't have tool_calls
+                data.tool_results.forEach(function (toolResult) {
+                    if (!toolResult || !toolResult.content) {
+                        return;
+                    }
+
+                    const toolName = toolResult.name || '';
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = toolResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = toolResult.content;
+                        }
+                    }
+                    
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
+
+                    if (normalized) {
+                        // Add text from tool result to assistant display if available
+                        if (normalized.text && typeof normalized.text === 'string') {
+                            if (assistantDisplay.text) {
+                                assistantDisplay.text += '\n\n' + normalized.text;
+                            } else {
+                                assistantDisplay.text = normalized.text;
+                            }
+                        }
+                        
+                        // Add attachments to the assistant display.
+                        if (normalized.attachments && normalized.attachments.length > 0) {
+                            assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
+                        }
+                    }
+                });
+            }
 
             // Re-render the assistant message if we added attachments or text from tool results.
             if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
