@@ -4,6 +4,12 @@
 
 The Gemini API uses a **restricted subset of OpenAPI 3.0 Schema Object** for function declaration parameters. This is more restrictive than other providers like OpenAI, which support full JSON Schema Draft 2020-12.
 
+**IMPORTANT**: The sanitization function only filters **schema keywords**, not **property names**. For example:
+- ✅ A parameter **named** `format` is preserved
+- ❌ A `format` **keyword** (like `"format": "email"`) is removed
+
+This ensures tools with parameters named `default`, `format`, etc., continue to work correctly.
+
 ## Unsupported Keywords
 
 The following JSON Schema keywords are **NOT supported** by Gemini API and are automatically filtered out by `WP_MCP_AI_Gemini_Client::sanitize_parameters_for_gemini()`:
@@ -43,6 +49,39 @@ The following keywords **ARE supported** and preserved:
 - `minLength` / `maxLength` - String length constraints
 - `minItems` / `maxItems` - Array length constraints
 - `pattern` - Regex pattern for strings
+
+## Property Names vs Schema Keywords
+
+**CRITICAL DISTINCTION**: The sanitization distinguishes between:
+
+1. **Property names** (parameter names in `properties` object) - **Always preserved**
+2. **Schema keywords** (JSON Schema fields) - **Filtered if unsupported**
+
+### Example: Property Named `format`
+
+```php
+'properties' => array(
+    'format' => array(              // ✅ PRESERVED: This is a property name
+        'type' => 'string',
+        'description' => 'Output format',
+        'format' => 'uri',          // ❌ REMOVED: This is a schema keyword
+        'default' => 'json',        // ❌ REMOVED: This is a schema keyword
+    ),
+)
+```
+
+**After sanitization:**
+```php
+'properties' => array(
+    'format' => array(              // ✅ Still present
+        'type' => 'string',
+        'description' => 'Output format',
+        // 'format' and 'default' keywords removed
+    ),
+)
+```
+
+This ensures tools can have parameters named `format`, `default`, `examples`, etc., without breaking.
 
 ## Impact on Tool Definitions
 
