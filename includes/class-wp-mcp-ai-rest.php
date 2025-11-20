@@ -6552,6 +6552,44 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Check if a message contains image content (image_url or image_file).
+		 *
+		 * @param array $message Message array to check.
+		 * @return bool True if the message contains image content, false otherwise.
+		 */
+		protected function message_has_image_content( $message ) {
+			if ( ! is_array( $message ) || ! isset( $message['content'] ) ) {
+				return false;
+			}
+
+			$content = $message['content'];
+
+			// Content must be an array to contain image segments
+			if ( ! is_array( $content ) ) {
+				return false;
+			}
+
+			// Check if content is a sequential array of segments
+			if ( ! $this->is_sequential_array( $content ) ) {
+				return false;
+			}
+
+			// Look for image_url or image_file type segments
+			foreach ( $content as $segment ) {
+				if ( ! is_array( $segment ) || ! isset( $segment['type'] ) ) {
+					continue;
+				}
+
+				$type = sanitize_key( $segment['type'] );
+				if ( 'image_url' === $type || 'image_file' === $type ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Extract request messages from a transcript row.
 		 *
 		 * @param array $row Database row.
@@ -6613,7 +6651,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				$content = $this->prepare_message_text( $message );
 
-				if ( '' === $content && 'tool' !== $role && 'system' !== $role ) {
+				// Check if message has image content (even if text content is empty)
+				$has_image_content = $this->message_has_image_content( $message );
+
+				// Skip messages with empty content, except:
+				// - tool role messages (required for tool responses)
+				// - system role messages (can be empty for context)
+				// - assistant role messages with tool_calls (required for agentic flow)
+				// - messages with image content (required to preserve images in chat)
+				$has_tool_calls = 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] );
+
+				if ( '' === $content && 'tool' !== $role && 'system' !== $role && ! $has_tool_calls && ! $has_image_content ) {
 					WP_MCP_AI_Logger::log_event(
 						'debug',
 						'extract_request_messages: skipping message with empty content',
@@ -6630,6 +6678,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'content' => $content,
 				);
 
+				// If message has image content, preserve the original content structure
+				// instead of the extracted text (which would be empty for image-only messages)
+				if ( $has_image_content && isset( $message['content'] ) ) {
+					$message_entry['content'] = $message['content'];
+				}
+
 				// Preserve tool_call_id for tool messages (required by OpenAI for proper request validation).
 				if ( 'tool' === $role && isset( $message['tool_call_id'] ) && '' !== $message['tool_call_id'] ) {
 					$message_entry['tool_call_id'] = sanitize_text_field( $message['tool_call_id'] );
@@ -6641,7 +6695,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 
 				// Preserve tool_calls for assistant messages (required when assistant makes tool calls).
-				if ( 'assistant' === $role && isset( $message['tool_calls'] ) && is_array( $message['tool_calls'] ) && ! empty( $message['tool_calls'] ) ) {
+				if ( $has_tool_calls ) {
 					$message_entry['tool_calls'] = $message['tool_calls'];
 				}
 
@@ -6704,14 +6758,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$role    = isset( $choice['message']['role'] ) ? sanitize_key( $choice['message']['role'] ) : 'assistant';
 					$content = $this->prepare_message_text( $choice['message'] );
 
-					// Always include assistant messages, even with empty content, if they have tool_calls.
-					$has_tool_calls = ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] );
+					// Always include assistant messages, even with empty content, if they have tool_calls or image content.
+					$has_tool_calls    = ! empty( $choice['message']['tool_calls'] ) && is_array( $choice['message']['tool_calls'] );
+					$has_image_content = $this->message_has_image_content( $choice['message'] );
 
-					if ( '' !== $content || 'tool' === $role || $has_tool_calls ) {
+					if ( '' !== $content || 'tool' === $role || $has_tool_calls || $has_image_content ) {
 						$message_entry = array(
 							'role'    => $role,
 							'content' => $content,
 						);
+
+						// If message has image content, preserve the original content structure
+						// instead of the extracted text (which would be empty for image-only messages)
+						if ( $has_image_content && isset( $choice['message']['content'] ) ) {
+							$message_entry['content'] = $choice['message']['content'];
+						}
 
 						// Preserve tool_calls in the assistant message for proper OpenAI schema compliance.
 						// Tool calls should remain in the assistant message, not be converted to tool role messages.
@@ -6726,10 +6787,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'debug',
 							'extract_response_messages: added message',
 							array(
-								'choice_index'   => $choice_index,
-								'role'           => $role,
-								'content_length' => strlen( $content ),
-								'has_tool_calls' => $has_tool_calls ? 'yes' : 'no',
+								'choice_index'      => $choice_index,
+								'role'              => $role,
+								'content_length'    => strlen( $content ),
+								'has_tool_calls'    => $has_tool_calls ? 'yes' : 'no',
+								'has_image_content' => $has_image_content ? 'yes' : 'no',
 							)
 						);
 					} else {
