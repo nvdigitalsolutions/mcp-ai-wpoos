@@ -8120,34 +8120,41 @@
                     }
 
                     const toolName = matchingResult.name || (toolCall.function && toolCall.function.name) || '';
-                    const normalized = normaliseToolResultForDisplay(toolName, matchingResult.content);
+                    
+                    // Parse the tool result content (JSON string) into an object
+                    let parsedContent = matchingResult.content;
+                    if (typeof parsedContent === 'string') {
+                        try {
+                            parsedContent = JSON.parse(parsedContent);
+                        } catch (e) {
+                            // If parsing fails, use the string as-is
+                            parsedContent = matchingResult.content;
+                        }
+                    }
+                    
+                    const normalized = normaliseToolResultForDisplay(toolName, parsedContent);
 
                     if (normalized) {
+                        // Add text from tool result to assistant display if available
+                        if (normalized.text && typeof normalized.text === 'string') {
+                            if (assistantDisplay.text) {
+                                assistantDisplay.text += '\n\n' + normalized.text;
+                            } else {
+                                assistantDisplay.text = normalized.text;
+                            }
+                        }
+                        
                         // Add attachments to the assistant display.
                         if (normalized.attachments && normalized.attachments.length > 0) {
                             assistantDisplay.attachments = (assistantDisplay.attachments || []).concat(normalized.attachments);
                         }
-                        
-                        // Add text from tool result to assistant display if present.
-                        // This ensures tools that return images with descriptive text (e.g., generate_gemini_image)
-                        // have that text included in the conversation for proper OpenAI API compliance.
-                        if (normalized.text && normalized.text.trim()) {
-                            if (!assistantDisplay.text) {
-                                assistantDisplay.text = normalized.text.trim();
-                            } else {
-                                assistantDisplay.text += '\n\n' + normalized.text.trim();
-                            }
-                        }
                     }
                 });
 
-                // Re-render the assistant message if we added attachments.
-                if (assistantDisplay.attachments.length > 0) {
-                    // Check if we now have text from tool results
-                    const hasTextFromTools = assistantDisplay.text && assistantDisplay.text.trim() !== '';
-                    
-                    if (hasDisplayContent || hasTextFromTools) {
-                        // Update existing assistant message with attachments and/or text from tools
+                // Re-render the assistant message if we added attachments or text from tool results.
+                if (assistantDisplay.attachments.length > 0 || assistantDisplay.text) {
+                    if (hasDisplayContent) {
+                        // Update existing assistant message with attachments
                         const lastMessage = state.messagesEl.lastElementChild;
                         if (lastMessage && lastMessage.classList.contains('wp-mcp-ai-chat__message--assistant')) {
                             lastMessage.parentNode.removeChild(lastMessage);
