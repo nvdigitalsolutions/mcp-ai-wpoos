@@ -7399,15 +7399,26 @@
         // Create a placeholder message element for streaming content
         function createStreamingMessage() {
             if (!streamingMessageElement) {
-                streamingMessageElement = appendMessage(state.messagesEl, 'assistant', {
-                    text: '',
-                    attachments: []
-                }, true, {
-                    speech: {
-                        state: state,
-                        text: '',
-                    },
-                });
+                // Create the message element structure directly for streaming
+                // We can't use appendMessage with empty text as it returns null
+                const entry = document.createElement('div');
+                entry.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__message--assistant';
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--streaming';
+                bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
+                
+                entry.appendChild(bubble);
+                state.messagesEl.appendChild(entry);
+                
+                streamingMessageElement = entry;
+                
+                // Scroll to show the new message
+                scrollBatcher.scrollToBottom(state.messagesEl);
+                
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Created streaming message element');
+                }
             }
             return streamingMessageElement;
         }
@@ -7433,6 +7444,8 @@
                 
                 // Auto-scroll to keep the streaming content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
+            } else if (window.console && console.warn) {
+                console.warn('[WP oOS] Streaming bubble element not found');
             }
         }
 
@@ -7695,14 +7708,15 @@
                                 });
                             }
                             
-                            // If we found content, add it to fullContent and update UI
-                            if (contentChunk) {
+                            // Check for final response with complete data first
+                            // This ensures tool_results and structured content are captured
+                            if (data.data) {
+                                return { content: fullContent, finalData: data };
+                            }
+                            // If we found streaming content, add it to fullContent and update UI
+                            else if (contentChunk) {
                                 fullContent += contentChunk;
                                 updateCallback(fullContent);
-                            }
-                            // Check for final response with complete data
-                            else if (data.data) {
-                                return { content: fullContent, finalData: data };
                             }
                         }
                     } catch (parseError) {
