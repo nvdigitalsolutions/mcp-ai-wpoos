@@ -930,10 +930,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Check if SSE streaming was requested.
-			$sse_handler = $this->get_sse_handler();
-			if ( $sse_handler && $sse_handler->request_wants_event_stream( $request ) ) {
+			if ( $this->sse_handler && $this->sse_handler->request_wants_event_stream( $request ) ) {
 				// Stream the job details via SSE.
-				return $sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
+				return $this->sse_handler->stream_event_stream_payload( $job_details, 'cron_job_status' );
 			}
 
 			return rest_ensure_response( $job_details );
