@@ -7485,9 +7485,16 @@
             startTime: Date.now()
         });
 
+        // Filter out system messages before sending to API
+        // System messages are UI feedback only and should not be sent to the AI
+        // This prevents breaking the agentic workflow with error messages and notices
+        const filteredMessages = state.conversation.filter(function(message) {
+            return message && message.role !== 'system';
+        });
+
         const payload = {
             assistant_id: state.originalAssistantId || state.config.assistantId,
-            messages: state.conversation,
+            messages: filteredMessages,
             save_transcript: state.config.saveTranscript !== false,
         };
 
