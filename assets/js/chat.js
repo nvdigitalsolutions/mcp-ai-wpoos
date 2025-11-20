@@ -7115,12 +7115,22 @@
                     content.forEach(function (segment) {
                         if (segment && segment.type === 'text' && segment.text) {
                             textParts.push(segment.text);
-                        } else if (segment && segment.type === 'input_image') {
+                        } else if (segment && (segment.type === 'input_image' || segment.type === 'image_url')) {
                             // Build attachment link for image
-                            if (segment.url) {
+                            // Handle both segment.url and segment.image_url formats
+                            let imageUrl = segment.url || '';
+                            if (!imageUrl && segment.image_url) {
+                                if (typeof segment.image_url === 'string') {
+                                    imageUrl = segment.image_url;
+                                } else if (segment.image_url.url) {
+                                    imageUrl = segment.image_url.url;
+                                }
+                            }
+                            
+                            if (imageUrl) {
                                 displayPayload.attachments.push({
-                                    url: segment.url,
-                                    label: segment.name || 'Image attachment',
+                                    url: imageUrl,
+                                    label: segment.caption || segment.name || 'Image attachment',
                                     downloadName: segment.name || '',
                                     meta: '',
                                 });
@@ -7150,12 +7160,20 @@
 
             if (role === 'assistant') {
                 // Render assistant messages
-                const assistantPayload = { text: content || '' };
+                // If content is an array (structured content with image_url blocks), 
+                // pass it as content so normaliseContent can handle it properly
+                const assistantPayload = Array.isArray(content) 
+                    ? { content: content }
+                    : { text: content || '' };
+                
+                const textForSpeech = Array.isArray(content) 
+                    ? normaliseContent(content) 
+                    : (content || '');
                 
                 appendMessage(state.messagesEl, 'assistant', assistantPayload, true, {
                     speech: {
                         state: state,
-                        text: content || '',
+                        text: textForSpeech,
                     },
                 });
                 return;

@@ -209,6 +209,37 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		}
 
 		/**
+		 * Prepare an input attachment segment (router method).
+		 *
+		 * Routes to the appropriate method based on segment type.
+		 *
+		 * @param array $segment Segment definition with type field.
+		 * @return array|WP_Error Prepared segment or error.
+		 */
+		public function prepare_input_attachment_segment( array $segment ) {
+			$segment_type = isset( $segment['type'] ) ? $segment['type'] : '';
+
+			if ( 'image_url' === $segment_type || 'image_file' === $segment_type || 'input_image' === $segment_type ) {
+				return $this->prepare_input_image_segment( $segment );
+			}
+
+			if ( 'audio' === $segment_type || 'file' === $segment_type || 'input_file' === $segment_type ) {
+				return $this->prepare_input_file_segment( $segment );
+			}
+
+			// If no valid type, treat as text segment
+			if ( isset( $segment['text'] ) ) {
+				return $this->prepare_input_text_segment( $segment['text'] );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_invalid_attachment_segment',
+				__( 'Attachment segment must have a valid type field.', 'wp-mcp-ai' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		/**
 		 * Prepare a text segment.
 		 *
 		 * @param string $text Raw text.
@@ -234,8 +265,25 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			$caption = isset( $segment['caption'] ) ? $this->sanitize_caption( $segment['caption'] ) : '';
 			$detail  = isset( $segment['detail'] ) ? $this->sanitize_detail( $segment['detail'] ) : '';
 
+			// Extract URL from various possible formats
+			$url = '';
 			if ( ! empty( $segment['url'] ) ) {
-				$url = esc_url_raw( $segment['url'] );
+				$url = $segment['url'];
+			} elseif ( isset( $segment['image_url'] ) ) {
+				// Handle image_url as string or object with url property
+				if ( is_string( $segment['image_url'] ) ) {
+					$url = $segment['image_url'];
+				} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
+					$url = $segment['image_url']['url'];
+					// Also extract detail from image_url if not already set
+					if ( empty( $detail ) && isset( $segment['image_url']['detail'] ) ) {
+						$detail = $this->sanitize_detail( $segment['image_url']['detail'] );
+					}
+				}
+			}
+
+			if ( ! empty( $url ) ) {
+				$url = esc_url_raw( $url );
 				if ( empty( $url ) ) {
 					return new WP_Error( 'wp_mcp_ai_invalid_image_url', __( 'Image segment URL is invalid.', 'wp-mcp-ai' ) );
 				}
