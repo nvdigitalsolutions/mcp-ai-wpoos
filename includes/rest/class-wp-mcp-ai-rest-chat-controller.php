@@ -348,6 +348,18 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( $this->main_controller ) {
 			return $this->main_controller->handle_chat_request( $request );
 		}
+
+		// Log error if main controller is missing.
+		WP_MCP_AI_Logger::log_event(
+			'error',
+			'Chat Controller: main_controller is null',
+			array(
+				'route'   => $request->get_route(),
+				'method'  => $request->get_method(),
+				'context' => 'handle_chat_request',
+			)
+		);
+
 		return $this->error( 'not_implemented', __( 'Chat endpoint not yet fully extracted.', 'wp-mcp-ai' ), 501 );
 	}
 
@@ -416,6 +428,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcripts( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcripts',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		$user_id = absint( $request->get_param( 'user_id' ) );
 
 		if ( ! $user_id ) {
@@ -538,6 +568,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_save( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_save',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		$this->main_controller->hydrate_request_body_params( $request );
 
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
@@ -693,6 +741,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_get( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_get',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 		$user_id      = absint( $request->get_param( 'user_id' ) );
@@ -776,6 +842,24 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_delete( WP_REST_Request $request ) {
+		// Defensive check for main controller.
+		if ( ! $this->main_controller ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'Chat Controller: main_controller is null in handle_chat_transcript_delete',
+				array(
+					'route'  => $request->get_route(),
+					'method' => $request->get_method(),
+				)
+			);
+
+			return new WP_Error(
+				'wp_mcp_ai_internal_error',
+				__( 'Internal server error. Please try again later.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
 		$session_key = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 
 		if ( '' === $session_key ) {
