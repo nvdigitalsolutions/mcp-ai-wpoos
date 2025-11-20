@@ -76,11 +76,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = $endpoint;
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
@@ -246,11 +247,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = $endpoint;
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
@@ -494,11 +496,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$endpoint = sprintf( self::API_ENDPOINT, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = $endpoint;
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'timeout' => $this->resolve_timeout( $options ),
 				'body'    => $encoded_payload,
@@ -644,7 +647,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$url = self::API_LIST_MODELS;
 
-			$query_args = array( 'key' => rawurlencode( $api_key ) );
+			$query_args = array();
 
 			if ( isset( $options['page_size'] ) ) {
 				$query_args['pageSize'] = absint( $options['page_size'] );
@@ -654,9 +657,14 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$query_args['pageToken'] = sanitize_text_field( $options['page_token'] );
 			}
 
-			$url = add_query_arg( $query_args, $url );
+			if ( ! empty( $query_args ) ) {
+				$url = add_query_arg( $query_args, $url );
+			}
 
 			$request_args = array(
+				'headers' => array(
+					'x-goog-api-key' => $api_key,
+				),
 				'timeout' => $this->resolve_timeout( $options ),
 			);
 
@@ -756,11 +764,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$endpoint = sprintf( self::API_COUNT_TOKENS, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = $endpoint;
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
@@ -895,11 +904,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			$payload = apply_filters( 'wp_mcp_ai_gemini_embedding_payload', $payload, $options, $text );
 
 			$endpoint = sprintf( self::API_EMBED_CONTENT, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
+			$url      = $endpoint;
 
 			$request_args = array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'body'    => wp_json_encode( $payload ),
 				'timeout' => $this->resolve_timeout( $options ),
@@ -1002,12 +1012,12 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 			}
 
 			$endpoint = sprintf( self::API_STREAM_ENDPOINT, rawurlencode( $model ) );
-			$url      = add_query_arg( 'key', rawurlencode( $api_key ), $endpoint );
-			$url      = add_query_arg( 'alt', 'sse', $url );
+			$url      = add_query_arg( 'alt', 'sse', $endpoint );
 
 			$request_args = array(
 				'headers'  => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'body'     => wp_json_encode( $payload ),
 				'timeout'  => $this->resolve_timeout( $options ),
@@ -1399,6 +1409,19 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_tokens'] );
 			} elseif ( isset( $options['max_output_tokens'] ) ) {
 				$payload['generationConfig']['maxOutputTokens'] = absint( $options['max_output_tokens'] );
+			}
+
+			// Add support for JSON schema responses.
+			if ( isset( $options['response_mime_type'] ) && '' !== $options['response_mime_type'] ) {
+				$payload['generationConfig']['responseMimeType'] = sanitize_text_field( $options['response_mime_type'] );
+			}
+
+			if ( isset( $options['response_schema'] ) && is_array( $options['response_schema'] ) ) {
+				$payload['generationConfig']['responseSchema'] = $options['response_schema'];
+			}
+
+			if ( isset( $options['response_json_schema'] ) && is_array( $options['response_json_schema'] ) ) {
+				$payload['generationConfig']['responseJsonSchema'] = $options['response_json_schema'];
 			}
 
 			if ( empty( $payload['generationConfig'] ) ) {
@@ -1931,7 +1954,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 						// Determine the appropriate type based on schema structure.
 						$inferred_type = 'string'; // Default fallback
 						$reason        = 'default';
-						
+
 						if ( isset( $prop_schema['items'] ) ) {
 							// If 'items' is present, this should be an array type.
 							$inferred_type = 'array';
@@ -1941,9 +1964,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 							$inferred_type = 'object';
 							$reason        = 'has_properties';
 						}
-						
+
 						$sanitized[ $prop_name ]['type'] = $inferred_type;
-						
+
 						WP_MCP_AI_Logger::log_event(
 							'gemini_schema_enhancement',
 							'Added missing type field to property schema',
@@ -1959,7 +1982,7 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 				// Handle the items schema itself when it's missing a type.
 				$inferred_type = 'string'; // Default fallback
 				$reason        = 'default';
-				
+
 				if ( isset( $sanitized['items'] ) ) {
 					// If 'items' is present, this should be an array type.
 					$inferred_type = 'array';
@@ -1969,9 +1992,9 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 					$inferred_type = 'object';
 					$reason        = 'has_properties';
 				}
-				
+
 				$sanitized['type'] = $inferred_type;
-				
+
 				WP_MCP_AI_Logger::log_event(
 					'gemini_schema_enhancement',
 					'Added missing type field to items schema',

@@ -353,10 +353,11 @@ class WP_MCP_AI_Tool_Generate_Image_Caption implements WP_MCP_AI_Tool_Interface,
 		);
 
 		$response = wp_remote_post(
-			'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . $api_key,
+			'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent',
 			array(
 				'headers' => array(
-					'Content-Type' => 'application/json',
+					'Content-Type'   => 'application/json',
+					'x-goog-api-key' => $api_key,
 				),
 				'body'    => wp_json_encode( $request_body ),
 				'timeout' => 30,
