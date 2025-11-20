@@ -527,7 +527,8 @@ class WP_MCP_AI_Tool_Async_Executor {
 	protected function get_registry() {
 		if ( null === $this->registry ) {
 			if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
-				$this->registry = new WP_MCP_AI_Tool_Registry();
+				$this->registry = WP_MCP_AI_Tool_Registry::get_instance();
+				$this->registry->init(); // Ensure registry is initialized during cron execution.
 			}
 		}
 
