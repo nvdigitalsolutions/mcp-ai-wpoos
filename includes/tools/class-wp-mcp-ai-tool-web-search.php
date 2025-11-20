@@ -17,14 +17,10 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cache-helper.php';
 }
 
-require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-llm-sanitizer-interface.php';
-
 /**
  * Performs lightweight web searches and returns the top results.
  */
-class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
-	const MAX_RETRY_ATTEMPTS = 3;
-	const RETRY_DELAY_SECONDS = 2;
+class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	/**
 	 * {@inheritdoc}
 	 */
@@ -205,70 +201,6 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	}
 
 	/**
-	 * Execute HTTP request with retry logic for 202 responses.
-	 *
-	 * Handles asynchronous processing by retrying with exponential backoff
-	 * when the provider returns HTTP 202 (Accepted).
-	 *
-	 * @param string $url     Request URL.
-	 * @param array  $args    wp_remote_get arguments.
-	 * @param string $context Context for error messages (e.g., 'duckduckgo', 'brave').
-	 * @return array|WP_Error HTTP response or error.
-	 */
-	protected function execute_http_request_with_retry( $url, $args, $context = 'search' ) {
-		$attempt = 0;
-
-		while ( $attempt < self::MAX_RETRY_ATTEMPTS ) {
-			$response = wp_remote_get( $url, $args );
-
-			if ( is_wp_error( $response ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_search_failed',
-					__( 'The web search request failed.', 'wp-mcp-ai' ),
-					$response->get_error_message()
-				);
-			}
-
-			$status_code = (int) wp_remote_retrieve_response_code( $response );
-
-			// Handle HTTP 202 (Accepted) - async processing in progress.
-			if ( 202 === $status_code ) {
-				$attempt++;
-
-				// If we've exhausted retries, return the error.
-				if ( $attempt >= self::MAX_RETRY_ATTEMPTS ) {
-					return new WP_Error(
-						'wp_mcp_ai_search_pending',
-						sprintf(
-							/* translators: %d: number of retry attempts */
-							__( 'The web search provider is still processing this query after %d attempts. Please try again in a moment.', 'wp-mcp-ai' ),
-							self::MAX_RETRY_ATTEMPTS
-						),
-						array(
-							'status'   => 202,
-							'attempts' => $attempt,
-							'provider' => $context,
-						)
-					);
-				}
-
-				// Wait before retrying (respect retry-after header if present).
-				$retry_after = wp_remote_retrieve_header( $response, 'retry-after' );
-				$delay       = ! empty( $retry_after ) ? min( absint( $retry_after ), 10 ) : self::RETRY_DELAY_SECONDS;
-
-				sleep( $delay );
-				continue;
-			}
-
-			// Success or other error - return response to caller.
-			return $response;
-		}
-
-		// Shouldn't reach here, but return last response as fallback.
-		return $response;
-	}
-
-	/**
 	 * Perform a DuckDuckGo Instant Answer search.
 	 *
 	 * @param string $query       The sanitized search query.
@@ -287,24 +219,28 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'https://api.duckduckgo.com/'
 		);
 
-		$response = $this->execute_http_request_with_retry(
+		$response = wp_remote_get(
 			$request_url,
 			array(
 				'timeout' => 10,
 				'headers' => array(
 					'Accept' => 'application/json',
 				),
-			),
-			'duckduckgo'
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'wp-mcp-ai' ),
+				$response->get_error_message()
+			);
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( 200 !== $status_code ) {
+		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
+		if ( 200 !== $status_code && 202 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
@@ -391,7 +327,7 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'https://api.search.brave.com/res/v1/web/search'
 		);
 
-		$response = $this->execute_http_request_with_retry(
+		$response = wp_remote_get(
 			$request_url,
 			array(
 				'timeout' => 10,
@@ -399,17 +335,21 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'Accept'               => 'application/json',
 					'X-Subscription-Token' => $api_key,
 				),
-			),
-			'brave'
+			)
 		);
 
 		if ( is_wp_error( $response ) ) {
-			return $response;
+			return new WP_Error(
+				'wp_mcp_ai_search_failed',
+				__( 'The web search request failed.', 'wp-mcp-ai' ),
+				$response->get_error_message()
+			);
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
 
-		if ( 200 !== $status_code ) {
+		// Accept both 200 (OK) and 202 (Accepted) - let the search complete.
+		if ( 200 !== $status_code && 202 !== $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_search_http_error',
 				sprintf(
@@ -572,42 +512,6 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'non-deterministic',    // Results may vary over time.
 			'may-timeout',          // May exceed typical HTTP request timeout.
 			'async-capable',        // Can execute asynchronously via cron.
-			'requires-polling',     // May need to poll for completion status.
 		);
-	}
-
-	/**
-	 * Sanitize tool result before passing to LLM.
-	 *
-	 * Removes verbose metadata that doesn't add value to the LLM's context.
-	 * The full result is preserved in tool_results[] for frontend display.
-	 *
-	 * @param mixed $result Raw tool execution result.
-	 * @return mixed Sanitized result safe for LLM context.
-	 */
-	public function sanitize_for_llm( $result ) {
-		if ( ! is_array( $result ) ) {
-			return $result;
-		}
-
-		// Keep essential fields for LLM reasoning.
-		$keep_fields = array(
-			'query',
-			'results',
-			'result_count',
-			'provider',
-			'note',
-		);
-
-		$sanitized = array();
-		foreach ( $keep_fields as $key ) {
-			if ( isset( $result[ $key ] ) ) {
-				$sanitized[ $key ] = $result[ $key ];
-			}
-		}
-
-		// Strip metadata that bloats context without adding value.
-		// Remove timestamp, cached status, etc.
-		return ! empty( $sanitized ) ? $sanitized : $result;
 	}
 }
