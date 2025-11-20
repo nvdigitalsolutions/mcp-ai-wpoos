@@ -976,6 +976,36 @@ if ( ! function_exists( 'wp_mcp_ai_init_async_executor' ) ) {
 }
 
 /**
+ * Ensure file cleanup cron jobs are scheduled.
+ *
+ * Called on plugins_loaded to handle plugin upgrades where activation
+ * hook doesn't fire. Checks if cron events exist and schedules them if missing.
+ */
+if ( ! has_action( 'plugins_loaded', 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
+	add_action( 'plugins_loaded', 'wp_mcp_ai_ensure_cleanup_cron_scheduled', 25 );
+}
+
+if ( ! function_exists( 'wp_mcp_ai_ensure_cleanup_cron_scheduled' ) ) {
+	/**
+	 * Ensure cleanup cron jobs are scheduled on every plugin load.
+	 *
+	 * This ensures existing installations get the cron jobs when they upgrade,
+	 * not just on fresh activations.
+	 */
+	function wp_mcp_ai_ensure_cleanup_cron_scheduled() {
+		// Schedule Gemini file cleanup if not already scheduled.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_gemini_files' );
+		}
+
+		// Schedule OpenAI file cleanup if not already scheduled.
+		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
+			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
+		}
+	}
+}
+
+/**
  * Register cron job handlers for file cleanup.
  */
 if ( ! has_action( 'wp_mcp_ai_cleanup_gemini_files', 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {

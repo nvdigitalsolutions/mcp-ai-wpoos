@@ -660,11 +660,12 @@ class WP_MCP_AI_Gemini_File_Service {
 			return false;
 		}
 
-		$cache_data = array(
+		$upload_time = time();
+		$cache_data  = array(
 			'file_name'     => $file_name,
 			'file_uri'      => $file_uri,
 			'mime_type'     => $mime_type,
-			'uploaded_at'   => time(),
+			'uploaded_at'   => $upload_time,
 			'video_url'     => $video_url,
 			'attachment_id' => $attachment_id,
 		);
@@ -676,7 +677,8 @@ class WP_MCP_AI_Gemini_File_Service {
 
 		if ( $result ) {
 			// Also add to list of tracked files for cleanup.
-			$this->add_to_tracked_files_list( $cache_key, $file_name );
+			// Store upload time in tracking list to persist beyond transient expiration.
+			$this->add_to_tracked_files_list( $cache_key, $file_name, $upload_time );
 
 			WP_MCP_AI_Logger::log_event(
 				'gemini_file_tracked',
@@ -695,7 +697,8 @@ class WP_MCP_AI_Gemini_File_Service {
 	/**
 	 * Get list of all tracked files
 	 *
-	 * Returns all files currently tracked in cache.
+	 * Returns all files currently tracked, including those whose transients have expired.
+	 * This ensures cleanup can still delete old files after cache expiration.
 	 *
 	 * @return array Array of tracked file information.
 	 */
@@ -703,20 +706,26 @@ class WP_MCP_AI_Gemini_File_Service {
 		$tracked_files_list = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
 		$tracked_files      = array();
 
-		foreach ( $tracked_files_list as $cache_key => $file_name ) {
+		foreach ( $tracked_files_list as $cache_key => $file_data ) {
+			// Try to get cached data first.
 			$cached_data = get_transient( $cache_key );
 
 			if ( false !== $cached_data ) {
+				// Transient still exists, use it.
 				$cached_data['cache_key'] = $cache_key;
 				$tracked_files[]          = $cached_data;
 			} else {
-				// Remove from list if transient expired.
-				unset( $tracked_files_list[ $cache_key ] );
+				// Transient expired, but we need the tracking data for cleanup.
+				// Use the file_name and uploaded_at from the tracking list.
+				if ( is_array( $file_data ) && isset( $file_data['file_name'], $file_data['uploaded_at'] ) ) {
+					$tracked_files[] = array(
+						'cache_key'   => $cache_key,
+						'file_name'   => $file_data['file_name'],
+						'uploaded_at' => $file_data['uploaded_at'],
+					);
+				}
 			}
 		}
-
-		// Update the list to remove expired entries.
-		update_option( 'wp_mcp_ai_gemini_tracked_files', $tracked_files_list, false );
 
 		return $tracked_files;
 	}
@@ -838,12 +847,16 @@ class WP_MCP_AI_Gemini_File_Service {
 	/**
 	 * Add file to tracked files list
 	 *
-	 * @param string $cache_key Cache key.
-	 * @param string $file_name Gemini file name.
+	 * @param string $cache_key    Cache key.
+	 * @param string $file_name    Gemini file name.
+	 * @param int    $uploaded_at  Upload timestamp.
 	 */
-	private function add_to_tracked_files_list( $cache_key, $file_name ) {
+	private function add_to_tracked_files_list( $cache_key, $file_name, $uploaded_at ) {
 		$tracked_files = get_option( 'wp_mcp_ai_gemini_tracked_files', array() );
-		$tracked_files[ $cache_key ] = $file_name;
+		$tracked_files[ $cache_key ] = array(
+			'file_name'   => $file_name,
+			'uploaded_at' => $uploaded_at,
+		);
 		update_option( 'wp_mcp_ai_gemini_tracked_files', $tracked_files, false );
 	}
 
