@@ -125,6 +125,16 @@ class WP_MCP_AI_OpenAI_Image_Tool_Test extends WP_UnitTestCase {
 
 		$this->assertGreaterThan( 0, (int) $result['bytes'] );
 
+		// Verify OpenAI metadata is saved to attachment.
+		$openai_meta = get_post_meta( $attachment_id, '_wp_mcp_ai_openai_image_meta', true );
+		$this->assertIsArray( $openai_meta );
+		$this->assertSame( 'openai', $openai_meta['source'] );
+		$this->assertSame( 'A friendly robot painting a portrait', $openai_meta['original_prompt'] );
+		$this->assertSame( 'gpt-image-test', $openai_meta['model'] );
+		$this->assertSame( 'A friendlier robot', $openai_meta['revised_prompt'] );
+		$this->assertSame( 456, $openai_meta['created'] );
+		$this->assertSame( 'png', $openai_meta['format'] );
+
 		wp_delete_attachment( $attachment_id, true );
 	}
 
