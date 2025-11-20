@@ -7634,10 +7634,12 @@
                         }
                     }
 
-                    state.conversation.push({
-                        role: 'assistant',
-                        content: streamResult.content
-                    });
+                    // Create assistant message with display metadata
+                    const displayPayload = { text: streamResult.content };
+                    const displayMetadata = extractDisplayMetadata(streamingMessageElement, displayPayload);
+                    const assistantMessage = createConversationMessage('assistant', streamResult.content, displayMetadata);
+                    
+                    state.conversation.push(assistantMessage);
                     
                     // Clear thinking text buffer
                     state.thinkingText = null;
