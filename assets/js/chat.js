@@ -9497,7 +9497,11 @@
             return Promise.reject(new Error('Tools endpoint not configured'));
         }
 
-        if (!saveData || (!saveData.content && !saveData.post_id)) {
+        if (!saveData || typeof saveData !== 'object') {
+            return Promise.reject(new Error('Invalid save data'));
+        }
+
+        if (!saveData.content && !saveData.post_id) {
             return Promise.reject(new Error('Save data must include content or post_id'));
         }
 
@@ -9521,7 +9525,11 @@
 
         // Add optional fields
         if (saveData.post_id) {
-            payload.arguments.post_id = parseInt(saveData.post_id, 10);
+            const postId = parseInt(saveData.post_id, 10);
+            if (isNaN(postId) || postId <= 0) {
+                return Promise.reject(new Error('Invalid post_id provided'));
+            }
+            payload.arguments.post_id = postId;
         }
         if (saveData.excerpt) {
             payload.arguments.excerpt = saveData.excerpt;
@@ -9577,6 +9585,12 @@
                                                'Save failed with status ' + response.status;
                                 throw new Error(errorMsg);
                             }
+                            
+                            // Validate response data structure
+                            if (!data || typeof data !== 'object') {
+                                throw new Error('Invalid response format from save endpoint');
+                            }
+                            
                             return data;
                         });
                 })
@@ -9584,7 +9598,7 @@
                     clearTimeout(timeoutId);
                     
                     // Check if we should retry
-                    if (attempt < maxRetries && !error.name === 'AbortError') {
+                    if (attempt < maxRetries && error.name !== 'AbortError') {
                         // Wait before retrying
                         return new Promise(function(resolve) {
                             setTimeout(function() {
