@@ -8030,9 +8030,9 @@
                     if (window.console && console.error) {
                         console.error('[WP oOS] Streaming request failed:', {
                             errorType: error && error.constructor ? error.constructor.name : 'Unknown',
-                            errorMessage: error ? error.message : 'No error message',
-                            errorStatus: error ? error.status : 'N/A',
-                            errorStatusText: error ? error.statusText : 'N/A',
+                            errorMessage: error ? (error.message || 'Unknown') : 'Unknown',
+                            errorStatus: error && error.status ? error.status : 'N/A',
+                            errorStatusText: error && error.statusText ? error.statusText : 'N/A',
                             endpoint: state.config.messagesEndpoint,
                             assistantId: payload.assistant_id,
                             hasResponse: error && typeof error.json === 'function',
