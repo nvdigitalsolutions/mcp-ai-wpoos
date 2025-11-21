@@ -122,7 +122,7 @@ class WP_MCP_AI_Tool_Check_Video_Status implements WP_MCP_AI_Tool_Interface, WP_
 	}
 
 	/**
-	 * Get human-readable status message
+	 * Get human-readable status message.
 	 *
 	 * @param string $status Job status.
 	 * @return string Status message.

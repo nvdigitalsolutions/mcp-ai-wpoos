@@ -124,7 +124,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Generate a video using Veo 3.1
+	 * Generate a video using Veo 3.1.
 	 *
 	 * @param array $args {
 	 *     Video generation arguments.
@@ -186,7 +186,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Build the generation payload for Veo 3.1
+	 * Build the generation payload for Veo 3.1.
 	 *
 	 * @param array $args Generation arguments.
 	 * @return array|WP_Error Payload or error.
@@ -265,7 +265,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Submit video generation request to Gemini API
+	 * Submit video generation request to Gemini API.
 	 *
 	 * @param array $payload Request payload.
 	 * @return array|WP_Error Operation details or error.
@@ -357,7 +357,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Poll for video generation completion
+	 * Poll for video generation completion.
 	 *
 	 * @param array $operation Operation details.
 	 * @return array|WP_Error Completed operation data or error.
@@ -448,7 +448,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Process completed video and download data
+	 * Process completed video and download data.
 	 *
 	 * @param array $result Completed operation result.
 	 * @param array $args   Original generation arguments.
@@ -487,7 +487,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Download generated video from URI
+	 * Download generated video from URI.
 	 *
 	 * @param string $video_uri Video URI from Gemini.
 	 * @return string|WP_Error Video binary data or error.
@@ -542,7 +542,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Queue async polling for video generation
+	 * Queue async polling for video generation.
 	 *
 	 * @param array $operation Operation details from Gemini API.
 	 * @param array $args      Original generation arguments.
@@ -599,7 +599,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Poll for video completion (cron callback)
+	 * Poll for video completion (cron callback).
 	 *
 	 * @param string $job_id Async job identifier.
 	 */
@@ -741,7 +741,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Schedule next polling attempt
+	 * Schedule next polling attempt.
 	 *
 	 * @param string $job_id   Job identifier.
 	 * @param array  $metadata Job metadata.
@@ -769,7 +769,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Get async job status
+	 * Get async job status.
 	 *
 	 * @param string $job_id Job identifier.
 	 * @return array|WP_Error Job status or error.
@@ -810,7 +810,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	}
 
 	/**
-	 * Save generated video to Media Library
+	 * Save generated video to Media Library.
+	 *
+	 * Note: This method is duplicated in the tool class for sync mode.
+	 * This is intentional to keep the service and tool layers independent.
+	 * The service needs it for async completion, the tool needs it for sync mode.
 	 *
 	 * @param array $result  Video generation result.
 	 * @param int   $user_id User ID for ownership.
