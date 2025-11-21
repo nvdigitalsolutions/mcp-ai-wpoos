@@ -6024,15 +6024,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$where_sql = implode( ' AND ', $where_clauses );
 
-			$query_template = "SELECT request_payload,
-                    response_payload,
-                    metadata,
-                    request_started_at,
-                    response_completed_at,
-                    cct_created,
-                    assistant_id,
-                    assistant_model,
-                    latency_ms
+			$select_fields  = $this->get_transcript_select_fields();
+			$query_template = "SELECT {$select_fields}
              FROM {$table}
              WHERE {$where_sql}
              ORDER BY cct_created ASC, id ASC";
@@ -6066,15 +6059,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
 
-				$fallback_query_template = "SELECT request_payload,
-                    response_payload,
-                    metadata,
-                    request_started_at,
-                    response_completed_at,
-                    cct_created,
-                    assistant_id,
-                    assistant_model,
-                    latency_ms
+				$select_fields           = $this->get_transcript_select_fields();
+				$fallback_query_template = "SELECT {$select_fields}
              FROM {$table}
              WHERE {$fallback_where_sql}
              ORDER BY cct_created ASC, id ASC";
@@ -7731,6 +7717,23 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce, X-WP-MCP-AI-Mesh-Key, X-WP-MCP-AI-Guest' );
 			$response->header( 'Access-Control-Max-Age', '3600' );
 			return $response;
+		}
+
+		/**
+		 * Get the SELECT fields for transcript session queries.
+		 *
+		 * @return string SQL SELECT fields.
+		 */
+		private function get_transcript_select_fields() {
+			return "request_payload,
+                    response_payload,
+                    metadata,
+                    request_started_at,
+                    response_completed_at,
+                    cct_created,
+                    assistant_id,
+                    assistant_model,
+                    latency_ms";
 		}
 	}
 }

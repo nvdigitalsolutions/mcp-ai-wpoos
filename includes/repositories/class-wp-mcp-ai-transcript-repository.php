@@ -185,15 +185,8 @@ class WP_MCP_AI_Transcript_Repository {
 
 		$where_sql = implode( ' AND ', $where_clauses );
 
-		$query_template = "SELECT request_payload,
-                response_payload,
-                metadata,
-                request_started_at,
-                response_completed_at,
-                cct_created,
-                assistant_id,
-                assistant_model,
-                latency_ms
+		$select_fields  = $this->get_select_fields();
+		$query_template = "SELECT {$select_fields}
          FROM {$table}
          WHERE {$where_sql}
          ORDER BY cct_created ASC, id ASC";
@@ -217,15 +210,8 @@ class WP_MCP_AI_Transcript_Repository {
 
 			$fallback_where_sql = implode( ' AND ', $fallback_where_clauses );
 
-			$fallback_query_template = "SELECT request_payload,
-                response_payload,
-                metadata,
-                request_started_at,
-                response_completed_at,
-                cct_created,
-                assistant_id,
-                assistant_model,
-                latency_ms
+			$select_fields           = $this->get_select_fields();
+			$fallback_query_template = "SELECT {$select_fields}
          FROM {$table}
          WHERE {$fallback_where_sql}
          ORDER BY cct_created ASC, id ASC";
@@ -266,7 +252,7 @@ class WP_MCP_AI_Transcript_Repository {
 			return false;
 		}
 
-		// Delete all transcript entries for this session and user.
+		// First try deleting with cct_author_id.
 		$deleted = $wpdb->delete(
 			$table,
 			array(
@@ -276,6 +262,37 @@ class WP_MCP_AI_Transcript_Repository {
 			array( '%s', '%d' )
 		);
 
+		// If no rows deleted with cct_author_id, try with user_id as fallback.
+		// This handles cases where JetEngine might be using the custom user_id field
+		// instead of the built-in cct_author_id column.
+		if ( false !== $deleted && 0 === $deleted ) {
+			$deleted = $wpdb->delete(
+				$table,
+				array(
+					'session_key' => $session_key,
+					'user_id'     => $user_id,
+				),
+				array( '%s', '%d' )
+			);
+		}
+
 		return $deleted;
+	}
+
+	/**
+	 * Get the SELECT fields for transcript queries.
+	 *
+	 * @return string SQL SELECT fields.
+	 */
+	private function get_select_fields() {
+		return "request_payload,
+                response_payload,
+                metadata,
+                request_started_at,
+                response_completed_at,
+                cct_created,
+                assistant_id,
+                assistant_model,
+                latency_ms";
 	}
 }
