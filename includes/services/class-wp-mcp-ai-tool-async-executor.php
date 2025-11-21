@@ -186,7 +186,8 @@ class WP_MCP_AI_Tool_Async_Executor {
 				array( $job_id ),
 				'single',
 				$timestamp,
-				$user_id
+				$user_id,
+				$job_id  // Use the async_xxx job_id directly instead of generating MD5 hash.
 			);
 		}
 
