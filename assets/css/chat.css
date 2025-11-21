@@ -980,7 +980,7 @@
     outline: none;
     border-color: var(--wp-mcp-ai-color-input-focus-border, #4361ff);
     box-shadow: 0 0 0 3px var(--wp-mcp-ai-color-input-focus-shadow, rgba(67, 97, 255, 0.2));
-    background: #fff;
+    background: var(--wp-mcp-ai-color-input-focus-background, #fff);
 }
 
 .wp-mcp-ai-chat__actions {
@@ -1157,7 +1157,7 @@
         var(--wp-mcp-ai-color-submit-hover-gradient-end, #6a4bff)
     );
     box-shadow: 0 16px 28px var(--wp-mcp-ai-color-submit-hover-shadow, rgba(50, 76, 248, 0.4));
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     color: var(
         --wp-mcp-ai-color-submit-hover-text,
         var(--wp-mcp-ai-color-submit-text, #fff)
@@ -1792,7 +1792,7 @@
 
     .wp-mcp-ai-chat__input {
         min-height: 100px;
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: max(16px, 1rem); /* Prevents zoom on iOS while respecting user font preferences */
     }
 
     .wp-mcp-ai-chat__tool-shortcuts {
