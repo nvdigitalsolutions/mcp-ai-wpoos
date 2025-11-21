@@ -7785,6 +7785,21 @@
                     streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--streaming');
                 }
                 
+                // Also update status area with streaming preview for better visibility
+                // Show a truncated preview of the streaming content
+                if (content && content.length > 0) {
+                    const previewLength = 100; // Show first 100 characters
+                    const preview = content.length > previewLength 
+                        ? content.substring(0, previewLength) + '…' 
+                        : content;
+                    
+                    setStatus(state.container, {
+                        message: preview,
+                        type: 'text-stream',
+                        showTime: false
+                    });
+                }
+                
                 // Auto-scroll to keep the streaming content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
