@@ -113,7 +113,7 @@
          * @return {string} Error type name or 'Unknown'
          */
         function getErrorType(error) {
-            return error && error.constructor ? error.constructor.name : 'Unknown';
+            return error && error.constructor && error.constructor.name ? error.constructor.name : 'Unknown';
         }
         
         /**
@@ -193,12 +193,14 @@
                         streamCompleted: context.streamCompleted
                     });
                     
-                    // Extract response text if available
+                    // Extract response text if available (async, non-blocking)
+                    // This runs asynchronously and doesn't block the error flow
                     if (error && typeof error.text === 'function') {
                         error.text().then(function(responseText) {
                             console.error(LOG_PREFIX + ' Server response text:', responseText);
-                        }).catch(function() {
-                            console.error(LOG_PREFIX + ' Could not extract response text');
+                        }).catch(function(extractError) {
+                            // Silently fail - response text extraction is best-effort
+                            console.error(LOG_PREFIX + ' Could not extract response text:', getErrorMessage(extractError));
                         });
                     }
                 }
