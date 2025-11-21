@@ -49,6 +49,13 @@
     const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
     const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
+    // Tool execution timer constants
+    // Duration (in milliseconds) to preserve tool execution info alongside thinking status.
+    // When a tool completes and thinking status arrives within this window, the tool name
+    // and timer are preserved in the status message. This ensures users see which tool
+    // executed and its duration for all tools, not just async tools.
+    const TOOL_TIMER_DISPLAY_DURATION = 1500;
+
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -8565,11 +8572,30 @@
                 return;
             }
             
+            // Preserve tool execution timer alongside thinking status
+            // If a tool recently completed, append tool info to thinking message
+            let statusMessage = message;
+            let statusStartTime = Date.now();
+            
+            if (state.lastToolResultTime && 
+                state.lastToolName &&
+                (Date.now() - state.lastToolResultTime < TOOL_TIMER_DISPLAY_DURATION)) {
+                // Tool just completed - preserve tool execution info alongside thinking status
+                const toolExecutionMsg = formatString(
+                    getString('executingTool', 'Executing %s…'),
+                    state.lastToolName
+                );
+                // Combine messages: "Executing tool_name… • Analyzing tool results…"
+                statusMessage = toolExecutionMsg + ' • ' + message;
+                // Use the original tool start time to show elapsed time
+                statusStartTime = state.lastToolStartTime || Date.now();
+            }
+            
             setStatus(state.container, {
-                message: message,
+                message: statusMessage,
                 type: 'thinking',
                 showTime: true,
-                startTime: Date.now()
+                startTime: statusStartTime
             });
         } else if (type === 'generating') {
             // Don't override streaming status if content is actively streaming
@@ -8629,6 +8655,10 @@
             });
         } else if (type === 'tool_start') {
             const toolName = data.tool_name || 'tool';
+            // Track the tool being executed and when it started
+            state.currentToolName = toolName;
+            state.currentToolStartTime = Date.now();
+            
             setStatus(state.container, {
                 message: formatString(
                     getString('executingTool', 'Executing %s…'),
@@ -8636,7 +8666,7 @@
                 ),
                 type: 'tool',
                 showTime: true,
-                startTime: Date.now()
+                startTime: state.currentToolStartTime
             });
         } else if (type === 'tool_result') {
             const toolName = data.tool_name || 'tool';
@@ -8654,6 +8684,12 @@
                 // Don't display the pending message here - waitForAsyncToolResult handles it
                 return;
             }
+            
+            // Track when the last tool result was received
+            // Store tool name and start time to preserve alongside thinking status
+            state.lastToolName = state.currentToolName || toolName;
+            state.lastToolStartTime = state.currentToolStartTime || Date.now();
+            state.lastToolResultTime = Date.now();
             
             // Extract attachments from tool result (e.g., generated images, audio files)
             const normalized = typeof result === 'object' && result !== null ? 
