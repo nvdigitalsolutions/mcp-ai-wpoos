@@ -2880,14 +2880,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Send text content in chunks to simulate streaming (for better UX).
 			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
 				$chunk_size = self::STREAMING_CHUNK_SIZE;
-				$text_len   = mb_strlen( $text_content, 'UTF-8' );
+				$text_len   = $this->mb_strlen( $text_content );
 
 				// Check once if usleep is available before the loop.
 				$can_sleep = function_exists( 'usleep' );
 
 				// Send chunks directly without building array (memory efficient).
 				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
-					$chunk = mb_substr( $text_content, $i, $chunk_size, 'UTF-8' );
+					$chunk = $this->mb_substr( $text_content, $i, $chunk_size );
 
 					$this->send_sse_event(
 						'message',
