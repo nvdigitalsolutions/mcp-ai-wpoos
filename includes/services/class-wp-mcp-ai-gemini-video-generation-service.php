@@ -380,7 +380,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Poll for video generation completion.
 	 *
 	 * @param array $operation Operation details.
-	 * @param array $args Optional. Original generation arguments for async fallback.
+	 * @param array $args Optional. Original generation arguments for async fallback on timeout.
 	 * @return array|WP_Error Completed operation data or error.
 	 */
 	protected function poll_for_completion( $operation, $args = array() ) {

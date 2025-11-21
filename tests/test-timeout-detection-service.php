@@ -84,8 +84,8 @@ class Test_Timeout_Detection_Service extends WP_UnitTestCase {
 		// Not approaching timeout yet.
 		$this->assertFalse( $detector->is_approaching_timeout() );
 
-		// Wait 1.5 seconds to exceed threshold.
-		usleep( 1500000 ); // 1.5 seconds in microseconds.
+		// Wait 1.1 seconds to exceed threshold (shorter than original 1.5s for faster tests).
+		usleep( 1100000 ); // 1.1 seconds in microseconds.
 
 		// Should now be approaching timeout.
 		$this->assertTrue( $detector->is_approaching_timeout() );
