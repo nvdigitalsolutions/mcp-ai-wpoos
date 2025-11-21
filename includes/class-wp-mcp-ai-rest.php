@@ -956,6 +956,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
+		 * Check if a job status represents a terminal state.
+		 *
+		 * Terminal states indicate the job has finished processing and will not change.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $status Job status to check.
+		 * @return bool True if status is terminal, false otherwise.
+		 */
+		protected function is_terminal_job_status( $status ) {
+			$terminal_statuses = array( 'completed', 'failed', 'error' );
+			return in_array( strtolower( (string) $status ), $terminal_statuses, true );
+		}
+
+		/**
 		 * Stream job status via SSE with polling until completion.
 		 *
 		 * Continuously polls the job status and sends SSE events until the job
@@ -1025,8 +1040,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->sse_handler->send_sse_event( 'cron_job_status', $job_details );
 
 				// Check if job has reached a terminal state.
-				$status = isset( $job_details['status'] ) ? strtolower( (string) $job_details['status'] ) : '';
-				if ( 'completed' === $status || 'failed' === $status || 'error' === $status ) {
+				$status = isset( $job_details['status'] ) ? (string) $job_details['status'] : '';
+				if ( $this->is_terminal_job_status( $status ) ) {
 					// Job finished - send [DONE] and exit.
 					echo "data: [DONE]\n\n";
 					if ( function_exists( 'flush' ) ) {
