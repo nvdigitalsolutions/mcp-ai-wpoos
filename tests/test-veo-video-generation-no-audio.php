@@ -228,8 +228,14 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			'generateAudio parameter should NOT be sent to the API as it is not supported by Veo 3.1'
 		);
 
+		// The model parameter should also NOT be in the parameters as it's specified in the URL.
+		$this->assertArrayNotHasKey(
+			'model',
+			$request_body['parameters'],
+			'model parameter should NOT be sent in the parameters as it is already specified in the API endpoint URL'
+		);
+
 		// Verify expected parameters ARE present.
-		$this->assertArrayHasKey( 'model', $request_body['parameters'], 'model parameter should be present' );
 		$this->assertArrayHasKey( 'durationSeconds', $request_body['parameters'], 'durationSeconds parameter should be present' );
 		$this->assertArrayHasKey( 'aspectRatio', $request_body['parameters'], 'aspectRatio parameter should be present' );
 		$this->assertArrayHasKey( 'resolution', $request_body['parameters'], 'resolution parameter should be present' );
