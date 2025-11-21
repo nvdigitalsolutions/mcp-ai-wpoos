@@ -37,6 +37,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const CHAT_APPROX_CHARS_PER_TOKEN = 4;     // Rough heuristic used when trimming oversized chats.
 		const TPM_SAFETY_MARGIN           = 0.8;   // Use 80% of TPM limit as target when truncating messages.
 		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
+		const STREAMING_CHUNK_SIZE        = 50;    // Characters per chunk for simulated streaming.
+		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -2869,7 +2871,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Simulate streaming by sending text content in chunks before final response.
 			// Extract text content from the response to send progressively.
 			$text_content = '';
-			if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0]['message']['content'] ) ) {
 				$text_content = $response['choices'][0]['message']['content'];
 			} elseif ( isset( $response['content'] ) ) {
 				$text_content = $response['content'];
@@ -2877,13 +2879,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Send text content in chunks to simulate streaming (for better UX).
 			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
-				$chunk_size = 50; // Characters per chunk.
+				$chunk_size = self::STREAMING_CHUNK_SIZE;
 				$text_len   = mb_strlen( $text_content, 'UTF-8' );
 				$chunks     = array();
 
 				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
 					$chunks[] = mb_substr( $text_content, $i, $chunk_size, 'UTF-8' );
 				}
+
+				// Check once if usleep is available before the loop.
+				$can_sleep = function_exists( 'usleep' );
 
 				// Send chunks with OpenAI-style delta format.
 				foreach ( $chunks as $chunk ) {
@@ -2900,10 +2905,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					// Small delay between chunks (microseconds) to simulate realistic streaming.
-					// This is optional and can be removed if it causes issues.
-					if ( function_exists( 'usleep' ) ) {
-						usleep( 10000 ); // 10ms per chunk.
+					// Small delay between chunks to simulate realistic streaming.
+					if ( $can_sleep ) {
+						usleep( self::STREAMING_CHUNK_DELAY_US );
 					}
 				}
 			}
