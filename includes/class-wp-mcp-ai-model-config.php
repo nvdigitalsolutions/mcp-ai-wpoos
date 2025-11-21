@@ -672,7 +672,7 @@ class WP_MCP_AI_Model_Config {
 				'rpd'            => 1500,
 				'context_window' => 2000000,
 				'fallback_model' => 'gemini-2.5-flash',
-				'cost_per_1k'    => 0.00125,
+				'cost_per_1k'    => 0.003,
 				'status'         => 'active',
 			),
 			'gemini-2.5-flash'       => array(
