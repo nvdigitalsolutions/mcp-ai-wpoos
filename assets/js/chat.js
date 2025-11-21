@@ -7767,18 +7767,31 @@
             return streamingMessageElement;
         }
 
-        // Update the streaming message with new content
+        // Update status area with streaming preview (Separation of Concerns)
+        function updateStreamingStatus(content) {
+            if (content && content.length > 0) {
+                const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
+                    ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
+                    : content;
+                
+                setStatus(state.container, {
+                    message: preview,
+                    type: 'text-stream',
+                    showTime: false
+                });
+            }
+        }
+
+        // Update the streaming message bubble with new content
         function updateStreamingMessage(content) {
             if (!streamingMessageElement) {
                 createStreamingMessage();
             }
 
-            // Find the bubble content element
-            // streamingMessageElement is now the bubble itself (merged structure)
+            // Concern 1: Update message bubble content
             if (streamingMessageElement) {
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
-                // Content will be properly formatted when finalized
                 streamingMessageElement.textContent = content;
                 
                 // Add streaming class for visual cursor indicator
@@ -7786,21 +7799,10 @@
                     streamingMessageElement.classList.add('wp-mcp-ai-chat__bubble--streaming');
                 }
                 
-                // Also update status area with streaming preview for better visibility
-                // Show a truncated preview of the streaming content
-                if (content && content.length > 0) {
-                    const preview = content.length > STREAMING_STATUS_PREVIEW_LENGTH 
-                        ? content.substring(0, STREAMING_STATUS_PREVIEW_LENGTH) + '…' 
-                        : content;
-                    
-                    setStatus(state.container, {
-                        message: preview,
-                        type: 'text-stream',
-                        showTime: false
-                    });
-                }
+                // Concern 2: Update status area (delegated to separate function)
+                updateStreamingStatus(content);
                 
-                // Auto-scroll to keep the streaming content visible
+                // Concern 3: Auto-scroll to keep content visible
                 scrollBatcher.scrollToBottom(state.messagesEl);
             } else if (window.console && console.warn) {
                 console.warn('[WP oOS] Streaming message element not found');
