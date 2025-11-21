@@ -2875,20 +2875,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$thinking_text = '';
 			$thinking_provider_format = 'gemini'; // Default to Gemini format
 
-			// Check for Gemini thinking text
-			if ( ! empty( $response['choices'][0]['message']['thinking'] ) ) {
-				$thinking_text = $response['choices'][0]['message']['thinking'];
-				$thinking_provider_format = 'gemini';
-			}
-			// Check for OpenAI reasoning_content (future-ready)
-			elseif ( ! empty( $response['choices'][0]['message']['reasoning_content'] ) ) {
-				$thinking_text = $response['choices'][0]['message']['reasoning_content'];
-				$thinking_provider_format = 'openai';
-			}
-			// Check for OpenAI reasoning (alternative field)
-			elseif ( ! empty( $response['choices'][0]['message']['reasoning'] ) ) {
-				$thinking_text = $response['choices'][0]['message']['reasoning'];
-				$thinking_provider_format = 'openai';
+			// Validate response structure before accessing nested keys
+			if ( ! empty( $response['choices'] ) && is_array( $response['choices'] ) && isset( $response['choices'][0]['message'] ) ) {
+				$message = $response['choices'][0]['message'];
+
+				// Check for Gemini thinking text
+				if ( ! empty( $message['thinking'] ) ) {
+					$thinking_text = $message['thinking'];
+					$thinking_provider_format = 'gemini';
+				}
+				// Check for OpenAI reasoning_content (future-ready)
+				elseif ( ! empty( $message['reasoning_content'] ) ) {
+					$thinking_text = $message['reasoning_content'];
+					$thinking_provider_format = 'openai';
+				}
+				// Check for OpenAI reasoning (alternative field)
+				elseif ( ! empty( $message['reasoning'] ) ) {
+					$thinking_text = $message['reasoning'];
+					$thinking_provider_format = 'openai';
+				}
 			}
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
