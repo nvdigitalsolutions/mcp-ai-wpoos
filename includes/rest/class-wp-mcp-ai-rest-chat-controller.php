@@ -189,11 +189,23 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_chat_transcript_get' ),
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
-						'session_key' => array(
+						'session_key'  => array(
 							'description'       => __( 'Session key for the transcript.', 'wp-mcp-ai' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+						),
+						'user_id'      => array(
+							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
+						),
+						'assistant_id' => array(
+							'description'       => __( 'Assistant ID to filter transcripts by.', 'wp-mcp-ai' ),
+							'type'              => 'integer',
+							'required'          => false,
+							'sanitize_callback' => 'absint',
 						),
 					),
 				),
