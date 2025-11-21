@@ -49,6 +49,12 @@
     const VOICE_CHAT_PROCESSING_CLASS = audioService && audioService.VOICE_CHAT_PROCESSING_CLASS || 'wp-mcp-ai-chat__voice-chat--processing';
     const MAX_TRANSCRIBE_BYTES = audioService && audioService.MAX_TRANSCRIBE_BYTES || 26214400;
 
+    // Tool execution timer constants
+    // Duration (in milliseconds) to keep tool execution timer visible before allowing
+    // "thinking" status to replace it. This ensures users see the timer for all tools,
+    // not just async tools.
+    const TOOL_TIMER_DISPLAY_DURATION = 1500;
+
     // Other constants
     const TOOL_SHORTCUT_CONTAINER_CLASS = 'wp-mcp-ai-chat__tool-shortcuts';
     const TOOL_SHORTCUT_BUTTON_CLASS = 'wp-mcp-ai-chat__tool-shortcut';
@@ -8557,9 +8563,9 @@
             }
             
             // Don't override tool execution status if a tool recently completed
-            // Allow at least 1500ms (1.5 seconds) for the tool timer to be visible
+            // Allow at least TOOL_TIMER_DISPLAY_DURATION for the tool timer to be visible
             // This ensures all tools show their execution timer, not just async tools
-            if (state.lastToolResultTime && (Date.now() - state.lastToolResultTime < 1500)) {
+            if (state.lastToolResultTime && (Date.now() - state.lastToolResultTime < TOOL_TIMER_DISPLAY_DURATION)) {
                 // Tool just completed, keep the tool status visible for a moment
                 return;
             }
