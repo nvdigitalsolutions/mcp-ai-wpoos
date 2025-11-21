@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-interface.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 
 /**
  * Generates videos from text prompts using Google's Veo 3.1 model.
@@ -192,16 +193,16 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
 		if ( $save_to_media ) {
-			$attachment_id = $this->save_video_to_media( $result, $user_id );
+			$save_result = $this->save_video_to_media( $result, $user_id );
 
-			if ( is_wp_error( $attachment_id ) ) {
-				return $attachment_id;
+			if ( is_wp_error( $save_result ) ) {
+				return $save_result;
 			}
 
 			return array(
 				'success'       => true,
-				'attachment_id' => $attachment_id,
-				'url'           => wp_get_attachment_url( $attachment_id ),
+				'attachment_id' => $save_result['attachment_id'],
+				'url'           => $save_result['url'],
 				'prompt'        => $result['prompt'],
 				'duration'      => $result['duration'],
 				'aspect_ratio'  => $result['aspect_ratio'],
@@ -211,7 +212,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'message'       => sprintf(
 					/* translators: %d: attachment ID */
 					__( 'Video generated successfully and saved as attachment ID %d.', 'wp-mcp-ai' ),
-					$attachment_id
+					$save_result['attachment_id']
 				),
 			);
 		}
@@ -407,7 +408,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			)
 		);
 
-		return $attachment_id;
+		// Return attachment result with local WordPress URL.
+		// Uses utility class for SoC compliance and code reusability.
+		return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
 	}
 
 	/**

@@ -23,6 +23,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+
 /**
  * Gemini Video Generation Service class
  *
@@ -786,19 +788,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 					: true;
 
 				if ( $save_to_media ) {
-					$attachment_id = $this->save_video_to_media( 
+					$save_result = $this->save_video_to_media( 
 						$result, 
 						isset( $metadata['args']['user_id'] ) ? $metadata['args']['user_id'] : 0 
 					);
 
-					if ( is_wp_error( $attachment_id ) ) {
+					if ( is_wp_error( $save_result ) ) {
 						$metadata['status'] = 'failed';
-						$metadata['error']  = $attachment_id->get_error_message();
+						$metadata['error']  = $save_result->get_error_message();
 					} else {
 						$metadata['status'] = 'completed';
 						$metadata['result'] = array(
-							'attachment_id' => $attachment_id,
-							'url'           => wp_get_attachment_url( $attachment_id ),
+							'attachment_id' => $save_result['attachment_id'],
+							'url'           => $save_result['url'],
 							'prompt'        => $result['prompt'],
 							'duration'      => $result['duration'],
 							'aspect_ratio'  => $result['aspect_ratio'],
@@ -808,8 +810,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 						);
 					}
 				} else {
+					// Video not saved to media library - return data URL instead of Google URL.
+					$video_base64 = base64_encode( $result['video_data'] );
+					$data_url     = 'data:video/mp4;base64,' . $video_base64;
+					
 					$metadata['status'] = 'completed';
-					$metadata['result'] = $result;
+					$metadata['result'] = array(
+						'video_url'    => $data_url,
+						'prompt'       => $result['prompt'],
+						'duration'     => $result['duration'],
+						'aspect_ratio' => $result['aspect_ratio'],
+						'resolution'   => $result['resolution'],
+						'model'        => $result['model'],
+						'provider'     => $result['provider'],
+					);
 				}
 			}
 
@@ -977,6 +991,8 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			)
 		);
 
-		return $attachment_id;
+		// Return attachment result with local WordPress URL.
+		// Uses utility class for SoC compliance and code reusability.
+		return WP_MCP_AI_Media_URL_Utils::build_attachment_result( $attachment_id, $upload );
 	}
 }
