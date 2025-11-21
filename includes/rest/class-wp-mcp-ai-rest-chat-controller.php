@@ -460,13 +460,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$user_id = absint( $request->get_param( 'user_id' ) );
-
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
-		}
-
-		if ( ! $user_id ) {
+		// The permissions check has already validated and set the user_id on the request.
+		// For CCT queries, this user_id maps to cct_author_id in the database.
+		// We must preserve user_id = 0 for guest users and not override with get_current_user_id().
+		// This allows admins to view other users' transcripts or guest transcripts.
+		$user_id = $request->get_param( 'user_id' );
+		if ( null === $user_id || '' === $user_id ) {
 			WP_MCP_AI_Logger::log_event(
 				'debug',
 				'handle_chat_transcripts: No user ID available',
@@ -483,6 +482,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				array( 'status' => 400 )
 			);
 		}
+
+		// Sanitize user_id as integer. This will be used to query cct_author_id in the CCT table.
+		$user_id = absint( $user_id );
 
 		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
@@ -775,7 +777,6 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-		$user_id      = absint( $request->get_param( 'user_id' ) );
 
 		if ( '' === $session_key ) {
 			return new WP_Error(
@@ -785,11 +786,12 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		if ( ! $user_id ) {
-			$user_id = get_current_user_id();
-		}
-
-		if ( ! $user_id ) {
+		// The permissions check has already validated and set the user_id on the request.
+		// For CCT queries, this user_id maps to cct_author_id in the database.
+		// We must preserve user_id = 0 for guest users and not override with get_current_user_id().
+		// This allows admins to view other users' transcripts or guest transcripts.
+		$user_id = $request->get_param( 'user_id' );
+		if ( null === $user_id || '' === $user_id ) {
 			WP_MCP_AI_Logger::log_event(
 				'debug',
 				'handle_chat_transcript_get: No user ID available',
@@ -807,6 +809,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				array( 'status' => 400 )
 			);
 		}
+
+		// Sanitize user_id as integer. This will be used to query cct_author_id in the CCT table.
+		$user_id = absint( $user_id );
 
 		WP_MCP_AI_Logger::log_event(
 			'debug',
