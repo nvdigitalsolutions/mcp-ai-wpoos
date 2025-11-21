@@ -8404,55 +8404,6 @@
                                 if (!fullContent) {
                                     let finalText = '';
                                     
-                                    /**
-                                     * Helper function to extract text from various content formats
-                                     * Handles: string, object with text property, array of content items
-                                     * @param {*} content - Content to extract text from
-                                     * @returns {string} - Extracted text or empty string
-                                     */
-                                    function extractTextFromContent(content) {
-                                        if (!content) {
-                                            return '';
-                                        }
-                                        
-                                        // If already a string, return it
-                                        if (typeof content === 'string') {
-                                            return content;
-                                        }
-                                        
-                                        // Handle array of content items (some providers return this)
-                                        if (Array.isArray(content)) {
-                                            let text = '';
-                                            for (let i = 0; i < content.length; i++) {
-                                                const item = content[i];
-                                                if (typeof item === 'string') {
-                                                    text += item;
-                                                } else if (item && typeof item === 'object') {
-                                                    // Handle nested object in array
-                                                    if (typeof item.text === 'string') {
-                                                        text += item.text;
-                                                    } else if (typeof item.content === 'string') {
-                                                        text += item.content;
-                                                    }
-                                                }
-                                            }
-                                            return text;
-                                        }
-                                        
-                                        // Handle object with text property (common format)
-                                        if (typeof content === 'object') {
-                                            if (typeof content.text === 'string') {
-                                                return content.text;
-                                            }
-                                            // Some formats nest text deeper
-                                            if (typeof content.content === 'string') {
-                                                return content.content;
-                                            }
-                                        }
-                                        
-                                        return '';
-                                    }
-                                    
                                     // Try to extract text from data.data structure
                                     // Handle OpenAI/Ollama format - choices[0].message.content
                                     if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
@@ -10050,6 +10001,60 @@
             return renderContentPiece(content);
         }
 
+        return '';
+    }
+
+    /**
+     * Extract text content from various AI provider response formats.
+     * Handles string content, object content with text/content properties,
+     * and arrays of content items.
+     * 
+     * This is used during SSE response parsing to normalize different
+     * provider formats (OpenAI, Ollama, etc.) into plain text.
+     * 
+     * @param {*} content - Content to extract text from (string, object, or array)
+     * @return {string} Extracted text or empty string
+     */
+    function extractTextFromContent(content) {
+        if (!content) {
+            return '';
+        }
+        
+        // If already a string, return it
+        if (typeof content === 'string') {
+            return content;
+        }
+        
+        // Handle array of content items (some providers return this)
+        if (Array.isArray(content)) {
+            let text = '';
+            for (let i = 0; i < content.length; i++) {
+                const item = content[i];
+                if (typeof item === 'string') {
+                    text += item;
+                } else if (item && typeof item === 'object') {
+                    // Handle nested object in array
+                    if (typeof item.text === 'string') {
+                        text += item.text;
+                    } else if (typeof item.content === 'string') {
+                        text += item.content;
+                    }
+                }
+            }
+            return text;
+        }
+        
+        // Handle object with text property (common format)
+        if (typeof content === 'object') {
+            if (typeof content.text === 'string') {
+                return content.text;
+            }
+            // Some formats nest text deeper
+            if (typeof content.content === 'string') {
+                return content.content;
+            }
+        }
+        
         return '';
     }
 
