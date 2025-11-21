@@ -1030,10 +1030,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 					// Send [DONE] marker.
-					echo "data: [DONE]\n\n";
-					if ( function_exists( 'flush' ) ) {
-						flush();
-					}
+					$this->sse_handler->send_sse_done();
 					exit;
 				}
 
@@ -1044,10 +1041,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$status = isset( $job_details['status'] ) ? (string) $job_details['status'] : '';
 				if ( $this->is_terminal_job_status( $status ) ) {
 					// Job finished - send [DONE] and exit.
-					echo "data: [DONE]\n\n";
-					if ( function_exists( 'flush' ) ) {
-						flush();
-					}
+					$this->sse_handler->send_sse_done();
 					exit;
 				}
 
@@ -1068,10 +1062,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			);
 
 			// Send [DONE] marker.
-			echo "data: [DONE]\n\n";
-			if ( function_exists( 'flush' ) ) {
-				flush();
-			}
+			$this->sse_handler->send_sse_done();
 			exit;
 		}
 
