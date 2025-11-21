@@ -65,7 +65,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @var int
 	 */
-	const MIN_DURATION = 4;
+	const MIN_DURATION = 5;
 
 	/**
 	 * Maximum video duration in seconds
@@ -79,7 +79,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *
 	 * @var int
 	 */
-	const DEFAULT_DURATION = 4;
+	const DEFAULT_DURATION = 5;
 
 	/**
 	 * Required duration for 1080p resolution (2025 API requirement)
@@ -145,7 +145,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     Video generation arguments.
 	 *
 	 *     @type string $prompt           Video description/prompt (required).
-	 *     @type int    $duration         Duration in seconds (4-8, default 4).
+	 *     @type int    $duration         Duration in seconds (5-8, default 5).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type string $negative_prompt  What to avoid in generation.
@@ -377,7 +377,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Adjusts constraints based on the model being used (Veo 2.0 default vs Veo 3.1 optional).
 	 * Duration validation is performed in multiple stages:
 	 * 1. Initial validation: Convert to integer and check range based on model
-	 * 2. Model-specific adjustments: Both models support 4-8s, 1080p requires 8s for Veo 3.1
+	 * 2. Model-specific adjustments: Both models support 5-8s, 1080p requires 8s for Veo 3.1
 	 * 3. Final validation: Safety check to ensure valid duration before API call
 	 *
 	 * @param array  $args  Generation arguments.
@@ -394,9 +394,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
-		// Duration validation - same for both models (4-8 seconds).
+		// Duration validation - same for both models (5-8 seconds).
 		// Stage 1: Initial validation and sanitization.
-		$min_duration = self::MIN_DURATION; // Both models support 4-8 seconds
+		$min_duration = self::MIN_DURATION; // Both models support 5-8 seconds
 		$duration     = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
 
 		// Adjust duration if below model minimum.
@@ -490,7 +490,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Note: 'personGeneration' parameter is not supported by Veo 3.1 API - removed to prevent API errors.
 
 		// Stage 3: Final validation as a safety check.
-		// This ensures duration is always within valid range (4-8 seconds) even if there are edge cases
+		// This ensures duration is always within valid range (5-8 seconds) even if there are edge cases
 		// in the validation logic above. This prevents "durationSeconds is out of bound" API errors.
 		if ( ! is_int( $parameters['durationSeconds'] ) || $parameters['durationSeconds'] < self::MIN_DURATION || $parameters['durationSeconds'] > self::MAX_DURATION ) {
 			$parameters['durationSeconds'] = self::DEFAULT_DURATION;
