@@ -37,13 +37,11 @@ class WP_MCP_AI_Veo_Video_Generation_No_Audio_Test extends WP_UnitTestCase {
 			'pre_http_request',
 			function ( $preempt, $args, $url ) use ( &$captured_request ) {
 				if ( strpos( $url, 'predictLongRunning' ) !== false ) {
-					// Capture the request if a reference was provided.
-					if ( null !== $captured_request || is_array( $captured_request ) ) {
-						$captured_request = array(
-							'args' => $args,
-							'url'  => $url,
-						);
-					}
+					// Always capture the request when this variable is in scope.
+					$captured_request = array(
+						'args' => $args,
+						'url'  => $url,
+					);
 
 					return array(
 						'response' => array(
