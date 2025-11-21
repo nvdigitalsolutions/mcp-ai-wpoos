@@ -2870,13 +2870,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Extract thinking text from the response if present (e.g., Gemini 2.0 Flash Thinking mode).
 			$thinking_text = '';
-			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['thinking'] ) ) {
+			if ( ! empty( $response['choices'][0]['message']['thinking'] ) ) {
 				$thinking_text = $response['choices'][0]['message']['thinking'];
 			}
 
 			// Send thinking text in chunks BEFORE sending main content (if present).
 			// This allows the client to display thinking text in the status section.
-			if ( ! empty( $thinking_text ) && is_string( $thinking_text ) ) {
+			if ( is_string( $thinking_text ) && '' !== $thinking_text ) {
 				$chunk_size = self::STREAMING_CHUNK_SIZE;
 				$text_len   = $this->mb_strlen( $thinking_text );
 
