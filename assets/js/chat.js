@@ -8556,6 +8556,14 @@
                 return;
             }
             
+            // Don't override tool execution status if a tool recently completed
+            // Allow at least 1500ms (1.5 seconds) for the tool timer to be visible
+            // This ensures all tools show their execution timer, not just async tools
+            if (state.lastToolResultTime && (Date.now() - state.lastToolResultTime < 1500)) {
+                // Tool just completed, keep the tool status visible for a moment
+                return;
+            }
+            
             setStatus(state.container, {
                 message: message,
                 type: 'thinking',
@@ -8645,6 +8653,11 @@
                 // Don't display the pending message here - waitForAsyncToolResult handles it
                 return;
             }
+            
+            // Track when the last tool result was received
+            // This helps prevent the "thinking" status from immediately overwriting
+            // the tool execution timer, ensuring it's visible for all tools
+            state.lastToolResultTime = Date.now();
             
             // Extract attachments from tool result (e.g., generated images, audio files)
             const normalized = typeof result === 'object' && result !== null ? 
