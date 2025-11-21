@@ -566,8 +566,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		// Save to transient (24 hour expiry).
 		set_transient( self::ASYNC_OP_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
 
-		// Schedule first poll immediately.
-		wp_schedule_single_event( time(), self::CRON_POLL_HOOK, array( $job_id ) );
+		// Schedule first poll with a 1-second delay to ensure transient is saved.
+		// This prevents race condition where cron executes before database commit.
+		$first_poll_time = time() + 1;
+		wp_schedule_single_event( $first_poll_time, self::CRON_POLL_HOOK, array( $job_id ) );
 
 		// Record cron job in cron manager for visibility.
 		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
@@ -576,7 +578,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 				self::CRON_POLL_HOOK,
 				array( $job_id ),
 				'single',
-				time(),
+				$first_poll_time,
 				$user_id
 			);
 		}

@@ -55,6 +55,13 @@ class WP_MCP_AI_Chat_Service {
 	private $tool_registry;
 
 	/**
+	 * Tool Execution Orchestrator instance
+	 *
+	 * @var WP_MCP_AI_Tool_Execution_Orchestrator|null
+	 */
+	private $tool_orchestrator;
+
+	/**
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Language_Model_Router $router                Language model router.
@@ -72,6 +79,7 @@ class WP_MCP_AI_Chat_Service {
 		$this->rate_limiter         = $rate_limiter;
 		$this->token_budget_manager = $token_budget_manager;
 		$this->tool_registry        = $tool_registry;
+		$this->tool_orchestrator    = null; // Lazy loaded.
 	}
 
 	/**
@@ -410,8 +418,9 @@ class WP_MCP_AI_Chat_Service {
 				continue;
 			}
 
-			// Execute tool via registry with iteration context.
-			$tool_result = $this->tool_registry->execute_tool(
+			// Execute tool via orchestrator (routes between sync/async).
+			$orchestrator = $this->get_tool_orchestrator();
+			$tool_result  = $orchestrator->execute_tool(
 				$tool_name,
 				$arguments,
 				array(
@@ -419,6 +428,7 @@ class WP_MCP_AI_Chat_Service {
 					'assistant_config' => $assistant_config,
 					'iteration'        => $iteration,
 					'max_iterations'   => $max_iterations,
+					'user_id'          => get_current_user_id(),
 				)
 			);
 
@@ -579,5 +589,21 @@ class WP_MCP_AI_Chat_Service {
 			$messages,
 			$options
 		);
+	}
+
+	/**
+	 * Get tool execution orchestrator instance (lazy loaded)
+	 *
+	 * @return WP_MCP_AI_Tool_Execution_Orchestrator
+	 */
+	private function get_tool_orchestrator() {
+		if ( null === $this->tool_orchestrator ) {
+			if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
+			}
+			$this->tool_orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->tool_registry );
+		}
+
+		return $this->tool_orchestrator;
 	}
 }

@@ -97,6 +97,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					'description'    => __( 'Allow AI agents to create and manage scheduled background tasks with inherited budget constraints.', 'wp-mcp-ai' ),
 					'default'        => true,
 				),
+				'enable_auto_async_execution'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Automatic Async Tool Execution', 'wp-mcp-ai' ),
+					'checkbox_label' => __( 'Automatically queue long-running tools in background', 'wp-mcp-ai' ),
+					'description'    => __( 'Automatically execute long-running tools (video generation, image generation, etc.) asynchronously via WordPress cron to prevent PHP timeouts. When enabled, tools with "async", "long-running", or "may-timeout" capability flags will be queued immediately and return a job_id for status polling.', 'wp-mcp-ai' ),
+					'default'        => true,
+				),
 				'cron_job_retention_period'       => array(
 					'type'        => 'select',
 					'label'       => __( 'Cron Job History Retention', 'wp-mcp-ai' ),
