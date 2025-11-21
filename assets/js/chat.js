@@ -1090,6 +1090,50 @@
      * @returns {Promise<{success: boolean, error?: string}>} Promise that resolves with save status
      */
     /**
+     * Strip UI-only metadata from a message for API submission.
+     * Removes fields like 'display' that are used for UI rendering but not part of the API schema.
+     * 
+     * @param {Object} message - Original message object
+     * @return {Object} Cleaned message object with only API-compatible fields
+     */
+    function stripMessageDisplayMetadata(message) {
+        // Handle invalid input
+        if (!message || typeof message !== 'object') {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] stripMessageDisplayMetadata: Invalid message object', message);
+            }
+            return null;
+        }
+
+        // Validate required field 'role' is present
+        if (!message.role) {
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] stripMessageDisplayMetadata: Message missing required "role" field', message);
+            }
+            return null;
+        }
+
+        // Create a new object with only API-compatible fields
+        const cleanMessage = {
+            role: message.role,
+            content: message.content
+        };
+
+        // Preserve other API-required fields if present
+        if (message.tool_calls !== undefined) {
+            cleanMessage.tool_calls = message.tool_calls;
+        }
+        if (message.tool_call_id !== undefined) {
+            cleanMessage.tool_call_id = message.tool_call_id;
+        }
+        if (message.name !== undefined) {
+            cleanMessage.name = message.name;
+        }
+
+        return cleanMessage;
+    }
+
+    /**
      * Enhanced function to save conversation to CCT (Custom Content Type) with retry logic.
      * This function includes timeout support, retry logic, and better error handling.
      * 
@@ -1130,10 +1174,16 @@
         // Otherwise fall back to config.assistantId for backwards compatibility
         const assistantIdToUse = state.originalAssistantId || state.config.assistantId;
 
+        // Strip UI-only metadata (like 'display' field) from messages before sending to API
+        // The REST API schema only accepts specific fields and will reject extra properties
+        const cleanMessages = state.conversation
+            .map(stripMessageDisplayMetadata)
+            .filter(function(msg) { return msg !== null; });
+
         const payload = {
             assistant_id: assistantIdToUse,
             session_key: state.config.sessionKey,
-            messages: state.conversation
+            messages: cleanMessages
         };
 
         /**
