@@ -2871,7 +2871,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Simulate streaming by sending text content in chunks before final response.
 			// Extract text content from the response to send progressively.
 			$text_content = '';
-			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0]['message']['content'] ) ) {
+			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['content'] ) ) {
 				$text_content = $response['choices'][0]['message']['content'];
 			} elseif ( isset( $response['content'] ) ) {
 				$text_content = $response['content'];
@@ -2881,17 +2881,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
 				$chunk_size = self::STREAMING_CHUNK_SIZE;
 				$text_len   = mb_strlen( $text_content, 'UTF-8' );
-				$chunks     = array();
-
-				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
-					$chunks[] = mb_substr( $text_content, $i, $chunk_size, 'UTF-8' );
-				}
 
 				// Check once if usleep is available before the loop.
 				$can_sleep = function_exists( 'usleep' );
 
-				// Send chunks with OpenAI-style delta format.
-				foreach ( $chunks as $chunk ) {
+				// Send chunks directly without building array (memory efficient).
+				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
+					$chunk = mb_substr( $text_content, $i, $chunk_size, 'UTF-8' );
+
 					$this->send_sse_event(
 						'message',
 						array(
