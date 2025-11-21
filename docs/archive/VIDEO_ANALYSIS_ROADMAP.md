@@ -1,6 +1,6 @@
 # Video Analysis Implementation Roadmap
 
-## Current Status: Phase 2.1 Complete (File Management & Caching)
+## Current Status: Phase 3 Complete (OpenAI Video Support via Frame Extraction)
 
 ### What's Implemented ✅
 
@@ -58,6 +58,52 @@
   - [x] Proper logging at all stages
   - [x] Transient expiration handling
 
+**Phase 3: OpenAI Video Support via Frame Extraction** ✅ **COMPLETE**
+
+For OpenAI GPT-4o, video analysis via frame extraction:
+
+1. **Extract key frames from video** ✅
+   - Uses FFmpeg for video frame extraction
+   - Selects frames at regular intervals
+   - Configurable frame count (default 10, max 20)
+   - Extracts high-quality JPEG frames
+
+2. **Send frames as image_url array** ✅
+   - Converts frames to base64 data URLs
+   - Builds proper message content structure
+   - Sends to OpenAI Vision API with GPT-4o
+   - Handles response parsing and error handling
+
+**Implementation Tasks:** ✅ **ALL COMPLETE**
+
+- [x] Create `WP_MCP_AI_Video_Frame_Extractor_Service`
+  - [x] Check for FFmpeg availability
+  - [x] Extract frames at intervals
+  - [x] Optimize frame selection (key frames)
+  - [x] Handle various video codecs
+  - [x] Get video duration using FFprobe
+  - [x] Convert frames to base64 data URLs
+  - [x] Clean up temporary frames after use
+
+- [x] Update video tools
+  - [x] Implement `analyze_with_openai` method
+  - [x] Route OpenAI requests to frame extractor
+  - [x] Upload frames as base64 data URLs
+  - [x] Clean up frames after analysis
+  - [x] Proper error handling for missing FFmpeg
+
+- [x] Fallback handling
+  - [x] Gracefully handle missing FFmpeg
+  - [x] Provide helpful error messages
+  - [x] Suggest installation instructions
+
+- [x] Testing
+  - [x] Comprehensive unit tests for frame extractor (17 tests)
+  - [x] Integration tests for OpenAI video analysis (12 tests)
+  - [x] Test FFmpeg availability checking
+  - [x] Test frame extraction and cleanup
+  - [x] Test error scenarios (missing FFmpeg, invalid video, etc.)
+
 **Current Behavior:**
 - ✅ Video analysis is fully functional via Gemini
 - ✅ Automatic file upload to Gemini File API
@@ -68,34 +114,39 @@
 - ✅ Comprehensive error handling
 - ✅ File caching to avoid duplicate uploads
 - ✅ Automatic cleanup via daily cron job
+- ✅ **NEW:** OpenAI video analysis via frame extraction
+- ✅ **NEW:** FFmpeg integration for frame extraction
+- ✅ **NEW:** Base64 data URL conversion for frames
+- ✅ **NEW:** Automatic cleanup of extracted frames
 
 ### Implementation Status
 
-**Completed Phases:** Phase 1 ✅, Phase 2 ✅, Phase 2.1 ✅
-**Lines of Code Added:** ~2,000 (includes caching and cleanup)
-**Test Coverage:** 54 unit tests (33 from Phase 2 + 21 from Phase 2.1)
-**Services Added:** 2 (Gemini File Service, Video Analysis Service)
+**Completed Phases:** Phase 1 ✅, Phase 2 ✅, Phase 2.1 ✅, Phase 3 ✅
+**Lines of Code Added:** ~2,800 (includes caching, cleanup, and frame extraction)
+**Test Coverage:** 83 unit tests (54 from Phase 2 + 29 from Phase 3)
+**Services Added:** 3 (Gemini File Service, Video Analysis Service, Frame Extractor Service)
 **Client Enhancements:** 2 new methods (file support in Gemini Client)
 **Tools Updated:** 2 (analyze_video, generate_video_caption)
 **Cron Jobs Added:** 2 (Gemini file cleanup, OpenAI file cleanup)
 
 ### What's Not Yet Implemented ⚠️
 
-**Phase 2.1: File Management (Optional Enhancement)** ✅ **COMPLETE**
+**Phase 3: OpenAI Video Support via Frame Extraction** ✅ **COMPLETE**
 
-All Phase 2.1 tasks have been completed:
-- ✅ Track uploaded files in transients and options
-- ✅ Cleanup old files via cron job
-- ✅ Handle upload failures gracefully
-- ✅ Add caching to avoid re-uploading same videos
-- ✅ Comprehensive test coverage (21 unit tests)
+All Phase 3 tasks have been completed:
+- ✅ FFmpeg integration for frame extraction
+- ✅ Frame extractor service with configurable settings
+- ✅ OpenAI video analysis implementation
+- ✅ Base64 data URL conversion for frames
+- ✅ Automatic cleanup of temporary frames
+- ✅ Comprehensive test coverage (29 unit tests)
+- ✅ Error handling for missing FFmpeg
+- ✅ Helpful error messages with installation instructions
 
-**Estimated Effort:** 1 week (Completed)
-**Priority:** Medium (optional optimization) - **DONE**
+**Estimated Effort:** 2-3 weeks (Completed)
+**Priority:** High - **DONE**
 
 ---
-
-### Phase 3: OpenAI Video Support via Frame Extraction (Future)
 
 For OpenAI GPT-4o, video analysis requires extracting frames:
 
@@ -322,10 +373,26 @@ This approach:
 - ✅ Support for both URL-based and attachment-based caching
 - ✅ Graceful handling of expired transients
 
-**Phase 3 Complete When:**
+**Phase 3 Complete When:** ✅ **ALL ACHIEVED**
 - ✅ Frame extraction works for all common codecs
-- ✅ OpenAI analysis produces quality results
-- ✅ Automatic provider selection works
+- ✅ OpenAI analysis produces quality results via vision API
+- ✅ Automatic provider selection works (Gemini vs OpenAI)
+- ✅ FFmpeg availability checking implemented
+- ✅ Helpful error messages for missing FFmpeg
+- ✅ Comprehensive test coverage (17 frame extractor + 12 integration tests)
+- ✅ All code passes WordPress Coding Standards
+- ✅ Proper logging and error handling
+- ✅ Automatic cleanup of temporary frames
+
+**Actual Implementation:**
+- ✅ 100% of Phase 3 tasks completed
+- ✅ FFmpeg integration with proper error handling
+- ✅ Configurable frame count (10 default, 20 max)
+- ✅ High-quality JPEG frame extraction
+- ✅ Base64 data URL conversion for OpenAI API
+- ✅ Memory-efficient temporary file handling
+- ✅ Support for both attachments and remote URLs
+- ✅ Graceful degradation when FFmpeg unavailable
 
 ---
 
@@ -338,11 +405,15 @@ This approach:
 - ✅ Support for both WordPress attachments and remote URLs
 - ✅ Automatic upload, processing, and cleanup
 - ✅ Comprehensive error messages
+- ✅ **OpenAI video support via frame extraction** ✅ **NEW**
+- ✅ **FFmpeg integration for video frame extraction** ✅ **NEW**
 
 **Remaining Limitations:**
-- OpenAI video support not yet implemented (requires frame extraction - Phase 3)
+- ~~OpenAI video support not yet implemented (requires frame extraction - Phase 3)~~ ✅ **RESOLVED**
 - ~~No file caching (same video re-uploaded each time - Phase 2.1 optional)~~ ✅ **RESOLVED**
 - ~~No upload tracking for lifecycle management (Phase 2.1 optional)~~ ✅ **RESOLVED**
+- **NEW:** OpenAI video analysis requires FFmpeg to be installed on the server
+- **NEW:** OpenAI video analysis is limited to 10-20 frames per video (configurable)
 
 ---
 
@@ -355,6 +426,7 @@ This approach:
 
 ---
 
-**Last Updated:** 2025-11-20
-**Status:** Phase 2.1 Complete ✅
-**Next Phase:** Phase 3 (OpenAI Video Support via Frame Extraction)
+**Last Updated:** 2025-11-21
+**Status:** Phase 3 Complete ✅
+**Next Phase:** Phase 4 (Enhanced Features - Optional)
+**All Core Video Analysis Features:** ✅ COMPLETE

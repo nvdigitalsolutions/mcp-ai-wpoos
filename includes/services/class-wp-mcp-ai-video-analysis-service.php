@@ -49,6 +49,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 	 *     @type string   $prompt        Analysis prompt.
 	 *     @type string   $provider      AI provider ('gemini', 'openai').
 	 *     @type string   $model         Model identifier (optional, uses default if not specified).
+	 *     @type int      $frame_count   Number of frames to extract for OpenAI (default 10, max 20).
 	 * }
 	 * @return array|WP_Error Analysis result with text, usage, model, and provider metadata.
 	 */
@@ -58,6 +59,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		$prompt        = isset( $args['prompt'] ) ? $args['prompt'] : '';
 		$provider      = isset( $args['provider'] ) ? $args['provider'] : 'gemini';
 		$model         = isset( $args['model'] ) ? $args['model'] : '';
+		$frame_count   = isset( $args['frame_count'] ) ? absint( $args['frame_count'] ) : 10;
 
 		// Validate inputs.
 		if ( empty( $video_url ) && ! $attachment_id ) {
@@ -74,7 +76,7 @@ class WP_MCP_AI_Video_Analysis_Service {
 		}
 
 		if ( 'openai' === $provider ) {
-			return $this->analyze_with_openai( $video_url, $attachment_id, $prompt, $model );
+			return $this->analyze_with_openai( $video_url, $attachment_id, $prompt, $model, $frame_count );
 		}
 
 		return new WP_Error(
@@ -232,22 +234,150 @@ class WP_MCP_AI_Video_Analysis_Service {
 	}
 
 	/**
-	 * Analyze video using OpenAI (via frame extraction)
-	 *
-	 * Note: Frame extraction not yet implemented.
+	 * Analyze video using OpenAI Vision API with frame extraction
 	 *
 	 * @param string   $video_url     Video URL.
 	 * @param int|null $attachment_id WordPress attachment ID.
 	 * @param string   $prompt        Analysis prompt.
 	 * @param string   $model         Model identifier.
+	 * @param int      $frame_count   Number of frames to extract (default 10).
 	 * @return array|WP_Error Analysis result.
 	 */
-	protected function analyze_with_openai( $video_url, $attachment_id, $prompt, $model = '' ) {
-		return new WP_Error(
-			'wp_mcp_ai_not_implemented',
-			__( 'Video frame extraction for OpenAI is not yet implemented. Please use Gemini for video analysis.', 'wp-mcp-ai' ),
-			array( 'status' => 501 )
+	protected function analyze_with_openai( $video_url, $attachment_id, $prompt, $model = '', $frame_count = 10 ) {
+		// Get file information.
+		$file_info = $this->get_file_info( $video_url, $attachment_id );
+		if ( is_wp_error( $file_info ) ) {
+			return $file_info;
+		}
+
+		$file_path = $file_info['file_path'];
+		$temp_file = $file_info['temp_file'];
+
+		// Initialize frame extractor service.
+		$frame_extractor = new WP_MCP_AI_Video_Frame_Extractor_Service();
+
+		// Check if FFmpeg is available.
+		if ( ! $frame_extractor->is_ffmpeg_available() ) {
+			if ( $temp_file && file_exists( $file_path ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+				unlink( $file_path );
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_ffmpeg_not_available',
+				__( 'FFmpeg is not installed on this server. Video analysis for OpenAI requires FFmpeg to extract frames. Please install FFmpeg or use Gemini for video analysis.', 'wp-mcp-ai' ),
+				array(
+					'status'  => 500,
+					'actions' => array(
+						'install_ffmpeg'   => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
+						'use_gemini'       => __( 'Alternatively, use Gemini which supports direct video analysis without FFmpeg.', 'wp-mcp-ai' ),
+					),
+				)
+			);
+		}
+
+		// Extract frames from video with configurable frame count.
+		$frame_paths = $frame_extractor->extract_frames( $file_path, $frame_count );
+
+		// Clean up temporary video file if downloaded.
+		if ( $temp_file && file_exists( $file_path ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.unlink_unlink
+			unlink( $file_path );
+		}
+
+		if ( is_wp_error( $frame_paths ) ) {
+			return $frame_paths;
+		}
+
+		// Convert frames to base64 data URLs.
+		$base64_frames = $frame_extractor->frames_to_base64( $frame_paths );
+
+		if ( empty( $base64_frames ) ) {
+			$frame_extractor->cleanup_frames( $frame_paths );
+			return new WP_Error(
+				'wp_mcp_ai_no_frames',
+				__( 'No frames could be extracted from the video.', 'wp-mcp-ai' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		// Build message content with text prompt and frame images.
+		$content = array(
+			array(
+				'type' => 'text',
+				'text' => ! empty( $prompt ) ? $prompt : __( 'Analyze this video by examining the extracted frames. Describe what you see, including scenes, objects, actions, and any relevant details.', 'wp-mcp-ai' ),
+			),
 		);
+
+		// Add each frame as an image_url.
+		foreach ( $base64_frames as $frame_url ) {
+			$content[] = array(
+				'type'      => 'image_url',
+				'image_url' => array(
+					'url' => $frame_url,
+				),
+			);
+		}
+
+		// Build messages array for OpenAI.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $content,
+			),
+		);
+
+		// Get OpenAI client.
+		$openai_client = new WP_MCP_AI_OpenAI_Client();
+
+		// Use GPT-4o or specified model (vision-capable model required).
+		if ( empty( $model ) ) {
+			$model = 'gpt-4o';
+		}
+
+		// Send request to OpenAI.
+		$response = $openai_client->chat_completion(
+			$messages,
+			array(
+				'model'       => $model,
+				'max_tokens'  => 2000,
+				'temperature' => 0.7,
+			)
+		);
+
+		// Clean up extracted frames.
+		$frame_extractor->cleanup_frames( $frame_paths );
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		// Extract analysis text.
+		$analysis_text = '';
+		if ( isset( $response['choices'][0]['message']['content'] ) ) {
+			$analysis_text = $response['choices'][0]['message']['content'];
+		}
+
+		// Build result array.
+		$result = array(
+			'text'         => $analysis_text,
+			'provider'     => 'openai',
+			'model'        => isset( $response['model'] ) ? $response['model'] : $model,
+			'frame_count'  => count( $base64_frames ),
+			'usage'        => isset( $response['usage'] ) ? $response['usage'] : array(),
+		);
+
+		WP_MCP_AI_Logger::log_event(
+			'openai_video_analysis_complete',
+			'Completed OpenAI video analysis via frame extraction',
+			array(
+				'model'       => $result['model'],
+				'frame_count' => $result['frame_count'],
+				'usage'       => $result['usage'],
+			)
+		);
+
+		return $result;
 	}
 
 	/**
