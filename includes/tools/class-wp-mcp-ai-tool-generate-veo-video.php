@@ -49,8 +49,8 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'duration'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Video duration in seconds (1-8). Default is 5 seconds.', 'wp-mcp-ai' ),
-					'minimum'     => 1,
+					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds.', 'wp-mcp-ai' ),
+					'minimum'     => 4,
 					'maximum'     => 8,
 					'default'     => 5,
 				),
