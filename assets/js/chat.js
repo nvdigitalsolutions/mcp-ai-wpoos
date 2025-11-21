@@ -1262,6 +1262,21 @@
                                 console.log('[WP oOS] Conversation saved successfully to CCT');
                             }
 
+                            // Update session_key with the normalized value returned by server
+                            // This ensures client and server are in sync after normalization
+                            if (body && body.session_key && state.config) {
+                                const normalizedKey = sanitizeSessionKey(body.session_key);
+                                if (normalizedKey && normalizedKey !== state.config.sessionKey) {
+                                    if (!silent && window.console && console.log) {
+                                        console.log('[WP oOS] Updating session_key from server response:', {
+                                            old: state.config.sessionKey,
+                                            new: normalizedKey
+                                        });
+                                    }
+                                    state.config.sessionKey = normalizedKey;
+                                }
+                            }
+
                             return { success: true, attempt: attempt + 1 };
                         });
                 })
