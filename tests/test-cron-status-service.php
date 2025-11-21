@@ -367,4 +367,112 @@ class Test_Cron_Status_Service extends WP_UnitTestCase {
 		// Clean up transient.
 		delete_transient( 'wp_mcp_ai_veo_async_' . $job_id );
 	}
+
+	/**
+	 * Test that async tool job results are included in status summary for agentic workflow.
+	 */
+	public function test_async_tool_job_includes_result_in_status_summary() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		// Create a completed async tool job with result data.
+		$job_id = 'async_test_result';
+		$result = array(
+			'text'   => 'Tool execution completed successfully',
+			'data'   => array(
+				'file_id' => 'file-abc123',
+				'url'     => 'https://example.com/file.pdf',
+			),
+			'status' => 'success',
+		);
+
+		$metadata = array(
+			'job_id'       => $job_id,
+			'tool_slug'    => 'test_tool',
+			'arguments'    => array( 'param' => 'value' ),
+			'context'      => array( 'user_id' => $this->user_id ),
+			'status'       => 'completed',
+			'queued_at'    => time() - 120,
+			'started_at'   => time() - 60,
+			'completed_at' => time() - 10,
+			'result'       => $result,
+			'error'        => null,
+			'duration'     => 50.5,
+		);
+
+		set_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get status summary.
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		$this->assertNotEmpty( $summary );
+		$this->assertCount( 1, $summary );
+
+		$job = $summary[0];
+		$this->assertEquals( $job_id, $job['job_id'] );
+		$this->assertEquals( 'test_tool', $job['tool_slug'] );
+		$this->assertEquals( 'completed', $job['status'] );
+		$this->assertEquals( 'async_tool', $job['type'] );
+
+		// Verify timing information.
+		$this->assertArrayHasKey( 'completed_at', $job );
+		$this->assertArrayHasKey( 'timestamp', $job['completed_at'] );
+		$this->assertArrayHasKey( 'relative', $job['completed_at'] );
+
+		// Verify result data is included for agentic workflow.
+		$this->assertArrayHasKey( 'has_result', $job );
+		$this->assertTrue( $job['has_result'] );
+		$this->assertArrayHasKey( 'result', $job );
+		$this->assertIsArray( $job['result'] );
+		$this->assertEquals( 'Tool execution completed successfully', $job['result']['text'] );
+		$this->assertEquals( 'file-abc123', $job['result']['data']['file_id'] );
+		$this->assertEquals( 'https://example.com/file.pdf', $job['result']['data']['url'] );
+
+		// Verify duration.
+		$this->assertArrayHasKey( 'duration', $job );
+		$this->assertEquals( 50.5, $job['duration'] );
+
+		// Clean up transient.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id );
+	}
+
+	/**
+	 * Test that async tool job without result doesn't include result field.
+	 */
+	public function test_async_tool_job_without_result() {
+		require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-async-executor.php';
+
+		// Create a pending async tool job without result.
+		$job_id   = 'async_test_pending';
+		$metadata = array(
+			'job_id'       => $job_id,
+			'tool_slug'    => 'test_tool',
+			'arguments'    => array( 'param' => 'value' ),
+			'context'      => array( 'user_id' => $this->user_id ),
+			'status'       => 'pending',
+			'queued_at'    => time() - 10,
+			'started_at'   => null,
+			'completed_at' => null,
+			'result'       => null,
+			'error'        => null,
+		);
+
+		set_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id, $metadata, DAY_IN_SECONDS );
+
+		// Get status summary.
+		$summary = $this->service->get_status_summary( $this->user_id, 10 );
+
+		$this->assertNotEmpty( $summary );
+		$this->assertCount( 1, $summary );
+
+		$job = $summary[0];
+		$this->assertEquals( $job_id, $job['job_id'] );
+		$this->assertEquals( 'pending', $job['status'] );
+
+		// Verify no result data for pending job.
+		$this->assertArrayNotHasKey( 'has_result', $job );
+		$this->assertArrayNotHasKey( 'result', $job );
+
+		// Clean up transient.
+		delete_transient( WP_MCP_AI_Tool_Async_Executor::METADATA_TRANSIENT_PREFIX . $job_id );
+	}
 }

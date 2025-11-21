@@ -388,10 +388,11 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Format async tool job for status display
 	 *
 	 * Transforms async tool job metadata into consistent status format.
+	 * Includes full result data for completed jobs to support agentic workflows.
 	 * Follows SOC by only formatting, not executing or managing jobs.
 	 *
 	 * @param array $job Async tool job metadata.
-	 * @return array Formatted job data for UI.
+	 * @return array Formatted job data for UI with result data when available.
 	 */
 	protected function format_async_tool_job( $job ) {
 		$job_id     = isset( $job['job_id'] ) ? $job['job_id'] : '';
@@ -426,9 +427,10 @@ class WP_MCP_AI_Cron_Status_Service {
 				'relative'  => $this->format_relative_time( $job['completed_at'], true ),
 			);
 
-			// Include result summary if available.
+			// Include full result data for agentic workflow.
 			if ( isset( $job['result'] ) ) {
 				$job_data['has_result'] = true;
+				$job_data['result']     = $job['result'];
 			}
 
 			if ( isset( $job['duration'] ) ) {
