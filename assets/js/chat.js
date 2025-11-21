@@ -7796,13 +7796,11 @@
             // Ensure content is a string
             const safeContent = content != null ? String(content) : '';
             
-            if (window.console && console.log) {
+            if (DEBUG_MODE && window.console && console.log) {
                 console.log('[WP oOS] updateStreamingMessage called:', {
-                    contentType: typeof content,
                     contentLength: safeContent.length,
                     contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
-                    elementExists: !!streamingMessageElement,
-                    elementInDOM: streamingMessageElement ? document.body.contains(streamingMessageElement) : false
+                    elementExists: !!streamingMessageElement
                 });
             }
             
@@ -7812,20 +7810,9 @@
 
             // Concern 1: Update message bubble content
             if (streamingMessageElement) {
-                if (window.console && console.log) {
-                    console.log('[WP oOS] Setting textContent on streaming element:', {
-                        currentTextLength: streamingMessageElement.textContent ? streamingMessageElement.textContent.length : 0,
-                        newTextLength: safeContent.length
-                    });
-                }
-                
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 streamingMessageElement.textContent = safeContent;
-                
-                if (window.console && console.log) {
-                    console.log('[WP oOS] textContent set. Actual element textContent length:', streamingMessageElement.textContent.length);
-                }
                 
                 // Add streaming class for visual cursor indicator
                 if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
@@ -8012,11 +7999,10 @@
                     try {
                         const data = JSON.parse(eventData);
                         
-                        if (window.console && console.log) {
-                            console.log('[WP oOS] SSE event received:', {
+                        if (DEBUG_MODE && window.console && console.log) {
+                            console.log('[WP oOS] SSE event:', {
                                 eventType: eventType || '(none)',
-                                dataKeys: Object.keys(data),
-                                dataSample: JSON.stringify(data).substring(0, 100) + '...'
+                                hasData: !!data
                             });
                         }
 
@@ -8139,11 +8125,10 @@
                                 // Store in state for status system access
                                 state.streamingContent = fullContent;
                                 
-                                if (window.console && console.log) {
-                                    console.log('[WP oOS] SSE content chunk received:', {
+                                if (DEBUG_MODE && window.console && console.log) {
+                                    console.log('[WP oOS] Content chunk:', {
                                         chunkLength: contentChunk.length,
-                                        fullContentLength: fullContent.length,
-                                        sample: fullContent.substring(0, 50) + '...'
+                                        totalLength: fullContent.length
                                     });
                                 }
                                 
