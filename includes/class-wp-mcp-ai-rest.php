@@ -2868,6 +2868,62 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
+			// Extract thinking text from the response if present (e.g., Gemini 2.0 Flash Thinking mode).
+			$thinking_text = '';
+			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['thinking'] ) ) {
+				$thinking_text = $response['choices'][0]['message']['thinking'];
+			}
+
+			// Send thinking text in chunks BEFORE sending main content (if present).
+			// This allows the client to display thinking text in the status section.
+			if ( ! empty( $thinking_text ) && is_string( $thinking_text ) ) {
+				$chunk_size = self::STREAMING_CHUNK_SIZE;
+				$text_len   = $this->mb_strlen( $thinking_text );
+
+				// Log thinking streaming start for debugging.
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'SSE Streaming: Starting to send thinking chunks',
+					array(
+						'text_length'  => $text_len,
+						'chunk_size'   => $chunk_size,
+						'num_chunks'   => ceil( $text_len / $chunk_size ),
+						'assistant_id' => $assistant_id,
+					)
+				);
+
+				// Check once if usleep is available before the loop.
+				$can_sleep = function_exists( 'usleep' );
+
+				// Send thinking chunks using Gemini-style format that JavaScript recognizes.
+				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
+					$chunk = $this->mb_substr( $thinking_text, $i, $chunk_size );
+
+					// Send in Gemini format for multi-provider compatibility.
+					$this->send_sse_event(
+						'message',
+						array(
+							'candidates' => array(
+								array(
+									'content' => array(
+										'parts' => array(
+											array(
+												'thought' => $chunk,
+											),
+										),
+									),
+								),
+							),
+						)
+					);
+
+					// Small delay between chunks to simulate realistic streaming.
+					if ( $can_sleep ) {
+						usleep( self::STREAMING_CHUNK_DELAY_US );
+					}
+				}
+			}
+
 			// Simulate streaming by sending text content in chunks before final response.
 			// Extract text content from the response to send progressively.
 			$text_content = '';
