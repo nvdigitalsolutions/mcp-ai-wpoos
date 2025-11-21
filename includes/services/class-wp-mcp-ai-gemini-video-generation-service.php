@@ -74,7 +74,7 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 *     Video generation arguments.
 	 *
 	 *     @type string $prompt           Video description/prompt (required).
-	 *     @type int    $duration         Duration in seconds (1-8, default 5).
+	 *     @type int    $duration         Duration in seconds (4-8, default 5).
 	 *     @type string $aspect_ratio     Aspect ratio: '16:9', '9:16' (default '16:9').
 	 *     @type string $resolution       Resolution: '720p', '1080p' (default '720p').
 	 *     @type string $negative_prompt  What to avoid in generation.
@@ -128,9 +128,9 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	protected function build_generation_payload( $args ) {
 		$prompt = sanitize_textarea_field( $args['prompt'] );
 
-		// Duration validation.
+		// Duration validation (Veo API requires 4-8 seconds).
 		$duration = isset( $args['duration'] ) ? absint( $args['duration'] ) : self::DEFAULT_DURATION;
-		if ( $duration < 1 || $duration > self::MAX_DURATION ) {
+		if ( $duration < 4 || $duration > self::MAX_DURATION ) {
 			$duration = self::DEFAULT_DURATION;
 		}
 
