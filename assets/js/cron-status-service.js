@@ -176,7 +176,7 @@
 		 */
 		refreshStatus: function (containerId) {
 			// Find the poller config
-			const pollConfig = this.pollerConfigs && this.pollerConfigs[containerId];
+			const pollConfig = this.pollerConfigs[containerId];
 			if (!pollConfig) {
 				return;
 			}
