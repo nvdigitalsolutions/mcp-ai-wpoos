@@ -8285,12 +8285,15 @@
                             let contentChunk = null;
                             let thinkingChunk = null;
                             
-                            // ALWAYS log message events for debugging
+                            // ALWAYS log message events for debugging with FULL data structure
                             if (window.console && console.log) {
                                 console.log('[WP oOS] SSE message event received:', {
                                     hasChoices: !!(data.choices),
                                     hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
-                                    hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content)
+                                    hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content),
+                                    hasData: !!(data.data),
+                                    dataKeys: Object.keys(data),
+                                    fullData: data
                                 });
                             }
                             
@@ -8396,6 +8399,42 @@
                             // Check for final response with complete data first
                             // This ensures tool_results and structured content are captured
                             if (data.data) {
+                                // Extract text from final response if no chunks were received
+                                // This handles cases where streaming chunks weren't sent
+                                if (!fullContent || fullContent.length === 0) {
+                                    let finalText = '';
+                                    
+                                    // Try to extract text from data.data structure
+                                    if (data.data.choices && data.data.choices[0] && data.data.choices[0].message && data.data.choices[0].message.content) {
+                                        finalText = data.data.choices[0].message.content;
+                                    } else if (data.data.content && typeof data.data.content === 'string') {
+                                        finalText = data.data.content;
+                                    } else if (data.data.response && typeof data.data.response === 'string') {
+                                        finalText = data.data.response;
+                                    } else if (data.data.candidates && data.data.candidates[0] && data.data.candidates[0].content && data.data.candidates[0].content.parts) {
+                                        // Gemini format
+                                        for (let p = 0; p < data.data.candidates[0].content.parts.length; p++) {
+                                            const part = data.data.candidates[0].content.parts[p];
+                                            if (part.text && typeof part.text === 'string') {
+                                                finalText += part.text;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (finalText) {
+                                        fullContent = finalText;
+                                        // Update the streaming bubble with the final text
+                                        updateCallback(fullContent);
+                                        
+                                        if (window.console && console.log) {
+                                            console.log('[WP oOS] Extracted final text from data.data:', {
+                                                textLength: finalText.length,
+                                                textSample: finalText.substring(0, 100)
+                                            });
+                                        }
+                                    }
+                                }
+                                
                                 return { content: fullContent, finalData: data };
                             }
                             // If we found streaming content, add it to fullContent and update UI
