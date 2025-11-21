@@ -112,9 +112,10 @@ class WP_MCP_AI_Tool_Delete_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'read-only',            // Only reads data, does not modify state.
+			'write',                // Deletes scheduled tasks.
 			'local-only',           // No external API calls.
 			'requires-capability',  // Requires user capabilities.
+			'state-changing',       // Modifies scheduled tasks.
 		);
 	}
 }
