@@ -285,9 +285,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Default to async for better reliability.
 		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
-		// NOTE: We no longer check agentic_loop here because the orchestrator in
-		// class-wp-mcp-ai-rest.php will handle async execution properly via the
-		// async executor, which is the correct pattern for long-running tools.
+		// NOTE: We no longer check agentic_loop here because the REST API orchestrator
+		// will handle async execution properly via the async executor when the tool
+		// is marked as 'background-only', which is the correct pattern for long-running tools.
 		return true;
 	}
 
