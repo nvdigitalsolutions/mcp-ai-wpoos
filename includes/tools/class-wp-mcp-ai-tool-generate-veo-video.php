@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Determine if async mode should be used.
-		$use_async = $this->should_use_async( $arguments );
+		$use_async = $this->should_use_async( $arguments, $context );
 
 		// Enhance prompt with style if specified.
 		$prompt = $this->enhance_prompt_with_style( $arguments );
@@ -262,9 +262,18 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 * Determine if async mode should be used
 	 *
 	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 * @return bool True if async mode should be used.
 	 */
-	protected function should_use_async( $arguments ) {
+	protected function should_use_async( $arguments, $context = array() ) {
+		// CRITICAL: If already running in async executor context, do NOT use tool-level async.
+		// This prevents double-async execution where orchestrator queues the tool async,
+		// then the tool itself queues another async job. This causes the client to get
+		// a nested async response it doesn't know how to handle.
+		if ( isset( $context['in_async_executor'] ) && $context['in_async_executor'] ) {
+			return false;
+		}
+
 		// Check if explicitly set in arguments.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
