@@ -7896,7 +7896,8 @@
                         }
                         
                         // Preserve original content before rendering in case of failure
-                        const originalContent = streamingMessageElement.textContent || '';
+                        // Note: We use streamResult.content (the accumulated content) rather than
+                        // streamingMessageElement.textContent to ensure we have the full content
                         const renderedHtml = renderMarkdown(streamResult.content);
                         
                         // Only update innerHTML if rendering produced content
@@ -7906,7 +7907,7 @@
                         } else {
                             // Fallback: keep original content as escaped text if rendering fails
                             if (window.console && console.warn) {
-                                console.warn('[WP oOS] Markdown rendering returned empty, preserving original content');
+                                console.warn('[WP MCP AI] Markdown rendering returned empty, preserving original content');
                             }
                             // Convert textContent to escaped HTML to preserve the content
                             streamingMessageElement.innerHTML = escapeHtml(streamResult.content).replace(/\n/g, '<br />');
