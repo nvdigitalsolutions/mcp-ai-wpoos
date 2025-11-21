@@ -6202,22 +6202,35 @@
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
         }).then(function (response) {
+            // 404 means task not found yet - this is expected early in async execution
             if (response.status === 404) {
                 return null;
             }
 
+            // Check response status BEFORE trying to parse JSON
+            if (!response.ok) {
+                // For server errors, try to extract error message from JSON if available
+                return response
+                    .json()
+                    .catch(function () {
+                        const error = new Error('HTTP ' + response.status);
+                        error.status = response.status;
+                        throw error;
+                    })
+                    .then(function (data) {
+                        const errorMessage = data && data.message ? data.message : ('HTTP ' + response.status);
+                        const error = new Error(errorMessage);
+                        error.status = response.status;
+                        error.data = data;
+                        throw error;
+                    });
+            }
+
+            // Success response - parse JSON normally
             return response
                 .json()
                 .catch(function () {
                     return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
-                        const error = new Error('HTTP ' + response.status);
-                        error.status = response.status;
-                        throw error;
-                    }
-                    return data;
                 });
         });
     }
@@ -6663,22 +6676,40 @@
             headers: buildJsonHeaders(state),
             credentials: 'same-origin',
         }).then(function (response) {
+            // 404 means job not found yet - this is expected early in async execution
+            // Return null to signal "not ready yet" rather than an error
             if (response.status === 404) {
                 return null;
             }
 
-            return response
-                .json()
-                .catch(function () {
-                    return null;
-                })
-                .then(function (data) {
-                    if (!response.ok) {
+            // Check response status BEFORE trying to parse JSON
+            // This provides better error messages for server errors
+            if (!response.ok) {
+                // For server errors, try to extract error message from JSON if available
+                return response
+                    .json()
+                    .catch(function () {
+                        // JSON parsing failed - just use HTTP status
                         const error = new Error('HTTP ' + response.status);
                         error.status = response.status;
                         throw error;
-                    }
-                    return data;
+                    })
+                    .then(function (data) {
+                        // Got JSON error response - use message if available
+                        const errorMessage = data && data.message ? data.message : ('HTTP ' + response.status);
+                        const error = new Error(errorMessage);
+                        error.status = response.status;
+                        error.data = data;
+                        throw error;
+                    });
+            }
+
+            // Success response - parse JSON normally
+            return response
+                .json()
+                .catch(function () {
+                    // JSON parsing failed on success response - return null
+                    return null;
                 });
         });
     }
