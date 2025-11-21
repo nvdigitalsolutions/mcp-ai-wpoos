@@ -2927,14 +2927,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Simulate streaming by sending text content in chunks before final response.
 			// Extract text content from the response to send progressively.
 			$text_content = '';
-			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['content'] ) ) {
-				$text_content = $response['choices'][0]['message']['content'];
+			if ( ! empty( $response['choices'][0]['message']['content'] ) ) {
+				// Normalize content - handles both string and array of segments.
+				$text_content = $this->normalise_message_content( $response['choices'][0]['message']['content'] );
 			} elseif ( isset( $response['content'] ) ) {
-				$text_content = $response['content'];
+				$text_content = $this->normalise_message_content( $response['content'] );
 			}
 
 			// Send text content in chunks to simulate streaming (for better UX).
-			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
+			if ( is_string( $text_content ) && '' !== $text_content ) {
 				$chunk_size = self::STREAMING_CHUNK_SIZE;
 				$text_len   = $this->mb_strlen( $text_content );
 
