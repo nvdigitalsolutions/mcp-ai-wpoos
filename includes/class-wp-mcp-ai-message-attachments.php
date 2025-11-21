@@ -32,6 +32,20 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		protected static $deleted_file_ids = array();
 
 		/**
+		 * AI provider for file uploads (openai, gemini, etc.).
+		 *
+		 * @var string
+		 */
+		protected $provider = 'openai';
+
+		/**
+		 * Model identifier for provider detection.
+		 *
+		 * @var string
+		 */
+		protected $model = '';
+
+		/**
 		 * Cached attachment payloads keyed by generated file identifier.
 		 *
 		 * @var array
@@ -51,6 +65,46 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 		 * @var array
 		 */
 		protected $file_id_index = array();
+
+		/**
+		 * Constructor.
+		 *
+		 * @param string $provider Provider name (openai, gemini, etc.). Default 'openai'.
+		 * @param string $model    Model identifier for auto-detection. Optional.
+		 */
+		public function __construct( $provider = 'openai', $model = '' ) {
+			$this->provider = sanitize_key( $provider );
+			$this->model    = sanitize_text_field( $model );
+
+			// Auto-detect provider from model if model is provided.
+			if ( ! empty( $model ) && 'openai' === $this->provider ) {
+				if ( ! class_exists( 'WP_MCP_AI_File_Service_Factory' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-file-service-factory.php';
+				}
+				$detected = WP_MCP_AI_File_Service_Factory::detect_provider_from_model( $model );
+				if ( 'unknown' !== $detected ) {
+					$this->provider = $detected;
+				}
+			}
+		}
+
+		/**
+		 * Set the AI provider for file uploads.
+		 *
+		 * @param string $provider Provider name (openai, gemini, etc.).
+		 */
+		public function set_provider( $provider ) {
+			$this->provider = sanitize_key( $provider );
+		}
+
+		/**
+		 * Get the current AI provider.
+		 *
+		 * @return string Provider name.
+		 */
+		public function get_provider() {
+			return $this->provider;
+		}
 
 		/**
 		 * Locate the attachment associated with an OpenAI file identifier.
@@ -539,17 +593,20 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				$file_id  = $cached_metadata['file_id'];
 				$metadata = $cached_metadata;
 			} else {
-				if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
-					require_once WP_MCP_AI_PATH . 'includes/class-openai-client.php';
+				// Use file service factory for provider-agnostic uploads.
+				if ( ! class_exists( 'WP_MCP_AI_File_Service_Factory' ) ) {
+					require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-file-service-factory.php';
 				}
 
-				$client = new WP_MCP_AI_OpenAI_Client();
-				$upload = $client->upload_file(
+				$upload = WP_MCP_AI_File_Service_Factory::upload_file(
 					$file_path,
+					$mime_type,
+					$this->provider,
 					array(
-						'purpose'   => $purpose,
-						'filename'  => wp_basename( $file_path ),
-						'mime_type' => $mime_type,
+						'purpose'       => $purpose,
+						'filename'      => wp_basename( $file_path ),
+						'display_name'  => get_the_title( $attachment ),
+						'attachment_id' => $attachment_id,
 					)
 				);
 
@@ -557,17 +614,46 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					return $upload;
 				}
 
-				$file_id = isset( $upload['id'] ) ? sanitize_text_field( $upload['id'] ) : '';
+				// Extract file ID based on provider.
+				$file_id = '';
+				if ( 'openai' === $this->provider && isset( $upload['id'] ) ) {
+					$file_id = sanitize_text_field( $upload['id'] );
+				} elseif ( in_array( $this->provider, array( 'gemini', 'google' ), true ) ) {
+					// Gemini returns 'name' field which includes the URI.
+					if ( isset( $upload['name'] ) ) {
+						$file_id = sanitize_text_field( $upload['name'] );
+					} elseif ( isset( $upload['uri'] ) ) {
+						$file_id = sanitize_text_field( $upload['uri'] );
+					}
+				}
 
 				if ( '' === $file_id ) {
-					return new WP_Error( 'wp_mcp_ai_openai_file_upload_missing_id', __( 'OpenAI did not return a file identifier.', 'wp-mcp-ai' ) );
+					return new WP_Error(
+						'wp_mcp_ai_file_upload_missing_id',
+						sprintf(
+							/* translators: %s: provider name */
+							__( '%s did not return a file identifier.', 'wp-mcp-ai' ),
+							ucfirst( $this->provider )
+						)
+					);
 				}
 
 				$metadata = array(
 					'file_id'    => $file_id,
+					'provider'   => $this->provider,
 					'created_at' => isset( $upload['created_at'] ) ? (int) $upload['created_at'] : time(),
-					'status'     => isset( $upload['status'] ) ? $upload['status'] : '',
+					'status'     => isset( $upload['status'] ) ? $upload['status'] : ( isset( $upload['state'] ) ? $upload['state'] : '' ),
 				);
+
+				// Store provider-specific metadata.
+				if ( 'gemini' === $this->provider || 'google' === $this->provider ) {
+					if ( isset( $upload['uri'] ) ) {
+						$metadata['uri'] = $upload['uri'];
+					}
+					if ( isset( $upload['mimeType'] ) ) {
+						$metadata['mime_type'] = $upload['mimeType'];
+					}
+				}
 			}
 
 			$metadata['hash']      = $file_hash;
