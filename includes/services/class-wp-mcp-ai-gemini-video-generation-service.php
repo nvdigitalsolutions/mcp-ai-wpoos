@@ -806,6 +806,11 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			$response['result'] = $metadata['result'];
 		}
 
+		// Include args for permission checking and context.
+		if ( isset( $metadata['args'] ) ) {
+			$response['args'] = $metadata['args'];
+		}
+
 		return $response;
 	}
 
