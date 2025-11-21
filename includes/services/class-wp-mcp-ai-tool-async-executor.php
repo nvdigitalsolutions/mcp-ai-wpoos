@@ -249,6 +249,20 @@ class WP_MCP_AI_Tool_Async_Executor {
 
 		// Execute tool.
 		try {
+			// Set execution time limit for async tool execution in cron context.
+			// Video generation can take 60-120 seconds, so we need to allow sufficient time.
+			// This is safe in cron context as it won't affect the main HTTP request.
+			$original_time_limit = ini_get( 'max_execution_time' );
+			$tool_timeout        = 180; // 3 minutes should be sufficient for video generation.
+			
+			// Apply filter to allow customization per tool.
+			$tool_timeout = apply_filters( 'wp_mcp_ai_async_tool_timeout', $tool_timeout, $tool_slug, $job_id );
+			
+			// Only set if we can (some hosting environments don't allow this).
+			if ( function_exists( 'set_time_limit' ) && 0 !== (int) $original_time_limit ) {
+				@set_time_limit( $tool_timeout ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			}
+			
 			$start_time = microtime( true );
 			$result     = $tool->execute( $arguments, $context );
 			$duration   = microtime( true ) - $start_time;

@@ -278,14 +278,6 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 
-		// CRITICAL: If in agentic loop, force synchronous execution.
-		// The agentic loop requires actual results to continue the conversation.
-		// Returning an async job_id would break the loop since the LLM wouldn't
-		// receive the actual video data to incorporate into its response.
-		if ( isset( $context['agentic_loop'] ) && $context['agentic_loop'] ) {
-			return false;
-		}
-
 		// Check if explicitly set in arguments.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
@@ -293,6 +285,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Default to async for better reliability.
 		// Video generation typically takes 60-120 seconds which often exceeds HTTP timeouts.
+		// NOTE: We no longer check agentic_loop here because the orchestrator in
+		// class-wp-mcp-ai-rest.php will handle async execution properly via the
+		// async executor, which is the correct pattern for long-running tools.
 		return true;
 	}
 
@@ -428,6 +423,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'consumes-tokens',      // Uses AI credits.
 			'async',                // Takes significant time (60-120 seconds).
 			'long-running',         // Video generation is async.
+			'background-only',      // Must run in background even in agentic loops (prevents HTTP timeouts).
 			'rate-limited',         // Subject to API rate limits (10 RPM for preview, higher for paid tiers).
 			'may-timeout',          // May exceed typical HTTP timeouts.
 		);

@@ -7275,12 +7275,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$orchestrator = wp_mcp_ai_get_async_tool_orchestrator();
 			$should_async = $orchestrator->should_execute_async( $tool, $arguments, $context );
 
-			// CRITICAL: Force synchronous execution in agentic loop.
+			// CRITICAL: Force synchronous execution in agentic loop for most tools.
 			// Async tools must complete before the loop continues to ensure the LLM
 			// receives actual results, not pending status. Without this, the agentic
 			// loop would continue with pending tool results, and the final LLM response
 			// would not include the actual tool output (e.g., generated image links).
-			if ( $should_async && ! empty( $context['agentic_loop'] ) ) {
+			// 
+			// EXCEPTION: Some tools (like video generation) take so long (60-120s) that
+			// they MUST run async to avoid HTTP timeouts, even in agentic loops.
+			// These tools are marked with 'background-only' capability flag.
+			$must_run_async = false;
+			if ( $tool instanceof WP_MCP_AI_Tool_Capability_Flags_Interface ) {
+				$capability_flags = $tool->get_capability_flags();
+				if ( is_array( $capability_flags ) && in_array( 'background-only', $capability_flags, true ) ) {
+					$must_run_async = true;
+				}
+			}
+			
+			if ( $should_async && ! empty( $context['agentic_loop'] ) && ! $must_run_async ) {
 				$should_async = false;
 				WP_MCP_AI_Logger::log_event(
 					'async_tool_forced_sync',
@@ -7289,6 +7301,16 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'tool_slug' => $tool_slug,
 						'iteration' => $iteration,
 						'reason'    => 'agentic_loop_requires_complete_results',
+					)
+				);
+			} elseif ( $must_run_async && ! empty( $context['agentic_loop'] ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'async_tool_required_in_agentic_loop',
+					sprintf( 'Tool %s must run async even in agentic loop (background-only)', $tool_slug ),
+					array(
+						'tool_slug' => $tool_slug,
+						'iteration' => $iteration,
+						'reason'    => 'tool_requires_background_execution',
 					)
 				);
 			}
