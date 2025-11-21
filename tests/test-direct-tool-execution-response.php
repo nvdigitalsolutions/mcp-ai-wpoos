@@ -97,7 +97,7 @@ class Test_Direct_Tool_Execution_Response extends WP_UnitTestCase {
 		$this->assertEquals( $expected_format['role'], $actual_format['role'] );
 		$this->assertEquals( $expected_format['name'], $actual_format['name'] );
 		$this->assertIsArray( $actual_format['content'] );
-		
+
 		// The chat UI checks for these fields.
 		$this->assertArrayHasKey( 'url', $actual_format['content'] );
 		$this->assertArrayHasKey( 'text', $actual_format['content'] );
