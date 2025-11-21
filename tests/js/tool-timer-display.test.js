@@ -191,7 +191,7 @@ describe('Tool Timer Display', () => {
 	});
 
 	it('should format elapsed time correctly', () => {
-		const now = Date.now();
+		const startTime = Date.now() - 5000;
 		
 		// Test 5 seconds - timer starts at 0s and updates after interval
 		// so we can't test retroactive calculation
@@ -199,7 +199,7 @@ describe('Tool Timer Display', () => {
 			message: 'Testing...',
 			type: 'tool',
 			showTime: true,
-			startTime: now - 5000
+			startTime: startTime
 		});
 		
 		let timeEl = statusEl.querySelector('.wp-mcp-ai-chat__status-time');
@@ -211,7 +211,7 @@ describe('Tool Timer Display', () => {
 		// We can verify the interval exists and startTime is stored correctly
 		expect(statusEl._timeInterval).toBeDefined();
 		const storedStartTime = parseInt(timeEl.getAttribute('data-start-time'));
-		expect(storedStartTime).toBe(now - 5000);
+		expect(storedStartTime).toBe(startTime);
 		
 		// Manually trigger what the interval would do to verify calculation logic
 		const elapsed = Math.floor((Date.now() - storedStartTime) / 1000);
