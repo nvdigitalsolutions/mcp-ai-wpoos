@@ -246,8 +246,11 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 	 * Test polling logic terminates on completed status.
 	 *
 	 * This validates the terminal state detection in stream_job_status_with_polling.
+	 * Note: The terminal status values ('completed', 'failed', 'error') must match
+	 * the values defined in WP_MCP_AI_REST::is_terminal_job_status().
 	 */
 	public function test_polling_terminates_on_completed_status() {
+		// These terminal statuses must match WP_MCP_AI_REST::is_terminal_job_status().
 		$terminal_statuses = array( 'completed', 'failed', 'error' );
 
 		foreach ( $terminal_statuses as $status ) {
@@ -257,7 +260,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 			);
 
 			// Terminal state should be detected by checking status.
-			$is_terminal = in_array( strtolower( $job_details['status'] ), array( 'completed', 'failed', 'error' ), true );
+			$is_terminal = in_array( strtolower( $job_details['status'] ), $terminal_statuses, true );
 
 			$this->assertTrue( $is_terminal, "Status '{$status}' should be detected as terminal" );
 		}
@@ -267,6 +270,8 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 	 * Test polling logic continues on pending/polling status.
 	 */
 	public function test_polling_continues_on_pending_status() {
+		// Terminal statuses that should NOT match.
+		$terminal_statuses     = array( 'completed', 'failed', 'error' );
 		$non_terminal_statuses = array( 'pending', 'polling', 'running', 'queued' );
 
 		foreach ( $non_terminal_statuses as $status ) {
@@ -276,7 +281,7 @@ class Test_SSE_Job_Polling extends WP_UnitTestCase {
 			);
 
 			// Non-terminal state should not be detected as terminal.
-			$is_terminal = in_array( strtolower( $job_details['status'] ), array( 'completed', 'failed', 'error' ), true );
+			$is_terminal = in_array( strtolower( $job_details['status'] ), $terminal_statuses, true );
 
 			$this->assertFalse( $is_terminal, "Status '{$status}' should not be detected as terminal" );
 		}

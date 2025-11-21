@@ -985,7 +985,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function stream_job_status_with_polling( $service, $job_id, $user_id ) {
 			// Enable connection abort detection.
-			// This allows connection_aborted() to work reliably across different PHP environments.
+			// The false parameter allows the script to detect when the client disconnects,
+			// preventing wasted resources polling for an abandoned connection.
 			if ( function_exists( 'ignore_user_abort' ) ) {
 				ignore_user_abort( false );
 			}
