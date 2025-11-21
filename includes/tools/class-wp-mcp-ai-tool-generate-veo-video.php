@@ -274,6 +274,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			return false;
 		}
 
+		// CRITICAL: If in agentic loop, force synchronous execution.
+		// The agentic loop requires actual results to continue the conversation.
+		// Returning an async job_id would break the loop since the LLM wouldn't
+		// receive the actual video data to incorporate into its response.
+		if ( isset( $context['agentic_loop'] ) && $context['agentic_loop'] ) {
+			return false;
+		}
+
 		// Check if explicitly set in arguments.
 		if ( isset( $arguments['async'] ) ) {
 			return (bool) $arguments['async'];
