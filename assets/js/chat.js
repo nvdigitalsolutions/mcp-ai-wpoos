@@ -1097,13 +1097,20 @@
      * @return {Object} Cleaned message object with only API-compatible fields
      */
     function stripMessageDisplayMetadata(message) {
+        // Handle invalid input
         if (!message || typeof message !== 'object') {
-            return message;
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] stripMessageDisplayMetadata: Invalid message object', message);
+            }
+            return null;
         }
 
-        // Validate required fields are present
+        // Validate required field 'role' is present
         if (!message.role) {
-            return message;
+            if (window.console && console.warn) {
+                console.warn('[WP oOS] stripMessageDisplayMetadata: Message missing required "role" field', message);
+            }
+            return null;
         }
 
         // Create a new object with only API-compatible fields
@@ -1169,7 +1176,9 @@
 
         // Strip UI-only metadata (like 'display' field) from messages before sending to API
         // The REST API schema only accepts specific fields and will reject extra properties
-        const cleanMessages = state.conversation.map(stripMessageDisplayMetadata);
+        const cleanMessages = state.conversation
+            .map(stripMessageDisplayMetadata)
+            .filter(function(msg) { return msg !== null; });
 
         const payload = {
             assistant_id: assistantIdToUse,
