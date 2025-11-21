@@ -175,13 +175,20 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		}
 
 		// Otherwise, poll synchronously (existing behavior).
-		$result = $this->poll_for_completion( $operation );
+		// Pass args for potential async fallback on timeout.
+		$result = $this->poll_for_completion( $operation, $args );
 
+		// Check for error response.
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
+		
+		// Check if result is an async fallback response (from timeout detection).
+		if ( isset( $result['async'] ) && $result['async'] ) {
+			return $result;
+		}
 
-		// Download and return video data.
+		// Download and return video data for synchronous completion.
 		return $this->process_completed_video( $result, $args );
 	}
 
@@ -374,9 +381,10 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 	 * Poll for video generation completion.
 	 *
 	 * @param array $operation Operation details.
+	 * @param array $args Optional. Original generation arguments for async fallback on timeout.
 	 * @return array|WP_Error Completed operation data or error.
 	 */
-	protected function poll_for_completion( $operation ) {
+	protected function poll_for_completion( $operation, $args = array() ) {
 		$operation_name = $operation['operation_name'];
 		$settings       = get_option( 'wp_mcp_ai_settings', array() );
 		$api_key        = isset( $settings['gemini_api_key'] ) ? $settings['gemini_api_key'] : '';
@@ -387,6 +395,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 		);
 
 		$attempts = 0;
+		
+		// Initialize timeout detector for async fallback.
+		// Note: Service is already loaded in services-init.php, but we require here
+		// to ensure it's available even if called directly without full initialization.
+		if ( ! class_exists( 'WP_MCP_AI_Timeout_Detection_Service' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-timeout-detection-service.php';
+		}
+		$timeout_detector = new WP_MCP_AI_Timeout_Detection_Service( 10 );
 
 		while ( $attempts < self::MAX_POLLING_ATTEMPTS ) {
 			++$attempts;
@@ -394,6 +410,19 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			// Wait before polling.
 			if ( $attempts > 1 ) {
 				sleep( self::POLLING_INTERVAL );
+			}
+			
+			// Check if we're approaching PHP timeout (10 seconds before).
+			if ( $timeout_detector->is_approaching_timeout() ) {
+				// Approaching timeout - fall back to async mode.
+				WP_MCP_AI_Logger::log_event(
+					'veo_timeout_async_fallback',
+					sprintf( 'Approaching timeout after %.2fs, falling back to async mode', $timeout_detector->get_elapsed_time() ),
+					$timeout_detector->get_metadata()
+				);
+				
+				// Queue for async polling and return job info.
+				return $this->queue_async_polling( $operation, $args );
 			}
 
 			$request_args = array(
@@ -453,12 +482,14 @@ class WP_MCP_AI_Gemini_Video_Generation_Service {
 			}
 		}
 
-		// Timeout.
-		return new WP_Error(
-			'wp_mcp_ai_veo_timeout',
-			__( 'Video generation timed out. The operation may still be processing on Google\'s servers.', 'wp-mcp-ai' ),
-			array( 'status' => 504 )
+		// Max polling attempts reached - fall back to async mode.
+		WP_MCP_AI_Logger::log_event(
+			'veo_max_attempts_async_fallback',
+			'Max polling attempts reached, falling back to async mode',
+			array( 'attempts' => $attempts )
 		);
+		
+		return $this->queue_async_polling( $operation, $args );
 	}
 
 	/**
