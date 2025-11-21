@@ -3990,9 +3990,8 @@
 
         updateHistoryToggle(state);
 
-        if (state.historyVisible) {
-            ensureHistorySessions(state);
-        }
+        // Don't auto-fetch when expanding - let users manually refresh via refresh button
+        // This avoids race conditions when history is opened immediately after saving
     }
 
     function ensureHistorySessions(state) {
@@ -4182,7 +4181,7 @@
         });
     }
 
-    function fetchHistorySessionDetails(state, sessionKey) {
+    function fetchHistorySessionDetails(state, sessionKey, retryCount) {
         if (!sessionKey) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
@@ -4192,6 +4191,11 @@
         if (!endpoint) {
             return Promise.reject(new Error(getString('historySessionError', 'Unable to load this conversation. Please try again.')));
         }
+
+        // Default retry count is 0 (first attempt)
+        const attempt = typeof retryCount === 'number' ? retryCount : 0;
+        const maxRetries = 2; // Allow up to 2 retries (3 total attempts)
+        const retryDelay = 500; // 500ms delay before retry
 
         // Construct URL with session_key in path (not as query param)
         let url = endpoint;
@@ -4228,7 +4232,9 @@
                 session_key: sessionKey,
                 url: url,
                 user_id: userId,
-                assistant_id: assistantId
+                assistant_id: assistantId,
+                attempt: attempt + 1,
+                max_attempts: maxRetries + 1
             });
         }
 
@@ -4242,7 +4248,8 @@
                 console.log('[WP oOS] Conversation details response:', {
                     status: response.status,
                     ok: response.ok,
-                    session_key: sessionKey
+                    session_key: sessionKey,
+                    attempt: attempt + 1
                 });
             }
 
@@ -4268,6 +4275,7 @@
                         const message = data && data.message ? data.message : getString('historySessionError', 'Unable to load this conversation. Please try again.');
                         const error = new Error(message);
                         error.status = response.status;
+                        error.retryable = response.status === 404 && attempt < maxRetries; // 404s might be timing issues
                         throw error;
                     }
 
@@ -4276,7 +4284,8 @@
                         if (window.console && console.log) {
                             console.log('[WP oOS] Conversation details loaded successfully:', {
                                 session_key: sessionKey,
-                                message_count: data.session.messages ? data.session.messages.length : 0
+                                message_count: data.session.messages ? data.session.messages.length : 0,
+                                attempt: attempt + 1
                             });
                         }
                         return data.session;
@@ -4293,8 +4302,32 @@
         }).catch(function (error) {
             // Log error for debugging (handles both network-level and application-level errors)
             if (window.console && console.error) {
-                console.error('[WP oOS] Error fetching conversation details:', error);
+                console.error('[WP oOS] Error fetching conversation details:', {
+                    error: error.message || error,
+                    session_key: sessionKey,
+                    attempt: attempt + 1,
+                    retryable: !!error.retryable
+                });
             }
+
+            // Retry on 404 errors (might be race condition) if we haven't exceeded max retries
+            if (error.retryable && attempt < maxRetries) {
+                if (window.console && console.log) {
+                    console.log('[WP oOS] Retrying conversation details fetch after delay:', {
+                        session_key: sessionKey,
+                        delay_ms: retryDelay,
+                        next_attempt: attempt + 2
+                    });
+                }
+                
+                // Wait before retrying
+                return new Promise(function(resolve) {
+                    setTimeout(function() {
+                        resolve(fetchHistorySessionDetails(state, sessionKey, attempt + 1));
+                    }, retryDelay);
+                });
+            }
+
             // Re-throw the error to propagate it to the caller
             // Errors from the response handler above already have user-friendly messages
             throw error;
