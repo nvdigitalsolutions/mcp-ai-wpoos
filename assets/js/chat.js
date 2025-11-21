@@ -8136,6 +8136,20 @@
                 showTime: true,
                 startTime: Date.now()
             });
+        } else if (type === 'generating') {
+            // Don't override streaming status if content is actively streaming
+            // This prevents "generating" status from being shown when actual content is streaming
+            if (state.streamingContent && state.streamingContent.length > 0) {
+                // Content is already streaming, keep current status
+                return;
+            }
+            
+            setStatus(state.container, {
+                message: message,
+                type: 'streaming',
+                showTime: true,
+                startTime: Date.now()
+            });
         } else if (type === 'model_switched' || type === 'messages_truncated') {
             // Show brief notification without timer
             setStatus(state.container, {

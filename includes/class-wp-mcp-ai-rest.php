@@ -37,6 +37,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		const CHAT_APPROX_CHARS_PER_TOKEN = 4;     // Rough heuristic used when trimming oversized chats.
 		const TPM_SAFETY_MARGIN           = 0.8;   // Use 80% of TPM limit as target when truncating messages.
 		const TPM_FALLBACK_TOKENS         = 100000; // Fallback token target if no TPM limit configured.
+		const STREAMING_CHUNK_SIZE        = 50;    // Characters per chunk for simulated streaming.
+		const STREAMING_CHUNK_DELAY_US    = 10000; // Microseconds delay between streaming chunks (10ms).
 
 		/**
 		 * Tool slug used for document + prompt submissions.
@@ -2592,6 +2594,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$iteration            = 0;
 			$tool_result_messages = array();
 
+			// Send status update to indicate AI is generating response.
+			$this->send_sse_event(
+				'status',
+				array(
+					'type'    => 'generating',
+					'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+				)
+			);
+
 			$transcript_context['request_started_at']    = microtime( true );
 			$response                                    = $this->client->create_chat_completion( $messages, $options );
 			$transcript_context['response_completed_at'] = microtime( true );
@@ -2788,6 +2799,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					}
 				}
 
+				// Send status update to indicate AI is generating response after tool execution.
+				$this->send_sse_event(
+					'status',
+					array(
+						'type'    => 'generating',
+						'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+					)
+				);
+
 				// Call LLM again with tool results.
 				$response = $this->client->create_chat_completion( $messages, $options );
 
@@ -2848,7 +2868,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			do_action( 'wp_mcp_ai_after_chat_response', $assistant_id, $response, $request );
 
-			// Stream final response.
+			// Simulate streaming by sending text content in chunks before final response.
+			// Extract text content from the response to send progressively.
+			$text_content = '';
+			if ( ! empty( $response['choices'] ) && isset( $response['choices'][0] ) && isset( $response['choices'][0]['message']['content'] ) ) {
+				$text_content = $response['choices'][0]['message']['content'];
+			} elseif ( isset( $response['content'] ) ) {
+				$text_content = $response['content'];
+			}
+
+			// Send text content in chunks to simulate streaming (for better UX).
+			if ( ! empty( $text_content ) && is_string( $text_content ) ) {
+				$chunk_size = self::STREAMING_CHUNK_SIZE;
+				$text_len   = $this->mb_strlen( $text_content );
+
+				// Check once if usleep is available before the loop.
+				$can_sleep = function_exists( 'usleep' );
+
+				// Send chunks directly without building array (memory efficient).
+				for ( $i = 0; $i < $text_len; $i += $chunk_size ) {
+					$chunk = $this->mb_substr( $text_content, $i, $chunk_size );
+
+					$this->send_sse_event(
+						'message',
+						array(
+							'choices' => array(
+								array(
+									'delta' => array(
+										'content' => $chunk,
+									),
+								),
+							),
+						)
+					);
+
+					// Small delay between chunks to simulate realistic streaming.
+					if ( $can_sleep ) {
+						usleep( self::STREAMING_CHUNK_DELAY_US );
+					}
+				}
+			}
+
+			// Stream final response with complete data.
 			$payload = array(
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
