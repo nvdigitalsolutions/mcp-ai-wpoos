@@ -192,16 +192,16 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$save_to_media = isset( $arguments['save_to_media'] ) ? (bool) $arguments['save_to_media'] : true;
 
 		if ( $save_to_media ) {
-			$attachment_id = $this->save_video_to_media( $result, $user_id );
+			$save_result = $this->save_video_to_media( $result, $user_id );
 
-			if ( is_wp_error( $attachment_id ) ) {
-				return $attachment_id;
+			if ( is_wp_error( $save_result ) ) {
+				return $save_result;
 			}
 
 			return array(
 				'success'       => true,
-				'attachment_id' => $attachment_id,
-				'url'           => wp_get_attachment_url( $attachment_id ),
+				'attachment_id' => $save_result['attachment_id'],
+				'url'           => $save_result['url'],
 				'prompt'        => $result['prompt'],
 				'duration'      => $result['duration'],
 				'aspect_ratio'  => $result['aspect_ratio'],
@@ -211,7 +211,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'message'       => sprintf(
 					/* translators: %d: attachment ID */
 					__( 'Video generated successfully and saved as attachment ID %d.', 'wp-mcp-ai' ),
-					$attachment_id
+					$save_result['attachment_id']
 				),
 			);
 		}
@@ -407,7 +407,13 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			)
 		);
 
-		return $attachment_id;
+		// Return both attachment ID and the local upload URL.
+		// We prefer the upload URL to ensure we're pointing to the local WordPress
+		// media directory, not an external CDN or cloud storage like OneDrive.
+		return array(
+			'attachment_id' => $attachment_id,
+			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
+		);
 	}
 
 	/**
