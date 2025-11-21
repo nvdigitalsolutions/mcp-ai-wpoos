@@ -7827,14 +7827,14 @@
             // Ensure content is a string
             const safeContent = content != null ? String(content) : '';
             
-            if (DEBUG_MODE) {
-                if (window.console && console.log) {
-                    console.log('[WP oOS] updateStreamingMessage called:', {
-                        contentLength: safeContent.length,
-                        contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
-                        elementExists: !!streamingMessageElement
-                    });
-                }
+            // ALWAYS log streaming updates for debugging (even when DEBUG_MODE is off)
+            if (window.console && console.log) {
+                console.log('[WP oOS] updateStreamingMessage called:', {
+                    contentLength: safeContent.length,
+                    contentSample: safeContent.substring(0, 50) + (safeContent.length > 50 ? '...' : ''),
+                    elementExists: !!streamingMessageElement,
+                    elementInDOM: streamingMessageElement ? streamingMessageElement.parentNode !== null : false
+                });
             }
             
             if (!streamingMessageElement) {
@@ -7846,6 +7846,15 @@
                 // Update text content with accumulated response
                 // Using textContent for progressive streaming (not innerHTML) to prevent XSS
                 streamingMessageElement.textContent = safeContent;
+                
+                // VERIFY the text was actually set
+                if (window.console && console.log) {
+                    console.log('[WP oOS] After setting textContent:', {
+                        elementTextContent: streamingMessageElement.textContent,
+                        elementInnerHTML: streamingMessageElement.innerHTML,
+                        elementOuterHTML: streamingMessageElement.outerHTML.substring(0, 200)
+                    });
+                }
                 
                 // Add streaming class for visual cursor indicator
                 if (streamingMessageElement.classList && !streamingMessageElement.classList.contains('wp-mcp-ai-chat__bubble--streaming')) {
@@ -8075,6 +8084,15 @@
                             let contentChunk = null;
                             let thinkingChunk = null;
                             
+                            // ALWAYS log message events for debugging
+                            if (window.console && console.log) {
+                                console.log('[WP oOS] SSE message event received:', {
+                                    hasChoices: !!(data.choices),
+                                    hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
+                                    hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content)
+                                });
+                            }
+                            
                             // OpenAI format: choices[0].delta.content
                             if (data.choices && data.choices[0]) {
                                 const delta = data.choices[0].delta;
@@ -8082,6 +8100,9 @@
                                     // Main content
                                     if (delta.content) {
                                         contentChunk = delta.content;
+                                        if (window.console && console.log) {
+                                            console.log('[WP oOS] Content chunk extracted:', contentChunk.substring(0, 50));
+                                        }
                                     }
                                     // OpenAI o1 models may have reasoning_content (if exposed in future)
                                     if (delta.reasoning_content && typeof delta.reasoning_content === 'string') {
