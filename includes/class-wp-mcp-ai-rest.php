@@ -3544,13 +3544,26 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-			return rest_ensure_response(
-				array(
-					'assistant_id' => $assistant_id,
-					'tool'         => $tool_slug,
-					'result'       => $result,
-				)
+			// Build response with both direct result and tool_results format
+			// for compatibility with chat UI that expects agentic loop format.
+			$response_data = array(
+				'assistant_id' => $assistant_id,
+				'tool'         => $tool_slug,
+				'result'       => $result,
 			);
+
+			// Add tool_results array format for chat UI display compatibility.
+			// This allows image/file tools to display their results in the chat widget
+			// even when called directly (not through agentic loop).
+			$response_data['tool_results'] = array(
+				array(
+					'role'    => 'tool',
+					'name'    => $tool_slug,
+					'content' => $result,
+				),
+			);
+
+			return rest_ensure_response( $response_data );
 		}
 
 		/**
